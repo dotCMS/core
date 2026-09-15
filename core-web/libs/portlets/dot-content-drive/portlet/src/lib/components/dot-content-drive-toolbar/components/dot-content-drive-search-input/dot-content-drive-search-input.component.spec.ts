@@ -175,17 +175,24 @@ describe('DotContentDriveSearchInputComponent', () => {
             ).toBeTruthy();
         });
 
-        it('should offer an explanation of what each option matches', () => {
+        it('should offer a distinct explanation for each option in the panel', () => {
             spectator.detectChanges();
 
             // Two labels do not carry the distinction between "the item's name" and "anything
-            // written inside it", and the control is new.
-            // Asserted through the directive instance rather than an ng-reflect attribute, which
-            // Angular only emits in development mode.
-            const tooltip = spectator.query(Tooltip);
+            // written inside it", and the control is new. The explanation lives on each option
+            // row in the panel, not on the trigger — asserted through the directive instances
+            // rather than an ng-reflect attribute, which Angular only emits in development mode.
+            spectator.click(byTestId('search-scope-trigger'));
+            spectator.detectChanges();
 
-            expect(tooltip).toBeTruthy();
-            expect(tooltip?.content).toBeTruthy();
+            const tooltips = spectator.queryAll(Tooltip);
+
+            expect(tooltips.length).toBe(2);
+            expect(tooltips.every((tooltip) => !!tooltip.content)).toBe(true);
+
+            const contents = tooltips.map((tooltip) => tooltip.content);
+
+            expect(new Set(contents).size).toBe(2);
         });
     });
 

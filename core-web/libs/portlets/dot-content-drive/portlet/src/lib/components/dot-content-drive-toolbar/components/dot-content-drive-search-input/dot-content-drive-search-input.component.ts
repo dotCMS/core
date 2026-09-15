@@ -80,10 +80,12 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     protected readonly scopeOptions = [
         {
             label: 'content-drive.search.scope.title',
+            help: 'content-drive.search.scope.title.help',
             value: DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE
         },
         {
             label: 'content-drive.search.scope.all-fields',
+            help: 'content-drive.search.scope.all-fields.help',
             value: DOT_CONTENT_DRIVE_SEARCH_SCOPE.ALL_FIELDS
         }
     ];

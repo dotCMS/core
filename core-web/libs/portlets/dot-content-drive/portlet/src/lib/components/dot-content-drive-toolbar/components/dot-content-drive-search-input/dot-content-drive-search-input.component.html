@@ -36,16 +36,16 @@
          same `{form.field.border.color}` alias `inputtext` uses, confirmed straight from the Lara
          preset source. -->
     <p-inputgroup-addon>
+        <!-- The explanation moved to each option in the panel below (FR-022 only requires it be
+             available, not where) — the trigger itself carries no tooltip. -->
         <button
             type="button"
             pButton
             severity="secondary"
             [pButtonPT]="TRIGGER_PT"
             [attr.aria-label]="'content-drive.search.scope.label' | dm"
-            [pTooltip]="'content-drive.search.scope.help' | dm"
             aria-haspopup="listbox"
             data-testid="search-scope-trigger"
-            tooltipPosition="bottom"
             class="min-w-32"
             (click)="panel.toggle($event)">
             <span class="truncate" data-testid="search-scope-active">
@@ -68,7 +68,10 @@
         data-testid="search-scope-panel"
         (ngModelChange)="onScopeChange($event); panel.hide()">
         <ng-template let-item pTemplate="item">
-            <span [attr.data-testid]="'search-scope-option-' + item.value">
+            <span
+                [pTooltip]="item.help | dm"
+                tooltipPosition="right"
+                [attr.data-testid]="'search-scope-option-' + item.value">
                 {{ item.label | dm }}
             </span>
         </ng-template>
