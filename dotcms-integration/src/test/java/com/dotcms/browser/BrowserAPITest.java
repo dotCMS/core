@@ -1363,13 +1363,21 @@ public class BrowserAPITest extends IntegrationTestBase {
             assertTrue("Should contain AND operator", result.contains(" AND "));
         }
 
-        // Test Case 5: Filter with special characters
+        // Test Case 5: Filter with special characters.
+        //
+        // CHANGED by issue #37532 (FR-027, SC-002's enumerated carve-out). "&" is a Lucene
+        // query_string reserved character; before that fix it survived into the query unescaped —
+        // exactly the defect the issue reports, just with a different symbol than the customer's
+        // ":"/"("/"/". It must now appear backslash-escaped rather than raw, which is what "handles"
+        // it means here: the term is matched literally instead of altering the query's structure.
         BrowserQuery querySpecialChars = BrowserQuery.builder()
                 .withFilter("test & special")
                 .build();
         result = browserAPIImpl.buildBaseESQuery(querySpecialChars);
         assertNotNull("Result should not be null", result);
-        assertTrue("Should handle special characters in filter", result.contains("test & special"));
+        assertTrue("Should handle special characters in filter", result.contains("test \\& special"));
+        assertFalse("The raw, unescaped '&' must not survive into the query",
+                result.contains("test & special"));
 
         // Test Case 6: Empty string filter
         BrowserQuery queryEmptyFilter = BrowserQuery.builder()
