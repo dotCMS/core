@@ -2264,6 +2264,12 @@ public class BrowserAPITest extends IntegrationTestBase {
         final int itemCount = 10;
         final int firstPageSize = 6;
 
+        // Captured rather than restored to the _DEFAULT constants below, so this does not clobber
+        // an environment override of either property for the rest of the suite (found in review).
+        final int originalChunkSize = Config.getIntProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY,
+                BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_DEFAULT);
+        final int originalScanLimit = Config.getIntProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY,
+                BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
         Config.setProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY, chunkAndScanLimit);
         Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY, chunkAndScanLimit);
         try {
@@ -2326,10 +2332,8 @@ public class BrowserAPITest extends IntegrationTestBase {
                             + "the full set of items in the folder",
                     expectedIdentifiers, unionIdentifiers);
         } finally {
-            Config.setProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY,
-                    BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_DEFAULT);
-            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY,
-                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+            Config.setProperty(BrowserAPIImpl.BROWSER_CONTENT_CHUNK_SIZE_KEY, originalChunkSize);
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY, originalScanLimit);
         }
     }
 

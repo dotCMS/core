@@ -270,6 +270,12 @@ public class BrowserAPIImpl implements BrowserAPI {
             final boolean applyESFilter) throws DotDataException, DotSecurityException {
 
         final int scanLimit = Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        // Clamped against the guard rail: BROWSER_DB_MAX_SCAN_ROWS is configurable, and without
+        // this the very first chunk fetch can already overshoot it whenever an operator lowers the
+        // scan limit below the caller's chunk size (e.g. below BROWSER_SINGLE_PASS_CHUNK_SIZE's
+        // 7,000 default) -- the dbOffset >= scanLimit check only runs after a chunk is fetched, so
+        // nothing upstream of it would have caught that (found in review, issue #37184).
+        final int effectiveChunkSize = Math.min(chunkSize, scanLimit);
 
         final List<Contentlet> accumulatedContent = new ArrayList<>();
         List<String> candidateChunkInodes;
@@ -280,13 +286,13 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         Logger.debug(this, String.format(
                 "[Starting content search by chunks]: content required %d, chunk size: %d, user: %s",
-                maxRows, chunkSize, browserQuery.user.getFullName()));
+                maxRows, effectiveChunkSize, browserQuery.user.getFullName()));
 
         while (true) {
             chunkCount++;
             Logger.debug(this, String.format("#%d Chunk: starting row: %d", chunkCount, dbOffset));
 
-            final DotConnect dcSelectChunk = buildPaginatedDotConnect(sqlQuery, chunkSize, dbOffset);
+            final DotConnect dcSelectChunk = buildPaginatedDotConnect(sqlQuery, effectiveChunkSize, dbOffset);
             candidateChunkInodes = collectInodesFromDB(dcSelectChunk);
 
             if (candidateChunkInodes.isEmpty()) {
@@ -308,7 +314,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             // warn path with a chunk-aligned cursor and silently skip whatever is left over in this
             // chunk -- reachable whenever a chunk boundary lands exactly on the scan limit.
             if (accumulatedContent.size() >= maxRows) {
-                hasMore = (candidateChunkInodes.size() == chunkSize);
+                hasMore = (candidateChunkInodes.size() == effectiveChunkSize);
                 nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
                         candidateChunkInodes, dbOffset);
                 break;
@@ -322,7 +328,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             // through whenever the last (partial) chunk's ending offset happens to land on or past
             // the scan limit, which is reachable whenever chunkSize and the scan limit are close in
             // size (found in review, issue #37184).
-            if (candidateChunkInodes.size() < chunkSize) {
+            if (candidateChunkInodes.size() < effectiveChunkSize) {
                 Logger.debug(this, String.format(
                         "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
                         accumulatedContent.size()));
