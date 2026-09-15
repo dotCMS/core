@@ -44,6 +44,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.Optional;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -196,6 +197,19 @@ public class ChatCompletionsResource {
                                               content = @Content(schema = @Schema(
                                                       implementation = ChatCompletionRequestView.class)))
                                       final ChatCompletionRequestView requestView) {
+
+        // Bearer only. Checked here as well as in BearerOnlyAuthFilter because the filter runs
+        // only inside the JAX-RS chain, while the rule has to hold wherever this method is
+        // reached. Without it the surrounding authentication accepts a session cookie or basic
+        // auth, which would undo the reasoning behind emitting no CORS headers: that the
+        // credential is a token someone deliberately issued and placed on a server, not one a
+        // browser attaches by itself.
+        final Optional<InferenceError> credentialProblem =
+                BearerOnlyAuthFilter.bearerCredentialProblem(
+                        request.getHeader(javax.ws.rs.core.HttpHeaders.AUTHORIZATION));
+        if (credentialProblem.isPresent()) {
+            return errorResponse(credentialProblem.get());
+        }
 
         // Any authenticated user, backend or frontend; an anonymous caller is rejected here with a
         // 401 the builder produces itself.

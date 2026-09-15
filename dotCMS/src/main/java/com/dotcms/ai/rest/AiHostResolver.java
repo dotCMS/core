@@ -109,7 +109,28 @@ public final class AiHostResolver {
             Logger.warn(AiHostResolver.class,
                     "Could not resolve host '" + sanitize(serverName) + "': " + e.getMessage());
         }
-        return WebAPILocator.getHostWebAPI().getCurrentHostNoThrow(request);
+        return defaultHost();
+    }
+
+    /**
+     * The default site, resolved without consulting the request.
+     *
+     * <p>Deliberately not {@code getCurrentHostNoThrow}, which is the obvious call and the wrong
+     * one: it reads the {@code host_id} and {@code Host} request parameters before it ever looks
+     * at the server name (`HostWebAPIImpl.getCurrentHostFromRequest`), and FR-025 requires those
+     * be ignored on this family. They were already ignored whenever the server name matched a
+     * site, because that path returns before reaching here — so the effect was that a legacy
+     * override was honoured in precisely the case where it could redirect which site's
+     * credentials get spent, and ignored everywhere it was harmless.</p>
+     *
+     * @return the default site
+     */
+    private static Host defaultHost() {
+        try {
+            return APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        } catch (final Exception e) {
+            throw new IllegalStateException("Could not resolve the default site: " + e.getMessage(), e);
+        }
     }
 
     /**
