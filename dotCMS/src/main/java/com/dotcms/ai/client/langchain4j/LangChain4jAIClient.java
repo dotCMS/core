@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AIModelType;
 import com.dotcms.ai.app.AppConfig;
+import com.dotcms.inference.model.CallerSafeException;
 import com.dotcms.ai.client.AIClient;
 import com.dotcms.ai.client.AIRequest;
 import com.dotcms.ai.client.JSONObjectAIRequest;
@@ -554,7 +555,10 @@ public class LangChain4jAIClient implements AIClient {
             final BiFunction<M, String, R> executor) {
         final List<String> models = effectiveModels(baseConfig);
         if (models.isEmpty()) {
-            throw new IllegalArgumentException(
+            // CallerSafeException, not a bare IllegalArgumentException: this sentence was written
+            // here, names the site's own configuration, and is the one thing that tells a caller
+            // what to fix. The type is what marks it returnable — see CallerSafeException.
+            throw new CallerSafeException(
                     "No model configured in providerConfig." + section + " — set 'model'");
         }
         // Each failure is logged immediately. The last exception is rethrown only after

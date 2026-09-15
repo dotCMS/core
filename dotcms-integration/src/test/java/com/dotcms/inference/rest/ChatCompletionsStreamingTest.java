@@ -579,6 +579,60 @@ public class ChatCompletionsStreamingTest {
     }
 
     /**
+     * Given a site whose provider configuration makes every chat model fail to initialise
+     * When a streamed completion is requested
+     * Then what the caller receives names nothing about the provider or the site's credentials
+     *
+     * <p>FR-031 and FR-036. The fallback chain reports a failed initialisation by rethrowing an
+     * {@code IllegalArgumentException} whose message is dotCMS's prefix followed by whatever the
+     * provider client said — and a provider client's message can carry its endpoint, its account
+     * identifiers, or a fragment of the prompt. The stream's error translator used to return that
+     * message on type alone, so it reached the caller in the error frame. The buffered paths never
+     * did, and {@code ImagesResource} documents that they must not, which is what made the
+     * streaming path's behaviour a discrepancy rather than a policy.</p>
+     *
+     * <p>Asserted on what the caller can read rather than on the translator, because that is the
+     * boundary the requirement is about: the full detail is still logged, and is still expected to
+     * be there for an operator.</p>
+     */
+    @Test
+    public void test_whenEveryModelFailsToStart_theCallerLearnsNothingAboutTheProvider()
+            throws Exception {
+        AiTest.aiAppSecretsWithProviderConfig(host, providerConfigThatCannotInitialise());
+
+        final Response response = resource.completions(
+                mockRequest(), mockResponse(), host.getIdentifier(), streamingRequest(null));
+
+        final String visible = clientVisibleBody(response);
+
+        assertFalse("The internal wrapper text names nothing a caller can act on and must not "
+                + "be returned", visible.contains("Failed to initialize"));
+        assertFalse("A site's credential must never appear in a response",
+                visible.contains(AiTest.API_KEY));
+        assertFalse("The provider endpoint dotCMS calls is infrastructure detail",
+                visible.contains(String.valueOf(AiTest.PORT)));
+        assertFalse(visible.contains("localhost"));
+    }
+
+    /**
+     * @return a provider configuration whose chat section cannot produce a model, so the failure
+     *         happens during initialisation rather than at the provider
+     */
+    private static String providerConfigThatCannotInitialise() {
+        final String endpoint = String.format("http://localhost:%d/", AiTest.PORT);
+        return String.format(
+                "{"
+                + "\"chat\":{\"provider\":\"openai\",\"apiKey\":\"\",\"model\":\"%1$s\","
+                + "\"endpoint\":\"%2$s\",\"maxRetries\":0},"
+                + "\"embeddings\":{\"provider\":\"openai\",\"apiKey\":\"%3$s\","
+                + "\"model\":\"%4$s\",\"endpoint\":\"%2$s\",\"maxRetries\":0},"
+                + "\"image\":{\"provider\":\"openai\",\"apiKey\":\"%3$s\",\"model\":\"%5$s\","
+                + "\"endpoint\":\"%2$s\",\"maxRetries\":0}"
+                + "}",
+                CHAT_MODEL, endpoint, AiTest.API_KEY, AiTest.EMBEDDINGS_MODEL, AiTest.IMAGE_MODEL);
+    }
+
+    /**
      * Writes the streamed entity out in full, the way the container would.
      *
      * @param response the response the resource returned
