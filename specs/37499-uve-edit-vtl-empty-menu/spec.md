@@ -48,7 +48,34 @@ has already lost the data it needs.
 
 ### Session 2026-09-14
 
-- Q (from PR #37519 review): with A selected, hovering B and clicking B's `</>` opens B's VTL while A stays the selected contentlet — should `</>` promote the hovered contentlet to selected? → A: **No. The selection is deliberately left where it is.** The hover toolbar already splits on *what the action opens*, not on which contentlet it targets: the bolt (Quick Edit) and palette (Style editor) call `promoteHoverToSelected()` because their side panels bind to `editorSelected` and have no other input; the pencil (full editor) and `×` (delete) do not, and the pencil is documented in-code as "intentionally stateless". `</>` opens the same dialog the pencil does (`handleEditVTL()` → `openContentForEdit()`), so it belongs with the pencil. Promoting on the button click would additionally move the selection when the user merely opens the menu and dismisses it without picking a file. Before this fix the divergence was invisible, because the menu listed the selected contentlet's files anyway; it is recorded here as a decision rather than as how the code happens to behave.
+- ~~Q (from PR #37519 review): with A selected, hovering B and clicking B's `</>` opens B's VTL while A stays the selected contentlet — should `</>` promote the hovered contentlet to selected?~~ **SUPERSEDED 2026-09-14 by AC-012 — the answer is now yes, on file choice. See the second 2026-09-14 session below. Original answer retained for the review thread:** A: **No. The selection is deliberately left where it is.** The hover toolbar already splits on *what the action opens*, not on which contentlet it targets: the bolt (Quick Edit) and palette (Style editor) call `promoteHoverToSelected()` because their side panels bind to `editorSelected` and have no other input; the pencil (full editor) and `×` (delete) do not, and the pencil is documented in-code as "intentionally stateless". `</>` opens the same dialog the pencil does (`handleEditVTL()` → `openContentForEdit()`), so it belongs with the pencil. Promoting on the button click would additionally move the selection when the user merely opens the menu and dismisses it without picking a file. Before this fix the divergence was invisible, because the menu listed the selected contentlet's files anyway; it is recorded here as a decision rather than as how the code happens to behave.
+
+### Session 2026-09-14 (second) — rescope to the root cause
+
+Triggered by plan review. The developer asked to stop optimising for diff size and fix this for
+long-term support, accepting spec changes and a single PR.
+
+- Q: Is the hover-only menu (fix 1) enough on its own? → A: **It fixes this defect and leaves the
+  cause.** `editorSelected.payload` is degraded by every re-anchor, and the codebase already
+  contains two independent workarounds for treating that payload as untrustworthy
+  (`dot-uve-style-editor-form.component.ts:185`, `edit-ema-editor.component.ts:1377`). #37499 is
+  the case where nobody worked around it. **AC-009 is superseded by AC-011** — the store fix is
+  back in scope, generalised from "carry `vtlFiles` forward" to "a positional event must not
+  degrade DOM-sourced data".
+- Q: So should the re-anchor stop rebuilding the payload entirely? → A: **No — verified against
+  the save path.** `pageContainers` and `container.contentletsId` are read straight off the
+  payload by `insertContentletInContainer()` and `deleteContentletFromContainer()`, and are
+  refreshed live from `$pageData()` by `getPageSavePayload()`. Freezing the payload would make
+  add/delete write a stale container tree. The re-anchor **merges**: page-level context refreshed,
+  DOM-level data preserved.
+- Q (reverses the earlier 2026-09-14 entry): should `</>` promote the hovered contentlet? → A:
+  **Yes, on file choice.** The reviewer's original instinct on PR #37519 was right. Promotion
+  fires from the menu command, not the button click, so a menu opened and dismissed leaves the
+  selection alone; `promoteHoverToSelected()` writes only `editorSelected`, so no side panel
+  opens. The pencil and `×` are untouched — see non-goals. **AC-012.**
+- Q: Do the two existing workarounds come out? → A: **No.** On inspection neither is caused by the
+  re-anchor — one is about values the DOM never carries, the other about a post-save inode. Left
+  in place; see non-goals.
 
 ## Reproduction *(mandatory)*
 
@@ -111,9 +138,9 @@ error, no toast, no network call.
   apply here — no Java is involved. Backend is behaving correctly: `DotParse.java` emits the
   `vtl-file` marker as expected, and the page API returns the VTL file list. **No backend and
   no SDK change is required.**
-  - Toolbar component — **the only thing modified**:
+  - Toolbar component — **modified**:
     `core-web/libs/portlets/edit-ema/portlet/src/lib/edit-ema-editor/components/dot-uve-contentlet-tools/`
-  - Store feature — **diagnosis only, not modified** (AC-009 withdrawn):
+  - Store feature — **modified** (AC-011, rescoped 2026-09-14):
     `core-web/libs/portlets/edit-ema/portlet/src/lib/store/features/editor/withSelectionAnchor.ts`
 - **Related known decisions**: None known that constrain this fix. The plan formally consults
   `dotCMS/platform-adrs`.
@@ -173,7 +200,14 @@ withdrawn AC-009 note under Acceptance, and the non-goal below.
   undefined model and an empty list becomes an honest empty list.
 - Remove the dead `selectedHasVtlFiles` computed (`dot-uve-contentlet-tools.component.ts:233`),
   confirmed unreferenced anywhere in `core-web` outside its own declaration.
-- Cover both defects with specs, per Principle V.
+- **Stop the `SET_BOUNDS` re-anchor degrading the selected payload** (rescoped 2026-09-14,
+  AC-011). `applyBoundsForSelection()` merges rather than replaces: page-level save context is
+  refreshed from the store as it is today, while the DOM-sourced contentlet data captured at
+  click time survives. This fixes the defect class — `vtlFiles`, `baseType`,
+  `onNumberOfPages`, `dotStyleProperties` — at its source rather than for one field.
+- **Promote the hovered contentlet when a VTL file is opened** (rescoped 2026-09-14, AC-012).
+  The selection border follows the contentlet whose VTL you just opened.
+- Cover all defects with specs, per Principle V.
 
 **Explicitly out of scope / non-goals**:
 
@@ -189,28 +223,38 @@ withdrawn AC-009 note under Acceptance, and the non-goal below.
   toolbar VTL button is wanted, that is separate product work.
 - **No change to `SET_BOUNDS` / `AUTO_BOUNDS` debounce behavior.** The re-anchor frequency is
   not the bug; losing data during the re-anchor is.
-- **No store change at all.** `applyBoundsForSelection()` is left exactly as it is. The
-  `SET_BOUNDS` re-anchor drops `vtlFiles` *and* `ContentletPayload.baseType`,
-  `onNumberOfPages` and `dotStyleProperties`, uniformly, because `getDotCMSContentletsBound()`
-  cannot supply them. After this fix none of those has a reader on the selected context: the
-  style editor carries its own rollback-based workaround for `dotStyleProperties`, and
-  `vtlFiles` is read only from the hover context. **Any future consumer that reads one of
-  these off `editorSelected.payload` — a selected-toolbar VTL button, for instance — must
-  repopulate it, or it will hit #37499 again.** Recorded here so that is a known constraint
-  rather than a rediscovered bug.
+- **No freeze of `editorSelected.payload` across a re-anchor.** The obvious reading of the
+  root-cause fix — "a positional event shouldn't touch the payload at all, so keep the one
+  captured at click time" — is **wrong**, and was ruled out by inspection (2026-09-14). The
+  payload carries two different kinds of data:
+  - **DOM-sourced, per contentlet**: `contentlet.*` (including `baseType`, `onNumberOfPages`,
+    `dotStyleProperties`) and `vtlFiles`. The bounds snapshot carries only a five-field subset,
+    so overwriting with it *degrades*.
+  - **Store-sourced, per page**: `pageContainers`, `container.contentletsId`, `language_id`,
+    `pageId`, `personaTag`, all read live from `$pageData()` by `getPageSavePayload()`. These
+    feed the save path — `insertContentletInContainer({...payload})` and
+    `deleteContentletFromContainer(payload)` both read `payload.pageContainers` directly
+    (`edit-ema-editor.component.ts:998`, `:1070`). Freezing them would make add/delete write
+    a stale container tree.
+
+  The re-anchor must therefore **refresh the page-level context and preserve the DOM-level
+  data**, which is AC-011 — not skip the rebuild.
 - **No change to `menuItems()`** (`dot-uve-contentlet-tools.component.ts:308-310`). The
   add-content menu keeps the same selected-preferred dual-context pattern. It never reads
   `vtlFiles` — it passes the context through as the `addContent` payload, where preferring the
   selected contentlet is the intended behavior. Confirmed intentionally untouched.
-- **No change to which contentlet is *selected* when `</>` is clicked** (clarified 2026-09-14).
-  `</>` does not call `promoteHoverToSelected()` and will not start doing so. The toolbar's
-  existing rule is that side-panel actions promote (bolt → Quick Edit, palette → Style editor,
-  both bound to `editorSelected`) while dialog actions do not (pencil → full editor, `×` →
-  delete; the pencil is documented in-code as deliberately stateless). `</>` opens the same
-  dialog the pencil does, so it stays with the pencil: after this fix it targets the **hovered**
-  contentlet and leaves the selection border where it is. This is not new behavior — the fix
-  only makes it observable, because until now the menu listed the selected contentlet's files
-  anyway. Making the selection follow `</>` is separate product work.
+- **No change to the pencil or `×` buttons.** Both stay stateless. The pencil's in-code comment
+  records that as deliberate, and reversing it is a wider behavior change than this defect
+  warrants; "selection moves, then the content is deleted" is not an improvement for `×`.
+  Only `</>` gains promotion (AC-012). If the toolbar should promote uniformly, that is
+  separate product work.
+- **No removal of the two existing `editorSelected.payload` workarounds.** The style editor
+  reads `dotStyleProperties` from `pageAsset` via `extractFromRollback`
+  (`dot-uve-style-editor-form.component.ts:185`) and `handleOpenFullEditor()` resolves the
+  contentlet through `$contentletEditData` (`edit-ema-editor.component.ts:1377`). Both were
+  cited as evidence that the payload is treated as untrustworthy, and on inspection **neither
+  is caused by the re-anchor**: the first is about values the DOM never carries, the second
+  about a post-save inode. AC-011 does not make them removable. Left exactly as they are.
 - **No `strict: true` migration** for the workspace, tempting as the undefined return makes it.
   Tracked separately (#37401).
 
@@ -219,10 +263,19 @@ withdrawn AC-009 note under Acceptance, and the non-goal below.
 - **Blast radius**:
   - `vtlMenuItems()` is consumed by both the full hover toolbar and `actionsMenuItems()` (the
     collapsed toolbar for small contentlets). Both must be verified.
-  - **The store is not touched.** With AC-009 withdrawn, `applyBoundsForSelection()`,
-    `editorSelected.payload` and every consumer of it — Quick Edit, add-content, the style
-    editor, `promoteHoverToSelected()`, the page save path — are entirely outside the diff.
-    This removes the fix's only shared-state risk; what remains is confined to one component.
+  - **The store IS touched** (AC-011, rescoped 2026-09-14) — this is the fix's real risk and
+    the reason it is no longer a one-component change. `applyBoundsForSelection()` feeds
+    `editorSelected.payload`, which is read by Quick Edit
+    (`dot-uve-quick-edit-form.component.ts:189, 228, 316`), the style editor
+    (`dot-uve-style-editor-form.component.ts:191, 222, 305`), the add-content menu, the drag
+    payload and the page save path. The merge is deliberately **additive** — every field
+    present today is still present and still refreshed from the same source — so a consumer
+    reading a store-sourced field sees no change, and one reading a DOM-sourced field stops
+    seeing it vanish. That is the property the store specs must pin down, in both directions.
+  - **The save path is the specific hazard.** `insertContentletInContainer({...payload})` and
+    `deleteContentletFromContainer(payload)` read `payload.pageContainers` directly. A merge
+    that preserved too much — freezing page-level context along with contentlet data — would
+    make add and delete write a stale container tree. AC-011 is worded to forbid that.
   - `menuItems()` (add-content) shares the dual-context pattern but reads no `vtlFiles` and is
     intentionally left alone — see non-goals.
 - **Backward compatibility**: None at risk. No REST contract, no DB schema, no ES mapping, no
@@ -256,7 +309,11 @@ withdrawn AC-009 note under Acceptance, and the non-goal below.
 
 **Store hardening — withdrawn**
 
-- **AC-009 — WITHDRAWN** (2026-09-11, after the review on PR #37519). It required
+- **AC-009 — WITHDRAWN, then SUPERSEDED by AC-011** (withdrawn 2026-09-11; superseded
+  2026-09-14). The reasoning below was correct about `vtlFiles` specifically and wrong about the
+  question: it asked whether one field had a reader, instead of why the payload degrades at all.
+  AC-011 replaces it with the general rule. The number stays retired so the PR #37519 review
+  thread remains readable. Original text follows. It required
   `applyBoundsForSelection()` to carry `vtlFiles` forward across a re-anchor. Removed because
   fix (1) and AC-010 between them leave no consumer reading `vtlFiles` off
   `editorSelected.payload`, so it would have hardened data nothing reads and added a store spec
@@ -267,6 +324,20 @@ withdrawn AC-009 note under Acceptance, and the non-goal below.
 **Cleanup**
 
 - **AC-010**: The dead `selectedHasVtlFiles` computed is removed.
+
+**Root cause — rescoped in 2026-09-14 (supersedes the withdrawn AC-009)**
+
+- **AC-011**: A `SET_BOUNDS` re-anchor updates position and page-level save context **without
+  degrading DOM-sourced contentlet data**. After any number of re-anchors,
+  `editorSelected.payload` still carries the `vtlFiles`, `baseType`, `onNumberOfPages` and
+  `dotStyleProperties` captured when the contentlet was selected, while `pageContainers`,
+  `container.contentletsId`, `language_id`, `pageId` and `personaTag` reflect the current
+  `$pageData()`. AC-009 asked for a one-field carry-forward; this asks for the rule that makes
+  the whole class impossible.
+- **AC-012**: Choosing a file in the `</>` menu promotes the hovered contentlet to selected —
+  the selection border moves to the contentlet whose VTL was opened. Promotion fires on the
+  **file choice**, not on opening the menu, so dismissing the menu without picking leaves the
+  selection untouched. No side panel opens.
 
 **Verification method**:
 
@@ -310,8 +381,14 @@ stated explicitly rather than left silent):
   reload, so carrying it forward across a re-anchor cannot serve stale data.
 - **The hover event always carries `vtlFiles`.** Verified: `events.ts:326-335` computes it via
   `findDotCMSVTLData(foundElement)` on every `contentletHovered` payload, unconditionally. This
-  is what makes fix (1) sufficient on its own and AC-009 unnecessary. If that ever becomes
-  conditional, this fix regresses and the store carry-forward comes back on the table.
+  is what makes the hover-only menu correct. Since the 2026-09-14 rescope it is no longer the
+  *only* thing holding the fix up — AC-011 means the selected payload keeps its `vtlFiles` too,
+  so if the hover event ever became conditional the defect would not immediately return.
+- **The bounds snapshot never carries a DOM-sourced field as an explicit `undefined`.**
+  `getDotCMSContentletsBound()` omits the keys entirely and the payload crosses `postMessage`,
+  which drops `undefined` values — so an object spread merges rather than erases. AC-011's spec
+  must assert this directly, because a future field added as an explicit `undefined` would
+  silently defeat the merge.
 - No consumer depends on `vtlMenuItems()` returning `undefined` as a signal — `actionsMenuItems()`
   guards with `?.length`, which is equally satisfied by `[]`.
 - Removing `selectedHasVtlFiles` is safe: it is unreferenced in `core-web` outside its own
