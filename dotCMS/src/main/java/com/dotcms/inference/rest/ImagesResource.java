@@ -14,6 +14,7 @@ import com.dotcms.inference.rest.view.ImageGenerationView;
 import com.dotcms.inference.rest.view.InferenceErrorView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.NoCors;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -86,6 +87,7 @@ import java.util.Optional;
  */
 @Path("/inference/v1/images")
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
+@NoCors
 public class ImagesResource {
 
     /** Section of the site's {@code providerConfig} JSON that configures image generation. */
@@ -298,7 +300,7 @@ public class ImagesResource {
             // occasionally a fragment of the prompt, so it is logged and never returned.
             Logger.error(this, "Image generation failed for site "
                     + AiHostResolver.sanitize(context.servingSiteId()), e);
-            return errorResponse(InferenceError.upstream(UPSTREAM_FAILURE_MESSAGE));
+            return errorResponse(InferenceError.fromProviderFailure(e, UPSTREAM_FAILURE_MESSAGE));
         }
     }
 

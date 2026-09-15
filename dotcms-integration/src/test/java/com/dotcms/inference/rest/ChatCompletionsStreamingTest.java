@@ -6,12 +6,15 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.inference.rest.mapper.SseSerializer;
 import com.dotcms.inference.rest.view.ChatCompletionRequestView;
+import com.dotcms.inference.rest.view.InferenceErrorView;
+import com.dotcms.inference.model.InferenceLimits;
 import com.dotcms.inference.rest.view.ChatCompletionRequestView.MessageView;
 import com.dotcms.inference.rest.view.ChatCompletionRequestView.StreamOptionsView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -512,6 +515,57 @@ public class ChatCompletionsStreamingTest {
      * @param streamOptions the streaming options to send, or null to send none
      * @return a one-turn conversation asking for a streamed answer
      */
+    /**
+     * Given a node already at its ceiling of concurrent streamed completions
+     * When another streamed completion is asked for
+     * Then it is refused with a 429 that carries {@code Retry-After}, and nothing reaches the
+     * provider
+     *
+     * <p>FR-037 for the ceiling itself, which had no coverage at all until now, and FR-031 for the
+     * header. The two belong in one test because the ceiling is only half an answer without it: a
+     * refusal that says "retry shortly" in a prose message tells a program nothing, and a client
+     * that cannot read a wait interval invents one — which under load means every refused caller
+     * returning at once and holding the node at capacity it was trying to shed.</p>
+     *
+     * <p>The ceiling is driven to zero rather than fifty streams being opened. Fifty real streams
+     * would make the test slow, machine-dependent and flaky, and would test the thread pool rather
+     * than the refusal; the limit is read from configuration on every request precisely so it can
+     * be changed without a restart, and that is the seam used here.</p>
+     */
+    @Test
+    public void test_atTheStreamCeiling_refusesWith429AndRetryAfter() {
+        final String previous = Config.getStringProperty(
+                InferenceLimits.MAX_CONCURRENT_STREAMS_KEY, null);
+        Config.setProperty(InferenceLimits.MAX_CONCURRENT_STREAMS_KEY, "0");
+        try {
+            final Response response = resource.completions(
+                    mockRequest(), mockResponse(), host.getIdentifier(), streamingRequest(null));
+
+            assertNotNull(response);
+            assertEquals("A node at its ceiling refuses rather than queues, so the caller can go "
+                    + "elsewhere instead of waiting on a thread that will not free up",
+                    429, response.getStatus());
+
+            assertEquals("The caller has to be told how long to wait in a form it can act on, not "
+                            + "only in prose it cannot parse",
+                    String.valueOf(5), response.getHeaderString("Retry-After"));
+
+            assertTrue(response.getEntity() instanceof InferenceErrorView);
+            final InferenceErrorView.Body error =
+                    ((InferenceErrorView) response.getEntity()).error();
+            assertNotNull(error);
+            assertEquals("rate_limit_error", error.type());
+
+            wireMockServer.verify(0, postRequestedFor(urlPathEqualTo(COMPLETIONS_PATH)));
+        } finally {
+            if (previous == null) {
+                Config.setProperty(InferenceLimits.MAX_CONCURRENT_STREAMS_KEY, null);
+            } else {
+                Config.setProperty(InferenceLimits.MAX_CONCURRENT_STREAMS_KEY, previous);
+            }
+        }
+    }
+
     private static ChatCompletionRequestView streamingRequest(final StreamOptionsView streamOptions) {
         return new ChatCompletionRequestView(
                 CHAT_MODEL,
@@ -522,6 +576,60 @@ public class ChatCompletionsStreamingTest {
                 Boolean.TRUE,
                 streamOptions,
                 null, null, null, null, null);
+    }
+
+    /**
+     * Given a site whose provider configuration makes every chat model fail to initialise
+     * When a streamed completion is requested
+     * Then what the caller receives names nothing about the provider or the site's credentials
+     *
+     * <p>FR-031 and FR-036. The fallback chain reports a failed initialisation by rethrowing an
+     * {@code IllegalArgumentException} whose message is dotCMS's prefix followed by whatever the
+     * provider client said — and a provider client's message can carry its endpoint, its account
+     * identifiers, or a fragment of the prompt. The stream's error translator used to return that
+     * message on type alone, so it reached the caller in the error frame. The buffered paths never
+     * did, and {@code ImagesResource} documents that they must not, which is what made the
+     * streaming path's behaviour a discrepancy rather than a policy.</p>
+     *
+     * <p>Asserted on what the caller can read rather than on the translator, because that is the
+     * boundary the requirement is about: the full detail is still logged, and is still expected to
+     * be there for an operator.</p>
+     */
+    @Test
+    public void test_whenEveryModelFailsToStart_theCallerLearnsNothingAboutTheProvider()
+            throws Exception {
+        AiTest.aiAppSecretsWithProviderConfig(host, providerConfigThatCannotInitialise());
+
+        final Response response = resource.completions(
+                mockRequest(), mockResponse(), host.getIdentifier(), streamingRequest(null));
+
+        final String visible = clientVisibleBody(response);
+
+        assertFalse("The internal wrapper text names nothing a caller can act on and must not "
+                + "be returned", visible.contains("Failed to initialize"));
+        assertFalse("A site's credential must never appear in a response",
+                visible.contains(AiTest.API_KEY));
+        assertFalse("The provider endpoint dotCMS calls is infrastructure detail",
+                visible.contains(String.valueOf(AiTest.PORT)));
+        assertFalse(visible.contains("localhost"));
+    }
+
+    /**
+     * @return a provider configuration whose chat section cannot produce a model, so the failure
+     *         happens during initialisation rather than at the provider
+     */
+    private static String providerConfigThatCannotInitialise() {
+        final String endpoint = String.format("http://localhost:%d/", AiTest.PORT);
+        return String.format(
+                "{"
+                + "\"chat\":{\"provider\":\"openai\",\"apiKey\":\"\",\"model\":\"%1$s\","
+                + "\"endpoint\":\"%2$s\",\"maxRetries\":0},"
+                + "\"embeddings\":{\"provider\":\"openai\",\"apiKey\":\"%3$s\","
+                + "\"model\":\"%4$s\",\"endpoint\":\"%2$s\",\"maxRetries\":0},"
+                + "\"image\":{\"provider\":\"openai\",\"apiKey\":\"%3$s\",\"model\":\"%5$s\","
+                + "\"endpoint\":\"%2$s\",\"maxRetries\":0}"
+                + "}",
+                CHAT_MODEL, endpoint, AiTest.API_KEY, AiTest.EMBEDDINGS_MODEL, AiTest.IMAGE_MODEL);
     }
 
     /**
