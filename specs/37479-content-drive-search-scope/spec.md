@@ -312,7 +312,9 @@ disappears from the list, while the row whose name matches stays. Delivers the n
 
 1. **Given** the Content Drive is open with no search term, **When** the author looks at the search
    box, **Then** a search scope control is visible next to the input, reading **All Fields**, and
-   the placeholder describes an all-fields search.
+   the placeholder shows the search box's fixed default text. ~~the placeholder describes an
+   all-fields search~~ — **corrected 2026-09-15** to match FR-003 as amended: the placeholder does
+   not vary by scope.
 2. **Given** a term is present in **All Fields** scope, **When** the author opens the search scope
    control and selects **Title**, **Then** the search re-runs immediately with the same term,
    results are restricted to name matches, pagination returns to page 1, and the control reads
@@ -424,9 +426,13 @@ with or without the search scope control on screen.
    matched as literal text and never alters the structure of the query.
 4. **Given** a term containing consecutive spaces or separators, **When** the search runs, **Then**
    no empty clause is emitted and the results are the same as for the single-separator form.
-5. **Given** a search request that nonetheless fails to execute, **When** the drive renders the
-   response, **Then** the author is shown an error state, **not** an empty result list presented as
-   a successful search.
+5. **Given** a search fails in a way the front end can itself observe (a network or server error
+   reaching the browser), **When** the drive renders the response, **Then** the author is shown an
+   error state, **not** an empty result list presented as a successful search. ~~Given a search
+   request that nonetheless fails to execute... the author is shown an error state~~ — **narrowed
+   2026-09-15** to match FR-029 as amended: an internal `BrowserAPIImpl` execution failure that
+   never reaches the front end as an observable error stays logged-only, exactly as before this
+   feature; only failures the browser itself can observe are covered.
 
 ---
 
@@ -482,8 +488,8 @@ with or without the search scope control on screen.
   NOT vary by search scope. It is always the shared search box's own default ("Search"), in both
   Title and All Fields. Direct instruction from the issue owner during UI review — not a defect or
   a constraint discovered while building; FR-003 as originally written was fully implementable and
-  had been implemented and tested. Consequence: User Story 1's acceptance scenario 2 and the
-  narrative around SC-007 describing a scope-aware placeholder are superseded by this wording.
+  had been implemented and tested. Consequence: User Story 1's acceptance scenario **1** (corrected
+  in place, 2026-09-15) described a scope-aware placeholder and is superseded by this wording.
 - **FR-004**: Selecting a search scope MUST re-run the current search immediately, without requiring
   the author to retype or re-submit the term.
 - **FR-005**: Selecting a search scope MUST reset pagination to the first page.
@@ -646,8 +652,12 @@ with or without the search scope control on screen.
 - **SC-010**: Every character in the reserved set `\ + - ! ( ) : ^ [ ] " { } ~ * ? | & /` is
   covered by a test that seeds a title containing it and finds that title by searching for it
   verbatim — the full set, not a sample, in both search scopes.
-- **SC-011**: A search whose query fails to execute produces a visible error state in 100% of
-  attempts, and zero of those attempts render as a successful empty result list.
+- **SC-011**: A search that fails in a way the front end can itself observe (network or server
+  errors reaching the browser) produces a visible error state in 100% of such attempts, and zero of
+  those attempts render as a successful empty result list. ~~A search whose query fails to
+  execute... in 100% of attempts~~ — **narrowed 2026-09-15** to match FR-029 as amended: an internal
+  `BrowserAPIImpl` execution failure that the front end never observes as an error stays
+  logged-only, exactly as before this feature.
 - **SC-012**: Content Drive's per-field filters pass the same reserved-set coverage as SC-010,
   confirming #37532's field-filter criterion by test rather than by inspection.
 
