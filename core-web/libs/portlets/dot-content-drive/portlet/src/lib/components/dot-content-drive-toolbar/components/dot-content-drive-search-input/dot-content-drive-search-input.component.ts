@@ -55,7 +55,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
                     [pTooltip]="'content-drive.search.scope.help' | dm"
                     optionValue="value"
                     appendTo="body"
-                    class="dot-search-scope border-none! bg-transparent! shadow-none!"
+                    class="dot-search-scope"
                     data-testid="search-scope"
                     tooltipPosition="bottom"
                     (ngModelChange)="onScopeChange($event)">
@@ -85,6 +85,42 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
                 border-top-right-radius: 0;
                 border-bottom-right-radius: 0;
                 border-right: 0;
+            }
+
+            /* A FIXED width, not a minimum.
+               p-select sizes itself to its selected label, so "Title" and "All Fields" produced
+               two different widths — and because the input takes the remaining space, choosing a
+               scope resized the text field under the user's cursor. Pinning the addon means
+               neither the white field nor the whole group ever moves. 140px is what the filter
+               chips below already use, and it fits the longer label without truncating it. */
+            :host ::ng-deep .p-inputgroup .p-inputgroup-addon {
+                width: 140px;
+                flex: 0 0 140px;
+                padding: 0;
+            }
+
+            :host ::ng-deep .dot-search-scope {
+                width: 100%;
+                border: none;
+                background: transparent;
+                box-shadow: none;
+            }
+
+            /* Let the label use the width it now has. */
+            :host ::ng-deep .dot-search-scope .p-select-label {
+                overflow: visible;
+                text-overflow: clip;
+            }
+
+            /* Match the filter chips rather than the default input theme: same border, same text
+               colour, so the search box and the chip row under it read as one family. */
+            :host ::ng-deep .p-inputgroup dot-search-input .p-inputtext,
+            :host ::ng-deep .p-inputgroup .p-inputgroup-addon {
+                border-color: var(--color-slate-200, #e2e8f0);
+            }
+
+            :host ::ng-deep .dot-search-scope .p-select-label {
+                color: var(--color-slate-600, #475569);
             }
         `
     ],
