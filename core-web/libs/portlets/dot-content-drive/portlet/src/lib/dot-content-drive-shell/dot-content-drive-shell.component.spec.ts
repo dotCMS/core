@@ -3353,6 +3353,24 @@ describe('DotContentDriveShellComponent', () => {
                 expect(workflowService.bulkFire).toHaveBeenCalled();
             });
 
+            // In System Host and all site content there is no selected folder at all, so the
+            // target arrives undefined and the folder-level check has nothing to answer about.
+            // The store's gate already knows which scope is open and whose permission applies;
+            // without deferring to it, a drop here is waved through on the site's answer while
+            // the Upload button beside it is correctly disabled.
+            it('should refuse a drop with no target when the scope refuses content', () => {
+                canAddChildrenSignal.set(false);
+
+                store.dragItems.mockReturnValue({
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                });
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', { targetFolder: undefined });
+
+                expect(workflowService.bulkFire).not.toHaveBeenCalled();
+            });
+
             // The site root carries no permissions of its own, so the store's site-level answer is
             // what decides there.
             it('should refuse a move onto the site root when the site refuses content', () => {

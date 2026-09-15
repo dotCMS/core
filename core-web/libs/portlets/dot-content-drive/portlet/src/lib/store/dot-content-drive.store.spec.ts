@@ -497,6 +497,43 @@ describe('DotContentDriveStore', () => {
                     expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
                 });
 
+                it('should keep System Host selected when the site is switched', () => {
+                    // **Characterization test: green the day it is written**, like the host-clause
+                    // guard on the backend. System Host belongs to no site, so switching sites does
+                    // not change what it lists, and the selection already survives because it is
+                    // derived from the location while a switch changes the site.
+                    //
+                    // Written precisely because nothing would notice if that stopped being true. A
+                    // later change that reset the path on a site switch would drift the highlight
+                    // onto the new site's root, and the sidebar would claim the user is in two
+                    // places at once — with every other test still passing.
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    expect(store.$systemHostSelected()).toBe(true);
+
+                    // A site switch reaches the store as a re-init carrying the new site and the
+                    // location the route still holds — which is how the switch can change the
+                    // site without disturbing where the drive is browsing.
+                    store.initContentDrive({
+                        currentSite: MOCK_SITES[0],
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$systemHostSelected()).toBe(true);
+                    expect(store.$allSiteContentSelected()).toBe(false);
+                    // The hierarchy below re-renders for the newly chosen site, so the switch
+                    // visibly does something rather than appearing to fail.
+                    expect(store.currentSite()).toEqual(MOCK_SITES[0]);
+                    // And the request still asks for System Host, not for the new site's content.
+                    expect(store.$request().browseScope).toBe('SYSTEM_HOST');
+                });
+
                 it('should not ask for folders in all site content', () => {
                     store.initContentDrive({
                         currentSite: SYSTEM_HOST,

@@ -1264,7 +1264,16 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * @returns {boolean} Whether the drop may proceed
      */
     #canDropInto(targetFolder?: DotFolderTreeNodeData): boolean {
-        if (canAddChildrenTo(targetFolder, this.#store.siteCanAddChildren())) {
+        // No target means no folder is selected, which is every scope that is not a folder: all
+        // site content and System Host. `canAddChildrenTo` answers `true` for an absent target
+        // because it has nothing to judge, so asking it there would wave the drop through on the
+        // site's answer while the Upload button beside it is correctly disabled. The store's gate
+        // already knows which scope is open and whose permission applies.
+        const allowed = targetFolder
+            ? canAddChildrenTo(targetFolder, this.#store.siteCanAddChildren())
+            : this.#store.$canAddChildren();
+
+        if (allowed) {
             return true;
         }
 

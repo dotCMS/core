@@ -91,6 +91,35 @@ test.describe('Content Drive Browse Scopes', () => {
         await drive.expectListContainsTitle(`scoped-${testSuffix}.png`);
     });
 
+    test('restores the tree selection when the user goes back to a folder @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        // Reported from the browser: Back restored the URL and the listing, while the tree showed
+        // nothing selected — so the sidebar stopped agreeing with what it was displaying. The two
+        // standalone entries were never affected, because they derive their state from the
+        // location; the tree's is stored, and nothing brought it back in line.
+        const site = await apiHelpers.getDefaultSite();
+        const folderName = `cd-back-${testSuffix}`;
+        await apiHelpers.createFolders(site.hostname, [`/${folderName}`]);
+
+        const drive = new ContentDrivePage(adminPage);
+        const tree = new ContentDriveTree(adminPage);
+
+        await drive.goTo();
+        await drive.openFolder(folderName);
+        await tree.expectFolderSelected(folderName);
+
+        await drive.selectSystemHost();
+        await drive.expectSelectedEntry('system-host');
+
+        await adminPage.goBack();
+
+        await tree.expectFolderSelected(folderName);
+        expect(await drive.isEntrySelected('system-host')).toBe(false);
+    });
+
     test('carries the selection in the URL so a reload reopens it @critical', async ({
         adminPage
     }) => {

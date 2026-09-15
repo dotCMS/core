@@ -9,7 +9,7 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { Observable, of, pipe, switchMap, tap } from 'rxjs';
 
-import { inject } from '@angular/core';
+import { effect, EffectRef, inject, untracked } from '@angular/core';
 
 import { catchError } from 'rxjs/operators';
 
@@ -19,6 +19,7 @@ import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import {
     DEFAULT_PAGE,
     DEFAULT_PATH,
+    ROOT_PATH,
     SYSTEM_HOST,
     SYSTEM_HOST_PATH
 } from '../../../shared/constants';
@@ -29,7 +30,11 @@ import {
     getFolderHierarchyByPath,
     getFolderNodesByPath
 } from '../../../utils/functions';
-import { buildTreeFolderNodes, createSiteNode } from '../../../utils/tree-folder.utils';
+import {
+    buildTreeFolderNodes,
+    createSiteNode,
+    findNodeByPath
+} from '../../../utils/tree-folder.utils';
 
 interface WithSidebarState {
     sidebarLoading: boolean;
@@ -226,9 +231,42 @@ export function withSidebar() {
             }
         })),
         withHooks((store) => {
+            let selectionSync: EffectRef | undefined;
+
             return {
                 onInit() {
                     store.loadFolders();
+
+                    // Keeps the tree's selection honest as the location moves.
+                    //
+                    // Folders reload on a site change, not on a Back, so returning to a folder
+                    // restored the URL and the listing while the tree showed nothing selected.
+                    // Everything else in the sidebar derives its selected state from the location
+                    // and was therefore already right; this is the one stored piece, so it has to
+                    // be pushed back in line rather than left holding whatever the previous
+                    // location put there.
+                    //
+                    // Reads `folders()` as well as `path()` on purpose: on a cold start the tree
+                    // is empty when the location is already known, and this has to run again once
+                    // the folders arrive.
+                    selectionSync = effect(() => {
+                        const path = store.path();
+                        const folders = store.folders();
+                        const match = path?.startsWith(ROOT_PATH)
+                            ? findNodeByPath(folders, path)
+                            : undefined;
+
+                        // Only when it actually differs: a folder click already sets the node, and
+                        // rewriting the same one on every location change churns the tree.
+                        untracked(() => {
+                            if (store.selectedNode()?.data?.path !== match?.data?.path) {
+                                patchState(store, { selectedNode: match });
+                            }
+                        });
+                    });
+                },
+                onDestroy() {
+                    selectionSync?.destroy();
                 }
             };
         })
