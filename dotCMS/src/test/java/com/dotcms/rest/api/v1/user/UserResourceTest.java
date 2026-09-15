@@ -21,6 +21,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.business.UserProxyAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -665,6 +666,41 @@ public class UserResourceTest extends UnitTestBase {
         verify(paginationUtil).getPage(Mockito.eq(request), Mockito.eq(user), Mockito.eq("jane"), Mockito.eq(0),
                 Mockito.eq(40), Mockito.isNull(), Mockito.eq(OrderDirection.ASC), extraParamsCaptor.capture());
         assertEquals(Boolean.TRUE, extraParamsCaptor.getValue().get(UserPaginator.INCLUDE_ROLES_PARAM));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#filter(HttpServletRequest, HttpServletResponse, String, int,
+     *     int, String, String, boolean, boolean, String, int, List, boolean)}</li>
+     *     <li><b>Given Scenario:</b> The {@code /filter} endpoint is called with {@code orderby=firstName} and
+     *     {@code direction=DESC}.</li>
+     *     <li><b>Expected Result:</b> Both the order-by field and the order direction reach the paginator through
+     *     the extra params ({@link UserAPI.FilteringParams#ORDER_BY_PARAM} and
+     *     {@link UserAPI.FilteringParams#ORDER_DIRECTION_PARAM}), the direction in the {@link SQLUtil} form the
+     *     factory expects; the {@link OrderDirection} is also passed to {@code getPage} for the Link header. Before
+     *     #37458 the direction key was never set, so every sort ran ascending.</li>
+     * </ul>
+     */
+    @Test
+    public void testFilterWithOrderByAndDirectionForwardsBothKeys() throws DotDataException {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+        final User user = mock(User.class);
+        when(initDataObject.getUser()).thenReturn(user);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
+
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        final UserResource resource = getFilterTestResource(webResource, mock(RoleAPI.class), paginationUtil);
+
+        resource.filter(request, response, "jane", 0, 40, "firstName", "DESC", false, false, null, 0, null, false);
+
+        final ArgumentCaptor<Map<String, Object>> extraParamsCaptor = ArgumentCaptor.forClass(Map.class);
+        verify(paginationUtil).getPage(Mockito.eq(request), Mockito.eq(user), Mockito.eq("jane"), Mockito.eq(0),
+                Mockito.eq(40), Mockito.eq("firstName"), Mockito.eq(OrderDirection.DESC), extraParamsCaptor.capture());
+        assertEquals("firstName", extraParamsCaptor.getValue().get(UserAPI.FilteringParams.ORDER_BY_PARAM));
+        assertEquals(SQLUtil._DESC, extraParamsCaptor.getValue().get(UserAPI.FilteringParams.ORDER_DIRECTION_PARAM));
     }
 
     /**
