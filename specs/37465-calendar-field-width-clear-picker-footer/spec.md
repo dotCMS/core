@@ -143,7 +143,10 @@ click the footer button on each of the three field types, and confirm the value 
 6. **Given** a *Time* field, **When** the author clicks **Now**, **Then** the field takes the server's current time.
 7. **Given** the browser and the server are in timezones where it is a different calendar day, **When** the author clicks the button, **Then** the value set is the **server's** day, not the browser's.
 8. **Given** the author clicks the button, **When** the picker settles, **Then** the field shows the new value and the content is considered edited.
-9. **Given** any of the three field types, **When** the author opens the picker, **Then** there is **no** *Clear* button anywhere in the footer.
+9. **Given** a *Date and time* field, **When** the author clicks **Today**, **Then** the picker stays **open**, so the hour can still be adjusted.
+10. **Given** a *Time* field, **When** the author clicks **Now**, **Then** the picker stays **open**.
+11. **Given** a *Date* field, **When** the author clicks **Today**, **Then** the picker **closes**, as it does today when a day is selected.
+12. **Given** any of the three field types, **When** the author opens the picker, **Then** there is **no** *Clear* button anywhere in the footer.
 
 ---
 
@@ -201,13 +204,13 @@ right edges at several viewport widths.
 
 - **FR-008**: Opening the picker on a **Date and time** or **Time** field MUST show the system timezone as muted, non-interactive text at the left of the picker footer. It MUST be the same timezone value shown under the input today.
 - **FR-008a**: Opening the picker on a **Date** field MUST NOT show timezone text. When the timezone is unavailable for any type, nothing MUST be rendered in its place — no empty slot, no change in the footer's height or in the action button's position.
-- **FR-009**: The timezone line under the input MUST be removed for all three field types, and the field's hint MUST render in the field footer under the input — the same placement the other field types use — rather than being displaced into the label.
+- **FR-009**: The timezone line under the input MUST be removed from the field types that render one today — Date-and-time and Time-only; a Date-only field has none to remove — and the field's hint MUST render in the field footer under the input — the same placement the other field types use — rather than being displaced into the label.
 
 #### Picker footer — Today / Now
 
 - **FR-010**: The picker footer MUST hold exactly one button, at its right, styled as a secondary **outlined** button using the shared button styling rather than bespoke CSS.
 - **FR-011**: That button MUST read **Today** on Date and Date-and-time fields, and **Now** on Time-only fields.
-- **FR-012**: Activating it MUST set: today's date and the current time on a Date-and-time field; today's date on a Date-only field; the current time on a Time-only field.
+- **FR-012**: Activating it MUST set: today's date and the current time on a Date-and-time field; today's date on a Date-only field; the current time on a Time-only field. "The current time" is the server's time at the moment of activation, resolved to **second** precision — the same precision the field already applies to a `now` default.
 - **FR-013**: The value it sets MUST be derived from the **server** timezone through the field's existing server-time path, never from the browser's clock.
 - **FR-014**: After activation the field MUST show the new value, the underlying value MUST update, and the field MUST be marked touched and dirty.
 - **FR-014a**: Activating it MUST leave the picker open on Date-and-time and Time-only fields (so the time can still be adjusted) and MUST let the picker close on Date-only fields, as a completed date selection does today.
@@ -251,7 +254,9 @@ right edges at several viewport widths.
 - **SC-003**: The timezone governing a Date-and-time or Time value is visible to the author whenever they are choosing that value, on **100%** of such fields — up from only those fields that happen to carry a hint today.
 - **SC-004**: A field's hint is shown to the author on **100%** of Date, Time and Date-and-time fields that define one, in the same position as every other field type.
 - **SC-005**: With the server and the browser on calendar days that differ, the *Today* / *Now* shortcut sets the **server's** day and time in **100%** of attempts across all three field types.
+- **SC-005a**: The value the shortcut sets matches the server's clock to the **second** in **100%** of attempts — not rounded to the minute, and not drifting from the precision a `now` default already produces.
 - **SC-006**: The picker footer offers exactly **one** action on all three field types; the redundant *Clear* action appears **0** times.
+- **SC-006a**: After using the shortcut, the picker is still open on **100%** of Date-and-time and Time-only fields and closed on **100%** of Date-only fields — the one place the picker's lifecycle is deliberately non-uniform, and therefore the one most likely to regress unnoticed while the footer is rebuilt.
 - **SC-007**: Every string this feature adds to the interface is translatable — **0** hardcoded user-visible strings.
 - **SC-008**: Values saved before the change and read after it are identical in **100%** of cases across the three field types, including Date-only, Time-only and default-valued fields.
 
@@ -276,6 +281,6 @@ right edges at several viewport widths.
 3. **The picker's close behaviour on *Today* / *Now* follows the existing per-type behaviour** (closes on Date-only, stays open on Date-and-time and Time-only) — confirmed with the developer. Making it uniform was considered and rejected as a change nobody asked for.
 4. **Clearing is a value-level action, not a validation bypass.** A cleared required field is empty and invalid, and saving is blocked exactly as for a required field never filled.
 5. **The timezone in the footer is display-only.** It is not selectable, not editable, and does not change what the field stores.
-6. **"Current time" means the server's current time** at the moment the button is activated, at second precision, consistent with how the field already resolves a `now` default.
+6. **"Current time" means the server's current time** at the moment the button is activated, consistent with how the field already resolves a `now` default. *(No longer only an assumption: the precision is stated in FR-012 and checked by SC-005a, so PR 2 can be judged against it.)*
 7. **New message-bundle keys** are added under the existing calendar-field namespace; no existing key is reused or repurposed, and no existing key is removed.
 8. **No new field-level configuration.** Clearing, the footer timezone and the *Today*/*Now* button are unconditional per field type — a content-type editor cannot turn them off.
