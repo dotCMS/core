@@ -831,6 +831,33 @@ describe('DotContentDriveShellComponent', () => {
             expect(location.go).not.toHaveBeenCalled();
         });
 
+        // The search scope rides the generic filter machinery rather than a mechanism of its own,
+        // which is what makes it survive reload, Back/Forward and a shared link for free. These pin
+        // that it actually reaches the address, and that the default never does.
+        it('should carry a non-default search scope into the address', () => {
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/');
+            filtersSignal.set({ title: 'pricing', searchScope: 'TITLE' });
+            spectator.detectChanges();
+
+            expect(location.replaceState).toHaveBeenCalledWith(
+                expect.stringContaining('searchScope%3ATITLE')
+            );
+        });
+
+        it('should keep the default search scope out of the address', () => {
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/');
+            // The store removes the key rather than storing the default, so the address stays as
+            // clean as it would have been had the control never been touched.
+            filtersSignal.set({ title: 'pricing' });
+            spectator.detectChanges();
+
+            expect(location.replaceState).not.toHaveBeenCalledWith(
+                expect.stringContaining('searchScope')
+            );
+        });
+
         it('pushes a history entry when the user navigates to a different folder', () => {
             // Folder navigation is a real user action, so Back must step back up the tree. Only the
             // automatic filter seed is denied an entry.

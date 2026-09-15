@@ -816,6 +816,75 @@ describe('DotContentDriveStore', () => {
             });
         });
 
+        describe('setSearchScope', () => {
+            it('should record a non-default scope as filter state', () => {
+                store.setSearchScope('TITLE');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], searchScope: 'TITLE' })
+                );
+            });
+
+            it('should remove the key when the scope returns to the default', () => {
+                store.setSearchScope('TITLE');
+
+                store.setSearchScope('ALL_FIELDS');
+
+                // Removed, not set to 'ALL_FIELDS'. A present key counts as a non-default filter,
+                // so storing the default would offer "Clear all" on an unfiltered drive.
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            });
+
+            it('should never store the default, even when set first', () => {
+                store.setSearchScope('ALL_FIELDS');
+
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+
+            it('should preserve the search term and other filters', () => {
+                store.setGlobalSearch('pricing');
+                store.patchFilters({ contentType: ['Blog'] });
+
+                store.setSearchScope('TITLE');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'pricing',
+                        searchScope: 'TITLE'
+                    })
+                );
+            });
+
+            it('should keep the scope and the term under separate keys', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('TITLE');
+
+                // `title` holds the TERM; `searchScope` holds the mode. A scope whose value is
+                // 'TITLE' beside a filter key named `title` is a collision waiting to happen.
+                expect(store.filters()['title']).toBe('pricing');
+                expect(store.filters()['searchScope']).toBe('TITLE');
+            });
+
+            it('should reset pagination so the narrowed results start at page 1', () => {
+                store.setPagination({ offset: 40, limit: 20, page: 3 });
+
+                store.setSearchScope('TITLE');
+
+                expect(store.pagination().page).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+            });
+
+            it('should drop the scope when all filters are cleared', () => {
+                store.setSearchScope('TITLE');
+
+                store.clearFilters();
+
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+        });
+
         describe('clearFilters', () => {
             it('should remove every filter', () => {
                 store.patchFilters({ contentType: ['Blog'], baseType: ['1'] });
