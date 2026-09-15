@@ -729,7 +729,6 @@ describe('DotUveContentletToolsComponent', () => {
                 expect(spectator.component.hoverDragButtonTopOffset()).toBe(scrolledArea.height);
             });
         });
-
     });
 
     describe('Position flag behavior', () => {
