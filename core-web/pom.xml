@@ -27,6 +27,12 @@
           The diff-scoped strict typecheck gate (issue #37536). Default ON-skip; the two
           activation profiles below flip it to false, on pull_request and on merge_group.
 
+          Its own property, NOT ${skip.validate}. `-Pvalidate -Dskip.validate=true` turns off
+          lint-test and format-test and leaves this running, by design: a blocking gate that the
+          documented way to silence its two neighbours also silences is not much of a gate. The
+          flip side is that a plain local `./mvnw -Pvalidate` runs lint and prettier but not this,
+          unlike its neighbours.
+
           Both are needed, for different reasons. The pull-request run is where inline
           annotations render on the diff, so it is what an author actually reads. The
           merge-queue run is what ENFORCES: this repository declares no required status checks
@@ -35,8 +41,20 @@
           stop a merge. A job that fails in the merge queue ejects the pull request, and that
           is the only place a failing gate actually blocks.
 
-          Trunk and nightly runs stay skipped: HEAD equals origin/main there, so the diff is
-          empty and the run could only ever pass. Nothing to report, nothing to enforce.
+          Every other event leaves this at true. On a trunk push or a nightly that is also what
+          you would want (HEAD is origin/main, so there would be nothing to report), but the
+          skip is by EVENT NAME, not by diff emptiness. Do not "fix the coverage gap" by adding a
+          `push` profile on the belief it would be a harmless no-op: cicd_3-trunk.yml and
+          cicd_4-nightly.yml also accept workflow_dispatch (HEAD != origin/main from a feature
+          branch), cicd_4-nightly.yml disables change detection so the frontend suite runs every
+          night, and cicd_5-lts.yml runs it on release-* pushes, where diffing against origin/main
+          would be meaningless.
+
+          One caveat on the "no required status checks" claim above: it holds today, but the
+          ruleset providing it is an org-level one named `2026-08-24_incident-response`. A separate
+          `Default Merge Queue` ruleset DOES define required_status_checks and is currently
+          `enforcement: disabled`. Whoever re-enables it should know this design assumed the
+          opposite.
         -->
         <skip.strict.gate>true</skip.strict.gate>
         <git.origin.branch>origin/main</git.origin.branch>
@@ -452,13 +470,13 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <configuration>
-                            <executable>${node.install.dir}/pnpm</executable>
-                            <workingDirectory>${project.basedir}</workingDirectory>
-                            <environmentVariables>
-                                <PATH>${node.install.dir}:${env.PATH}</PATH>
-                            </environmentVariables>
-                        </configuration>
+                        <!--
+                          No plugin-level <configuration> here on purpose. This entry merges with
+                          the one in the base <build>, so `executable`, `workingDirectory` and the
+                          environment (PATH with the installed Node prepended, NODE_OPTIONS) are
+                          inherited. Restating them would fork the PATH comment at lines 126-131
+                          into a second copy that a future edit to the base would silently miss.
+                        -->
                         <executions>
                             <!--
                               Diff-scoped strict typecheck (issue #37536). Reports strict-mode
@@ -514,9 +532,10 @@
                                       only a pathological case can, chiefly the harness's
                                       unshallow git-fetch fallback when the base ref cannot be
                                       resolved (a full fetch here is ~1.1GB / ~20min). Timing out
-                                      kills the process with 143, which is not a success code, so
-                                      the build fails and the log names the timeout - an unfinished
-                                      check is not a passing one.
+                                      fails the build through the plugin's watchdog, which throws
+                                      directly and never consults successCodes at all - so adding
+                                      a success code to "allow timeouts" would have no effect. An
+                                      unfinished check is not a passing one.
                                     -->
                                     <timeout>180000</timeout>
                                     <arguments>
