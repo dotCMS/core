@@ -1,0 +1,111 @@
+# pnpm configuration for core-web.
+#
+# From pnpm 11 on, the `pnpm` block in package.json is no longer read and .npmrc is
+# consulted for registry/auth only. Everything else lives here. pnpm 12 fails the
+# install on an unrecognized key in this file (ERR_PNPM_UNRECOGNIZED_WORKSPACE_SETTINGS)
+# because the project pins its package manager, so typos surface immediately.
+#
+# This stays a single-project setup: no `packages:` key on purpose.
+
+overrides:
+    '@babel/helper-define-polyfill-provider': 0.6.6
+    '@tiptap/core': 3.22.2
+    '@vue/shared': 3.5.29
+    http-cache-semantics: 4.1.1
+    pdfjs-dist: 4.2.67
+# The `stylus: github:stylus/stylus#0.59.0` override that lived here under pnpm 10 was
+# dropped: stylus is an optional peer of the css loaders and is never installed (it
+# appears in pnpm-lock.yaml only as an optional peerDependency, with no resolution), so
+# the override resolves nothing. It would also be the only exotic (git) source in a tree
+# where blockExoticSubdeps is now on.
+
+peerDependencyRules:
+    allowedVersions:
+        '@angular/core': '22'
+        '@angular/common': '22'
+        '@angular/forms': '22'
+        '@angular/router': '22'
+        '@angular/platform-browser': '22'
+        '@angular/cdk': '22'
+        'primeng>@angular/core': '22'
+        'primeng>@angular/common': '22'
+        'primeng>@angular/forms': '22'
+        'primeng>@angular/router': '22'
+        'primeng>@angular/platform-browser': '22'
+        '@ngrx/signals>@angular/core': '22'
+        '@ngrx/component-store>@angular/core': '22'
+
+ignoredOptionalDependencies:
+    - canvas
+
+# Moved out of .npmrc, which pnpm 11+ reads for registry and auth only.
+engineStrict: true
+
+# Keep strictPeerDependencies false (the pnpm default would block the install on
+# pre-existing peer conflicts: codelyzer, ng-mocks, ngx-markdown, etc.).
+# These mirror what yarn 1 warned about silently. Dropping this flag requires
+# fixing each conflict first, tracked as separate follow-up work.
+strictPeerDependencies: false
+
+# Mirrors `yarn config set network-timeout 6000000` from the previous toolchain.
+fetchTimeout: 6000000
+
+# Replaces onlyBuiltDependencies, removed in pnpm 11 along with neverBuiltDependencies,
+# ignoredBuiltDependencies and ignoreDepScripts.
+allowBuilds:
+    canvas: true
+    esbuild: true
+    '@swc/core': true
+    nx: true
+    '@parcel/watcher': true
+    core-js: true
+    document-register-element: true
+    lmdb: true
+    msgpackr-extract: true
+    unrs-resolver: true
+    # `less` was never in onlyBuiltDependencies, so pnpm 10 reported it as
+    # "Ignored build scripts: less" — a notice there, but a hard install failure under
+    # pnpm 12's strictDepBuilds. It has been running without its build script all
+    # along, so denying it explicitly preserves today's behaviour.
+    less: false
+
+# Security posture. Set explicitly even where it matches the pnpm 12 default, because
+# the intent is being declared rather than inherited.
+trustPolicy: no-downgrade
+
+# Eight lockfile entries fail no-downgrade today. None is a takeover: each is an older
+# release of a package whose other releases carry provenance, and the check compares a
+# version against the package's whole history regardless of semver line. Publish dates
+# verified against registry.npmjs.org. Listed one by one rather than waved through with
+# trustPolicyIgnoreAfter, which would stop checking every package older than its window.
+trustPolicyExclude:
+    # legacy major lines that never adopted provenance, while a newer line already had it
+    - 'semver@5.7.2' # 2023-07-10; semver 7.5.1 attested since 2023-05-12
+    - 'semver@6.3.1' # 2023-07-10; same
+    - 'css-declaration-sorter@6.4.1' # 2023-07-08; 7.0.0 attested since 2023-05-29
+    # a provenance gap in one release of an otherwise attested line
+    - 'undici-types@6.21.0' # 2024-11-13; 6.13.0 through 6.16.x (Apr-May 2024) were attested
+    - 'detect-port@1.6.1' # 2024-05-08; 1.6.0 was attested the same day
+    - 'chokidar@4.0.3' # 2024-12-18; 3.6.0 attested since 2024-02-06
+    # strongest signal here: over a thousand earlier versions attested, these two are not
+    - '@modern-js/node-bundle-require@2.68.2' # 2025-07-11
+    - '@modern-js/utils@2.68.2' # 2025-07-11
+
+# Drop entries above as soon as the lockfile stops resolving them, so the list cannot rot.
+trustPolicyExcludePrune: true
+
+blockExoticSubdeps: true
+strictDepBuilds: true
+
+# pnpm 11 changed the default to `install`, which would inject a dependency install into
+# Maven and CI builds that expect to run against an already-installed tree.
+verifyDepsBeforeRun: warn
+
+# minimumReleaseAge is deliberately NOT set. Our registry mirror dotcms-npm.b-cdn.net
+# returns no `time` field on any metadata document (verified live; registry.npmjs.org
+# returns it on the full document), so pnpm cannot evaluate the maturity check through
+# it and the default 1440-minute policy is inert today. Setting
+# minimumReleaseAgeIgnoreMissingTime: false would therefore fail every install, and
+# setting minimumReleaseAge explicitly would flip minimumReleaseAgeStrict to true
+# (pnpm 12.3.0+). Both are left at their defaults until the mirror preserves `time`.
+# Tracked in dotCMS/core#37562 (mirror to preserve `time`, or be retired).
