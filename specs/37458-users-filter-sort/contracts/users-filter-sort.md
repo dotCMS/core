@@ -43,8 +43,9 @@ block and `Link` header. Only the order of `entity[]` differs.
 |---|---|---|
 | `orderby=firstName` (any of the three) | 200, order ignored, `ERROR` logged server-side | 200, ordered, no error logged |
 | `orderby=mod_date%20desc` | 500 (`order by mod_date desc asc`) | 200, ordered by `mod_date desc` |
+| `orderby=-mod_date` (sanitizer's descending shorthand) | 500 (`order by -mod_date asc`, unary minus on a timestamp) | 200, ordered by `mod_date desc` |
 | `orderby=<unknown>` | 200, default order, `ERROR` logged | unchanged |
-| `direction=<not ASC/DESC>` | 500 (`OrderDirection.valueOf`) | unchanged, out of scope |
+| `direction=<not ASC/DESC>` | 400 (`OrderDirection.valueOf` → `IllegalArgumentExceptionMapper`) | unchanged; still validated after the role/permission checks, so a rejected request keeps its 403 |
 
 ## OpenAPI change
 

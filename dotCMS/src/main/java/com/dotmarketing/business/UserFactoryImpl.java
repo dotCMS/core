@@ -308,9 +308,10 @@ public class UserFactoryImpl implements UserFactory {
      *     <li>A key of {@link #SORTABLE_USER_FIELDS}: its template with the direction substituted; the shared
      *     sanitizer is not consulted.</li>
      *     <li>Anything else: {@link SQLUtil#sanitizeSortBy(String)} as before. A rejected term falls back to the
-     *     default expression. The direction is appended exactly once: a term the sanitizer returns with its own
-     *     {@code asc}/{@code desc} suffix is used as is, so {@code mod_date desc} no longer becomes
-     *     {@code mod_date desc asc}.</li>
+     *     default expression. The direction is applied exactly once: a term the sanitizer returns with its own
+     *     direction -- a trailing {@code desc} or the leading-dash descending shorthand -- is honored as is, so
+     *     {@code mod_date desc} no longer becomes {@code mod_date desc asc} and {@code -mod_date} becomes
+     *     {@code mod_date desc} instead of the invalid {@code -mod_date asc}.</li>
      * </ol>
      *
      * @param filteringParams   The filtering params carrying {@code orderBy} and {@code orderDirection}.
@@ -334,8 +335,13 @@ public class UserFactoryImpl implements UserFactory {
         if (!UtilMethods.isSet(sanitized)) {
             return defaultClause;
         }
-        final String lowerSanitized = sanitized.toLowerCase();
-        if (lowerSanitized.endsWith(SQLUtil._ASC) || lowerSanitized.endsWith(SQLUtil._DESC)) {
+        // sanitizeSortBy encodes a caller-supplied direction in two shapes, and either wins over the direction
+        // param: a leading "-" (descending shorthand, e.g. "-mod_date") or a trailing " desc". It never returns a
+        // trailing " asc". Anything else gets the param applied exactly once.
+        if (sanitized.startsWith("-")) {
+            return sanitized.substring(1) + StringPool.SPACE + SQLUtil.DESC;
+        }
+        if (sanitized.toLowerCase().endsWith(SQLUtil._DESC)) {
             return sanitized;
         }
         return sanitized + StringPool.SPACE + direction;

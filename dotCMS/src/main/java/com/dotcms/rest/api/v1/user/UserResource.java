@@ -34,7 +34,6 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -476,13 +475,7 @@ public class UserResource implements Serializable {
 		extraParams.put(UserPaginator.PERMISSION_PARAM, permission);
 		extraParams.put(UserAPI.FilteringParams.INCLUDE_ANONYMOUS_PARAM, includeAnonymous);
 		extraParams.put(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault);
-		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
 		extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
-		// UserPaginator reads ordering from the FilteringParams keys, not from the PaginationUtil orderBy/direction
-		// arguments, so the direction must be passed here too (same wiring as RoleResource#loadUsersByRoleId).
-		// The value is enum-gated above and mapped to the SQLUtil constants FilteringParams expects.
-		extraParams.put(UserAPI.FilteringParams.ORDER_DIRECTION_PARAM,
-				OrderDirection.DESC == orderDirection ? SQLUtil._DESC : SQLUtil._ASC);
 
 		final List<Role> roles = this.resolveRoleKeys(roleKeys);
 		if (UtilMethods.isSet(roles)) {
@@ -501,6 +494,11 @@ public class UserResource implements Serializable {
 			extraParams.put(UserPaginator.INCLUDE_ROLES_PARAM, true);
 		}
 
+		// Validated last so an invalid direction never changes the status a rejected request already gets above.
+		// UserPaginator reads ordering from the FilteringParams keys, not from the PaginationUtil orderBy/direction
+		// arguments, so the direction is passed here too (same wiring as RoleResource#loadUsersByRoleId).
+		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
+		extraParams.put(UserAPI.FilteringParams.ORDER_DIRECTION_PARAM, UserAPI.FilteringParams.sqlDirection(orderDirection));
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
 	}
 

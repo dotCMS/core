@@ -875,6 +875,24 @@ public class UserResourceIntegrationTest {
      * back ordered by modification date, newest first (AC-006). Before the fix this produced
      * {@code order by mod_date desc asc} and an SQL syntax error.
      */
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=-mod_date}
+     * Given Scenario: The sanitizer's leading-dash descending shorthand is sent, together with {@code direction=ASC}.
+     * Expected Result: The dash is translated to {@code desc} and nothing else is appended; the call succeeds and the
+     * fixtures come back newest first (AC-006, review finding #1). Before the fix this produced
+     * {@code order by -mod_date asc}, which PostgreSQL rejects (unary minus on a timestamp).
+     */
+    @Test
+    public void test_filter_dashPrefixedTerm_sortsDescending() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> modDates = column(sorted(p, "-mod_date", "ASC"), "modificationDate");
+        assertEquals("all four fixtures must be returned", 4, modDates.size());
+        for (int i = 1; i < modDates.size(); i++) {
+            assertTrue("modificationDate must be non-increasing at index " + i,
+                    (Long) modDates.get(i - 1) >= (Long) modDates.get(i));
+        }
+    }
+
     @Test
     public void test_filter_sanitizedTermWithDirection_isNotDoubled() throws Exception {
         final String p = seedSortFixtures();
