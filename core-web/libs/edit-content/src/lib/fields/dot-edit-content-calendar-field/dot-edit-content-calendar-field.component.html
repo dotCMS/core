@@ -1,17 +1,11 @@
 @let field = $field();
 @let showLabel = $showLabel();
-@let systemTimezone = $systemTimezone();
-@let showTimezoneInfo = $showTimezoneInfo();
-@let hasTimezone = showTimezoneInfo && systemTimezone;
 @let hasHint = field.hint;
 @let fieldHasError = $hasError();
 
 <dot-card-field [hasError]="fieldHasError">
     @if (showLabel) {
-        <dot-card-field-label
-            [variableName]="field.variable"
-            [isRequired]="isRequired"
-            [hint]="hasTimezone ? field.hint : null">
+        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
             {{ field.name }}
         </dot-card-field-label>
     }
@@ -20,34 +14,38 @@
             [field]="field"
             [hasError]="fieldHasError"
             [formControlName]="field.variable"
-            [utcTimezone]="systemTimezone"
+            [utcTimezone]="$systemTimezone()"
             [contentType]="$contentType()" />
     </dot-card-field-content>
     @if ((fieldHasError && isRequired) || hasHint) {
         <dot-card-field-footer>
-            <div class="flex justify-between items-center">
-                <div class="grow">
+            <div class="flex justify-between items-start">
+                <!--
+                    Error and hint stack rather than replace one another: the hint says what to
+                    enter, which is precisely what the author needs while the field is in error.
+                    The error goes first as the new information, the hint moves below it.
+                -->
+                <div class="grow flex flex-col gap-1">
+                    <!--
+                        The utilities duplicate what `.form .p-field-error` / `.p-field-hint` in
+                        apps/dotcms-ui/src/style.css already declare, because those rules only
+                        apply under a `.form` ancestor and the new Edit Content editor has none —
+                        so the classes alone render as unstyled text. Adopting `.form` here is
+                        #37460; making these rules stand on their own is an AC of #37464. Until
+                        one of those lands this field states its own colours. Drop the utilities,
+                        keeping the semantic classes, once either does.
+                    -->
                     @if (fieldHasError && isRequired) {
-                        <small class="p-field-error">
+                        <small class="p-field-error text-sm text-red-500">
                             {{ 'dot.edit.content.form.field.required' | dm }}
                         </small>
                     }
 
-                    @if (!fieldHasError && !hasTimezone && hasHint) {
+                    @if (hasHint) {
                         <small
-                            class="p-field-hint"
-                            [attr.data-testId]="'hint-' + field.variable"
-                            data-testid="calendar-field-hint">
+                            class="p-field-hint text-sm text-gray-500"
+                            [attr.data-testId]="'hint-' + field.variable">
                             {{ field.hint }}
-                        </small>
-                    }
-                    @if (!fieldHasError && hasTimezone && hasHint) {
-                        <small
-                            data-testid="calendar-field-timezone"
-                            class="p-field-hint"
-                            role="status"
-                            aria-live="polite">
-                            {{ systemTimezone.label }}
                         </small>
                     }
                 </div>

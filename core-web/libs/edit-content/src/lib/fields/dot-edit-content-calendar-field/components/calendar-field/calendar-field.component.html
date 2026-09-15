@@ -20,8 +20,54 @@
     [showIcon]="true"
     [icon]="fieldTypeConfig.icon"
     [showButtonBar]="true"
-    [showClear]="$isExpireDateField()"
+    [showClear]="true"
     [placeholder]="
         $isExpireDateField() ? ('edit.content.form.field.calendar.never.expires' | dm) : ''
     "
-    [attr.aria-label]="field.name" />
+    [attr.aria-label]="field.name">
+    <!--
+        Replaces PrimeNG's stock footer (Today on the left, Clear on the right). Clear leaves
+        entirely — emptying the field is the on-field X above. The layout is our own flex row
+        rather than the theme's default justification, so the Date-only case, which renders no
+        timezone at all, still puts the action flush right with no empty slot holding its place.
+    -->
+    <ng-template #buttonbar>
+        <!--
+            Tailwind utilities, not component SCSS: the overlay is appended to body, so a
+            ':host ::ng-deep' rule never matches it — the selector requires the element to be a
+            descendant of the host. Tailwind's classes are global, so they apply wherever
+            PrimeNG moves these nodes.
+        -->
+        <div class="flex items-center justify-between gap-2 w-full">
+            @if ($showFooterTimezone()) {
+                <span class="text-muted-color text-sm" data-testid="calendar-field-timezone">
+                    {{ $systemTimezone().label }}
+                </span>
+            }
+            <p-button
+                class="ml-auto"
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                data-testid="calendar-field-today-button"
+                [label]="$footerActionLabel() | dm"
+                (onClick)="setCurrentServerDateTime()" />
+        </div>
+    </ng-template>
+
+    <!--
+        PrimeNG's default clear control is a bare <svg> with a click handler: not focusable,
+        no accessible name, unreachable by keyboard. Projecting a real button restores all
+        three. The click bubbles to the wrapping span PrimeNG puts the handler on, so Enter
+        and Space work through the native button behaviour without extra key handling.
+    -->
+    <ng-template #clearicon>
+        <button
+            type="button"
+            class="calendar-field__clear"
+            data-testid="calendar-clear-button"
+            [attr.aria-label]="'edit.content.form.field.calendar.clear' | dm">
+            <i class="pi pi-times" aria-hidden="true"></i>
+        </button>
+    </ng-template>
+</p-datepicker>
