@@ -2097,6 +2097,25 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
+        it('should name System Host as the upload destination, not the switcher site', () => {
+            // The indicator is the only surface an upload has before the handle comes back, so a
+            // wrong destination there tells the author their files are going somewhere else.
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.$systemHostSelected.mockReturnValue(true);
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            // The message mock echoes keys, so the key IS the observable outcome here: the
+            // indicator asks for the sidebar entry's own label rather than naming a site.
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ targetLabel: 'content-drive.sidebar.system-host' })
+            );
+        });
+
         it('should target System Host when that is where the batch lands, not the switcher site', () => {
             // The switcher still names a site while System Host is browsed, and that site is
             // context rather than the destination. Uploading here with the site's identifier

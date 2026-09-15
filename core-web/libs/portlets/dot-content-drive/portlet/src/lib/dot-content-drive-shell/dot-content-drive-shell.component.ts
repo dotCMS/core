@@ -1465,6 +1465,27 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * @param {DotFolderTreeNodeData} [hostFolder]
      * @memberof DotContentDriveShellComponent
      */
+    /**
+     * What the progress indicator calls an upload's destination.
+     *
+     * `||`, not `??`: the site root's node carries an *empty* path, which is present but names
+     * nothing, so the indicator would otherwise read "Applying Upload to " with a blank target.
+     *
+     * With no folder the destination is whichever host the sidebar is showing — and in the System
+     * Host scope that is not the site in the switcher, which still names one. Saying the site's
+     * name there tells the author their files are going somewhere they are not. The name is the
+     * sidebar entry's own label, so the indicator and the row the user clicked agree.
+     */
+    private uploadTargetLabel(hostFolder?: { path?: string }): string | undefined {
+        if (hostFolder?.path) {
+            return hostFolder.path;
+        }
+
+        return this.#store.$systemHostSelected()
+            ? this.#dotMessageService.get('content-drive.sidebar.system-host')
+            : this.#store.currentSite()?.hostname;
+    }
+
     protected uploadByBaseType(
         files: File[],
         baseType: string,
@@ -1505,9 +1526,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
             operation: `${UPLOAD_BATCH_OPERATION}:${(this.#uploadSequence += 1)}`,
             actionName: this.#dotMessageService.get('content-drive.upload'),
             total: files.length,
-            // `||`, not `??`: the site root's node carries an *empty* path, which is present but
-            // names nothing, so the indicator would read "Applying Upload to " with a blank target.
-            targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
+            targetLabel: this.uploadTargetLabel(hostFolder),
             // Empty on purpose. The indicator speaks only for runs with nothing to mark, since a
             // run over rows is already reported by those rows dimming. An upload's content does not
             // exist until the run creates it, so the indicator is its only surface — naming the
@@ -1591,7 +1610,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
                         actionName: this.#dotMessageService.get('content-drive.upload'),
                         labelKey: 'content-drive.upload.indicator.background',
                         total: submitted,
-                        targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
+                        targetLabel: this.uploadTargetLabel(hostFolder),
                         targets: []
                     });
 
