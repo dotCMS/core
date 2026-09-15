@@ -118,10 +118,14 @@
                 [pSelectableRowIndex]="rowIndex"
                 [attr.aria-selected]="$selectedKeys().has(item[$dataKey()])"
                 [attr.aria-disabled]="isUnselectable || null"
-                [pSelectableRowDisabled]="$disabled() || $readOnly() || isUnselectable"
+                [pSelectableRowDisabled]="
+                    $disabled() || $readOnly() || isUnselectable || $busyRowsSet().has(item.inode)
+                "
+                [class.opacity-60]="$busyRowsSet().has(item.inode)"
+                [class.pointer-events-none]="$busyRowsSet().has(item.inode)"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
-                (dblclick)="onDoubleClick(item)"
+                (dblclick)="onDoubleClick(item, $event)"
                 [attr.draggable]="!$readOnly()"
                 (dragstart)="onDragStart($event, item)"
                 (dragend)="onDragEnd()"
@@ -138,6 +142,13 @@
                      control. Separate branches destroy and rebuild the control on the transition,
                      which is the only way it comes back correct in **both** directions. -->
                 <td data-testId="item-checkbox" (click)="onCheckboxClick($event, rowIndex)">
+                    <!-- Two reasons a control is dead, kept apart because they behave differently.
+                         A **busy** row is transient — the operation ends and the same control comes
+                         back — so it takes a bound `[disabled]`. An **unselectable** row is a
+                         standing refusal, and its branch is separate: PrimeNG's table controls drive
+                         their checkbox through `[(ngModel)]`, whose `setDisabledState` latches on
+                         init, so a bound `[disabled]` that flips back to false leaves a dead
+                         control. Rebuilding it is the only way it recovers. -->
                     @if (isUnselectable) {
                         @if ($selectionMode() === 'multiple') {
                             <p-tableCheckbox [value]="item" [disabled]="true" />
@@ -148,7 +159,9 @@
                                 data-testId="item-radio" />
                         }
                     } @else if ($selectionMode() === 'multiple') {
-                        <p-tableCheckbox [value]="item" [disabled]="$disabled()" />
+                        <p-tableCheckbox
+                            [value]="item"
+                            [disabled]="$disabled() || $busyRowsSet().has(item.inode)" />
                     } @else {
                         <p-tableRadioButton [value]="item" data-testId="item-radio" />
                     }
@@ -157,10 +170,25 @@
                     <td
                         class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
                         data-testId="item-title">
+                        <!-- The busy marker swaps the thumbnail's *contents*, never its box: this
+                             is the title cell's first grid column and it is sized (4.5rem), so
+                             replacing the container collapses the column and the row loses its
+                             layout. Deliberately not a skeleton either - swapping a busy row for
+                             placeholders repeats, one row at a time, the very thing this feature
+                             removes, since the row the author wants to watch is the one that
+                             disappears. -->
                         <div
                             class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
+                            data-testId="item-thumbnail-box"
                             (click)="onTitleClick($event, item)">
-                            @if (!isFolder) {
+                            @if ($busyRowsSet().has(item.inode)) {
+                                <i
+                                    class="pi pi-spin pi-spinner flex! size-full! items-center! justify-center! text-2xl! text-(--color-palette-primary-500)"
+                                    role="status"
+                                    aria-live="off"
+                                    [attr.title]="'content-drive.list-view.row-busy' | dm"
+                                    data-testId="row-busy"></i>
+                            } @else if (!isFolder) {
                                 <!-- No fieldVariable: rows are the assets themselves, so the mapper
                                      resolves through titleImage / the default /dA path. Passing the
                                      contentType here (legacy quirk) 404s the /contentAsset-based

@@ -291,6 +291,20 @@ public enum SystemEventType {
 	 * with {@link Visibility#USER} scoped to whoever submitted the run, because a reindex is nobody
 	 * else's business — unlike the legacy batch reindex, which told every CMS Administrator.
 	 */
-	BULK_REFRESH_COMPLETED
+	BULK_REFRESH_COMPLETED,
+
+	/**
+	 * A bulk file upload ({@code POST /api/v1/assets/_bulkupload}) has finished.
+	 * <p>
+	 * Its own type rather than a shared "batch finished" event, so a client can tell an upload from
+	 * a reindex without inspecting the payload — they are different operations with different copy
+	 * and different follow-up actions.
+	 * <p>
+	 * Carries the counts <b>and the per-file results</b>, not counts alone: an author told "27 of 30
+	 * created" with no way to learn which three cannot act on it, and those names are exactly what
+	 * tell them which files to choose again. Pushed with {@link Visibility#USER} scoped to whoever
+	 * submitted the run.
+	 */
+	BULK_UPLOAD_COMPLETED
 
 }

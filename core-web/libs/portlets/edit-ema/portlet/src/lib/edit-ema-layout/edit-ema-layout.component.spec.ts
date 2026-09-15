@@ -378,7 +378,7 @@ describe('EditEmaLayoutComponent', () => {
     describe('Serialized save paths (AC3 — no concurrent layout saves)', () => {
         it('should not fire a second save when force-save-on-leave is requested while the debounced save is in-flight', fakeAsync(() => {
             const saveSubject = new Subject();
-            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+            (dotPageLayoutService.save as Mock).mockReturnValue(saveSubject.asObservable());
 
             // Debounce fires -> POST #1 sent, #layoutSaveInFlight = true
             templateBuilder.templateChange.emit();
@@ -397,7 +397,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should skip the debounced save when force-save-on-leave already sent one for the same template', fakeAsync(() => {
             const saveSubject = new Subject();
-            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+            (dotPageLayoutService.save as Mock).mockReturnValue(saveSubject.asObservable());
 
             templateBuilder.templateChange.emit();
 
@@ -418,7 +418,7 @@ describe('EditEmaLayoutComponent', () => {
 
         it('should unblock route deactivation from the in-flight save even when the skipped duplicate is the one requesting to leave', fakeAsync(() => {
             const saveSubject = new Subject();
-            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+            (dotPageLayoutService.save as Mock).mockReturnValue(saveSubject.asObservable());
 
             templateBuilder.templateChange.emit();
             tick(DEBOUNCE_TIME); // POST #1 in-flight
@@ -434,7 +434,7 @@ describe('EditEmaLayoutComponent', () => {
         }));
 
         it('should unblock route deactivation when the force-save-on-leave request itself fails', () => {
-            (dotPageLayoutService.save as jest.Mock).mockReturnValue(
+            (dotPageLayoutService.save as Mock).mockReturnValue(
                 throwError(() => new HttpErrorResponse({ status: 500 }))
             );
 
