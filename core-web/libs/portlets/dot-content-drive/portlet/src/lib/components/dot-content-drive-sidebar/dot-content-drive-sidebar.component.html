@@ -9,6 +9,12 @@
     data-testid="all-site-content"
     [class.p-tree-node-selected]="$allSiteContentSelected()"
     [attr.aria-current]="$allSiteContentSelected() ? 'true' : null"
+    [attr.aria-disabled]="$allSiteContentDragOver() ? 'true' : null"
+    [class.opacity-50]="$allSiteContentDragOver()"
+    (dragenter)="onAllSiteContentDragOver()"
+    (dragover)="onAllSiteContentDragOver()"
+    (dragleave)="onAllSiteContentDragLeave()"
+    (drop)="onAllSiteContentDragLeave()"
     (click)="onSelectAllSiteContent()">
     <i
         class="pi pi-list flex! size-[16px] shrink-0 items-center justify-center text-[16px]! leading-none!"></i>
@@ -46,6 +52,9 @@
     data-testid="system-host"
     [class.p-tree-node-selected]="$systemHostSelected()"
     [attr.aria-current]="$systemHostSelected() ? 'true' : null"
+    (dragenter)="onSystemHostDragOver($event)"
+    (dragover)="onSystemHostDragOver($event)"
+    (drop)="onSystemHostDrop($event)"
     (click)="onSelectSystemHost()">
     <i
         class="pi pi-cloud flex! size-[16px] shrink-0 items-center justify-center text-[16px]! leading-none!"></i>

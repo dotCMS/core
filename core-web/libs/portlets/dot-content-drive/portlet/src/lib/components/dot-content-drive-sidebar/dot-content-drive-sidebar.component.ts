@@ -8,13 +8,18 @@ import {
     inject,
     Injector,
     output,
+    signal,
     untracked,
     viewChild
 } from '@angular/core';
 
 import type { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/types/tree';
 
-import { DotContentDriveActionableFolder, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
+import {
+    DotContentDriveActionableFolder,
+    PERMISSIONS_TYPE,
+    TreeNodeLoadMoreData
+} from '@dotcms/dotcms-models';
 import {
     DotContentDriveMoveItems,
     DotContentDriveTreeRightClick,
@@ -27,6 +32,7 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { SYSTEM_HOST } from '../../shared/constants';
 import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions';
 /**
  * @description DotContentDriveSidebarComponent is the component that renders the sidebar for the content drive
@@ -68,6 +74,86 @@ export class DotContentDriveSidebarComponent {
 
     readonly uploadFiles = output<DotContentDriveUploadFiles>();
     readonly moveItems = output<DotContentDriveMoveItems>();
+
+    /** Whether the user may add content to System Host; unknown reads as allowed. */
+    readonly $systemHostCanAddChildren = this.#store.systemHostCanAddChildren;
+
+    /**
+     * Whether a drag is currently over the all-site-content entry.
+     *
+     * Held so the row can look refused rather than inert. A gesture that simply does nothing
+     * reads as a broken UI, and this row is the one place in the sidebar where a drop is
+     * declined by what the row *means* rather than by a permission.
+     */
+    protected readonly $allSiteContentDragOver = signal(false);
+
+    /**
+     * The drop target that stands for System Host.
+     *
+     * An empty `path` is what marks it as the host itself rather than a folder on it — the same
+     * distinction the upload contract draws, where a folder id with no path is a site. The
+     * permission travels with the target so the shell's existing gate answers about System Host
+     * instead of about whichever site the switcher happens to show.
+     */
+    private systemHostTarget(): DotFolderTreeNodeContentData {
+        return {
+            type: 'folder',
+            id: SYSTEM_HOST.identifier,
+            path: '',
+            hostname: SYSTEM_HOST.hostname,
+            permissions: [PERMISSIONS_TYPE.CAN_ADD_CHILDREN]
+        } as DotFolderTreeNodeContentData;
+    }
+
+    /**
+     * Offers the System Host entry as a drop target, but only while the user may add to it.
+     *
+     * Cancelling the event is what makes a drop possible at all, so declining to cancel is how
+     * the row declines the drop — the browser then shows the "no drop" cursor on its own, which
+     * is the refusal the spec asks for without inventing a second way to say it.
+     */
+    protected onSystemHostDragOver(event: DragEvent): void {
+        if (this.$systemHostCanAddChildren() === false) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+    }
+
+    /** Files land as an upload, anything else as a move — the same fork the tree makes. */
+    protected onSystemHostDrop(event: DragEvent): void {
+        if (this.$systemHostCanAddChildren() === false) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const targetFolder = this.systemHostTarget();
+        const files = event.dataTransfer?.files ?? undefined;
+
+        if (files?.length) {
+            this.uploadFiles.emit({ files, targetFolder });
+
+            return;
+        }
+
+        this.moveItems.emit({ targetFolder });
+    }
+
+    /**
+     * All site content is never a destination: it spans every folder, and the site row directly
+     * beneath it already means the site root. The event is deliberately left uncancelled so the
+     * drop cannot happen; all this does is let the row say so while the drag is over it.
+     */
+    protected onAllSiteContentDragOver(): void {
+        this.$allSiteContentDragOver.set(true);
+    }
+
+    protected onAllSiteContentDragLeave(): void {
+        this.$allSiteContentDragOver.set(false);
+    }
 
     readonly treeFolder = viewChild<DotTreeFolderComponent>('treeFolder');
     readonly getSiteFoldersEffect = effect(() => {

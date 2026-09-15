@@ -28,6 +28,8 @@ export class ContentDrivePage {
     readonly currentSiteHostname: Locator;
     readonly listTitles: Locator;
     readonly treeNodeLabels: Locator;
+    readonly allSiteContentRow: Locator;
+    readonly systemHostRow: Locator;
     readonly searchField: Locator;
     readonly uploadIndicator: Locator;
     readonly uploadProgress: Locator;
@@ -45,6 +47,10 @@ export class ContentDrivePage {
         this.currentSiteHostname = this.sidebar.getByTestId('tree-node-label').first();
         this.listTitles = page.getByTestId('item-title-text');
         this.treeNodeLabels = this.sidebar.getByTestId('tree-node-label');
+        // The two entries that are not part of the hierarchy. They carry their own testids and no
+        // `tree-node-label`, which is why `currentSiteHostname` above still finds the site row.
+        this.allSiteContentRow = this.sidebar.getByTestId('all-site-content');
+        this.systemHostRow = this.sidebar.getByTestId('system-host');
         // The toolbar's in-flight indicator, and the position it shows when a run reports one.
         this.uploadIndicator = page.getByTestId('action-execution-indicator');
         this.uploadProgress = page.getByTestId('action-execution-progress');
@@ -373,6 +379,50 @@ export class ContentDrivePage {
      */
     async expectNoSingleFileWarning() {
         await expect(this.page.locator('.p-toast-message-warn')).toHaveCount(0);
+    }
+
+    /** Selects the All Site Content entry and waits for the listing it triggers. */
+    async selectAllSiteContent() {
+        await this.selectSidebarEntry(this.allSiteContentRow);
+    }
+
+    /** Selects the System Host entry and waits for the listing it triggers. */
+    async selectSystemHost() {
+        await this.selectSidebarEntry(this.systemHostRow);
+    }
+
+    /**
+     * Clicks a sidebar entry and waits for the listing request the click sets off.
+     *
+     * Armed before the click, not after: the response can land first, and then a wait registered
+     * afterwards never resolves.
+     */
+    private async selectSidebarEntry(row: Locator) {
+        const listing = this.page.waitForResponse(
+            (response) => response.url().includes('/v1/drive/search') && response.ok()
+        );
+        await row.click();
+        await listing;
+    }
+
+    /**
+     * Asserts which sidebar entry reads as the current one.
+     *
+     * `aria-current` rather than a class: the rows announce selection to assistive tech through
+     * it, so asserting on it checks the thing that actually has to be right.
+     */
+    async expectSelectedEntry(entry: 'all' | 'system-host' | 'neither') {
+        const row = entry === 'system-host' ? this.systemHostRow : this.allSiteContentRow;
+        await expect(row).toHaveAttribute('aria-current', entry === 'neither' ? /^$/ : 'true', {
+            timeout: entry === 'neither' ? 2000 : undefined
+        });
+    }
+
+    /** Whether an entry currently announces itself as the selected one. */
+    async isEntrySelected(entry: 'all' | 'system-host') {
+        const row = entry === 'system-host' ? this.systemHostRow : this.allSiteContentRow;
+
+        return (await row.getAttribute('aria-current')) === 'true';
     }
 }
 

@@ -30,6 +30,7 @@ import { createFakeSite } from '@dotcms/utils-testing';
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { SYSTEM_HOST } from '../../shared/constants';
 import { createSiteNode } from '../../utils/tree-folder.utils';
 
 describe('DotContentDriveSidebarComponent', () => {
@@ -109,6 +110,8 @@ describe('DotContentDriveSidebarComponent', () => {
     // only re-renders when a signal it reads is invalidated. Same pattern the toolbar spec uses.
     const allSiteContentSelected = signal(false);
     const systemHostSelected = signal(false);
+    // Drives the System Host row's drop gate the way the store's own lookup would.
+    const systemHostCanAddChildren = signal<boolean | undefined>(true);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveSidebarComponent,
@@ -119,6 +122,7 @@ describe('DotContentDriveSidebarComponent', () => {
             }),
             mockProvider(DotContentDriveStore, {
                 initContentDrive: vi.fn(),
+                systemHostCanAddChildren: systemHostCanAddChildren,
                 currentSite: vi.fn().mockReturnValue(mockSiteDetails),
                 isTreeExpanded: vi.fn().mockReturnValue(true),
                 removeFilter: vi.fn(),
@@ -202,6 +206,121 @@ describe('DotContentDriveSidebarComponent', () => {
             spectator.detectChanges();
 
             expect(row()?.getAttribute('aria-current')).toBe('true');
+        });
+    });
+
+    describe('drag and drop onto the sidebar entries', () => {
+        const dragWith = (row: Element | null, files: File[]) => {
+            // This environment neither populates `files` from `items.add` nor carries a
+            // `dataTransfer` through the DragEvent constructor, and the component forks on
+            // `files.length` -- so it is attached to the event itself.
+            const fileList = {
+                ...files,
+                length: files.length,
+                item: (i: number) => files[i] ?? null
+            } as unknown as FileList;
+            const fire = (type: string) => {
+                const event = new DragEvent(type, { bubbles: true, cancelable: true });
+                Object.defineProperty(event, 'dataTransfer', {
+                    value: { files: fileList },
+                    configurable: true
+                });
+
+                return row?.dispatchEvent(event);
+            };
+            fire('dragenter');
+            // A row that accepts a drop cancels dragover; anything else declines it.
+            const offered = fire('dragover') === false;
+            fire('drop');
+            spectator.detectChanges();
+
+            return offered;
+        };
+        const png = () => new File(['x'], 'a.png', { type: 'image/png' });
+
+        beforeEach(() => systemHostCanAddChildren.set(true));
+
+        describe('the System Host entry', () => {
+            it('should upload files dropped on it, targeting System Host', () => {
+                const uploads: DotContentDriveUploadFiles[] = [];
+                spectator
+                    .output<DotContentDriveUploadFiles>('uploadFiles')
+                    .subscribe((e) => uploads.push(e));
+
+                dragWith(spectator.query(byTestId('system-host')), [png()]);
+
+                expect(uploads.length).toBe(1);
+                expect(uploads[0].targetFolder?.id).toBe(SYSTEM_HOST.identifier);
+            });
+
+            it('should move content dropped on it, targeting System Host', () => {
+                const moves: DotContentDriveMoveItems[] = [];
+                spectator
+                    .output<DotContentDriveMoveItems>('moveItems')
+                    .subscribe((e) => moves.push(e));
+
+                dragWith(spectator.query(byTestId('system-host')), []);
+
+                expect(moves.length).toBe(1);
+                expect(moves[0].targetFolder?.id).toBe(SYSTEM_HOST.identifier);
+            });
+
+            it('should offer itself as a drop target while the user may add to System Host', () => {
+                expect(dragWith(spectator.query(byTestId('system-host')), [png()])).toBe(true);
+            });
+
+            it('should not offer itself when the user may not add to System Host', () => {
+                // The spec refuses the target outright rather than accepting and then failing:
+                // a drop that is going to be rejected should never look available.
+                systemHostCanAddChildren.set(false);
+                spectator.detectChanges();
+
+                const moves: DotContentDriveMoveItems[] = [];
+                spectator
+                    .output<DotContentDriveMoveItems>('moveItems')
+                    .subscribe((e) => moves.push(e));
+
+                expect(dragWith(spectator.query(byTestId('system-host')), [])).toBe(false);
+                expect(moves.length).toBe(0);
+            });
+        });
+
+        describe('the All Site Content entry', () => {
+            it('should never be a drop target, for files or for content', () => {
+                // Files dropped on the LISTING in this scope are accepted; the entry itself is
+                // not a destination, because the site row beneath it already means the site root.
+                const uploads: DotContentDriveUploadFiles[] = [];
+                const moves: DotContentDriveMoveItems[] = [];
+                spectator
+                    .output<DotContentDriveUploadFiles>('uploadFiles')
+                    .subscribe((e) => uploads.push(e));
+                spectator
+                    .output<DotContentDriveMoveItems>('moveItems')
+                    .subscribe((e) => moves.push(e));
+
+                expect(dragWith(spectator.query(byTestId('all-site-content')), [png()])).toBe(
+                    false
+                );
+                expect(dragWith(spectator.query(byTestId('all-site-content')), [])).toBe(false);
+                expect(uploads.length).toBe(0);
+                expect(moves.length).toBe(0);
+            });
+
+            it('should look refused while a drag is over it, rather than inert', () => {
+                // A gesture that simply does nothing reads as a broken UI.
+                const row = spectator.query(byTestId('all-site-content'));
+                const dt = new DataTransfer();
+                row?.dispatchEvent(
+                    new DragEvent('dragenter', {
+                        bubbles: true,
+                        cancelable: true,
+                        dataTransfer: dt
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(row?.getAttribute('aria-disabled')).toBe('true');
+            });
         });
     });
 
