@@ -16,6 +16,8 @@ it to the reader.
   clause in FR-011 that bound the review to the accumulated set go with it.
 - **FR-018 narrowed** — the picker renders the shared table's default columns and passes none from
   the content type.
+- **FR-023 / FR-024 changed** — the related list's control is a "Show all (N)" / "Show less" toggle
+  rather than an incremental "Load more".
 
 Note for whoever re-approves: PR #37482 merged the **original** spec to `main`, and merging `main`
 back into the implementation branch silently reverted the first of these amendments. Git saw no
@@ -436,11 +438,17 @@ its width against the form's other fields; compare the Status column's alignment
 - **FR-021**: The related-content list MUST NOT render a paging control.
 - **FR-022**: When the relationship holds more than **40** items, the list MUST render only the first
   40 rows and withhold the rest from the DOM.
-- **FR-023**: A row MUST be appended after the last rendered one carrying a control that reveals the
-  next 40. It MUST read **"Load more"**, with no count, matching the Key/Value field's precedent
-  (#37191).
-- **FR-024**: The control MUST disappear once every row is rendered, and MUST NOT appear at all for a
-  relationship that fits in the first page.
+- **FR-023**: A row MUST be appended after the last rendered one carrying a control that shows every
+  item at once. It MUST read **"Show all (N)"**, where N is the total the relationship holds, and
+  become **"Show less"** once expanded — returning the list to the first 40.
+  ~~It MUST read "Load more", with no count, matching the Key/Value field's precedent (#37191).~~
+  **Changed after sign-off.** The Key/Value precedent reveals a page at a time; this list is
+  drag-ordered, and stepping through pages to reach one row is worse here than showing the lot. The
+  count sits on "Show all" because that is the decision needing a number — how much is hidden —
+  while collapsing always returns to the same first page.
+- **FR-024**: The control MUST NOT appear for a relationship that fits in the first page.
+  ~~The control MUST disappear once every row is rendered~~ — it now stays, as "Show less", which is
+  what makes the expansion reversible.
 - **FR-025**: Withholding MUST be a **rendering** limit only. Every related item MUST remain in the
   field's value and in what it emits, so reorder, remove and the saved payload behave as though every
   row were on screen. A drag MUST NOT lose, move or reorder a withheld item.

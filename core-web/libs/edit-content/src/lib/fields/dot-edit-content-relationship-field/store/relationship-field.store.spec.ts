@@ -93,7 +93,7 @@ describe('RelationshipFieldStore', () => {
             expect(store.data()).toEqual([]);
             expect(store.status()).toBe(ComponentStatus.INIT);
             expect(store.selectionMode()).toBeNull();
-            expect(store.visibleCount()).toBe(RELATED_PAGE_SIZE);
+            expect(store.showingAll()).toBe(false);
         });
     });
 
@@ -206,8 +206,8 @@ describe('RelationshipFieldStore', () => {
 
                 // The editor has revealed a second page of rows and is looking at one they just
                 // edited elsewhere.
-                store.loadMore();
-                expect(store.visibleCount()).toBe(RELATED_PAGE_SIZE * 2);
+                store.toggleShowAll();
+                expect(store.showingAll()).toBe(true);
 
                 // A save mints a new inode; the identifier is what stays stable.
                 store.refreshItem(
@@ -220,7 +220,7 @@ describe('RelationshipFieldStore', () => {
 
                 // Collapsing the revealed rows would lose the editor's place — this is why the
                 // method exists instead of reusing setData.
-                expect(store.visibleCount()).toBe(RELATED_PAGE_SIZE * 2);
+                expect(store.showingAll()).toBe(true);
                 expect(store.data()[6].inode).toBe('inode-after-save');
                 expect(store.data()[6].title).toBe('Edited elsewhere');
                 expect(store.data().length).toBe(8);
@@ -643,7 +643,7 @@ describe('RelationshipFieldStore', () => {
         });
     });
 
-    describe('Load more (US4)', () => {
+    describe('Show all / Show less (US4)', () => {
         const many = (n: number) =>
             Array.from({ length: n }, (_, i) =>
                 createFakeContentlet({
@@ -656,47 +656,56 @@ describe('RelationshipFieldStore', () => {
         it('starts by rendering the first page and no more', () => {
             store.setData(many(95));
 
-            expect(store.visibleCount()).toBe(RELATED_PAGE_SIZE);
+            expect(store.showingAll()).toBe(false);
             expect(store.$visibleItems()).toHaveLength(RELATED_PAGE_SIZE);
         });
 
-        it('renders everything and reports nothing remaining for a short list', () => {
+        it('offers no toggle for a list that already fits', () => {
             store.setData(many(12));
 
             expect(store.$visibleItems()).toHaveLength(12);
-            expect(store.$remaining()).toBe(0);
+            expect(store.$canToggleAll()).toBe(false);
         });
 
-        it('reveals one page at a time and stops once everything is on screen', () => {
+        it('offers the toggle once the list outgrows one page', () => {
+            store.setData(many(RELATED_PAGE_SIZE + 1));
+
+            expect(store.$canToggleAll()).toBe(true);
+        });
+
+        /**
+         * One step each way, not an incremental reveal: the control shows everything, then returns
+         * to the first page. There is no intermediate amount.
+         */
+        it('shows everything in one step and collapses back to the first page', () => {
             store.setData(many(95));
 
-            store.loadMore();
-            expect(store.$visibleItems()).toHaveLength(80);
-            expect(store.$remaining()).toBe(15);
-
-            store.loadMore();
+            store.toggleShowAll();
             expect(store.$visibleItems()).toHaveLength(95);
-            expect(store.$remaining()).toBe(0);
+
+            store.toggleShowAll();
+            expect(store.$visibleItems()).toHaveLength(RELATED_PAGE_SIZE);
         });
 
         /**
          * FR-023. The bug `DotKeyValueComponent` hit and documented: with the count derived from
          * the data, a single removal after revealing rows snapped the table back to 40.
          */
-        it('keeps revealed rows revealed when an item is removed', () => {
+        it('stays expanded when an item is removed', () => {
             store.setData(many(95));
-            store.loadMore();
+            store.toggleShowAll();
             store.deleteItem('inode0');
 
-            expect(store.visibleCount()).toBe(80);
+            expect(store.showingAll()).toBe(true);
+            expect(store.$visibleItems()).toHaveLength(94);
         });
 
-        it('keeps revealed rows revealed when the list is reordered', () => {
+        it('stays expanded when the list is reordered', () => {
             store.setData(many(95));
-            store.loadMore();
+            store.toggleShowAll();
             store.reorderData(many(95).reverse());
 
-            expect(store.visibleCount()).toBe(80);
+            expect(store.showingAll()).toBe(true);
         });
 
         /**
@@ -731,9 +740,8 @@ describe('RelationshipFieldStore', () => {
             const items = many(95);
             store.setData(items);
 
-            // Item 90 is well past the 40 rendered, so it can only be dragged after `loadMore`.
-            store.loadMore();
-            store.loadMore();
+            // Item 90 is well past the 40 rendered, so it can only be dragged once expanded.
+            store.toggleShowAll();
 
             const withheld = items[90];
             const reordered = [withheld, ...items.filter((i) => i.inode !== withheld.inode)];
@@ -746,16 +754,16 @@ describe('RelationshipFieldStore', () => {
 
         /**
          * `setData` is the picker's close path, and the one most likely to produce a "the table
-         * snapped back to 40 rows" report. It leaves `visibleCount` alone for the same reason
+         * snapped back to 40 rows" report. It leaves `showingAll` alone for the same reason
          * `deleteItem` and `reorderData` do.
          */
         it('keeps revealed rows revealed when the picker writes a new set', () => {
             store.setData(many(95));
-            store.loadMore();
+            store.toggleShowAll();
 
             store.setData(many(95));
 
-            expect(store.visibleCount()).toBe(80);
+            expect(store.showingAll()).toBe(true);
         });
 
         it('does not reorder withheld items as a side effect of a drag', () => {

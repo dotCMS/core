@@ -51,7 +51,13 @@ export interface RelationshipFieldState {
      * delete. A field opened afresh still starts at one page, because a new field component is
      * built for it.
      */
-    visibleCount: number;
+    /**
+     * Whether the list is showing every related item or only the first {@link RELATED_PAGE_SIZE}.
+     *
+     * A flag rather than a count: the control is a two-state toggle — "Show all (N)" and
+     * "Show less" — not an incremental reveal, so there is no intermediate amount to track.
+     */
+    showingAll: boolean;
     /**
      * Origin of the current `data`:
      * - `'load'`: populated programmatically (initial load / locale re-init). The
@@ -73,7 +79,7 @@ const initialState: RelationshipFieldState = {
     contentType: null,
     isNewEditorEnabled: false,
     staticColumns: STATIC_COLUMNS,
-    visibleCount: RELATED_PAGE_SIZE,
+    showingAll: false,
     lastChangeSource: 'load'
 };
 
@@ -94,9 +100,14 @@ export const RelationshipFieldStore = signalStore(
          * how much of it reaches the DOM. That is what lets a drag move any item next to any other,
          * which paging made impossible for anything past the first six rows.
          */
-        $visibleItems: computed(() => state.data().slice(0, state.visibleCount())),
-        /** Rows still withheld below the last rendered one. Drives the "Load more" row. */
-        $remaining: computed(() => Math.max(0, state.data().length - state.visibleCount())),
+        $visibleItems: computed(() =>
+            state.showingAll() ? state.data() : state.data().slice(0, RELATED_PAGE_SIZE)
+        ),
+        /**
+         * Whether the toggle row is worth rendering at all: only once the list outgrows one page.
+         * Below that there is nothing to expand and nothing to collapse.
+         */
+        $canToggleAll: computed(() => state.data().length > RELATED_PAGE_SIZE),
         /**
          * Checks if the create new content button is disabled based on the selection mode and the number of items.
          * @returns {boolean} True if the button is disabled, false otherwise.
@@ -250,7 +261,7 @@ export const RelationshipFieldStore = signalStore(
             deleteItem(inode: string) {
                 // Just a filter now. The branch this replaces existed only to keep the current page
                 // valid when a removal emptied it — with no pages, there is nothing to clamp, and
-                // `visibleCount` is deliberately left alone so revealed rows stay revealed.
+                // `showingAll` is deliberately left alone so an expanded list stays expanded.
                 patchState(store, {
                     data: store.data().filter((item) => item.inode !== inode),
                     lastChangeSource: 'user'
@@ -301,8 +312,8 @@ export const RelationshipFieldStore = signalStore(
              * site/folder selector this fetches nothing. Rows are withheld from the DOM, never from
              * the data — every operation on the value still sees all of them.
              */
-            loadMore() {
-                patchState(store, { visibleCount: store.visibleCount() + RELATED_PAGE_SIZE });
+            toggleShowAll() {
+                patchState(store, { showingAll: !store.showingAll() });
             }
         })
     )

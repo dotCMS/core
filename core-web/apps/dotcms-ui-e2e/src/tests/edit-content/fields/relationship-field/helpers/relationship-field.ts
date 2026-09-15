@@ -291,34 +291,19 @@ export class RelationshipField {
         await expect(handles).toHaveCount(0);
     }
 
-    // ─── Load more ───────────────────────────────────────────────────
-
     /**
      * Asserts the related list carries no paginator (FR-021).
      *
      * Kept as an assertion rather than deleted with the feature: paging is what made drag-reorder
      * unable to move a row between pages, so its absence is a requirement and not merely the
      * current state.
+     *
+     * The Show all / Show less toggle that replaced it has no helper here on purpose: covering it
+     * end to end meant creating more than forty contentlets per run, which is expensive enough to
+     * destabilise the whole shard. It is covered in the component and store specs instead.
      */
     async expectPaginationHidden(): Promise<void> {
         await expect(this.page.getByTestId('relationship-table-pagination')).toHaveCount(0);
-    }
-
-    /** The control that reveals the next batch of related items (FR-022). */
-    getLoadMore(): Locator {
-        return this.root.getByTestId('relationship-load-more');
-    }
-
-    async expectLoadMoreVisible(): Promise<void> {
-        await expect(this.getLoadMore()).toBeVisible();
-    }
-
-    async expectLoadMoreHidden(): Promise<void> {
-        await expect(this.getLoadMore()).toHaveCount(0);
-    }
-
-    async clickLoadMore(): Promise<void> {
-        await this.getLoadMore().click();
     }
 
     // ─── Disabled State ──────────────────────────────────────────────

@@ -167,9 +167,10 @@ describe('DotRelationshipFieldComponent', () => {
             // Derived from `data` by default so a test that sets one list does not have to remember
             // to set the other; tests about withholding override it explicitly.
             $visibleItems: vi.fn(() => mock.data()),
-            $remaining: vi.fn().mockReturnValue(0),
-            visibleCount: vi.fn().mockReturnValue(40),
-            loadMore: vi.fn(),
+
+            showingAll: vi.fn().mockReturnValue(false),
+            $canToggleAll: vi.fn().mockReturnValue(false),
+            toggleShowAll: vi.fn(),
             columns: vi.fn().mockReturnValue([TITLE_COLUMN, LANGUAGE_COLUMN, STATUS_COLUMN]),
             staticColumns: vi.fn().mockReturnValue(2),
 
@@ -844,7 +845,7 @@ describe('DotRelationshipFieldComponent', () => {
     });
 
     /**
-     * US4 — no paging control, and a "Load more" row instead.
+     * US4 — no paging control, and a Show all / Show less toggle instead.
      *
      * The two lists in #37192 are different lists: the *picker* keeps its paging; this one, the
      * related content inside the form, loses it so a drag can reach any pair of rows.
@@ -863,38 +864,60 @@ describe('DotRelationshipFieldComponent', () => {
             setup({
                 data: vi.fn().mockReturnValue(rows(95)),
                 $visibleItems: vi.fn().mockReturnValue(rows(40)),
-                $remaining: vi.fn().mockReturnValue(55)
+                $canToggleAll: vi.fn().mockReturnValue(true)
             });
 
             expect(spectator.query(byTestId('relationship-table-pagination'))).toBeNull();
         });
 
-        it('offers no Load more when everything is on screen', () => {
+        it('offers no toggle when everything is on screen', () => {
             setup({ data: vi.fn().mockReturnValue(rows(12)) });
 
-            expect(spectator.query(byTestId('relationship-load-more'))).toBeNull();
+            expect(spectator.query(byTestId('relationship-show-all'))).toBeNull();
         });
 
-        it('offers Load more while rows are still withheld', () => {
+        /**
+         * The count is on "Show all" because that is the decision needing a number — how much is
+         * hidden. It reads the whole list, not the withheld remainder: "Show all (95)" is what the
+         * editor gets, not "Show all (55)".
+         */
+        it('offers Show all with the total count while rows are withheld', () => {
             setup({
                 data: vi.fn().mockReturnValue(rows(95)),
                 $visibleItems: vi.fn().mockReturnValue(rows(40)),
-                $remaining: vi.fn().mockReturnValue(55)
+                $canToggleAll: vi.fn().mockReturnValue(true)
             });
 
-            expect(spectator.query(byTestId('relationship-load-more'))).toBeTruthy();
+            const toggle = spectator.query(byTestId('relationship-show-all'));
+
+            expect(toggle?.textContent).toContain('95');
+            expect(toggle?.getAttribute('aria-expanded')).toBe('false');
         });
 
-        it('reveals the next page when Load more is used', () => {
+        it('offers Show less once expanded, with no count', () => {
+            setup({
+                data: vi.fn().mockReturnValue(rows(95)),
+                $visibleItems: vi.fn().mockReturnValue(rows(95)),
+                $canToggleAll: vi.fn().mockReturnValue(true),
+                showingAll: vi.fn().mockReturnValue(true)
+            });
+
+            const toggle = spectator.query(byTestId('relationship-show-all'));
+
+            expect(toggle?.textContent).not.toContain('95');
+            expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+        });
+
+        it('asks the store to toggle when the control is used', () => {
             setup({
                 data: vi.fn().mockReturnValue(rows(95)),
                 $visibleItems: vi.fn().mockReturnValue(rows(40)),
-                $remaining: vi.fn().mockReturnValue(55)
+                $canToggleAll: vi.fn().mockReturnValue(true)
             });
 
-            spectator.click(spectator.query(byTestId('relationship-load-more')) as HTMLElement);
+            spectator.click(spectator.query(byTestId('relationship-show-all')) as HTMLElement);
 
-            expect(storeMock.loadMore).toHaveBeenCalled();
+            expect(storeMock.toggleShowAll).toHaveBeenCalled();
         });
 
         /** Withholding is a rendering limit: the value keeps all 95, the DOM shows 40. */

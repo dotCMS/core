@@ -1,5 +1,6 @@
 @let data = store.$visibleItems();
-@let remaining = store.$remaining();
+@let canToggleAll = store.$canToggleAll();
+@let showingAll = store.showingAll();
 @let isDisabled = $isDisabled();
 @let isEmpty = store.data().length === 0;
 @let showThumbnail = store.showThumbnail();
@@ -227,20 +228,30 @@
          A real row rather than the table's `summary` slot, matching the Key/Value field: the
          control belongs after the last rendered row, inside the same frame. -->
     <ng-template pTemplate="footer">
-        @if (remaining > 0) {
-            <tr data-testid="relationship-load-more-row">
+        @if (canToggleAll) {
+            <tr data-testid="relationship-show-all-row">
                 <td
                     [attr.colspan]="$totalColumns()"
                     class="border-t border-t-(--p-datatable-border-color) px-4 py-3">
+                    <!-- The count belongs on "Show all" and not on "Show less": expanding is the
+                         decision that needs a number — how much is hidden — while collapsing always
+                         returns to the same first page. -->
                     <button
                         type="button"
                         class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-sm font-normal text-primary-500 hover:underline"
-                        data-testid="relationship-load-more"
-                        (click)="store.loadMore()">
+                        [attr.aria-expanded]="showingAll"
+                        data-testid="relationship-show-all"
+                        (click)="store.toggleShowAll()">
                         <span class="material-symbols-outlined text-base!" aria-hidden="true">
-                            add_circle
+                            {{ showingAll ? 'remove_circle' : 'add_circle' }}
                         </span>
-                        {{ 'dot.file.relationship.field.table.load.more' | dm }}
+                        @if (showingAll) {
+                            {{ 'dot.file.relationship.field.table.show.less' | dm }}
+                        } @else {
+                            {{ 'dot.file.relationship.field.table.show.all' | dm }} ({{
+                                store.data().length
+                            }})
+                        }
                     </button>
                 </td>
             </tr>
