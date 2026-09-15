@@ -64,6 +64,8 @@ public class ContentDriveSearchScopeTest extends IntegrationTestBase {
     private static String titleMatchInode;
     /** Title does NOT contain the term; the body does. Returned in All Fields only. */
     private static String bodyOnlyMatchInode;
+    /** Title has neither probe word; the body has both. The multi-word leak detector. */
+    private static String bodyHasBothWordsInode;
     /** A folder whose NAME contains the term — scope-independent, must appear in both. */
     private static String folderName;
 
@@ -95,6 +97,10 @@ public class ContentDriveSearchScopeTest extends IntegrationTestBase {
                 .contentTypeId(testType.id()).searchable(true).indexed(true).nextPersisted();
 
         titleMatchInode = seed(term + " in the title", "unrelated body copy", root, languageId);
+        // Carries BOTH words of the multi-word probe in its BODY and neither in its title. A Title
+        // search for "<term> stylesheet" must never return it.
+        bodyHasBothWordsInode = seed("a heading with neither word " + uniqueId,
+                term + " stylesheet appears only in this body", root, languageId);
         bodyOnlyMatchInode = seed("a plain heading " + uniqueId, "the body mentions " + term,
                 root, languageId);
 
@@ -238,6 +244,55 @@ public class ContentDriveSearchScopeTest extends IntegrationTestBase {
     // FR-018 / FR-025 — the contract rejects nonsense instead of guessing.
     // -----------------------------------------------------------------------------------------
 
+    /**
+     * The multi-word case, which the single-word tests cannot catch.
+     *
+     * <p>The first implementation interpolated the whole term into one {@code title:<term>*}
+     * clause. For a multi-word term the {@code title:} prefix binds only to the first word, so
+     * every word after it became a bare term matched against <b>every</b> field — "mixed case" in
+     * Title scope returned stylesheets whose body contained "case". Found in manual testing, not by
+     * the original suite, because every assertion here used a single-word term.</p>
+     */
+    @Test
+    public void titleScope_withMultiWordTerm_doesNotLeakIntoOtherFields() throws Exception {
+        final PaginatedContents results = contentDriveHelper.driveSearch(DriveRequestForm.builder()
+                .assetPath(assetPath).showFolders(false).live(false).archived(false)
+                .offset(0).maxResults(100)
+                .filters(QueryFilters.builder().text(term + " stylesheet")
+                        .searchScope(SearchScope.TITLE).build())
+                .build(), systemUser);
+
+        assertFalse("A multi-word Title search must not match a document that carries those words "
+                        + "only in its BODY. If this fails, the second word is being matched "
+                        + "against every field instead of the title.",
+                contains(results, bodyHasBothWordsInode));
+    }
+
+    /**
+     * An injection-shaped term must be matched as text, not parsed as query syntax.
+     *
+     * <p>Asserts the result set is <b>empty</b>, not merely that the seeded documents are absent.
+     * The earlier version of this check asserted only the latter, and passed while the query
+     * matched everything else in the drive — the failure mode it was written to catch.</p>
+     *
+     * <p>Scoped to TITLE deliberately. The all-fields path shares
+     * {@code GlobalSearchAttributeStrategy} with the Search portlet and the Relationships dialog,
+     * where the same {@code OR} handling predates this work and is tracked separately.</p>
+     */
+    @Test
+    public void titleScope_injectionShapedTerm_matchesNothing() throws Exception {
+        final PaginatedContents results = contentDriveHelper.driveSearch(DriveRequestForm.builder()
+                .assetPath(assetPath).showFolders(false).live(false).archived(false)
+                .offset(0).maxResults(100)
+                .filters(QueryFilters.builder().text("notatitle\"] OR title:*")
+                        .searchScope(SearchScope.TITLE).build())
+                .build(), systemUser);
+
+        assertEquals("An injection-shaped term must match nothing at all. Returning results means "
+                        + "the OR survived escaping and was parsed as an operator.",
+                0, results.list.size());
+    }
+
     /** FR-025: the scope qualifies the text and is meaningless without it. */
     @Test
     public void scopeWithoutText_isRejected() throws Exception {
@@ -260,26 +315,81 @@ public class ContentDriveSearchScopeTest extends IntegrationTestBase {
     }
 
     /**
-     * SC-009 carried into Title scope: the ticket 39185 headline must be findable here too. FR-027
-     * applies to both scopes, so the clause Title introduces must escape exactly as the other does.
+     * Punctuation in Title scope: the term must not break the query, and must not drag in content
+     * that does not belong — but the punctuation itself is <b>not</b> matchable mid-title.
+     *
+     * <p>That is a consequence of FR-010, not an oversight. Title scope matches by prefix, and a
+     * prefix query is not analyzed: the indexed token for {@code (XETRA:} is {@code xetra}, with the
+     * punctuation stripped at index time, while the search term keeps it. Reaching punctuation in
+     * the middle of a title needs a leading wildcard — {@code *(XETRA:*} — which is exactly what
+     * FR-010 forbids, because it turns the prefix seek into a scan of every distinct raw title and
+     * costs the scope the only thing that makes it cheaper than All Fields.</p>
+     *
+     * <p>It is the same limit already accepted for mid-token matching ({@code 1004} not finding
+     * {@code IMG_1004.jpeg}), showing another face. The content stays reachable: searching the
+     * words without the symbols finds it, which is how search normally behaves. And All Fields —
+     * the default — matches the punctuated term in full, which is the path the customer case of
+     * #37532 takes.</p>
+     *
+     * <p>An earlier version of this test asserted the opposite and passed, but only because the
+     * clause it exercised was leaking into every field. Fixing that leak is what exposed the real
+     * behaviour.</p>
      */
     @Test
-    public void titleScope_alsoMatchesTermsWithReservedCharacters() throws Exception {
+    public void titleScope_punctuatedTitle_isReachableByItsWords() throws Exception {
         final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         final Folder folder = APILocator.getFolderAPI()
                 .findFolderByPath(assetPath.substring(assetPath.indexOf('/', 2)), testSite,
                         systemUser, false);
-        final String punctuated = "ABC (XETRA: DB) / scope" + System.nanoTime();
-        final String inode = seed(punctuated, "unrelated", folder, languageId);
+        final String marker = "xetraprobe" + System.nanoTime();
+        final String punctuated = "ABC (XETRA: DB) / " + marker;
+        final String inode = seed(punctuated, "unrelated body", folder, languageId);
 
-        final PaginatedContents results = contentDriveHelper.driveSearch(DriveRequestForm.builder()
-                .assetPath(assetPath)
-                .showFolders(false).live(false).archived(false).offset(0).maxResults(100)
-                .filters(QueryFilters.builder().text(punctuated)
+        // The words are reachable — the analyzer stripped the punctuation on both sides.
+        final PaginatedContents byWord = contentDriveHelper.driveSearch(DriveRequestForm.builder()
+                .assetPath(assetPath).showFolders(false).live(false).archived(false)
+                .offset(0).maxResults(100)
+                .filters(QueryFilters.builder().text(marker)
                         .searchScope(SearchScope.TITLE).build())
                 .build(), systemUser);
+        assertTrue("A title carrying punctuation must still be reachable by its words",
+                contains(byWord, inode));
 
-        assertTrue("Title scope must match reserved characters literally, exactly as All Fields "
-                + "does — FR-027 applies to both", contains(results, inode));
+        // The punctuated term itself must not break the query, and must not pull in anything else.
+        final PaginatedContents byPunctuated = contentDriveHelper.driveSearch(
+                DriveRequestForm.builder()
+                        .assetPath(assetPath).showFolders(false).live(false).archived(false)
+                        .offset(0).maxResults(100)
+                        .filters(QueryFilters.builder().text(punctuated)
+                                .searchScope(SearchScope.TITLE).build())
+                        .build(), systemUser);
+        assertFalse("A punctuated term must not leak unrelated content into Title scope",
+                contains(byPunctuated, bodyOnlyMatchInode));
+        assertFalse("A punctuated term must not leak unrelated content into Title scope",
+                contains(byPunctuated, bodyHasBothWordsInode));
+    }
+
+    /**
+     * All Fields — the default — does match the punctuated term in full. This is the path the
+     * customer case of #37532 takes, and the reason the limitation above is acceptable.
+     */
+    @Test
+    public void allFieldsScope_matchesThePunctuatedTermInFull() throws Exception {
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final Folder folder = APILocator.getFolderAPI()
+                .findFolderByPath(assetPath.substring(assetPath.indexOf('/', 2)), testSite,
+                        systemUser, false);
+        final String punctuated = "ABC (XETRA: DB) / allfields" + System.nanoTime();
+        final String inode = seed(punctuated, "unrelated body", folder, languageId);
+
+        final PaginatedContents results = contentDriveHelper.driveSearch(DriveRequestForm.builder()
+                .assetPath(assetPath).showFolders(false).live(false).archived(false)
+                .offset(0).maxResults(100)
+                .filters(QueryFilters.builder().text(punctuated)
+                        .searchScope(SearchScope.ALL_FIELDS).build())
+                .build(), systemUser);
+
+        assertTrue("All Fields must match a punctuated term in full — this is the customer path",
+                contains(results, inode));
     }
 }

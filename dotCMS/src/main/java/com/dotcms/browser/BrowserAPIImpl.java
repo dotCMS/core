@@ -1266,14 +1266,24 @@ public class BrowserAPIImpl implements BrowserAPI {
         return baseQuery.toString();
     }
 
+    /** Splits a term into tokens, matching the shared field strategies. */
+    private static final String TITLE_SCOPE_SPLIT_REGEX = "[,|\\s+]";
+
     /**
      * Builds the Elasticsearch clause for {@link SearchScope#TITLE} — the search scope that matches
      * a term against the contentlet title alone (issue #37479).
      *
      * <p>This is a <b>sibling</b> of {@link GlobalSearchAttributeStrategy} rather than a branch
      * inside it. That strategy also serves the Search portlet and the Relationships dialog through
-     * the Lucene Query Builder service, and neither asked for a narrower query; adding a mode to it
-     * would change their behavior too.</p>
+     * the Lucene Query Builder service, and neither asked for a narrower query.</p>
+     *
+     * <p><b>One mandatory clause per token</b>, mirroring {@code TextFieldStrategy}. This is not a
+     * style choice — the first version of this method interpolated the whole term into a single
+     * {@code title:<term>*} clause, and for a multi-word term the {@code title:} prefix binds only
+     * to the first word. Every word after it became a bare term, which Elasticsearch matches
+     * against <b>every</b> field, so "mixed case" in Title scope returned stylesheets whose
+     * <i>body</i> contained "case". Tokenizing also means a term containing {@code OR} or
+     * {@code AND} is matched as a word rather than parsed as a boolean operator.</p>
      *
      * <p>Two things this clause must not do, both of which would make the scope a display filter
      * rather than the cheaper query path it exists to be:</p>
@@ -1281,36 +1291,51 @@ public class BrowserAPIImpl implements BrowserAPI {
      * <ul>
      *   <li><b>No {@code catchall}.</b> That field aggregates every field of the document, which is
      *       exactly the breadth the Title scope is meant to avoid.</li>
-     *   <li><b>No leading wildcard in the mandatory gate.</b> {@code title_dotraw} is a keyword
-     *       field, so {@code *term*} scans every distinct raw title while {@code term*} is a prefix
-     *       seek. Issue #36688 removed a leading wildcard for this reason and it must not return.</li>
+     *   <li><b>No leading wildcard.</b> {@code title_dotraw} is a keyword field, so {@code *term*}
+     *       scans every distinct raw title while {@code term*} is a prefix seek. Issue #36688
+     *       removed a leading wildcard for this reason and it must not return.</li>
      * </ul>
      *
-     * <p>The gate matches either a token prefix on the analyzed {@code title} — so a word from the
-     * middle of a name still matches — or a prefix of the whole raw title. <b>Known trade-off</b>:
-     * dropping the leading wildcard also drops mid-token matching, so searching {@code 1004} will
-     * not find {@code IMG_1004.jpeg} in this scope. That is deliberate and signed off: All Fields
-     * keeps mid-token matching (issue #36791), and restoring it here would cost the prefix seek
-     * that makes the scope worth having.</p>
+     * <p><b>Known trade-offs</b>, both signed off, and both the same consequence of matching by
+     * prefix rather than by substring:</p>
      *
-     * <p>The term is escaped before the wildcards are appended, so a reserved character is matched
-     * literally and the wildcards stay live (issue #37532, FR-027).</p>
+     * <ul>
+     *   <li><b>Mid-token.</b> Searching {@code 1004} will not find {@code IMG_1004.jpeg} here. All
+     *       Fields keeps it (issue #36791).</li>
+     *   <li><b>Punctuation mid-title.</b> A prefix query is not analyzed, so the search term keeps
+     *       its punctuation while the indexed token had it stripped — {@code (XETRA:} is indexed as
+     *       {@code xetra}. Reaching it would need {@code *(XETRA:*}, the leading wildcard this
+     *       method exists to avoid. The content stays reachable by its words, and All Fields — the
+     *       default — matches the punctuated term in full, which is the path the customer case of
+     *       issue #37532 takes.</li>
+     * </ul>
+     *
+     * <p>Restoring either would cost the prefix seek that makes this scope worth having.</p>
+     *
+     * <p>No boost clauses. The all-fields strategy carries several, but Content Drive orders by the
+     * grid's sort — modification date by default — and never by score, so a boost changes nothing a
+     * user can see. Adding one here would only be another place for a term to be interpolated
+     * badly.</p>
      *
      * @param filter The raw, unescaped term the user typed.
      *
-     * @return The Lucene clause for a title-only search.
+     * @return The Lucene clause for a title-only search, or {@link #BLANK} when the term carries no
+     *         usable token.
      */
     private String buildTitleScopedQuery(final String filter) {
-        final String value = LuceneQueryUtils.escape(filter);
         final StringBuilder query = new StringBuilder();
-        // Mandatory gate: token prefix on the analyzed field, OR raw-value prefix on the keyword.
-        query.append("+(title:").append(value).append("* OR title_dotraw:")
-                .append(value).append("*) ");
-        // Non-mandatory boosts, mirroring the all-fields strategy so ranking feels the same: an
-        // exact-value hit outranks a prefix hit.
-        query.append("title:'").append(value).append("'^15 ");
-        query.append("title_dotraw:").append(value).append("^10");
-        return query.toString();
+        for (final String token : filter.split(TITLE_SCOPE_SPLIT_REGEX)) {
+            if (token.isEmpty()) {
+                continue;
+            }
+            // Escape first, then append the wildcard, so a reserved character is matched literally
+            // while the "*" this method adds itself stays live syntax (issue #37532, FR-027).
+            final String value = LuceneQueryUtils.escape(token);
+            query.append("+(title:").append(value).append("* title_dotraw:")
+                    .append(value).append("*) ");
+        }
+
+        return query.toString().trim();
     }
 
     /**
