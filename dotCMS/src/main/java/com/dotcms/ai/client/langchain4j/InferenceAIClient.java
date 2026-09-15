@@ -3,6 +3,7 @@ package com.dotcms.ai.client.langchain4j;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.inference.model.InferenceError;
 import com.dotcms.inference.model.InferenceLimits;
+import com.dotcms.inference.model.MultipleImagesUnsupportedException;
 import com.dotcms.inference.model.InferenceMessage;
 import com.dotcms.inference.model.InferenceRequest;
 import com.dotcms.inference.model.InferenceResponse;
@@ -15,11 +16,14 @@ import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.JsonNode;
 import dev.langchain4j.agent.tool.ToolExecutionRequest;
 import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.data.embedding.Embedding;
+import dev.langchain4j.data.image.Image;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
 import dev.langchain4j.model.chat.request.ResponseFormatType;
@@ -31,11 +35,20 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.CompleteToolCall;
 import dev.langchain4j.model.chat.response.PartialToolCall;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.langchain4j.model.image.ImageModel;
+import dev.langchain4j.model.output.Response;
 import dev.langchain4j.model.output.TokenUsage;
 import io.vavr.Lazy;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -64,7 +77,8 @@ import java.util.function.Consumer;
  * when its credentials are rotated, and {@code AIAppListener} is wired to that one class. A second
  * client keeping its own cache would go on serving a revoked key until its TTL expired, with
  * nothing to notice. So this class borrows models through
- * {@link LangChain4jAIClient#withChatModel} and {@link LangChain4jAIClient#withStreamingChatModel}
+ * {@link LangChain4jAIClient#withChatModel}, {@link LangChain4jAIClient#withStreamingChatModel},
+ * {@link LangChain4jAIClient#withEmbeddingModel} and {@link LangChain4jAIClient#withImageModel},
  * and owns no state of its own.</p>
  *
  * <p>Those accessors hand over the name of the model that actually served, which after a fallback
@@ -91,6 +105,15 @@ public final class InferenceAIClient {
     private static final String SCHEMA_ADDITIONAL_PROPERTIES = "additionalProperties";
     private static final String SCHEMA_DEFS = "$defs";
     private static final String SCHEMA_DEFINITIONS = "definitions";
+
+    /** What a caller is told when nothing usable came back from an image provider. */
+    private static final String NO_IMAGE_MESSAGE = "The model provider returned no usable image";
+
+    /**
+     * Ceiling on fetching a provider-hosted image. A request thread is parked for the whole
+     * download, so a provider whose CDN hangs must not be able to hold one indefinitely.
+     */
+    private static final int IMAGE_FETCH_TIMEOUT_SECONDS = 30;
 
     private InferenceAIClient() {
     }
@@ -160,6 +183,122 @@ public final class InferenceAIClient {
             Logger.warn(InferenceAIClient.class,
                     "Inference stream could not be started: " + e.getClass().getSimpleName());
             state.fail(toInferenceError(e));
+        }
+    }
+
+    /**
+     * Embeds a batch of texts in one provider round trip.
+     *
+     * <p>One call rather than one per input, because the batch is what the caller sent and what
+     * the provider bills as a unit: embedding them separately would report usage that describes
+     * none of them and would multiply the site's spend on a request it was never asked to split.
+     * The vectors come back in the order the inputs were given, which is what lets the caller
+     * stamp each entry with the index of the text it embedded.</p>
+     *
+     * <p>Nothing here logs the input: it is customer content by definition.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @param inputs    the texts to embed, in the order the caller sent them
+     * @return the vectors, the model that served, and the usage for the whole batch
+     * @throws RuntimeException if every model in the site's chain failed; the exception is the last
+     *                          failure, left for the REST layer to turn into a status
+     */
+    public EmbeddingBatch embed(final AppConfig appConfig, final List<String> inputs) {
+        final List<TextSegment> segments = new ArrayList<>(inputs.size());
+        for (final String input : inputs) {
+            segments.add(TextSegment.from(input));
+        }
+
+        return LangChain4jAIClient.get().withEmbeddingModel(appConfig, (model, servingModel) -> {
+            final Response<List<Embedding>> response = model.embedAll(segments);
+            final List<Embedding> embeddings =
+                    response.content() == null ? List.of() : response.content();
+            final List<List<Float>> vectors = new ArrayList<>(embeddings.size());
+            for (final Embedding embedding : embeddings) {
+                vectors.add(List.copyOf(embedding.vectorAsList()));
+            }
+            return new EmbeddingBatch(
+                    servingModel, List.copyOf(vectors), toEmbeddingUsage(response.tokenUsage()));
+        });
+    }
+
+    /**
+     * Generates images from a prompt and returns each as base64, whatever the provider offered.
+     *
+     * <p>{@link LangChain4jAIClient#withImageModel} already asks the provider for the inline form,
+     * so for most providers the bytes arrive inline and nothing further is needed. A provider that
+     * has no such option answers with a URL regardless; that URL is fetched and re-encoded here
+     * rather than refused, because the upstream artifact exists either way at that point and
+     * declining would break image generation on part of a multi-provider gateway to avoid an
+     * exposure already incurred. What the guarantee actually covers is the caller: they never
+     * receive an addressable artifact.</p>
+     *
+     * <p>A request for a single image goes through {@code generate(prompt)} rather than through
+     * {@code generate(prompt, 1)}. The multi-image overload is a {@code default} method on
+     * {@link ImageModel} that throws unless a provider overrides it, so routing the common case
+     * through it would break every provider that has not — for a count where the two calls mean
+     * exactly the same thing.</p>
+     *
+     * <p>Neither the prompt nor the provider's URL is logged; the first is customer content and
+     * the second addresses content generated from it.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @param prompt    what to generate
+     * @param size      the size the caller asked for, or null to use the site's configured one
+     * @param count     how many images to generate; at least one
+     * @return the images as base64, and the model that served
+     * @throws RuntimeException if every model in the site's chain failed, if the provider cannot
+     *                          generate several images at once, or if it produced nothing that
+     *                          could be turned into bytes
+     */
+    public GeneratedImages generateImages(final AppConfig appConfig,
+                                          final String prompt,
+                                          final String size,
+                                          final int count) {
+        return LangChain4jAIClient.get().withImageModel(appConfig, size, (model, servingModel) -> {
+            if (count > 1 && !supportsMultipleImages(model)) {
+                throw new MultipleImagesUnsupportedException(servingModel);
+            }
+            final List<Image> images = count == 1
+                    ? Collections.singletonList(model.generate(prompt).content())
+                    : model.generate(prompt, count).content();
+
+            if (images == null || images.isEmpty()) {
+                throw new IllegalStateException(NO_IMAGE_MESSAGE);
+            }
+
+            final List<GeneratedImage> generated = new ArrayList<>(images.size());
+            for (final Image image : images) {
+                generated.add(new GeneratedImage(
+                        toBase64(image), image == null ? null : image.revisedPrompt()));
+            }
+            return new GeneratedImages(servingModel, List.copyOf(generated));
+        });
+    }
+
+    /**
+     * Answers whether an image model can actually produce more than one image per call.
+     *
+     * <p>The multi-image call is a default method on the provider abstraction that throws unless
+     * the implementation overrides it, so declaring the image capability says nothing about
+     * whether this particular provider honours a count. Asking the class which one it inherited is
+     * exact: it needs no list of provider names to be kept current, and it cannot be fooled by a
+     * message string that the library is free to change.</p>
+     *
+     * <p>Probing beforehand rather than catching afterwards matters because the thrown type is
+     * {@code IllegalArgumentException} — indistinguishable from a genuine complaint about the
+     * arguments, and so not safe to translate on sight.</p>
+     *
+     * @param model the image model handed over by the accessor
+     * @return whether the multi-image call is implemented rather than inherited
+     */
+    private static boolean supportsMultipleImages(final ImageModel model) {
+        try {
+            return model.getClass()
+                    .getMethod("generate", String.class, int.class)
+                    .getDeclaringClass() != ImageModel.class;
+        } catch (final NoSuchMethodException e) {
+            return false;
         }
     }
 
@@ -571,6 +710,115 @@ public final class InferenceAIClient {
      */
     private static String nullToEmpty(final String value) {
         return value == null ? "" : value;
+    }
+
+    /**
+     * Reads an image as base64, fetching it first when the provider only gave a link to it.
+     *
+     * @param image the provider's image
+     * @return the image bytes, base64 encoded
+     */
+    private static String toBase64(final Image image) {
+        if (image == null) {
+            throw new IllegalStateException(NO_IMAGE_MESSAGE);
+        }
+        if (image.base64Data() != null && !image.base64Data().isBlank()) {
+            return image.base64Data();
+        }
+        if (image.url() == null) {
+            throw new IllegalStateException(NO_IMAGE_MESSAGE);
+        }
+        return fetchAndEncode(image.url());
+    }
+
+    /**
+     * Downloads a provider-hosted image and encodes it.
+     *
+     * <p>Bounded by {@link #IMAGE_FETCH_TIMEOUT_SECONDS} so a provider whose CDN hangs cannot park
+     * the request thread for as long as it likes. The address is the provider's own, taken from a
+     * response to a request dotCMS made to an endpoint the site configured, and it is never logged
+     * or handed back to the caller.</p>
+     *
+     * @param url where the provider put the image
+     * @return the image bytes, base64 encoded
+     */
+    private static String fetchAndEncode(final URI url) {
+        final Duration timeout = Duration.ofSeconds(IMAGE_FETCH_TIMEOUT_SECONDS);
+        try {
+            final HttpClient httpClient = HttpClient.newBuilder()
+                    .connectTimeout(timeout)
+                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .build();
+            final HttpResponse<byte[]> response = httpClient.send(
+                    HttpRequest.newBuilder(url).timeout(timeout).GET().build(),
+                    HttpResponse.BodyHandlers.ofByteArray());
+
+            if (response.statusCode() / 100 != 2
+                    || response.body() == null
+                    || response.body().length == 0) {
+                throw new IllegalStateException(NO_IMAGE_MESSAGE);
+            }
+            return Base64.getEncoder().encodeToString(response.body());
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(NO_IMAGE_MESSAGE, e);
+        } catch (final IOException e) {
+            Logger.warn(InferenceAIClient.class,
+                    "Could not retrieve the provider's generated image: "
+                            + e.getClass().getSimpleName());
+            throw new IllegalStateException(NO_IMAGE_MESSAGE, e);
+        }
+    }
+
+    /**
+     * Maps the token counts an embeddings exchange reported.
+     *
+     * <p>An embeddings call generates nothing, so there is no completion count to report and the
+     * total equals the prompt count. A provider that reported only the prompt count is therefore
+     * read as having reported the total too — that is arithmetic on what it said, not an estimate
+     * of what it did not.</p>
+     *
+     * @param tokenUsage the provider's counts, possibly null or partly absent
+     * @return the counts, or {@link InferenceUsage#UNREPORTED} when the provider reported none
+     */
+    private static InferenceUsage toEmbeddingUsage(final TokenUsage tokenUsage) {
+        if (tokenUsage == null) {
+            return InferenceUsage.UNREPORTED;
+        }
+        final Integer inputTokens = tokenUsage.inputTokenCount();
+        final Integer totalTokens = tokenUsage.totalTokenCount() == null
+                ? inputTokens
+                : tokenUsage.totalTokenCount();
+        final InferenceUsage usage = new InferenceUsage(inputTokens, null, totalTokens);
+        return usage.isReported() ? usage : InferenceUsage.UNREPORTED;
+    }
+
+    /**
+     * One batch of embeddings, as the provider produced them.
+     *
+     * @param model   the model that actually served, after any fallback hop
+     * @param vectors one vector per input, in the order the inputs were given
+     * @param usage   tokens consumed by the whole batch
+     */
+    public record EmbeddingBatch(String model, List<List<Float>> vectors, InferenceUsage usage) {
+    }
+
+    /**
+     * The images one generation request produced.
+     *
+     * @param model  the model that actually served, after any fallback hop
+     * @param images the images, in the order the provider returned them
+     */
+    public record GeneratedImages(String model, List<GeneratedImage> images) {
+    }
+
+    /**
+     * One generated image, always as base64.
+     *
+     * @param base64Data    the image bytes, base64 encoded
+     * @param revisedPrompt the prompt the provider says it actually used, when it says so
+     */
+    public record GeneratedImage(String base64Data, String revisedPrompt) {
     }
 
     /**

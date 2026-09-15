@@ -1404,6 +1404,183 @@ paths:
       summary: Create a chat completion
       tags:
       - AI
+  /inference/v1/embeddings:
+    post:
+      description: "Embeds text against the model the resolved site has configured\
+        \ for embeddings, in the OpenAI-compatible request and response shape. The\
+        \ input field accepts either a single string or an array of strings embedded\
+        \ as one batch; the response is always a list with one entry per input, each\
+        \ carrying the index of the input it corresponds to. An absent, null or empty\
+        \ input is refused, as is a blank or whitespace-only string wherever it appears,\
+        \ and every element of an array must be a string — arrays of token ids are\
+        \ not supported. The model field is required and is validated against the\
+        \ site's embeddings configuration, not its chat models; there is no implicit\
+        \ default. Every response reports the serving site in the X-dotCMS-Resolved-Site\
+        \ header."
+      operationId: createEmbeddings
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmbeddingsRequestView"
+        description: What to embed
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmbeddingListView"
+          description: "The vectors, one per input"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: "Malformed request, or one asking for something unsupported"
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Forbidden - the caller cannot read the requested site
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The requested model is not configured for the resolved site
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The model provider failed to complete the request
+      summary: Create embeddings
+      tags:
+      - AI
+  /inference/v1/images/generations:
+    post:
+      description: "Generates images against the model the resolved site has configured\
+        \ for images, in the OpenAI-compatible request and response shape. Every image\
+        \ is returned inline as b64_json: no hosted, separately-addressable artifact\
+        \ is created, and no url is ever returned. Both model and prompt are required,\
+        \ and model is validated against the site's image configuration rather than\
+        \ its chat or embeddings models; there is no implicit default. The n field\
+        \ is honored — omitting it means one image. A value below 1, a value above\
+        \ the configured maximum, or any value above 1 on a site whose image model\
+        \ can only produce one, is refused with a 400 naming the field. The size field\
+        \ is passed through to the provider as a WIDTHxHEIGHT string; where the site\
+        \ carries an image size setting the caller's value wins and the site's is\
+        \ the default. Every response reports the serving site in the X-dotCMS-Resolved-Site\
+        \ header."
+      operationId: createImageGeneration
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImageGenerationRequestView"
+        description: What to generate
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageGenerationView"
+          description: "The generated images, each inline as base64"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: "Malformed request, or one asking for something unsupported"
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Forbidden - the caller cannot read the requested site
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The requested model is not configured for the resolved site
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The model provider failed to complete the request
+      summary: Generate images
+      tags:
+      - AI
+  /inference/v1/models:
+    get:
+      description: "Returns the models the resolved site has configured for chat,\
+        \ including every entry of a fallback chain, in configured order — the first\
+        \ is the site's primary model. The list is exactly the set of values the chat\
+        \ completions endpoint accepts as \"model\": there is no implicit default\
+        \ and no reserved alias, and nothing synthetic is added. No model provider\
+        \ is contacted. A site with no AI configuration, on an instance with none\
+        \ at the system level either, returns an empty data array rather than another\
+        \ site's models. Every response reports the serving site in the X-dotCMS-Resolved-Site\
+        \ header."
+      operationId: listInferenceModels
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelListView"
+          description: "The configured models, possibly none"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The requested site could not be resolved
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Forbidden - the caller cannot read the requested site
+      summary: List the models this site has configured
+      tags:
+      - AI
   /integrity/_fixconflictsfromremote:
     post:
       operationId: fixConflictsFromRemote
@@ -28057,6 +28234,44 @@ components:
       required:
       - deletedCount
       - success
+    EmbeddingListView:
+      type: object
+      description: Embeddings response in the OpenAI-compatible shape
+      properties:
+        data:
+          type: array
+          description: One entry per input
+          items:
+            $ref: "#/components/schemas/EmbeddingView"
+        model:
+          type: string
+          description: Model that served the request
+          example: text-embedding-3-small
+        object:
+          type: string
+          description: Object type
+          example: list
+        usage:
+          $ref: "#/components/schemas/UsageView"
+    EmbeddingView:
+      type: object
+      description: One embedding
+      properties:
+        embedding:
+          type: array
+          description: The vector
+          items:
+            type: number
+            format: float
+            description: The vector
+        index:
+          type: integer
+          format: int32
+          description: Position of the input this vector embeds
+        object:
+          type: string
+          description: Object type
+          example: embedding
     EmbeddingsForm:
       type: object
       properties:
@@ -28085,6 +28300,16 @@ components:
           type: string
         velocityTemplate:
           type: string
+    EmbeddingsRequestView:
+      type: object
+      description: Embeddings request in the OpenAI-compatible shape
+      properties:
+        input:
+          $ref: "#/components/schemas/JsonNode"
+        model:
+          type: string
+          description: "Model id, as configured for this site's embeddings"
+          example: text-embedding-3-small
     EmptyField:
       type: object
       allOf:
@@ -30476,6 +30701,50 @@ components:
             type: string
           variable:
             type: string
+    ImageGenerationRequestView:
+      type: object
+      description: Image generation request in the OpenAI-compatible shape
+      properties:
+        model:
+          type: string
+          description: "Model id, as configured for this site's images"
+          example: dall-e-3
+        "n":
+          type: integer
+          format: int32
+          description: "Number of images; at least 1, defaults to 1"
+          example: 1
+        prompt:
+          type: string
+          description: What to generate
+          example: A cat in a hammock
+        size:
+          type: string
+          description: Image size
+          example: 1024x1024
+    ImageGenerationView:
+      type: object
+      description: Image generation response in the OpenAI-compatible shape
+      properties:
+        created:
+          type: integer
+          format: int64
+          description: Epoch seconds
+        data:
+          type: array
+          description: The generated images
+          items:
+            $ref: "#/components/schemas/ImageView"
+    ImageView:
+      type: object
+      description: "One generated image, delivered inline as base64"
+      properties:
+        b64_json:
+          type: string
+          description: "The image bytes, base64 encoded"
+        revised_prompt:
+          type: string
+          description: The prompt the provider actually used
     ImmutableListAssetPreviewView:
       type: array
       description: Preview of first 3 assets in the bundle
@@ -31497,6 +31766,39 @@ components:
           - EXIT_RATE
           - BOUNCE_RATE
           - URL_PARAMETER
+    ModelListView:
+      type: object
+      description: Model listing in the OpenAI-compatible shape
+      properties:
+        data:
+          type: array
+          description: "The configured models, primary first"
+          items:
+            $ref: "#/components/schemas/ModelView"
+        object:
+          type: string
+          description: Object type
+          example: list
+    ModelView:
+      type: object
+      description: One configured model
+      properties:
+        created:
+          type: integer
+          format: int64
+          description: Epoch seconds
+        id:
+          type: string
+          description: Model id
+          example: gpt-4o
+        object:
+          type: string
+          description: Object type
+          example: model
+        owned_by:
+          type: string
+          description: Owner
+          example: dotcms
     MoveFieldsForm:
       type: object
     MulitreeView:
@@ -39876,15 +40178,14 @@ components:
       type: object
       description: Tokens consumed
       properties:
-        completion_tokens:
-          type: integer
-          format: int32
         prompt_tokens:
           type: integer
           format: int32
+          description: Tokens across every input
         total_tokens:
           type: integer
           format: int32
+          description: Total tokens
     User:
       type: object
       properties:

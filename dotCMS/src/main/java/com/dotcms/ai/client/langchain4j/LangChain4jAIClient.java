@@ -75,6 +75,21 @@ public class LangChain4jAIClient implements AIClient {
     private static final long MODEL_CACHE_TTL_HOURS = 1;
     private static final long STREAMING_TIMEOUT_SECONDS = 300;
     private static final String CHAT_SECTION = "chat";
+    private static final String EMBEDDINGS_SECTION = "embeddings";
+    private static final String IMAGE_SECTION = "image";
+
+    /**
+     * Response format asked of an image provider by the {@code /api/inference/v1} family, so the
+     * bytes arrive inline and no separately-addressable artifact is minted upstream.
+     */
+    private static final String INLINE_IMAGE_FORMAT = "b64_json";
+
+    /**
+     * Cache-key discriminator for models the inference family borrows. Those differ from the ones
+     * the legacy endpoints get — they are built asking for the inline image form — so they cannot
+     * share a cache entry with them even for the same site, model and size.
+     */
+    private static final String INFERENCE_KEY_SEGMENT = ":inference";
 
     private final Cache<String, ChatModel> chatModelCache = Caffeine.newBuilder()
             .maximumSize(128)
@@ -167,6 +182,107 @@ public class LangChain4jAIClient implements AIClient {
                     executor.accept(model, modelName);
                     return null;
                 });
+    }
+
+    /**
+     * Hands a caller an embedding model for a site, with the fallback chain and cache applied.
+     *
+     * <p>The embeddings counterpart of {@link #withChatModel}; see that method for why model
+     * acquisition stays in this class rather than moving to the caller. The model is built from
+     * the site's {@code embeddings} section, which a site configures independently of its chat
+     * models.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @param executor  receives an embedding model and its name, and produces the result
+     * @param <R>       the result type
+     * @return whatever the executor returned for the first model that succeeded
+     */
+    public <R> R withEmbeddingModel(final AppConfig appConfig,
+                                    final BiFunction<EmbeddingModel, String, R> executor) {
+        return executeWithFallbackTyped(
+                cacheKeyPrefix(appConfig),
+                EMBEDDINGS_SECTION,
+                parseSection(appConfig.getProviderConfig(), EMBEDDINGS_SECTION),
+                embeddingModelCache,
+                LangChain4jModelFactory::buildEmbeddingModel,
+                executor);
+    }
+
+    /**
+     * Hands a caller an image model for a site, asked for the inline image form.
+     *
+     * <p>The image counterpart of {@link #withChatModel}, with two differences that are the
+     * caller's request rather than the site's configuration. The requested {@code size} is applied
+     * over the configured one, because a caller who named a size changed both what they receive
+     * and what the site pays. And {@code responseFormat} is set to {@value #INLINE_IMAGE_FORMAT}
+     * so a provider that offers the choice never mints a hosted artifact in the first place;
+     * providers that ignore it still answer, and the caller re-encodes what comes back.</p>
+     *
+     * <p>Both are folded into the cache key, so a model asked for one size is never handed to a
+     * request that asked for another, and the legacy image endpoint — which wants the provider's
+     * own default format — never receives one of these.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @param size      the size the caller asked for, or null/blank to use the configured one
+     * @param executor  receives an image model and its name, and produces the result
+     * @param <R>       the result type
+     * @return whatever the executor returned for the first model that succeeded
+     */
+    public <R> R withImageModel(final AppConfig appConfig,
+                                final String size,
+                                final BiFunction<ImageModel, String, R> executor) {
+        final ProviderConfig baseConfig = parseSection(appConfig.getProviderConfig(), IMAGE_SECTION);
+        final boolean sized = size != null && !size.isBlank();
+        final ProviderConfig requestConfig = ImmutableProviderConfig.copyOf(baseConfig)
+                .withSize(sized ? size : baseConfig.size())
+                .withResponseFormat(INLINE_IMAGE_FORMAT);
+
+        return executeWithFallbackTyped(
+                cacheKeyPrefix(appConfig) + INFERENCE_KEY_SEGMENT
+                        + (requestConfig.size() == null ? "" : ":" + requestConfig.size()),
+                IMAGE_SECTION,
+                requestConfig,
+                imageModelCache,
+                LangChain4jModelFactory::buildImageModel,
+                executor);
+    }
+
+    /**
+     * Reads the model names a site has configured for one section of its {@code providerConfig}.
+     *
+     * <p>Exists so that the model gate every {@code /api/inference/v1} endpoint applies, and the
+     * listing that tells a caller what will pass it, read the configuration through the class that
+     * owns it rather than each re-implementing the same parse. Fallback chains are returned whole
+     * and in configured order, because every entry is a name the gate accepts.</p>
+     *
+     * <p>A site with no usable configuration for that section yields an empty list rather than an
+     * exception. From where a caller stands, a model nobody configured and a section nobody
+     * configured are the same absence, and distinguishing them would disclose which sites have
+     * dotAI set up.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @param section   the {@code providerConfig} section, e.g. {@code chat}
+     * @return the configured model names in fallback order; empty when there are none
+     */
+    public List<String> configuredModels(final AppConfig appConfig, final String section) {
+        final String providerConfigJson = appConfig == null ? null : appConfig.getProviderConfig();
+        if (providerConfigJson == null || providerConfigJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            final JsonNode sectionNode = MAPPER.readTree(providerConfigJson).get(section);
+            if (sectionNode == null || sectionNode.isNull()) {
+                return List.of();
+            }
+            return List.copyOf(
+                    effectiveModels(MAPPER.treeToValue(sectionNode, ProviderConfig.class)));
+        } catch (final Exception e) {
+            // Never the parser's message: providerConfig carries credentials and a parse failure
+            // can quote the fragment it choked on.
+            Logger.warn(LangChain4jAIClient.class, "Could not read the '" + section
+                    + "' section of providerConfig: " + e.getClass().getSimpleName());
+            return List.of();
+        }
     }
 
     /**

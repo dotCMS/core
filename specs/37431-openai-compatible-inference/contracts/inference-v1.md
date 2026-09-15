@@ -16,7 +16,7 @@
 | CORS | No cross-origin headers emitted. Server-side use only (FR-030) |
 | Cost | `@RequestCost(Price.HTTP_FETCH)` — the 100 band, "one remote HTTP round trip" (FR-032) |
 | Error body | OpenAI error shape. **Retryability is the HTTP status**, not a body field (FR-031) |
-| Limits | `413` over `DOT_INFERENCE_MAX_REQUEST_BYTES`; `429` over `DOT_INFERENCE_MAX_CONCURRENT_STREAMS` (FR-037) |
+| Limits | `413` over `DOT_INFERENCE_MAX_REQUEST_BYTES`; `429` over `DOT_INFERENCE_MAX_CONCURRENT_STREAMS`; `400` over `DOT_INFERENCE_MAX_IMAGES_PER_REQUEST` (FR-037) |
 
 ### Error shape
 
@@ -24,9 +24,11 @@
 { "error": { "message": "…", "type": "invalid_request_error", "param": "model", "code": null } }
 ```
 
+Every refusal in this family carries `type: "invalid_request_error"` unless a more specific family applies (`api_error` for an upstream failure, `rate_limit_error` for a refusal on the concurrency ceiling). The `type` is what a standard client branches on, so it is pinned here rather than left to each endpoint.
+
 | Status | When |
 |---|---|
-| `400` | Missing/invalid `model`, empty `messages`, uncorrelated tool result, unsupported semantic field |
+| `400` | Missing/invalid `model`, empty `messages`, uncorrelated tool result, unsupported semantic field, bad `input`, `n` other than 1 |
 | `401` | Anonymous, or no bearer token |
 | `403` | Explicit site override the caller cannot READ (FR-019) |
 | `404` | Model not configured for this site/section — `NoSuchModelError` shape (FR-023) |
@@ -125,14 +127,23 @@ Returns the models the resolved site has configured for its **chat** section, in
 
 ## `POST /embeddings`
 
+`input` accepts **either a single string or an array of strings**, as the format does. Batching is the ordinary way to embed content — anyone indexing a site sends an array — so accepting only the scalar form would fail the common case and break SC-008 for it.
+
 ```json
 { "model": "text-embedding-3-small", "input": "The quick brown fox" }
 ```
 
 ```json
+{ "model": "text-embedding-3-small", "input": ["The quick brown fox", "jumps over the lazy dog"] }
+```
+
+The response is always a list, one entry per input, with `index` giving the position in the request so a caller can correlate vectors back to what they sent:
+
+```json
 { "object": "list", "model": "text-embedding-3-small",
-  "data": [ { "object": "embedding", "index": 0, "embedding": [0.0023, -0.0091] } ],
-  "usage": { "prompt_tokens": 5, "total_tokens": 5 } }
+  "data": [ { "object": "embedding", "index": 0, "embedding": [0.0023, -0.0091] },
+            { "object": "embedding", "index": 1, "embedding": [0.0512, 0.0034] } ],
+  "usage": { "prompt_tokens": 12, "total_tokens": 12 } }
 ```
 
 `model` is validated against the site's **embeddings** section, not its chat models (FR-011, R7).
@@ -142,14 +153,20 @@ Returns the models the resolved site has configured for its **chat** section, in
 ## `POST /images/generations`
 
 ```json
-{ "model": "dall-e-3", "prompt": "A cat in a hammock", "n": 1, "size": "1024x1024" }
+{ "model": "dall-e-3", "prompt": "A cat in a hammock", "n": 2, "size": "1024x1024" }
 ```
 
 ```json
-{ "created": 1789000000, "data": [ { "b64_json": "iVBORw0KGgo…" } ] }
+{ "created": 1789000000, "data": [ { "b64_json": "iVBORw0KGgo…" }, { "b64_json": "R0lGODlhAQAB…" } ] }
 ```
 
-Images are returned **inline as base64** — no hosted URL, so no separately-addressable artifact is created from a possibly sensitive prompt (FR-012).
+Images are returned **inline as base64** — no hosted URL, so no separately-addressable artifact is created from a possibly sensitive prompt (FR-012). Where the provider offers the choice, dotCMS asks it for the inline form too, so no hosted artifact is minted upstream either; providers without that option are still served.
+
+`n` is honored where the resolved site's image model supports it. A value below `1`, a value above `DOT_INFERENCE_MAX_IMAGES_PER_REQUEST` (default `10`, the ceiling the OpenAI images API documents for this field), or any value above 1 on a site whose image model can only produce one, is refused with a **400** naming the field — not a 5xx, because an upstream status would tell a client to retry something that cannot succeed. Omitting `n` means one. Per-model restriction of `n` matches the upstream API, which documents the field on the operation while restricting it for models that cannot honour it. `size` is passed through as a `WIDTHxHEIGHT` string; where the site carries an `imageSize` setting the caller's value wins and the site's is the default, matching what the existing dotAI image endpoint already does.
+
+Where a provider lets dotCMS ask for the inline form, it does; where a provider only returns a URL, dotCMS fetches and re-encodes it. In that second case an artifact does exist upstream — the guarantee is that a caller never receives one, not that none is ever created.
+
+For embeddings, every element of an array `input` must be a string, and blank or whitespace-only strings are refused alongside absent, null and empty ones. Where one element of an array is at fault the message identifies which. There is no separate cap on element count — the request-size limit bounds what can arrive.
 
 ---
 
