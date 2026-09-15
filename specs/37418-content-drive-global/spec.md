@@ -143,10 +143,24 @@ reference, to formally document the working comparison path in the plan.]
   term would return with any content-type filter applied, for the same term, on the same
   data — i.e. the DB-order chunked scan must not silently drop candidates that would
   otherwise match ES, regardless of scan/page cutoffs.
-- Preserve the hybrid DB+ES heuristic's purpose (bounding scan cost on very large sites)
-  while making its cutoff behavior consistent rather than order-dependent — either by
-  removing the silent-drop behavior, exhausting the full scan before giving up, or another
-  approach identified during planning.
+- Make the cutoff behavior consistent rather than order-dependent. The two real
+  alternatives, to be decided during `/speckit-plan`:
+  - **Stay DB-first**: keep the DB-order chunked scan but change how it terminates (e.g.
+    a smarter/adaptive cutoff, or surfacing to the caller that results may be incomplete)
+    so it no longer silently drops candidates. This preserves the heuristic's original
+    purpose — bounding scan cost on very large sites — but does not by itself guarantee
+    completeness at 718,174 rows; exhausting the full scan to guarantee completeness
+    would defeat that same bound, so a DB-first fix must pick one or the other, not both.
+  - **Invert to ES-first**, the way the legacy Search All portlet does: query ES directly
+    for the free-text term and use the DB only to enrich/authorize the resulting set. This
+    guarantees completeness regardless of DB row order and dataset size, at the cost of
+    changing Content Drive's search path more substantially.
+  - **Choosing criterion**: the plan must pick based on (a) whether completeness at
+    ~718,174 rows can be guaranteed without an unbounded per-request scan cost, and (b) the
+    blast radius/regression risk of each approach (see Regression Risk) — a DB-first
+    tweak is lower-risk but only fixable to the AC-001/AC-004 bar if it stops depending on
+    reaching every row within a bounded scan; ES-first is higher-risk to the search path
+    but structurally closes the gap the way Search All already does.
 
 **Explicitly out of scope / non-goals**:
 
@@ -186,11 +200,16 @@ reference, to formally document the working comparison path in the plan.]
   scan/page cutoffs are never hit.
 - **Verification method**: Extend `dotcms-integration`'s
   `com.dotcms.browser.BrowserAPITest` (or add a new test class registered in the relevant
-  `MainSuite`/`Junit5Suite`, per `docs/testing/INTEGRATION_TESTS.md`) with a case that seeds
-  enough content to exceed `BROWSER_CONTENT_CHUNK_SIZE`/force the scan-limit path, places a
-  matching item late in DB order, and asserts it's returned by an unfiltered global search.
-  Manual verification against a large/large-like dataset per AC-004, given the original
-  report requires ~718,174 contentlets.
+  `MainSuite`/`Junit5Suite`, per `docs/testing/INTEGRATION_TESTS.md`) with a case that
+  lowers `BROWSER_DB_MAX_SCAN_ROWS` via `Config` (e.g. to a few hundred rows) so the
+  scan-limit cutoff — not just the `BROWSER_CONTENT_CHUNK_SIZE` chunk loop — is reachable
+  at fixture scale, seeds enough content to exceed that lowered limit, places a matching
+  item past it in DB order, and asserts it's still returned by an unfiltered global search.
+  Exceeding `BROWSER_CONTENT_CHUNK_SIZE` alone only exercises the chunk loop, not the
+  cutoff that causes the defect, and seeding the real ~718,174-row scale in an integration
+  test is impractical — so AC-004 at that literal scale is verified manually against a
+  large/large-like dataset, while the integration test proves the same cutoff-driven defect
+  is fixed at fixture scale by lowering the threshold instead of the row count.
 
 ## Assumptions
 
