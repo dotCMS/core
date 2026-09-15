@@ -45,6 +45,8 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -72,6 +74,22 @@ public class LangChain4jAIClient implements AIClient {
     private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
     private static final long MODEL_CACHE_TTL_HOURS = 1;
     private static final long STREAMING_TIMEOUT_SECONDS = 300;
+    private static final String CHAT_SECTION = "chat";
+    private static final String EMBEDDINGS_SECTION = "embeddings";
+    private static final String IMAGE_SECTION = "image";
+
+    /**
+     * Response format asked of an image provider by the {@code /api/inference/v1} family, so the
+     * bytes arrive inline and no separately-addressable artifact is minted upstream.
+     */
+    private static final String INLINE_IMAGE_FORMAT = "b64_json";
+
+    /**
+     * Cache-key discriminator for models the inference family borrows. Those differ from the ones
+     * the legacy endpoints get — they are built asking for the inline image form — so they cannot
+     * share a cache entry with them even for the same site, model and size.
+     */
+    private static final String INFERENCE_KEY_SEGMENT = ":inference";
 
     private final Cache<String, ChatModel> chatModelCache = Caffeine.newBuilder()
             .maximumSize(128)
@@ -111,6 +129,174 @@ public class LangChain4jAIClient implements AIClient {
         streamingChatModelCache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
         embeddingModelCache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
         imageModelCache.asMap().keySet().removeIf(key -> key.startsWith(prefix));
+    }
+
+    /**
+     * Hands a caller a chat model for a site, with the fallback chain and cache already applied.
+     *
+     * <p>Exists so the {@code /api/inference/v1} family can own its own request and response
+     * semantics — which are dictated by an external standard and will change when that standard
+     * changes — without owning model construction, caching or eviction. Those stay here, in one
+     * place, for one reason: {@link #flushCachesForHost(String)} is what evicts a site's cached
+     * providers when its credentials are rotated, and it is wired to this class alone
+     * ({@code AIAppListener}). A second client holding its own cache would keep serving a revoked
+     * key until the TTL expired, with no symptom to notice.</p>
+     *
+     * <p>The executor receives the model's name alongside the model because a fallback hop means
+     * the model that served is not the model that was asked for, and a caller reporting back to a
+     * client has to say which one actually ran.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @param executor  receives a chat model and its name, and produces the result
+     * @param <R>       the result type
+     * @return whatever the executor returned for the first model that succeeded
+     */
+    public <R> R withChatModel(final AppConfig appConfig, final BiFunction<ChatModel, String, R> executor) {
+        return executeWithFallbackTyped(
+                cacheKeyPrefix(appConfig),
+                CHAT_SECTION,
+                parseSection(appConfig.getProviderConfig(), CHAT_SECTION),
+                chatModelCache,
+                LangChain4jModelFactory::buildChatModel,
+                executor);
+    }
+
+    /**
+     * Hands a caller a streaming chat model for a site, with the fallback chain and cache applied.
+     *
+     * <p>The streaming counterpart of {@link #withChatModel}; see that method for why model
+     * acquisition stays in this class rather than moving to the caller.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @param executor  receives a streaming chat model and its name
+     */
+    public void withStreamingChatModel(final AppConfig appConfig,
+                                       final BiConsumer<StreamingChatModel, String> executor) {
+        executeWithFallbackTyped(
+                cacheKeyPrefix(appConfig),
+                CHAT_SECTION,
+                parseSection(appConfig.getProviderConfig(), CHAT_SECTION),
+                streamingChatModelCache,
+                LangChain4jModelFactory::buildStreamingChatModel,
+                (model, modelName) -> {
+                    executor.accept(model, modelName);
+                    return null;
+                });
+    }
+
+    /**
+     * Hands a caller an embedding model for a site, with the fallback chain and cache applied.
+     *
+     * <p>The embeddings counterpart of {@link #withChatModel}; see that method for why model
+     * acquisition stays in this class rather than moving to the caller. The model is built from
+     * the site's {@code embeddings} section, which a site configures independently of its chat
+     * models.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @param executor  receives an embedding model and its name, and produces the result
+     * @param <R>       the result type
+     * @return whatever the executor returned for the first model that succeeded
+     */
+    public <R> R withEmbeddingModel(final AppConfig appConfig,
+                                    final BiFunction<EmbeddingModel, String, R> executor) {
+        return executeWithFallbackTyped(
+                cacheKeyPrefix(appConfig),
+                EMBEDDINGS_SECTION,
+                parseSection(appConfig.getProviderConfig(), EMBEDDINGS_SECTION),
+                embeddingModelCache,
+                LangChain4jModelFactory::buildEmbeddingModel,
+                executor);
+    }
+
+    /**
+     * Hands a caller an image model for a site, asked for the inline image form.
+     *
+     * <p>The image counterpart of {@link #withChatModel}, with two differences that are the
+     * caller's request rather than the site's configuration. The requested {@code size} is applied
+     * over the configured one, because a caller who named a size changed both what they receive
+     * and what the site pays. And {@code responseFormat} is set to {@value #INLINE_IMAGE_FORMAT}
+     * so a provider that offers the choice never mints a hosted artifact in the first place;
+     * providers that ignore it still answer, and the caller re-encodes what comes back.</p>
+     *
+     * <p>Both are folded into the cache key, so a model asked for one size is never handed to a
+     * request that asked for another, and the legacy image endpoint — which wants the provider's
+     * own default format — never receives one of these.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @param size      the size the caller asked for, or null/blank to use the configured one
+     * @param executor  receives an image model and its name, and produces the result
+     * @param <R>       the result type
+     * @return whatever the executor returned for the first model that succeeded
+     */
+    public <R> R withImageModel(final AppConfig appConfig,
+                                final String size,
+                                final BiFunction<ImageModel, String, R> executor) {
+        final ProviderConfig baseConfig = parseSection(appConfig.getProviderConfig(), IMAGE_SECTION);
+        final boolean sized = size != null && !size.isBlank();
+        final ProviderConfig requestConfig = ImmutableProviderConfig.copyOf(baseConfig)
+                .withSize(sized ? size : baseConfig.size())
+                .withResponseFormat(INLINE_IMAGE_FORMAT);
+
+        return executeWithFallbackTyped(
+                cacheKeyPrefix(appConfig) + INFERENCE_KEY_SEGMENT
+                        + (requestConfig.size() == null ? "" : ":" + requestConfig.size()),
+                IMAGE_SECTION,
+                requestConfig,
+                imageModelCache,
+                LangChain4jModelFactory::buildImageModel,
+                executor);
+    }
+
+    /**
+     * Reads the model names a site has configured for one section of its {@code providerConfig}.
+     *
+     * <p>Exists so that the model gate every {@code /api/inference/v1} endpoint applies, and the
+     * listing that tells a caller what will pass it, read the configuration through the class that
+     * owns it rather than each re-implementing the same parse. Fallback chains are returned whole
+     * and in configured order, because every entry is a name the gate accepts.</p>
+     *
+     * <p>A site with no usable configuration for that section yields an empty list rather than an
+     * exception. From where a caller stands, a model nobody configured and a section nobody
+     * configured are the same absence, and distinguishing them would disclose which sites have
+     * dotAI set up.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @param section   the {@code providerConfig} section, e.g. {@code chat}
+     * @return the configured model names in fallback order; empty when there are none
+     */
+    public List<String> configuredModels(final AppConfig appConfig, final String section) {
+        final String providerConfigJson = appConfig == null ? null : appConfig.getProviderConfig();
+        if (providerConfigJson == null || providerConfigJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            final JsonNode sectionNode = MAPPER.readTree(providerConfigJson).get(section);
+            if (sectionNode == null || sectionNode.isNull()) {
+                return List.of();
+            }
+            return List.copyOf(
+                    effectiveModels(MAPPER.treeToValue(sectionNode, ProviderConfig.class)));
+        } catch (final Exception e) {
+            // Never the parser's message: providerConfig carries credentials and a parse failure
+            // can quote the fragment it choked on.
+            Logger.warn(LangChain4jAIClient.class, "Could not read the '" + section
+                    + "' section of providerConfig: " + e.getClass().getSimpleName());
+            return List.of();
+        }
+    }
+
+    /**
+     * The cache key prefix for a site's models.
+     *
+     * <p>Derived from the configuration rather than from the request, which is what makes two
+     * sites with different providers get separate model instances for free, and what makes a
+     * credential rotation change the key so the old instance is no longer reachable.</p>
+     *
+     * @param appConfig the resolved site's configuration
+     * @return the prefix shared by every cache entry for that site and configuration
+     */
+    private static String cacheKeyPrefix(final AppConfig appConfig) {
+        return appConfig.getHost() + ":" + appConfig.getProviderConfigHash();
     }
 
     @Override
@@ -336,6 +522,36 @@ public class LangChain4jAIClient implements AIClient {
             final Cache<String, M> modelCache,
             final Function<ProviderConfig, M> modelBuilder,
             final Function<M, String> executor) {
+        return executeWithFallbackTyped(cacheKeyPrefix, section, baseConfig, modelCache, modelBuilder,
+                (model, modelName) -> executor.apply(model));
+    }
+
+    /**
+     * Runs {@code executor} against each configured model in turn until one succeeds.
+     *
+     * <p>Generalised from the String-returning variant above, which now delegates here, so the
+     * fallback chain, the cache keying and the per-attempt logging have exactly one
+     * implementation. The executor additionally receives the name of the model it was handed,
+     * because a caller reporting results back to a client needs to say which model actually
+     * served — after a fallback hop that is not the one the caller asked for.</p>
+     *
+     * @param cacheKeyPrefix the site-and-config-derived cache key prefix
+     * @param section        the providerConfig section, e.g. {@code chat}
+     * @param baseConfig     the parsed section config
+     * @param modelCache     the cache for this model type
+     * @param modelBuilder   builds a model from a config naming one model
+     * @param executor       receives the model and the model's name, and produces the result
+     * @param <M>            the provider model type
+     * @param <R>            the result type
+     * @return the first successful result
+     */
+    <M, R> R executeWithFallbackTyped(
+            final String cacheKeyPrefix,
+            final String section,
+            final ProviderConfig baseConfig,
+            final Cache<String, M> modelCache,
+            final Function<ProviderConfig, M> modelBuilder,
+            final BiFunction<M, String, R> executor) {
         final List<String> models = effectiveModels(baseConfig);
         if (models.isEmpty()) {
             throw new IllegalArgumentException(
@@ -361,7 +577,7 @@ public class LangChain4jAIClient implements AIClient {
             }
             try {
                 final long start = System.currentTimeMillis();
-                final String result = executor.apply(model);
+                final R result = executor.apply(model, modelName);
                 Logger.info(LangChain4jAIClient.class,
                         section + " model '" + modelName + "' responded in "
                         + (System.currentTimeMillis() - start) + "ms");

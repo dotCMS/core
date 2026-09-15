@@ -67,6 +67,16 @@ import com.dotcms.enterprise.publishing.staticpublishing.LanguageFolderTest;
 import com.dotcms.experiments.business.IndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.experiments.business.RootIndexRegexUrlPatterStrategyIntegrationTest;
 import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
+import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
+import com.dotcms.inference.rest.ChatCompletionsTest;
+import com.dotcms.inference.rest.InferenceAuthorizationTest;
+import com.dotcms.inference.rest.InferenceEmbeddingsTest;
+import com.dotcms.inference.rest.InferenceFallbackTest;
+import com.dotcms.inference.rest.InferenceImagesTest;
+import com.dotcms.inference.rest.InferenceModelsTest;
+import com.dotcms.inference.rest.InferenceModelValidationTest;
+import com.dotcms.inference.rest.InferenceSiteIsolationTest;
+import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
 import com.dotcms.integritycheckers.HostIntegrityCheckerTest;
@@ -444,6 +454,16 @@ import org.junit.runners.Suite.SuiteClasses;
         CompletionsToolTest.class,
         ConfigServiceTest.class,
         AIProxyClientTest.class,
+        ChatCompletionsTest.class,
+        ChatCompletionsStreamingTest.class,
+        InferenceAuthorizationTest.class,
+        InferenceEmbeddingsTest.class,
+        InferenceFallbackTest.class,
+        InferenceImagesTest.class,
+        InferenceModelsTest.class,
+        InferenceModelValidationTest.class,
+        InferenceSiteIsolationTest.class,
+        InferenceSiteResolutionTest.class,
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
         PruneTimeMachineBackupJobTest.class,
