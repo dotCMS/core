@@ -124,11 +124,13 @@ const params: DotPageAssetParams = HEADLESS_BASE_QUERY_PARAMS;
 const $experimentsPortletSwitchSignal = signal(false);
 
 /**
- * The URL's query params, as `ActivatedRoute` reports them.
+ * The URL's query params, as `ActivatedRoute` reports them — the frozen half of the address.
  *
- * The origin marker is read from here rather than from `store.pageParams()`: `DotPageAssetParams`
- * is a typed page-asset shape and the marker is a routing concern that only survives that type
- * through `#getPageParams`'s `as` cast. `ActivatedRoute` is where query params actually live.
+ * The gesture handlers still read here: the origin marker is a routing concern that survives
+ * `DotPageAssetParams` only through `#getPageParams`'s `as` cast, and a gesture happens on the
+ * toolbar the navigation built, where the snapshot is still true.
+ *
+ * The chip does not, and cannot — see {@link setAddress}.
  */
 let routeQueryParams: Record<string, string> = {};
 const url = sanitizeURL(params?.url);
@@ -187,6 +189,27 @@ const viewSignal = computed(() => ({
 
 // Mutable signal for pageParams control (for test control)
 const pageParamsSignal = signal({ ...params, mode: UVE_MODE.EDIT });
+
+/**
+ * Put the editor at an address — both halves of it.
+ *
+ * The toolbar reads the same query params from two places, and a test that writes only one of
+ * them describes a state the editor is never in. `ActivatedRoute.snapshot` is frozen at the
+ * navigation that built the toolbar, because UVE writes its own address with `Location.go` and
+ * the router never hears about it; `pageParams` is the half that stays current, so it is what the
+ * chip is derived from and what the return leg clears.
+ *
+ * `mode` is carried over rather than reset: it is the editor's own state, not part of the address
+ * a test is describing here.
+ */
+const setAddress = (queryParams: Record<string, string>) => {
+    routeQueryParams = queryParams;
+    pageParamsSignal.set({
+        ...params,
+        mode: pageParamsSignal().mode,
+        ...queryParams
+    } as ReturnType<typeof pageParamsSignal>);
+};
 const pageSnapshotSignal = signal({
     ...MOCK_RESPONSE_VTL,
     clientResponse: MOCK_RESPONSE_VTL
@@ -260,7 +283,15 @@ const baseUVEState = {
     viewDeviceOrientation: orientationSignal,
     workflowIsLoading: signal(false),
     workflowLockIsLoading: signal(false),
-    pageLoad: vi.fn(),
+    // Both merge into `pageParams`, as the real store's do. A bare `vi.fn()` would let a test
+    // assert the call and still describe an editor whose params never changed — which is the
+    // state the chip is derived from.
+    pageLoad: vi.fn((next: Record<string, unknown>) =>
+        pageParamsSignal.update((current) => ({ ...current, ...next }))
+    ),
+    pageUpdateParams: vi.fn((next: Record<string, unknown>) =>
+        pageParamsSignal.update((current) => ({ ...current, ...next }))
+    ),
     $isPreviewMode: signal(false),
     $isLiveMode: signal(false),
     $isEditMode: signal(false),
@@ -1795,7 +1826,7 @@ describe('DotUveToolbarComponent', () => {
                             );
 
                         beforeEach(() => {
-                            routeQueryParams = {};
+                            setAddress({});
                             $experimentsPortletSwitchSignal.set(false);
                             baseUVEState.pageExperiment.set({
                                 id: EXPERIMENT_ID,
@@ -1845,7 +1876,7 @@ describe('DotUveToolbarComponent', () => {
                              */
                             it('should hand a suspended panel back untouched', () => {
                                 panelWith(true);
-                                routeQueryParams = {};
+                                setAddress({});
                                 spectator.detectChanges();
 
                                 leaveVariant();
@@ -1867,7 +1898,7 @@ describe('DotUveToolbarComponent', () => {
                                     id: 'the-running-one',
                                     pageId: PAGE_ID
                                 } as DotExperiment);
-                                routeQueryParams = { experimentId: 'the-draft-i-clicked' };
+                                setAddress({ experimentId: 'the-draft-i-clicked' });
                                 spectator.detectChanges();
 
                                 leaveVariant();
@@ -1893,7 +1924,7 @@ describe('DotUveToolbarComponent', () => {
                             it('should reopen the panel with no experiment on the page', () => {
                                 panelWith(true);
                                 baseUVEState.pageExperiment.set(null);
-                                routeQueryParams = {};
+                                setAddress({});
                                 spectator.detectChanges();
 
                                 leaveVariant();
@@ -1915,7 +1946,7 @@ describe('DotUveToolbarComponent', () => {
                              */
                             it('should not reload at all when on the control', () => {
                                 panelWith(true);
-                                routeQueryParams = { variantName: DEFAULT_VARIANT_ID };
+                                setAddress({ variantName: DEFAULT_VARIANT_ID });
                                 spectator.detectChanges();
                                 (baseUVEState.pageLoad as Mock).mockClear();
 
@@ -1923,6 +1954,42 @@ describe('DotUveToolbarComponent', () => {
 
                                 expect(baseUVEState.pageLoad).not.toHaveBeenCalled();
                                 expect(navigate).not.toHaveBeenCalled();
+                                // Not a no-op, though: the experiment still has to come off the
+                                // params, or the chip it feeds outlives the trip.
+                                expect(baseUVEState.pageUpdateParams).toHaveBeenCalledWith({
+                                    experimentId: null,
+                                    [EXPERIMENT_RETURN_PARAM]: null
+                                });
+                            });
+
+                            /**
+                             * What the editor sees, which is the point of the whole return: the
+                             * blue bar offering a way back is gone once the way back has been
+                             * taken.
+                             *
+                             * On the control the chip is the *only* bar — the store's own props
+                             * are null for DEFAULT — so it is the one that has to go, and it did
+                             * not: it read `ActivatedRoute.snapshot`, which UVE never updates
+                             * because it writes its address with `Location.go`. The bar survived a
+                             * return that had already happened. A real variant needs no equivalent
+                             * test: there the bar is the store's own, and `pageLoad` rebuilds it
+                             * from params that no longer name a variant.
+                             */
+                            it('should take the chip away once the control is left', () => {
+                                panelWith(true);
+                                infoDisplayPropsSignal.set(undefined);
+                                setAddress({
+                                    variantName: DEFAULT_VARIANT_ID,
+                                    experimentId: EXPERIMENT_ID
+                                });
+                                spectator.detectChanges();
+                                expect(spectator.component.$infoDisplayProps()).toBeTruthy();
+
+                                leaveVariant();
+                                spectator.detectChanges();
+
+                                expect(spectator.component.$infoDisplayProps()).toBeFalsy();
+                                expect(spectator.query(byTestId('info-display'))).toBeNull();
                             });
 
                             /**
@@ -1938,7 +2005,7 @@ describe('DotUveToolbarComponent', () => {
                              */
                             it('should leave a real variant by loading, not routing', () => {
                                 panelWith(true);
-                                routeQueryParams = { variantName: 'variant-b' };
+                                setAddress({ variantName: 'variant-b' });
                                 spectator.detectChanges();
 
                                 leaveVariant();
@@ -1955,7 +2022,7 @@ describe('DotUveToolbarComponent', () => {
                              */
                             it('should rebuild the return when there is nothing to resume', () => {
                                 panelWith(false);
-                                routeQueryParams = { experimentId: EXPERIMENT_ID };
+                                setAddress({ experimentId: EXPERIMENT_ID });
                                 spectator.detectChanges();
 
                                 leaveVariant();
@@ -1973,7 +2040,7 @@ describe('DotUveToolbarComponent', () => {
                                 { origin: 'nowhere — a pasted link', params: {} }
                             ])('should stay in the editor, coming from $origin', ({ params }) => {
                                 panelWith(false);
-                                routeQueryParams = { ...params, experimentId: EXPERIMENT_ID };
+                                setAddress({ ...params, experimentId: EXPERIMENT_ID });
                                 spectator.detectChanges();
 
                                 leaveVariant();
@@ -1994,10 +2061,10 @@ describe('DotUveToolbarComponent', () => {
                              */
                             it('should take the variant off by loading the page again', () => {
                                 panelWith(false);
-                                routeQueryParams = {
+                                setAddress({
                                     variantName: 'variant-a',
                                     experimentId: EXPERIMENT_ID
-                                };
+                                });
                                 spectator.detectChanges();
 
                                 leaveVariant();
@@ -2009,10 +2076,10 @@ describe('DotUveToolbarComponent', () => {
                             /** Already back on the page: writing it again would reload for nothing. */
                             it('should not reload on the control with nothing to resume', () => {
                                 panelWith(false);
-                                routeQueryParams = {
+                                setAddress({
                                     experimentId: EXPERIMENT_ID,
                                     variantName: DEFAULT_VARIANT_ID
-                                };
+                                });
                                 spectator.detectChanges();
 
                                 leaveVariant();
@@ -2081,10 +2148,10 @@ describe('DotUveToolbarComponent', () => {
                             });
 
                             it('should offer the chip, naming the control', () => {
-                                routeQueryParams = {
+                                setAddress({
                                     experimentId: EXPERIMENT_ID,
                                     [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
-                                };
+                                });
                                 spectator.detectChanges();
 
                                 expect(spectator.component.$infoDisplayProps()).toEqual(
@@ -2104,7 +2171,7 @@ describe('DotUveToolbarComponent', () => {
                              */
                             it('should not offer the chip without the origin marker, switch off', () => {
                                 $experimentsPortletSwitchSignal.set(false);
-                                routeQueryParams = { experimentId: EXPERIMENT_ID };
+                                setAddress({ experimentId: EXPERIMENT_ID });
                                 spectator = createComponent({ detectChanges: false });
                                 spectator.detectChanges();
 
@@ -2121,7 +2188,7 @@ describe('DotUveToolbarComponent', () => {
                              */
                             it('should offer the chip for any experiment arrival, switch on', () => {
                                 $experimentsPortletSwitchSignal.set(true);
-                                routeQueryParams = { experimentId: EXPERIMENT_ID };
+                                setAddress({ experimentId: EXPERIMENT_ID });
                                 spectator = createComponent({ detectChanges: false });
                                 spectator.detectChanges();
 
@@ -2130,7 +2197,7 @@ describe('DotUveToolbarComponent', () => {
 
                             it('should offer no chip outside an experiment, switch on', () => {
                                 $experimentsPortletSwitchSignal.set(true);
-                                routeQueryParams = {};
+                                setAddress({});
                                 spectator = createComponent({ detectChanges: false });
                                 spectator.detectChanges();
 
@@ -2138,10 +2205,10 @@ describe('DotUveToolbarComponent', () => {
                             });
 
                             it('should return to Configure when the chip is used', () => {
-                                routeQueryParams = {
+                                setAddress({
                                     experimentId: EXPERIMENT_ID,
                                     [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
-                                };
+                                });
                                 spectator.detectChanges();
 
                                 leaveVariant();
@@ -2155,9 +2222,9 @@ describe('DotUveToolbarComponent', () => {
 
                         // T037 / FR-005, FR-006.
                         it('should land on the portlet when the round-trip began there', () => {
-                            routeQueryParams = {
+                            setAddress({
                                 [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
-                            };
+                            });
                             spectator.detectChanges();
 
                             leaveVariant();
@@ -2177,9 +2244,9 @@ describe('DotUveToolbarComponent', () => {
                         // The Variants card is where the round-trip started, so returning to the
                         // top of a four-card form loses the reader's place.
                         it('should ask Configure to land on the Variants card', () => {
-                            routeQueryParams = {
+                            setAddress({
                                 [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
-                            };
+                            });
                             spectator.detectChanges();
 
                             leaveVariant();
@@ -2198,9 +2265,9 @@ describe('DotUveToolbarComponent', () => {
                         // `language_id` and the persona key mean nothing to the list and its
                         // `parseViewState` would leave them in the address indefinitely.
                         it('should not merge UVE params into the portlet URL', () => {
-                            routeQueryParams = {
+                            setAddress({
                                 [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
-                            };
+                            });
                             spectator.detectChanges();
 
                             leaveVariant();
@@ -2212,9 +2279,9 @@ describe('DotUveToolbarComponent', () => {
                         // T038 / FR-027. The case a switch-only branch gets wrong.
                         it('should land on the portlet even with the switch off', () => {
                             $experimentsPortletSwitchSignal.set(false);
-                            routeQueryParams = {
+                            setAddress({
                                 [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
-                            };
+                            });
                             spectator.detectChanges();
 
                             leaveVariant();
@@ -2229,9 +2296,9 @@ describe('DotUveToolbarComponent', () => {
                         // page segment, so a page hosting two experiments returns to the right
                         // one — US1 scenario 4.
                         it('should key the portlet destination on the experiment, not the page', () => {
-                            routeQueryParams = {
+                            setAddress({
                                 [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
-                            };
+                            });
                             spectator.detectChanges();
 
                             leaveVariant();
@@ -2246,7 +2313,7 @@ describe('DotUveToolbarComponent', () => {
                         // path, byte-identical.
                         it('should fall back to the legacy screen with no origin and the switch off', () => {
                             $experimentsPortletSwitchSignal.set(false);
-                            routeQueryParams = {};
+                            setAddress({});
                             spectator.detectChanges();
 
                             leaveVariant();

@@ -68,16 +68,25 @@ import {
 import { readExperimentsPortletSwitch } from '../../../utils/experiments-portlet-switch.util';
 
 /**
- * Cleared on every way back, so no variant, experiment or mode survives the return (FR-006).
+ * What says the editor is inside an experiment — and nothing about what is on the canvas.
  *
- * The origin marker goes with them: it answers "where did this round trip start", and once the
- * editor is back there is no round trip left for it to describe.
+ * These two are why the chip is there: `experimentId` names the experiment being previewed, and
+ * the origin marker answers "where did this round trip start". Once the editor is back, neither
+ * describes anything, so both go. Clearing them changes no rendered pixel, which is what lets the
+ * control's return skip the page load entirely.
  */
-const CLEARED_VARIANT_PARAMS = {
-    mode: null,
-    variantName: null,
+const CLEARED_EXPERIMENT_PARAMS = {
     experimentId: null,
     [EXPERIMENT_RETURN_PARAM]: null
+} as const;
+
+/**
+ * Cleared on every way back, so no variant, experiment or mode survives the return (FR-006).
+ */
+const CLEARED_VARIANT_PARAMS = {
+    ...CLEARED_EXPERIMENT_PARAMS,
+    mode: null,
+    variantName: null
 } as const;
 
 @Component({
@@ -328,25 +337,20 @@ export class DotUveToolbarComponent {
      * case. Same shape the store builds for a real variant, so the action handler and the template
      * need no special case: the id stays `variant` and the back arrow means the same thing.
      *
-     * **This reads the address outside the signal graph, and that is safe for one reason only.**
-     * `snapshot.queryParams` is not a signal, so the computed calling this does not re-derive when
-     * it changes. The origin marker is *write-once per component instance*: it can only arrive on
-     * the navigation **into** UVE from the portlet's Configure screen, which builds a new toolbar
-     * whose first evaluation already sees it. Nothing in a live session adds, removes or rewrites
-     * `experimentReturn` on an instance that already exists — and the same holds for
-     * `experimentId`, which arrives on the same navigation.
-     *
-     * What would break it: any flow that sets the marker on an already-mounted editor. If one is
-     * ever added, this has to move to `toSignal(this.#activatedRoute.queryParams)` — and note that
-     * even then it would only track *router* navigations, not the `Location.go` writes UVE uses for
-     * its own params, which never emit on `queryParams`.
+     * **It reads the store's params, not the route's, and that is what makes the chip go away.**
+     * Both hold the same values, but only one of them is ever updated: UVE writes its address with
+     * `Location.go`, which does not notify the router, so `snapshot.queryParams` is frozen at the
+     * navigation that built this toolbar. The chip has to *disappear* when the editor takes the way
+     * back — the params are cleared right there, on a toolbar that stays mounted — and read from
+     * the snapshot it never would. `pageParams` is a signal and is the thing UVE mirrors into the
+     * address, so the computed re-derives and the bar goes with the state it describes.
      */
     #controlVariantChip(): InfoOptions | null {
-        const { queryParams } = this.#activatedRoute.snapshot;
+        const params = this.#store.pageParams();
 
         const deserved = this.$experimentsPanelEnabled()
-            ? !!queryParams['experimentId']
-            : queryParams[EXPERIMENT_RETURN_PARAM] === EXPERIMENT_RETURN_PORTLET;
+            ? !!params?.['experimentId']
+            : params?.[EXPERIMENT_RETURN_PARAM] === EXPERIMENT_RETURN_PORTLET;
 
         if (!deserved) {
             return null;
@@ -393,7 +397,17 @@ export class DotUveToolbarComponent {
      * variant". Reading it as presence is what restarted UVE for nothing.
      */
     #leaveTheVariant(): void {
-        if (getIsDefaultVariant(this.#activatedRoute.snapshot.queryParams['variantName'])) {
+        if (getIsDefaultVariant(this.#store.pageParams()?.variantName)) {
+            /**
+             * The control was never a different page, so there is nothing to fetch — but the
+             * experiment params still have to go, or the chip they feed outlives the trip and the
+             * editor is left with a bar offering a way back it has already taken.
+             *
+             * `pageUpdateParams` is the load-free half of `pageLoad`: it patches the params, the
+             * shell mirrors them into the address, and the canvas is never touched.
+             */
+            this.#store.pageUpdateParams(CLEARED_EXPERIMENT_PARAMS);
+
             return;
         }
 
@@ -472,9 +486,10 @@ export class DotUveToolbarComponent {
             return;
         }
 
-        // Which configuration screen opened this variant (#37005). Read from the route rather than
-        // from `pageParams()`: `DotPageAssetParams` is a page-asset shape that does not declare the
-        // marker, which survives `#getPageParams()` only through its `as` cast.
+        // Which configuration screen opened this variant (#37005). The route is the right source
+        // here and the wrong one for the chip: a gesture happens on the toolbar the navigation
+        // built, where the snapshot still holds, while the chip has to survive the params being
+        // cleared underneath it. See `#controlVariantChip`.
         const cameFromPortlet =
             this.#activatedRoute.snapshot.queryParams[EXPERIMENT_RETURN_PARAM] ===
             EXPERIMENT_RETURN_PORTLET;
@@ -490,35 +505,6 @@ export class DotUveToolbarComponent {
             [CONFIGURE_SECTION_PARAM]: CONFIGURE_SECTION_VARIANTS
         };
 
-        /**
-         * Back into the panel, whichever way this round trip started (#37478, FR-023, FR-046).
-         *
-         * The variant lives on the address, so returning to the page means taking it off. Merged,
-         * because everything else there is the editor's own (FR-031). A query-param-only write,
-         * which nothing in these routes re-runs on, so the canvas does not reload.
-         */
-
-        /**
-         * Decided by the switch, and by nothing else.
-         *
-         * With it on there is a panel on this page that can show the configuration, so no return
-         * leaves the editor — not one that began in the full-screen portlet, and not a pasted
-         * variant link with no origin at all. The round trip finishes where the editor already is.
-         *
-         * Reached only when there is nothing to resume: the round trip began in the full-screen
-         * portlet, or a reload during it took the panel's memory with it. The experiment is named
-         * by the address for as long as the editor is on the variant, so the return is rebuilt
-         * from that instead — the same destination, reconstructed rather than restored.
-         *
-         * With it off the origin marker still decides, exactly as it did. Branching on the switch
-         * alone *there* would make FR-018 and FR-005/FR-027 mutually exclusive on a supported
-         * path: with the switch off an editor can still reach the portlet from the main navigation
-         * (FR-026) and still open a variant from it (FR-027), and they must not be returned to a
-         * legacy screen they never came from.
-         *
-         * Read now rather than at construction so an operator's flip lands on this gesture
-         * (SC-002).
-         */
         /**
          * Decided by the switch, and by nothing else.
          *
@@ -569,15 +555,12 @@ export class DotUveToolbarComponent {
                 }
 
                 if (cameFromPortlet) {
-                    this.#router.navigate(
-                        ['/experiments', currentExperiment.id, 'configuration'],
-                        {
-                            // No `queryParamsHandling`: `url`, `language_id` and the persona key
-                            // are UVE's, and the list's `parseViewState` does not recognise them —
-                            // they would sit in its address indefinitely.
-                            queryParams: portletReturnParams
-                        }
-                    );
+                    this.#router.navigate(['/experiments', currentExperiment.id, 'configuration'], {
+                        // No `queryParamsHandling`: `url`, `language_id` and the persona key
+                        // are UVE's, and the list's `parseViewState` does not recognise them —
+                        // they would sit in its address indefinitely.
+                        queryParams: portletReturnParams
+                    });
 
                     return;
                 }
