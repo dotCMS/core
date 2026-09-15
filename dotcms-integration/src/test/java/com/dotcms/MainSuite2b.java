@@ -74,6 +74,7 @@ import com.dotcms.inference.rest.InferenceClientConformanceTest;
 import com.dotcms.inference.rest.InferenceEmbeddingsTest;
 import com.dotcms.inference.rest.InferenceFallbackTest;
 import com.dotcms.inference.rest.InferenceImagesTest;
+import com.dotcms.inference.rest.InferenceLoggingTest;
 import com.dotcms.inference.rest.InferenceModelsTest;
 import com.dotcms.inference.rest.InferenceModelValidationTest;
 import com.dotcms.inference.rest.InferenceSiteIsolationTest;
@@ -462,6 +463,7 @@ import org.junit.runners.Suite.SuiteClasses;
         InferenceEmbeddingsTest.class,
         InferenceFallbackTest.class,
         InferenceImagesTest.class,
+        InferenceLoggingTest.class,
         InferenceModelsTest.class,
         InferenceModelValidationTest.class,
         InferenceSiteIsolationTest.class,
