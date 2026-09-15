@@ -43,19 +43,15 @@ export interface RelationshipFieldState {
     staticColumns: number;
     columns: TableColumn[];
     /**
-     * How many rows are currently rendered.
-     *
-     * **Deliberately not derived from `data`.** `DotKeyValueComponent` learned this the hard way
-     * and records it: a count derived from the list collapses the table back to the first page the
-     * moment anything is added, edited, removed or reordered — 80 rows down to 40 on a single
-     * delete. A field opened afresh still starts at one page, because a new field component is
-     * built for it.
-     */
-    /**
      * Whether the list is showing every related item or only the first {@link RELATED_PAGE_SIZE}.
      *
      * A flag rather than a count: the control is a two-state toggle — "Show all (N)" and
      * "Show less" — not an incremental reveal, so there is no intermediate amount to track.
+     *
+     * **Deliberately state, not derived from `data`.** `DotKeyValueComponent` learned this the hard
+     * way and records it: derive what is rendered from the list and the table collapses back to the
+     * first page the moment anything is added, edited, removed or reordered. A field opened afresh
+     * still starts collapsed, because a new field component is built for it.
      */
     showingAll: boolean;
     /**

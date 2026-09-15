@@ -83,12 +83,6 @@ const buildAssetPath = (hostname?: string, path?: string): string => {
 };
 
 /**
- * Whether a hostname can appear in the authority of the URI the endpoint parses.
- *
- * @param hostname The candidate site name.
- * @return True when `//<hostname>/` is a parseable URI.
- */
-/**
  * Re-sorts a selection so rows the field already held keep the order it held them in.
  *
  * `selection` is a `Map` and confirmation emits its insertion order, which is the order the
@@ -143,6 +137,12 @@ function isContentlet(row: DotContentDriveBrowseItem): row is DotCMSContentlet {
     return (row as { type?: string }).type !== 'folder';
 }
 
+/**
+ * Whether a hostname can appear in the authority of the URI the endpoint parses.
+ *
+ * @param hostname The candidate site name.
+ * @return True when `//<hostname>/` is a parseable URI.
+ */
 const isBrowsableHost = (hostname: string): boolean => {
     try {
         return new URL(`https://${hostname}/`).hostname === hostname.toLowerCase();
@@ -739,7 +739,6 @@ export const AddRelationshipsStore = signalStore(
                     load();
                 },
 
-                /** Jumps to a page number. Used by the footer's paging control. */
                 /**
                  * Moves to a page, and to a page size when the editor changes it.
                  *
