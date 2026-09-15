@@ -57,6 +57,22 @@
           opposite.
         -->
         <skip.strict.gate>true</skip.strict.gate>
+        <!--
+          What the gate diffs against. Deliberately its OWN property rather than reusing
+          ${git.origin.branch}: lint-test and format-test tolerate a base that is merely close
+          (over-including projects for lint is harmless on a lint-clean main), but this gate
+          blocks, and main is deliberately not strict-clean while #37198 is in flight. Given a
+          base that is only near the divergence point, it would reject authors for violations
+          main introduced.
+
+          Defaults to ${git.origin.branch} so a local run behaves as before. In CI the
+          strict-gate-explicit-base profile below replaces it with the event's real base commit,
+          which cicd_comp_test-phase.yml fetches. Both sides of the comparison are depth-1 there,
+          so `git merge-base` cannot traverse and the harness falls back to comparing against the
+          base tip, which is correct only when the base IS the divergence point. That SHA is
+          exactly that point.
+        -->
+        <strict.gate.base>${git.origin.branch}</strict.gate.base>
         <git.origin.branch>origin/main</git.origin.branch>
         <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
         <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
@@ -542,7 +558,7 @@
                                         <argument>exec</argument>
                                         <argument>node</argument>
                                         <argument>tools/scripts/strict-gate/run.mjs</argument>
-                                        <argument>--base=${git.origin.branch}</argument>
+                                        <argument>--base=${strict.gate.base}</argument>
                                         <argument>--flags=strict</argument>
                                         <argument>--granularity=line</argument>
                                         <argument>--scope=core-web</argument>
@@ -576,6 +592,23 @@
             </activation>
             <properties>
                 <skip.strict.gate>false</skip.strict.gate>
+            </properties>
+        </profile>
+
+        <profile>
+            <!--
+              Replaces the default base with the event's real base commit, which
+              cicd_comp_test-phase.yml resolves from the payload and exports. Absent everywhere
+              else, including local runs, where strict.gate.base keeps its origin/main default.
+            -->
+            <id>strict-gate-explicit-base</id>
+            <activation>
+                <property>
+                    <name>env.STRICT_GATE_BASE</name>
+                </property>
+            </activation>
+            <properties>
+                <strict.gate.base>${env.STRICT_GATE_BASE}</strict.gate.base>
             </properties>
         </profile>
 

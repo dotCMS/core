@@ -261,9 +261,37 @@ jobs:
       # Frontend Unit Tests runs `nx affected` (lint-test, -Pvalidate) which diffs
       # against origin/main (core-web/pom.xml git.origin.branch). The shallow
       # checkout above has no origin/main ref, so fetch just that ref, shallow.
-      - name: Fetch origin/main for Nx affected
+      #
+      # The strict-gate (#37536) additionally needs a base it can diff against
+      # HONESTLY. Both sides here are depth-1, so `git merge-base` cannot traverse
+      # and the harness falls back to comparing against the TIP of origin/main --
+      # which attributes every commit main moved ahead to the pull request. That is
+      # survivable for `nx affected` (over-including projects for lint is harmless
+      # on a lint-clean main) but not for a blocking strict check, because main is
+      # deliberately NOT strict-clean while #37198 is in flight: authors would be
+      # rejected for violations they never wrote.
+      #
+      # So fetch the event's real base commit and hand it to the gate. With the base
+      # already AT the divergence point, the harness's base-tip fallback stops being
+      # a degradation and becomes exactly right. It also makes the base branch's name
+      # irrelevant, so a pull request targeting something other than `main` compares
+      # against its own base rather than against main.
+      - name: Fetch base refs for Nx affected and the strict gate
         if: contains(matrix.maven_args, '-Pvalidate')
-        run: git fetch --depth=1 origin main:refs/remotes/origin/main
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: |
+          git fetch --depth=1 origin main:refs/remotes/origin/main
+          if [ -n "$BASE_SHA" ]; then
+            # Not fatal: if the base object cannot be fetched the gate still runs
+            # against origin/main and warns, which is the behaviour before this step.
+            if git fetch --depth=1 origin "$BASE_SHA" 2>/dev/null; then
+              echo "STRICT_GATE_BASE=$BASE_SHA" >> "$GITHUB_ENV"
+              echo "strict-gate base: $BASE_SHA"
+            else
+              echo "::warning::could not fetch base $BASE_SHA; strict-gate will fall back to origin/main"
+            fi
+          fi
 
       # The libvips image engine (IMAGE_API_USE_LIBVIPS) is exercised by VipsParityTest.
       # Install native libvips on the JVM unit-test runner so those tests run instead of
