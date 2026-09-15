@@ -123,6 +123,16 @@ export interface AddRelationshipsState {
      */
     pendingInodes: Set<string>;
 
+    /**
+     * The identifiers the field already related, in the order it held them.
+     *
+     * Confirming emits `selection` in insertion order, and `toggleSelection` removes then re-adds —
+     * so without this a row unchecked and checked again lands at the end and silently moves down the
+     * relationship, which is drag-ordered and persisted. A row that was already there goes back
+     * where it was; a new pick still belongs at the end.
+     */
+    seededOrder: string[];
+
     /** Read and written only through `DOT_FILTER_FACADE`; nothing else touches this. */
     filters: DotAddRelationshipsFilters;
 

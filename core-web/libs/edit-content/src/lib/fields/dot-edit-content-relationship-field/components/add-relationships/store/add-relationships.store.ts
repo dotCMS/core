@@ -10,6 +10,7 @@ import { LoggerService, SiteService } from '@dotcms/dotcms-js';
 import {
     ComponentStatus,
     DotCMSContentlet,
+    DotContentDriveBrowseItem,
     DotContentDriveItem,
     DotContentDriveSearchRequest,
     DotLanguage
@@ -44,16 +45,11 @@ const withLanguages = (
     const byId = new Map(languages.map((language) => [language.id, language]));
 
     return rows.map((row) => {
-        // `DotContentDriveItem` is a union with folders, which carry no language at all. The dialog
-        // asks for `showFolders: false`, so none should arrive — but the type admits them, and
-        // silently stamping `language: undefined` onto one would be a lie rather than a no-op.
-        const languageId = (row as DotCMSContentlet).languageId;
-
-        if (languageId == null) {
+        if (!isContentlet(row)) {
             return row;
         }
 
-        return { ...row, language: byId.get(languageId) } as DotContentDriveItem;
+        return { ...row, language: byId.get(row.languageId) };
     });
 };
 
@@ -92,6 +88,61 @@ const buildAssetPath = (hostname?: string, path?: string): string => {
  * @param hostname The candidate site name.
  * @return True when `//<hostname>/` is a parseable URI.
  */
+/**
+ * Re-sorts a selection so rows the field already held keep the order it held them in.
+ *
+ * `selection` is a `Map` and confirmation emits its insertion order, which is the order the
+ * relationship is saved in. `toggleSelection` deletes then re-adds, so without this an item
+ * unchecked and checked again arrives at the end — moving it down a list the editor may have
+ * dragged into place, with nothing on screen saying so.
+ *
+ * Rows picked inside the dialog are not in `seededOrder` and keep landing at the end, which is
+ * where a new pick belongs.
+ *
+ * @param selection The selection after the toggle.
+ * @param seededOrder The identifiers the field related when the dialog opened, in its order.
+ * @return The same entries, seeded ones first in their original order.
+ */
+function inSeededOrder(
+    selection: Map<string, DotCMSContentlet>,
+    seededOrder: string[]
+): Map<string, DotCMSContentlet> {
+    const seeded = new Set(seededOrder);
+    const ordered = new Map<string, DotCMSContentlet>();
+
+    for (const identifier of seededOrder) {
+        const item = selection.get(identifier);
+
+        if (item) {
+            ordered.set(identifier, item);
+        }
+    }
+
+    for (const [identifier, item] of selection) {
+        if (!seeded.has(identifier)) {
+            ordered.set(identifier, item);
+        }
+    }
+
+    return ordered;
+}
+
+/**
+ * Narrows a drive row to a contentlet.
+ *
+ * `DotContentDriveItem` is a union with folders, which carry no language and none of the fields the
+ * selection needs. The dialog asks for `showFolders: false`, so none should arrive — but that is a
+ * property of the request, and these rows come back over HTTP. Discriminating on the tag the folder
+ * type actually carries makes the narrowing hold whatever the endpoint returns, instead of resting
+ * on a request shape plus a comment.
+ *
+ * @param row A row from `/drive/search`.
+ * @return Whether it is a contentlet rather than a folder.
+ */
+function isContentlet(row: DotContentDriveBrowseItem): row is DotCMSContentlet {
+    return (row as { type?: string }).type !== 'folder';
+}
+
 const isBrowsableHost = (hostname: string): boolean => {
     try {
         return new URL(`https://${hostname}/`).hostname === hostname.toLowerCase();
@@ -121,6 +172,7 @@ const initialState: AddRelationshipsState = {
     items: [],
     selection: new Map<string, DotCMSContentlet>(),
     pendingInodes: new Set<string>(),
+    seededOrder: [],
     filters: {},
     defaultFilters: {},
     page: { number: 1, limit: ADD_RELATIONSHIPS_PAGE_SIZE },
@@ -344,11 +396,8 @@ export const AddRelationshipsStore = signalStore(
                                             const stillPending = new Set(pending);
 
                                             for (const row of response.list) {
-                                                if (pending.has(row.inode)) {
-                                                    selection.set(
-                                                        row.identifier,
-                                                        row as DotCMSContentlet
-                                                    );
+                                                if (isContentlet(row) && pending.has(row.inode)) {
+                                                    selection.set(row.identifier, row);
                                                     stillPending.delete(row.inode);
                                                 }
                                             }
@@ -484,6 +533,7 @@ export const AddRelationshipsStore = signalStore(
                         defaultScopeLabel: hostname ?? '',
                         selection: new Map(input.selected.map((item) => [item.identifier, item])),
                         pendingInodes: new Set(input.selectedInodes ?? []),
+                        seededOrder: input.selected.map((item) => item.identifier),
                         filters: seeded,
                         defaultFilters: seeded
                     });
@@ -494,7 +544,7 @@ export const AddRelationshipsStore = signalStore(
                 },
 
                 /** Reads one filter. `undefined` (not set) and `[]` (set to nothing) differ. */
-                getFilterValue(key: string) {
+                getFilterValue(key: string): string | string[] | undefined {
                     return store.filters()[key];
                 },
 
@@ -597,7 +647,7 @@ export const AddRelationshipsStore = signalStore(
                         selection.set(item.identifier, item);
                     }
 
-                    patchState(store, { selection });
+                    patchState(store, { selection: inSeededOrder(selection, store.seededOrder()) });
                 },
 
                 /**
@@ -612,7 +662,10 @@ export const AddRelationshipsStore = signalStore(
                     const constrained = store.constrainedIdentifiers();
                     const visible = store
                         .items()
-                        .filter((item) => !constrained.has(item.identifier)) as DotCMSContentlet[];
+                        .filter(
+                            (item): item is DotCMSContentlet =>
+                                isContentlet(item) && !constrained.has(item.identifier)
+                        );
                     const selection = new Map(store.selection());
 
                     for (const item of visible) {

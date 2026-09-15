@@ -694,6 +694,51 @@ describe('AddRelationshipsStore (US2 — selection)', () => {
             expect(store.errorMessage()).toBe('dot.relationship.add.dialog.search.failed');
         });
 
+        /**
+         * Reported in review: `selection` is a `Map`, so confirming emits insertion order — and
+         * `toggleSelection` removes then re-adds, which sends a re-checked row to the end.
+         *
+         * That order is the relationship's order: it is drag-reorderable and persisted. An editor
+         * who unchecks a row to look at something and checks it again has not asked to move it to
+         * the bottom, and nothing on screen tells them it happened. A row already related when the
+         * dialog opened keeps its seeded place; only new picks belong at the end.
+         */
+        it('restores the original position of a row unchecked and checked again', () => {
+            store.initialize({ ...baseInput, selected: [item(1), item(2), item(3)] });
+
+            store.toggleSelection(item(2));
+            store.toggleSelection(item(2));
+
+            expect(store.$selectedItems().map((c) => c.identifier)).toEqual([
+                'id-1',
+                'id-2',
+                'id-3'
+            ]);
+        });
+
+        it('still appends a genuinely new pick to the end', () => {
+            store.initialize({ ...baseInput, selected: [item(1), item(2)] });
+
+            store.toggleSelection(item(9));
+
+            expect(store.$selectedItems().map((c) => c.identifier)).toEqual([
+                'id-1',
+                'id-2',
+                'id-9'
+            ]);
+        });
+
+        it('does not restore a position for a pick made and undone within the dialog', () => {
+            store.initialize({ ...baseInput, selected: [item(1)] });
+
+            // Picked here, so it has no seeded place to go back to.
+            store.toggleSelection(item(9));
+            store.toggleSelection(item(9));
+            store.toggleSelection(item(9));
+
+            expect(store.$selectedItems().map((c) => c.identifier)).toEqual(['id-1', 'id-9']);
+        });
+
         it('pins contentTypes to the relationship target type', () => {
             store.initialize(baseInput);
             store.load();
