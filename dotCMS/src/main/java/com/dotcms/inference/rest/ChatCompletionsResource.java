@@ -188,6 +188,16 @@ public class ChatCompletionsResource {
     @JSONP
     @NoCache
     @InferenceEndpoint
+    // One flat price for an operation whose real cost varies by orders of magnitude, and it
+    // under-counts a stream worst of all: a streamed completion holds a request thread for the
+    // whole generation rather than for one round trip, and the tokens it spends are unknown until
+    // it ends. Deliberately not "fixed" here by picking a larger constant — a bigger flat number
+    // is the same mistake scaled, and it would silently re-price every non-streaming caller too.
+    // Pricing this honestly means charging on what a request actually consumed, token counts being
+    // the unit that matches what the provider bills, which is a design this endpoint cannot settle
+    // on its own: it needs a decision about where usage is metered, what happens when a stream
+    // fails halfway, and how that reconciles with the per-site spend attribution FR-032 puts out
+    // of scope. Until that exists, the flat price stands and is known to be wrong for streams.
     @RequestCost(Price.HTTP_FETCH)
     @Path("/completions")
     @Consumes(MediaType.APPLICATION_JSON)
