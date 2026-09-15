@@ -29,8 +29,8 @@ import { createFakeSite } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
-import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { SYSTEM_HOST } from '../../shared/constants';
+import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { createSiteNode } from '../../utils/tree-folder.utils';
 
 describe('DotContentDriveSidebarComponent', () => {

@@ -31,8 +31,8 @@ import {
 } from '@dotcms/portlets/content-drive/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { SYSTEM_HOST } from '../../shared/constants';
+import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions';
 /**
  * @description DotContentDriveSidebarComponent is the component that renders the sidebar for the content drive
