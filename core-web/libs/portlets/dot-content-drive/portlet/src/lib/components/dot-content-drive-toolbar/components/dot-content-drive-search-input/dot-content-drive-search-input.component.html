@@ -13,40 +13,40 @@
      dropdown already uses (see dot-content-drive-workflow-filter), so this control matches the
      rest of the toolbar instead of introducing a styling idiom of its own. -->
 <p-inputgroup class="w-full">
+    <!-- No [placeholder] binding: the placeholder is always the shared component's own default
+         ("Search"), deliberately not describing the active scope. -->
     <dot-search-input
         [value]="$searchTerm()"
-        [placeholder]="$placeholder()"
         [inputDt]="{
             border: { radius: '{form.field.border.radius} 0 0 {form.field.border.radius}' }
         }"
         (search)="onSearch($event)"
         class="min-w-0 flex-1" />
 
-    <!-- Fixed width, not a minimum: a p-button sizes itself to its label, so "Title" and
-         "All Fields" produced two different widths and the whole group visibly resized as the
-         choice changed. 140px is what the filter chips below already use, and it fits the longer
-         label whole. Width is plain Tailwind because it is layout, not a PrimeNG token — nothing in
-         the button's own stylesheet sets a width to compete with, unlike the border-colour case
-         below.
+    <!-- Fixed-ish width: a p-button sizes itself to its label, so "Title" and "All Fields" produced
+         two different widths and the whole group visibly resized as the choice changed. `min-w-32`
+         is plain Tailwind because width is layout, not a PrimeNG token — nothing in the button's own
+         stylesheet sets a width to compete with.
 
-         Border colour, via `dt`: Button's `secondary` severity and InputText are different PrimeNG
-         components with separate token families — this theme's `button.secondary.border.color`
-         resolves to `{surface.700}` while `inputtext.border.color` resolves to
-         `{form.field.border.color}`, so the two never matched. `TRIGGER_DT` repoints the button at
-         the exact token the input already uses, rather than a guessed literal colour, so the two
-         stay identical if the theme itself ever changes. -->
+         The button's own border is removed via `[pButtonPT]`'s `root.style`, not a `!important`
+         class: PT's `style` slot is applied through the directive's own `[style]` host binding (see
+         `TRIGGER_PT`), which is a real inline style and wins the cascade unconditionally, the same
+         guarantee `!important` gives without needing it. What is left showing is the addon's own
+         border, which already equals the input's — `inputgroup.addon.borderColor` resolves to the
+         same `{form.field.border.color}` alias `inputtext` uses, confirmed straight from the Lara
+         preset source. -->
     <p-inputgroup-addon>
         <button
             type="button"
             pButton
             severity="secondary"
-            [dt]="TRIGGER_DT"
+            [pButtonPT]="TRIGGER_PT"
             [attr.aria-label]="'content-drive.search.scope.label' | dm"
             [pTooltip]="'content-drive.search.scope.help' | dm"
             aria-haspopup="listbox"
             data-testid="search-scope-trigger"
             tooltipPosition="bottom"
-            class="w-[140px]"
+            class="min-w-32"
             (click)="panel.toggle($event)">
             <span class="truncate" data-testid="search-scope-active">
                 {{ $activeScopeLabel() | dm }}

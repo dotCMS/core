@@ -89,25 +89,23 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     ];
 
     /**
-     * Repoints the trigger at the exact tokens the search input already uses, so the two read as
-     * one field rather than a white box beside a grey one.
+     * The addon's own background, repointed to match the input.
      *
-     * Button and InputText are different PrimeNG components with entirely separate token families.
-     * In this theme `button.secondary` resolves to `background: {surface.100}`,
-     * `borderColor: {surface.100}` (identical to its own background — invisible by design) and
-     * `color: {surface.600}`, while `inputtext` resolves to `{form.field.background}`,
-     * `{form.field.border.color}` and `{form.field.color}`. Overriding the border alone left a
-     * visible grey-filled button next to a white field; all three have to move together for the
-     * pair to read as one control. Each is a design-token override, not a literal colour, so the
-     * two stay identical if the active theme itself changes.
+     * `p-inputgroup-addon` has no `dt` input (confirmed against its compiled metadata — only
+     * `style`/`styleClass` are declared), so a design-token override isn't an option here. `[style]`
+     * is the component's own supported way in instead, and it needs no `!important`: an inline style
+     * always wins the cascade over an external stylesheet rule, regardless of specificity.
+     *
+     * `var(--p-inputtext-background)` rather than a literal colour: PrimeNG's `dt()` mechanism
+     * compiles every token to a CSS custom property of exactly this shape, so reading the input's
+     * own resolved variable keeps the two in step if the active theme ever changes, the same
+     * guarantee a `dt` override would have given if one were available.
+     *
+     * The addon's BORDER needs no such fix — `inputgroup.addon.borderColor` already resolves to the
+     * same `{form.field.border.color}` alias `inputtext` uses, confirmed straight from the Lara
+     * preset source. Only the background differs (`{surface.50}`, a light grey).
      */
-    protected readonly TRIGGER_DT = {
-        secondary: {
-            background: '{form.field.background}',
-            borderColor: '{form.field.border.color}',
-            color: '{form.field.color}'
-        }
-    };
+    protected readonly ADDON_STYLE = { background: 'var(--p-inputtext-background)' };
 
     /**
      * The same popover/listbox pass-through every other Content Drive filter dropdown already uses
@@ -132,12 +130,18 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
             'content-drive.search.scope.all-fields'
     );
 
-    /** The box says what it will do before the user types again. */
-    protected readonly $placeholder = computed(() =>
-        this.$searchScope() === DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE
-            ? 'content-drive.search.placeholder.title'
-            : 'content-drive.search.placeholder.all-fields'
-    );
+    /**
+     * The trigger's own border, removed via PT rather than a Tailwind `!important` class.
+     *
+     * `pButtonPT`'s `root.style` is consumed through `[style]`/`[class]` HOST BINDINGS on the
+     * directive's own host element (see `Bind`, the directive backing this), which Angular applies
+     * the same way any `[style]` binding is — as a real inline style. That wins the cascade over
+     * PrimeNG's own injected `.p-button-secondary` rule unconditionally, the same guarantee
+     * `!important` gives, without reaching for it.
+     */
+    protected readonly TRIGGER_PT = {
+        root: { style: { border: 'none' } }
+    };
 
     /**
      * Claims the search shortcuts for as long as this box is on screen.

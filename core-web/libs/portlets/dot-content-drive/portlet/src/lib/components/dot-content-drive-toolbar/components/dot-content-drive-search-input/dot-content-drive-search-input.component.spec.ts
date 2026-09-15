@@ -131,24 +131,21 @@ describe('DotContentDriveSearchInputComponent', () => {
             expect(spectator.component['$searchScope']()).toBe('TITLE');
         });
 
-        // One assertion per test: the store mock is a plain fn rather than a signal, so the
-        // computed has nothing to invalidate and caches within a single instance.
-        it('should say "search by title" in Title scope', () => {
+        // The placeholder deliberately does NOT describe the active scope — it is always the
+        // shared component's own default ("Search"), so no [placeholder] binding is passed at all.
+        // Regression guard for both directions: scope changes must not reintroduce one.
+        it('should leave the input on its default placeholder in Title scope', () => {
             withScope('TITLE');
             spectator.detectChanges();
 
-            expect(spectator.component['$placeholder']()).toBe(
-                'content-drive.search.placeholder.title'
-            );
+            expect(searchInput().componentInstance.$placeholder()).toBe('search');
         });
 
-        it('should say "search all fields" in All Fields scope', () => {
+        it('should leave the input on its default placeholder in All Fields scope', () => {
             withScope(undefined);
             spectator.detectChanges();
 
-            expect(spectator.component['$placeholder']()).toBe(
-                'content-drive.search.placeholder.all-fields'
-            );
+            expect(searchInput().componentInstance.$placeholder()).toBe('search');
         });
 
         it('should record a newly chosen scope', () => {
