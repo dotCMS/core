@@ -347,6 +347,41 @@ describe('Utility Functions', () => {
         });
     });
 
+    // The search scope travels in the address like any other filter, but an unrecognized value
+    // cannot be passed on: the endpoint rejects one with a 400, which would surface as a stopped
+    // spinner over a stale grid. A stale or hand-edited link has to degrade to the default instead
+    // (FR-015).
+    describe('search scope round-trip', () => {
+        it('should decode a known scope', () => {
+            expect(decodeFilters('searchScope:TITLE')).toEqual({ searchScope: 'TITLE' });
+        });
+
+        it('should drop an unrecognized scope rather than pass it on', () => {
+            expect(decodeFilters('searchScope:BANANA')).toEqual({});
+        });
+
+        it('should drop the key entirely, not replace it with the default', () => {
+            // Substituting ALL_FIELDS would leave the key present, and a present key counts as a
+            // non-default filter — which would offer "Clear all" on an unfiltered drive.
+            const decoded = decodeFilters('searchScope:BANANA');
+
+            expect(Object.hasOwn(decoded, 'searchScope')).toBe(false);
+        });
+
+        it('should survive an encode/decode round trip', () => {
+            const filters = { searchScope: 'TITLE', title: 'pricing' };
+
+            expect(decodeFilters(encodeFilters(filters))).toEqual(filters);
+        });
+
+        it('should not make an unfiltered drive look filtered', () => {
+            // The scope is written only when it differs from the default, so a decoded scope is
+            // always a real filter — but a dropped one must not leave a trace either.
+            expect(hasNonDefaultFilters(decodeFilters('searchScope:BANANA'))).toBe(false);
+            expect(hasNonDefaultFilters(decodeFilters('searchScope:TITLE'))).toBe(true);
+        });
+    });
+
     describe('status filter round-trip', () => {
         it('should survive encode → decode unchanged', () => {
             const filters = { status: ['ARCHIVED', 'LOCKED'] };

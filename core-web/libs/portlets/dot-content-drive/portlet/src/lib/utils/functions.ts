@@ -27,8 +27,10 @@ import {
     USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE,
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
+    DotContentDriveSearchScope,
     DotKnownContentDriveFilters
 } from '../shared/models';
 
@@ -144,8 +146,25 @@ export const decodeByFilterKey: Record<
     // filter", which is how the other filters already behave — an unknown contentType id is
     // dropped server-side rather than failing the request.
     status: (value) => multiSelector(value).filter(isContentStatus),
-    sharedAssets: singleSelector
+    sharedAssets: singleSelector,
+    // MUST be listed explicitly, for the same reason `status` is: an unrecognized value has to be
+    // dropped here rather than passed on. The endpoint rejects an unknown search scope with a 400
+    // — it will not silently widen or narrow the results — and that 400 would surface as a stopped
+    // spinner over a stale grid. A stale or hand-edited URL should degrade to "no scope", which
+    // resolves to the default.
+    //
+    // Dropped rather than replaced with the default value: a present key counts as a non-default
+    // filter (`hasNonDefaultFilters`), so writing ALL_FIELDS here would offer "Clear all" on a
+    // drive with nothing filtered at all.
+    searchScope: (value) => (isSearchScope(value) ? value : '')
 };
+
+/** Narrows a raw URL value to a search scope, so an unknown one can be dropped. */
+function isSearchScope(value: string): value is DotContentDriveSearchScope {
+    return Object.values(DOT_CONTENT_DRIVE_SEARCH_SCOPE).includes(
+        value as DotContentDriveSearchScope
+    );
+}
 
 /**
  * Decodes the filters string into a record of key-value pairs.
@@ -186,9 +205,11 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         // narrowing happens only inside decodeFilterValue for the known-key lookup.
         const decoded = decodeFilterValue(key, value);
 
-        // A multi-value key that decoded to nothing is not a filter. Dropping it keeps a sanitized
-        // `status:BOGUS` from round-tripping back into the URL as a bare `status:`.
-        if (Array.isArray(decoded) && decoded.length === 0) {
+        // A key that decoded to nothing is not a filter. Dropping it keeps a sanitized URL from
+        // carrying a key with no meaning — and it is what lets a decoder reject an unrecognized
+        // value (see `status` and `searchScope`) by returning empty. `encodeFilters` never writes
+        // an empty value, so an empty decoded one can only come from a stale or hand-edited URL.
+        if (Array.isArray(decoded) ? decoded.length === 0 : decoded === '') {
             return acc;
         }
 
