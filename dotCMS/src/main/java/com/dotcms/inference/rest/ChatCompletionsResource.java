@@ -111,6 +111,21 @@ public class ChatCompletionsResource {
     private static final String SITE_HEADER = "X-dotCMS-Site";
 
     /** Prefix the completion id carries, as standard clients expect. */
+    /** The header a standard client reads to learn how long to wait before retrying. */
+    private static final String RETRY_AFTER_HEADER = "Retry-After";
+
+    /**
+     * How long to tell a caller to wait when this node is at its streaming ceiling.
+     *
+     * <p>Five seconds, which is a judgement rather than a measurement: a streamed completion runs
+     * for seconds to minutes, so no single number is right for every deployment. It is chosen to be
+     * long enough that a refused client does not immediately return and re-refuse — turning one
+     * ceiling into a retry storm that keeps the node at capacity — and short enough that capacity
+     * freed a moment later does not sit idle. It is not a configurable limit because it is not a
+     * limit: the ceiling itself is configurable, and this only says how long to wait for it.</p>
+     */
+    private static final int CAPACITY_RETRY_AFTER_SECONDS = 5;
+
     private static final String COMPLETION_ID_PREFIX = "chatcmpl-";
 
     /** What a caller is told when the provider failed; never the provider's own words. */
@@ -314,12 +329,17 @@ public class ChatCompletionsResource {
             ACTIVE_STREAMS.decrementAndGet();
             Logger.warn(this, "Refusing a streamed completion: the node is already serving its "
                     + "ceiling of " + maxConcurrentStreams + " concurrent streams");
+            // Carries Retry-After because this refusal is dotCMS's own: the wait is until a
+            // stream on this node finishes, not until some provider decides to let us back in.
+            // "Retry shortly" in the message is prose a client cannot act on; the header is the
+            // same instruction in the form every standard client already honours.
             return errorResponse(new InferenceError(
                     "rate_limit_error",
                     "This node is already serving its ceiling of " + maxConcurrentStreams
                             + " concurrent streamed completions; retry shortly",
                     null,
-                    429));
+                    429),
+                    CAPACITY_RETRY_AFTER_SECONDS);
         }
 
         // Fixed for the whole stream: a client correlates the chunks it stitches together by the
@@ -449,6 +469,26 @@ public class ChatCompletionsResource {
         return Response.status(error.httpStatus())
                 .entity(InferenceErrorView.of(error))
                 .type(MediaType.APPLICATION_JSON)
+                .build();
+    }
+
+    /**
+     * Renders a refusal that tells the caller when to come back.
+     *
+     * <p>Only for refusals whose duration dotCMS actually knows — its own capacity ceilings. An
+     * upstream rate limit is not one of those: the provider knows how long it wants to be left
+     * alone and says so in a header the provider abstraction discards before dotCMS sees it, and
+     * inventing a number there would be a guess presented to the client as an instruction.</p>
+     *
+     * @param error             the refusal
+     * @param retryAfterSeconds how long the caller should wait before trying again
+     * @return the refusal, carrying {@code Retry-After}
+     */
+    private static Response errorResponse(final InferenceError error, final int retryAfterSeconds) {
+        return Response.status(error.httpStatus())
+                .entity(InferenceErrorView.of(error))
+                .type(MediaType.APPLICATION_JSON)
+                .header(RETRY_AFTER_HEADER, retryAfterSeconds)
                 .build();
     }
 
