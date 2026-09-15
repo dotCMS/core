@@ -234,6 +234,7 @@ public class EmbeddingsResource {
                 Logger.error(this, "The embeddings provider returned " + batch.vectors().size()
                         + " vectors for " + inputs.size() + " inputs on site "
                         + AiHostResolver.sanitize(context.servingSiteId()));
+                // No exception to inspect here: the provider answered, it just answered short.
                 return errorResponse(InferenceError.upstream(UPSTREAM_FAILURE_MESSAGE));
             }
 
@@ -245,7 +246,7 @@ public class EmbeddingsResource {
             // occasionally a fragment of the input, so it is logged and never returned.
             Logger.error(this, "Embeddings failed for site "
                     + AiHostResolver.sanitize(context.servingSiteId()), e);
-            return errorResponse(InferenceError.upstream(UPSTREAM_FAILURE_MESSAGE));
+            return errorResponse(InferenceError.fromProviderFailure(e, UPSTREAM_FAILURE_MESSAGE));
         }
     }
 
