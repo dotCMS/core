@@ -221,6 +221,89 @@ public class RoleResourceIntegrationTest {
     }
 
     /**
+     * Method to test: {@link RoleResource#updateRole(HttpServletRequest, HttpServletResponse, String, RoleForm)}
+     * Given Scenario: A role with exactly one child is reparented under another role (#37303).
+     * Expected Result: the response reports the child exactly once and childCount == 1 —
+     * matching what a fresh load returns — instead of the 4x-duplicated list.
+     */
+    @Test
+    public void testUpdateRole_reparent_responseChildrenNotDuplicated() throws Exception {
+        final Role target = new RoleDataGen().nextPersisted();
+        final Role parent = new RoleDataGen().nextPersisted();
+        final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
+
+        final RoleForm form = formFrom(parent).parentRoleId(target.getId()).build();
+
+        final ResponseEntityRoleDetailView view = resource.updateRole(
+                adminRequest(), new MockHttpResponse().response(), parent.getId(), form);
+
+        final RoleView entity = view.getEntity();
+        assertNotNull(entity.getRoleChildren());
+        assertEquals("PUT response must carry each child exactly once (#37303)",
+                1, entity.getRoleChildren().size());
+        assertEquals(child.getId(), entity.getRoleChildren().get(0).getId());
+        assertEquals("childCount must equal the number of distinct children (#37303)",
+                1, entity.getChildCount());
+
+        final Role reloaded = roleAPI.loadRoleById(parent.getId());
+        assertNotNull(reloaded.getRoleChildren());
+        assertEquals("PUT response must match what a subsequent load reports (#37303)",
+                1, reloaded.getRoleChildren().size());
+    }
+
+    /**
+     * Method to test: {@link RoleResource#updateRole(HttpServletRequest, HttpServletResponse, String, RoleForm)}
+     * Given Scenario: A plain field update (no reparent — the role is and stays a root role)
+     * on a role with one child (#37303).
+     * Expected Result: the response reports the child exactly once and childCount == 1.
+     */
+    @Test
+    public void testUpdateRole_plainFieldUpdate_responseChildrenNotDuplicated() throws Exception {
+        final Role parent = new RoleDataGen().nextPersisted();
+        final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
+
+        // no parentRoleId in the form → the role remains a root role; only the description changes
+        final RoleForm form = formFrom(parent).description("updated-" + uniq()).build();
+
+        final ResponseEntityRoleDetailView view = resource.updateRole(
+                adminRequest(), new MockHttpResponse().response(), parent.getId(), form);
+
+        final RoleView entity = view.getEntity();
+        assertEquals(parent.getId(), entity.getParent());
+        assertNotNull(entity.getRoleChildren());
+        assertEquals("plain update must carry each child exactly once (#37303)",
+                1, entity.getRoleChildren().size());
+        assertEquals(child.getId(), entity.getRoleChildren().get(0).getId());
+        assertEquals(1, entity.getChildCount());
+    }
+
+    /**
+     * Method to test: {@link RoleResource#updateRole(HttpServletRequest, HttpServletResponse, String, RoleForm)}
+     * Given Scenario: A role with one child is moved to root (parentRoleId: null) (#37303).
+     * Expected Result: the role becomes a root role and the response reports the child exactly
+     * once with childCount == 1.
+     */
+    @Test
+    public void testUpdateRole_moveToRoot_responseChildrenNotDuplicated() throws Exception {
+        final Role oldParent = new RoleDataGen().nextPersisted();
+        final Role role = new RoleDataGen().parent(oldParent.getId()).nextPersisted();
+        final Role child = new RoleDataGen().parent(role.getId()).nextPersisted();
+
+        final RoleForm form = formFrom(role).parentRoleId(null).build();
+
+        final ResponseEntityRoleDetailView view = resource.updateRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId(), form);
+
+        final RoleView entity = view.getEntity();
+        assertEquals(role.getId(), entity.getParent());
+        assertNotNull(entity.getRoleChildren());
+        assertEquals("move-to-root must carry each child exactly once (#37303)",
+                1, entity.getRoleChildren().size());
+        assertEquals(child.getId(), entity.getRoleChildren().get(0).getId());
+        assertEquals(1, entity.getChildCount());
+    }
+
+    /**
      * Given Scenario: A parent role is reparented under its own descendant (cycle).
      * Expected Result: 400 BadRequestException and the hierarchy is unchanged. This guard is
      * net-new vs legacy (the Dojo tree simply never offered the bad drop target).
