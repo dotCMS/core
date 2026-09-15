@@ -1,6 +1,7 @@
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Observable, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { createEnvironmentInjector, EnvironmentInjector } from '@angular/core';
 
@@ -37,17 +38,17 @@ describe('withAiChat', () => {
     });
 
     /** Deltas are coalesced on a timer, so tests drive the clock rather than wait on it. */
-    const flushDeltas = () => jest.advanceTimersByTime(100);
+    const flushDeltas = () => vi.advanceTimersByTime(100);
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         spectator = createService();
         store = spectator.service;
         stream$ = new Subject<DotAiStreamEvent>();
-        spectator.inject(DotAiCompletionsStreamService).stream = jest.fn().mockReturnValue(stream$);
+        spectator.inject(DotAiCompletionsStreamService).stream = vi.fn().mockReturnValue(stream$);
     });
 
-    afterEach(() => jest.useRealTimers());
+    afterEach(() => vi.useRealTimers());
 
     const assistant = () => store.chatAnswer();
 
@@ -92,7 +93,7 @@ describe('withAiChat', () => {
         stream$.next({ type: 'delta', content: 'done' });
         stream$.complete();
 
-        expect(jest.getTimerCount()).toBe(0);
+        expect(vi.getTimerCount()).toBe(0);
     });
 
     it('should send the shared retrieval payload with stream enabled', () => {
@@ -117,7 +118,7 @@ describe('withAiChat', () => {
         // The backstop for the whole portlet unmounting. `{ providedIn: 'root' }` never fires
         // onDestroy, so this needs a scoped store in a child injector that can be destroyed —
         // the pattern a11y-run.store.spec.ts uses for the same reason.
-        const teardown = jest.fn();
+        const teardown = vi.fn();
         const ScopedStore = signalStore(
             withState<DotAiPortletState>(DOT_AI_INITIAL_STATE),
             withRetrievalSettings(),
@@ -130,7 +131,7 @@ describe('withAiChat', () => {
 
         // The child injector resolves the stream service from the parent, so this is the
         // same mock instance the rest of the suite drives.
-        spectator.inject(DotAiCompletionsStreamService).stream = jest
+        spectator.inject(DotAiCompletionsStreamService).stream = vi
             .fn()
             .mockReturnValue(new Observable(() => teardown));
 
@@ -175,7 +176,7 @@ describe('withAiChat', () => {
         store.sendChat('first');
         stream$.next({ type: 'delta', content: 'one' });
 
-        service.stream = jest.fn().mockReturnValue(second$);
+        service.stream = vi.fn().mockReturnValue(second$);
         store.sendChat('second');
 
         // The first stream is unsubscribed, so a late delta cannot bleed into the new turn.
@@ -201,7 +202,7 @@ describe('withAiChat', () => {
         });
 
         it('should render a transport failure inline too, never as a dialog', () => {
-            spectator.inject(DotAiCompletionsStreamService).stream = jest
+            spectator.inject(DotAiCompletionsStreamService).stream = vi
                 .fn()
                 .mockReturnValue(throwError(() => new Error('boom')));
 

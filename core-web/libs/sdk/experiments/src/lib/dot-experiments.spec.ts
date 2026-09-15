@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import fakeIndexedDB from 'fake-indexeddb';
 import fetchMock from 'fetch-mock';
+import { vi } from 'vitest';
 
 import { DotExperiments } from './dot-experiments';
 import { API_EXPERIMENTS_URL, EXPERIMENT_QUERY_PARAM_KEY } from './shared/constants';
@@ -20,13 +21,13 @@ import {
 } from './shared/mocks/mock';
 import { DotExperimentConfig } from './shared/models';
 
-jest.spyOn(Date, 'now').mockImplementation(() => MOCK_CURRENT_TIMESTAMP);
+vi.spyOn(Date, 'now').mockImplementation(() => MOCK_CURRENT_TIMESTAMP);
 
 // Jitsu SDK Mock
-jest.mock('@jitsu/sdk-js', () => ({
-    jitsuClient: jest.fn(() => ({
-        set: jest.fn(),
-        track: jest.fn().mockResolvedValue(true)
+vi.mock('@jitsu/sdk-js', () => ({
+    jitsuClient: vi.fn(() => ({
+        set: vi.fn(),
+        track: vi.fn().mockResolvedValue(true)
     }))
 }));
 
@@ -105,7 +106,7 @@ describe('DotExperiments', () => {
 
             const instance = DotExperiments.getInstance(config);
 
-            const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
+            const spyTrackPageView = vi.spyOn(instance, 'trackPageView');
 
             expect(spyTrackPageView).not.toHaveBeenCalled();
 
@@ -132,7 +133,7 @@ describe('DotExperiments', () => {
 
             const instance = DotExperiments.getInstance(config);
 
-            const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
+            const spyTrackPageView = vi.spyOn(instance, 'trackPageView');
 
             expect(spyTrackPageView).not.toHaveBeenCalled();
 
@@ -205,7 +206,7 @@ describe('DotExperiments', () => {
 
             const instance = DotExperiments.getInstance(configMock);
 
-            const spyTrackPageView = jest.spyOn(instance, 'trackPageView');
+            const spyTrackPageView = vi.spyOn(instance, 'trackPageView');
 
             await instance.ready().then(() => {
                 const experiments = instance.experiments;
@@ -218,7 +219,7 @@ describe('DotExperiments', () => {
 
             // Second time the user enter to the page
             // change the time 5 days later
-            jest.spyOn(Date, 'now').mockImplementation(
+            vi.spyOn(Date, 'now').mockImplementation(
                 () => MOCK_CURRENT_TIMESTAMP + TIME_5_DAYS_MILLISECONDS
             );
 
@@ -260,7 +261,7 @@ describe('DotExperiments', () => {
             // Third try, after 15 days
             const location = { ...LocationMock, href: 'http://localhost/destinations' };
 
-            jest.spyOn(Date, 'now').mockImplementation(
+            vi.spyOn(Date, 'now').mockImplementation(
                 () => MOCK_CURRENT_TIMESTAMP + TIME_15_DAYS_MILLISECONDS
             );
             await instance.locationChanged(location).then(() => {

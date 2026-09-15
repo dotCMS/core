@@ -1,4 +1,5 @@
-import { byText, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { byText, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import { Mock, MockInstance, Mocked, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -103,32 +104,32 @@ describe('DotAuthConfigComponent', () => {
         component: DotAuthConfigComponent,
         componentProviders: [
             mockProvider(DotAuthConfigStore, {
-                load: jest.fn(),
-                saveSso: jest.fn(),
-                reset: jest.fn(),
-                clearOverride: jest.fn(),
-                update: jest.fn(),
-                setProtocol: jest.fn(),
-                runOidcDiscovery: jest.fn(),
-                applyGoogleGroupsPreset: jest.fn(),
-                dismissGooglePrefill: jest.fn(),
-                revokeAllSessionRefs: jest.fn(),
-                addAllowedOrigin: jest.fn(),
-                removeAllowedOrigin: jest.fn(),
-                addTrustedIdp: jest.fn(),
-                removeTrustedIdp: jest.fn(),
-                siteId: jest.fn().mockReturnValue(DOT_AUTH_SYSTEM_HOST),
-                draft: jest.fn().mockReturnValue(DRAFT),
-                original: jest.fn().mockReturnValue(DRAFT),
-                configured: jest.fn().mockReturnValue(true),
-                inherited: jest.fn().mockReturnValue(false),
-                status: jest.fn().mockReturnValue('loaded'),
-                errors: jest.fn().mockReturnValue({}),
-                errorCount: jest.fn().mockReturnValue(0),
-                dirty: jest.fn().mockReturnValue(false),
-                ssoDirty: jest.fn().mockReturnValue(false),
-                isSystem: jest.fn().mockReturnValue(true),
-                googlePrefillPending: jest.fn().mockReturnValue(false)
+                load: vi.fn(),
+                saveSso: vi.fn(),
+                reset: vi.fn(),
+                clearOverride: vi.fn(),
+                update: vi.fn(),
+                setProtocol: vi.fn(),
+                runOidcDiscovery: vi.fn(),
+                applyGoogleGroupsPreset: vi.fn(),
+                dismissGooglePrefill: vi.fn(),
+                revokeAllSessionRefs: vi.fn(),
+                addAllowedOrigin: vi.fn(),
+                removeAllowedOrigin: vi.fn(),
+                addTrustedIdp: vi.fn(),
+                removeTrustedIdp: vi.fn(),
+                siteId: vi.fn().mockReturnValue(DOT_AUTH_SYSTEM_HOST),
+                draft: vi.fn().mockReturnValue(DRAFT),
+                original: vi.fn().mockReturnValue(DRAFT),
+                configured: vi.fn().mockReturnValue(true),
+                inherited: vi.fn().mockReturnValue(false),
+                status: vi.fn().mockReturnValue('loaded'),
+                errors: vi.fn().mockReturnValue({}),
+                errorCount: vi.fn().mockReturnValue(0),
+                dirty: vi.fn().mockReturnValue(false),
+                ssoDirty: vi.fn().mockReturnValue(false),
+                isSystem: vi.fn().mockReturnValue(true),
+                googlePrefillPending: vi.fn().mockReturnValue(false)
             })
         ],
         providers: [
@@ -167,14 +168,14 @@ describe('DotAuthConfigComponent', () => {
     });
 
     describe('Google Workspace groups pre-fill offer', () => {
-        let store: jest.Mocked<InstanceType<typeof DotAuthConfigStore>>;
-        let confirmSpy: jest.SpyInstance;
+        let store: Mocked<InstanceType<typeof DotAuthConfigStore>>;
+        let confirmSpy: MockInstance;
 
         beforeEach(() => {
-            store = spectator.inject(DotAuthConfigStore, true) as unknown as jest.Mocked<
+            store = spectator.inject(DotAuthConfigStore, true) as unknown as Mocked<
                 InstanceType<typeof DotAuthConfigStore>
             >;
-            confirmSpy = jest.spyOn(spectator.inject(ConfirmationService), 'confirm');
+            confirmSpy = vi.spyOn(spectator.inject(ConfirmationService), 'confirm');
         });
 
         it('does not open the dialog when no Google discovery is pending', () => {
@@ -183,7 +184,7 @@ describe('DotAuthConfigComponent', () => {
         });
 
         it('opens the dialog once and clears the pending flag when Google is detected', () => {
-            (store.googlePrefillPending as unknown as jest.Mock).mockReturnValue(true);
+            (store.googlePrefillPending as unknown as Mock).mockReturnValue(true);
             spectator.detectChanges();
             expect(store.dismissGooglePrefill).toHaveBeenCalledTimes(1);
             expect(confirmSpy).toHaveBeenCalledTimes(1);
@@ -191,7 +192,7 @@ describe('DotAuthConfigComponent', () => {
         });
 
         it('applies the preset on accept and nothing on reject', () => {
-            (store.googlePrefillPending as unknown as jest.Mock).mockReturnValue(true);
+            (store.googlePrefillPending as unknown as Mock).mockReturnValue(true);
             spectator.detectChanges();
             const options = confirmSpy.mock.calls[0][0];
             options.reject?.();

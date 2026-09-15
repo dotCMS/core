@@ -1,4 +1,5 @@
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { DebugElement, SimpleChange } from '@angular/core';
@@ -23,7 +24,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const mockFieldVariablesServiceWithData = {
-    load: jest.fn().mockReturnValue(
+    load: vi.fn().mockReturnValue(
         of([
             {
                 clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
@@ -34,14 +35,14 @@ const mockFieldVariablesServiceWithData = {
             }
         ])
     ),
-    save: jest.fn().mockReturnValue(of([])),
-    delete: jest.fn().mockReturnValue(of([]))
+    save: vi.fn().mockReturnValue(of([])),
+    delete: vi.fn().mockReturnValue(of([]))
 };
 
 const mockFieldVariablesServiceEmpty = {
-    load: jest.fn().mockReturnValue(of([])),
-    save: jest.fn().mockReturnValue(of([])),
-    delete: jest.fn().mockReturnValue(of([]))
+    load: vi.fn().mockReturnValue(of([])),
+    save: vi.fn().mockReturnValue(of([])),
+    delete: vi.fn().mockReturnValue(of([]))
 };
 
 const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
@@ -176,7 +177,7 @@ describe('DotBlockEditorSettingsComponent', () => {
 
         it('should emit changeControls when isVisible input is true', () => {
             fixture.detectChanges();
-            jest.spyOn(component.$changeControls, 'emit');
+            vi.spyOn(component.$changeControls, 'emit');
             component.ngOnChanges({
                 $isVisible: new SimpleChange(false, true, false)
             });
@@ -185,7 +186,7 @@ describe('DotBlockEditorSettingsComponent', () => {
         });
 
         it('should emit valid output on form change', () => {
-            jest.spyOn(component.$valid, 'emit');
+            vi.spyOn(component.$valid, 'emit');
             fixture.detectChanges();
             component.form.get('allowedBlocks').setValue(['codeblock']);
             expect(component.$valid.emit).toHaveBeenCalled();
@@ -193,7 +194,7 @@ describe('DotBlockEditorSettingsComponent', () => {
 
         it('should save properties on saveSettings', () => {
             mockFieldVariablesServiceWithData.save.mockReturnValue(of(mockFieldVariables[0]));
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(component.$save, 'emit');
             fixture.detectChanges();
             component.saveSettings();
             expect(dotFieldVariableService.save).toHaveBeenCalledTimes(amountFields);
@@ -203,7 +204,7 @@ describe('DotBlockEditorSettingsComponent', () => {
 
         it('should delete properties on saveSettings when is empty', () => {
             mockFieldVariablesServiceWithData.delete.mockReturnValue(of(mockFieldVariables[0]));
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(component.$save, 'emit');
             fixture.detectChanges();
             component.form.get('allowedBlocks').setValue([]);
             component.saveSettings();
@@ -214,8 +215,8 @@ describe('DotBlockEditorSettingsComponent', () => {
 
         it('should handle error if save properties failed', () => {
             mockFieldVariablesServiceWithData.save.mockReturnValue(throwError(() => ({})));
-            jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
+            vi.spyOn(component.$save, 'emit');
             fixture.detectChanges();
             component.saveSettings();
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
@@ -375,7 +376,7 @@ describe('DotBlockEditorSettingsComponent', () => {
         });
 
         it('should fallback the label to name, drop duplicates, and warn on missing names', () => {
-            const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
             const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
             fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK);
             fixture.detectChanges();
@@ -393,7 +394,7 @@ describe('DotBlockEditorSettingsComponent', () => {
         });
 
         it('should ignore malformed customBlocks payloads gracefully', () => {
-            const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
             const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
             fixture.componentRef.setInput('field', MALFORMED_CUSTOM_BLOCK_FIELD);
             fixture.detectChanges();

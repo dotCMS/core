@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -25,21 +31,21 @@ describe('DotAiEmbeddingsComponent', () => {
     let spectator: Spectator<DotAiEmbeddingsComponent>;
     let onClose: Subject<unknown>;
     let dialogService: DialogService;
-    let confirmSpy: jest.SpyInstance;
+    let confirmSpy: MockInstance;
 
     const storeMock = {
-        indexes: jest.fn().mockReturnValue([index()]),
-        filteredIndexes: jest.fn().mockReturnValue([index()]),
-        indexStatuses: jest.fn().mockReturnValue({ blogs: 'READY' }),
-        indexesForbidden: jest.fn().mockReturnValue(false),
-        isConfigured: jest.fn().mockReturnValue(true),
-        setIndexFilter: jest.fn(),
-        buildIndex: jest.fn(),
-        indexBuildNotice: jest.fn().mockReturnValue(null),
-        dismissBuildNotice: jest.fn(),
-        deleteFromIndex: jest.fn(),
-        deleteIndex: jest.fn(),
-        rebuildEmbeddingsDb: jest.fn()
+        indexes: vi.fn().mockReturnValue([index()]),
+        filteredIndexes: vi.fn().mockReturnValue([index()]),
+        indexStatuses: vi.fn().mockReturnValue({ blogs: 'READY' }),
+        indexesForbidden: vi.fn().mockReturnValue(false),
+        isConfigured: vi.fn().mockReturnValue(true),
+        setIndexFilter: vi.fn(),
+        buildIndex: vi.fn(),
+        indexBuildNotice: vi.fn().mockReturnValue(null),
+        dismissBuildNotice: vi.fn(),
+        deleteFromIndex: vi.fn(),
+        deleteIndex: vi.fn(),
+        rebuildEmbeddingsDb: vi.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -50,7 +56,7 @@ describe('DotAiEmbeddingsComponent', () => {
         componentProviders: [
             { provide: DotAiStore, useValue: storeMock },
             ConfirmationService,
-            { provide: DialogService, useValue: { open: jest.fn() } }
+            { provide: DialogService, useValue: { open: vi.fn() } }
         ],
         // Echoes the key, so assertions on dialog copy read as the key that was asked
         // for rather than `undefined`.
@@ -59,14 +65,14 @@ describe('DotAiEmbeddingsComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         storeMock.indexesForbidden.mockReturnValue(false);
         storeMock.filteredIndexes.mockReturnValue([index()]);
         onClose = new Subject();
         spectator = createComponent();
         dialogService = spectator.inject(DialogService, true);
-        (dialogService.open as jest.Mock).mockReturnValue({ onClose });
-        confirmSpy = jest.spyOn(spectator.inject(ConfirmationService, true), 'confirm');
+        (dialogService.open as Mock).mockReturnValue({ onClose });
+        confirmSpy = vi.spyOn(spectator.inject(ConfirmationService, true), 'confirm');
     });
 
     const clickButton = (testId: string) =>

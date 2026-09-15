@@ -1,5 +1,6 @@
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { buildPersistedQueryKey } from './dot-persisted-query.utils';
 import { withPersistedQuery } from './with-persisted-query.feature';
@@ -31,11 +32,11 @@ describe('withPersistedQuery', () => {
 
     beforeEach(() => {
         window.localStorage.clear();
-        jest.useFakeTimers();
+        vi.useFakeTimers();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
         window.localStorage.clear();
     });
 
@@ -76,7 +77,7 @@ describe('withPersistedQuery', () => {
 
             expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
 
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(window.localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify('draft'));
         });
@@ -87,15 +88,15 @@ describe('withPersistedQuery', () => {
 
             spectator.service.setQuery('first');
             spectator.flushEffects();
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             spectator.service.setQuery('second');
             spectator.flushEffects();
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
 
             spectator.service.setQuery('third');
             spectator.flushEffects();
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(window.localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify('third'));
         });
@@ -128,7 +129,7 @@ describe('withPersistedQuery', () => {
 
             spectator.service.clearPersistedQuery();
             spectator.flushEffects();
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
         });
@@ -139,12 +140,12 @@ describe('withPersistedQuery', () => {
 
             spectator.service.setQuery('draft');
             spectator.flushEffects();
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             expect(window.localStorage.getItem(STORAGE_KEY)).toBe(JSON.stringify('draft'));
 
             spectator.service.setQuery('');
             spectator.flushEffects();
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull();
         });

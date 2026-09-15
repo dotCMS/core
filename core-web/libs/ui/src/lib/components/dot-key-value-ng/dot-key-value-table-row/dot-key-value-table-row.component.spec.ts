@@ -1,4 +1,5 @@
-import { SpectatorHost, byTestId, createHostFactory } from '@openng/spectator/jest';
+import { SpectatorHost, byTestId, createHostFactory } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Table } from 'primeng/table';
 
@@ -28,7 +29,7 @@ describe('DotKeyValueTableRowComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: messageServiceMock },
             // `pReorderableRowHandle` reaches for the parent Table through DI.
-            { provide: Table, useValue: { onRowReorder: { emit: jest.fn() } } }
+            { provide: Table, useValue: { onRowReorder: { emit: vi.fn() } } }
         ]
     });
 
@@ -107,7 +108,7 @@ describe('DotKeyValueTableRowComponent', () => {
         });
 
         it('should commit the edit and return to plain text on Enter', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             activate();
 
             const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'));
@@ -153,7 +154,7 @@ describe('DotKeyValueTableRowComponent', () => {
         it('should discard the edit when focus leaves the input', () => {
             // Enter is the one gesture that writes. Clicking away abandons, so a valid
             // edit and an invalid one leave by the same door.
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             activate();
 
             const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'));
@@ -168,7 +169,7 @@ describe('DotKeyValueTableRowComponent', () => {
         });
 
         it('should refuse an emptied value and say why', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             activate();
 
             spectator.component.editControl.setValue('   ');
@@ -182,7 +183,7 @@ describe('DotKeyValueTableRowComponent', () => {
 
         it('should commit a value exactly as typed, spaces included', () => {
             // Trimming decides only whether a value counts as blank; it never edits it.
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             activate();
 
             spectator.component.editControl.setValue('John ');
@@ -203,7 +204,7 @@ describe('DotKeyValueTableRowComponent', () => {
         });
 
         it('should restore the original value on Escape and emit nothing', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             activate();
 
             const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'));
@@ -218,7 +219,7 @@ describe('DotKeyValueTableRowComponent', () => {
         });
 
         it('should not report an edit that changed nothing', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             activate();
 
             spectator
@@ -232,7 +233,7 @@ describe('DotKeyValueTableRowComponent', () => {
 
     describe('removing', () => {
         it('should emit delete when the remove control is used', () => {
-            const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
+            const deleteSpy = vi.spyOn(spectator.component.delete, 'emit');
 
             spectator.click(byTestId('dot-key-value-delete-button'));
             spectator.detectChanges();
@@ -334,7 +335,7 @@ describe('DotKeyValueTableRowComponent', () => {
         });
 
         it('should report the renamed pair, keeping its value', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             startEditing();
 
             spectator.component.editControl.setValue('renamed');
@@ -347,7 +348,7 @@ describe('DotKeyValueTableRowComponent', () => {
         });
 
         it('should say nothing when the key comes back unchanged', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             startEditing();
 
             spectator.component.commitEdit();
@@ -357,7 +358,7 @@ describe('DotKeyValueTableRowComponent', () => {
 
         it('should restore the key on Escape', () => {
             startEditing();
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
 
             spectator.component.editControl.setValue('typed-but-discarded');
             spectator.component.cancelEdit();
@@ -374,7 +375,7 @@ describe('DotKeyValueTableRowComponent', () => {
             // entry row already rejects the same thing when adding.
             setProps({ variable: mockVariable, forbiddenkeys: { taken: true } });
             startEditing();
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
 
             spectator.component.editControl.setValue('taken');
             spectator.component.commitEdit();
@@ -384,7 +385,7 @@ describe('DotKeyValueTableRowComponent', () => {
 
         it('should refuse an empty key', () => {
             startEditing();
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
 
             spectator.component.editControl.setValue('   ');
             spectator.component.commitEdit();
@@ -417,7 +418,7 @@ describe('DotKeyValueTableRowComponent', () => {
                 forbiddenkeys: { name: true }
             });
             startEditing();
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
 
             spectator.component.editControl.setValue('  name  ');
             spectator.component.commitEdit();
@@ -441,7 +442,7 @@ describe('DotKeyValueTableRowComponent', () => {
         });
 
         it('should discard a rename when focus leaves the input', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             startEditing();
 
             const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-key-input'));

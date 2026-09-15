@@ -3,12 +3,18 @@
 /* eslint-disable no-console */
 
 // This file is required by jest and is used for setup for each test file.
+import '@analogjs/vitest-angular/setup-zone';
+import '@angular/compiler';
+import '@analogjs/vitest-angular/setup-snapshots';
+import { setupTestBed } from '@analogjs/vitest-angular/setup-testbed';
 import '@testing-library/jest-dom';
-import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
+import { vi } from 'vitest';
+
+import { provideZoneChangeDetection } from '@angular/core';
 
 import { setupResizeObserverMock } from '@dotcms/utils-testing';
 
-setupZoneTestEnv();
+setupTestBed({ zoneless: false, providers: [provideZoneChangeDetection()] });
 
 // Setup global mocks
 setupResizeObserverMock();
@@ -46,7 +52,7 @@ if (!global.Date) {
 
 // Add scrollIntoView polyfill for JSDOM
 if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
-    Element.prototype.scrollIntoView = jest.fn();
+    Element.prototype.scrollIntoView = vi.fn();
 }
 
 // Add element.animate polyfill for Jest/JSDOM environment
@@ -141,12 +147,12 @@ console.warn = (...args: unknown[]) => {
 
 // Mock sessionStorage for JSDOM
 const mockSessionStorage = {
-    getItem: jest.fn().mockReturnValue(null),
-    setItem: jest.fn(),
-    removeItem: jest.fn(),
-    clear: jest.fn(),
+    getItem: vi.fn().mockReturnValue(null),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
+    clear: vi.fn(),
     length: 0,
-    key: jest.fn()
+    key: vi.fn()
 };
 
 Object.defineProperty(window, 'sessionStorage', {

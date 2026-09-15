@@ -1,6 +1,7 @@
 import { Dispatcher, provideDispatcher } from '@ngrx/signals/events';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, convertToParamMap, Params } from '@angular/router';
@@ -112,13 +113,13 @@ describe('DotExperimentsResultsStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotExperimentsResultsStore>>;
     let store: InstanceType<typeof DotExperimentsResultsStore>;
     let dispatcher: Dispatcher;
-    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
 
-    const getById = jest.fn();
-    const getResults = jest.fn();
-    const stop = jest.fn();
-    const promoteVariant = jest.fn();
-    const messageGet = jest.fn();
+    const getById = vi.fn();
+    const getResults = vi.fn();
+    const stop = vi.fn();
+    const promoteVariant = vi.fn();
+    const messageGet = vi.fn();
 
     let routeParams: Params;
 
@@ -153,7 +154,7 @@ describe('DotExperimentsResultsStore', () => {
         dispatcher = spectator.inject(Dispatcher);
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
-        ) as jest.Mocked<DotHttpErrorManagerService>;
+        ) as Mocked<DotHttpErrorManagerService>;
         spectator.flushEffects();
     };
 
@@ -171,7 +172,7 @@ describe('DotExperimentsResultsStore', () => {
         new HttpErrorResponse({ status, error });
 
     beforeEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
 
         getById.mockReturnValue(of(RUNNING_EXPERIMENT));
         getResults.mockReturnValue(of(RESULTS));

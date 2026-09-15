@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of, throwError } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -39,14 +40,17 @@ import { DotPageStateService } from '../dot-page-state/dot-page-state.service';
 import { DotRouterService } from '../dot-router/dot-router.service';
 import { DotSessionStorageService } from '../dot-session-storage/dot-session-storage.service';
 
-const route: any = jest.spyOn(ActivatedRouteSnapshot, 'toString');
-
-route.queryParams = {};
+// The tests mutate `queryParams` and `children` directly, so the snapshot is a
+// plain stand-in rather than a real ActivatedRouteSnapshot.
+const route: any = {
+    toString: vi.fn(),
+    queryParams: {}
+};
 
 describe('DotEditPageResolver', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotPageStateService: DotPageStateService;
-    let dotPageStateServiceRequestPageSpy: jest.SpyInstance;
+    let dotPageStateServiceRequestPageSpy: MockInstance;
     let dotRouterService: DotRouterService;
     let dotSessionStorageService: DotSessionStorageService;
 
@@ -74,7 +78,7 @@ describe('DotEditPageResolver', () => {
                 DotFormatDateService,
                 DotESContentService,
                 DotFavoritePageService,
-                { provide: DotRouterService, useValue: new MockDotRouterJestService(jest) },
+                { provide: DotRouterService, useValue: new MockDotRouterJestService(vi) },
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
@@ -98,12 +102,12 @@ describe('DotEditPageResolver', () => {
         dotEditPageResolver = injector.inject(DotEditPageResolver);
         dotHttpErrorManagerService = injector.inject(DotHttpErrorManagerService);
         dotPageStateService = injector.inject(DotPageStateService);
-        dotPageStateServiceRequestPageSpy = jest.spyOn(dotPageStateService, 'requestPage');
+        dotPageStateServiceRequestPageSpy = vi.spyOn(dotPageStateService, 'requestPage');
         dotRouterService = injector.inject(DotRouterService);
         siteService = injector.inject(SiteService);
         dotSessionStorageService = injector.inject(DotSessionStorageService);
 
-        jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
+        vi.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
     });
 
     beforeEach(() => {
@@ -161,7 +165,7 @@ describe('DotEditPageResolver', () => {
     describe('Switch Site', () => {
         it('should switch site when host_id is present in queryparams', () => {
             route.queryParams.host_id = '123';
-            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
+            vi.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
@@ -173,7 +177,7 @@ describe('DotEditPageResolver', () => {
 
         it('should not switch site when host_id is not present in queryparams', () => {
             route.queryParams = {};
-            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
+            vi.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
@@ -185,7 +189,7 @@ describe('DotEditPageResolver', () => {
 
         it('should not switch site when host_id is equal to current site id', () => {
             route.queryParams.host_id = siteService.currentSite.identifier;
-            jest.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
+            vi.spyOn(siteService, 'switchSiteById').mockReturnValue(of());
             const mock = new DotPageRenderState(
                 mockUser(),
                 new DotPageRender(mockDotRenderedPage())
@@ -248,7 +252,7 @@ describe('DotEditPageResolver', () => {
         });
 
         it('should call to `removeVariantId` when handle error and redirect to site-browser ', () => {
-            jest.spyOn(dotSessionStorageService, 'removeVariantId');
+            vi.spyOn(dotSessionStorageService, 'removeVariantId');
 
             const mock = new DotPageRenderState(
                 mockUser(),

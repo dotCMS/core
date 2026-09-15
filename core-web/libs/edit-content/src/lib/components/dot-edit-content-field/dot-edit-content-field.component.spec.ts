@@ -1,9 +1,14 @@
-import { describe } from '@jest/globals';
 import { MonacoEditorLoaderService, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { describe, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -111,18 +116,18 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
                 contentlet: signal(null)
             }),
             mockProvider(DotEditContentService, {
-                getContentById: jest.fn().mockReturnValue(of({}))
+                getContentById: vi.fn().mockReturnValue(of({}))
             }),
             {
                 provide: EDIT_CONTENT_HOST,
                 useValue: {
                     inPlaceNavigation: false,
-                    setContentTitle: jest.fn(),
-                    addBreadcrumb: jest.fn(),
-                    goToSavedContent: jest.fn(),
-                    goToRestoredVersion: jest.fn(),
-                    goToRelatedContent: jest.fn(),
-                    goToCrumb: jest.fn()
+                    setContentTitle: vi.fn(),
+                    addBreadcrumb: vi.fn(),
+                    goToSavedContent: vi.fn(),
+                    goToRestoredVersion: vi.fn(),
+                    goToRelatedContent: vi.fn(),
+                    goToCrumb: vi.fn()
                 }
             }
         ]
@@ -155,7 +160,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         component: DotEditContentHostFolderFieldComponent,
         providers: [
             mockProvider(DotEditContentService, {
-                getSitesTreePath: jest.fn().mockReturnValue(of(TREE_SELECT_MOCK))
+                getSitesTreePath: vi.fn().mockReturnValue(of(TREE_SELECT_MOCK))
             })
         ]
     },
@@ -319,7 +324,7 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(
+                getSystemConfig: vi.fn().mockReturnValue(
                     of({
                         logos: { loginScreen: '/assets/logo.png', navBar: 'NA' },
                         colors: { primary: '#000000', secondary: '#FFFFFF', background: '#F5F5F5' },
@@ -479,7 +484,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(
+                getSystemConfig: vi.fn().mockReturnValue(
                     of({
                         systemTimezone: {
                             id: 'UTC',
@@ -640,7 +645,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Non-FILEASSET)'
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(
+                getSystemConfig: vi.fn().mockReturnValue(
                     of({
                         systemTimezone: {
                             id: 'UTC',
@@ -716,7 +721,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Null ContentTyp
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(
+                getSystemConfig: vi.fn().mockReturnValue(
                     of({
                         systemTimezone: {
                             id: 'UTC',
@@ -791,7 +796,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Title Only)', (
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(
+                getSystemConfig: vi.fn().mockReturnValue(
                     of({
                         systemTimezone: {
                             id: 'UTC',
@@ -864,7 +869,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (FileName Only)'
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
-                getSystemConfig: jest.fn().mockReturnValue(
+                getSystemConfig: vi.fn().mockReturnValue(
                     of({
                         systemTimezone: {
                             id: 'UTC',

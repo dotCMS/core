@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import {
     DefaultGoalConfiguration,
@@ -212,10 +212,11 @@ describe('DotExperimentsService', () => {
         expect(req.request.body).not.toHaveProperty('pageId');
     });
 
-    it('should return an Observable of undefined when experimentId is undefined', (done) => {
-        spectator.service.getById(undefined).subscribe((result) => {
-            expect(result).toBeUndefined();
-            done();
-        });
-    });
+    it('should return an Observable of undefined when experimentId is undefined', () =>
+        new Promise<void>((done) => {
+            spectator.service.getById(undefined).subscribe((result) => {
+                expect(result).toBeUndefined();
+                done();
+            });
+        }));
 });

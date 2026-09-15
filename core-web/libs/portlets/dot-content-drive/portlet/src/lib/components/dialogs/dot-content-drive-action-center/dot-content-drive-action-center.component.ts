@@ -158,7 +158,7 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
             /*
              * Folder notice is present at open, so PrimeNG Message's hardcoded enter/leave height
              * animation (no API opt-out) reads as a late shove of the action list — kill both via CSS
-             * on \`.no-enter-motion\`; \`:host ::ng-deep\` so we don't rely on \`_ngcontent\` piercing.
+             * on '.no-enter-motion'; ':host ::ng-deep' so we don't rely on '_ngcontent' piercing.
              */
             :host ::ng-deep p-message.no-enter-motion.p-message-enter-active,
             :host ::ng-deep p-message.no-enter-motion.p-message-leave-active {
@@ -278,7 +278,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * local signal would reset to `false` on the new instance and let the same action be fired twice
      * over the same rows.
      */
-    protected readonly $executing = computed(() => !!this.#store.actionExecution());
+    protected readonly $executing = computed(() => this.#store.activeRunCount() > 0);
     /**
      * Which screen is showing.
      *
@@ -805,7 +805,10 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.#store.executeAddToBundle(
             this.#dotMessageService.get(quickAction.name),
             bundle,
-            identifiers
+            identifiers,
+            // The rows this is acting on. Sent alongside the identifiers because the two are
+            // different vocabularies: the request queues assets, the listing marks rows.
+            this.$includedItems().map((item) => item.inode)
         );
         this.handOffToToolbar();
     }
@@ -828,7 +831,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.#store.executePushPublish(
             this.#dotMessageService.get(quickAction.name),
             identifiers,
-            settings
+            settings,
+            this.$includedItems().map((item) => item.inode)
         );
         this.handOffToToolbar();
     }

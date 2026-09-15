@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { Subject, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -28,7 +34,7 @@ const MOCK_REFERENCES: DotContentReference[] = [
 describe('DotEditContentSidebarReferencesDialogComponent', () => {
     let spectator: Spectator<DotEditContentSidebarReferencesDialogComponent>;
 
-    const dialogRefMock = { close: jest.fn() };
+    const dialogRefMock = { close: vi.fn() };
 
     const createComponent = createComponentFactory({
         component: DotEditContentSidebarReferencesDialogComponent,
@@ -46,13 +52,13 @@ describe('DotEditContentSidebarReferencesDialogComponent', () => {
                 useValue: new MockDotMessageService({ of: 'of' })
             },
             mockProvider(DotEditContentService, {
-                getContentletReferences: jest.fn().mockReturnValue(of(MOCK_REFERENCES))
+                getContentletReferences: vi.fn().mockReturnValue(of(MOCK_REFERENCES))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 
-    beforeEach(() => jest.clearAllMocks());
+    beforeEach(() => vi.clearAllMocks());
 
     describe('loading state', () => {
         it('should show skeletons while the HTTP call is in-flight', () => {
@@ -61,7 +67,7 @@ describe('DotEditContentSidebarReferencesDialogComponent', () => {
             spectator = createComponent({
                 providers: [
                     mockProvider(DotEditContentService, {
-                        getContentletReferences: jest.fn().mockReturnValue(responses$)
+                        getContentletReferences: vi.fn().mockReturnValue(responses$)
                     })
                 ],
                 detectChanges: false
@@ -95,7 +101,7 @@ describe('DotEditContentSidebarReferencesDialogComponent', () => {
             spectator = createComponent({
                 providers: [
                     mockProvider(DotEditContentService, {
-                        getContentletReferences: jest.fn().mockReturnValue(of([]))
+                        getContentletReferences: vi.fn().mockReturnValue(of([]))
                     })
                 ]
             });
@@ -115,7 +121,7 @@ describe('DotEditContentSidebarReferencesDialogComponent', () => {
             spectator = createComponent({
                 providers: [
                     mockProvider(DotEditContentService, {
-                        getContentletReferences: jest
+                        getContentletReferences: vi
                             .fn()
                             .mockReturnValue(throwError(() => new Error('boom')))
                     })

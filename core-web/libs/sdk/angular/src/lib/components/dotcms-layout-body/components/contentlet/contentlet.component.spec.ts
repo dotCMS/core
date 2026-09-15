@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mocked, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Component, ElementRef, Input, Type } from '@angular/core';
 
@@ -23,7 +23,7 @@ class MockComponent {
 describe('ContentletComponent', () => {
     let spectator: Spectator<ContentletComponent>;
     let component: ContentletComponent;
-    let dotcmsStore: jest.Mocked<DotCMSStore>;
+    let dotcmsStore: Mocked<DotCMSStore>;
 
     const mockContentlet: DotCMSBasicContentlet = {
         identifier: 'test-contentlet-id',
@@ -51,12 +51,12 @@ describe('ContentletComponent', () => {
 
     beforeEach(() => {
         dotcmsStore = {
-            $isDevMode: jest.fn().mockReturnValue(false),
-            $isAnalyticsActive: jest.fn().mockReturnValue(false),
+            $isDevMode: vi.fn().mockReturnValue(false),
+            $isAnalyticsActive: vi.fn().mockReturnValue(false),
             store: {
                 components: mockComponentsStore
             }
-        } as unknown as jest.Mocked<DotCMSStore>;
+        } as unknown as Mocked<DotCMSStore>;
 
         spectator = createComponent({
             props: {
@@ -80,7 +80,7 @@ describe('ContentletComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('edit mode (UVE)', () => {

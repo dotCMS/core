@@ -1,14 +1,15 @@
-import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import {
     Spectator,
     SpyObject,
     byTestId,
     createComponentFactory,
     mockProvider
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { computed, signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -58,7 +59,7 @@ const settleToolbarAnimation = async (spectator: Spectator<DotContentDriveToolba
 };
 
 /** The bar clears through the facade, so this is what the Clear all test asserts against. */
-const clearFiltersSpy = jest.fn();
+const clearFiltersSpy = vi.fn();
 
 describe('DotContentDriveToolbarComponent', () => {
     let spectator: Spectator<DotContentDriveToolbarComponent>;
@@ -72,6 +73,7 @@ describe('DotContentDriveToolbarComponent', () => {
         { data?: { defaultBaseType?: string | null; permissions?: string[] } } | undefined
     >(undefined);
     const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    const activeRunCountSignal = signal<number>(0);
     // The field-filter chips read these through DOT_FIELD_FILTER_HOST, and the toolbar reads the
     // same pair off the store to render one chip per active field — so both point here.
     const userSearchableFieldsSignal = signal<DotCMSContentTypeField[]>([]);
@@ -86,11 +88,11 @@ describe('DotContentDriveToolbarComponent', () => {
             {
                 provide: DOT_FILTER_FACADE,
                 useValue: {
-                    getFilterValue: jest.fn(
+                    getFilterValue: vi.fn(
                         (key: string): DotFilterValue | undefined => filtersSignal()[key]
                     ),
-                    patchFilters: jest.fn(),
-                    removeFilter: jest.fn(),
+                    patchFilters: vi.fn(),
+                    removeFilter: vi.fn(),
                     clearFilters: clearFiltersSpy,
                     // "Clear all" lives in the shared bar now and keys off this. In production the
                     // facade derives it from the same filters this suite already drives, so deriving
@@ -105,9 +107,9 @@ describe('DotContentDriveToolbarComponent', () => {
                 useValue: {
                     $activeFields: userSearchableActiveSignal,
                     $fields: userSearchableFieldsSignal,
-                    addField: jest.fn(),
-                    setFields: jest.fn(),
-                    clearFields: jest.fn()
+                    addField: vi.fn(),
+                    setFields: vi.fn(),
+                    clearFields: vi.fn()
                 } satisfies DotFieldFilterHost
             },
             mockProvider(DotContentDriveStore, {
@@ -117,22 +119,25 @@ describe('DotContentDriveToolbarComponent', () => {
                 // the real preference from a panel-forced override.
                 isTreeVisuallyExpanded: isTreeExpandedSignal,
                 // The toggler disables itself while the side panel holds the tree collapsed.
-                isTreeForceCollapsed: jest.fn().mockReturnValue(false),
-                setIsTreeExpanded: jest.fn(),
-                getFilterValue: jest.fn().mockReturnValue(undefined),
-                patchFilters: jest.fn(),
-                removeFilter: jest.fn(),
-                clearFilters: jest.fn(),
+                isTreeForceCollapsed: vi.fn().mockReturnValue(false),
+                setIsTreeExpanded: vi.fn(),
+                getFilterValue: vi.fn().mockReturnValue(undefined),
+                patchFilters: vi.fn(),
+                removeFilter: vi.fn(),
+                clearFilters: vi.fn(),
                 filters: filtersSignal,
-                setDialog: jest.fn(),
+                setDialog: vi.fn(),
                 selectedItems: selectedItemsSignal,
                 selectedNode: selectedNodeSignal,
                 userSearchableFields: userSearchableFieldsSignal,
                 userSearchableActive: userSearchableActiveSignal,
-                setUserSearchableFields: jest.fn(),
-                addUserSearchableField: jest.fn(),
-                clearUserSearchableFilters: jest.fn(),
-                actionExecution: actionExecutionSignal,
+                setUserSearchableFields: vi.fn(),
+                addUserSearchableField: vi.fn(),
+                clearUserSearchableFilters: vi.fn(),
+                // The toolbar reads the *presentation* signals: only runs the rows cannot
+                // speak for themselves, which today means an upload.
+                toolbarRun: actionExecutionSignal,
+                toolbarRunCount: activeRunCountSignal,
                 siteCanAddChildren: siteCanAddChildrenSignal,
                 // Mirrors the store's own computed so the toolbar tests still drive the gate
                 // through the two signals it derives from, not through a hardcoded answer.
@@ -148,11 +153,11 @@ describe('DotContentDriveToolbarComponent', () => {
                 // Read by the Locale chip this toolbar renders: the store resolves the languages
                 // once and seeds the environment default into the `languageId` filter.
                 languages: signal(mockLocales),
-                defaultLanguageId: jest.fn().mockReturnValue(1)
+                defaultLanguageId: vi.fn().mockReturnValue(1)
             }),
             mockProvider(DotContentTypeService, {
-                getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
-                getContentTypesWithPagination: jest.fn().mockReturnValue(
+                getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
+                getContentTypesWithPagination: vi.fn().mockReturnValue(
                     of({
                         contentTypes: MOCK_CONTENT_TYPES,
                         pagination: {
@@ -162,26 +167,26 @@ describe('DotContentDriveToolbarComponent', () => {
                         }
                     })
                 ),
-                getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
+                getAllContentTypes: vi.fn().mockReturnValue(of(MOCK_BASE_TYPES))
             }),
             // The shared DotLanguageFilterComponent fetches the language list on init, so without
             // this the toolbar's render reaches for /api/v2/languages and the spec fails on a
             // NetworkError rather than on anything it is testing.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             mockProvider(DotHttpErrorManagerService),
             // Field-filter chips render inside the toolbar; provide their dependencies.
             mockProvider(DotTagsService, {
-                getTagsPaginated: jest.fn().mockReturnValue(of({ entity: [] }))
+                getTagsPaginated: vi.fn().mockReturnValue(of({ entity: [] }))
             }),
             mockProvider(DotCategoriesService, {
-                getChildrenPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
-                getCategoriesPaginated: jest.fn().mockReturnValue(of({ entity: [] })),
-                getCategory: jest.fn().mockReturnValue(of(null))
+                getChildrenPaginated: vi.fn().mockReturnValue(of({ entity: [] })),
+                getCategoriesPaginated: vi.fn().mockReturnValue(of({ entity: [] })),
+                getCategory: vi.fn().mockReturnValue(of(null))
             }),
             mockProvider(DotContentletService, {
-                getContentletByInode: jest.fn().mockReturnValue(of(null))
+                getContentletByInode: vi.fn().mockReturnValue(of(null))
             }),
             {
                 provide: DotMessageService,
@@ -189,12 +194,17 @@ describe('DotContentDriveToolbarComponent', () => {
             },
             // Needed once a selection exists: that mounts the workflow-actions child, which injects
             // both of these.
-            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(MessageService, { add: vi.fn() }),
             mockProvider(DotContentDriveNavigationService, {
-                editContent: jest.fn(),
-                editPage: jest.fn()
+                editContent: vi.fn(),
+                editPage: vi.fn()
             }),
-            provideHttpClient()
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
+            provideHttpClient(),
+            provideHttpClientTesting()
         ],
         detectChanges: false
     });
@@ -206,12 +216,17 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
+        // `clearAllMocks` resets call history but leaves a `vi.spyOn` implementation in place, so
+        // a test that stubs `DotMessageService.get` to render real copy was leaking that stub into
+        // every test after it. Restoring puts the shared key-echoing mock back.
+        vi.restoreAllMocks();
         isTreeExpandedSignal.set(false);
         filtersSignal.set({});
         selectedItemsSignal.set([]);
         selectedNodeSignal.set(undefined);
         actionExecutionSignal.set(undefined);
+        activeRunCountSignal.set(0);
     });
 
     it('should render toolbar container', () => {
@@ -550,7 +565,7 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should emit upload when the upload button is clicked', async () => {
             await settleToolbarAnimation(spectator);
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.$upload.subscribe(emitSpy);
 
             const uploadButton = spectator
@@ -667,6 +682,7 @@ describe('DotContentDriveToolbarComponent', () => {
             // Reopening mid-run gives a dialog with every row greyed out that then closes itself
             // when the run settles. Refusing to open it is the honest version of that state.
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             await settleToolbarAnimation(spectator);
 
@@ -677,8 +693,40 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(button?.disabled).toBe(true);
         });
 
+        it('should stay disabled when several actions are running at once', async () => {
+            // `toolbarRun` names a run only when there is exactly one: with several it is
+            // deliberately undefined so the indicator falls back to a count rather than naming one
+            // arbitrarily. Gating on its truthiness therefore un-gated the button exactly when the
+            // most was happening — and this branch makes that reachable, because a backgrounded
+            // upload outlives its request and can sit alongside a second run.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(2);
+            actionExecutionSignal.set(undefined);
+            await settleToolbarAnimation(spectator);
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(true);
+        });
+
+        it('should still explain itself when several actions are running at once', async () => {
+            // The tooltip is the only thing that says why the button cannot be used, so it has to
+            // survive the same case rather than going quiet when there is more to explain.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(2);
+            actionExecutionSignal.set(undefined);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe(
+                'content-drive.action-center.busy'
+            );
+        });
+
         it('should explain why it is disabled while an action is running', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             await settleToolbarAnimation(spectator);
 
@@ -696,6 +744,7 @@ describe('DotContentDriveToolbarComponent', () => {
 
         it('should not open the dialog while an action is running', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             await settleToolbarAnimation(spectator);
 
@@ -707,10 +756,14 @@ describe('DotContentDriveToolbarComponent', () => {
 
         it('should become available again once the run settles', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             await settleToolbarAnimation(spectator);
 
+            // A settled run leaves neither a name nor a count. Clearing only the name described a
+            // state the store cannot be in, and passed only while the gate read the name.
             actionExecutionSignal.set(undefined);
+            activeRunCountSignal.set(0);
             spectator.detectChanges();
 
             const button = spectator
@@ -731,6 +784,7 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should report the action and the number of items once a run starts', () => {
             // The toolbar is the only place still reporting the run after the Action Center dialog is
             // closed, which is the whole reason the indicator lives out here.
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             spectator.detectChanges();
 
@@ -751,13 +805,13 @@ describe('DotContentDriveToolbarComponent', () => {
             // anything; the real message has to be in play for the assertion to mean something.
             const messageService = spectator.inject(DotMessageService);
 
-            jest.spyOn(messageService, 'get').mockImplementation(
-                (key: string, ...args: string[]) =>
-                    key === 'content-drive.action-center.applying'
-                        ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
-                        : key
+            vi.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
+                key === 'content-drive.action-center.applying'
+                    ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
+                    : key
             );
 
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({
                 actionName: '<img src=x onerror="window.__xss = true">',
                 total: 3
@@ -775,13 +829,145 @@ describe('DotContentDriveToolbarComponent', () => {
         });
 
         it('should disappear again once the run settles', () => {
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             spectator.detectChanges();
 
             actionExecutionSignal.set(undefined);
+            // Settling clears the count too; the indicator now keys visibility off it so that
+            // several runs (where no single one is named) still show something.
+            activeRunCountSignal.set(0);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+        });
+
+        // ---- FR-017: several runs at once ----
+
+        it('should collapse to a count when several runs are in flight', () => {
+            // `actionExecution` is undefined with more than one run: naming one of several
+            // arbitrarily is worse than naming none.
+            activeRunCountSignal.set(2);
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeTruthy();
+            expect(spectator.component.$actionExecutionLabel()).toBe(
+                'content-drive.action-center.applying-many'
+            );
+        });
+
+        it('should still hide the indicator when nothing at all is running', () => {
+            activeRunCountSignal.set(0);
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+        });
+
+        // ---- FR-010: name the item when there is one ----
+
+        it('should name the item, not a count, when the run is over a single thing', () => {
+            // "Applying Publish to 1 item(s)" is worse than useless on a context-menu action: the
+            // author knows it is one item, what they cannot see is *which*.
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({
+                actionName: 'Publish',
+                total: 1,
+                targetLabel: 'My Page'
+            });
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionExecutionLabel()).toBe(
+                'content-drive.action-center.applying-item'
+            );
+        });
+
+        it('should keep the count form when several items are in play', () => {
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 12 });
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionExecutionLabel()).toBe(
+                'content-drive.action-center.applying'
+            );
+        });
+
+        // ---- FR-011: the item name is author-supplied content ----
+
+        it('should not render markup carried by the item name', () => {
+            // `actionName` comes from the backend; a title is typed by an author, so this is the
+            // likelier of the two to carry markup and the one that must not become live DOM.
+            const messageService = spectator.inject(DotMessageService);
+
+            vi.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
+                key === 'content-drive.action-center.applying-item'
+                    ? `Applying <b>${args[0]}</b> to <i>${args[1]}</i>`
+                    : key
+            );
+
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({
+                actionName: 'Publish',
+                total: 1,
+                targetLabel: '<img src=x onerror="window.__xss = true">'
+            });
+            spectator.detectChanges();
+
+            const indicator = spectator.query(byTestId('action-execution-indicator'));
+
+            expect(indicator?.querySelector('img')).toBeNull();
+            expect(indicator?.querySelector('[onerror]')).toBeNull();
+            expect(indicator?.textContent).toContain('<img src=x');
+        });
+
+        // ---- FR-012: a position only when the run actually reports one ----
+
+        it('should show activity without a position when the run reports no progress', () => {
+            // Progress readback is the backend's largest piece of hidden work. Until it lands every
+            // run is indeterminate, and the indicator must not imply a position it does not have.
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 50 });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeTruthy();
+            expect(spectator.query(byTestId('action-execution-progress'))).toBeNull();
+        });
+
+        it('should show the position once the run reports one', () => {
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 20 });
+            spectator.detectChanges();
+
+            const progress = spectator.query(byTestId('action-execution-progress'));
+
+            expect(progress).toBeTruthy();
+            expect(spectator.component.$actionExecutionPercent()).toBe(40);
+        });
+
+        it('should treat a reported zero as a position, not as absence', () => {
+            // `processed: 0` is a run that has genuinely done nothing yet, which is different from a
+            // run that cannot say. A truthiness check would collapse the two.
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 0 });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-progress'))).toBeTruthy();
+            expect(spectator.component.$actionExecutionPercent()).toBe(0);
+        });
+
+        // ---- FR-035: announce state changes, not every tick ----
+
+        it('should keep progress updates out of the live region', () => {
+            // The indicator is a polite live region. A fifty-file upload that re-announced on every
+            // tick would speak fifty times; the value stays queryable instead of being pushed.
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 20 });
+            spectator.detectChanges();
+
+            const progress = spectator.query(byTestId('action-execution-progress'));
+
+            expect(progress?.getAttribute('aria-live')).toBe('off');
         });
     });
 
@@ -887,6 +1073,19 @@ describe('DotContentDriveToolbarComponent', () => {
             await withPermissions(['CAN_ADD_CHILDREN']);
 
             expect(spectator.component.$addChildrenTooltip()).toBe('');
+        });
+    });
+
+    describe('progress the run measures itself', () => {
+        it('should fall back to the item ratio when the run reports no percent', () => {
+            actionExecutionSignal.set({
+                actionName: 'Publish',
+                total: 4,
+                processed: 1
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionExecutionPercent()).toBe(25);
         });
     });
 });

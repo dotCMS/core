@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { EMPTY } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { Title } from '@angular/platform-browser';
@@ -38,14 +39,14 @@ const routeTree = (
 describe('RouterEditContentHost', () => {
     let spectator: SpectatorService<RouterEditContentHost>;
     let host: RouterEditContentHost;
-    let router: jest.Mocked<Pick<Router, 'navigate'>>;
-    let title: jest.Mocked<Pick<Title, 'setTitle'>>;
-    let globalStore: { addNewBreadcrumb: jest.Mock };
+    let router: Mocked<Pick<Router, 'navigate'>>;
+    let title: Mocked<Pick<Title, 'setTitle'>>;
+    let globalStore: { addNewBreadcrumb: Mock };
     let relatedNav: {
-        registerTitle: jest.Mock;
-        buildTrailForSavedInode: jest.Mock;
-        appendToTrail: jest.Mock;
-        trailInodes: jest.Mock;
+        registerTitle: Mock;
+        buildTrailForSavedInode: Mock;
+        appendToTrail: Mock;
+        trailInodes: Mock;
         trail: ReturnType<typeof signal<DotRelatedContentCrumb[]>>;
     };
 
@@ -55,24 +56,24 @@ describe('RouterEditContentHost', () => {
         service: RouterEditContentHost,
         providers: [
             mockProvider(Router, {
-                navigate: jest.fn(),
+                navigate: vi.fn(),
                 // identityChanges$ subscribes to router.events at construction.
                 events: EMPTY,
                 routerState: {
                     snapshot: { root: routeTree([{}]) }
                 }
             }),
-            mockProvider(Title, { setTitle: jest.fn() }),
-            mockProvider(GlobalStore, { addNewBreadcrumb: jest.fn() }),
+            mockProvider(Title, { setTitle: vi.fn() }),
+            mockProvider(GlobalStore, { addNewBreadcrumb: vi.fn() }),
             mockProvider(DotRelatedContentNavigationStore, {
-                registerTitle: jest.fn(),
-                buildTrailForSavedInode: jest.fn().mockReturnValue('a,b'),
-                appendToTrail: jest.fn().mockReturnValue(['inode-a', 'inode-b']),
-                trailInodes: jest.fn().mockReturnValue(['inode-a']),
+                registerTitle: vi.fn(),
+                buildTrailForSavedInode: vi.fn().mockReturnValue('a,b'),
+                appendToTrail: vi.fn().mockReturnValue(['inode-a', 'inode-b']),
+                trailInodes: vi.fn().mockReturnValue(['inode-a']),
                 trail: trailSignal
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockReturnValue('dotCMS')
+                get: vi.fn().mockReturnValue('dotCMS')
             })
         ]
     });
@@ -88,7 +89,7 @@ describe('RouterEditContentHost', () => {
             DotRelatedContentNavigationStore
         ) as unknown as typeof relatedNav;
 
-        // The provider jest.fns are shared across tests (providers are evaluated
+        // The provider vi.fns are shared across tests (providers are evaluated
         // once); clear call history so per-test assertions are isolated.
         router.navigate.mockClear();
         relatedNav.registerTitle.mockClear();

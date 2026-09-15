@@ -1,6 +1,12 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { Injector, WritableSignal, signal } from '@angular/core';
 import { applyEach, disabled, FieldTree, form, max, min, validate } from '@angular/forms/signals';
@@ -89,34 +95,34 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 /**
- * The card reads the store and never writes to it, so every signal is a plain `jest.fn()` whose
+ * The card reads the store and never writes to it, so every signal is a plain `vi.fn()` whose
  * value each test decides before the component is created. The weights are not among them: they
  * arrive through the `weights` input, as a real slice of a real form.
  */
 const createStoreMock = () => ({
-    experiment: jest.fn().mockReturnValue(EXPERIMENT),
-    $variants: jest.fn().mockReturnValue([CONTROL_VARIANT, SECOND_VARIANT]),
-    $disabledTooltipKey: jest.fn().mockReturnValue(null),
-    $isLocked: jest.fn().mockReturnValue(false),
-    $validationErrors: jest.fn().mockReturnValue([]),
-    selectedPage: jest.fn().mockReturnValue(SELECTED_PAGE),
+    experiment: vi.fn().mockReturnValue(EXPERIMENT),
+    $variants: vi.fn().mockReturnValue([CONTROL_VARIANT, SECOND_VARIANT]),
+    $disabledTooltipKey: vi.fn().mockReturnValue(null),
+    $isLocked: vi.fn().mockReturnValue(false),
+    $validationErrors: vi.fn().mockReturnValue([]),
+    selectedPage: vi.fn().mockReturnValue(SELECTED_PAGE),
     // What the "of all traffic" column multiplies each split against.
-    $trafficAllocation: jest.fn().mockReturnValue(100)
+    $trafficAllocation: vi.fn().mockReturnValue(100)
 });
 
 describe('DotExperimentsConfigureVariantsComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureVariantsComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
-    let confirm: jest.SpyInstance;
+    let dispatch: MockInstance;
+    let confirm: MockInstance;
     let dialogClosed: Subject<DotExperimentsAddVariantDialogResult | undefined>;
-    let dialogServiceMock: { open: jest.Mock };
+    let dialogServiceMock: { open: Mock };
     let weights: WritableSignal<VariantWeightFormRow[]>;
     let weightsField: FieldTree<VariantWeightFormRow[]>;
     /** The one navigation the card makes: the variant round-trip's outbound leg (#37005). */
-    let navigate: jest.SpyInstance;
+    let navigate: MockInstance;
     /** How a refused open-in-editor reaches the user, instead of a half-formed URL. */
-    let messagePush: jest.SpyInstance;
+    let messagePush: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigureVariantsComponent,
@@ -133,7 +139,7 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             // it in the spec is what hid exactly that bug. `DotMessageDisplayService` is the right
             // channel — it is in the app-wide `providers.ts`, so it resolves on every route.
             mockProvider(DotMessageDisplayService),
-            { provide: Router, useFactory: () => ({ navigate: jest.fn() }) }
+            { provide: Router, useFactory: () => ({ navigate: vi.fn() }) }
         ],
         detectChanges: false
     });
@@ -238,19 +244,19 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
     beforeEach(() => {
         storeMock = createStoreMock();
         dialogClosed = new Subject<DotExperimentsAddVariantDialogResult | undefined>();
-        dialogServiceMock = { open: jest.fn().mockReturnValue({ onClose: dialogClosed }) };
+        dialogServiceMock = { open: vi.fn().mockReturnValue({ onClose: dialogClosed }) };
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
-        navigate = jest.spyOn(spectator.inject(Router), 'navigate');
-        messagePush = jest.spyOn(spectator.inject(DotMessageDisplayService), 'push');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+        messagePush = vi.spyOn(spectator.inject(DotMessageDisplayService), 'push');
         const confirmationService = spectator.inject(ConfirmationService, true);
-        confirm = jest
+        confirm = vi
             .spyOn(confirmationService, 'confirm')
-            .mockReturnValue(confirmationService) as jest.SpyInstance;
+            .mockReturnValue(confirmationService) as MockInstance;
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('rows', () => {

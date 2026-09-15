@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Injector } from '@angular/core';
 
@@ -35,7 +36,7 @@ describe('ToolbarComponent — emoji is never gated (#37340)', () => {
         shallow: true,
         providers: [
             { provide: DotMessageService, useValue: { get: (key: string) => key } },
-            { provide: EditorPopoverService, useValue: { isOpen: () => false, toggle: jest.fn() } },
+            { provide: EditorPopoverService, useValue: { isOpen: () => false, toggle: vi.fn() } },
             { provide: EditorModalService, useValue: {} },
             { provide: ContentletEditUrlService, useValue: {} },
             { provide: ConfirmationService, useValue: {} },
@@ -53,7 +54,7 @@ describe('ToolbarComponent — emoji is never gated (#37340)', () => {
                     {
                         get: (_target, property) =>
                             property === 'connect'
-                                ? jest.fn().mockReturnValue(() => undefined)
+                                ? vi.fn().mockReturnValue(() => undefined)
                                 : () => false
                     }
                 )
