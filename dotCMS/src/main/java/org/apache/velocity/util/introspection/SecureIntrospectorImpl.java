@@ -19,7 +19,21 @@ package org.apache.velocity.util.introspection;
  * under the License.
  */
 
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.io.Reader;
+import java.io.Writer;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URL;
+import java.nio.channels.Channel;
+import java.nio.file.FileSystem;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.spi.FileSystemProvider;
 
 import com.dotmarketing.util.Logger;
 
@@ -59,6 +73,7 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
      * @return Method object retrieved by Introspector
      * @throws IllegalArgumentException The parameter passed in were incorrect.
      */
+    @Override
     public Method getMethod(Class clazz, String methodName, Object[] params)
         throws IllegalArgumentException
     {
@@ -86,6 +101,7 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
      * @param methodName Name of method to be called
      * @see org.apache.velocity.util.introspection.SecureIntrospectorControl#checkObjectExecutePermission(java.lang.Class, java.lang.String)
      */
+    @Override
     public boolean checkObjectExecutePermission(Class clazz, String methodName)
     {
 		/**
@@ -136,6 +152,18 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
             return false;
         }
 
+        /**
+         * Extend restricted-class coverage to the file, IO and network-resource type families.
+         * These are matched by type hierarchy so that concrete platform implementations (for
+         * example the JDK's internal Path implementation) are covered as well, which an
+         * exact-string class/package list cannot reach. The static utility holders Files and
+         * Paths are final and have no restricted supertype, so they are matched by identity.
+         */
+        if (isRestrictedResourceType(clazz))
+        {
+            return false;
+        }
+
 
 
         /**
@@ -168,5 +196,52 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         }
 
         return true;
+    }
+
+    /**
+     * The supertypes whose method calls are restricted. Matching by hierarchy means every
+     * concrete subtype and implementation is covered without enumerating platform-internal
+     * class names.
+     */
+    private static final Class<?>[] RESTRICTED_SUPERTYPES = {
+            File.class, Path.class, RandomAccessFile.class, InputStream.class,
+            OutputStream.class, Reader.class, Writer.class, Channel.class,
+            FileSystem.class, FileSystemProvider.class, URL.class, URI.class
+    };
+
+    /**
+     * The final utility holders that expose file-system operations but have no restricted
+     * supertype; matched by identity.
+     */
+    private static final Class<?>[] RESTRICTED_EXACT_TYPES = {
+            Files.class, Paths.class
+    };
+
+    /**
+     * Determines whether method execution on the given class is restricted because it belongs to
+     * the file, IO or network-resource type families.
+     *
+     * @param clazz class a method is about to be resolved on
+     * @return {@code true} if the class is a restricted resource type (deny), {@code false} otherwise
+     */
+    private static boolean isRestrictedResourceType(final Class<?> clazz)
+    {
+        for (final Class<?> supertype : RESTRICTED_SUPERTYPES)
+        {
+            if (supertype.isAssignableFrom(clazz))
+            {
+                return true;
+            }
+        }
+
+        for (final Class<?> exact : RESTRICTED_EXACT_TYPES)
+        {
+            if (exact == clazz)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
