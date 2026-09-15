@@ -25,13 +25,12 @@
             data-testid="add-relationships-fullscreen"
             (onClick)="toggleFullscreen()">
             <ng-template #icon>
-                <!-- `text-[1.125rem]!` rather than `text-lg`, which is the same value: this is the
-                     literal class the Asset Picker's own header uses, and the two headers sit in the
-                     same product doing the same job. The `!` is load-bearing — PrimeNG's button
-                     styles an icon slot by font-size and wins on specificity otherwise. Matching the
-                     sibling surface beats matching the scale here; if that class changes, both
-                     should change together. -->
-                <i class="material-symbols-outlined text-[1.125rem]!">{{ $fullscreenIcon() }}</i>
+                <!-- The `!` is load-bearing: PrimeNG styles the button's icon slot by font-size and
+                     wins on specificity otherwise. The size itself is the theme scale rather than
+                     an arbitrary value — `text-lg` is 1.125rem, so this is the same rendering the
+                     Asset Picker's header gets from `text-[1.125rem]!`, written the way
+                     STYLING_STANDARDS asks for. That picker should follow. -->
+                <i class="material-symbols-outlined text-lg!">{{ $fullscreenIcon() }}</i>
             </ng-template>
         </p-button>
     </dot-dialog-header>
