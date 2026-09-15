@@ -1269,6 +1269,9 @@ public class BrowserAPIImpl implements BrowserAPI {
     /** Splits a term into tokens, matching the shared field strategies. */
     private static final String TITLE_SCOPE_SPLIT_REGEX = "[,|\\s+]";
 
+    /** The Lucene {@code query_string} reserved set, as documented on {@code LuceneQueryUtils}. */
+    private static final String LUCENE_RESERVED = "\\\\+-!():^[]\"{}~*?|&/";
+
     /**
      * Builds the Elasticsearch clause for {@link SearchScope#TITLE} — the search scope that matches
      * a term against the contentlet title alone (issue #37479).
@@ -1328,14 +1331,50 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (token.isEmpty()) {
                 continue;
             }
-            // Escape first, then append the wildcard, so a reserved character is matched literally
-            // while the "*" this method adds itself stays live syntax (issue #37532, FR-027).
-            final String value = LuceneQueryUtils.escape(token);
+            // STRIP the query-syntax characters rather than escape them.
+            //
+            // Escaping is the right move for a substring match, and it is what the all-fields
+            // strategy does. It is the wrong move here. A prefix query is NOT analyzed, so the term
+            // is compared against the indexed token as-is — and the analyzer already stripped that
+            // punctuation at index time: "(XETRA:" is indexed as "xetra". An escaped "\(XETRA\:"
+            // can therefore never match, and because every token is mandatory, one such token sinks
+            // the whole search. Pasting a punctuated title into Title scope returned nothing.
+            //
+            // Stripping aligns the term with what the analyzer actually stored, and it is at least
+            // as safe as escaping: a token with no reserved characters left in it cannot be query
+            // syntax. Tokens that vanish entirely (a lone "/") are skipped.
+            final String value = stripQuerySyntax(token);
+            if (value.isEmpty()) {
+                continue;
+            }
             query.append("+(title:").append(value).append("* title_dotraw:")
                     .append(value).append("*) ");
         }
 
         return query.toString().trim();
+    }
+
+    /**
+     * Removes every Lucene {@code query_string} reserved character from a single token, so it can
+     * be compared against an analyzed field that never stored those characters.
+     *
+     * <p>Deliberately not {@code LuceneQueryUtils.escape}: escaping preserves the character, which
+     * is correct when the term is matched as a substring of a raw value and wrong when it is
+     * matched as a prefix of an analyzed token.</p>
+     *
+     * @param token A single token of the user's term.
+     *
+     * @return The token with reserved characters removed; may be empty.
+     */
+    private static String stripQuerySyntax(final String token) {
+        final StringBuilder clean = new StringBuilder(token.length());
+        for (int i = 0; i < token.length(); i++) {
+            final char c = token.charAt(i);
+            if (LUCENE_RESERVED.indexOf(c) < 0) {
+                clean.append(c);
+            }
+        }
+        return clean.toString();
     }
 
     /**

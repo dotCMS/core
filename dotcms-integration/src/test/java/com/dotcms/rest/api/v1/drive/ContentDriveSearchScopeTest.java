@@ -335,6 +335,42 @@ public class ContentDriveSearchScopeTest extends IntegrationTestBase {
      * clause it exercised was leaking into every field. Fixing that leak is what exposed the real
      * behaviour.</p>
      */
+    /**
+     * The customer headline of #37532, pasted whole into Title scope.
+     *
+     * <p>This is the case manual testing caught after the leak was fixed. Every token is mandatory,
+     * so tokens like {@code (XETRA:} and {@code NYSE:} have to match — and an escaped token never
+     * can, because a prefix query is not analyzed while the indexed token had its punctuation
+     * stripped. One unmatchable token sank the whole search, and pasting a title into Title scope
+     * returned nothing: the same symptom the customer originally reported, reached by a different
+     * route.</p>
+     *
+     * <p>Stripping the punctuation instead of escaping it aligns the term with what the analyzer
+     * stored, without a leading wildcard and without leaving the title field.</p>
+     */
+    @Test
+    public void titleScope_matchesTheCustomerHeadlinePastedWhole() throws Exception {
+        final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final Folder folder = APILocator.getFolderAPI()
+                .findFolderByPath(assetPath.substring(assetPath.indexOf('/', 2)), testSite,
+                        systemUser, false);
+        final String headline = "ABC Bank (XETRA: DBKGn.DB / NYSE: DB) and PSL Launch independent "
+                + "European CLO Total Return Indices " + System.nanoTime();
+        final String inode = seed(headline, "unrelated body", folder, languageId);
+
+        final PaginatedContents results = contentDriveHelper.driveSearch(DriveRequestForm.builder()
+                .assetPath(assetPath).showFolders(false).live(false).archived(false)
+                .offset(0).maxResults(100)
+                .filters(QueryFilters.builder().text(headline)
+                        .searchScope(SearchScope.TITLE).build())
+                .build(), systemUser);
+
+        assertTrue("Pasting a punctuated title into Title scope must find it. Returning nothing is "
+                        + "the symptom #37532 was raised about, and a search scope must not "
+                        + "reintroduce it by another route.",
+                contains(results, inode));
+    }
+
     @Test
     public void titleScope_punctuatedTitle_isReachableByItsWords() throws Exception {
         final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
