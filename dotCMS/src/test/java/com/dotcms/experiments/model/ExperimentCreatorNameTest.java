@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -31,12 +33,12 @@ import org.mockito.MockedStatic;
  * introduces an asymmetry the current payload does not have: today every computed member is
  * {@code @JsonIgnore}d, so an Experiment round-trips cleanly.
  *
- * <p>{@code @JsonProperty(access = READ_ONLY)} is the mechanism that is supposed to make the
- * property <i>known but not bound</i>. {@link #payloadCarryingTheField_stillDeserializes()} is what
- * decides whether that holds when Jackson binds into the generated delegate rather than into the
- * interface. If it cannot be made green, the agreed fallback is a {@code @JsonAppend} virtual
- * property — <b>not</b> disabling {@code FAIL_ON_UNKNOWN_PROPERTIES} on a shared mapper, which
- * would weaken every other contract that mapper serves.
+ * <p>{@code @JsonProperty(access = READ_ONLY)} is what makes the property <i>known but not
+ * bound</i>, and {@link #payloadCarryingTheField_stillDeserializes()} is what established that it
+ * holds when Jackson binds into the generated delegate rather than into the interface. Should that
+ * ever stop being true, the answer is a {@code @JsonAppend} virtual property — <b>not</b> disabling
+ * {@code FAIL_ON_UNKNOWN_PROPERTIES} on a shared mapper, which would weaken every other contract
+ * that mapper serves.
  *
  * <p>These tests deliberately use {@link DotObjectMapperProvider#createDefaultMapper()} rather than
  * a bare {@code ObjectMapper}: the question is what the REST layer actually does, not what Jackson
@@ -66,11 +68,7 @@ class ExperimentCreatorNameTest {
     }
 
     private static User adminUser() {
-        final User user = new User();
-        user.setFirstName("Admin");
-        user.setMiddleName("");
-        user.setLastName("User");
-        return user;
+        return userNamed("Admin", "User");
     }
 
     /**
@@ -188,5 +186,83 @@ class ExperimentCreatorNameTest {
                         "The computed member '" + computed + "' must stay out of the payload");
             }
         });
+    }
+
+    /**
+     * Method to test: {@code AbstractExperiment.createdByUserName()}
+     * Given Scenario: Experiments are built and handled without ever being serialized — constructed
+     *                 from the builder, rebuilt via {@code from(...)} the way
+     *                 {@code addTargetingConditions} does on the find path, read for their owner,
+     *                 and compared.
+     * ExpectedResult: The user layer is never consulted. Only serializing the Experiment resolves
+     *                 the name (FR-015).
+     *
+     * <p>This is the guard for the decision the whole feature rests on. The accessor is a plain
+     * {@code default} method precisely so it stays inert on the paths that never serialize — the
+     * database transformer behind every list row, the running-experiments cache fill on page
+     * render, and the push-publish dependency walk. Turning it into a {@code @Value.Derived}
+     * attribute would move the lookup into the constructor and break that silently: every other
+     * test in this class would still pass, because they all serialize. This one would not.
+     */
+    @Test
+    void buildingAnExperimentWithoutSerializing_neverResolvesTheCreator() throws Exception {
+        final UserAPI userAPI = mock(UserAPI.class);
+
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+
+            final Experiment experiment = anExperiment();
+            final Experiment rebuilt = Experiment.builder().from(experiment).build();
+            experiment.getOwner();
+            experiment.equals(rebuilt);
+            experiment.hashCode();
+            experiment.toString();
+
+            verifyNoInteractions(userAPI);
+
+            DotObjectMapperProvider.createDefaultMapper().writeValueAsString(experiment);
+
+            verify(userAPI).loadUserById(CREATOR_ID);
+        }
+    }
+
+    /**
+     * Method to test: {@code AbstractExperiment.createdByUserName()}
+     * Given Scenario: The same Experiment instance serialized twice, with the creator renaming
+     *                 themselves in between.
+     * ExpectedResult: The second payload reports the new name (FR-016).
+     *
+     * <p>The guard against memoization. A {@code @Value.Lazy} attribute would compute the name once
+     * and keep it for the life of the instance — invisible on the REST path, where instances are
+     * short-lived, but not on the running-experiments list cache, whose entries are long-lived and
+     * shared. This test fails the moment the value starts being cached on the object.
+     */
+    @Test
+    void renamingTheCreator_isReflectedOnTheNextSerialization() throws Exception {
+        final UserAPI userAPI = mock(UserAPI.class);
+        when(userAPI.loadUserById(CREATOR_ID))
+                .thenReturn(adminUser(), userNamed("Renamed", "User"));
+
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+
+            final Experiment experiment = anExperiment();
+            final ObjectMapper mapper = DotObjectMapperProvider.createDefaultMapper();
+
+            final JsonNode before = mapper.readTree(mapper.writeValueAsString(experiment));
+            final JsonNode after = mapper.readTree(mapper.writeValueAsString(experiment));
+
+            assertEquals(CREATOR_NAME, before.get("createdByUserName").asText());
+            assertEquals("Renamed User", after.get("createdByUserName").asText(),
+                    "The name must be resolved per serialization, never captured on the instance");
+        }
+    }
+
+    private static User userNamed(final String first, final String last) {
+        final User user = new User();
+        user.setFirstName(first);
+        user.setMiddleName("");
+        user.setLastName(last);
+        return user;
     }
 }
