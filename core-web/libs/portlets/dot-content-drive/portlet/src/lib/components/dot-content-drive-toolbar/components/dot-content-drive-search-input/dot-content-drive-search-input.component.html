@@ -16,23 +16,42 @@
     <dot-search-input
         [value]="$searchTerm()"
         [placeholder]="$placeholder()"
-        [inputDt]="{ border: { radius: '{form.field.border.radius} 0 0 {form.field.border.radius}' } }"
+        [inputDt]="{
+            border: { radius: '{form.field.border.radius} 0 0 {form.field.border.radius}' }
+        }"
         (search)="onSearch($event)"
         class="min-w-0 flex-1" />
 
+    <!-- Fixed width, not a minimum: a p-button sizes itself to its label, so "Title" and
+         "All Fields" produced two different widths and the whole group visibly resized as the
+         choice changed. 140px is what the filter chips below already use, and it fits the longer
+         label whole. Width is plain Tailwind because it is layout, not a PrimeNG token — nothing in
+         the button's own stylesheet sets a width to compete with, unlike the border-colour case
+         below.
+
+         Border colour, via `dt`: Button's `secondary` severity and InputText are different PrimeNG
+         components with separate token families — this theme's `button.secondary.border.color`
+         resolves to `{surface.700}` while `inputtext.border.color` resolves to
+         `{form.field.border.color}`, so the two never matched. `TRIGGER_DT` repoints the button at
+         the exact token the input already uses, rather than a guessed literal colour, so the two
+         stay identical if the theme itself ever changes. -->
     <p-inputgroup-addon>
         <button
             type="button"
             pButton
             severity="secondary"
+            [dt]="TRIGGER_DT"
             [attr.aria-label]="'content-drive.search.scope.label' | dm"
             [pTooltip]="'content-drive.search.scope.help' | dm"
             aria-haspopup="listbox"
             data-testid="search-scope-trigger"
             tooltipPosition="bottom"
+            class="w-[140px]"
             (click)="panel.toggle($event)">
-            <span data-testid="search-scope-active">{{ $activeScopeLabel() | dm }}</span>
-            <i class="pi pi-chevron-down text-xs" aria-hidden="true"></i>
+            <span class="truncate" data-testid="search-scope-active">
+                {{ $activeScopeLabel() | dm }}
+            </span>
+            <i class="pi pi-chevron-down shrink-0 text-xs" aria-hidden="true"></i>
         </button>
     </p-inputgroup-addon>
 </p-inputgroup>

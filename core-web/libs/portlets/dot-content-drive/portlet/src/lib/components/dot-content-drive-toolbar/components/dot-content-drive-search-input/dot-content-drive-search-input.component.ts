@@ -89,6 +89,19 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     ];
 
     /**
+     * Repoints the trigger's border at the exact token the search input already uses.
+     *
+     * Button and InputText are different PrimeNG components with separate token families — this
+     * theme's `button.secondary.border.color` resolves to `{surface.700}` while
+     * `inputtext.border.color` resolves to `{form.field.border.color}`, so a plain `severity`
+     * button never matched the field it sits beside. A design-token override, not a literal colour:
+     * if the active theme's form-field border ever changes, this stays in step with it.
+     */
+    protected readonly TRIGGER_DT = {
+        secondary: { borderColor: '{form.field.border.color}' }
+    };
+
+    /**
      * The same popover/listbox pass-through every other Content Drive filter dropdown already uses
      * (`dot-content-drive-workflow-filter`, `dot-status-filter`, …), so this panel matches the rest
      * of the toolbar instead of introducing its own styling.
