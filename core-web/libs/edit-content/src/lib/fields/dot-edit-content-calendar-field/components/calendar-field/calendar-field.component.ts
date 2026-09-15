@@ -163,9 +163,9 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
     });
 
     /**
-     * The picker instance: the footer action dismisses the overlay through it, and the
-     * constructor's effect drives its change detection when a value arrives (see there).
-     * Optional rather than required — the effect can run before the view exists.
+     * The picker instance: the constructor's effect drives its change detection when a value
+     * arrives (see there). Optional rather than required — the effect can run before the view
+     * exists.
      */
     $picker = viewChild(DatePicker);
 
@@ -256,12 +256,6 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      */
     setCurrentServerDateTime(): void {
         this.onCalendarChange(getCurrentServerTime(this.$systemTimezone()));
-
-        // A date-only pick is complete, so the picker closes as it does for a day click. The
-        // types carrying a time stay open so the hour can still be adjusted.
-        if (!this.$fieldTypeConfig().showTime) {
-            this.$picker()?.hideOverlay();
-        }
     }
 
     readonly handleDisabledChange = signalMethod<boolean>((isDisabled) => {
