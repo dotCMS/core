@@ -6,14 +6,24 @@ import {
     OnDestroy,
     viewChild
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { SelectButtonModule } from 'primeng/selectbutton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotKeyboardShortcutService,
     DotKeyboardShortcutUnregister,
+    DotMessagePipe,
     DotSearchInputComponent,
     hasOverlayAbove
 } from '@dotcms/ui';
 
+import { DEFAULT_SEARCH_SCOPE, SEARCH_SCOPE_FILTER_KEY } from '../../../../shared/constants';
+import {
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE,
+    DotContentDriveSearchScope
+} from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 /**
@@ -24,11 +34,39 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 @Component({
     selector: 'dot-content-drive-search-input',
     template: `
-        <!-- Placeholder falls back to the shared "search" i18n key. -->
-        <dot-search-input [value]="$searchTerm()" (search)="onSearch($event)" />
+        <div class="flex w-full items-center gap-2">
+            <!-- The tooltip is a directive on a real wrapper, not a SelectButton input, and the
+                 label is a plain aria-label: ariaLabelledBy takes an element id, not text. -->
+            <span
+                [pTooltip]="'content-drive.search.scope.help' | dm"
+                data-testid="search-scope-help"
+                tooltipPosition="bottom"
+                class="inline-flex">
+                <p-selectButton
+                    [options]="scopeOptions"
+                    [ngModel]="$searchScope()"
+                    [allowEmpty]="false"
+                    [attr.aria-label]="'content-drive.search.scope.label' | dm"
+                    optionLabel="label"
+                    optionValue="value"
+                    data-testid="search-scope"
+                    (onOptionClick)="onScopeChange($event.option.value)" />
+            </span>
+            <dot-search-input
+                [value]="$searchTerm()"
+                [placeholder]="$placeholder()"
+                (search)="onSearch($event)"
+                class="flex-1" />
+        </div>
     `,
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotSearchInputComponent],
+    imports: [
+        DotSearchInputComponent,
+        SelectButtonModule,
+        TooltipModule,
+        DotMessagePipe,
+        FormsModule
+    ],
     host: { class: 'w-full' }
 })
 export class DotContentDriveSearchInputComponent implements OnDestroy {
@@ -45,6 +83,37 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
 
     protected readonly $searchTerm = computed(
         () => (this.#store.getFilterValue('title') as string) ?? ''
+    );
+
+    /**
+     * The two options, in the order they read best: the narrow one first, because it is the choice
+     * the user is here to make. The wide one is called "All Fields" rather than "All Content" — it
+     * widens which FIELDS are read, not which content is searched, and Content Drive is separately
+     * gaining a browse scope where "All" genuinely means all content.
+     */
+    protected readonly scopeOptions = [
+        {
+            label: 'content-drive.search.scope.title',
+            value: DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE
+        },
+        {
+            label: 'content-drive.search.scope.all-fields',
+            value: DOT_CONTENT_DRIVE_SEARCH_SCOPE.ALL_FIELDS
+        }
+    ];
+
+    /** Absent from the filters means the default — the scope is only stored when it differs. */
+    protected readonly $searchScope = computed<DotContentDriveSearchScope>(
+        () =>
+            (this.#store.getFilterValue(SEARCH_SCOPE_FILTER_KEY) as DotContentDriveSearchScope) ??
+            DEFAULT_SEARCH_SCOPE
+    );
+
+    /** The box says what it will do before the user types again. */
+    protected readonly $placeholder = computed(() =>
+        this.$searchScope() === DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE
+            ? 'content-drive.search.placeholder.title'
+            : 'content-drive.search.placeholder.all-fields'
     );
 
     /**
@@ -115,5 +184,19 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     protected onSearch(term: string): void {
         this.#store.setGlobalSearch(term);
         this.#store.selectRootNode();
+    }
+
+    /**
+     * Records the new scope and lets the store re-run the search.
+     *
+     * Re-selecting the scope that is already active is ignored: the results cannot change, and
+     * `patchFilters` would reset the user to page 1 for nothing.
+     */
+    protected onScopeChange(scope: DotContentDriveSearchScope): void {
+        if (scope === this.$searchScope()) {
+            return;
+        }
+
+        this.#store.setSearchScope(scope);
     }
 }

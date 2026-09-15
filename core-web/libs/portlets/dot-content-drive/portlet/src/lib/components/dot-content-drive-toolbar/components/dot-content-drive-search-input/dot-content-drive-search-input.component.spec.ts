@@ -1,4 +1,5 @@
 import {
+    byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
@@ -28,7 +29,8 @@ describe('DotContentDriveSearchInputComponent', () => {
             mockProvider(DotContentDriveStore, {
                 getFilterValue: vi.fn().mockReturnValue(undefined),
                 setGlobalSearch: vi.fn(),
-                selectRootNode: vi.fn()
+                selectRootNode: vi.fn(),
+                setSearchScope: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -90,6 +92,91 @@ describe('DotContentDriveSearchInputComponent', () => {
 
     // The claim lives here rather than in the shell because this component is the one holding the
     // search box; the shell would have to reach three levels down to find it.
+    describe('search scope', () => {
+        // Absent from the filters means the default. The key is deliberately NOT `title` — that
+        // holds the search TERM, and a scope whose value is 'TITLE' beside it would be a collision.
+        const withScope = (scope?: string) =>
+            store.getFilterValue.mockImplementation((key: string) =>
+                key === 'searchScope' ? scope : undefined
+            );
+
+        it('should render the scope control next to the search input', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('search-scope'))).toBeTruthy();
+            expect(searchInput()).toBeTruthy();
+        });
+
+        it('should start on All Fields when nothing is stored', () => {
+            withScope(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.component['$searchScope']()).toBe('ALL_FIELDS');
+        });
+
+        it('should read the stored scope when one is set', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            expect(spectator.component['$searchScope']()).toBe('TITLE');
+        });
+
+        // One assertion per test: the store mock is a plain fn rather than a signal, so the
+        // computed has nothing to invalidate and caches within a single instance.
+        it('should say "search by title" in Title scope', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            expect(spectator.component['$placeholder']()).toBe(
+                'content-drive.search.placeholder.title'
+            );
+        });
+
+        it('should say "search all fields" in All Fields scope', () => {
+            withScope(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.component['$placeholder']()).toBe(
+                'content-drive.search.placeholder.all-fields'
+            );
+        });
+
+        it('should record a newly chosen scope', () => {
+            withScope(undefined);
+            spectator.detectChanges();
+
+            spectator.component['onScopeChange']('TITLE');
+
+            expect(store.setSearchScope).toHaveBeenCalledWith('TITLE');
+        });
+
+        it('should ignore re-selecting the scope that is already active', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            spectator.component['onScopeChange']('TITLE');
+
+            // Re-running cannot change the results, and it would reset the user to page 1.
+            expect(store.setSearchScope).not.toHaveBeenCalled();
+        });
+
+        it('should name the control for assistive technology', () => {
+            spectator.detectChanges();
+
+            expect(
+                spectator.query(byTestId('search-scope'))?.getAttribute('aria-label')
+            ).toBeTruthy();
+        });
+
+        it('should offer an explanation of what each option matches', () => {
+            spectator.detectChanges();
+
+            // Two labels do not carry the distinction between "the item's name" and "anything
+            // written inside it", and the control is new.
+            expect(spectator.query(byTestId('search-scope-help'))).toBeTruthy();
+        });
+    });
+
     describe('search shortcut', () => {
         /** Dispatches from `target` (the document unless a field is given), the way a browser would. */
         const press = (init: KeyboardEventInit, target: EventTarget = document): KeyboardEvent => {

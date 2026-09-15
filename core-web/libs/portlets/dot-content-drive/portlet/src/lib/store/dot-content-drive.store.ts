@@ -40,9 +40,11 @@ import {
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
+    DEFAULT_SEARCH_SCOPE,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     MAP_NUMBERS_TO_BASE_TYPES,
+    SEARCH_SCOPE_FILTER_KEY,
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST,
@@ -52,6 +54,7 @@ import {
     DotContentDriveFilters,
     DotContentDriveInit,
     DotContentDrivePagination,
+    DotContentDriveSearchScope,
     DotContentDriveSort,
     DotContentDriveState,
     DotContentDriveStatus
@@ -135,7 +138,19 @@ export const DotContentDriveStore = signalStore(
                                 SHARED_ASSETS_DISABLED_VALUE,
                             filters: {
                                 text: filters()?.title || '',
-                                filterFolders: true
+                                filterFolders: true,
+                                // Sent only when a term is present and the scope is not the
+                                // default. The server rejects a scope without text as the contract
+                                // error it is, and an omitted scope is processed exactly as it was
+                                // before this field existed — which is what leaves the AssetPicker,
+                                // the one other caller of this endpoint, untouched.
+                                ...(filters()?.title && filters()?.[SEARCH_SCOPE_FILTER_KEY]
+                                    ? {
+                                          searchScope: filters()?.[
+                                              SEARCH_SCOPE_FILTER_KEY
+                                          ] as DotContentDriveSearchScope
+                                      }
+                                    : {})
                             },
                             language: filters()?.languageId,
                             contentTypes: filters()?.contentType,
@@ -242,6 +257,26 @@ export const DotContentDriveStore = signalStore(
                     },
                     path: DEFAULT_PATH
                 });
+            },
+            /**
+             * Records which fields the search term is matched against.
+             *
+             * Written into the filter state only while it differs from the default, and deleted
+             * when it returns to it. That is not cosmetic: `hasNonDefaultFilters` counts every
+             * filter key except two, and that signal is what shows the chip bar's "Clear all". A
+             * scope written on every selection would offer "Clear all" the moment someone picked
+             * the default on a drive with nothing filtered at all.
+             *
+             * Mirrors how `setGlobalSearch` already deletes its own key when the term goes empty.
+             */
+            setSearchScope(scope: DotContentDriveSearchScope) {
+                if (scope === DEFAULT_SEARCH_SCOPE) {
+                    this.removeFilter(SEARCH_SCOPE_FILTER_KEY);
+
+                    return;
+                }
+
+                this.patchFilters({ [SEARCH_SCOPE_FILTER_KEY]: scope });
             },
             clearFilters() {
                 patchState(store, {

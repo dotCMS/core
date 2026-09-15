@@ -163,6 +163,19 @@ export interface DotContentDriveQueryFilters {
      * Text to search for.
      */
     text: string;
+
+    /**
+     * Which fields {@link text} is matched against.
+     *
+     * Sits here rather than at the top level because it qualifies `text` and means nothing without
+     * it — the same reason {@link filterFolders} lives here. Omit it for the historical behaviour:
+     * an absent scope is processed exactly as it was before the field existed, which is what keeps
+     * the AssetPicker unaffected.
+     *
+     * Not to be confused with a *browse* scope, which says where you are browsing rather than which
+     * fields a search reads.
+     */
+    searchScope?: 'TITLE' | 'ALL_FIELDS';
 }
 
 /**
