@@ -101,10 +101,10 @@ describe('DotContentDriveSearchInputComponent', () => {
                 key === 'searchScope' ? scope : undefined
             );
 
-        it('should render the scope trigger next to the search input', () => {
+        it('should render the scope control next to the search input', () => {
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('search-scope-trigger'))).toBeTruthy();
+            expect(spectator.query(byTestId('search-scope'))).toBeTruthy();
             expect(searchInput()).toBeTruthy();
         });
 
@@ -172,12 +172,10 @@ describe('DotContentDriveSearchInputComponent', () => {
 
         it('should name the control for assistive technology', () => {
             spectator.detectChanges();
-            const trigger = spectator.query(byTestId('search-scope-trigger'));
 
-            expect(trigger?.getAttribute('aria-label')).toBeTruthy();
-            // The trigger opens a listbox panel, and a screen reader has to be told so.
-            expect(trigger?.getAttribute('aria-haspopup')).toBe('listbox');
-            expect(trigger?.getAttribute('aria-expanded')).toBe('false');
+            expect(
+                spectator.query(byTestId('search-scope'))?.getAttribute('aria-label')
+            ).toBeTruthy();
         });
 
         it('should offer an explanation of what each option matches', () => {
