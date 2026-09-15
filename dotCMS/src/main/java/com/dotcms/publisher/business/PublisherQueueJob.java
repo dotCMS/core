@@ -222,10 +222,11 @@ public class PublisherQueueJob implements StatefulJob {
 							pubAuditAPI.updatePublishAuditStatus(pconf.getId(), PublishAuditStatus.Status.FAILED_TO_BUNDLE, historyPojo);
 							pubAPI.deleteElementsFromPublishQueueTable(pconf.getId());
 						}
-					} catch (final Throwable t) {
-						// Anything else that escapes while processing THIS bundle must not end the run for
-						// the bundles queued behind it. Finalize this one and move on (#37449).
-						finalizeBundleAfterUnexpectedError(tempBundleId, historyPojo, bundleStart, t);
+					} catch (final Exception e) {
+						// Any other exception while processing THIS bundle must not end the run for the
+						// bundles queued behind it. Finalize this one and move on (#37449). JVM Errors are
+						// deliberately not caught here; they reach the outer catch and end the run.
+						finalizeBundleAfterUnexpectedError(tempBundleId, historyPojo, bundleStart, e);
 					} finally {
 						ThreadContext.remove(BUNDLE_ID);
 					}
@@ -311,9 +312,9 @@ public class PublisherQueueJob implements StatefulJob {
 
 
 	/**
-	 * Finalizes a bundle whose processing threw something other than a {@link DotPublishingException}
+	 * Finalizes a bundle whose processing threw an exception other than a {@link DotPublishingException}
 	 * (for example a {@code NullPointerException} on a corrupt queue row). Before this existed such an
-	 * error escaped to the outer catch of {@link #execute}, ended the whole run, and left the bundle
+	 * exception escaped to the outer catch of {@link #execute}, ended the whole run, and left the bundle
 	 * half-written so it aborted the next run too. The bundle is marked
 	 * {@link Status#FAILED_TO_PUBLISH} with the error in its endpoint detail and removed from the
 	 * publishing queue, in one local transaction, mirroring {@link #finalizeFailedBundle}. If the
@@ -327,7 +328,7 @@ public class PublisherQueueJob implements StatefulJob {
 	 * @param error       What went wrong.
 	 */
 	private void finalizeBundleAfterUnexpectedError(final String bundleId, final PublishAuditHistory history,
-													final Date bundleStart, final Throwable error) {
+													final Date bundleStart, final Exception error) {
 		final String errorMsg = ExceptionUtil.getErrorMessage(error);
 		Logger.error(PublisherQueueJob.class, String.format("Unexpected error processing bundle '%s', " +
 				"finalizing it as failed and continuing with the next bundle: %s", bundleId, errorMsg), error);
