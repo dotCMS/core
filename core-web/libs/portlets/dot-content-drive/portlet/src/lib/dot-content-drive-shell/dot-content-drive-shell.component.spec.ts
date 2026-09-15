@@ -70,6 +70,7 @@ import {
     DIALOG_TYPE,
     ERROR_MESSAGE_LIFE,
     SUCCESS_MESSAGE_LIFE,
+    SYSTEM_HOST,
     WARNING_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
@@ -226,6 +227,9 @@ describe('DotContentDriveShellComponent', () => {
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
 
+        const currentSiteMock = vi.fn().mockReturnValue(MOCK_SITES[0]);
+        const systemHostSelectedMock = vi.fn().mockReturnValue(false);
+
         spectator = createComponent({
             providers: [
                 mockProvider(DotContentDriveStore, {
@@ -237,7 +241,7 @@ describe('DotContentDriveShellComponent', () => {
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
                     siteCanAddChildren: siteCanAddChildrenSignal,
-                    currentSite: vi.fn().mockReturnValue(MOCK_SITES[0]),
+                    currentSite: currentSiteMock,
                     // Tree collapsed at start to render the toggle button on toolbar
                     isTreeExpanded: vi.fn().mockReturnValue(false),
                     removeFilter: vi.fn(),
@@ -297,6 +301,17 @@ describe('DotContentDriveShellComponent', () => {
                     folders: vi.fn(),
                     selectedNode: vi.fn(),
                     setSelectedNode: vi.fn(),
+                    // The shell renders the sidebar, which asks the store which entry is selected.
+                    $allSiteContentSelected: vi.fn().mockReturnValue(false),
+                    $systemHostSelected: systemHostSelectedMock,
+                    // Mirrors the store's own computed rather than hardcoding an answer, so these
+                    // tests keep driving the destination through the signals they already control:
+                    // System Host when that is selected, the current site otherwise.
+                    $newContentHostId: vi.fn(() =>
+                        systemHostSelectedMock() ? 'SYSTEM_HOST' : currentSiteMock()?.identifier
+                    ),
+                    selectAllSiteContent: vi.fn(),
+                    selectSystemHost: vi.fn(),
                     sidebarLoading: vi.fn(),
                     closeDialog: vi.fn(),
                     patchContextMenu: vi.fn(),
@@ -2082,6 +2097,62 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
+        it('should name the site when no folder is chosen', () => {
+            // The site, not the root of it. Naming the root was tried and read as fussy for what
+            // it bought: the destination that matters to the author is which site received the
+            // files, and the site row and the flat view put them in the same place anyway.
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.$systemHostSelected.mockReturnValue(false);
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ targetLabel: MOCK_SITES[0].hostname })
+            );
+        });
+
+        it('should name System Host as the upload destination, not the switcher site', () => {
+            // The indicator is the only surface an upload has before the handle comes back, so a
+            // wrong destination there tells the author their files are going somewhere else.
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.$systemHostSelected.mockReturnValue(true);
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            // The message mock echoes keys, so the key IS the observable outcome here: the
+            // indicator asks for the sidebar entry's own label rather than naming a site.
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ targetLabel: 'content-drive.sidebar.system-host' })
+            );
+        });
+
+        it('should target System Host when that is where the batch lands, not the switcher site', () => {
+            // The switcher still names a site while System Host is browsed, and that site is
+            // context rather than the destination. Uploading here with the site's identifier
+            // silently lands the files somewhere the author did not choose.
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.$systemHostSelected.mockReturnValue(true);
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ siteId: SYSTEM_HOST.identifier })
+            );
+        });
+
         it('should submit a single file down the same path, as a batch of one', () => {
             // Not a special case. One path, one set of gates, one method: a lone file is a batch
             // whose length is one, so nothing forks on count.
@@ -3283,6 +3354,24 @@ describe('DotContentDriveShellComponent', () => {
                 expect(workflowService.bulkFire).toHaveBeenCalled();
             });
 
+            // In System Host and all site content there is no selected folder at all, so the
+            // target arrives undefined and the folder-level check has nothing to answer about.
+            // The store's gate already knows which scope is open and whose permission applies;
+            // without deferring to it, a drop here is waved through on the site's answer while
+            // the Upload button beside it is correctly disabled.
+            it('should refuse a drop with no target when the scope refuses content', () => {
+                canAddChildrenSignal.set(false);
+
+                store.dragItems.mockReturnValue({
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                });
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', { targetFolder: undefined });
+
+                expect(workflowService.bulkFire).not.toHaveBeenCalled();
+            });
+
             // The site root carries no permissions of its own, so the store's site-level answer is
             // what decides there.
             it('should refuse a move onto the site root when the site refuses content', () => {
@@ -4009,6 +4098,33 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(store.setPath).toHaveBeenCalledWith('/documents/');
+        });
+
+        it('should read the site row as the site root, not as no location at all', () => {
+            // The tree tells its site row apart from a folder by carrying an empty path. As a
+            // *location* that means the site root, which is a different thing from all site
+            // content — and all site content is what an absent location means. Without this
+            // translation the two collapse into each other and choosing the site row silently
+            // lands on the flat whole-site view.
+            const siteRow: DotFolderTreeNodeItem = {
+                key: 'site',
+                label: 'demo.dotcms.com',
+                data: {
+                    id: 'site-123',
+                    hostname: 'demo.dotcms.com',
+                    path: '',
+                    type: 'site'
+                },
+                leaf: false
+            };
+
+            store.selectedNode.mockReturnValue(siteRow);
+            store.setPath.mockClear();
+
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(store.setPath).toHaveBeenCalledWith('/');
         });
 
         it('should not set path when selectedNode is null', () => {

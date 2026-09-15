@@ -47,6 +47,7 @@ import {
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
+    ROOT_PATH,
     DEFAULT_TREE_EXPANDED,
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_ENABLED_VALUE,
@@ -295,10 +296,12 @@ describe('DotContentDriveStore', () => {
 
         it('should still show folders when a language is selected', () => {
             // Folders have no language, so a locale filter — which selects a *version* of content —
-            // must not tear down the structure being navigated.
+            // must not tear down the structure being navigated. Asserted at the site root, which is
+            // where structure exists: all site content asks for no folders by design, so testing it
+            // there would prove nothing about the language filter.
             store.initContentDrive({
                 currentSite: SYSTEM_HOST,
-                path: DEFAULT_PATH,
+                path: ROOT_PATH,
                 filters: { languageId: ['1', '2'] },
                 isTreeExpanded: false
             });
@@ -339,7 +342,10 @@ describe('DotContentDriveStore', () => {
                 // Likewise `status`: omitted entirely when nothing is selected, so an unfiltered
                 // request stays byte-identical to one that never knew about the filter (FR-002).
                 expect(request.status).toBeUndefined();
-                expect(request.showFolders).toBe(true);
+                // No location means all site content, which spans every folder in the site and so
+                // lists none of them; the tree is still there to navigate. Browsing the site root
+                // instead is what asks for the top-level folders.
+                expect(request.showFolders).toBe(false);
             });
 
             describe('includeSystemHost', () => {
@@ -423,6 +429,146 @@ describe('DotContentDriveStore', () => {
                 const request = store.$request();
 
                 expect(request.assetPath).toBe(`//${customSite.hostname}/`);
+            });
+
+            describe('browse scope', () => {
+                // The wire values are written out rather than imported: this is the one place the
+                // client's idea of a location turns into what the endpoint is asked for, so the
+                // assertions should fail if that mapping drifts, not follow it.
+
+                it('should ask for all site content when the URL carries no location', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('ALL');
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should ask for the site root when the location is the root itself', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('ROOT');
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should name no scope when the location is a folder', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/documents/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    // A folder is addressed by its path alone. Naming a scope as well would be
+                    // refused by the endpoint, and it is what would turn this into a listing of
+                    // every descendant.
+                    expect(request.browseScope).toBeUndefined();
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/documents/`);
+                });
+
+                it('should ask for System Host without pasting the reserved word onto the site', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('SYSTEM_HOST');
+                    // The bug this exists to catch: interpolating the location straight into the
+                    // path produces `//demo.dotcms.comSYSTEM_HOST`, which resolves to nothing.
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should keep System Host selected when the site is switched', () => {
+                    // **Characterization test: green the day it is written**, like the host-clause
+                    // guard on the backend. System Host belongs to no site, so switching sites does
+                    // not change what it lists, and the selection already survives because it is
+                    // derived from the location while a switch changes the site.
+                    //
+                    // Written precisely because nothing would notice if that stopped being true. A
+                    // later change that reset the path on a site switch would drift the highlight
+                    // onto the new site's root, and the sidebar would claim the user is in two
+                    // places at once — with every other test still passing.
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    expect(store.$systemHostSelected()).toBe(true);
+
+                    // A site switch reaches the store as a re-init carrying the new site and the
+                    // location the route still holds — which is how the switch can change the
+                    // site without disturbing where the drive is browsing.
+                    store.initContentDrive({
+                        currentSite: MOCK_SITES[0],
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$systemHostSelected()).toBe(true);
+                    expect(store.$allSiteContentSelected()).toBe(false);
+                    // The hierarchy below re-renders for the newly chosen site, so the switch
+                    // visibly does something rather than appearing to fail.
+                    expect(store.currentSite()).toEqual(MOCK_SITES[0]);
+                    // And the request still asks for System Host, not for the new site's content.
+                    expect(store.$request().browseScope).toBe('SYSTEM_HOST');
+                });
+
+                it('should not ask for folders in all site content', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    // Folders are not results in a flat listing that spans the whole site, and the
+                    // tree is still there to navigate them.
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                it('should not ask for folders in System Host, which has none', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                it('should still ask for folders at the site root', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    // The top-level folders sit at the root, so they are part of what is there.
+                    expect(store.$request().showFolders).toBe(true);
+                });
             });
 
             it('should include title filter in request when provided', () => {
@@ -589,14 +735,15 @@ describe('DotContentDriveStore', () => {
 
             it('should KEEP showFolders true when a languageId filter is provided', () => {
                 // Folders have no language, so a locale filter — which picks a *version* of content
-                // — must not tear down the structure being navigated.
+                // — must not tear down the structure being navigated. At the site root for the same
+                // reason as the sibling test above.
                 const filters = {
                     languageId: ['en']
                 };
 
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters,
                     isTreeExpanded: false
                 });
@@ -641,7 +788,7 @@ describe('DotContentDriveStore', () => {
             it('should drop the status filter when filters are cleared', () => {
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters: { status: ['ARCHIVED'] },
                     isTreeExpanded: false
                 });
@@ -688,9 +835,11 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should set showFolders to true when no filters are provided', () => {
+                // At the site root: with no location at all this is now all site content, which
+                // asks for no folders whatever the filters say.
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters: {},
                     isTreeExpanded: false
                 });

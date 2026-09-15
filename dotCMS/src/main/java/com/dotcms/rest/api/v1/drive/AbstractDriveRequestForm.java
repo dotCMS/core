@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.drive;
 
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.HostUtil;
+import com.liferay.util.StringPool;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -111,6 +114,71 @@ public interface AbstractDriveRequestForm {
     @JsonProperty("includeSystemHost")
     @Value.Default
     default boolean includeSystemHost(){return true;}
+
+    /**
+     * Which slice of content to list: the whole site, the site root alone, or System Host.
+     * <p>
+     * <b>Omitting it means today's behavior, exactly.</b> It carries no default on purpose: at the
+     * site root an omitted scope and {@link BrowseScope#ALL} agree, but inside a folder they do
+     * not, and defaulting the field would silently turn every existing folder request recursive.
+     * That guarantee is what leaves the Asset Picker, which calls this same endpoint, untouched.
+     * </p>
+     * <p>
+     * Only valid with a site-root {@link #assetPath()}. The three scopes are things you can only
+     * be in at the top of a site; a folder is addressed by its path, so a scope named alongside a
+     * folder path is two contradictory statements and is refused rather than resolved.
+     * </p>
+     * <p>
+     * {@link #includeSystemHost()} is read only when this is {@code ALL} or omitted — the other
+     * two scopes already answer the System Host question themselves.
+     * </p>
+     *
+     * @return the requested browse scope, or null for today's behavior
+     */
+    @Nullable
+    @JsonProperty("browseScope")
+    BrowseScope browseScope();
+
+    /**
+     * A browse scope is only meaningful at the site root, so one named alongside a folder path is
+     * refused.
+     * <p>
+     * <b>Refused rather than resolved by precedence.</b> A caller that names both has said two
+     * contradictory things, and honouring either one would quietly list somewhere they did not
+     * ask for. This follows {@code BulkUploadForm}, which refuses a submission naming both a
+     * folder and a site for the same reason. Ignoring the scope instead would be kinder to a
+     * sloppy caller and would hide the caller's bug.
+     * </p>
+     * <p>
+     * The path is split here rather than resolved: this asks only whether anything follows the
+     * site, which needs no site lookup and no database. Resolving the path is
+     * {@code AssetPathResolver}'s job and happens later, once the request is known to be coherent.
+     * </p>
+     */
+    @Value.Check
+    default void checkBrowseScopeIsAtTheSiteRoot() {
+        if (null == browseScope()) {
+            return;
+        }
+        final String pathWithinSite = pathWithinSite(assetPath());
+        if (!pathWithinSite.isEmpty() && !StringPool.FORWARD_SLASH.equals(pathWithinSite)) {
+            throw new BadRequestException(String.format(
+                    "browseScope is only valid at the site root; got '%s' with path '%s'",
+                    browseScope().name(), pathWithinSite));
+        }
+    }
+
+    /**
+     * The portion of {@code //site/some/path/} that follows the site, or an empty string when the
+     * path names a site and nothing else.
+     */
+    static String pathWithinSite(final String assetPath) {
+        final String withoutHostIndicator = assetPath.startsWith(HostUtil.HOST_INDICATOR)
+                ? assetPath.substring(HostUtil.HOST_INDICATOR.length())
+                : assetPath;
+        final int firstSlash = withoutHostIndicator.indexOf(StringPool.FORWARD_SLASH);
+        return firstSlash < 0 ? StringPool.BLANK : withoutHostIndicator.substring(firstSlash);
+    }
 
     /**
      * List of language identifiers to include in the search.

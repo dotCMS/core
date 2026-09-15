@@ -643,7 +643,16 @@ public class BrowserAPIImpl implements BrowserAPI {
             ? browserQuery.site.getIdentifier()
             : browserQuery.folder.getHostId();
 
-        if (browserQuery.forceSystemHost || browserQuery.folder.isSystemFolder()) {
+        // The caller's request decides this, and nothing else. This used to widen the clause
+        // whenever the folder happened to be the system folder — that is, at every site root —
+        // which made this builder answer differently from the SQL one about a structural
+        // criterion. ADR-0018 makes the database authoritative for exactly those criteria and
+        // forbids re-routing them to the index, so the two must name the same hosts for the same
+        // request. The divergence only ever surfaced under the non-default PURE_ES heuristic,
+        // which is why it went unnoticed rather than why it was acceptable.
+        if (SystemHostMode.ONLY == browserQuery.systemHostMode) {
+            query.append("+conhost:SYSTEM_HOST ");
+        } else if (SystemHostMode.INCLUDE == browserQuery.systemHostMode) {
             query.append("+(conhost:").append(hostId).append(" OR conhost:SYSTEM_HOST) ");
         } else {
             query.append("+conhost:").append(hostId).append(" ");
@@ -2105,8 +2114,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (shouldApplySiteFiltering) {
                 if (browserQuery.site != null) {
                     appendSiteQuery(candidatesPredicates, browserQuery.site.getIdentifier(),
-                            browserQuery.forceSystemHost, parameters);
-                } else if (browserQuery.forceSystemHost) {
+                            browserQuery.systemHostMode, parameters);
+                } else if (SystemHostMode.EXCLUDE != browserQuery.systemHostMode) {
                     appendSystemHostQuery(candidatesPredicates);
                 }
             }
@@ -2142,9 +2151,11 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (shouldApplySiteFiltering) {
                 if (browserQuery.site != null) {
                     appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
-                            browserQuery.forceSystemHost, parameters);
+                            browserQuery.systemHostMode, parameters);
                 } else {
-                    if (browserQuery.forceSystemHost) {
+                    // No site to narrow to, so the only host clause worth emitting is the
+                    // System Host one, which both INCLUDE and ONLY want here.
+                    if (SystemHostMode.EXCLUDE != browserQuery.systemHostMode) {
                         appendSystemHostQuery(selectQuery);
                     }
                 }
@@ -2315,9 +2326,14 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param siteIdentifier The site identifier to filter by.
      * @param parameters     The list of parameters to add the site identifier to.
      */
-    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier, boolean forceSystemHost,
-            List<Object> parameters) {
-        if(forceSystemHost){
+    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier,
+            SystemHostMode systemHostMode, List<Object> parameters) {
+        if (SystemHostMode.ONLY == systemHostMode) {
+            // The site is context rather than a filter here, so nothing is bound.
+            appendSystemHostQuery(sqlQuery);
+            return;
+        }
+        if (SystemHostMode.INCLUDE == systemHostMode) {
             sqlQuery.append(" and (id.host_inode = ? or id.host_inode = 'SYSTEM_HOST') ");
         } else {
             sqlQuery.append(" and (id.host_inode = ?) ");

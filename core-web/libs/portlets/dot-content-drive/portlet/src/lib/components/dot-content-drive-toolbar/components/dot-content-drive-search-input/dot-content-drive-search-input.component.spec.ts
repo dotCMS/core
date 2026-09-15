@@ -28,7 +28,8 @@ describe('DotContentDriveSearchInputComponent', () => {
             mockProvider(DotContentDriveStore, {
                 getFilterValue: vi.fn().mockReturnValue(undefined),
                 setGlobalSearch: vi.fn(),
-                selectRootNode: vi.fn()
+                selectRootNode: vi.fn(),
+                selectAllSiteContent: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -75,7 +76,10 @@ describe('DotContentDriveSearchInputComponent', () => {
         spectator.triggerEventHandler(searchInput(), 'search', 'blog');
 
         expect(store.setGlobalSearch).toHaveBeenCalledWith('blog');
-        expect(store.selectRootNode).toHaveBeenCalled();
+        // All site content, not the site row: the results span the whole site at any depth, and
+        // the site row now means the root alone. Selecting it would have the sidebar naming a
+        // narrower place than the list is showing.
+        expect(store.selectAllSiteContent).toHaveBeenCalled();
     });
 
     it('should clear the search in the store when an empty term is emitted', () => {
@@ -85,7 +89,7 @@ describe('DotContentDriveSearchInputComponent', () => {
         spectator.triggerEventHandler(searchInput(), 'search', '');
 
         expect(store.setGlobalSearch).toHaveBeenCalledWith('');
-        expect(store.selectRootNode).toHaveBeenCalled();
+        expect(store.selectAllSiteContent).toHaveBeenCalled();
     });
 
     // The claim lives here rather than in the shell because this component is the one holding the

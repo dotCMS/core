@@ -226,10 +226,27 @@ export class DotContentDriveToolbarComponent {
      */
     protected readonly $canAddChildren = this.#store.$canAddChildren;
 
+    /** Gates the Show System Host chip: it has something to decide in one scope only. */
+    protected readonly $allSiteContentSelected = this.#store.$allSiteContentSelected;
+
     /** Empty when creation is allowed, so the buttons carry no tooltip in the normal case. */
-    protected readonly $addChildrenTooltip = computed(() =>
-        this.$canAddChildren() ? '' : 'content-drive.add-new.no-add-children'
-    );
+    /**
+     * Why creating and uploading are unavailable, when they are.
+     *
+     * Two different refusals reach the same disabled buttons, and they must not say the same
+     * thing. In all site content nothing is wrong with the user's permissions: the view simply
+     * spans the whole site and names no place for new content to land. Telling them they lack
+     * permission there would send them to an administrator for a problem they do not have.
+     */
+    protected readonly $addChildrenTooltip = computed(() => {
+        if (this.$canAddChildren()) {
+            return '';
+        }
+
+        // One reason left, and it is always a permission one: every scope that reaches here now
+        // has a place for content to land.
+        return 'content-drive.add-new.no-add-children';
+    });
 
     protected readonly $uploadBaseType = computed(() => {
         const data = this.#store.selectedNode()?.data;

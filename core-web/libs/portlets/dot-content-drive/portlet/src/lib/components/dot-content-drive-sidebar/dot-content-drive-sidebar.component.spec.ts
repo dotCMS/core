@@ -1,7 +1,13 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 import { Mock, Mocked, vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
 import { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
@@ -23,6 +29,7 @@ import { createFakeSite } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
+import { SYSTEM_HOST } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { createSiteNode } from '../../utils/tree-folder.utils';
 
@@ -99,6 +106,13 @@ describe('DotContentDriveSidebarComponent', () => {
         }
     ];
 
+    // A real signal, not a vi.fn: the row's selected state is read in an OnPush template, so it
+    // only re-renders when a signal it reads is invalidated. Same pattern the toolbar spec uses.
+    const allSiteContentSelected = signal(false);
+    const systemHostSelected = signal(false);
+    // Drives the System Host row's drop gate the way the store's own lookup would.
+    const systemHostCanAddChildren = signal<boolean | undefined>(true);
+
     const createComponent = createComponentFactory({
         component: DotContentDriveSidebarComponent,
         imports: [DotTreeFolderComponent],
@@ -108,6 +122,7 @@ describe('DotContentDriveSidebarComponent', () => {
             }),
             mockProvider(DotContentDriveStore, {
                 initContentDrive: vi.fn(),
+                systemHostCanAddChildren: systemHostCanAddChildren,
                 currentSite: vi.fn().mockReturnValue(mockSiteDetails),
                 isTreeExpanded: vi.fn().mockReturnValue(true),
                 removeFilter: vi.fn(),
@@ -128,7 +143,11 @@ describe('DotContentDriveSidebarComponent', () => {
                 loadChildFolders: vi.fn(),
                 patchContextMenu: vi.fn(),
                 updateFolders: vi.fn(),
-                setSelectedNode: vi.fn()
+                setSelectedNode: vi.fn(),
+                selectAllSiteContent: vi.fn(),
+                selectSystemHost: vi.fn(),
+                $allSiteContentSelected: allSiteContentSelected,
+                $systemHostSelected: systemHostSelected
             }),
             mockProvider(DotMessageService, {
                 get: vi.fn().mockImplementation((key: string) => key)
@@ -137,6 +156,9 @@ describe('DotContentDriveSidebarComponent', () => {
     });
 
     beforeEach(() => {
+        allSiteContentSelected.set(false);
+        systemHostSelected.set(false);
+
         spectator = createComponent({
             providers: [
                 mockProvider(DotFolderService, {
@@ -148,6 +170,195 @@ describe('DotContentDriveSidebarComponent', () => {
         contentDriveStore = spectator.inject(DotContentDriveStore, true);
 
         spectator.detectChanges();
+    });
+
+    describe('all site content', () => {
+        const row = () => spectator.query(byTestId('all-site-content'));
+
+        it('should offer a row above the hierarchy', () => {
+            expect(row()).toBeTruthy();
+        });
+
+        it('should ask the store for all site content when the row is chosen', () => {
+            spectator.click(byTestId('all-site-content'));
+
+            expect(contentDriveStore.selectAllSiteContent).toHaveBeenCalled();
+        });
+
+        it('should be reachable by keyboard, not only by pointer', () => {
+            // The hierarchy beside it is a tree with its own arrow-key handling, so this row has to
+            // carry its own semantics rather than inheriting the tree's.
+            expect(row()?.tagName.toLowerCase()).toBe('button');
+        });
+
+        it('should not read as current while a folder is being browsed', () => {
+            // The default mock browses '/test/path'.
+            expect(row()?.getAttribute('aria-current')).toBeNull();
+        });
+
+        it('should read as current when the drive carries no location', () => {
+            // `aria-current`, not `aria-selected`: the latter is only meaningful on roles like
+            // option, tab or treeitem, and on a button it is dropped from the accessibility tree
+            // outright — which is how this was caught, as a row that announced nothing and looked
+            // identical whether or not it was the view you were on.
+            allSiteContentSelected.set(true);
+
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('aria-current')).toBe('true');
+        });
+    });
+
+    describe('drag and drop onto the sidebar entries', () => {
+        const dragWith = (row: Element | null, files: File[]) => {
+            // This environment neither populates `files` from `items.add` nor carries a
+            // `dataTransfer` through the DragEvent constructor, and the component forks on
+            // `files.length` -- so it is attached to the event itself.
+            const fileList = {
+                ...files,
+                length: files.length,
+                item: (i: number) => files[i] ?? null
+            } as unknown as FileList;
+            const fire = (type: string) => {
+                const event = new DragEvent(type, { bubbles: true, cancelable: true });
+                Object.defineProperty(event, 'dataTransfer', {
+                    value: { files: fileList },
+                    configurable: true
+                });
+
+                return row?.dispatchEvent(event);
+            };
+            fire('dragenter');
+            // A row that accepts a drop cancels dragover; anything else declines it.
+            const offered = fire('dragover') === false;
+            fire('drop');
+            spectator.detectChanges();
+
+            return offered;
+        };
+        const png = () => new File(['x'], 'a.png', { type: 'image/png' });
+
+        beforeEach(() => systemHostCanAddChildren.set(true));
+
+        describe('the System Host entry', () => {
+            it('should upload files dropped on it, targeting System Host', () => {
+                const uploads: DotContentDriveUploadFiles[] = [];
+                spectator
+                    .output<DotContentDriveUploadFiles>('uploadFiles')
+                    .subscribe((e) => uploads.push(e));
+
+                dragWith(spectator.query(byTestId('system-host')), [png()]);
+
+                expect(uploads.length).toBe(1);
+                expect(uploads[0].targetFolder?.id).toBe(SYSTEM_HOST.identifier);
+            });
+
+            it('should move content dropped on it, targeting System Host', () => {
+                const moves: DotContentDriveMoveItems[] = [];
+                spectator
+                    .output<DotContentDriveMoveItems>('moveItems')
+                    .subscribe((e) => moves.push(e));
+
+                dragWith(spectator.query(byTestId('system-host')), []);
+
+                expect(moves.length).toBe(1);
+                expect(moves[0].targetFolder?.id).toBe(SYSTEM_HOST.identifier);
+            });
+
+            it('should offer itself as a drop target while the user may add to System Host', () => {
+                expect(dragWith(spectator.query(byTestId('system-host')), [png()])).toBe(true);
+            });
+
+            it('should not offer itself when the user may not add to System Host', () => {
+                // The spec refuses the target outright rather than accepting and then failing:
+                // a drop that is going to be rejected should never look available.
+                systemHostCanAddChildren.set(false);
+                spectator.detectChanges();
+
+                const moves: DotContentDriveMoveItems[] = [];
+                spectator
+                    .output<DotContentDriveMoveItems>('moveItems')
+                    .subscribe((e) => moves.push(e));
+
+                expect(dragWith(spectator.query(byTestId('system-host')), [])).toBe(false);
+                expect(moves.length).toBe(0);
+            });
+        });
+
+        describe('the All Site Content entry', () => {
+            it('should never be a drop target, for files or for content', () => {
+                // Files dropped on the LISTING in this scope are accepted; the entry itself is
+                // not a destination, because the site row beneath it already means the site root.
+                const uploads: DotContentDriveUploadFiles[] = [];
+                const moves: DotContentDriveMoveItems[] = [];
+                spectator
+                    .output<DotContentDriveUploadFiles>('uploadFiles')
+                    .subscribe((e) => uploads.push(e));
+                spectator
+                    .output<DotContentDriveMoveItems>('moveItems')
+                    .subscribe((e) => moves.push(e));
+
+                expect(dragWith(spectator.query(byTestId('all-site-content')), [png()])).toBe(
+                    false
+                );
+                expect(dragWith(spectator.query(byTestId('all-site-content')), [])).toBe(false);
+                expect(uploads.length).toBe(0);
+                expect(moves.length).toBe(0);
+            });
+
+            it('should look refused while a drag is over it, rather than inert', () => {
+                // A gesture that simply does nothing reads as a broken UI.
+                const row = spectator.query(byTestId('all-site-content'));
+                const dt = new DataTransfer();
+                row?.dispatchEvent(
+                    new DragEvent('dragenter', {
+                        bubbles: true,
+                        cancelable: true,
+                        dataTransfer: dt
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(row?.getAttribute('aria-disabled')).toBe('true');
+            });
+        });
+    });
+
+    describe('System Host', () => {
+        const row = () => spectator.query(byTestId('system-host'));
+
+        it('should offer a row below the hierarchy', () => {
+            expect(row()).toBeTruthy();
+        });
+
+        it('should sit after the hierarchy in document order', () => {
+            // Below the tree, not above it: System Host belongs to no site, so it reads as the
+            // other place you can be rather than as part of this site's structure.
+            const hierarchy = spectator.query(byTestId('hierarchy-scroll'));
+
+            expect(
+                hierarchy?.compareDocumentPosition(row() as Node) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        it('should ask the store for System Host when the row is chosen', () => {
+            spectator.click(byTestId('system-host'));
+
+            expect(contentDriveStore.selectSystemHost).toHaveBeenCalled();
+        });
+
+        it('should be reachable by keyboard, not only by pointer', () => {
+            expect(row()?.tagName.toLowerCase()).toBe('button');
+        });
+
+        it('should read as current only while System Host is what is being shown', () => {
+            expect(row()?.getAttribute('aria-current')).toBeNull();
+
+            systemHostSelected.set(true);
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('aria-current')).toBe('true');
+        });
     });
 
     describe('HTML Rendering', () => {

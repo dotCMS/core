@@ -8,6 +8,7 @@ import {
     PERMISSIONS_TYPE,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
+    DotContentDriveBrowseScope,
     DotFolder,
     DotSite,
     FolderSearchView,
@@ -22,8 +23,10 @@ import {
     FOLDER_NAME_FILTER_MIN_LENGTH,
     FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
+    ROOT_PATH,
     SHARED_ASSETS_ENABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
+    SYSTEM_HOST_PATH,
     USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
@@ -889,6 +892,52 @@ export function canAddChildrenTo(
     }
 
     return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
+}
+
+/**
+ * Turns the one value that says where the user is browsing into the two the endpoint expects.
+ *
+ * The sidebar can select four things and the URL carries one value for all of them: absent means
+ * all site content, `/` means the site root, a deeper path means that folder, and a reserved word
+ * means System Host. Keeping it to one value is what stops a location and a scope disagreeing,
+ * and this is the single place the two representations meet.
+ *
+ * Written as a mapping rather than interpolation on purpose. Pasting the location into the path
+ * produces `//demo.dotcms.comSYSTEM_HOST` for the reserved word, which resolves to nothing.
+ *
+ * A folder deliberately gets **no** scope: it is addressed by its path, the endpoint refuses a
+ * scope alongside a folder path, and a scope there is what would turn the listing into every
+ * descendant.
+ */
+export function toRequestLocation(
+    hostname: string | undefined,
+    path: string | undefined
+): { assetPath: string; browseScope?: DotContentDriveBrowseScope } {
+    const siteRoot = `//${hostname}/`;
+
+    if (!path?.length) {
+        return { assetPath: siteRoot, browseScope: 'ALL' };
+    }
+
+    if (path === SYSTEM_HOST_PATH) {
+        return { assetPath: siteRoot, browseScope: 'SYSTEM_HOST' };
+    }
+
+    if (path === ROOT_PATH) {
+        return { assetPath: siteRoot, browseScope: 'ROOT' };
+    }
+
+    return { assetPath: `//${hostname}${path}` };
+}
+
+/**
+ * Whether the listing should ask for folders at all.
+ *
+ * Folders are not results in a listing that spans the whole site, and System Host has none, so
+ * both of those scopes ask for none. The tree is still there to navigate them.
+ */
+export function listsFolders(browseScope: DotContentDriveBrowseScope | undefined): boolean {
+    return browseScope !== 'ALL' && browseScope !== 'SYSTEM_HOST';
 }
 
 /**

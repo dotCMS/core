@@ -8,6 +8,7 @@ import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.publisher.business.PublisherQueueJobTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveBrowseScopeTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveFieldFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveKeywordSearchTest;
@@ -85,6 +86,7 @@ import org.junit.runners.Suite;
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
+        ContentDriveBrowseScopeTest.class,
         ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
         ContentDriveKeywordSearchTest.class,

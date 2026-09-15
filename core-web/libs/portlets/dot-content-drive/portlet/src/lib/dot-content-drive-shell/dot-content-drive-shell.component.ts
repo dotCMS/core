@@ -87,7 +87,8 @@ import {
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
     UPLOAD_BATCH_OPERATION,
-    NEW_CONTENT_MARKER
+    NEW_CONTENT_MARKER,
+    ROOT_PATH
 } from '../shared/constants';
 import {
     DotContentDriveContentTypeSelectorPayload,
@@ -1021,8 +1022,14 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return;
         }
 
-        if (data.path != currentPath) {
-            this.#store.setPath(data.path);
+        // The tree tells its site row apart from a folder by giving it an empty path. As a
+        // *location* that means the site root, `/`, which is a different thing from all site
+        // content — and all site content is what an absent location means. Translating here keeps
+        // the tree's own representation untouched while stopping the two collapsing into one.
+        const location = data.path === '' ? ROOT_PATH : data.path;
+
+        if (location != currentPath) {
+            this.#store.setPath(location);
         }
     });
 
@@ -1257,7 +1264,16 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * @returns {boolean} Whether the drop may proceed
      */
     #canDropInto(targetFolder?: DotFolderTreeNodeData): boolean {
-        if (canAddChildrenTo(targetFolder, this.#store.siteCanAddChildren())) {
+        // No target means no folder is selected, which is every scope that is not a folder: all
+        // site content and System Host. `canAddChildrenTo` answers `true` for an absent target
+        // because it has nothing to judge, so asking it there would wave the drop through on the
+        // site's answer while the Upload button beside it is correctly disabled. The store's gate
+        // already knows which scope is open and whose permission applies.
+        const allowed = targetFolder
+            ? canAddChildrenTo(targetFolder, this.#store.siteCanAddChildren())
+            : this.#store.$canAddChildren();
+
+        if (allowed) {
             return true;
         }
 
@@ -1458,6 +1474,32 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * @param {DotFolderTreeNodeData} [hostFolder]
      * @memberof DotContentDriveShellComponent
      */
+    /**
+     * What the progress indicator calls an upload's destination.
+     *
+     * `||`, not `??`: the site root's node carries an *empty* path, which is present but names
+     * nothing, so the indicator would otherwise read "Applying Upload to " with a blank target.
+     *
+     * With no folder the destination is whichever host the sidebar is showing — and in the System
+     * Host scope that is not the site in the switcher, which still names one. Saying the site's
+     * name there tells the author their files are going somewhere they are not. The name is the
+     * sidebar entry's own label, so the indicator and the row the user clicked agree.
+     */
+    private uploadTargetLabel(hostFolder?: { path?: string }): string | undefined {
+        if (hostFolder?.path) {
+            return hostFolder.path;
+        }
+
+        if (this.#store.$systemHostSelected()) {
+            return this.#dotMessageService.get('content-drive.sidebar.system-host');
+        }
+
+        // The site. With no folder chosen the files land at its root, but which SITE received them
+        // is the part an author needs, and the site row and the flat view put content in the same
+        // place anyway -- so naming the root adds words without adding an answer.
+        return this.#store.currentSite()?.hostname;
+    }
+
     protected uploadByBaseType(
         files: File[],
         baseType: string,
@@ -1498,9 +1540,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
             operation: `${UPLOAD_BATCH_OPERATION}:${(this.#uploadSequence += 1)}`,
             actionName: this.#dotMessageService.get('content-drive.upload'),
             total: files.length,
-            // `||`, not `??`: the site root's node carries an *empty* path, which is present but
-            // names nothing, so the indicator would read "Applying Upload to " with a blank target.
-            targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
+            targetLabel: this.uploadTargetLabel(hostFolder),
             // Empty on purpose. The indicator speaks only for runs with nothing to mark, since a
             // run over rows is already reported by those rows dimming. An upload's content does not
             // exist until the run creates it, so the indicator is its only surface — naming the
@@ -1535,10 +1575,14 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 // id" reads as "is a folder" and sends a site id as `folderId`, which the server
                 // answers 404 to, correctly: that folder does not exist. An empty `path` is what
                 // marks the row as the site itself.
+                //
+                // The last fallback is the *browsed* host, not the site in the switcher: with
+                // System Host selected the switcher still shows a site, and that site is context
+                // rather than the destination.
                 ...(hostFolder?.id && hostFolder.path
                     ? { folderId: hostFolder.id }
                     : {
-                          siteId: hostFolder?.id ?? this.#store.currentSite()?.identifier ?? ''
+                          siteId: hostFolder?.id ?? this.#store.$newContentHostId() ?? ''
                       })
             })
             .subscribe({
@@ -1580,7 +1624,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
                         actionName: this.#dotMessageService.get('content-drive.upload'),
                         labelKey: 'content-drive.upload.indicator.background',
                         total: submitted,
-                        targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
+                        targetLabel: this.uploadTargetLabel(hostFolder),
                         targets: []
                     });
 
