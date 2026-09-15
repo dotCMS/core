@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DatePickerModule } from 'primeng/datepicker';
@@ -13,8 +13,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCalendarFieldComponent } from './components/calendar-field/calendar-field.component';
 
-import { CALENDAR_FIELD_TYPES_WITH_TIME } from '../../models/dot-edit-content-field.constant';
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
 import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
@@ -89,12 +87,4 @@ export class DotEditContentCalendarFieldComponent extends BaseWrapperField {
      * Alias: contentType
      */
     $contentType = input<DotCMSContentType | null>(null, { alias: 'contentType' });
-    /**
-     * Whether to show timezone information.
-     * Only shown for fields that include time.
-     */
-    $showTimezoneInfo = computed(() => {
-        const fieldType = this.$field().fieldType as FIELD_TYPES; // TODO: Fix fieldType on DotCMSContentTypeField to FieldType instead of string
-        return CALENDAR_FIELD_TYPES_WITH_TIME.includes(fieldType);
-    });
 }
