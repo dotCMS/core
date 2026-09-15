@@ -2097,9 +2097,10 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
-        it('should name the site ROOT, not just the site, when no folder is chosen', () => {
-            // The flat view has no path column, so the indicator is the only thing that says where
-            // a file went. "demo.com" reads as "somewhere on this site"; the root is the answer.
+        it('should name the site when no folder is chosen', () => {
+            // The site, not the root of it. Naming the root was tried and read as fussy for what
+            // it bought: the destination that matters to the author is which site received the
+            // files, and the site row and the flat view put them in the same place anyway.
             store.currentSite.mockReturnValue(MOCK_SITES[0]);
             store.$systemHostSelected.mockReturnValue(false);
 
@@ -2110,7 +2111,7 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             expect(store.startExternalRun).toHaveBeenCalledWith(
-                expect.objectContaining({ targetLabel: 'content-drive.upload.target.site-root' })
+                expect.objectContaining({ targetLabel: MOCK_SITES[0].hostname })
             );
         });
 
