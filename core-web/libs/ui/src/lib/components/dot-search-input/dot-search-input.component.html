@@ -8,7 +8,7 @@
         [placeholder]="$placeholder() | dm"
         [attr.aria-label]="$placeholder() | dm"
         autocomplete="off"
-        class="w-full"
+        [class]="'w-full ' + $inputClass()"
         [attr.data-testId]="$testId()"
         [formControl]="searchControl" />
     @if ($text().length) {

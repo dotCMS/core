@@ -11,7 +11,6 @@ import { FormsModule } from '@angular/forms';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { SelectModule } from 'primeng/select';
-import { TooltipModule } from 'primeng/tooltip';
 
 import {
     DotKeyboardShortcutService,
@@ -42,7 +41,6 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
         InputGroupModule,
         InputGroupAddonModule,
         SelectModule,
-        TooltipModule,
         DotMessagePipe,
         FormsModule
     ],
