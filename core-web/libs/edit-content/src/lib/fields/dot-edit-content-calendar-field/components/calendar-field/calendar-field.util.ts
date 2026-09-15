@@ -319,8 +319,25 @@ export const createUtcDateAtMidnight = (year: number, month: number, date: numbe
 export const getCurrentServerTime = (systemTimezone: DotSystemTimezone | null): Date => {
     const now = new Date();
 
-    // For UTC server or no timezone, show UTC time components as local time
-    if (!systemTimezone?.id || systemTimezone.id === 'UTC') {
+    // Timezone not loaded, or its request failed: there is no server zone to resolve against.
+    // Fall back to the browser's own clock, which is the convention every other timezone-less
+    // path in this field already follows — `convertServerTimeToUtc` and `convertUtcToServerTime`
+    // both return the date untouched when the zone is unknown, so wall-clock means local there.
+    // Returning UTC components here instead would make the value display one time and store
+    // another, off by the browser's offset, and read back differently than it was set.
+    if (!systemTimezone?.id) {
+        return new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            now.getHours(),
+            now.getMinutes(),
+            now.getSeconds()
+        );
+    }
+
+    // Server explicitly on UTC: show UTC time components as local time
+    if (systemTimezone.id === 'UTC') {
         // Create a date showing UTC components as if they were local
         // This shows 18:26 UTC as 18:26 in the calendar
         return new Date(

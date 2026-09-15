@@ -439,6 +439,44 @@ describe('DotCalendarFieldComponent', () => {
             expect(controlValue()).not.toBeNull();
         });
 
+
+        // FR-013a — the timezone is loaded asynchronously and its request can fail outright, so
+        // this state is reachable and, on failure, permanent. Every other tz-less path in this
+        // field reads and writes wall-clock as local; the shortcut must not speak a different
+        // dialect, or the value it sets comes back displaying a different time than it set.
+        it('should store the true instant, and round-trip, when the timezone is unavailable', async () => {
+            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, { utcTimezone: null });
+            openPicker();
+
+            spectator.click(queryActionButton() as HTMLElement);
+            await settle();
+
+            const stored = controlValue() as number;
+            const shown = spectator.component.internalFormControl.value as Date;
+
+            // The stored value is the real moment, not a wall-clock reinterpreted into another zone.
+            expect(stored).toBe(FAKE_NOW_UTC.getTime());
+
+            // And what the author sees is what that instant reads back as, so a reload is stable.
+            expect(shown.getHours()).toBe(new Date(stored).getHours());
+            expect(shown.getMinutes()).toBe(new Date(stored).getMinutes());
+        });
+
+        // FR-015b — symmetric with FR-007a for the clear control. p-button renders a native
+        // button, but nothing pinned that, and an icon-only or div-based footer action would
+        // satisfy every other criterion while being unreachable without a mouse.
+        it('should expose the footer action as a focusable button with an accessible name', () => {
+            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
+            openPicker();
+
+            const btn = queryActionButton() as HTMLButtonElement;
+
+            expect(btn.tagName).toBe('BUTTON');
+            btn.focus();
+            expect(document.activeElement).toBe(btn);
+            expect(btn.textContent?.trim()).toBeTruthy();
+        });
+
         // T036 — FR-014
         it('should mark the control touched and dirty after using the footer action', async () => {
             spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
