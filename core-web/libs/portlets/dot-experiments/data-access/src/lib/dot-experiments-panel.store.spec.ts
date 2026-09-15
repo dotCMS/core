@@ -4,7 +4,6 @@ import { signal, WritableSignal } from '@angular/core';
 
 import { CONFIGURE_SECTION_VARIANTS } from '@dotcms/dotcms-models';
 
-
 import { DotExperimentsPanelStore } from './dot-experiments-panel.store';
 
 const PAGE_A = 'page-a';

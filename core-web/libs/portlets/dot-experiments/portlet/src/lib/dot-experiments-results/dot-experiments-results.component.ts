@@ -125,14 +125,6 @@ export class DotExperimentsResultsComponent {
     );
 
     /**
-     * Analytics health, from whichever of the two sources this screen has.
-     *
-     * The portlet gets it from a route resolver that re-runs per experiment. The panel has no
-     * routes and therefore no resolver — but it does not need one: the editor can only reach
-     * results through the panel's list, whose own gate already asked. Asking again here would
-     * spend a second request on a question already answered (FR-027, SC-005).
-     */
-    /**
      * Analytics health inside the panel, asked for rather than resolved.
      *
      * There is no route here to carry a resolver, so the screen asks the same question the
@@ -145,6 +137,13 @@ export class DotExperimentsResultsComponent {
         this.#panel ? inject(DotExperimentsService).healthCheck() : of(undefined)
     );
 
+    /**
+     * Analytics health, from whichever of the two sources this screen has.
+     *
+     * The portlet's comes from a route resolver that re-runs per experiment; the panel's from the
+     * call above. Only one of them is ever set, so the order between them is a formality rather
+     * than a precedence.
+     */
     readonly #healthStatus = computed<HealthStatusTypes | undefined>(
         () => this.#panelHealthStatus() ?? this.#routeHealthStatus()
     );

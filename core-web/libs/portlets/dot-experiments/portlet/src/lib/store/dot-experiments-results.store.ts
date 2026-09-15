@@ -471,9 +471,7 @@ export const DotExperimentsResultsStore = signalStore(
 
                             knownExperimentId = experimentId;
 
-                            untracked(() =>
-                                dispatcher.dispatch(pageEvents.enter(experimentId))
-                            );
+                            untracked(() => dispatcher.dispatch(pageEvents.enter(experimentId)));
                         },
                         { injector }
                     );

@@ -509,9 +509,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
         it('should return to the list as a view, not a navigation', () => {
             inPanel();
-            const navigate = vi
-                .spyOn(spectator.inject(Router), 'navigate')
-                .mockResolvedValue(true);
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
 
             spectator.component.onBackToList();
 
@@ -521,9 +519,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
         it('should open results in the panel', () => {
             inPanel();
-            const navigate = vi
-                .spyOn(spectator.inject(Router), 'navigate')
-                .mockResolvedValue(true);
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
 
             spectator.component.onViewResults();
 
