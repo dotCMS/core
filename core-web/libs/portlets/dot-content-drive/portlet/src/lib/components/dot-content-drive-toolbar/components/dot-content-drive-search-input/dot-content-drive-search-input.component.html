@@ -1,0 +1,77 @@
+<!-- p-inputgroup joins the two halves into one field: it owns the seam and the shared border. The
+     trigger sits in the addon as a plain PrimeNG button — PrimeNG's own inputgroup stylesheet
+     already zeroes an addon's padding and a button's radius when it detects a button inside an
+     addon (`.p-inputgroupaddon:has(.p-button)` / `.p-inputgroupaddon .p-button`), which is the exact
+     recipe https://v21.primeng.org/inputgroup#button uses. No override needed on that side.
+
+     The search input's connecting edge needs one, because this component's own host sits between
+     `p-inputgroup` and the real `<input>`, breaking PrimeNG's structural CSS. `inputDt` reaches
+     through with a design-token override rather than a class, so it applies by redefining the
+     value the component's own stylesheet reads instead of competing with it for specificity.
+
+     The panel reuses the same popover + listbox pass-through every other Content Drive filter
+     dropdown already uses (see dot-content-drive-workflow-filter), so this control matches the
+     rest of the toolbar instead of introducing a styling idiom of its own. -->
+<p-inputgroup class="w-full">
+    <!-- No [placeholder] binding: the placeholder is always the shared component's own default
+         ("Search"), deliberately not describing the active scope. -->
+    <dot-search-input
+        [value]="$searchTerm()"
+        [inputDt]="INPUT_DT"
+        (search)="onSearch($event)"
+        class="min-w-0 flex-1" />
+
+    <!-- Fixed-ish width: a p-button sizes itself to its label, so "Title" and "All Fields" produced
+         two different widths and the whole group visibly resized as the choice changed. `min-w-32`
+         is plain Tailwind because width is layout, not a PrimeNG token — nothing in the button's own
+         stylesheet sets a width to compete with.
+
+         The button's own border is removed via `[pButtonPT]`'s `root.style`, not a `!important`
+         class: PT's `style` slot is applied through the directive's own `[style]` host binding (see
+         `TRIGGER_PT`), which is a real inline style and wins the cascade unconditionally, the same
+         guarantee `!important` gives without needing it. What is left showing is the addon's own
+         border, which already equals the input's — `inputgroup.addon.borderColor` resolves to the
+         same `{form.field.border.color}` alias `inputtext` uses, confirmed straight from the Lara
+         preset source. -->
+    <p-inputgroup-addon>
+        <!-- The explanation moved to each option in the panel below (FR-022 only requires it be
+             available, not where) — the trigger itself carries no tooltip. -->
+        <button
+            type="button"
+            pButton
+            severity="secondary"
+            [pButtonPT]="TRIGGER_PT"
+            [attr.aria-label]="'content-drive.search.scope.label' | dm"
+            aria-haspopup="listbox"
+            data-testid="search-scope-trigger"
+            class="min-w-32"
+            (click)="panel.toggle($event)">
+            <span class="truncate" data-testid="search-scope-active">
+                {{ $activeScopeLabel() | dm }}
+            </span>
+            <i class="pi pi-chevron-down shrink-0 text-xs" aria-hidden="true"></i>
+        </button>
+    </p-inputgroup-addon>
+</p-inputgroup>
+
+<p-popover #panel [pt]="POPOVER_PT">
+    <p-listbox
+        [options]="scopeOptions"
+        [ngModel]="$searchScope()"
+        [ngModelOptions]="{ standalone: true }"
+        [checkmark]="true"
+        [pt]="LISTBOX_PT"
+        [scrollHeight]="SCROLL_HEIGHT"
+        optionValue="value"
+        data-testid="search-scope-panel"
+        (ngModelChange)="onScopeChange($event); panel.hide()">
+        <ng-template let-item pTemplate="item">
+            <span
+                [pTooltip]="item.help | dm"
+                tooltipPosition="right"
+                [attr.data-testid]="'search-scope-option-' + item.value">
+                {{ item.label | dm }}
+            </span>
+        </ng-template>
+    </p-listbox>
+</p-popover>

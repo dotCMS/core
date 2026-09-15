@@ -6,14 +6,31 @@ import {
     OnDestroy,
     viewChild
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+
+import { ButtonModule } from 'primeng/button';
+import { InputGroupModule } from 'primeng/inputgroup';
+import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
+import { ListboxModule } from 'primeng/listbox';
+import { PopoverModule } from 'primeng/popover';
+import { TooltipModule } from 'primeng/tooltip';
 
 import {
+    CHIP_FILTER_LISTBOX_PT,
+    CHIP_FILTER_POPOVER_PT,
+    CHIP_FILTER_SCROLL_HEIGHT,
     DotKeyboardShortcutService,
     DotKeyboardShortcutUnregister,
+    DotMessagePipe,
     DotSearchInputComponent,
     hasOverlayAbove
 } from '@dotcms/ui';
 
+import { DEFAULT_SEARCH_SCOPE, SEARCH_SCOPE_FILTER_KEY } from '../../../../shared/constants';
+import {
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE,
+    DotContentDriveSearchScope
+} from '../../../../shared/models';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
 /**
@@ -23,12 +40,19 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
  */
 @Component({
     selector: 'dot-content-drive-search-input',
-    template: `
-        <!-- Placeholder falls back to the shared "search" i18n key. -->
-        <dot-search-input [value]="$searchTerm()" (search)="onSearch($event)" />
-    `,
+    templateUrl: './dot-content-drive-search-input.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotSearchInputComponent],
+    imports: [
+        DotSearchInputComponent,
+        ButtonModule,
+        InputGroupModule,
+        InputGroupAddonModule,
+        ListboxModule,
+        PopoverModule,
+        TooltipModule,
+        DotMessagePipe,
+        FormsModule
+    ],
     host: { class: 'w-full' }
 })
 export class DotContentDriveSearchInputComponent implements OnDestroy {
@@ -46,6 +70,91 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     protected readonly $searchTerm = computed(
         () => (this.#store.getFilterValue('title') as string) ?? ''
     );
+
+    /**
+     * The two options, in the order they read best: the narrow one first, because it is the choice
+     * the user is here to make. The wide one is called "All Fields" rather than "All Content" — it
+     * widens which FIELDS are read, not which content is searched, and Content Drive is separately
+     * gaining a browse scope where "All" genuinely means all content.
+     */
+    protected readonly scopeOptions = [
+        {
+            label: 'content-drive.search.scope.title',
+            help: 'content-drive.search.scope.title.help',
+            value: DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE
+        },
+        {
+            label: 'content-drive.search.scope.all-fields',
+            help: 'content-drive.search.scope.all-fields.help',
+            value: DOT_CONTENT_DRIVE_SEARCH_SCOPE.ALL_FIELDS
+        }
+    ];
+
+    /**
+     * The addon's own background, repointed to match the input.
+     *
+     * `p-inputgroup-addon` has no `dt` input (confirmed against its compiled metadata — only
+     * `style`/`styleClass` are declared), so a design-token override isn't an option here. `[style]`
+     * is the component's own supported way in instead, and it needs no `!important`: an inline style
+     * always wins the cascade over an external stylesheet rule, regardless of specificity.
+     *
+     * `var(--p-inputtext-background)` rather than a literal colour: PrimeNG's `dt()` mechanism
+     * compiles every token to a CSS custom property of exactly this shape, so reading the input's
+     * own resolved variable keeps the two in step if the active theme ever changes, the same
+     * guarantee a `dt` override would have given if one were available.
+     *
+     * The addon's BORDER needs no such fix — `inputgroup.addon.borderColor` already resolves to the
+     * same `{form.field.border.color}` alias `inputtext` uses, confirmed straight from the Lara
+     * preset source. Only the background differs (`{surface.50}`, a light grey).
+     */
+    protected readonly ADDON_STYLE = { background: 'var(--p-inputtext-background)' };
+
+    /**
+     * The same popover/listbox pass-through every other Content Drive filter dropdown already uses
+     * (`dot-content-drive-workflow-filter`, `dot-status-filter`, …), so this panel matches the rest
+     * of the toolbar instead of introducing its own styling.
+     */
+    protected readonly POPOVER_PT = CHIP_FILTER_POPOVER_PT;
+    protected readonly LISTBOX_PT = CHIP_FILTER_LISTBOX_PT;
+    protected readonly SCROLL_HEIGHT = CHIP_FILTER_SCROLL_HEIGHT;
+
+    /** Absent from the filters means the default — the scope is only stored when it differs. */
+    protected readonly $searchScope = computed<DotContentDriveSearchScope>(
+        () =>
+            (this.#store.getFilterValue(SEARCH_SCOPE_FILTER_KEY) as DotContentDriveSearchScope) ??
+            DEFAULT_SEARCH_SCOPE
+    );
+
+    /** The trigger shows the active scope, as the mock does. */
+    protected readonly $activeScopeLabel = computed(
+        () =>
+            this.scopeOptions.find((option) => option.value === this.$searchScope())?.label ??
+            'content-drive.search.scope.all-fields'
+    );
+
+    /**
+     * The trigger's own border, removed via PT rather than a Tailwind `!important` class.
+     *
+     * `pButtonPT`'s `root.style` is consumed through `[style]`/`[class]` HOST BINDINGS on the
+     * directive's own host element (see `Bind`, the directive backing this), which Angular applies
+     * the same way any `[style]` binding is — as a real inline style. That wins the cascade over
+     * PrimeNG's own injected `.p-button-secondary` rule unconditionally, the same guarantee
+     * `!important` gives, without reaching for it.
+     */
+    protected readonly TRIGGER_PT = {
+        root: { style: { border: 'none' } }
+    };
+
+    /**
+     * Squares off the search input's connecting edge — the side that meets the scope addon. This
+     * component's own host sits between `p-inputgroup` and the real `<input>`, breaking PrimeNG's
+     * structural CSS, so the override rides the design token through `inputDt` instead of
+     * competing for specificity (see the template comment). Hoisted like `TRIGGER_PT`: an inline
+     * object literal would be recreated on every change detection cycle.
+     */
+    protected readonly INPUT_DT = {
+        border: { radius: '{form.field.border.radius} 0 0 {form.field.border.radius}' }
+    };
 
     /**
      * Claims the search shortcuts for as long as this box is on screen.
@@ -115,5 +224,19 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     protected onSearch(term: string): void {
         this.#store.setGlobalSearch(term);
         this.#store.selectRootNode();
+    }
+
+    /**
+     * Records the new scope and lets the store re-run the search.
+     *
+     * Re-selecting the scope that is already active is ignored: the results cannot change, and
+     * `patchFilters` would reset the user to page 1 for nothing.
+     */
+    protected onScopeChange(scope: DotContentDriveSearchScope): void {
+        if (scope === this.$searchScope()) {
+            return;
+        }
+
+        this.#store.setSearchScope(scope);
     }
 }

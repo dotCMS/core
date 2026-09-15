@@ -67,6 +67,25 @@ export class DotSearchInputComponent {
      */
     readonly $testId = input('search-input-field', { alias: 'testId' });
 
+    /**
+     * PrimeNG design-token overrides for the actual `<input>`, e.g. to flatten one side's radius
+     * when this component sits inside a `p-inputgroup`.
+     *
+     * Exists for one reason: a host that nests this component inside an input group cannot reach
+     * the `<input>` from outside, because PrimeNG's own inputgroup CSS only rewires direct
+     * structural relationships (`.p-inputgroup > .p-component`,
+     * `.p-inputgroup > .p-iconfield > .p-component`) — and this component's own host element sits
+     * between the group and that input, breaking the chain.
+     *
+     * `dt`, not a class: a design-token override sets the CSS custom property the component's own
+     * stylesheet already reads, so it applies unconditionally rather than fighting PrimeNG's
+     * dynamically-injected styles for specificity. Empty by default, so every existing consumer
+     * (the AssetPicker included) is unaffected.
+     *
+     * @alias inputDt
+     */
+    readonly $inputDt = input<Record<string, unknown>>({}, { alias: 'inputDt' });
+
     /** Emits the trimmed term once the debounce window closes. */
     readonly search = output<string>();
 

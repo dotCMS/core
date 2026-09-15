@@ -164,4 +164,84 @@ public class BrowserAPIImplTest {
         final Set<String> ids = BrowserAPIImpl.collectWarmUpUserIds(List.of(locked));
         assertEquals(Set.of("author-1"), ids);
     }
+
+    // ---------------------------------------------------------------------------------------
+    // Title scope query building (issue #37479).
+    //
+    // The title field is indexed with the standard tokenizer, which treats punctuation as word
+    // separators — "COVID-19" is stored as the tokens "covid" and "19" (verified against the
+    // Lucene 8.7.0 StandardAnalyzer this index uses). The expected clauses below are pinned to
+    // that fact.
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * A hyphenated term must become one mandatory clause per WORD, not one fused word: stripping
+     * the separator turned "COVID-19" into "COVID19" — a word no document contains — so a title
+     * findable in All Fields vanished from Title scope. The analyzer stores "covid" and "19", so
+     * the prefix queries must be split the same way.
+     */
+    @Test
+    public void buildTitleScopedQuery_hyphenatedTerm_splitsIntoMandatoryWordPrefixes() {
+        assertEquals(
+                "+(title:COVID* title_dotraw:COVID*) +(title:19* title_dotraw:19*)",
+                BrowserAPIImpl.buildTitleScopedQuery("COVID-19"));
+    }
+
+    /** Same mechanism, other analyzer separators: the words on both sides stay reachable. */
+    @Test
+    public void buildTitleScopedQuery_slashedTerm_splitsIntoMandatoryWordPrefixes() {
+        assertEquals(
+                "+(title:input* title_dotraw:input*) +(title:output* title_dotraw:output*)",
+                BrowserAPIImpl.buildTitleScopedQuery("input/output"));
+    }
+
+    /**
+     * Punctuation at a token's edges splits exactly like it stripped (the empty side is dropped),
+     * so the punctuated-paste cases keep working: "(XETRA:" reaches the analyzer's "xetra" token.
+     */
+    @Test
+    public void buildTitleScopedQuery_punctuatedToken_reachesTheStoredWord() {
+        assertEquals(
+                "+(title:XETRA* title_dotraw:XETRA*)",
+                BrowserAPIImpl.buildTitleScopedQuery("(XETRA:"));
+    }
+
+    /**
+     * Wildcards are query intent, not word separators: dropped, keeping the term as one token.
+     * Splitting them would leave fragments like ".txt" that no analyzed token starts with and
+     * that, being mandatory, would sink the whole search.
+     */
+    @Test
+    public void buildTitleScopedQuery_wildcardsAreDropped_notSplit() {
+        assertEquals(
+                "+(title:file.txt* title_dotraw:file.txt*)",
+                BrowserAPIImpl.buildTitleScopedQuery("file*.txt"));
+    }
+
+    /** Underscore and dot are not query syntax: a dotted file title survives as one token. */
+    @Test
+    public void buildTitleScopedQuery_dottedFileName_staysOneToken() {
+        assertEquals(
+                "+(title:IMG_1004.jpeg* title_dotraw:IMG_1004.jpeg*)",
+                BrowserAPIImpl.buildTitleScopedQuery("IMG_1004.jpeg"));
+    }
+
+    /**
+     * A term that is ONLY query syntax carries no usable word. It must match nothing — returning
+     * no clause at all would drop the text constraint and return the whole folder, the opposite
+     * of All Fields, which matches nothing for the same input.
+     */
+    @Test
+    public void buildTitleScopedQuery_termOfOnlyQuerySyntax_matchesNothing() {
+        assertEquals("+title:* -title:*", BrowserAPIImpl.buildTitleScopedQuery("***"));
+        assertEquals("+title:* -title:*", BrowserAPIImpl.buildTitleScopedQuery("/"));
+    }
+
+    /** A multi-word term keeps one mandatory clause per word — the injection-shaped terms too. */
+    @Test
+    public void buildTitleScopedQuery_multiWordTerm_oneMandatoryClausePerWord() {
+        assertEquals(
+                "+(title:mixed* title_dotraw:mixed*) +(title:case* title_dotraw:case*)",
+                BrowserAPIImpl.buildTitleScopedQuery("mixed case"));
+    }
 }

@@ -17,6 +17,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
 import com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy;
+import com.dotcms.rest.api.v1.drive.SearchScope;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -903,6 +904,14 @@ public class BrowserAPIImpl implements BrowserAPI {
                 inodes.size(), collectedInodes.size(), duration));
 
         } catch (final Exception e) {
+            // Deliberately swallowed, and it is worth saying why rather than leaving it to look
+            // like an oversight. Raising this instead was tried while fixing #37532 and reverted:
+            // once the term is escaped (see GlobalSearchAttributeStrategy) no user input can break
+            // the query, so what remains here is infrastructure failure — and raising it also broke
+            // the guarantee that a Lucene-injection attempt is escaped, matches nothing, and does
+            // NOT produce a 500 (see ContentDriveFieldFilterTest#testMalformedDateBoundIsSafe).
+            // Failures the front end can observe — network and server errors — already surface as
+            // an error banner rather than an empty grid.
             Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
         }
 
@@ -1266,16 +1275,20 @@ public class BrowserAPIImpl implements BrowserAPI {
         final StringBuilder textGroup = new StringBuilder();
 
         if (UtilMethods.isSet(browserQuery.filter)) {
-            // Reuse the Content Search global-search strategy so Content Drive keyword search stays
-            // consistent with the Search portlet (issue #36688). It builds a selective mandatory
-            // "+catchall:<kw>*" prefix plus tokenized, escaped title boosts — replacing the previous
-            // broad "catchall:*<kw>*" leading wildcard, which returned unrelated body matches and
-            // scanned slowly on large, indexed datasets.
-            final FieldContext globalSearchContext = new FieldContext.Builder()
-                    .withFieldName("title")
-                    .withFieldValue(browserQuery.filter)
-                    .build();
-            textGroup.append(new GlobalSearchAttributeStrategy().generateQuery(globalSearchContext));
+            if (SearchScope.TITLE == browserQuery.searchScope) {
+                textGroup.append(buildTitleScopedQuery(browserQuery.filter));
+            } else {
+                // Reuse the Content Search global-search strategy so Content Drive keyword search stays
+                // consistent with the Search portlet (issue #36688). It builds a selective mandatory
+                // "+catchall:<kw>*" prefix plus tokenized, escaped title boosts — replacing the previous
+                // broad "catchall:*<kw>*" leading wildcard, which returned unrelated body matches and
+                // scanned slowly on large, indexed datasets.
+                final FieldContext globalSearchContext = new FieldContext.Builder()
+                        .withFieldName("title")
+                        .withFieldValue(browserQuery.filter)
+                        .build();
+                textGroup.append(new GlobalSearchAttributeStrategy().generateQuery(globalSearchContext));
+            }
         }
 
         if (UtilMethods.isSet(browserQuery.fileName)) {
@@ -1322,6 +1335,159 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         return baseQuery.toString();
+    }
+
+    /** Splits a term into tokens, matching the shared field strategies. */
+    private static final String TITLE_SCOPE_SPLIT_REGEX = "[,|\\s+]";
+
+    /**
+     * The subset of {@link LuceneQueryUtils#LUCENE_SPECIAL_CHARS} that reads as query intent — a
+     * wildcard or an escape — rather than as a word boundary. These are dropped from the token
+     * outright (the historical behavior) instead of splitting it: {@code file*.txt} keeps meaning
+     * the literal {@code file.txt}, rather than becoming two mandatory words, one of which
+     * ({@code .txt}) could never match an analyzed token and would sink the whole search.
+     */
+    private static final String WILDCARD_CHARS = "*?\\";
+
+    /**
+     * The clause for a term whose every token is query syntax ({@code ***}, a lone {@code /}): a
+     * required existence test on {@code title} paired with its own negation — a contradiction no
+     * document can satisfy. {@code field:*} is the established {@code query_string} exists idiom
+     * (see {@code PersonaAPIImpl}'s {@code +languageid:*}); the wrapping group in
+     * {@link #buildBaseESQuery} applies the {@code +} and {@code -} as written.
+     */
+    private static final String MATCH_NOTHING_CLAUSE = "+title:* -title:*";
+
+    /**
+     * Builds the Elasticsearch clause for {@link SearchScope#TITLE} — the search scope that matches
+     * a term against the contentlet title alone (issue #37479).
+     *
+     * <p>This is a <b>sibling</b> of {@link GlobalSearchAttributeStrategy} rather than a branch
+     * inside it. That strategy also serves the Search portlet and the Relationships dialog through
+     * the Lucene Query Builder service, and neither asked for a narrower query.</p>
+     *
+     * <p><b>One mandatory clause per token</b>, mirroring {@code TextFieldStrategy}. This is not a
+     * style choice — the first version of this method interpolated the whole term into a single
+     * {@code title:<term>*} clause, and for a multi-word term the {@code title:} prefix binds only
+     * to the first word. Every word after it became a bare term, which Elasticsearch matches
+     * against <b>every</b> field, so "mixed case" in Title scope returned stylesheets whose
+     * <i>body</i> contained "case". Tokenizing also means a term containing {@code OR} or
+     * {@code AND} is matched as a word rather than parsed as a boolean operator.</p>
+     *
+     * <p>Two things this clause must not do, both of which would make the scope a display filter
+     * rather than the cheaper query path it exists to be:</p>
+     *
+     * <ul>
+     *   <li><b>No {@code catchall}.</b> That field aggregates every field of the document, which is
+     *       exactly the breadth the Title scope is meant to avoid.</li>
+     *   <li><b>No leading wildcard.</b> {@code title_dotraw} is a keyword field, so {@code *term*}
+     *       scans every distinct raw title while {@code term*} is a prefix seek. Issue #36688
+     *       removed a leading wildcard for this reason and it must not return.</li>
+     * </ul>
+     *
+     * <p><b>Known trade-offs</b>, both signed off, and both the same consequence of matching by
+     * prefix rather than by substring:</p>
+     *
+     * <ul>
+     *   <li><b>Mid-token.</b> Searching {@code 1004} will not find {@code IMG_1004.jpeg} here. All
+     *       Fields keeps it (issue #36791).</li>
+     *   <li><b>Punctuation mid-title.</b> The punctuation itself is never matchable: a prefix query
+     *       is not analyzed, and the indexed token had it removed — {@code (XETRA:} is indexed as
+     *       {@code xetra}. Reaching the punctuation would need {@code *(XETRA:*}, the leading
+     *       wildcard this method exists to avoid. The words around it stay reachable — a split
+     *       aligns the term with the tokens the analyzer stored — and All Fields, the default,
+     *       matches the punctuated term in full, which is the path the customer case of issue
+     *       #37532 takes.</li>
+     * </ul>
+     *
+     * <p>Restoring either would cost the prefix seek that makes this scope worth having.</p>
+     *
+     * <p>No boost clauses. The all-fields strategy carries several, but Content Drive orders by the
+     * grid's sort — modification date by default — and never by score, so a boost changes nothing a
+     * user can see. Adding one here would only be another place for a term to be interpolated
+     * badly.</p>
+     *
+     * @param filter The raw, unescaped term the user typed.
+     *
+     * @return The Lucene clause for a title-only search, or {@link #MATCH_NOTHING_CLAUSE} when the
+     *         term carries no usable token at all — matching nothing, never everything.
+     */
+    static String buildTitleScopedQuery(final String filter) {
+        final StringBuilder query = new StringBuilder();
+        for (final String token : filter.split(TITLE_SCOPE_SPLIT_REGEX)) {
+            // SPLIT the query-syntax characters that are word separators; DROP the wildcard ones.
+            //
+            // Escaping is the right move for a substring match, and it is what the all-fields
+            // strategy does. It is the wrong move here. A prefix query is NOT analyzed, so the
+            // term is compared against the indexed token as-is — and the analyzer already removed
+            // that punctuation at index time: "(XETRA:" is indexed as "xetra". An escaped
+            // "\(XETRA\:" can therefore never match, and because every token is mandatory, one
+            // such token sinks the whole search. Pasting a punctuated title into Title scope
+            // returned nothing.
+            //
+            // Stripping alone aligns the term with what the analyzer stored, but it also FUSES
+            // the words around the stripped character: title is indexed with the standard
+            // tokenizer, which treats punctuation as word separators — "COVID-19" is stored as
+            // the tokens "covid" and "19", and a stripped token turned the term into "COVID19",
+            // a word no document contains. A hyphenated title findable in All Fields vanished
+            // from Title scope. Splitting on the same separators the analyzer uses keeps every
+            // word reachable by its own prefix; at a token's edges a split and a strip are
+            // equivalent, because the empty side is dropped — which is what the punctuated-paste
+            // cases rely on. Either way, a fragment with no reserved characters left in it
+            // cannot be query syntax.
+            for (final String value : splitQuerySyntax(token)) {
+                query.append("+(title:").append(value).append("* title_dotraw:")
+                        .append(value).append("*) ");
+            }
+        }
+
+        if (query.length() == 0) {
+            // Every token was pure query syntax (e.g. "***" or a lone "/"). Returning BLANK here
+            // would drop the text constraint entirely and return the whole folder — the exact
+            // "term silently ignored" failure the injection-shaped test guards against, reached
+            // from the opposite direction, and the opposite of All Fields, which matches nothing
+            // for the same input.
+            return MATCH_NOTHING_CLAUSE;
+        }
+
+        return query.toString().trim();
+    }
+
+    /**
+     * Splits a single token of the user's term on the Lucene reserved characters, so it can be
+     * compared against an analyzed field that never stored those characters.
+     *
+     * <p>Deliberately not {@code LuceneQueryUtils.escape}: escaping preserves the character, which
+     * is correct when the term is matched as a substring of a raw value and wrong when it is
+     * matched as a prefix of an analyzed token. And deliberately a character walk, not a regex,
+     * for the same OpenSearch-migration reasons documented on {@code LuceneQueryUtils.escape}.</p>
+     *
+     * @param token A single token of the user's term (already split on the shared separators).
+     *
+     * @return The word fragments the analyzer would have stored; never empty, never blank.
+     */
+    static List<String> splitQuerySyntax(final String token) {
+        final List<String> segments = new ArrayList<>();
+        final StringBuilder current = new StringBuilder(token.length());
+        for (int i = 0; i < token.length(); i++) {
+            final char c = token.charAt(i);
+            if (LuceneQueryUtils.LUCENE_SPECIAL_CHARS.indexOf(c) < 0) {
+                current.append(c);
+            } else if (WILDCARD_CHARS.indexOf(c) >= 0) {
+                // A wildcard or escape: query intent, dropped rather than treated as a separator
+                // (see WILDCARD_CHARS).
+            } else {
+                // A word separator for the analyzer: flush the fragment accumulated so far.
+                if (current.length() > 0) {
+                    segments.add(current.toString());
+                    current.setLength(0);
+                }
+            }
+        }
+        if (current.length() > 0) {
+            segments.add(current.toString());
+        }
+        return segments;
     }
 
     /**
