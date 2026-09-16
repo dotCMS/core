@@ -348,7 +348,6 @@ export class DotToolsPageComponent {
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: this.#messageService.get('tools.confirm.accept'),
             rejectLabel: this.#messageService.get('tools.confirm.reject'),
-            acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             accept: () => this.store.deleteSection(section.id)
         });
@@ -370,7 +369,6 @@ export class DotToolsPageComponent {
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: this.#messageService.get('tools.confirm.accept'),
             rejectLabel: this.#messageService.get('tools.confirm.reject'),
-            acceptButtonStyleClass: 'p-button-danger',
             rejectButtonStyleClass: 'p-button-text',
             accept: () => this.store.deleteCustomTool(tool.id)
         });
