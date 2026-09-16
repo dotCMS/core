@@ -370,19 +370,25 @@
 }
 
 <!-- Group 8: Insert dialogs -->
-@if (isAllowed('link')) {
-    <button
-        type="button"
-        [attr.aria-label]="'dot.block.editor.toolbar.insert-link' | dm"
-        [pTooltip]="'dot.block.editor.toolbar.insert-link' | dm"
-        [tooltipPosition]="TOOLTIP_POSITION"
-        [tooltipOptions]="overlayTooltipOptions()"
-        [showDelay]="TOOLTIP_SHOW_DELAY"
-        [class]="btnClass(state.isLink() || state.isImageLinked() || popovers.isOpen('link'))"
-        (mousedown)="openLinkDialog($event)">
-        <span aria-hidden="true" class="material-symbols-outlined">link</span>
-    </button>
-}
+<!--
+    Never gated, same reason as the emoji button below (#37340) — this one is #36351.
+    `link` is not selectable in Allowed Blocks: that list comes from `getEditorBlockOptions()`,
+    which offers block nodes only, and `link`/`emoji`/`youtube` were excluded by #37175. So
+    `isAllowed('link')` was true ONLY on a field with no restriction at all, which meant
+    restricting any block silently removed hyperlinks — a restriction no admin chose and none
+    could undo, short of clearing the whole list and giving up restriction entirely.
+-->
+<button
+    type="button"
+    [attr.aria-label]="'dot.block.editor.toolbar.insert-link' | dm"
+    [pTooltip]="'dot.block.editor.toolbar.insert-link' | dm"
+    [tooltipPosition]="TOOLTIP_POSITION"
+    [tooltipOptions]="overlayTooltipOptions()"
+    [showDelay]="TOOLTIP_SHOW_DELAY"
+    [class]="btnClass(state.isLink() || state.isImageLinked() || popovers.isOpen('link'))"
+    (mousedown)="openLinkDialog($event)">
+    <span aria-hidden="true" class="material-symbols-outlined">link</span>
+</button>
 @if (isAllowed('image')) {
     <button
         type="button"
