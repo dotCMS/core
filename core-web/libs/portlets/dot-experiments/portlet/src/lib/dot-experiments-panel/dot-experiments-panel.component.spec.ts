@@ -2,6 +2,7 @@ import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/v
 import { MockComponent, MockPipe } from 'ng-mocks';
 import { vi } from 'vitest';
 
+import { ConfirmEventType } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
 import { ZIndexUtils } from 'primeng/utils';
@@ -13,6 +14,7 @@ import { DotExperimentsPanelComponent } from './dot-experiments-panel.component'
 
 import { DotExperimentsConfigureComponent } from '../dot-experiments-configure/dot-experiments-configure.component';
 import { DotExperimentsListComponent } from '../dot-experiments-list/dot-experiments-list.component';
+import { DotExperimentsResultsComponent } from '../dot-experiments-results/dot-experiments-results.component';
 import { PANEL_EXPANDED_WIDTH, PANEL_WIDTH } from '../shared/constants';
 
 const EXPANDED_STORAGE_KEY = 'dot-experiments-panel-expanded';
@@ -40,6 +42,7 @@ describe('DotExperimentsPanelComponent', () => {
                             // that asserts nothing about them.
                             MockComponent(DotExperimentsListComponent),
                             MockComponent(DotExperimentsConfigureComponent),
+                            MockComponent(DotExperimentsResultsComponent),
                             MockPipe(DotMessagePipe, (key: string) => key)
                         ]
                     }
@@ -132,6 +135,130 @@ describe('DotExperimentsPanelComponent', () => {
         open();
         spectator.detectChanges();
     };
+
+    /**
+     * FR-019. Every way out of this panel — the X, the mask, Escape — is a click, not a
+     * navigation, so `experimentsUnsavedChangesGuard` cannot see any of them. Without this the
+     * editor loses everything typed since the last Save Draft to a stray click on a backdrop.
+     */
+    /**
+     * FR-025f / FR-037. Results is the only screen here that pulls a charting library, and the
+     * panel is opened far more often to glance at the list than to read a report. Its own `@defer`
+     * is what keeps that cost off every other opening.
+     *
+     * `@defer` is usable here and was not in the shell (T034), and the difference is worth keeping
+     * straight so neither is 'corrected' to match the other: results and the panel are in the same
+     * lib, so the static `imports:` entry a defer block still needs crosses no Nx boundary.
+     */
+    describe('deferring the results screen', () => {
+        it('should not render results when the panel opens on the list', () => {
+            openOn(() => store.open());
+
+            expect(spectator.query(DotExperimentsResultsComponent)).toBeNull();
+        });
+
+        it('should not render results while configuring either', () => {
+            openOn(() => {
+                store.open();
+                store.showConfigure('exp-1');
+            });
+
+            expect(spectator.query(DotExperimentsResultsComponent)).toBeNull();
+        });
+
+        it('should render results only once they are the view', async () => {
+            openOn(() => store.openResults('exp-1'));
+
+            await vi.waitFor(() => {
+                spectator.detectChanges();
+                expect(spectator.query(DotExperimentsResultsComponent)).not.toBeNull();
+            });
+        });
+    });
+
+    describe('closing over unsaved work', () => {
+        /**
+         * Puts the Configure screen on show and gives its mock the two members the prompt reads.
+         * The real component is not mounted on purpose — this spec is about what the panel does
+         * with the answer, and the dialog's own behaviour has its own spec.
+         */
+        const configureOnScreen = (hasUnsavedChanges: boolean) => {
+            openOn(() => {
+                store.open();
+                store.showConfigure('exp-1');
+            });
+
+            const confirm = vi.fn();
+            const configure = spectator.query(DotExperimentsConfigureComponent);
+            Object.assign(configure, {
+                store: { $hasUnsavedChanges: () => hasUnsavedChanges },
+                confirmationService: { confirm }
+            });
+
+            return confirm;
+        };
+
+        // `clickButton` looks at the document root: `appendTo="body"` teleports the drawer out of
+        // the fixture, so a plain query finds nothing.
+        const close = () => clickButton('experiments-panel-close');
+
+        it('should ask before closing, and stay open while the answer is pending', async () => {
+            const confirm = configureOnScreen(true);
+
+            close();
+
+            await vi.waitFor(() => expect(confirm).toHaveBeenCalledTimes(1));
+            expect(store.isOpen()).toBe(true);
+        });
+
+        it('should stay open when the editor keeps editing', async () => {
+            const confirm = configureOnScreen(true);
+            confirm.mockImplementation((options) => options.accept?.());
+
+            close();
+
+            await vi.waitFor(() => expect(confirm).toHaveBeenCalled());
+            expect(store.isOpen()).toBe(true);
+        });
+
+        it('should close once the editor chooses to discard', async () => {
+            const confirm = configureOnScreen(true);
+            confirm.mockImplementation((options) => options.reject?.(ConfirmEventType.REJECT));
+
+            close();
+
+            await vi.waitFor(() => expect(store.isOpen()).toBe(false));
+        });
+
+        /** A dismissal is not permission to throw the work away. */
+        it('should treat a dismissal as staying open', async () => {
+            const confirm = configureOnScreen(true);
+            confirm.mockImplementation((options) => options.reject?.(ConfirmEventType.CANCEL));
+
+            close();
+
+            await vi.waitFor(() => expect(confirm).toHaveBeenCalled());
+            expect(store.isOpen()).toBe(true);
+        });
+
+        it('should close without asking when there is nothing unsaved', async () => {
+            const confirm = configureOnScreen(false);
+
+            close();
+
+            await vi.waitFor(() => expect(store.isOpen()).toBe(false));
+            expect(confirm).not.toHaveBeenCalled();
+        });
+
+        /** Only configuration can hold unsaved work; the list has nothing to lose. */
+        it('should close straight away from the list', async () => {
+            openOn(() => store.open());
+
+            close();
+
+            await vi.waitFor(() => expect(store.isOpen()).toBe(false));
+        });
+    });
 
     describe('what it shows', () => {
         it('should render nothing while the store is closed', () => {
@@ -240,6 +367,55 @@ describe('DotExperimentsPanelComponent', () => {
             openOn(() => store.open());
 
             expect(drawerWidth()).toBe(PANEL_EXPANDED_WIDTH);
+        });
+    });
+
+    /**
+     * US7 / FR-012, D6. The panel answers "what is running on this page"; this is the way out to
+     * "everything", and it must not cost the editor the page they are standing on.
+     *
+     * Asserted as a real anchor rather than a click handler calling `window.open`. "Opens in a new
+     * tab" is a promise to the editor, not to the code: an anchor honours cmd-click and
+     * middle-click, survives a popup blocker, and shows its destination on hover. A handler
+     * delivers none of that and would still pass a `window.open` spy.
+     */
+    describe('the way out to the full portlet', () => {
+        const wayOut = () => surface('experiments-panel-portlet-link') as HTMLAnchorElement | null;
+
+        it('should offer a link to the portlet', () => {
+            openOn(() => store.open());
+
+            expect(wayOut()).not.toBeNull();
+            expect(wayOut()?.getAttribute('aria-label')).toBe(
+                'experiments.panel.action.open-portlet'
+            );
+        });
+
+        /**
+         * **Unfiltered**, deliberately. D6 replaced #37005's clearable page filter with this: in a
+         * page-scoped panel there is no filter to clear, so carrying `pageId` here would narrow the
+         * one destination whose whole point is that it does not narrow.
+         */
+        it('should target the whole portlet, with no page narrowing', () => {
+            openOn(() => store.open());
+
+            expect(wayOut()?.getAttribute('href')).toBe('/dotAdmin/#/experiments');
+        });
+
+        it('should open in a new tab, leaving the editor on its page', () => {
+            openOn(() => store.open());
+
+            expect(wayOut()?.getAttribute('target')).toBe('_blank');
+            // Without it the new tab gets a handle on this one through `window.opener`.
+            expect(wayOut()?.getAttribute('rel')).toContain('noopener');
+        });
+
+        it('should not close the panel or move the editor when it is followed', () => {
+            openOn(() => store.open());
+
+            spectator.click(wayOut() as HTMLElement);
+
+            expect(store.isOpen()).toBe(true);
         });
     });
 

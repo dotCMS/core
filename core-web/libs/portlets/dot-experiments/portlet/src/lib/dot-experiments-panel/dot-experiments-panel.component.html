@@ -15,6 +15,18 @@
     this panel gains in phase 2. The mask click is handled by the component instead (`onMaskClick`).
     `closeOnEscape` is off for the same reason — Escape goes through the shared shortcut registry.
 
+    The header's bottom border is the panel's, not the theme's: PrimeNG gives `p-drawer-header`
+    padding and no rule, so every screen below it — the list's toolbar, the configuration header,
+    results — began flush against the panel's title with nothing marking where the chrome ended and
+    the screen started. Drawn here once rather than per screen, so the four cannot disagree.
+
+    `px-5!` on the header is one number shared with the list's toolbar and the outer table cells,
+    because the editor reads those three as a single column. They were three different values — the
+    drawer header takes PrimeNG's `{overlay.modal.padding}`, the toolbar carried `px-3`, the cells
+    whatever the datatable preset gives — so the title, the search field and the first cell each
+    began at a different x. Only in the panel: the portlet's list sits in a page with its own
+    gutter and is left alone (FR-047).
+
     The header buttons name themselves through PrimeNG's `[ariaLabel]`, never `[attr.aria-label]`:
     the latter lands on the non-focusable `<p-button>` host, leaving the real `<button>` — whose
     only content is an icon glyph — with no accessible name.
@@ -34,6 +46,7 @@
             class: '!shadow-2xl',
             style: { width: $width(), transition: 'width 250ms ease' }
         },
+        header: { class: 'px-5! border-b border-surface-200' },
         content: { class: 'p-0! flex flex-col min-h-0' }
     }">
     <ng-template #header>
@@ -42,6 +55,26 @@
                 {{ $titleKey() | dm }}
             </span>
             <div class="flex items-center gap-1">
+                <!--
+                    A real anchor, not a button calling `window.open`. "Opens in a new tab" is a
+                    promise to the editor rather than to the code: an anchor honours cmd-click and
+                    middle-click, survives a popup blocker and shows where it goes on hover.
+
+                    Unfiltered on purpose (D6): in a page-scoped panel there is no filter to clear,
+                    so carrying `pageId` would narrow the one destination whose point is that it
+                    does not narrow.
+                -->
+                <a
+                    class="p-button p-button-text p-button-sm p-button-icon-only p-button-secondary inline-flex size-11! items-center justify-center no-underline!"
+                    href="/dotAdmin/#/experiments"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    [attr.aria-label]="'experiments.panel.action.open-portlet' | dm"
+                    [pTooltip]="'experiments.panel.action.open-portlet.tooltip' | dm"
+                    tooltipPosition="bottom"
+                    data-testid="experiments-panel-portlet-link">
+                    <i class="material-symbols-outlined text-xl! leading-none">open_in_new</i>
+                </a>
                 <p-button
                     [text]="true"
                     severity="secondary"
