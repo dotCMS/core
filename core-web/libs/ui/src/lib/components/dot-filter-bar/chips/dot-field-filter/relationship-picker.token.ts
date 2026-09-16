@@ -38,7 +38,7 @@ export interface DotRelationshipPicker {
  * nothing still gets a fully working field filter for every other field type, and only the
  * Relationship type degrades — with the control saying so rather than failing to render.
  *
- * Content Drive provides an implementation backed by `DotSelectExistingContentComponent`, which is
+ * Content Drive provides an implementation backed by `AddRelationshipsComponent`, which is
  * exactly what it opens today, so its behaviour is unchanged (FR-021). The AssetPicker provides
  * none: the content types it filters — DotAsset and File Asset — carry no relationship fields, so
  * there is nothing for it to lose.
