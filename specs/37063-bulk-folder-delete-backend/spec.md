@@ -355,7 +355,16 @@ path in the first; confirm the second is refused with a readable reason and no j
   on it.
 - **FR-019**: Any new failure reason this feature needs MUST be agreed with the client half before
   implementation, because every reason requires client copy and a reason with no copy renders as
-  nothing.
+  nothing. **Four are agreed** and are the set this feature adds to the shared enumeration:
+  - the path no longer resolves, or does not name a folder (FR-010);
+  - the folder is one the system protects and never deletes (FR-011);
+  - something inside it is locked or otherwise in use, and blocked the delete (D-010);
+  - an ancestor in the same submission removed it first (FR-013) — reported as *skipped*, since it
+    was never attempted, rather than as a failure.
+
+  Permission refusal (FR-009) and an unclassified cause (FR-018) already exist in that enumeration
+  and are reused. A fifth reason MUST NOT be introduced during implementation without routing it
+  back to the client half, for the reason above.
 
 #### The transaction boundary
 
@@ -464,6 +473,12 @@ path in the first; confirm the second is refused with a readable reason and no j
   - **The audience for the "left" announcement MUST be established while the folder still exists.**
     It is derived from who may read the folder, and by the time the delete ends there is nothing
     left to derive it from.
+  - **A folder's "left" announcement MUST follow that folder's deletion**, never precede it, for the
+    same reason C-010 orders the completion signal: a client that unmarks and refreshes on an
+    announcement arriving early would read a state the delete has not reached yet, and would show
+    the folder back. The "entered" announcement is ordered the other way — it MUST precede the
+    folder's deletion, since its whole purpose is to warn while there is still something to warn
+    about.
   - **It does not make discovery redundant** (C-012). A run that dies never announces its end, so an
     announcement stream alone leaves folders marked indefinitely. The client's own establishment of
     the in-flight set on load is what recovers from that, and remains required.
@@ -558,6 +573,11 @@ requirement above from the consumer's point of view, so the boundary is explicit
   another author started deleting *after* the client loaded, which reading the in-flight listing once
   cannot tell it. The announcement carries the folder and nothing about how the run is going;
   outcomes stay with the submitter (C-009).
+
+  **The announcements are ordered around the work**: a folder is announced as entering a delete
+  *before* it is deleted, and as having left it *after* — the same ordering C-010 gives the
+  completion signal, and for the same reason. A client may therefore refresh on the "left"
+  announcement without racing the deletion.
 
   **It is not a replacement for reading that listing.** A run that dies never announces its exit, so
   a client relying on announcements alone would mark folders indefinitely. Establishing the in-flight
@@ -849,10 +869,11 @@ explicitly rather than meet them during implementation.
   the run needs from the submitting request — the user, the site context — must be captured into the
   run's parameters at submission. The plan must enumerate what is captured. Note also that a null
   parameter value stalls the *shared* processing loop, not just this queue.
-- **Failure reason set** (FR-017, FR-019, C-005). The existing enumerated reasons are
-  upload-flavoured; delete needs at least "path did not resolve" and "protected folder", and those
-  values need client copy before either half is implemented. The plan must fix the set and route it
-  to the client half.
+- **Failure reason set** (FR-017, FR-019, C-005). The set itself is agreed — FR-019 names the four
+  delete adds to the upload-flavoured ones already there. What the plan still owes is the mechanical
+  half: adding those values to the shared enumeration without disturbing the features that already
+  read it, and confirming each has client copy before either half is implemented. A reason that
+  reaches the client with no copy renders as nothing, which is worse than an unclassified one.
 - **Test coverage** (Constitution V). The plan must name which layers this feature exercises and
   which it does not, with a reason for each omission. #37063 enumerates what it expects: happy path
   over several folders, mixed partial failure, permission denied, unresolvable path and cancellation

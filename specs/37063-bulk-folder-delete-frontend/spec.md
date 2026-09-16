@@ -499,9 +499,12 @@ assuming it.
   overlapping an in-flight run are told apart. FR-040 and FR-041 rest on this; the overlap refusal is
   the one an ordinary author can actually provoke and carries its own copy.
 - **A stable, enumerated set of failure reasons** (C-005). Each maps to client copy (FR-028). The
-  server's message is diagnostic and is never displayed (FR-029). **Delete adds reasons the shared set
-  did not have** — the folder no longer resolves, the folder is protected, something inside is in use,
-  an ancestor already removed it — and each needs its copy written before either half is implemented.
+  server's message is diagnostic and is never displayed (FR-029). **Delete adds four reasons the shared
+  set did not have**, now fixed on the other half too (backend FR-019): the folder no longer resolves,
+  the folder is protected, something inside is in use, and an ancestor in the same submission removed
+  it first — the last reported as *skipped* rather than failed, since it was never attempted. Each
+  needs its copy written before either half is implemented, and a fifth must not appear during
+  implementation without coming back through this boundary.
 - **Progress, and an honest statement of what it counts** (C-006). Completed top-level folders, nothing
   finer. This is why FR-016 requires an indeterminate indicator: the contract says the number cannot
   carry a bar, so the client does not render one.
@@ -530,6 +533,10 @@ assuming it.
   the submitter (C-009). The server filters by the recipient's own rights, so a folder this author
   may not see produces no announcement for them at all (backend FR-035b) — this half does no
   filtering of its own and must not be written as though it does.
+
+  **They are ordered around the work**: a folder is announced as entering a delete before it is
+  deleted, and as having left it after. The client may therefore refresh on the "left" announcement
+  without racing the deletion, the same guarantee C-010 gives the completion signal.
 
   **It does not replace reading the list** (FR-020b). A run whose process dies never announces its
   exit, so announcements alone would mark a folder forever. The load-time read is what recovers from
