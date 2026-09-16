@@ -195,9 +195,9 @@ Located in `.github/workflows/cicd_comp_*-phase.yml`:
 | **Test** | Matrix-driven parallel test execution | Test results, build reports |
 | **Semgrep** | Security and code quality scanning | Quality gate status |
 | **CLI Build** | Multi-platform native CLI builds | CLI artifacts (Linux, macOS x2) |
-| **Deployment** | Docker images, NPM packages, Artifactory | Docker tags, NPM versions |
+| **Deployment** | Docker images, NPM packages, S3 Maven repo | Docker tags, NPM versions |
 | **Release Prepare** | Version validation, branch creation | Release version, tag, branch |
-| **Release** | Artifactory, Javadocs, SBOM, labels | Release artifacts |
+| **Release** | S3 Maven repo, Javadocs, SBOM, labels | Release artifacts |
 | **Finalize** | Aggregate results, determine status | `aggregate_status` |
 | **Reporting** | Generate reports, send notifications | Slack messages, test reports |
 
@@ -218,7 +218,7 @@ Located in `.github/actions/`:
 
 ### Deployment Actions  
 - **deploy-docker**: Multi-platform Docker builds and pushes
-- **deploy-jfrog**: Artifactory deployments
+- **deploy-bunny-maven-s3**: S3 Maven repository deployments
 - **deploy-cli-npm**: CLI NPM package publishing
 - **deploy-javadoc**: S3 javadoc uploads
 - **deploy-javascript-sdk**: SDK NPM publishing
@@ -252,7 +252,7 @@ Each workflow has specific optimizations and purposes:
 **Optimization**: Artifact Reuse
 - ♻️ Reuses merge queue artifacts (saves 5-10 min)
 - 🔨 Native CLI builds (3 platforms)
-- 📦 Snapshot deployments (GitHub, Artifactory)
+- 📦 Snapshot deployments (GitHub, S3 Maven repo)
 - 📚 Optional SDK publishing
 
 ### 4-Nightly (Trunk Health Monitor)
