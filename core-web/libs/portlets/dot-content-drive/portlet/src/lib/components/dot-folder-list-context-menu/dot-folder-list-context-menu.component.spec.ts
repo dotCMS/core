@@ -5,7 +5,7 @@ import {
     Spectator,
     SpyObject
 } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { Mock, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -114,6 +114,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
     let workflowsActionsFireService: SpyObject<DotWorkflowActionsFireService>;
     let dotContentletService: SpyObject<DotContentletService>;
     let messageService: SpyObject<MessageService>;
+    let dotMessageService: SpyObject<DotMessageService>;
 
     const mockContentlet = createFakeContentlet();
 
@@ -222,6 +223,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
         workflowsActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotContentletService = spectator.inject(DotContentletService);
         messageService = spectator.inject(MessageService);
+        dotMessageService = spectator.inject(DotMessageService);
     });
 
     afterEach(() => {
@@ -828,10 +830,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     await component.getMenuItems(folderContextMenuWithPublish);
                     pushPublishItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
-                    expect(pushPublishDialogService.open).toHaveBeenCalledWith({
-                        assetIdentifier: folderWithPublish.identifier,
-                        title: 'contenttypes.content.push_publish'
-                    });
+                    expect(pushPublishDialogService.open).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            assetIdentifier: folderWithPublish.identifier,
+                            title: 'contenttypes.content.push_publish'
+                        })
+                    );
                 });
 
                 it('should enable the item, plainly labelled, once an environment is reachable', async () => {
@@ -954,7 +958,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 beforeEach(() => {
                     alertConfirmService = spectator.inject(DotAlertConfirmService);
                     folderService = spectator.inject(DotFolderService);
-                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(of(true));
+                    folderService.deleteFolder = vi.fn().mockReturnValue(of(true));
                     // The delete path is built from the browsed site, so it has to be a real one
                     // rather than the store's SYSTEM_HOST default.
                     store.initContentDrive({
@@ -1023,7 +1027,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
 
                     expect(store.loadFolders).toHaveBeenCalled();
                 });
@@ -1041,7 +1045,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
 
                     expect(folderService.deleteFolder).not.toHaveBeenCalled();
                     expect(messageService.add).toHaveBeenCalledWith(
@@ -1050,14 +1054,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
 
                 it('should not refetch the folder tree when the delete fails', async () => {
-                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(
-                        throwError(() => new Error('nope'))
-                    );
+                    folderService.deleteFolder = vi
+                        .fn()
+                        .mockReturnValue(throwError(() => new Error('nope')));
                     vi.spyOn(store, 'loadFolders');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
 
                     expect(store.loadFolders).not.toHaveBeenCalled();
                 });
@@ -1068,7 +1072,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
                     // Run whatever the confirm was armed with, as accepting the dialog would.
-                    const confirmArgs = (alertConfirmService.confirm as Mock).mock.lastCall![0];
+                    const confirmArgs = (alertConfirmService.confirm as Mock).mock.lastCall[0];
                     confirmArgs.accept();
 
                     expect(folderService.deleteFolder).toHaveBeenCalledWith(
@@ -1077,15 +1081,65 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     expect(store.reloadContentDrive).toHaveBeenCalled();
                 });
 
-                it('should not reload the drive when the delete fails', async () => {
-                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(
-                        throwError(() => new Error('nope'))
+                it('should report the delete on the toolbar while it runs', async () => {
+                    // A recursive subtree delete is the slowest thing in the portlet and reported
+                    // nothing at all until its toast. The confirm dialog closes on accept, so the
+                    // run outlives its trigger and belongs on the indicator (FR-007).
+                    folderService.deleteFolder = vi.fn().mockReturnValue(NEVER);
+                    const startExternalRun = vi.spyOn(store, 'startExternalRun');
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+
+                    expect(startExternalRun).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            total: 1,
+                            targetLabel: folderWithEdit.name,
+                            // Both keys, because neither alone is reliably the one the row carries:
+                            // the search service backfills `inode` from `identifier` only when the
+                            // API returned none, so a folder that arrives with a distinct inode
+                            // would never be marked if this targeted the identifier alone.
+                            targets: [folderWithEdit.identifier, folderWithEdit.inode].filter(
+                                Boolean
+                            )
+                        })
                     );
+                });
+
+                it('should clear the indicator when the delete succeeds', async () => {
+                    const endExternalRun = vi.spyOn(store, 'endExternalRun');
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+
+                    expect(endExternalRun).toHaveBeenCalled();
+                });
+
+                it('should clear the indicator when the delete fails', async () => {
+                    // A failed delete that left the indicator up would report work that stopped.
+                    folderService.deleteFolder = vi
+                        .fn()
+                        .mockReturnValue(throwError(() => new Error('nope')));
+                    const endExternalRun = vi.spyOn(store, 'endExternalRun');
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
+
+                    expect(endExternalRun).toHaveBeenCalled();
+                });
+
+                it('should not reload the drive when the delete fails', async () => {
+                    folderService.deleteFolder = vi
+                        .fn()
+                        .mockReturnValue(throwError(() => new Error('nope')));
                     vi.spyOn(store, 'reloadContentDrive');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
 
                     expect(store.reloadContentDrive).not.toHaveBeenCalled();
                 });
@@ -1101,7 +1155,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                         await component.getMenuItems(folderContextMenuWithEdit);
                         deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                        (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
+                        (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
 
                         expect(store.setPath).toHaveBeenCalledWith('/');
                     });
@@ -1112,7 +1166,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                         await component.getMenuItems(folderContextMenuWithEdit);
                         deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                        (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
+                        (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
 
                         expect(store.setPath).toHaveBeenCalledWith('/');
                     });
@@ -1125,7 +1179,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                         await component.getMenuItems(folderContextMenuWithEdit);
                         deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                        (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
+                        (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
 
                         expect(store.setPath).not.toHaveBeenCalled();
                     });
@@ -1135,13 +1189,13 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // `handle(error)` call entirely would keep them green while the delete failed in
                 // total silence. This is the AC clause that says a failure reaches the user.
                 it('should surface a failed delete through the HTTP error handler', async () => {
-                    vi.spyOn(folderService, 'deleteFolder').mockReturnValue(
-                        throwError(() => new Error('nope'))
-                    );
+                    folderService.deleteFolder = vi
+                        .fn()
+                        .mockReturnValue(throwError(() => new Error('nope')));
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall![0].accept();
+                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
 
                     expect(
                         spectator.inject(DotHttpErrorManagerService, true).handle
@@ -1283,7 +1337,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 );
             });
 
-            it('should show success message when lock action succeeds', async () => {
+            it('should not announce a lock the listing already shows', async () => {
                 vi.useFakeTimers();
                 dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
                 dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
@@ -1303,16 +1357,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 vi.advanceTimersByTime(0);
 
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: 'content-drive.toast.lock-success',
-                    detail: 'content-drive.toast.lock-success-detail'
-                });
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'success' })
+                );
 
                 vi.useRealTimers();
             });
 
-            it('should show success message when unlock action succeeds', async () => {
+            it('should not announce an unlock the listing already shows', async () => {
                 vi.useFakeTimers();
                 dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
                 dotContentletService.unlockContent.mockReturnValue(of(mockContentlet));
@@ -1332,11 +1384,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 vi.advanceTimersByTime(0);
 
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: 'content-drive.toast.unlock-success',
-                    detail: 'content-drive.toast.unlock-success-detail'
-                });
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'success' })
+                );
 
                 vi.useRealTimers();
             });
@@ -1372,10 +1422,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockContextMenuData);
                 pushPublishItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
-                expect(pushPublishDialogService.open).toHaveBeenCalledWith({
-                    assetIdentifier: mockContentlet.identifier,
-                    title: 'contenttypes.content.push_publish'
-                });
+                expect(pushPublishDialogService.open).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        assetIdentifier: mockContentlet.identifier,
+                        title: 'contenttypes.content.push_publish'
+                    })
+                );
             });
 
             it('should disable the item with a tooltip when no environment is reachable', async () => {
@@ -1386,6 +1438,25 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     'content-drive.context-menu.push-publish.no-environment'
                 );
             });
+        });
+    });
+
+    describe('menu cache invalidation', () => {
+        it('should drop the memo when reloaded rows arrive, even with no LOADING in between', () => {
+            // Regression: the memo was only cleared by a LOADING status. A reload that settles an
+            // action is now quiet — it never sets LOADING — so the cache survived it and the menu
+            // kept offering the workflow actions for the step the item was on *before* the action.
+            //
+            // Keying by inode does not save it: publishing does not change the working inode, so
+            // the same key comes back pointing at a stale menu.
+            spectator.detectChanges();
+            component.$memoizedMenuItems.set({ 'test-inode': [] });
+
+            // A quiet reload delivers rows with no status change at all.
+            patchState(store, { items: [mockContentlet as DotContentDriveItem] });
+            spectator.detectChanges();
+
+            expect(component.$memoizedMenuItems()).toEqual({});
         });
     });
 
@@ -1539,7 +1610,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
         });
 
-        it('should show success message when workflow action succeeds', async () => {
+        it('should not announce a workflow action the listing already shows', async () => {
             vi.useFakeTimers();
             const mockWorkflowWithoutInputs = [
                 {
@@ -1562,10 +1633,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             vi.advanceTimersByTime(0);
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: 'content-drive.toast.workflow-executed'
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
 
             vi.useRealTimers();
         });
@@ -1597,14 +1667,21 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'error',
                 summary: 'content-drive.toast.workflow-error',
+                detail: 'content-drive.toast.workflow-error-detail',
                 life: 4500
             });
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.toast.workflow-error-detail',
+                'Save',
+                mockContentlet.title
+            );
 
             vi.useRealTimers();
         });
 
-        it('should set status to LOADED when workflow action fails', async () => {
+        it('should leave the listing status untouched when a workflow action fails', async () => {
             vi.useFakeTimers();
+            const statusBefore = store.status();
             const mockWorkflowWithoutInputs = [
                 {
                     ...mockWorkflowActions[1],
@@ -1627,7 +1704,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             vi.advanceTimersByTime(0);
 
-            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+            // It used to set LOADED here only to undo the LOADING it had set itself. Now that the run
+            // reports on the toolbar indicator, the listing's status is not this component's
+            // business at all, and writing either value would be reaching into an unrelated concern.
+            expect(store.status()).toBe(statusBefore);
 
             vi.useRealTimers();
         });
@@ -1685,6 +1765,177 @@ describe('DotFolderListViewContextMenuComponent', () => {
         });
     });
 
+    describe('in-flight reporting (FR-007, FR-009)', () => {
+        const mockEvent = new MouseEvent('contextmenu');
+
+        const fireSaveAction = async () => {
+            workflowsActionsService.getByInode.mockReturnValue(
+                of([{ ...mockWorkflowActions[1], actionInputs: [] }])
+            );
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            invoke(component.$items(), 'Save');
+            vi.advanceTimersByTime(0);
+        };
+
+        it('should not blank the listing while a workflow action runs', async () => {
+            vi.useFakeTimers();
+            const setStatus = vi.spyOn(store, 'setStatus');
+
+            await fireSaveAction();
+
+            // The listing's loading state means "the listing is being fetched" and nothing else
+            // (FR-009). Using it to report a one-row action hid the very row the author acted on,
+            // and was indistinguishable from an ordinary page load.
+            expect(setStatus).not.toHaveBeenCalledWith(DotContentDriveStatus.LOADING);
+
+            vi.useRealTimers();
+        });
+
+        it('should report the run on the toolbar indicator, naming the item', async () => {
+            vi.useFakeTimers();
+            const startExternalRun = vi.spyOn(store, 'startExternalRun');
+
+            await fireSaveAction();
+
+            expect(startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    actionName: 'Save',
+                    total: 1,
+                    targetLabel: mockContentlet.title,
+                    targets: [mockContentlet.inode]
+                })
+            );
+
+            vi.useRealTimers();
+        });
+
+        it('should clear the indicator once the run settles', async () => {
+            vi.useFakeTimers();
+            const endExternalRun = vi.spyOn(store, 'endExternalRun');
+
+            await fireSaveAction();
+
+            expect(endExternalRun).toHaveBeenCalled();
+
+            vi.useRealTimers();
+        });
+
+        it('should clear the indicator when the run fails', async () => {
+            vi.useFakeTimers();
+            workflowsActionsFireService.fireTo.mockReturnValue(throwError(() => new Error('boom')));
+            const endExternalRun = vi.spyOn(store, 'endExternalRun');
+
+            await fireSaveAction();
+
+            // A failed run that left the indicator up would report work that is not happening.
+            expect(endExternalRun).toHaveBeenCalled();
+
+            vi.useRealTimers();
+        });
+    });
+
+    describe('lock/unlock in-flight reporting', () => {
+        const mockEvent = new MouseEvent('contextmenu');
+
+        const fireLock = async (locked: boolean) => {
+            dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, locked)));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const label = locked
+                ? 'content-drive.context-menu.unlock'
+                : 'content-drive.context-menu.lock';
+
+            component
+                .$items()
+                .find((item) => item.label === label)
+                ?.command?.({} as unknown as MenuItemCommandEvent);
+
+            vi.advanceTimersByTime(0);
+        };
+
+        it('should report a lock on the toolbar, naming the item', async () => {
+            // The same Lock fired from the Workflow Center registers a run and reports; from the
+            // row menu it registered nothing, so one action read two ways depending on the surface.
+            vi.useFakeTimers();
+            dotContentletService.lockContent.mockReturnValue(NEVER);
+            const startExternalRun = vi.spyOn(store, 'startExternalRun');
+
+            await fireLock(false);
+
+            expect(startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    total: 1,
+                    targetLabel: mockContentlet.title,
+                    targets: [mockContentlet.inode]
+                })
+            );
+
+            vi.useRealTimers();
+        });
+
+        it('should report an unlock the same way', async () => {
+            vi.useFakeTimers();
+            dotContentletService.unlockContent.mockReturnValue(NEVER);
+            const startExternalRun = vi.spyOn(store, 'startExternalRun');
+
+            await fireLock(true);
+
+            expect(startExternalRun).toHaveBeenCalled();
+
+            vi.useRealTimers();
+        });
+
+        it('should clear the indicator when a lock settles', async () => {
+            vi.useFakeTimers();
+            dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
+            const endExternalRun = vi.spyOn(store, 'endExternalRun');
+
+            await fireLock(false);
+
+            expect(endExternalRun).toHaveBeenCalled();
+
+            vi.useRealTimers();
+        });
+
+        it('should reload quietly, since the row was already marked', async () => {
+            // Reported from the running instance: the table blinked. The row marks appear, the lock
+            // settles, and a loud reload then blanks the whole grid — a second load right after the
+            // first. Nothing caught it because no test asserted *how* the reload was performed.
+            vi.useFakeTimers();
+            dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
+            const reload = vi.spyOn(store, 'reloadContentDrive');
+
+            await fireLock(false);
+
+            expect(reload).toHaveBeenCalledWith({ quiet: true });
+
+            vi.useRealTimers();
+        });
+
+        it('should clear the indicator when a lock fails', async () => {
+            vi.useFakeTimers();
+            dotContentletService.lockContent.mockReturnValue(throwError(() => new Error('nope')));
+            const endExternalRun = vi.spyOn(store, 'endExternalRun');
+
+            await fireLock(false);
+
+            expect(endExternalRun).toHaveBeenCalled();
+
+            vi.useRealTimers();
+        });
+    });
+
     describe('lock/unlock error handling', () => {
         const mockEvent = new MouseEvent('contextmenu');
 
@@ -1714,6 +1965,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 detail: 'content-drive.toast.lock-error-detail',
                 life: 4500
             });
+            // Asymmetry this closes: `lock-success` is "Locked {0}" while the failure said only
+            // "The contentlet wasn't locked", leaving the author to work out which one.
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.toast.lock-error-detail',
+                mockContentlet.title
+            );
 
             vi.useRealTimers();
         });
@@ -1746,6 +2003,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 detail: 'content-drive.toast.unlock-error-detail',
                 life: 4500
             });
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.toast.unlock-error-detail',
+                mockContentlet.title
+            );
 
             vi.useRealTimers();
         });

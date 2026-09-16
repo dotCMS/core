@@ -1,7 +1,7 @@
 import { NewEditContentFormPage } from '@pages';
 
+import { AddRelationshipsDialog } from './helpers/add-relationships-dialog';
 import { RelationshipField } from './helpers/relationship-field';
-import { SelectExistingContentDialog } from './helpers/select-existing-content-dialog';
 
 import { CARDINALITY, expect, test } from '../../../../fixtures/relationship.fixture';
 
@@ -65,7 +65,7 @@ test.describe('Status & Locale Chips', () => {
         await formPage.goToNew(blogTypeVariable);
 
         const relationshipField = new RelationshipField(adminPage);
-        const dialog = new SelectExistingContentDialog(adminPage);
+        const dialog = new AddRelationshipsDialog(adminPage);
 
         await relationshipField.clickRelateExisting();
         await dialog.waitForVisible();

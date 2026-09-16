@@ -106,11 +106,17 @@ export function withSelectionAnchor() {
                     const wasLocked = s.$iframeLayoutLocked();
 
                     const selected = s.editorSelected();
-                    const selectedInode = selected?.payload?.contentlet?.inode;
+                    const selectedContentlet = selected?.payload?.contentlet;
+                    const selectedInode = selectedContentlet?.inode;
                     const selectedContainerId = selected?.payload?.container?.identifier;
                     const selectedContainerUuid = selected?.payload?.container?.uuid;
 
-                    if (!selectedInode || !selectedContainerId || !selectedContainerUuid) {
+                    if (
+                        !selectedContentlet ||
+                        !selectedInode ||
+                        !selectedContainerId ||
+                        !selectedContainerUuid
+                    ) {
                         if (wasLocked) {
                             s.setEditorState(EDITOR_STATE.IDLE);
                         }
@@ -128,6 +134,8 @@ export function withSelectionAnchor() {
                                 continue;
                             }
                             const actionPayload = s.getPageSavePayload(parsed as PositionPayload);
+                            const previousPayload = selected?.payload;
+
                             s.setSelected({
                                 bounds: {
                                     x: container.x + contentletBound.x,
@@ -135,7 +143,51 @@ export function withSelectionAnchor() {
                                     width: contentletBound.width,
                                     height: contentletBound.height
                                 },
-                                payload: actionPayload
+                                // Merge, don't replace. The payload holds two kinds of
+                                // data and a re-anchor must treat them differently:
+                                //
+                                //   store-sourced, per page — pageContainers,
+                                //     container.contentletsId, language_id, pageId,
+                                //     personaTag. getPageSavePayload() reads these live
+                                //     from $pageData() and they MUST keep refreshing:
+                                //     insertContentletInContainer({...payload}) and
+                                //     deleteContentletFromContainer(payload) read
+                                //     payload.pageContainers straight off this object, so
+                                //     a frozen copy would make add/delete write a stale
+                                //     container tree.
+                                //
+                                //   DOM-sourced, per contentlet — contentlet.baseType,
+                                //     onNumberOfPages, dotStyleProperties, and vtlFiles.
+                                //     The bounds snapshot carries only
+                                //     {identifier, title, inode, contentType, canEdit}
+                                //     (getDotCMSContentletsBound), so rebuilding from it
+                                //     DROPS the rest. Preserving them is what keeps the
+                                //     selection usable across a scroll or resize.
+                                //
+                                // The fresh payload is the base, and exactly the
+                                // DOM-sourced data is carried over it — an allowlist, not
+                                // a blanket `...previousPayload`. A blanket spread would
+                                // also pin the transient fields (`position`,
+                                // `newContentlet`, `newContentletId`) to the selection for
+                                // as long as it lives: `promoteHoverToSelected()` writes
+                                // `contentContext()`, which always stamps `position`, and
+                                // `insertContentletInContainer` branches on that field.
+                                //
+                                // `contentlet` IS merged wholesale, deliberately — every
+                                // field on it is DOM-sourced, so the snapshot's five win
+                                // and the rest survive.
+                                payload: {
+                                    ...actionPayload,
+                                    vtlFiles: actionPayload.vtlFiles ?? previousPayload?.vtlFiles,
+                                    // `selectedContentlet` is `previousPayload.contentlet`, already
+                                    // narrowed to present by the guard above. Spreading it as the
+                                    // base also gives the merge a complete `ContentletPayload`,
+                                    // which the optional `ActionPayload.contentlet` cannot.
+                                    contentlet: {
+                                        ...selectedContentlet,
+                                        ...actionPayload.contentlet
+                                    }
+                                }
                             });
                             if (wasLocked) {
                                 s.setEditorState(EDITOR_STATE.IDLE);

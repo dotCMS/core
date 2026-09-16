@@ -20,6 +20,7 @@ export * from './lib/dot-container.model';
 export * from './lib/dot-content-analytics.model';
 export * from './lib/dot-content-compare.model';
 export * from './lib/dot-content-drive.model';
+export * from './lib/dot-job.model';
 export * from './lib/dot-content-state.model';
 export * from './lib/dot-content-types.model';
 export * from './lib/dot-contentlet.model';

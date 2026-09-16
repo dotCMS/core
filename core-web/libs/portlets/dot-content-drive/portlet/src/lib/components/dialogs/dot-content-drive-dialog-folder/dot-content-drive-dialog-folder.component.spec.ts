@@ -94,7 +94,15 @@ describe('DotContentDriveDialogFolderComponent', () => {
                         'Folder created successfully',
                     'content-drive.dialog.folder.message.create-error': 'Error creating folder',
                     'content-drive.dialog.folder.message.save-success': 'Folder saved successfully',
-                    'content-drive.dialog.folder.message.save-error': 'Error saving folder'
+                    'content-drive.dialog.folder.message.save-error': 'Error saving folder',
+                    // FR-028: outcomes name what ran and what it ran on. FR-030: the author sees
+                    // product copy, never the server's raw message.
+                    'content-drive.dialog.folder.message.create-success-detail': '{0} was created.',
+                    'content-drive.dialog.folder.message.save-success-detail': '{0} was saved.',
+                    'content-drive.dialog.folder.message.create-error-detail':
+                        'The folder could not be created.',
+                    'content-drive.dialog.folder.message.save-error-detail':
+                        'The folder could not be saved.'
                 })
             },
             mockProvider(DotContentTypeService, {
@@ -799,7 +807,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(store.closeDialog).toHaveBeenCalled();
         });
 
-        it('should show success message on successful creation', () => {
+        it('should not announce a folder the listing now shows', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
@@ -810,11 +818,9 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(createButton!);
             spectator.detectChanges();
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Folder created successfully'
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
         });
 
         it('should show error message on creation failure', () => {
@@ -827,11 +833,15 @@ describe('DotContentDriveDialogFolderComponent', () => {
             );
             spectator.click(createButton!);
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'error',
-                summary: 'Error creating folder',
-                detail: 'Creation failed'
-            });
+            // 'Creation failed' is the server's own `error.message`. FR-030 keeps it out of the
+            // author's view and in the logs, where support can still reach it.
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    summary: 'Error creating folder',
+                    detail: 'The folder could not be created.'
+                })
+            );
         });
     });
 
@@ -1376,7 +1386,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(store.closeDialog).toHaveBeenCalled();
         });
 
-        it('should show success message on successful save', () => {
+        it('should not announce a rename the listing now shows', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
@@ -1384,11 +1394,9 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(saveButton!);
             spectator.detectChanges();
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: 'Folder saved successfully',
-                detail: undefined
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
         });
 
         it('should show error message on save failure', () => {
@@ -1401,11 +1409,14 @@ describe('DotContentDriveDialogFolderComponent', () => {
             );
             spectator.click(saveButton!);
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'error',
-                summary: 'Error saving folder',
-                detail: 'Save failed'
-            });
+            // Second of the two raw-message leaks: 'Save failed' comes straight from the server.
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    summary: 'Error saving folder',
+                    detail: 'The folder could not be saved.'
+                })
+            );
         });
     });
 });

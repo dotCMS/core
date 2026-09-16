@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
-import { Observable, of as observableOf, of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -25,11 +25,11 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
 
 class PushPublishServiceMock {
     pushPublishContent(): Observable<any> {
-        return observableOf([]);
+        return of([]);
     }
 
     getEnvironments(): Observable<any> {
-        return observableOf([]);
+        return of([]);
     }
 }
 
