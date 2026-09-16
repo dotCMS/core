@@ -170,11 +170,9 @@ jobs:
           digest-mismatch: error
           path: ${{ github.workspace }}/artifacts
           pattern: cli-artifacts-*
-      # TODO(#37567): JReleaser still uploads the CLI runner jar and native
-      # binaries to Artifactory (tools/dotcms-cli/jreleaser.yml). The
-      # EE_REPO_* secrets are being retired with the Artifactory
-      # decommissioning, so this upload must move to the S3 repository (or be
-      # dropped) before those secrets are removed.
+      # TODO(#37567): JReleaser still uploads the CLI native binaries to
+      # Artifactory (tools/dotcms-cli/jreleaser.yml) using the retiring
+      # EE_REPO_* secrets. The runner jar is published to S3 explicitly below.
       - uses: ./.github/actions/core-cicd/maven-job
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -189,6 +187,33 @@ jobs:
           maven-args: "-Prelease validate -DartifactsDir=artifacts -Dm2Dir=$HOME/.m2/repository -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE"
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
           version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+
+      # tools/dotcms-cli/action resolves the runner jar from the S3 repository.
+      # Publish it explicitly here rather than assuming it survives the JReleaser
+      # Artifactory upload. The maven-job above restored maven-repo into ~/.m2,
+      # so the runner jar installed by the Quarkus build is available.
+      - name: 'Publish CLI runner jar to S3'
+        if: always()
+        env:
+          MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+          MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
+          MAVEN_S3_ENDPOINT: ${{ vars.MAVEN_S3_ENDPOINT }}
+          MAVEN_S3_REGION: ${{ vars.MAVEN_S3_REGION }}
+          MAVEN_S3_BUCKET: ${{ vars.MAVEN_S3_BUCKET }}
+          MAVEN_S3_PREFIX: ${{ vars.MAVEN_S3_PREFIX }}
+          MAVEN_S3_PUBLIC_URL: ${{ vars.MAVEN_S3_PUBLIC_URL }}
+          VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+        run: |
+          echo "::group::Publish CLI runner jar to S3"
+          JAR="$HOME/.m2/repository/com/dotcms/dotcms-cli/${VERSION}/dotcms-cli-${VERSION}-runner.jar"
+          if [[ ! -f "$JAR" ]]; then
+            echo "::error::CLI runner jar not found at ${JAR}"
+            exit 1
+          fi
+          ./.github/scripts/publish-to-s3/publish.sh file \
+            --source "$JAR" \
+            --key "com/dotcms/dotcms-cli/${VERSION}/dotcms-cli-${VERSION}-runner.jar"
+          echo "::endgroup::"
 
   # Publish NPM package
   publish-npm-package:
