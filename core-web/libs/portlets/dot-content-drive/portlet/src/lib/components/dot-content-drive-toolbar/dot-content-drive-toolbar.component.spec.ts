@@ -32,7 +32,8 @@ import {
     DotFilterFacade,
     DotFilterValue,
     DotLanguageFilterChipComponent,
-    isCanonicalChipOrder
+    isCanonicalChipOrder,
+    STATUS_TOAST_KEY
 } from '@dotcms/ui';
 import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -68,6 +69,9 @@ describe('DotContentDriveToolbarComponent', () => {
     // Real signals so the component's computeds re-run when they change
     const isTreeExpandedSignal = signal(false);
     const allSiteContentSelectedSignal = signal(false);
+    // The toolbar reports a run by raising a status message rather than drawing it, so the spec owns
+    // the service it pushes through.
+    const messageServiceSpy = { add: vi.fn(), clear: vi.fn() };
     const filtersSignal = signal<DotContentDriveFilters>({});
     const selectedItemsSignal = signal<DotContentDriveItem[]>([]);
     const selectedNodeSignal = signal<
@@ -202,7 +206,7 @@ describe('DotContentDriveToolbarComponent', () => {
             },
             // Needed once a selection exists: that mounts the workflow-actions child, which injects
             // both of these.
-            mockProvider(MessageService, { add: vi.fn() }),
+            mockProvider(MessageService, messageServiceSpy),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: vi.fn(),
                 editPage: vi.fn()
@@ -218,6 +222,8 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     beforeEach(() => {
+        messageServiceSpy.add.mockClear();
+        messageServiceSpy.clear.mockClear();
         spectator = createComponent();
         store = spectator.inject(DotContentDriveStore, true);
         spectator.detectChanges();
@@ -793,35 +799,53 @@ describe('DotContentDriveToolbarComponent', () => {
         });
     });
 
-    describe('running-action indicator', () => {
-        it('should stay hidden when nothing is running', () => {
-            spectator.detectChanges();
+    describe('running-action reporting', () => {
+        // The toolbar used to draw this at the end of its filter row. It now raises a status toast
+        // instead, so these assert the message rather than markup the toolbar no longer owns — the
+        // label itself is still composed here, which is why those assertions are unchanged.
+        const statusMessages = () =>
+            (messageServiceSpy.add.mock.calls as unknown[][])
+                .map(([message]) => message as { key?: string; summary?: string })
+                .filter((message) => message.key === STATUS_TOAST_KEY);
 
-            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+        it('should raise nothing when nothing is running', () => {
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(0);
         });
 
         it('should report the action and the number of items once a run starts', () => {
-            // The toolbar is the only place still reporting the run after the Action Center dialog is
-            // closed, which is the whole reason the indicator lives out here.
+            // The toolbar is the only place still reporting the run after the Action Center dialog
+            // is closed, which is the whole reason this is reported outside it.
             activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             spectator.detectChanges();
+            spectator.flushEffects();
 
-            const indicator = spectator.query(byTestId('action-execution-indicator'));
-
-            expect(indicator).toBeTruthy();
+            expect(statusMessages()).toHaveLength(1);
             expect(spectator.component.$actionExecutionLabel()).toBe(
                 'content-drive.action-center.applying'
             );
         });
 
-        it('should not render markup carried by the action name', () => {
-            // Workflow action names come from the backend verbatim (`$selectedAction()?.name`), and
-            // the label is placed in the DOM as HTML so the message's own `<b>` renders. A name
-            // carrying markup must not become live DOM — an event-handler attribute least of all.
-            //
-            // The shared mock returns the bare key, which would make this pass without rendering
-            // anything; the real message has to be in play for the assertion to mean something.
+        it('should say the run is still going rather than reporting an outcome', () => {
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            const [message] = statusMessages();
+
+            expect(message).toEqual(
+                expect.objectContaining({ sticky: true, icon: 'pi pi-spin pi-spinner' })
+            );
+        });
+
+        it('should escape markup carried by the action name', () => {
+            // Workflow action names come from the backend verbatim, and the label is rendered as
+            // HTML so the message's own `<b>` shows. A name carrying markup must not become live
+            // DOM — escaping happens as the label is composed, which is where this now asserts.
             const messageService = spectator.inject(DotMessageService);
 
             vi.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
@@ -832,59 +856,78 @@ describe('DotContentDriveToolbarComponent', () => {
 
             activeRunCountSignal.set(1);
             actionExecutionSignal.set({
-                actionName: '<img src=x onerror="window.__xss = true">',
+                actionName: '<img src=x onerror=alert(1)>',
                 total: 3
             });
             spectator.detectChanges();
+            spectator.flushEffects();
 
-            const indicator = spectator.query(byTestId('action-execution-indicator'));
+            const label = spectator.component.$actionExecutionLabel();
 
-            // Asserted structurally rather than by searching the markup for "onerror": once the name
-            // is escaped it renders as visible text that legitimately still contains that word.
-            expect(indicator?.querySelector('img')).toBeNull();
-            expect(indicator?.querySelector('[onerror]')).toBeNull();
-            // …and the name is still shown to the user, just as text.
-            expect(indicator?.textContent).toContain('<img src=x');
+            expect(label).not.toContain('<img src=x');
+            expect(label).toContain('&lt;img src=x');
         });
 
-        it('should disappear again once the run settles', () => {
+        it('should clear the status once the run settles', () => {
             activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             spectator.detectChanges();
+            spectator.flushEffects();
 
-            actionExecutionSignal.set(undefined);
-            // Settling clears the count too; the indicator now keys visibility off it so that
-            // several runs (where no single one is named) still show something.
             activeRunCountSignal.set(0);
+            actionExecutionSignal.set(undefined);
             spectator.detectChanges();
+            spectator.flushEffects();
 
-            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+            expect(messageServiceSpy.clear).toHaveBeenCalledWith(STATUS_TOAST_KEY);
         });
 
-        // ---- FR-017: several runs at once ----
+        it('should not re-raise while the same run keeps going', () => {
+            // The indicator this replaced changed its text in place. Clearing and raising again on
+            // every store touch would dismiss and re-animate the toast for no new information.
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+            spectator.flushEffects();
 
-        it('should collapse to a count when several runs are in flight', () => {
-            // `actionExecution` is undefined with more than one run: naming one of several
-            // arbitrarily is worse than naming none.
+            const raisedOnce = statusMessages().length;
+
+            // Something unrelated changes; the run and its wording do not.
+            siteCanAddChildrenSignal.set(false);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(raisedOnce);
+        });
+
+        it('should report the new wording when a second run joins', () => {
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            // A second run collapses the label to the count form, which IS new information.
             activeRunCountSignal.set(2);
             actionExecutionSignal.set(undefined);
             spectator.detectChanges();
+            spectator.flushEffects();
 
-            expect(spectator.query(byTestId('action-execution-indicator'))).toBeTruthy();
+            expect(statusMessages().length).toBeGreaterThan(1);
+        });
+
+        it('should collapse to a count when several runs are in flight', () => {
+            // With several at once the store leaves the run undefined on purpose: name none of
+            // them and report the number instead.
+            activeRunCountSignal.set(3);
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages().length).toBeGreaterThan(0);
             expect(spectator.component.$actionExecutionLabel()).toBe(
                 'content-drive.action-center.applying-many'
             );
         });
-
-        it('should still hide the indicator when nothing at all is running', () => {
-            activeRunCountSignal.set(0);
-            actionExecutionSignal.set(undefined);
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
-        });
-
-        // ---- FR-010: name the item when there is one ----
 
         it('should name the item, not a count, when the run is over a single thing', () => {
             // "Applying Publish to 1 item(s)" is worse than useless on a context-menu action: the
@@ -896,6 +939,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 targetLabel: 'My Page'
             });
             spectator.detectChanges();
+            spectator.flushEffects();
 
             expect(spectator.component.$actionExecutionLabel()).toBe(
                 'content-drive.action-center.applying-item'
@@ -906,17 +950,16 @@ describe('DotContentDriveToolbarComponent', () => {
             activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 12 });
             spectator.detectChanges();
+            spectator.flushEffects();
 
             expect(spectator.component.$actionExecutionLabel()).toBe(
                 'content-drive.action-center.applying'
             );
         });
 
-        // ---- FR-011: the item name is author-supplied content ----
-
-        it('should not render markup carried by the item name', () => {
+        it('should escape markup carried by the item name', () => {
             // `actionName` comes from the backend; a title is typed by an author, so this is the
-            // likelier of the two to carry markup and the one that must not become live DOM.
+            // likelier of the two to carry markup.
             const messageService = spectator.inject(DotMessageService);
 
             vi.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
@@ -929,64 +972,15 @@ describe('DotContentDriveToolbarComponent', () => {
             actionExecutionSignal.set({
                 actionName: 'Publish',
                 total: 1,
-                targetLabel: '<img src=x onerror="window.__xss = true">'
+                targetLabel: '<img src=x onerror=alert(1)>'
             });
             spectator.detectChanges();
+            spectator.flushEffects();
 
-            const indicator = spectator.query(byTestId('action-execution-indicator'));
+            const label = spectator.component.$actionExecutionLabel();
 
-            expect(indicator?.querySelector('img')).toBeNull();
-            expect(indicator?.querySelector('[onerror]')).toBeNull();
-            expect(indicator?.textContent).toContain('<img src=x');
-        });
-
-        // ---- FR-012: a position only when the run actually reports one ----
-
-        it('should show activity without a position when the run reports no progress', () => {
-            // Progress readback is the backend's largest piece of hidden work. Until it lands every
-            // run is indeterminate, and the indicator must not imply a position it does not have.
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 50 });
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('action-execution-indicator'))).toBeTruthy();
-            expect(spectator.query(byTestId('action-execution-progress'))).toBeNull();
-        });
-
-        it('should show the position once the run reports one', () => {
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 20 });
-            spectator.detectChanges();
-
-            const progress = spectator.query(byTestId('action-execution-progress'));
-
-            expect(progress).toBeTruthy();
-            expect(spectator.component.$actionExecutionPercent()).toBe(40);
-        });
-
-        it('should treat a reported zero as a position, not as absence', () => {
-            // `processed: 0` is a run that has genuinely done nothing yet, which is different from a
-            // run that cannot say. A truthiness check would collapse the two.
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 0 });
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('action-execution-progress'))).toBeTruthy();
-            expect(spectator.component.$actionExecutionPercent()).toBe(0);
-        });
-
-        // ---- FR-035: announce state changes, not every tick ----
-
-        it('should keep progress updates out of the live region', () => {
-            // The indicator is a polite live region. A fifty-file upload that re-announced on every
-            // tick would speak fifty times; the value stays queryable instead of being pushed.
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 20 });
-            spectator.detectChanges();
-
-            const progress = spectator.query(byTestId('action-execution-progress'));
-
-            expect(progress?.getAttribute('aria-live')).toBe('off');
+            expect(label).not.toContain('<img src=x');
+            expect(label).toContain('&lt;img src=x');
         });
     });
 

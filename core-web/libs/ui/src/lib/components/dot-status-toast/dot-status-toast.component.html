@@ -1,0 +1,38 @@
+<p-toast [position]="$position()" [key]="$key()" data-testid="dot-status-toast">
+    <!-- Class names and `data-pc-section` mirror PrimeNG's own message template, the way dot-toast
+         does, so Lara keeps colouring this by severity. What differs is what is rendered: an icon,
+         one line, and a dismiss — no detail slot, because a status that needs a paragraph is a
+         report and belongs in the wider outlet. -->
+    <ng-template let-message #message>
+        <span
+            class="p-toast-message-icon"
+            [attr.aria-hidden]="true"
+            [attr.data-pc-section]="'icon'">
+            @if (message.icon) {
+                <!-- A run still going carries its own glyph, usually a spinner. -->
+                <i [class]="message.icon"></i>
+            } @else {
+                <dot-severity-icon [severity]="message.severity" />
+            }
+        </span>
+
+        <div class="p-toast-message-text">
+            <!-- `innerHtml`, like dot-toast: the run label bolds the action and its target
+                 ("Applying <b>Upload</b> to <b>demo.dotcms.com</b>"), and interpolating would show
+                 those tags literally. Angular sanitises it. -->
+            <div
+                class="p-toast-summary"
+                data-testid="status-toast-summary"
+                [innerHtml]="message.summary"></div>
+        </div>
+
+        <button
+            type="button"
+            class="p-toast-close-button"
+            data-testid="status-toast-close"
+            [attr.aria-label]="'Close' | dm"
+            (click)="onClose()">
+            <i class="pi pi-times"></i>
+        </button>
+    </ng-template>
+</p-toast>

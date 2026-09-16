@@ -11,7 +11,7 @@ import {
     untracked
 } from '@angular/core';
 
-import { MenuItem } from 'primeng/api';
+import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -26,6 +26,7 @@ import {
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import {
     DotContentTypeFilterChipComponent,
+    STATUS_TOAST_KEY,
     DotFieldFilterComponent,
     DotFieldFilterMenuComponent,
     DotFilterBarComponent,
@@ -211,6 +212,7 @@ interface ToolbarAnimationState {
 export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #messageService = inject(MessageService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
     // Emits the click event so the shell can anchor the upload-type popover to the button.
@@ -322,6 +324,58 @@ export class DotContentDriveToolbarComponent {
     readonly $activeRunCount = this.#store.toolbarRunCount;
 
     readonly $hasRunInFlight = computed(() => this.$activeRunCount() > 0);
+
+    /** What the status toast is currently saying, so an unchanged run is not re-raised. */
+    #shownRunLabel: string | undefined;
+
+    /**
+     * Mirrors the run in flight into the status toast.
+     *
+     * The toolbar used to draw this itself, at the end of the filter row. It moved because the row
+     * is where the user works — filter chips come and go beside it — and a status that appears and
+     * disappears there shifts the controls under the pointer. A toast says the same thing without
+     * competing for that space, and gives the in-flight state and its outcome one surface instead
+     * of an indicator here and a toast elsewhere.
+     *
+     * Sticky while the run lasts and cleared when it settles: the outcome toast that follows is
+     * raised by the shell, which is where results are turned into copy.
+     *
+     * The percentage the old indicator could show is deliberately not carried over. Nothing ever
+     * sets a run's `processed` — `updateExternalRun` has no callers — so it could not render, and
+     * the app's HTTP backend does not report upload progress either.
+     */
+    readonly runToastSync = effect(() => {
+        const running = this.$hasRunInFlight();
+        const label = this.$actionExecutionLabel();
+
+        untracked(() => {
+            if (!running) {
+                this.#shownRunLabel = undefined;
+                this.#messageService.clear(STATUS_TOAST_KEY);
+
+                return;
+            }
+
+            // Only when the wording actually changes. PrimeNG has no update, so re-reporting means
+            // clearing and raising again — and the old inline indicator simply changed its text,
+            // so re-animating on every store touch would be a behaviour this replaced, not kept.
+            // The label does change while runs are in flight: a second run starting collapses it to
+            // the count form, and finishing brings the named form back.
+            if (label === this.#shownRunLabel) {
+                return;
+            }
+
+            this.#shownRunLabel = label;
+            this.#messageService.clear(STATUS_TOAST_KEY);
+            this.#messageService.add({
+                key: STATUS_TOAST_KEY,
+                severity: 'info',
+                summary: label,
+                icon: 'pi pi-spin pi-spinner',
+                sticky: true
+            });
+        });
+    });
 
     /**
      * Resolved indicator label. Built here rather than in the template because `DotMessagePipe` takes

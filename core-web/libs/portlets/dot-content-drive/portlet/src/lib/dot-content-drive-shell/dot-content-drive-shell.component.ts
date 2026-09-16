@@ -66,6 +66,7 @@ import {
     DotKeyboardShortcutUnregister,
     hasOverlayAbove,
     DotMessagePipe,
+    DotStatusToastComponent,
     DotToastComponent,
     DotUploadDropzoneComponent,
     DotUploadTypeSelectorComponent
@@ -131,6 +132,7 @@ import { describeUploadFailures } from '../utils/upload-failures';
         MessageModule,
         DotMessagePipe,
         DotUploadDropzoneComponent,
+        DotStatusToastComponent,
         DotToastComponent,
         DotEditContentSidePanelComponent,
         ProgressSpinnerModule,
@@ -1539,6 +1541,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
             // freshly chosen files, so two uploads at once is legitimate rather than a double-fire.
             operation: `${UPLOAD_BATCH_OPERATION}:${(this.#uploadSequence += 1)}`,
             actionName: this.#dotMessageService.get('content-drive.upload'),
+            // Its own wording rather than the workflow sentence. Without this the run reads
+            // "Applying Upload to demo.dotcms.com" — a phrasing for an action applied TO content,
+            // which is not what putting files INTO a place is.
+            labelKey: 'content-drive.upload.indicator',
             total: files.length,
             targetLabel: this.uploadTargetLabel(hostFolder),
             // Empty on purpose. The indicator speaks only for runs with nothing to mark, since a
@@ -1650,22 +1656,14 @@ export class DotContentDriveShellComponent implements OnDestroy {
                         baseType
                     );
 
-                    // The one notification this flow raises, and the only in-flight fact worth
-                    // one: until the handle existed, leaving lost the batch and the page guard
-                    // said so; now leaving costs nothing. That rule changed with no visible
-                    // cause, and the indicator cannot report it — it says work is happening, not
-                    // that the author is released from it.
-                    this.#messageService.add({
-                        severity: 'info',
-                        summary: this.#dotMessageService.get(
-                            'content-drive.upload.toast.backgrounded'
-                        ),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.upload.toast.backgrounded-detail',
-                            String(submitted)
-                        ),
-                        life: SUCCESS_MESSAGE_LIFE
-                    });
+                    // No notification here any more. This used to raise one, because the
+                    // indicator could say work was happening but not that the page guard had
+                    // released the author. The status toast that replaced the indicator says
+                    // "in the background" itself, and having both on screen meant a backgrounded
+                    // upload announced itself twice, once wide and once compact.
+                    //
+                    // What is genuinely lost is the sentence spelling out that the author may
+                    // leave the page. The wording carries the fact; it no longer argues for it.
 
                     // Nothing else to do, and deliberately nothing. A `202` means the batch is queued,
                     // not that any file exists, so reloading here refetches a folder whose files

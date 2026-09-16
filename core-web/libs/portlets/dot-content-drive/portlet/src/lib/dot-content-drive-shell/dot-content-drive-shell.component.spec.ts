@@ -2134,6 +2134,21 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
+        it('should describe itself as an upload, not as an action applied to a site', () => {
+            // Without a label of its own the run falls to the workflow sentence, which reads
+            // "Applying Upload to demo.dotcms.com" — phrased for an action applied TO content,
+            // not for files going INTO a place.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ labelKey: 'content-drive.upload.indicator' })
+            );
+        });
+
         it('should target System Host when that is where the batch lands, not the switcher site', () => {
             // The switcher still names a site while System Host is browsed, and that site is
             // context rather than the destination. Uploading here with the site's identifier
@@ -2253,11 +2268,10 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: 'info',
-                    detail: 'content-drive.upload.toast.backgrounded-detail'
-                })
+            // The advisory toast this used to assert is gone: the status it sat beside says
+            // "in the background" itself, and both on screen announced one upload twice.
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ labelKey: 'content-drive.upload.indicator.background' })
             );
         });
 
@@ -2289,13 +2303,17 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'content-drive.upload.toast.backgrounded-detail',
-                '2'
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 2
+                })
             );
-            expect(dotMessageService.get).not.toHaveBeenCalledWith(
-                'content-drive.upload.toast.backgrounded-detail',
-                '3'
+            expect(store.startExternalRun).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 3
+                })
             );
         });
 
@@ -2348,9 +2366,11 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'content-drive.upload.toast.backgrounded-detail',
-                '2'
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 2
+                })
             );
         });
 
@@ -2839,11 +2859,8 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: 'info',
-                    detail: 'content-drive.upload.toast.backgrounded-detail'
-                })
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ labelKey: 'content-drive.upload.indicator.background' })
             );
             // Still nothing that names it a success: the files do not exist yet.
             expect(messageService.add).not.toHaveBeenCalledWith(
@@ -2963,13 +2980,10 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(addSpy).toHaveBeenCalledTimes(1);
-            expect(addSpy).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: 'info',
-                    summary: 'content-drive.upload.toast.backgrounded'
-                })
-            );
+            // Nothing at all now. The handoff advisory this used to assert was removed because
+            // the status toast beside it already said the upload was in the background, and one
+            // upload announcing itself twice is the noise this replaced.
+            expect(addSpy).not.toHaveBeenCalled();
         });
 
         it('should not announce an upload the listing now shows', () => {
