@@ -216,19 +216,19 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        pkg_json_pm=$(jq -r '.packageManager' core-web/package.json)
-        pkg_json_version="${pkg_json_pm#pnpm@}"
-        postman_pm=$(jq -r '.packageManager' dotcms-postman/package.json)
-        postman_version="${postman_pm#pnpm@}"
+        # The pom is the reference: Maven installs that pnpm and every module runs it.
+        # Collect every mismatch before failing, so a contributor who forgot to bump one
+        # manifest does not fix it, re-run CI, and only then learn about the other.
         pom_version=$(grep -oE '<pnpm\.version>[^<]+</pnpm\.version>' nodejs-parent/pom.xml | sed -E 's|</?pnpm\.version>||g')
-        if [ "$pkg_json_version" != "$pom_version" ]; then
-          echo "::error::pnpm version mismatch: core-web/package.json=$pkg_json_version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — Maven uses the pom value while the pnpm store cache key uses the package.json value." >&2
-          exit 1
-        fi
-        if [ "$postman_version" != "$pom_version" ]; then
-          echo "::error::pnpm version mismatch: dotcms-postman/package.json=$postman_version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — dotcms-postman runs its install with the pnpm Maven installs from the pom value." >&2
-          exit 1
-        fi
+        fail=0
+        for manifest in core-web/package.json dotcms-postman/package.json; do
+          declared=$(jq -r '.packageManager' "$manifest")
+          if [ "${declared#pnpm@}" != "$pom_version" ]; then
+            echo "::error file=$manifest::pnpm version mismatch: $manifest declares $declared, nodejs-parent/pom.xml pins $pom_version. Maven installs the pom version and every module runs it, so the manifests must agree." >&2
+            fail=1
+          fi
+        done
+        [ "$fail" -eq 0 ] || exit 1
         echo "pnpm version in sync: $pom_version"
 
     # pnpm/setup downloads pnpm's own standalone binary — no Node and no npm
