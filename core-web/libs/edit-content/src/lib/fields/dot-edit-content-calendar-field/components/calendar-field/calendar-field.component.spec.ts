@@ -240,7 +240,6 @@ describe('DotCalendarFieldComponent', () => {
             expect(control?.value).toBeNull();
         });
 
-
         // T058 — FR-018 and the "Clearing a field that carries a default value" edge case.
         // Only reachable because FR-005 made clearing available on every field type; before
         // this feature only the expire-date field had a clear control. `handleChangeValue`'s
@@ -426,7 +425,6 @@ describe('DotCalendarFieldComponent', () => {
             expect(spectator.component.internalFormControl.value?.getHours()).toBe(SERVER_HOUR);
             expect(controlValue()).not.toBeNull();
         });
-
 
         // FR-015b — symmetric with FR-007a for the clear control. p-button renders a native
         // button, but nothing pinned that, and an icon-only or div-based footer action would
