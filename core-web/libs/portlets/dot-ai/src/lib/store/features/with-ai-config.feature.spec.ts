@@ -13,7 +13,7 @@ import { withAiConfig } from './with-ai-config.feature';
 import { DOT_AI_INITIAL_STATE, DotAiPortletState } from '../../models/dot-ai-portlet.models';
 
 const resolved = (overrides: Partial<DotAiResolvedConfig> = {}): DotAiResolvedConfig => ({
-    configHost: 'demo.dotcms.com (falls back to system host)',
+    configHost: 'demo.dotcms.com',
     settings: { embeddingsSearchThreshold: '0.4' },
     providerConfig: { chat: { model: 'a,b' } },
     chatModels: ['a', 'b'],
