@@ -66,6 +66,18 @@ public record InferenceError(String type, String message, String param, int http
      * account identifiers, and occasionally a fragment of the prompt. Only the status is taken
      * from it, which is why the caller supplies the wording.</p>
      *
+     * <p>Three outcomes, not two, because "the provider said no" splits along a line a client
+     * acts on. A rate limit is temporary: 429, come back later. A refusal the provider will
+     * repeat — an exhausted account, a rejected key, a model the provider does not serve — is
+     * permanent until somebody changes something, and answering 502 there tells a standard
+     * client's back-off to retry a request that cannot ever succeed. Everything left is a
+     * genuine upstream fault, which is what 502 is for.</p>
+     *
+     * <p>Permanence is read from the provider library's own classification rather than from a
+     * list of exception types or status codes: it already sorts its failures into retriable and
+     * non-retriable, and keying off that means a type added in a later release is classified
+     * correctly without this method being touched.</p>
+     *
      * <p>The cause chain is walked rather than the top exception inspected, because the provider
      * client wraps: a rate limit surfaces as its own type or as a generic HTTP failure carrying
      * 429, and by the time a retrying fallback chain has rethrown it, either can be two or three
@@ -85,6 +97,9 @@ public record InferenceError(String type, String message, String param, int http
                     && httpFailure.statusCode() == 429) {
                 return rateLimited();
             }
+            if (current instanceof dev.langchain4j.exception.NonRetriableException) {
+                return providerRefused();
+            }
             if (current.getCause() == current) {
                 break;
             }
@@ -95,6 +110,23 @@ public record InferenceError(String type, String message, String param, int http
     /**
      * @return the standard rate-limit refusal, which a client reads as "retry later"
      */
+    /**
+     * @return the refusal for a provider failure that a retry cannot fix
+     */
+    public static InferenceError providerRefused() {
+        // 400 rather than 502, because the status is the only thing carrying retryability and a
+        // 5xx would keep a client coming back. It is an imperfect fit — the caller has usually
+        // done nothing wrong, and the thing to fix is the site's provider account or
+        // configuration — so the message says where to look rather than implying the request was
+        // malformed. The provider's own wording, which names the account and sometimes the
+        // prompt, stays in the log.
+        return new InferenceError("invalid_request_error",
+                "The model provider refused this request, and will refuse it again on retry. "
+                        + "This is a provider account or site configuration problem rather than "
+                        + "a problem with the request; the details are in the server log.",
+                null, 400);
+    }
+
     public static InferenceError rateLimited() {
         return new InferenceError("rate_limit_error",
                 "The model provider is rate limiting this site's requests", null, 429);

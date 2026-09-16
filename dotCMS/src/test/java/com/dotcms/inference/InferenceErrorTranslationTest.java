@@ -1,7 +1,11 @@
 package com.dotcms.inference;
 
 import com.dotcms.inference.model.InferenceError;
+import dev.langchain4j.exception.AuthenticationException;
 import dev.langchain4j.exception.HttpException;
+import dev.langchain4j.exception.InternalServerException;
+import dev.langchain4j.exception.InvalidRequestException;
+import dev.langchain4j.exception.ModelNotFoundException;
 import dev.langchain4j.exception.RateLimitException;
 import org.junit.Test;
 
@@ -21,6 +25,11 @@ import static org.junit.Assert.assertTrue;
 public class InferenceErrorTranslationTest {
 
     private static final String UPSTREAM = "The model provider failed to complete the request";
+
+    /** Stands in for a provider message: endpoint, key and a fragment of the caller's prompt. */
+    private static final String LEAKY =
+            "api.openai.com rejected key sk-live-9f3c for org acme-corp while completing "
+                    + "'draft the Q3 board memo'";
 
     /**
      * Given a provider that refused because the site is over its rate limit
@@ -101,6 +110,78 @@ public class InferenceErrorTranslationTest {
             }
         };
         assertEquals(502, InferenceError.fromProviderFailure(selfReferencing, UPSTREAM).httpStatus());
+    }
+
+    /**
+     * Given a provider that refused on an exhausted account
+     * When the failure is translated
+     * Then the caller gets a 400, not a retryable 502
+     *
+     * <p>The case that found this. An OpenRouter account out of credit answers 402 with "requires
+     * more credits, or fewer max_tokens"; the provider library maps that to a non-retriable
+     * exception, and this family used to answer 502. A 502 is the one thing that must not happen
+     * there: it is the status a client's back-off reads as "try again", so a request that cannot
+     * succeed until somebody adds credit gets retried on a schedule, burning a round trip each
+     * time. The live log showed three attempts before the caller ever saw an answer.</p>
+     */
+    @Test
+    public void test_exhaustedProviderAccount_isNotReportedAsRetryable() {
+        final InferenceError error = InferenceError.fromProviderFailure(
+                new InvalidRequestException(
+                        "This request requires more credits, or fewer max_tokens. You requested "
+                                + "up to 65536 tokens, but can only afford 30546"),
+                UPSTREAM);
+
+        assertEquals("A refusal a retry cannot fix must not carry a retryable status",
+                400, error.httpStatus());
+        assertFalse("The whole point is that a client stops retrying", error.isRetryable());
+        assertFalse("The provider's wording names the account and the limits; it stays in the log",
+                error.message().contains("65536"));
+        assertFalse(error.message().contains("credits"));
+    }
+
+    /**
+     * Given each kind of refusal the provider library classifies as non-retriable
+     * When they are translated
+     * Then none of them is reported as retryable
+     *
+     * <p>Asserted across the family rather than on the one that was reported, because they share
+     * a parent in the library and the translation keys off that parent. A bad key and a model the
+     * provider does not serve are as permanent as an empty account, and all three used to be
+     * 502.</p>
+     */
+    @Test
+    public void test_everyNonRetriableRefusal_isTerminal() {
+        for (final RuntimeException refusal : new RuntimeException[]{
+                new InvalidRequestException(LEAKY),
+                new AuthenticationException(LEAKY),
+                new ModelNotFoundException(LEAKY)}) {
+
+            final InferenceError error = InferenceError.fromProviderFailure(refusal, UPSTREAM);
+            assertFalse(refusal.getClass().getSimpleName()
+                    + " cannot be fixed by retrying, so it must not be reported as retryable",
+                    error.isRetryable());
+            assertFalse(error.message().contains("sk-live-9f3c"));
+        }
+    }
+
+    /**
+     * Given a genuine upstream fault
+     * When it is translated
+     * Then it stays a retryable 502
+     *
+     * <p>The boundary in the other direction: the library calls this one retriable, and it is —
+     * a provider having a bad minute is exactly what 502 and a client back-off are for. A fix
+     * that turned every provider failure into a terminal 4xx would be as wrong as the bug.</p>
+     */
+    @Test
+    public void test_genuineUpstreamFault_staysRetryable() {
+        final InferenceError error =
+                InferenceError.fromProviderFailure(new InternalServerException(LEAKY), UPSTREAM);
+
+        assertEquals(502, error.httpStatus());
+        assertTrue("A provider having a bad minute is worth retrying", error.isRetryable());
+        assertEquals(UPSTREAM, error.message());
     }
 
     /**
