@@ -53,6 +53,10 @@ fetchTimeout: 6000000
 # Replaces onlyBuiltDependencies, removed in pnpm 11 along with neverBuiltDependencies,
 # ignoredBuiltDependencies and ignoreDepScripts.
 allowBuilds:
+    # `canvas` is also in ignoredOptionalDependencies above, so it is never installed and
+    # this entry never fires today. Kept deliberately: if that ignore is ever lifted, canvas
+    # is a native module that must build, and discovering that through ERR_PNPM_IGNORED_BUILDS
+    # is a worse day than carrying one dead line.
     canvas: true
     esbuild: true
     '@swc/core': true

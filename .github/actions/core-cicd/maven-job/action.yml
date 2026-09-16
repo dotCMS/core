@@ -205,30 +205,31 @@ runs:
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: installs
-        # hash nodejs-parent/pom.xml so the pnpm-era layout (install-node-and-npm
-        # + corepack shim) is not mixed with the yarn-era layout from cached
-        # builds of the previous toolchain.
+        # nodejs-parent/pom.xml is hashed because it holds <pnpm.version> and drives
+        # how installs/ is laid out — a pnpm bump or a change to the install mechanism
+        # must invalidate this cache, or the job restores a tree with the wrong pnpm.
         key: node-binary-${{ hashFiles('core-web/.nvmrc', 'nodejs-parent/pom.xml') }}
 
-    - name: Verify pnpm version is in sync between package.json and nodejs-parent/pom.xml
+    - name: Verify the pnpm version is in sync across package.json files and nodejs-parent/pom.xml
       if: ${{ inputs.requires-node == 'true' }}
       shell: bash
       run: |
         set -euo pipefail
-        pkg_json_pm=$(jq -r '.packageManager' core-web/package.json)
-        pkg_json_version="${pkg_json_pm#pnpm@}"
-        postman_pm=$(jq -r '.packageManager' dotcms-postman/package.json)
-        postman_version="${postman_pm#pnpm@}"
+        # nodejs-parent/pom.xml is the source of truth: Maven installs that pnpm, and every
+        # package.json must agree with it. Report every mismatch in one run — fixing one and
+        # re-running CI to discover the next is a wasted round trip.
         pom_version=$(grep -oE '<pnpm\.version>[^<]+</pnpm\.version>' nodejs-parent/pom.xml | sed -E 's|</?pnpm\.version>||g')
-        if [ "$pkg_json_version" != "$pom_version" ]; then
-          echo "::error::pnpm version mismatch: core-web/package.json=$pkg_json_version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — Maven uses the pom value while the pnpm store cache key uses the package.json value." >&2
-          exit 1
-        fi
-        if [ "$postman_version" != "$pom_version" ]; then
-          echo "::error::pnpm version mismatch: dotcms-postman/package.json=$postman_version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — dotcms-postman runs its install with the pnpm Maven installs from the pom value." >&2
-          exit 1
-        fi
-        echo "pnpm version in sync: $pom_version"
+        fail=0
+        for manifest in core-web/package.json dotcms-postman/package.json; do
+          pm=$(jq -r '.packageManager' "$manifest")
+          version="${pm#pnpm@}"
+          if [ "$version" != "$pom_version" ]; then
+            echo "::error file=$manifest::pnpm version mismatch: $manifest=$version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — Maven uses the pom value, while the pnpm store cache key and pnpm/action-setup read core-web/package.json." >&2
+            fail=1
+          fi
+        done
+        [ "$fail" -eq 0 ] || exit 1
+        echo "pnpm version in sync across all manifests: $pom_version"
 
     - name: Set up pnpm
       if: ${{ inputs.requires-node == 'true' }}
