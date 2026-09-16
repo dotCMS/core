@@ -313,8 +313,14 @@ cmd_maven() {
   fi
 
   if [[ ${#artifacts[@]} -eq 0 ]]; then
-    # An empty publish is only legitimate for the intentionally-skipped
-    # conditionals (e.g. java variants), so keep it non-fatal but loud.
+    # No matches is only legitimate when modules were not requested explicitly
+    # (e.g. an intentionally-skipped conditional). If the caller asked for
+    # specific modules and none exist, that is a real error: S3 is now the
+    # authoritative location, so silently publishing nothing would leave
+    # consumers with a missing artifact (e.g. the CLI runner jar).
+    if [[ -n "$modules" ]]; then
+      die "None of the requested modules ($modules) have version '$version' under $MAVEN_REPO_DIR."
+    fi
     warn "No com/dotcms artifacts found for version '$version' under $MAVEN_REPO_DIR."
     return 0
   fi
