@@ -22,6 +22,8 @@ import java.util.Map;
  *   <li>{@code referencePage} — the URI of the experiment page, resolved from
  *       {@link Experiment#pageId()} via {@link GoalConditionUtil#resolvePageUri}</li>
  *   <li>{@code targetUrl} — the destination page (condition parameter {@code "url"})</li>
+ *   <li>{@code targetMatchType} — the URL match operator ({@code "equals"} or {@code "contains"}),
+ *       derived from the {@code operator()} on the {@code "url"} condition</li>
  *   <li>{@code dimensions=variant} for {@link #executeAggregate} (aggregate per-variant totals)</li>
  *   <li>{@code dimensions=variant,day} for {@link #executeByDay} (per-day per-variant breakdown)</li>
  * </ul>
@@ -77,6 +79,8 @@ public class ReachPageCAEMResultQuery implements ExperimentGoalResultsQuery {
         params.put("referencePage", GoalConditionUtil.resolvePageUri(experiment));
         GoalConditionUtil.findConditionValue(experiment, "url")
                 .ifPresent(url -> params.put("targetUrl", url));
+        GoalConditionUtil.findConditionOperator(experiment, "url")
+                .ifPresent(op -> params.put("targetMatchType", op.name().toLowerCase()));
         return params;
     }
 
