@@ -180,19 +180,30 @@ and confirm they match the asset's own record.
 - **FR-009**: Where a property name could refer either to the referenced asset or to the binary
   file it carries, the API MUST give that name exactly one documented meaning, and MUST offer an
   unambiguous way to reach the other.
-- **FR-009a**: No property name may silently change what it returns. Where this feature changes
-  the meaning of an existing name, that name MUST be changed too, so the client receives an
-  explicit failure rather than a different value. A break a client can see is required; a break a
-  client cannot see is not acceptable.
+- **FR-009a**: No existing property name may change what it returns — not visibly, and above all
+  not silently. Where this feature exposes a value that differs from what a name returns today,
+  it MUST do so through a **new** surface and leave the existing one alone. The worked example is
+  the asset description: today that name returns the asset's title, and the asset's own stored
+  description is unreachable. Both MUST be available afterwards, under names that cannot be
+  confused, and the existing name MUST keep returning what it returns today.
 - **FR-010**: The delivered behavior MUST be covered by an automated API-level test that a
   customer-defined property on an extended asset type is readable through both an Image field and
   a File field.
 - **FR-011**: Reading N properties of one referenced asset MUST NOT cost N times the work of
   reading one; per-asset work MUST be performed once per asset per request.
-- **FR-012**: Existing customer queries MAY break. This feature is not required to keep the
-  current asset view working. The break MUST be announced ahead of the release and MUST ship with
-  migration guidance naming, for each property available today, its replacement or the fact that
-  it has none. See "Decision: breaking change accepted" below.
+- **FR-012**: Existing customer queries MUST keep working unchanged. Every property the current
+  asset view exposes MUST continue to be selectable and MUST continue to return exactly what it
+  returns today. The new capability is delivered **alongside** the current view, not by replacing
+  it.
+- **FR-012a**: The current asset view MUST be marked as superseded **in the published API
+  description itself**, not only in code or release notes, so that a client's own tooling surfaces
+  the warning without anyone reading a changelog. The marking MUST say what replaces each property.
+- **FR-012b**: Removal of the current asset view is **out of scope for this feature** and MUST NOT
+  happen in the same release that introduces the replacement. It is a later, separately tracked
+  step, gated on an explicit floor: the oldest still-supported release no longer depending on it,
+  **and** a confirmed observation window with no remaining use. A tracking item for that removal
+  MUST be opened when this feature ships, naming the surface to be retired — not deferred to a
+  later cleanup pass.
 - **FR-013**: This feature supersedes PR dotCMS/core#35363. That PR MUST be closed as superseded
   rather than merged, and the convenience it aimed at — reading an asset's binary properties
   without descending a level — MUST be re-raised as a second, separately tracked stage of issue
@@ -249,6 +260,11 @@ and confirm they match the asset's own record.
   of per-asset work as requesting one, measured as a constant rather than a per-property cost.
 - **SC-007**: The AI tagging workflow, which cannot read an asset's tags today, completes
   end-to-end.
+- **SC-008**: Zero existing customer queries stop working. Every selection valid against the
+  current asset view is still valid after this feature ships and returns the same value it
+  returned before.
+- **SC-009**: A client inspecting the API's own published description sees the current asset view
+  marked as superseded, with its replacement named — without reading release notes.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -258,71 +274,51 @@ and confirm they match the asset's own record.
   themselves are long-standing product surface.
 
 - **Backward-compatibility expectations**: Customers already query the six properties the current
-  asset view exposes. Changing how an asset-pointing field is described invalidates those queries
-  on deploy. **This is accepted** (FR-012): the current view is a facade that reports asset
-  content using property names borrowed from the other base type, and preserving it would mean
-  preserving the misdescription permanently. The break ships with announcement and migration
-  guidance, and FR-009a requires every break to be visible.
+  asset view exposes. **Those queries must keep working, unchanged** (FR-012). The new capability
+  ships alongside the current view; the current view is marked as superseded in the published API
+  description (FR-012a) and retired later, as a separately gated step (FR-012b).
 
-### What breaks, and whether the client can see it
+  An earlier draft of this spec accepted breaking those queries outright. That was reversed after
+  consulting the accepted architecture decisions — see ADR Alignment below.
 
-Measured against a running instance, for the six properties the current view exposes:
+### ADR Alignment
 
-- **Five are invented for image-style assets** — `fileName`, `fileAsset`, `metaData`,
-  `showOnMenu`, `sortOrder` do not exist on that content at all; the current view synthesizes
-  them. Removing the facade removes them. A client asking for one gets an outright request
-  failure, which is loud and immediately visible.
-- **One is real but currently masked** — `description`. The current view does not return the
+Two accepted decisions in `dotCMS/platform-adrs` govern how a published contract may change, and
+both were consulted before this spec was finalized:
+
+- **ADR-0020** (accepted) deprecated a core REST endpoint and kept it **functional**, annotated for
+  removal, with existing integrations explicitly unaffected.
+- **ADR-0022** (accepted) states the principle directly — *"a URL, parameter, or response field is
+  a promise to callers in exactly the same way a database column is a promise to queries"* — and
+  names why it bites here: dotCMS is self-hosted and upgraded by customers on their own schedule,
+  so *"'nobody is calling the old endpoint right now' is not the same question as 'it's safe to
+  remove.'"* It prescribes **expand → adopt → bake → retire**, gates removal on both a
+  supported-version floor and a confirmed zero-use window, and requires the deprecation to be
+  marked **in the schema itself**, not only in code.
+
+This feature follows that pattern: FR-012 expands, FR-012a marks, FR-012b defers retirement behind
+the same gate and requires the tracking item to be opened up front rather than left to a later
+cleanup pass. **No exception to either ADR is requested.**
+
+### Why breaking was rejected, and what the facade actually hides
+
+Measured against a running instance, the six properties the current view exposes split in two:
+
+- **Five are invented for image-style assets** — the file name, the binary, the metadata, the menu
+  flag and the sort order do not exist on that content at all; the current view synthesizes them,
+  borrowing names from the other base type. Removing the view would remove them outright, and a
+  client asking for one would get an immediate request failure.
+- **One is real but currently masked** — the description. The current view does not return the
   asset's stored description; it returns the asset's title, which for an image is the file name.
-  The asset's own description is unreachable. After the change the same name returns the stored
-  value instead. Measured on a real instance: the current view returns a value for 57 of 57
-  images, while only 2 of those 57 have a stored description — so 55 of 57 would go from a
-  populated string to empty, **with no error of any kind**. This is the one case a client cannot
-  detect, and it is why FR-009a requires renaming rather than silently repurposing it.
-- **File-style assets fare better**: their properties are real and merely move from the shared
-  view to the specific type, so a client recovers all of them by naming the type.
+  The stored description is unreachable. Had the view been replaced in place, that name would have
+  kept working and kept returning a string, but a different one: measured on a real instance, the
+  current view returns a value for 57 of 57 images while only 2 of those 57 have a stored
+  description. So 55 of 57 would have gone from a populated string to empty, **with no error of
+  any kind** — undetectable by the client.
 
-- **Known related decisions**: Issue dotCMS/core#34540 asks for two things: (a) customer-defined
-  properties on extended asset types must be queryable, and (b) the ~20 general asset properties
-  reachable today only through the untyped `_map` escape hatch must be properly described. **This
-  spec covers (a).** Limb (b) is addressed by in-flight work described below. The plan phase will
-  formally consult `dotCMS/platform-adrs`.
-
-### Relationship to in-flight work
-
-Pull request dotCMS/core#35363 is open and unmerged, and states that it closes #34540. It delivers
-limb (b): a shared description of the binary properties an asset carries, so a client can ask for
-things like size, MIME type and dimensions directly instead of descending a level. It does **not**
-deliver limb (a) — customer-defined properties remain unreachable after it.
-
-That PR is an **input to be reviewed, not a settled foundation.** The plan phase must evaluate it
-on its merits before deciding how this work relates to it, and specifically must reach a position
-on each of the following, all of which are visible in the PR as it stands:
-
-1. **Scope versus claim.** It closes #34540 while delivering only limb (b). Decide whether it
-   should close the issue at all.
-2. **An overloaded property name.** It introduces `title` and `modDate` on the asset-pointing
-   view meaning the *binary file's* title and date. Everywhere else in the delivery API those
-   names mean the *content item's* title and date. A customer asking an Image field for `title`
-   would get the file's. This ambiguity originates in that PR, independently of this feature, and
-   is what FR-009 exists to resolve.
-3. **How the returned type is chosen.** It selects which description to apply by inspecting the
-   runtime shape of the value being resolved. Assess how robust that is; it is also the exact
-   decision point this feature must change in order to satisfy FR-003.
-4. **Cost per property.** Its resolution of each binary property re-derives the asset's binary
-   metadata from scratch, with no reuse across the properties of the same asset in the same
-   request. Selecting all twelve therefore repeats that derivation twelve times per asset, per row
-   of a result set. Quantify it against FR-011 and decide whether reuse is required.
-5. **A hardcoded assumption.** It assumes the binary-carrying property of an image-style asset is
-   always named `asset`. Confirm that holds for every customer-extended image-style type.
-6. **Unfinished verification.** Its own test plan leaves two items unchecked: a manual end-to-end
-   check through the GraphQL console, and API-level test coverage for these queries. Treat both as
-   outstanding.
-
-**Structural tension**: that PR attaches the twelve binary properties to the single fixed asset
-view. This feature replaces that fixed view with per-type descriptions, which is how FR-001 and
-FR-003 get satisfied — so those twelve properties do not come along, and the queries #35363
-enables would stop working unless carried over.
+That second case is decisive, and it is why FR-012 keeps the current view intact and FR-009a
+routes the real value through a new surface instead. A self-hosted customer who has not upgraded
+would not have seen a failure; they would have seen different data.
 
 ### Depth of the type hierarchy
 
@@ -347,8 +343,10 @@ Recorded as FR-013. The reasoning, verified rather than assumed:
   binary carrying all twelve of those properties plus a focal point — verified against a running
   instance. The client still descends exactly one level, just to the correctly named property. The
   saving the PR offers is gone.
-- **Its deliverable would have to be rebuilt anyway.** The twelve properties are attached to the
-  view this feature removes.
+- **Its deliverable lands on a view that is now on a retirement path.** The twelve properties
+  would be attached to the current asset view, which FR-012a marks as superseded and FR-012b
+  schedules for removal — so the work would be spent extending a surface already being retired,
+  and would have to be redone on the replacement.
 - **It is not in a mergeable state.** Its automated checks have been failing since it was last
   updated, on a check in its own area, tripped by its own change and left unaddressed. It carries
   no review. See FR-014: the check in question is itself wrong and must be corrected regardless.
@@ -377,3 +375,7 @@ stage's design depends on the shape this one establishes.
   it stays on issue #34540, which remains open after this feature ships.
 - "Single request" in SC-002 means one GraphQL query from the client's perspective; it makes no
   claim about server-side work.
+- The current asset view keeps its exact present behavior for the whole of its remaining life,
+  including the two synthesized property values it derives rather than stores. Correcting them
+  would be a silent change to a live contract, which FR-009a forbids; the corrected values are
+  reached through the new surface instead.
