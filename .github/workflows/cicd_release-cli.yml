@@ -192,8 +192,12 @@ jobs:
       # Publish it explicitly here rather than assuming it survives the JReleaser
       # Artifactory upload. The maven-job above restored maven-repo into ~/.m2,
       # so the runner jar installed by the Quarkus build is available.
+      # Run even if the legacy JReleaser/Artifactory step fails (#37567): S3 is
+      # now the authoritative location for the runner jar. Skipped for dry-runs so
+      # a workflow_dispatch with dry-run=true never writes to the public repo. The
+      # step fails below if the restored maven-repo does not contain the jar.
       - name: 'Publish CLI runner jar to S3'
-        if: always()
+        if: always() && github.event.inputs.dry-run != 'true'
         env:
           MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
           MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
