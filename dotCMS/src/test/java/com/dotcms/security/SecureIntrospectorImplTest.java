@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import com.dotmarketing.util.Config;
 import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 import org.junit.Test;
 
@@ -164,6 +165,41 @@ public class SecureIntrospectorImplTest {
             assertTrue("velocity.properties introspector.restrict.classes must enumerate "
                     + expected, configuredClasses.contains(expected)
                     || restrictedClasses.contains(expected));
+        }
+    }
+
+    /**
+     * The operator-configurable layer denies a whole package by prefix (so deployments can push
+     * the sandbox toward a stricter stance without a code change), while an allow-list entry
+     * carves a specific class back out. Defaults are empty, so this only takes effect when
+     * configured.
+     */
+    @Test
+    public void configurable_packages_are_denied_with_allowlist_carveout() {
+        final SecureIntrospectorImpl sandbox = introspector();
+        try {
+            // Without configuration, an ordinary type is allowed.
+            assertAllowed(java.time.LocalDate.class, "getYear");
+
+            // Configuring a restricted package prefix denies the package and its subpackages.
+            Config.setProperty(SecureIntrospectorImpl.RESTRICT_PACKAGES_PROP, "java.time");
+            assertFalse("configured restricted package must be denied",
+                    sandbox.checkObjectExecutePermission(java.time.LocalDate.class, "getYear"));
+            assertFalse("subpackage of a configured restricted package must be denied (prefix match)",
+                    sandbox.checkObjectExecutePermission(java.time.chrono.IsoChronology.class, "getId"));
+
+            // An allow-list entry carves one class back out of the configurable denial.
+            Config.setProperty(SecureIntrospectorImpl.ALLOW_CLASSES_PROP, "java.time.LocalDate");
+            assertTrue("allow-listed class must be permitted despite the package restriction",
+                    sandbox.checkObjectExecutePermission(java.time.LocalDate.class, "getYear"));
+            assertFalse("a non-allow-listed class in the restricted package stays denied",
+                    sandbox.checkObjectExecutePermission(java.time.chrono.IsoChronology.class, "getId"));
+
+            // The configurable layer never overrides the code-level floor.
+            assertDenied(File.class, "getCanonicalPath");
+        } finally {
+            Config.setProperty(SecureIntrospectorImpl.RESTRICT_PACKAGES_PROP, "");
+            Config.setProperty(SecureIntrospectorImpl.ALLOW_CLASSES_PROP, "");
         }
     }
 }
