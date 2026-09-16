@@ -451,6 +451,26 @@ path in the first; confirm the second is refused with a readable reason and no j
 - **FR-035**: The system MUST emit a distinguishable completion signal type, so a client can tell
   this run's completion from any other background work.
 
+- **FR-035a**: The system MUST announce, **to every author who may see a folder**, that the folder
+  has entered and left a delete. This is a different signal from FR-031 and does not replace or
+  widen it: FR-031 carries the *outcome* — counts, per-path reasons — and stays scoped to the
+  submitter, because how a run went is the submitter's business. The announcement carries only that
+  a folder is being deleted, and later that it no longer is, which is everyone's business, since
+  the alternative is an author working inside a folder that is being destroyed under them.
+  - **Per folder, not per run.** A run covers folders whose audiences differ; one announcement
+    listing all of them cannot be filtered per folder, and sending the union would tell an author
+    about a folder they may not see. The existing folder-deleted event is already per folder, and
+    this matches it.
+  - **The audience for the "left" announcement MUST be established while the folder still exists.**
+    It is derived from who may read the folder, and by the time the delete ends there is nothing
+    left to derive it from.
+  - **It does not make discovery redundant** (C-012). A run that dies never announces its end, so an
+    announcement stream alone leaves folders marked indefinitely. The client's own establishment of
+    the in-flight set on load is what recovers from that, and remains required.
+- **FR-035b**: Announcements MUST be filtered by the recipient's own rights, not by whether they hold
+  a back-end role. An author who may not read a folder MUST NOT receive its announcements at all —
+  not receive and discard them.
+
 #### Contract and documentation
 
 - **FR-036**: The published API description MUST state that the operation is asynchronous, that the
@@ -533,6 +553,16 @@ requirement above from the consumer's point of view, so the boundary is explicit
   only the ones that genuinely mean *in progress*. Stated here rather than left to discovery: the
   state is present in the response and the filter is one line, but the failure it prevents surfaces
   in QA as "sometimes folders stay marked forever", which reads as a client defect and is not one.
+- **C-012**: **A folder's entry into and exit from a delete is announced to every author who may see
+  it** (FR-035a, FR-035b), not only to the submitter. A client can therefore mark a folder that
+  another author started deleting *after* the client loaded, which reading the in-flight listing once
+  cannot tell it. The announcement carries the folder and nothing about how the run is going;
+  outcomes stay with the submitter (C-009).
+
+  **It is not a replacement for reading that listing.** A run that dies never announces its exit, so
+  a client relying on announcements alone would mark folders indefinitely. Establishing the in-flight
+  set on load stays required — it moves from being the only mechanism to being the one that recovers
+  when an announcement never arrives. Both, not either.
 
 **Explicitly the client's own business, not specified here**: the confirmation dialog and its
 wording, which permissions hide or disable the action, whether the grid and the sidebar tree refresh
@@ -650,13 +680,6 @@ built a second time**.
   `_bulkdelete` was proposed on 2026-08-24 and did not survive review: the reasoning is that
   designing a synchronous endpoint around an expected proxy timeout is an async design without the
   machinery. Not relitigated here.
-- **D-015 — Folder paths recorded with a run stay readable by any back-end user** (FR-005a). Not an
-  independent judgement: the client half had already answered it twice without either side noticing
-  it was the same question. Restoring in-flight marking after a reload needs those paths; showing a
-  folder *another* author is deleting needs another author's. Filtering the listings by submitter
-  removes the second outright, and replacing paths with an opaque handle removes both. So the only
-  answer consistent with the other half is to leave the listing as it is, and to say plainly that
-  this is a trade rather than an oversight. *(Questionnaire B14 = A, forced by F1 and F9.)*
 - **D-002 — The outcome field names follow what shipped, not what the issue text says.** #37063's
   description writes `successCount` / `failCount`. What is actually in the product, from bulk upload
   and bulk refresh, is `total`, `processed`, `successCount`, `failedCount`, `skippedCount`,
@@ -744,6 +767,24 @@ built a second time**.
   The honest consequence, stated in FR-009b: a folder reported as succeeded is true of the data and
   not of the process. *(Questionnaire B2 = C, which by construction closes B3 — no stricter rule is
   adopted, so there is nowhere to put it.)*
+- **D-015 — Folder paths recorded with a run stay readable by any back-end user** (FR-005a). Not an
+  independent judgement: the client half had already answered it twice without either side noticing
+  it was the same question. Restoring in-flight marking after a reload needs those paths; showing a
+  folder *another* author is deleting needs another author's. Filtering the listings by submitter
+  removes the second outright, and replacing paths with an opaque handle removes both. So the only
+  answer consistent with the other half is to leave the listing as it is, and to say plainly that
+  this is a trade rather than an oversight. *(Questionnaire B14 = A, forced by F1 and F9.)*
+- **D-016 — A folder's delete is announced to everyone who may see the folder** (FR-035a, C-012).
+  Asked by the client half during joint review, and taken. The reason it is cheap is that the
+  mechanism is not new and is not even new *to this method*: deleting a folder already announces
+  itself to every author whose roles may read it, excluding the one who did it, and the delivery
+  layer already evaluates that audience per recipient rather than trusting the client to filter.
+  Volume is not an argument against it either — the existing announcement fires once per folder
+  *inside the recursion*, so a tree of five hundred subfolders already emits five hundred of them,
+  against which a start and an end per selected folder is noise. What this decision adds is a
+  **start**, an explicit **end**, and the acceptance that both are scoped by who may read the folder
+  rather than by who submitted the run. FR-031's scoping is untouched: outcomes stay private, the
+  fact that a folder is busy does not.
 
 ---
 
@@ -779,6 +820,12 @@ explicitly rather than meet them during implementation.
     an author reading them a day later; an identifier does not. If both are genuinely needed, the
     plan should carry the second alongside the results rather than widen a type that bulk upload,
     bulk refresh, folder copy and folder move all share (D-012).
+- **Capturing an announcement's audience before the folder is gone** (FR-035a). The audience for a
+  folder's "delete finished" announcement is derived from who may read that folder, and the folder
+  does not exist by then. It has to be resolved at the start and carried, which means it is part of
+  what the run records rather than something computed at the end. The plan must say where it lives
+  and what happens when it cannot be resolved — an announcement nobody receives is indistinguishable
+  from one never sent, and the client's marking stays until it re-establishes state on load.
 - **Signalling liveness from outside a blocking call** (FR-024a). The delete does not return until a
   folder is gone, so nothing inside the run can report progress. Whatever mechanism is chosen has to
   live beside the work rather than in it, and the plan must say where it lives, what it updates, and

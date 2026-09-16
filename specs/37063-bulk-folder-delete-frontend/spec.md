@@ -21,7 +21,7 @@ specification covers the browser-side half of fixing that.
 
 **This specification covers the client only.** The server half is delivered separately by another
 developer and is specified in `specs/37063-bulk-folder-delete-backend/spec.md`. The two halves meet
-at that document's *Contract Consumed by the Client* (C-001 … C-010), restated here from the
+at that document's *Contract Consumed by the Client* (C-001 … C-012), restated here from the
 consumer's side in §Contract Consumed. Nothing about server behaviour is re-specified here.
 
 **Deleting a folder deletes everything inside it, permanently, and there is no undo.** That single
@@ -60,7 +60,7 @@ answer about who may read those paths (backend D-015).
 - Q: The author selects six folders and may delete only four — does Delete act on four, or on six? → A: On six. The client does not filter a selection by its own reading of rights; every selected folder is submitted, and the two the server refuses come back as per-folder permission failures in the report. The action is still withheld when the author can delete none of them.
 - Q: Does a running delete block other Content Drive actions? → A: No. Delete follows the existing guard unchanged — it refuses a repeat of the same delete on the same folders, and nothing else. Unrelated actions and deletes of other folders run alongside it; overlapping subtrees are refused by the server, not by the client.
 - Q: The report names the first few failures and counts the rest — how does the author reach the rest? → A: The report links to the durable record, so the overflow count is followed to the full per-folder list rather than being a dead end.
-- Q: A run started by another author sends this client no completion signal, so how does its marking clear? → A: In-flight runs are discovered once when Content Drive opens, and each discovered run is then observed individually until it ends. No repeated polling. A run started by another author *after* the page opened is not marked until the next load — an accepted limitation, not an oversight (see FR-020a).
+- Q: A run started by another author sends this client no completion signal, so how does its marking clear? → A: In-flight runs are established once when Content Drive opens, and kept current from the announcements the server makes as folders enter and leave a delete. No repeated polling. *(Revised 2026-09-16: this was first answered with an accepted limitation — a run started after the page opened would not be marked until the next load. It was put to the backend half as a question, that half took the change, and the limitation is gone. See FR-020a, FR-020b and backend D-016.)*
 
 ---
 
@@ -151,8 +151,11 @@ the folder is still marked and still inert.
 3. **Given** a run started by **another** author was already in flight when this author opened Content
    Drive, **When** this author browses the same site, **Then** those folders are marked for them too.
 3a. **Given** a run started by another author began **after** this author opened Content Drive,
-   **When** this author browses the same site, **Then** those folders are not marked until the page is
-   opened again — the limitation FR-020a states, and the behaviour Content Drive has today.
+   **When** it begins, **Then** those folders are marked for this author without a reload, from the
+   announcement the server makes (FR-020a).
+3b. **Given** a run another author started ends without announcing it — the process behind it died —
+   **When** this author next opens Content Drive, **Then** the marking is gone, because the in-flight
+   set is established again on load rather than inherited from what the client was told (FR-020b).
 4. **Given** the marking was restored from server state, **When** the run ends, **Then** the marking
    clears without the author reloading again.
 5. **Given** no run is in flight, **When** Content Drive loads, **Then** nothing is marked and the
@@ -392,13 +395,17 @@ unavailable; as an author colliding with a running delete, confirm the refusal e
 - **FR-020**: Marking restored this way MUST cover runs submitted by **any** author, not only the
   current one, so a folder someone else is deleting is not presented as usable.
 - **FR-020a**: The client MUST establish the in-flight set **once** when Content Drive opens, and MUST
-  then observe each discovered run individually until it ends. It MUST NOT poll for the state of runs
-  it already knows about. The consequence is a stated limitation: a run started by another author
-  *after* this page opened is not marked here until the page is opened again. That window is one
-  page-load long, and inside it the behaviour is exactly today's — the folder looks ordinary, because
-  today nothing marks it at all. Closing that window needs the server to announce a run's start and
-  end to everyone rather than to its submitter alone, which is a change to the other half and is
-  **not** assumed by this specification.
+  then keep it current from the announcements the server makes as folders enter and leave a delete
+  (C-012). It MUST NOT poll for the state of runs it already knows about. A folder another author
+  starts deleting *after* this page opened is therefore marked here too, without a reload — the
+  window this requirement previously accepted as a limitation is closed by the other half taking
+  that change (backend D-016).
+- **FR-020b**: Establishing the set on load MUST NOT be dropped in favour of announcements alone. A
+  run that dies never announces that it ended, so a client listening only to announcements would
+  mark a folder indefinitely with nothing to correct it. The two mechanisms answer different
+  questions — the listing says what is in flight *now*, announcements say what changed *since* — and
+  the client needs both. Re-establishing the set on load is what recovers from an announcement that
+  never arrived.
 - **FR-021**: Marking MUST clear when the run behind it ends, without the author reloading. For a run
   this author submitted, the completion the server pushes is what clears it. For a run discovered
   under FR-020a, the individual observation of that run is what clears it. A folder MUST NOT remain
@@ -478,7 +485,7 @@ unavailable; as an author colliding with a running delete, confirm the refusal e
 ## Contract Consumed *(mandatory — the boundary with the server half)*
 
 Restated from `specs/37063-bulk-folder-delete-backend/spec.md` §Contract Consumed by the Client
-(C-001 … C-010), from this side. Where this feature depends on something, it says so here rather than
+(C-001 … C-012), from this side. Where this feature depends on something, it says so here rather than
 assuming it.
 
 - **One call, one handle** (C-001, C-002). The client sends the selected folder paths as one ordinary
@@ -516,6 +523,17 @@ assuming it.
   half's side of it: filter on each run's state and keep only what is genuinely in progress. Recorded
   here because the symptom — "sometimes folders stay marked forever" — reads as a client defect and
   would be diagnosed as one.
+- **A folder's entry into and exit from a delete is announced to every author who may see it**
+  (C-012). Not only to the submitter, so this client learns about a run another author started after
+  it loaded — which reading the in-flight list once cannot tell it. The announcement says a folder is
+  busy and later that it is not; it says nothing about how the run is going, and outcomes stay with
+  the submitter (C-009). The server filters by the recipient's own rights, so a folder this author
+  may not see produces no announcement for them at all (backend FR-035b) — this half does no
+  filtering of its own and must not be written as though it does.
+
+  **It does not replace reading the list** (FR-020b). A run whose process dies never announces its
+  exit, so announcements alone would mark a folder forever. The load-time read is what recovers from
+  that.
 - **In-flight runs, and the folders they are working on, are readable** (backend FR-005a / D-015).
   FR-019 and FR-020 rest entirely on this. It is the one place where this half's requirements changed
   the other half's: the server records folder paths with a run and leaves the in-flight listing
@@ -541,8 +559,9 @@ and the durable record's lifetime.
 - **SC-003**: Across reloads taken at arbitrary points during a run, a folder being deleted is never
   presented as an ordinary, usable folder — in the listing or in the sidebar tree.
 - **SC-004**: A folder another author is deleting is marked for every author who can see it, in 100% of
-  cases where that run was already in flight when they opened Content Drive. Runs starting later are
-  out of scope by FR-020a and are measured as today's behaviour, not as a regression.
+  cases — whether the run was already in flight when they opened Content Drive or started afterwards.
+  A folder no author may see is marked for nobody who may not see it: the filtering is the server's
+  and is measured as such (backend FR-035b).
 - **SC-005**: 100% of folders the server accepted are accounted for in the report — deleted, failed
   with a reason, or skipped with which kind of skip. Zero are silently dropped.
 - **SC-006**: The counts the author is shown match the server's record in 100% of runs, including
@@ -731,11 +750,14 @@ none is reopened by this document.
 - **D-013 — The confirmation is a plain one with explicit wording** *(F15 = A)*. Consistent with the
   shipped single-folder delete. The wording carries the weight, and FR-010 removes the inaccurate claim
   the original issue text proposed putting in it.
-- **D-015 — In-flight runs are discovered once and then observed individually** *(clarification,
-  2026-09-16)*. Recorded in full under §Clarifications and governed by FR-020a. Noted here because it
-  is the one decision in this document that was not settled by the questionnaire, and because it
-  carries an accepted limitation — a run another author starts after this page opened is not marked
-  here — that a reviewer should see beside the others rather than discover in a requirement.
+- **D-015 — In-flight state is established on load and kept current by announcement** *(clarification
+  2026-09-16, revised after the backend took the broadcast)*. Governed by FR-020a and FR-020b. This
+  started as an accepted limitation — a run another author began after this page opened would not be
+  marked until the next load — and was raised to the other half as a question rather than assumed.
+  That half took it (backend D-016, C-012), and the limitation is gone. **What survives the change is
+  the load-time read**, and it is worth saying why it was not dropped as redundant: a run whose
+  process dies never announces that it ended, so announcements alone would mark a folder forever. The
+  two mechanisms cover different failures and the client keeps both.
 - **D-014 — Progress renders as an indeterminate indicator** *(backend B18, C-006)*. Not a client
   preference: the server counts completed top-level folders and nothing finer, so a bar would sit at 0%
   for the whole of the folder that matters and read as a hung feature.
