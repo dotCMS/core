@@ -2135,6 +2135,20 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
+        it('should count a single file in the singular', () => {
+            // "Uploading 1 files" is the price of dropping the "(s)" hedge, so the caller picks
+            // the wording -- it is the only place that knows how many were chosen.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ labelKey: 'content-drive.upload.indicator.one' })
+            );
+        });
+
         it('should describe itself as an upload, not as an action applied to a site', () => {
             // Without a label of its own the run falls to the workflow sentence, which reads
             // "Applying Upload to demo.dotcms.com" — phrased for an action applied TO content,
@@ -2146,7 +2160,9 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             expect(store.startExternalRun).toHaveBeenCalledWith(
-                expect.objectContaining({ labelKey: 'content-drive.upload.indicator' })
+                expect.objectContaining({
+                    labelKey: expect.stringContaining('content-drive.upload.indicator')
+                })
             );
         });
 
@@ -2301,8 +2317,14 @@ describe('DotContentDriveShellComponent', () => {
 
             // The advisory toast this used to assert is gone: the status it sat beside says
             // "in the background" itself, and both on screen announced one upload twice.
+            // Matched as a prefix: what this protects is that one file is still announced as
+            // backgrounded, not which noun the sentence uses. The wording does vary by count --
+            // "1 file" against "3 files" -- and pinning the exact key here would fail for the
+            // grammar while the behaviour under test was perfectly intact.
             expect(store.startExternalRun).toHaveBeenCalledWith(
-                expect.objectContaining({ labelKey: 'content-drive.upload.indicator.background' })
+                expect.objectContaining({
+                    labelKey: expect.stringContaining('content-drive.upload.indicator.background')
+                })
             );
         });
 
@@ -2891,7 +2913,9 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             expect(store.startExternalRun).toHaveBeenCalledWith(
-                expect.objectContaining({ labelKey: 'content-drive.upload.indicator.background' })
+                expect.objectContaining({
+                    labelKey: expect.stringContaining('content-drive.upload.indicator.background')
+                })
             );
             // Still nothing that names it a success: the files do not exist yet.
             expect(messageService.add).not.toHaveBeenCalledWith(

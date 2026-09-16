@@ -115,6 +115,25 @@ import {
 } from '../utils/functions';
 import { refuseOverCeiling } from '../utils/upload-ceilings';
 import { describeUploadFailures } from '../utils/upload-failures';
+/**
+ * Which wording an upload run names itself with.
+ *
+ * The messages spell "file" or "files" out instead of hedging with "file(s)", so the count has to
+ * choose between them, and only the caller knows the count. Nothing here names a destination: the
+ * drive already shows where the author is, and the sentence was long enough that the part they
+ * could read at a glance was getting lost behind the part they could not.
+ *
+ * @param {number} count - How many files the batch carries
+ * @param {{ backgrounded?: boolean }} [options] - Whether the batch is the server's now
+ * @returns {string} the message key for that run
+ */
+const uploadIndicatorKey = (count: number, options?: { backgrounded?: boolean }): string => {
+    const base = options?.backgrounded
+        ? 'content-drive.upload.indicator.background'
+        : 'content-drive.upload.indicator';
+
+    return count === 1 ? `${base}.one` : base;
+};
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -1545,7 +1564,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
             // Its own wording rather than the workflow sentence. Without this the run reads
             // "Applying Upload to demo.dotcms.com" — a phrasing for an action applied TO content,
             // which is not what putting files INTO a place is.
-            labelKey: 'content-drive.upload.indicator',
+            //
+            // The caller picks singular or plural because it is the only place that knows how
+            // many files were chosen. The messages spell the noun out rather than hedging with
+            // "file(s)", which is what the count is for.
+            labelKey: uploadIndicatorKey(files.length),
             total: files.length,
             targetLabel: this.uploadTargetLabel(hostFolder),
             // Empty on purpose. The indicator speaks only for runs with nothing to mark, since a
@@ -1629,7 +1652,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
                     const backgroundRunId = this.#store.startExternalRun({
                         operation: `${UPLOAD_BATCH_OPERATION}:${event.handle.jobId}`,
                         actionName: this.#dotMessageService.get('content-drive.upload'),
-                        labelKey: 'content-drive.upload.indicator.background',
+                        labelKey: uploadIndicatorKey(submitted, { backgrounded: true }),
                         total: submitted,
                         targetLabel: this.uploadTargetLabel(hostFolder),
                         targets: []

@@ -43,19 +43,14 @@ describe('DotStatusToastComponent', () => {
         expect(box()?.getAttribute('data-pc-severity') ?? box()?.className).toContain('success');
     });
 
-    it('should offer a way to dismiss it', () => {
+    it('should render nothing a caller can close by hand', () => {
+        // A status is not a message the reader has to deal with. It reports something already
+        // under way and goes when that finishes, so a close button asks the reader to tidy up
+        // after a thing they did not start and cannot affect -- and the row of controls it sat in
+        // was most of what made this feel like a panel rather than a status.
         raise({ severity: 'success', summary: 'Uploaded' });
 
-        expect(spectator.query('[data-testid="status-toast-close"]')).toBeTruthy();
-    });
-
-    it('should clear the message when dismissed', () => {
-        raise({ severity: 'success', summary: 'Uploaded' });
-
-        spectator.click('[data-testid="status-toast-close"]');
-        spectator.detectChanges();
-
-        expect(spectator.query('[data-testid="status-toast-summary"]')).toBeNull();
+        expect(spectator.query('[data-testid="status-toast-close"]')).toBeNull();
     });
 
     it('should ignore a detail line rather than growing to fit it', () => {

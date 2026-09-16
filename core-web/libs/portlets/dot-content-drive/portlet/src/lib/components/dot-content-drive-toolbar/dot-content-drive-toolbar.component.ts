@@ -401,7 +401,11 @@ export class DotContentDriveToolbarComponent {
                 severity: 'info',
                 summary: label,
                 icon: 'pi pi-spin pi-spinner',
-                sticky: true
+                sticky: true,
+                // PrimeNG reads this off the message, not the outlet, and defaults to closable.
+                // A status is not the reader's to dismiss: it reports work already under way and
+                // clears itself when that work settles.
+                closable: false
             });
         });
     });

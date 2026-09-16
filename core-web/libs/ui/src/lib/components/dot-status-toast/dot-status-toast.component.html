@@ -1,7 +1,9 @@
 <p-toast [position]="$position()" [key]="$key()" data-testid="dot-status-toast">
     <!-- Class names and `data-pc-section` mirror PrimeNG's own message template, the way dot-toast
          does, so Lara keeps colouring this by severity. What differs is what is rendered: an icon,
-         one line, and a dismiss — no detail slot, because a status that needs a paragraph is a
+         and one line. No dismiss: a status reports something already under way and goes when
+         that finishes, so a close button would ask the reader to tidy up after a thing they
+         did not start. No detail slot either, because a status that needs a paragraph is a
          report and belongs in the wider outlet. -->
     <ng-template let-message #message>
         <span
@@ -25,14 +27,5 @@
                 data-testid="status-toast-summary"
                 [innerHtml]="message.summary"></div>
         </div>
-
-        <button
-            type="button"
-            class="p-toast-close-button"
-            data-testid="status-toast-close"
-            [attr.aria-label]="'Close' | dm"
-            (click)="onClose()">
-            <i class="pi pi-times"></i>
-        </button>
     </ng-template>
 </p-toast>

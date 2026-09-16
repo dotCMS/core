@@ -893,8 +893,16 @@ describe('DotContentDriveToolbarComponent', () => {
 
             const [message] = statusMessages();
 
+            // `closable: false` belongs on the message because that is where PrimeNG looks for
+            // it — its template reads `message?.closable !== false` and the outlet has no input
+            // that can set it. Sticky for the same reason the run owns the toast's life: it ends
+            // when the work ends, not on a timer that could blank it mid-upload.
             expect(message).toEqual(
-                expect.objectContaining({ sticky: true, icon: 'pi pi-spin pi-spinner' })
+                expect.objectContaining({
+                    sticky: true,
+                    closable: false,
+                    icon: 'pi pi-spin pi-spinner'
+                })
             );
         });
 
