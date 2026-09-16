@@ -180,11 +180,14 @@ public class BrowserAPIImplTest {
      * the separator turned "COVID-19" into "COVID19" — a word no document contains — so a title
      * findable in All Fields vanished from Title scope. The analyzer stores "covid" and "19", so
      * the prefix queries must be split the same way.
+     *
+     * <p>Only the first word carries {@code title_dotraw} — see
+     * {@code buildTitleScopedQuery_multiWordTerm_onlyFirstWordCarriesTitleDotraw}.</p>
      */
     @Test
     public void buildTitleScopedQuery_hyphenatedTerm_splitsIntoMandatoryWordPrefixes() {
         assertEquals(
-                "+(title:COVID* title_dotraw:COVID*) +(title:19* title_dotraw:19*)",
+                "+(title:COVID* title_dotraw:COVID*) +title:19*",
                 BrowserAPIImpl.buildTitleScopedQuery("COVID-19"));
     }
 
@@ -192,7 +195,7 @@ public class BrowserAPIImplTest {
     @Test
     public void buildTitleScopedQuery_slashedTerm_splitsIntoMandatoryWordPrefixes() {
         assertEquals(
-                "+(title:input* title_dotraw:input*) +(title:output* title_dotraw:output*)",
+                "+(title:input* title_dotraw:input*) +title:output*",
                 BrowserAPIImpl.buildTitleScopedQuery("input/output"));
     }
 
@@ -242,8 +245,22 @@ public class BrowserAPIImplTest {
     @Test
     public void buildTitleScopedQuery_multiWordTerm_oneMandatoryClausePerWord() {
         assertEquals(
-                "+(title:mixed* title_dotraw:mixed*) +(title:case* title_dotraw:case*)",
+                "+(title:mixed* title_dotraw:mixed*) +title:case*",
                 BrowserAPIImpl.buildTitleScopedQuery("mixed case"));
+    }
+
+    /**
+     * {@code title_dotraw} is the WHOLE raw title as one keyword term, so a prefix match against
+     * it can only ever succeed for the very first word of the search term — no word after it can
+     * be a prefix of the full title string. Carrying it on every word (the pre-#37554-review
+     * shape) paid the cost of a prefix search over a near-one-term-per-document keyword
+     * dictionary on every word, for a clause that could only ever contribute on the first.
+     */
+    @Test
+    public void buildTitleScopedQuery_multiWordTerm_onlyFirstWordCarriesTitleDotraw() {
+        assertEquals(
+                "+(title:three* title_dotraw:three*) +title:word* +title:title*",
+                BrowserAPIImpl.buildTitleScopedQuery("three word title"));
     }
 
     /**
@@ -273,13 +290,13 @@ public class BrowserAPIImplTest {
     @Test
     public void buildTitleScopedQuery_rangeOperatorChars_splitAsSeparators() {
         assertEquals(
-                "+(title:Sales* title_dotraw:Sales*) +(title:2024* title_dotraw:2024*)",
+                "+(title:Sales* title_dotraw:Sales*) +title:2024*",
                 BrowserAPIImpl.buildTitleScopedQuery("Sales > 2024"));
         assertEquals(
-                "+(title:a* title_dotraw:a*) +(title:b* title_dotraw:b*)",
+                "+(title:a* title_dotraw:a*) +title:b*",
                 BrowserAPIImpl.buildTitleScopedQuery("a<b"));
         assertEquals(
-                "+(title:x* title_dotraw:x*) +(title:y* title_dotraw:y*)",
+                "+(title:x* title_dotraw:x*) +title:y*",
                 BrowserAPIImpl.buildTitleScopedQuery("x=y"));
     }
 

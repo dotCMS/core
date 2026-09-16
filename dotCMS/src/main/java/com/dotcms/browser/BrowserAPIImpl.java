@@ -1478,6 +1478,12 @@ public class BrowserAPIImpl implements BrowserAPI {
      * user can see. Adding one here would only be another place for a term to be interpolated
      * badly.</p>
      *
+     * <p><b>{@code title_dotraw} rides only on the first word</b> (issue #37554 review, SC-003
+     * follow-up). It is the whole raw title as one keyword term, so a prefix match against it can
+     * only ever succeed when the fragment is a prefix of the ENTIRE title — true, at best, for the
+     * first word of a multi-word search term, never for the ones after it. Every later word still
+     * gets its {@code title} check alone.</p>
+     *
      * @param filter The raw, unescaped term the user typed.
      *
      * @return The Lucene clause for a title-only search, or {@link #MATCH_NOTHING_CLAUSE} when the
@@ -1485,6 +1491,7 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     static String buildTitleScopedQuery(final String filter) {
         final StringBuilder query = new StringBuilder();
+        boolean firstFragment = true;
         for (final String token : filter.split(TITLE_SCOPE_SPLIT_REGEX)) {
             // SPLIT the query-syntax characters that are word separators; DROP the wildcard ones.
             //
@@ -1507,8 +1514,20 @@ public class BrowserAPIImpl implements BrowserAPI {
             // cases rely on. Either way, a fragment with no reserved characters left in it
             // cannot be query syntax.
             for (final String value : splitQuerySyntax(token)) {
-                query.append("+(title:").append(value).append("* title_dotraw:")
-                        .append(value).append("*) ");
+                if (firstFragment) {
+                    // title_dotraw is the WHOLE raw title as one keyword term (issue #37554
+                    // review, SC-003 performance follow-up), so a prefix match against it can
+                    // only ever succeed for the very first word of the search term — no later
+                    // word can be a prefix of the full title string. Carrying it on every word
+                    // paid for nothing beyond the first: a prefix search against title_dotraw
+                    // walks a keyword dictionary with close to one term per document, against
+                    // title's much smaller per-word vocabulary.
+                    query.append("+(title:").append(value).append("* title_dotraw:")
+                            .append(value).append("*) ");
+                    firstFragment = false;
+                } else {
+                    query.append("+title:").append(value).append("* ");
+                }
             }
         }
 
