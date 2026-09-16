@@ -91,6 +91,21 @@ const initialState: DotExperimentsPanelState = {
  * does in the portlet through its resolvers. Both lived here for a while and were the only
  * duplicated state in the feature.
  *
+ * **In a `data-access` lib, which reads odd for view state, and is not a filing mistake.** This
+ * file is the contract between two portlets: the UVE shell provides it and injects it, its
+ * toolbar injects it, and the experiments screens decide they are in a panel by its presence. Both
+ * sides need it at compile time, so it cannot live in either — it has to be a leaf they share.
+ *
+ * `@dotcms/portlets/dot-experiments/portlet`, the obvious home, is the one lib that cannot hold
+ * it. `edit-ema` reaches that lib only through a dynamic `import()`, so Nx marks it lazy-loaded
+ * and a static import of it fails the build outright: *"Static imports of lazy-loaded libraries
+ * are forbidden."* And past that rule the split would be gone anyway — the whole portlet lib,
+ * three screens and chart.js, would land in the editor's eager bundle, which is the cost FR-037
+ * exists to avoid.
+ *
+ * So it sits in the only lib both sides already import statically. The lib is named for what it
+ * mostly holds; this file is the boundary.
+ *
  * **Provided by the route**, beside `UVEStore`, not by the shell component. The shell is destroyed
  * and rebuilt when the editor leaves for a variant — `/edit-page` declares `reuseRoute: false` and
  * route data is inherited — so a component-scoped store loses the panel's place on the way out and
@@ -159,7 +174,18 @@ export const DotExperimentsPanelStore = signalStore(
                         return;
                     }
 
+                    const firstPageSeen = knownPageId === null;
+
                     knownPageId = currentPageId;
+
+                    // The first identifier this store ever sees is the page it is already on, not
+                    // a move to another one — a shell built for a page still loading hands over a
+                    // null, and re-scoping needs a page to re-scope *from*. Adopt it and stop.
+                    // Reacting to it discarded whatever the panel had just been pointed at, which
+                    // is how a return from a variant landed on the list.
+                    if (firstPageSeen) {
+                        return;
+                    }
 
                     // `isOpen` is deliberately untouched: a page change re-scopes the panel, it
                     // neither closes one the editor is using nor reopens one they dismissed

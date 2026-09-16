@@ -56,6 +56,55 @@ describe('DotExperimentsPanelStore', () => {
         spectator.flushEffects();
     };
 
+    /**
+     * The trip that begins in the full-screen portlet: Preview from a Variants card navigates the
+     * editor into the UVE, so the shell — and this store — are built from nothing, with the page
+     * still unloaded. The panel then has to open on the experiment the editor came from, and the
+     * page arriving underneath it must not be read as a page *change*.
+     */
+    describe('returning from a variant that started in the portlet', () => {
+        it('should keep the experiment when the page resolves after the return', () => {
+            // The shell calls setContext in ngOnInit, before the page has loaded.
+            initStore(null);
+
+            pageId.set(PAGE_A);
+            spectator.flushEffects();
+
+            store.returnFromVariant('exp-1');
+
+            // The way back reloads the page, which blanks the asset while it is in flight.
+            pageId.set(null);
+            spectator.flushEffects();
+            pageId.set(PAGE_A);
+            spectator.flushEffects();
+
+            expect(store.isOpen()).toBe(true);
+            expect(store.view()).toBe('configure');
+            expect(store.experimentId()).toBe('exp-1');
+        });
+
+        /**
+         * The same trip, with the page arriving *after* the panel has been pointed somewhere.
+         *
+         * Re-scoping means "the editor moved to another page", and that needs a page to have moved
+         * *from*. A store built on an unloaded shell has none, so the first identifier it ever sees
+         * is the page it is already on — adopting it, not a change to react to. Reading it as a
+         * change threw away the destination the return had just set and dropped the panel on the
+         * list.
+         */
+        it('should adopt the first page it sees rather than re-scope to it', () => {
+            initStore(null);
+
+            store.returnFromVariant('exp-1');
+
+            pageId.set(PAGE_A);
+            spectator.flushEffects();
+
+            expect(store.view()).toBe('configure');
+            expect(store.experimentId()).toBe('exp-1');
+        });
+    });
+
     describe('initial state', () => {
         it('starts closed, on the list, with no experiment', () => {
             initStore();
@@ -265,6 +314,8 @@ describe('DotExperimentsPanelStore', () => {
 
     describe('returnFromVariant()', () => {
         it('should land on that experiment configuration, at the Variants card', () => {
+            initStore();
+
             store.returnFromVariant('exp-9');
 
             expect(store.isOpen()).toBe(true);
@@ -273,7 +324,14 @@ describe('DotExperimentsPanelStore', () => {
             expect(store.section()).toBe(CONFIGURE_SECTION_VARIANTS);
         });
 
+        /**
+         * A panel that never suspended, built rather than inherited. The trip that began in the
+         * full-screen portlet arrives at a store this fresh, so the precondition is the test's to
+         * establish — asserting it off whatever a sibling left behind proves nothing about this
+         * path.
+         */
         it('should return from a panel that was never suspended', () => {
+            initStore();
             expect(store.suspendedForVariant()).toBe(false);
 
             store.returnFromVariant('exp-9');
@@ -283,6 +341,7 @@ describe('DotExperimentsPanelStore', () => {
         });
 
         it('should clear the suspension it may or may not have been holding', () => {
+            initStore();
             store.showConfigure('exp-9');
             store.suspendForVariant();
 
@@ -293,6 +352,7 @@ describe('DotExperimentsPanelStore', () => {
 
         /** Only the return asks for a card; everything else starts at the top of the form. */
         it('should leave the Variants card behind on the next move', () => {
+            initStore();
             store.returnFromVariant('exp-9');
 
             store.backToList();
