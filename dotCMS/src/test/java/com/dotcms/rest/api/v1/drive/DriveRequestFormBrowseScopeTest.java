@@ -1,8 +1,10 @@
 package com.dotcms.rest.api.v1.drive;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import java.util.List;
 import javax.ws.rs.WebApplicationException;
 import org.junit.Test;
@@ -104,5 +106,42 @@ public class DriveRequestFormBrowseScopeTest {
     @Test
     public void testAFolderPathWithNoBrowseScopeIsUntouched() {
         formFor(A_FOLDER).build();
+    }
+
+    /**
+     * Given a body carrying a field this binary does not know, When it is deserialized, Then it is
+     * accepted and the unknown field ignored.
+     *
+     * <p>This is the rollback direction of the same compatibility the rest of this class pins going
+     * forward. A browser holding a cached bundle keeps sending {@code browseScope} after the server
+     * it talks to has been rolled back to a build that predates the field, and that is not an edge
+     * case: the field is sent for all site content, the site root and System Host, so it rides on
+     * the view the drive opens on. Without this the older binary answers every one of those with a
+     * deserialization failure, and browsing stays broken until the user hard-refreshes -- which
+     * they have no way of knowing to do.</p>
+     *
+     * <p>The trade being made is real: unknown fields are now ignored rather than refused, so a
+     * caller who misspells one gets silence instead of an error naming their typo. The peer forms
+     * ({@code A11yAgentStopForm}, {@code PageScanCheckForm}, {@code FileUploadDetail}) make the same
+     * trade, for the same reason.</p>
+     *
+     * <p>Deserialized through the mapper the resource actually uses, not a plain one. A plain
+     * {@code ObjectMapper} was tried first and fails before reaching the assertion: this form holds
+     * Guava collections, and the modules that read them are registered by
+     * {@code createDefaultMapper}. Standing the real one up is also what makes the test mean
+     * something -- it is that mapper's settings, not Jackson's defaults, that decide whether an
+     * unknown field is refused, and it leaves {@code FAIL_ON_UNKNOWN_PROPERTIES} at Jackson's
+     * enabled default.</p>
+     */
+    @Test
+    public void testAFieldThisBinaryDoesNotKnowIsIgnoredRatherThanRefused() throws Exception {
+        final String bodyFromANewerFrontend = "{\"assetPath\":\"" + SITE_ROOT
+                + "\",\"language\":[\"1\"],\"aFieldFromTheFuture\":\"ROOT\"}";
+
+        final DriveRequestForm form = DotObjectMapperProvider.createDefaultMapper()
+                .readValue(bodyFromANewerFrontend, DriveRequestForm.class);
+
+        assertEquals("the fields this binary does know must still be read",
+                SITE_ROOT, form.assetPath());
     }
 }

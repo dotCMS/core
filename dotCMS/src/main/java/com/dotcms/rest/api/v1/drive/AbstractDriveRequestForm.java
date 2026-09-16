@@ -4,6 +4,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.HostUtil;
 import com.liferay.util.StringPool;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -75,6 +76,7 @@ import org.immutables.value.Value;
 @Value.Immutable
 @JsonSerialize(as = DriveRequestForm.class)
 @JsonDeserialize(as = DriveRequestForm.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public interface AbstractDriveRequestForm {
 
     /**
