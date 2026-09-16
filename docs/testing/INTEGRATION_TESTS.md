@@ -32,7 +32,7 @@ dotcms-integration/
 For JUnit4 tests that need `@DataProvider`-style parameterization (from the
 `com.tngtech.junit.dataprovider` library — a real dependency declared in
 `dotcms-integration/pom.xml`), annotate the class with one of these two `@RunWith` runners:
-- **`DataProviderRunner`** (`com.tngtech.java.junit.dataprovider.DataProviderRunner`): plain data-provider-driven parameterized tests, no CDI container — **~74 real usages** in this module (e.g. `LanguageUtilTest.java`)
+- **`DataProviderRunner`** (`com.tngtech.java.junit.dataprovider.DataProviderRunner`): plain data-provider-driven parameterized tests, no CDI container — **68 real usages** (`@RunWith(DataProviderRunner.class)`) in this module (e.g. `LanguageUtilTest.java`)
 - **`DataProviderWeldRunner`** (`com.dotcms.DataProviderWeldRunner`): same, but extends `DataProviderRunner` to additionally spin up a real Weld CDI container so test classes can be resolved as CDI beans — **~41 real usages**. This is a CDI-aware superset, not a replacement for the plain runner; both stay in active use for different needs.
 
 ### Naming: use the `Test` suffix, not `IT` ⚠️
@@ -45,7 +45,7 @@ plus `**/QuickSuite.java` and `**/OpenSearchUpgradeSuite.java` in their profiles
 is driven entirely by suite registration and never by the class-name suffix. Surefire is skipped
 in this module, so a `*Test` name here can't be mistaken for a unit test either.
 
-Match the siblings already in your package — the module is ~680 `*Test.java` to ~12 `*IT.java`.
+Match the siblings already in your package — the module is ~680 `*Test.java` to ~19 `*IT.java`.
 
 ### Registering Tests in a MainSuite (CI gate) ⚠️
 
@@ -89,15 +89,16 @@ When you add a new integration test class, register it:
 ```java
 // Say the check in step 1 found MainSuite2b currently has the shortest CI runtime —
 // register the new class there: import alphabetized with the rest, class entry appended
-// at the end of the @SuiteClasses list:
+// at the end of the @SuiteClasses list. (MyNewFeatureIntegrationTest below is a placeholder —
+// don't copy an existing suite member as your "new" entry, or you'll register it twice.)
 // MainSuite2b.java
-import com.dotcms.rest.api.v2.asset.WebAssetResourceV2IntegrationTest; // alphabetized import
+import com.dotcms.myfeature.MyNewFeatureIntegrationTest; // alphabetized import
 ...
 @SuiteClasses({
     ...
     RoleResourceUsersIntegrationTest.class,
     com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
-    WebAssetResourceV2IntegrationTest.class,   // <-- appended at the end
+    MyNewFeatureIntegrationTest.class,   // <-- appended at the end
 })
 ```
 
