@@ -79,12 +79,17 @@ export class DotSearchInputComponent {
      *
      * `dt`, not a class: a design-token override sets the CSS custom property the component's own
      * stylesheet already reads, so it applies unconditionally rather than fighting PrimeNG's
-     * dynamically-injected styles for specificity. Empty by default, so every existing consumer
-     * (the AssetPicker included) is unaffected.
+     * dynamically-injected styles for specificity. `undefined` by default, not `{}` — PrimeNG's
+     * `BaseComponent` only skips loading a scoped stylesheet and registering a theme-change
+     * listener when `dt()` is falsy, and `{}` is truthy, so every existing consumer (the
+     * AssetPicker included) would otherwise pay that per-instance overhead for a preset that
+     * overrides nothing.
      *
      * @alias inputDt
      */
-    readonly $inputDt = input<Record<string, unknown>>({}, { alias: 'inputDt' });
+    readonly $inputDt = input<Record<string, unknown> | undefined>(undefined, {
+        alias: 'inputDt'
+    });
 
     /** Emits the trimmed term once the debounce window closes. */
     readonly search = output<string>();

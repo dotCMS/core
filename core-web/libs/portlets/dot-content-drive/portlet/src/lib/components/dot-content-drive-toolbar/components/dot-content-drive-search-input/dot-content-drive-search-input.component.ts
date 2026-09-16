@@ -15,6 +15,7 @@ import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import {
     CHIP_FILTER_LISTBOX_PT,
     CHIP_FILTER_POPOVER_PT,
@@ -58,6 +59,7 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 export class DotContentDriveSearchInputComponent implements OnDestroy {
     readonly #store = inject(DotContentDriveStore);
     readonly #shortcuts = inject(DotKeyboardShortcutService);
+    readonly #messageService = inject(DotMessageService);
 
     /** Withdrawals for the claims made in the constructor, released in {@link ngOnDestroy}. */
     #withdrawShortcuts: DotKeyboardShortcutUnregister[] = [];
@@ -76,38 +78,25 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
      * the user is here to make. The wide one is called "All Fields" rather than "All Content" — it
      * widens which FIELDS are read, not which content is searched, and Content Drive is separately
      * gaining a browse scope where "All" genuinely means all content.
+     *
+     * `label` is resolved here, eagerly, rather than left as a raw i18n key for the item template
+     * to pipe through `| dm`. `p-listbox` puts its own `[attr.aria-label]` on each option element
+     * from `getOptionLabel(option)`, which falls back to the raw `option.label` — it does not go
+     * through this component's template, so a piped label left a screen reader announcing the key
+     * itself (e.g. "content-drive.search.scope.title") instead of the translated text.
      */
     protected readonly scopeOptions = [
         {
-            label: 'content-drive.search.scope.title',
+            label: this.#messageService.get('content-drive.search.scope.title'),
             help: 'content-drive.search.scope.title.help',
             value: DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE
         },
         {
-            label: 'content-drive.search.scope.all-fields',
+            label: this.#messageService.get('content-drive.search.scope.all-fields'),
             help: 'content-drive.search.scope.all-fields.help',
             value: DOT_CONTENT_DRIVE_SEARCH_SCOPE.ALL_FIELDS
         }
     ];
-
-    /**
-     * The addon's own background, repointed to match the input.
-     *
-     * `p-inputgroup-addon` has no `dt` input (confirmed against its compiled metadata — only
-     * `style`/`styleClass` are declared), so a design-token override isn't an option here. `[style]`
-     * is the component's own supported way in instead, and it needs no `!important`: an inline style
-     * always wins the cascade over an external stylesheet rule, regardless of specificity.
-     *
-     * `var(--p-inputtext-background)` rather than a literal colour: PrimeNG's `dt()` mechanism
-     * compiles every token to a CSS custom property of exactly this shape, so reading the input's
-     * own resolved variable keeps the two in step if the active theme ever changes, the same
-     * guarantee a `dt` override would have given if one were available.
-     *
-     * The addon's BORDER needs no such fix — `inputgroup.addon.borderColor` already resolves to the
-     * same `{form.field.border.color}` alias `inputtext` uses, confirmed straight from the Lara
-     * preset source. Only the background differs (`{surface.50}`, a light grey).
-     */
-    protected readonly ADDON_STYLE = { background: 'var(--p-inputtext-background)' };
 
     /**
      * The same popover/listbox pass-through every other Content Drive filter dropdown already uses
@@ -125,11 +114,15 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
             DEFAULT_SEARCH_SCOPE
     );
 
-    /** The trigger shows the active scope, as the mock does. */
+    /**
+     * The trigger shows the active scope, as the mock does. Already-translated text — see the
+     * comment on `scopeOptions` for why the label is resolved there rather than piped through
+     * `| dm` in the template.
+     */
     protected readonly $activeScopeLabel = computed(
         () =>
             this.scopeOptions.find((option) => option.value === this.$searchScope())?.label ??
-            'content-drive.search.scope.all-fields'
+            this.#messageService.get('content-drive.search.scope.all-fields')
     );
 
     /**
@@ -231,9 +224,19 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
      *
      * Re-selecting the scope that is already active is ignored: the results cannot change, and
      * `patchFilters` would reset the user to page 1 for nothing.
+     *
+     * The `null` guard is load-bearing, not defensive filler. `p-listbox` is single-select with
+     * `metaKeySelection` at its default of `false`, which makes it a TOGGLE: re-clicking the
+     * option that is already selected emits `null` instead of the option's value
+     * (`onOptionSelectSingle` in `primeng/listbox`). Without the guard that `null` reaches
+     * `setSearchScope`, which only special-cases the real default value — `null` is neither that
+     * nor the current scope, so it gets written into the filters as `searchScope: null`. That
+     * silently flips the active search to All Fields and lights up "Clear all" on a drive with
+     * nothing filtered, and the bad value can then never be reselected away because
+     * `$searchScope()` already reads back as a real scope.
      */
     protected onScopeChange(scope: DotContentDriveSearchScope): void {
-        if (scope === this.$searchScope()) {
+        if (scope == null || scope === this.$searchScope()) {
             return;
         }
 

@@ -163,6 +163,23 @@ describe('DotSearchInputComponent', () => {
         });
     });
 
+    // `{}` is truthy, so a default of `{}` made PrimeNG's BaseComponent load a scoped stylesheet
+    // and register a theme-change listener for every consumer, including the ones (AssetPicker)
+    // that pass no override at all. `undefined` is the only default that actually skips that path.
+    describe('inputDt', () => {
+        it('should default to undefined rather than an empty object', () => {
+            expect(spectator.component.$inputDt()).toBeUndefined();
+        });
+
+        it('should pass through an explicit override', () => {
+            const dt = { border: { radius: '0' } };
+            spectator.setInput('inputDt', dt);
+            spectator.detectChanges();
+
+            expect(spectator.component.$inputDt()).toEqual(dt);
+        });
+    });
+
     describe('clear icon', () => {
         it('should be hidden while the input is empty', () => {
             expect(spectator.query(byTestId('search-icon-clear'))).toBeNull();

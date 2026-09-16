@@ -167,6 +167,20 @@ describe('DotContentDriveSearchInputComponent', () => {
             expect(store.setSearchScope).not.toHaveBeenCalled();
         });
 
+        // p-listbox is single-select with metaKeySelection=false, so re-clicking the already
+        // active option TOGGLES it and emits `null` via (ngModelChange) instead of the option's
+        // value. Before the null guard, that null slipped past the "already active" check (`null
+        // !== 'TITLE'`) and reached the store as a real scope change — silently dropping the user
+        // back to All Fields and marking a clean drive as filtered (issue #37554 review).
+        it('should ignore a null emission from re-clicking the active scope in the listbox', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            spectator.component['onScopeChange'](null);
+
+            expect(store.setSearchScope).not.toHaveBeenCalled();
+        });
+
         it('should name the control for assistive technology', () => {
             spectator.detectChanges();
 

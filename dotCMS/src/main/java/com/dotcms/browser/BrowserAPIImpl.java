@@ -16,7 +16,6 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
-import com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy;
 import com.dotcms.rest.api.v1.drive.SearchScope;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -906,12 +905,21 @@ public class BrowserAPIImpl implements BrowserAPI {
         } catch (final Exception e) {
             // Deliberately swallowed, and it is worth saying why rather than leaving it to look
             // like an oversight. Raising this instead was tried while fixing #37532 and reverted:
-            // once the term is escaped (see GlobalSearchAttributeStrategy) no user input can break
-            // the query, so what remains here is infrastructure failure — and raising it also broke
-            // the guarantee that a Lucene-injection attempt is escaped, matches nothing, and does
-            // NOT produce a 500 (see ContentDriveFieldFilterTest#testMalformedDateBoundIsSafe).
-            // Failures the front end can observe — network and server errors — already surface as
-            // an error banner rather than an empty grid.
+            // once the term is escaped (see buildAllFieldsScopedQuery/buildTitleScopedQuery) no
+            // user input can break the query, so what remains here is infrastructure failure — and
+            // raising it also broke the guarantee that a Lucene-injection attempt is escaped,
+            // matches nothing, and does NOT produce a 500 (see
+            // ContentDriveFieldFilterTest#testMalformedDateBoundIsSafe).
+            //
+            // This does NOT give the shell's error banner (dot-content-drive-shell.component.html)
+            // full coverage, and the comment should not be read as claiming it does: the request
+            // still completes with HTTP 200 here, falling through to whatever was collected into
+            // `collectedInodes` before the failure — a short, silently partial result rather than
+            // an explicit error. The banner only fires for failures the front end can itself
+            // observe (network/transport errors surfacing as a failed HTTP call); a query that
+            // fails inside this method never becomes one. Narrower than the ideal, wider than
+            // nothing: still strictly better than the pre-#37532 state, where EVERY failure here
+            // (including a reserved-character term) looked exactly like this.
             Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
         }
 
@@ -955,6 +963,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                 }, submitter)
                 .orTimeout(60, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
+                    // Same partial-result trade-off as processSingleESQuery's catch block, one
+                    // level up: a timed-out or failed chunk contributes an empty set rather than
+                    // failing the whole request, so the other chunks' hits still come back with
+                    // HTTP 200 and this chunk's rows are simply missing from the page.
                     Logger.error(BrowserAPIImpl.this, String.format("ES sub-query %d failed: %s",
                         batchIndex, throwable.getMessage()), throwable);
                     return new LinkedHashSet<>();
@@ -1278,16 +1290,11 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (SearchScope.TITLE == browserQuery.searchScope) {
                 textGroup.append(buildTitleScopedQuery(browserQuery.filter));
             } else {
-                // Reuse the Content Search global-search strategy so Content Drive keyword search stays
-                // consistent with the Search portlet (issue #36688). It builds a selective mandatory
-                // "+catchall:<kw>*" prefix plus tokenized, escaped title boosts — replacing the previous
-                // broad "catchall:*<kw>*" leading wildcard, which returned unrelated body matches and
-                // scanned slowly on large, indexed datasets.
-                final FieldContext globalSearchContext = new FieldContext.Builder()
-                        .withFieldName("title")
-                        .withFieldValue(browserQuery.filter)
-                        .build();
-                textGroup.append(new GlobalSearchAttributeStrategy().generateQuery(globalSearchContext));
+                // All Fields (the default): match the term as literal text against every indexed
+                // field (issue #37532, customer ticket 39185). See buildAllFieldsScopedQuery's
+                // Javadoc for why this is Content Drive's own implementation rather than a call
+                // into the Search portlet's shared GlobalSearchAttributeStrategy.
+                textGroup.append(buildAllFieldsScopedQuery(browserQuery.filter));
             }
         }
 
@@ -1350,6 +1357,18 @@ public class BrowserAPIImpl implements BrowserAPI {
     private static final String WILDCARD_CHARS = "*?\\";
 
     /**
+     * Reserved by the {@code query_string} range-query syntax ({@code field:>value},
+     * {@code field:<=value}, …) but absent from {@link LuceneQueryUtils#LUCENE_SPECIAL_CHARS} — that
+     * set is the shared escape/split list every field strategy agrees on, and widening it would also
+     * change escaping for the Search portlet and the Relationships dialog. Kept local to this
+     * Content-Drive-only split instead: without it, a token like {@code >2024} survives untouched and
+     * becomes {@code title:>2024*}, which Elasticsearch parses as a range query rather than the
+     * prefix search intended, so the clause is broad instead of empty and costs precision rather than
+     * failing outright.
+     */
+    private static final String TITLE_SCOPE_EXTRA_SPLIT_CHARS = "<>=";
+
+    /**
      * The clause for a term whose every token is query syntax ({@code ***}, a lone {@code /}): a
      * required existence test on {@code title} paired with its own negation — a contradiction no
      * document can satisfy. {@code field:*} is the established {@code query_string} exists idiom
@@ -1359,12 +1378,64 @@ public class BrowserAPIImpl implements BrowserAPI {
     private static final String MATCH_NOTHING_CLAUSE = "+title:* -title:*";
 
     /**
+     * Builds the Elasticsearch clause for {@link SearchScope#ALL_FIELDS} — the default search scope
+     * that matches a term as literal text against every indexed field (issue #37532, customer
+     * ticket 39185).
+     *
+     * <p>This used to be a direct call into
+     * {@code com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy}, the
+     * same class that builds the Search portlet's and the Relationships dialog's global search
+     * query. It is now Content Drive's own implementation instead: escaping every Lucene reserved
+     * character in every clause below — including the mandatory gate, which is exactly what that
+     * shared class does <b>not</b> do — would have changed the Search portlet's and Relationships
+     * dialog's behavior too (a term like {@code foo*}, today a wildcard search there, would start
+     * matching a literal asterisk). Product asked for the fix to land in Content Drive only, so the
+     * query-building code is forked rather than the shared class being changed underneath its other
+     * callers.</p>
+     *
+     * @param filter The raw, unescaped term the user typed.
+     *
+     * @return The Lucene clause for an all-fields search.
+     */
+    static String buildAllFieldsScopedQuery(final String filter) {
+        final String value = LuceneQueryUtils.escape(filter);
+        final StringBuilder query = new StringBuilder();
+        // Mandatory gate: match either a catchall token PREFIX (fast) OR the title_dotraw raw
+        // value via wildcard. Unlike catchall (which aggregates every field of the document),
+        // title_dotraw is scoped to this one field, so this alternative recovers mid-token and
+        // exact-full-value matches (issue #36791) without reintroducing an unscoped,
+        // whole-document wildcard like the old broad catchall:*value* (issue #36688).
+        query.append("+(catchall:").append(value).append("*^10 OR ")
+                .append("title_dotraw:*").append(value).append("*^2)").append(" ");
+        query.append("title:'").append(value).append("'^15").append(" ");
+
+        // Tokenize the RAW value so the split sees the user's real separators, then escape each
+        // token individually. Empty tokens are dropped: consecutive separators would otherwise
+        // emit a term-less "title:^5" clause that cannot parse.
+        final String[] titleSplit = filter.split(TITLE_SCOPE_SPLIT_REGEX);
+        if (titleSplit.length > 1) {
+            for (final String term : titleSplit) {
+                if (term.isEmpty()) {
+                    continue;
+                }
+                query.append("title:").append(LuceneQueryUtils.escape(term)).append("^5").append(" ");
+            }
+        }
+
+        // The "*" wildcard here is syntax this method adds itself, so it is appended AFTER
+        // escaping and stays live rather than becoming a literal asterisk.
+        query.append("title:").append(value).append("*");
+        return query.toString();
+    }
+
+    /**
      * Builds the Elasticsearch clause for {@link SearchScope#TITLE} — the search scope that matches
      * a term against the contentlet title alone (issue #37479).
      *
-     * <p>This is a <b>sibling</b> of {@link GlobalSearchAttributeStrategy} rather than a branch
-     * inside it. That strategy also serves the Search portlet and the Relationships dialog through
-     * the Lucene Query Builder service, and neither asked for a narrower query.</p>
+     * <p>This is a <b>sibling</b> of {@link #buildAllFieldsScopedQuery} rather than a branch inside
+     * it, for the same reason that method is a sibling of the Search portlet's shared strategy:
+     * neither the Title scope nor the All Fields scope should have to route through a query shape
+     * another portlet's behavior depends on.</p>
      *
      * <p><b>One mandatory clause per token</b>, mirroring {@code TextFieldStrategy}. This is not a
      * style choice — the first version of this method interpolated the whole term into a single
@@ -1471,7 +1542,9 @@ public class BrowserAPIImpl implements BrowserAPI {
         final StringBuilder current = new StringBuilder(token.length());
         for (int i = 0; i < token.length(); i++) {
             final char c = token.charAt(i);
-            if (LuceneQueryUtils.LUCENE_SPECIAL_CHARS.indexOf(c) < 0) {
+            final boolean isReserved = LuceneQueryUtils.LUCENE_SPECIAL_CHARS.indexOf(c) >= 0
+                    || TITLE_SCOPE_EXTRA_SPLIT_CHARS.indexOf(c) >= 0;
+            if (!isReserved) {
                 current.append(c);
             } else if (WILDCARD_CHARS.indexOf(c) >= 0) {
                 // A wildcard or escape: query intent, dropped rather than treated as a separator

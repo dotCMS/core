@@ -6,22 +6,32 @@ import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import org.junit.Test;
 
 /**
- * Characterization tests pinning the query {@link GlobalSearchAttributeStrategy} produces
- * <b>before</b> the escaping fix of issue #37532, so that "All Fields results are unchanged" can be
- * proved rather than asserted.
+ * Characterization tests pinning the query {@link GlobalSearchAttributeStrategy} produces, so that
+ * the Search portlet's and the Relationships dialog's global search stay byte-for-byte unchanged
+ * going forward.
  *
- * <p>The spec's FR-009 promises no regression for All Fields search, with <b>exactly one</b>
- * written carve-out: terms containing Lucene reserved characters or consecutive separators, whose
- * results change by design because today's behavior for them is a malformed query. This class
- * draws that line concretely:</p>
+ * <p>Issue #37532 reported that a term containing a Lucene reserved character (a colon, a
+ * parenthesis, a slash) produces a query Elasticsearch cannot parse, so the mandatory gate fails
+ * silently and the user is told their content does not exist. That defect is real in the output
+ * pinned below — see the carve-out cases — but it is <b>deliberately not fixed in this class</b>:
+ * fixing it here would also change the Search portlet's and the Relationships dialog's existing
+ * wildcard-aware search behavior, which product asked to leave untouched. The literal-text fix for
+ * #37532 instead lives in Content Drive's own {@code BrowserAPIImpl#buildAllFieldsScopedQuery},
+ * forked from this class rather than built on top of it — see that method's Javadoc and
+ * {@code BrowserAPIImplTest} for its coverage.</p>
+ *
+ * <p>This class exists to keep that boundary honest: if someone edits
+ * {@link GlobalSearchAttributeStrategy} later — to fix this same defect here, say — these
+ * assertions fail and make the Search-portlet/Relationships-dialog impact visible in review rather
+ * than discovered by a customer.</p>
  *
  * <ul>
- *   <li><b>Invariant cases</b> — a term with no reserved character must produce a byte-identical
- *       query after the fix. These assertions must never be edited.</li>
- *   <li><b>Carve-out cases</b> — a term with a reserved character produced a malformed query
- *       before the fix. These assertions were <b>updated on 2026-09-14</b> when the fix landed, each
- *       carrying its before/after in a comment. They are the complete list of pre-existing test
- *       expectations this work changed (SC-002).</li>
+ *   <li><b>Invariant cases</b> — a term with no reserved character. Byte-identical query, and
+ *       should stay that way indefinitely.</li>
+ *   <li><b>Carve-out cases</b> — a term with a reserved character or consecutive separators,
+ *       pinning the known-malformed output described above. These are expected to keep failing to
+ *       parse in the Search portlet and Relationships dialog; that is the tracked, accepted
+ *       trade-off, not a regression.</li>
  * </ul>
  *
  * @see <a href="https://github.com/dotCMS/core/issues/37532">#37532</a>
@@ -34,7 +44,7 @@ public class GlobalSearchAttributeStrategyBaselineTest {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Invariant: no reserved characters. These MUST stay byte-identical after the fix (FR-009).
+    // Invariant: no reserved characters. Must stay byte-identical indefinitely.
     // ---------------------------------------------------------------------------------------
 
     /** A single plain word — the most common search there is. */
@@ -59,57 +69,50 @@ public class GlobalSearchAttributeStrategyBaselineTest {
     }
 
     // ---------------------------------------------------------------------------------------
-    // Carve-out: reserved characters. These record TODAY'S BROKEN OUTPUT and are expected to
-    // change when #37532 is fixed. Each one is a query Elasticsearch cannot parse.
+    // Carve-out: reserved characters. These record the known-malformed output issue #37532
+    // reports for the Search portlet / Relationships dialog, deliberately left as-is here.
     // ---------------------------------------------------------------------------------------
 
     /**
-     * A hyphen is reserved. Note the asymmetry that is the whole defect: the mandatory gate carries
-     * the RAW {@code angular-cms} while only the trailing clause is escaped to
-     * {@code angular\-cms}. After the fix every clause must be escaped.
+     * A hyphen is reserved. The asymmetry is the whole defect: the mandatory gate — the clause
+     * that decides whether a document matches at all — carries the RAW {@code angular-cms}, and
+     * only the trailing clause is escaped to {@code angular\-cms}. Elasticsearch cannot parse a
+     * bare hyphen in {@code query_string} position, so the gate fails and the search returns
+     * nothing for a title that exists.
      */
     @Test
-    public void baseline_reservedCharacter_hyphen_isEscapedInEveryClause() {
-        // CHANGED by the #37532 fix. Before, the gate carried the RAW term and only the trailing
-        // clause was escaped:
-        //   +(catchall:angular-cms*^10 OR title_dotraw:*angular-cms*^2) title:'angular-cms'^15 ...
+    public void baseline_reservedCharacter_hyphen_onlyTrailingClauseIsEscaped() {
         assertEquals(
-                "+(catchall:angular\\-cms*^10 OR title_dotraw:*angular\\-cms*^2) "
-                        + "title:'angular\\-cms'^15 "
+                "+(catchall:angular-cms*^10 OR title_dotraw:*angular-cms*^2) "
+                        + "title:'angular-cms'^15 "
                         + "title:angular\\-cms*",
                 query("angular-cms"));
     }
 
     /**
      * A forward slash is reserved by the {@code query_string} syntax but is absent from this
-     * strategy's private escape set, so it is not escaped <b>anywhere</b> — not even in the final
-     * clause. This is #37532's fifth acceptance criterion, reproduced.
+     * strategy's private escape set, so it is not escaped <b>anywhere</b> — not even in the
+     * trailing clause. This is #37532's fifth acceptance criterion, reproduced.
      */
     @Test
-    public void baseline_forwardSlash_isEscaped() {
-        // CHANGED by the #37532 fix. Before, "/" was absent from the private escape set so it was
-        // escaped NOWHERE — the issue's fifth acceptance criterion:
-        //   +(catchall:a/b*^10 OR title_dotraw:*a/b*^2) title:'a/b'^15 title:a/b*
+    public void baseline_forwardSlash_isEscapedNowhere() {
         assertEquals(
-                "+(catchall:a\\/b*^10 OR title_dotraw:*a\\/b*^2) "
-                        + "title:'a\\/b'^15 "
-                        + "title:a\\/b*",
+                "+(catchall:a/b*^10 OR title_dotraw:*a/b*^2) "
+                        + "title:'a/b'^15 "
+                        + "title:a/b*",
                 query("a/b"));
     }
 
     /**
      * Consecutive separators split into an empty token, emitting a term-less {@code title:^5}
-     * clause that cannot parse (FR-028).
+     * clause that cannot parse (the FR-028 defect, also reproduced here).
      */
     @Test
-    public void baseline_consecutiveSpaces_emitNoTermlessClause() {
-        // CHANGED by the #37532 fix (FR-028). Before, the empty token between the two spaces
-        // produced a term-less clause that could not parse:
-        //   ... title:a^5 title:^5 title:b^5 ...
+    public void baseline_consecutiveSpaces_emitsTermlessClause() {
         assertEquals(
                 "+(catchall:a  b*^10 OR title_dotraw:*a  b*^2) "
                         + "title:'a  b'^15 "
-                        + "title:a^5 title:b^5 "
+                        + "title:a^5 title:^5 title:b^5 "
                         + "title:a  b*",
                 query("a  b"));
     }

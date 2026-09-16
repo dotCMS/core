@@ -42,12 +42,13 @@
             severity="secondary"
             [pButtonPT]="TRIGGER_PT"
             [attr.aria-label]="'content-drive.search.scope.label' | dm"
+            [attr.aria-expanded]="panel.overlayVisible"
             aria-haspopup="listbox"
             data-testid="search-scope-trigger"
             class="min-w-32"
             (click)="panel.toggle($event)">
             <span class="truncate" data-testid="search-scope-active">
-                {{ $activeScopeLabel() | dm }}
+                {{ $activeScopeLabel() }}
             </span>
             <i class="pi pi-chevron-down shrink-0 text-xs" aria-hidden="true"></i>
         </button>
@@ -70,7 +71,7 @@
                 [pTooltip]="item.help | dm"
                 tooltipPosition="right"
                 [attr.data-testid]="'search-scope-option-' + item.value">
-                {{ item.label | dm }}
+                {{ item.label }}
             </span>
         </ng-template>
     </p-listbox>
