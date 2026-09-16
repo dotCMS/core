@@ -655,14 +655,40 @@ public class PublisherAPIImpl extends PublisherAPI{
 	private static final String SCHEDULED_BUNDLES_FILTER =
 			"AND (LOWER(pq.bundle_id) LIKE ? OR LOWER(pb.name) LIKE ?) ";
 
+	/** Queue-only bundles whose publish date is already reached (the job picks these up next). */
+	private static final String SCHEDULED_BUNDLES_DUE = "AND pq.publish_date <= ? ";
+
+	/** Queue-only bundles whose publish date is still ahead. */
+	private static final String SCHEDULED_BUNDLES_FUTURE = "AND pq.publish_date > ? ";
+
+	/**
+	 * Appends the {@link QueuedTier} predicate for the scheduled-tier queries. The comparison value
+	 * is the JVM's current time, the same clock {@link #getQueueBundleIdsToProcess()} binds, so the
+	 * v1 API and the publisher job agree on what is due.
+	 */
+	private static void appendTierPredicate(final StringBuilder sql, final QueuedTier tier) {
+		if (tier == QueuedTier.DUE) {
+			sql.append(SCHEDULED_BUNDLES_DUE);
+		} else if (tier == QueuedTier.FUTURE) {
+			sql.append(SCHEDULED_BUNDLES_FUTURE);
+		}
+	}
+
+	private static void addTierParam(final DotConnect dc, final QueuedTier tier) {
+		if (tier == QueuedTier.DUE || tier == QueuedTier.FUTURE) {
+			dc.addParam(new Date());
+		}
+	}
+
 	@CloseDBIfOpened
 	@Override
-	public Integer countScheduledBundleIds(final String filter) throws DotPublisherException {
+	public Integer countScheduledBundleIds(final String filter, final QueuedTier tier) throws DotPublisherException {
 		try {
 			final boolean hasFilter = UtilMethods.isSet(filter);
 			final StringBuilder sql = new StringBuilder(
 					"SELECT COUNT(*) AS bundle_count FROM (SELECT pq.bundle_id ")
 					.append(SCHEDULED_BUNDLES_FROM_WHERE);
+			appendTierPredicate(sql, tier);
 			if (hasFilter) {
 				sql.append(SCHEDULED_BUNDLES_FILTER);
 			}
@@ -670,6 +696,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 			final DotConnect dc = new DotConnect();
 			dc.setSQL(sql.toString());
+			addTierParam(dc, tier);
 			if (hasFilter) {
 				final String likeParam = "%" + SQLUtil.sanitizeParameter(filter).toLowerCase() + "%";
 				dc.addParam(likeParam);
@@ -685,7 +712,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 	@CloseDBIfOpened
 	@Override
 	public List<Map<String, Object>> getScheduledBundleIds(final int limit, final int offset,
-			final String filter) throws DotPublisherException {
+			final String filter, final QueuedTier tier) throws DotPublisherException {
 		try {
 			final boolean hasFilter = UtilMethods.isSet(filter);
 			// One row per bundle. asset_count = queue rows (one per asset); environment_count is a
@@ -703,6 +730,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 					"(SELECT COUNT(*) FROM publishing_bundle_environment e WHERE e.bundle_id = pq.bundle_id) " +
 					"AS environment_count ")
 					.append(SCHEDULED_BUNDLES_FROM_WHERE);
+			appendTierPredicate(sql, tier);
 			if (hasFilter) {
 				sql.append(SCHEDULED_BUNDLES_FILTER);
 			}
@@ -710,6 +738,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 			final DotConnect dc = new DotConnect();
 			dc.setSQL(sql.toString());
+			addTierParam(dc, tier);
 			if (hasFilter) {
 				final String likeParam = "%" + SQLUtil.sanitizeParameter(filter).toLowerCase() + "%";
 				dc.addParam(likeParam);

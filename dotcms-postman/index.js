@@ -177,6 +177,12 @@ async function runNewman(
           showRequestData: true,
         },
       },
+      // Where a formdata `src` is resolved from. Without it Newman resolves against the process
+      // cwd — which under Maven is the module root, while the fixtures live beside the collections
+      // — so every file upload in every collection silently sent an EMPTY part and reported
+      // 'file load error: "resources/x.png", no such file' in the middle of otherwise green output.
+      // A test that uploads nothing and asserts a 400 still passes, which is why this survived.
+      workingDir: postmanTestsDir,
       timeout: 27000000, // 3 minutes per collection (optimized for CI/CD)
       bail: true, // Stop on first error to fail fast in CI/CD
       ignoreRedirects: false,

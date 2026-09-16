@@ -151,13 +151,19 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     private static final StringBuilder ASSET_NAME_EQ = new StringBuilder().append("LOWER(%s) = ? ");
 
+    // "size" is bound to the candidate-inode count of the query it accompanies: every one of these
+    // queries is scoped with "+inode:(id1 OR id2 ...)", so it can never legitimately return more
+    // hits than the inodes it names. Without an explicit "size", Elasticsearch applies its own
+    // default of 10 hits, silently capping each sub-query at 10 matches regardless of how many
+    // candidates it was given (found in review).
     private static final String ES_QUERY_TEMPLATE =
             "{\n" +
                     "    \"query\": {\n" +
                     "        \"query_string\": {\n" +
                     "            \"query\": \"%s\"\n" +
                     "        }\n" +
-                    "    }\n" +
+                    "    },\n" +
+                    "    \"size\": %d\n" +
             "}";
 
     /**
@@ -264,6 +270,12 @@ public class BrowserAPIImpl implements BrowserAPI {
             final boolean applyESFilter) throws DotDataException, DotSecurityException {
 
         final int scanLimit = Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        // Clamped against the guard rail: BROWSER_DB_MAX_SCAN_ROWS is configurable, and without
+        // this the very first chunk fetch can already overshoot it whenever an operator lowers the
+        // scan limit below the caller's chunk size (e.g. below BROWSER_SINGLE_PASS_CHUNK_SIZE's
+        // 7,000 default) -- the dbOffset >= scanLimit check only runs after a chunk is fetched, so
+        // nothing upstream of it would have caught that (found in review, issue #37184).
+        final int effectiveChunkSize = Math.min(chunkSize, scanLimit);
 
         final List<Contentlet> accumulatedContent = new ArrayList<>();
         List<String> candidateChunkInodes;
@@ -274,13 +286,13 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         Logger.debug(this, String.format(
                 "[Starting content search by chunks]: content required %d, chunk size: %d, user: %s",
-                maxRows, chunkSize, browserQuery.user.getFullName()));
+                maxRows, effectiveChunkSize, browserQuery.user.getFullName()));
 
         while (true) {
             chunkCount++;
             Logger.debug(this, String.format("#%d Chunk: starting row: %d", chunkCount, dbOffset));
 
-            final DotConnect dcSelectChunk = buildPaginatedDotConnect(sqlQuery, chunkSize, dbOffset);
+            final DotConnect dcSelectChunk = buildPaginatedDotConnect(sqlQuery, effectiveChunkSize, dbOffset);
             candidateChunkInodes = collectInodesFromDB(dcSelectChunk);
 
             if (candidateChunkInodes.isEmpty()) {
@@ -296,27 +308,40 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             dbOffset += candidateChunkInodes.size();
 
+            // A satisfied page wins over the guard rail: when this chunk already produced enough
+            // visible items we must exit through generateNextContentCursor so the next page resumes
+            // right after the last item returned. Checking the scan limit first would exit via the
+            // warn path with a chunk-aligned cursor and silently skip whatever is left over in this
+            // chunk -- reachable whenever a chunk boundary lands exactly on the scan limit.
+            if (accumulatedContent.size() >= maxRows) {
+                hasMore = (candidateChunkInodes.size() == effectiveChunkSize);
+                nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
+                        candidateChunkInodes, dbOffset);
+                break;
+            }
+
+            // Natural DB exhaustion also wins over the guard rail, for the same reason: the scan
+            // limit exists to cut off a search that is NOT done, not to relabel a search that
+            // finished on its own. A partial last chunk (fewer rows than chunkSize) means there is
+            // nothing left to scan, regardless of how far dbOffset has climbed -- checking the scan
+            // limit first would report hasMore=true for a folder that is actually fully paged
+            // through whenever the last (partial) chunk's ending offset happens to land on or past
+            // the scan limit, which is reachable whenever chunkSize and the scan limit are close in
+            // size (found in review, issue #37184).
+            if (candidateChunkInodes.size() < effectiveChunkSize) {
+                Logger.debug(this, String.format(
+                        "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
+                        accumulatedContent.size()));
+                nextContentCursor = dbOffset;
+                break;
+            }
+
             if (dbOffset >= scanLimit) {
                 Logger.warn(BrowserAPIImpl.class, String.format(
                         "Scan limit reached (%d rows) after %d chunks. Returning %d accumulated items.",
                         dbOffset, chunkCount, accumulatedContent.size()));
                 nextContentCursor = dbOffset;
                 hasMore = true;
-                break;
-            }
-
-            if (accumulatedContent.size() >= maxRows) {
-                hasMore = (candidateChunkInodes.size() == chunkSize);
-                nextContentCursor = generateNextContentCursor(accumulatedContent, maxRows,
-                        candidateChunkInodes, dbOffset);
-                break;
-            }
-
-            if (candidateChunkInodes.size() < chunkSize) {
-                Logger.debug(this, String.format(
-                        "Reached end of results (partial chunk) - DB is exhausted. Total accumulated: %d",
-                        accumulatedContent.size()));
-                nextContentCursor = dbOffset;
                 break;
             }
 
@@ -360,7 +385,20 @@ public class BrowserAPIImpl implements BrowserAPI {
             final Set<String> esFiltered = processESDirectly(
                     browserQuery, new LinkedHashSet<>(candidateChunkInodes));
             if (!esFiltered.isEmpty()) {
-                return getContentFilteredByRole(browserQuery, new LinkedList<>(esFiltered));
+                // Elasticsearch returns matches in relevance/index order. When the chunk is split
+                // into several ES sub-queries, processMultipleESQueries collects those futures in
+                // submission order, so batches themselves follow DB order — the disorder comes from
+                // within each sub-query, where ES returns its own relevance/index order rather than
+                // the order its candidate inodes were given in (found in review). Everything
+                // downstream assumes DB order: findContentletsInParallel preserves the
+                // order it is handed, and generateNextContentCursor locates the last item of the
+                // page by its position inside the DB-ordered chunk. Feeding it ES order would make
+                // the next cursor land on an arbitrary row and skip or repeat items across pages.
+                // Re-projecting onto candidateChunkInodes restores DB order in a single O(n) pass.
+                final List<String> esFilteredInDbOrder = candidateChunkInodes.stream()
+                        .filter(esFiltered::contains)
+                        .collect(Collectors.toList());
+                return getContentFilteredByRole(browserQuery, esFilteredInDbOrder);
             }
         } else {
             return getContentFilteredByRole(browserQuery, candidateChunkInodes);
@@ -547,9 +585,49 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * True when a request has no criterion left that requires database resolution — every field
+     * criterion routes to the index, and there is no workflow filter and no free-text/fileName
+     * term (issue #37184, FR-002). When eligible, the folder's candidate scan runs in
+     * {@code BROWSER_SINGLE_PASS_CHUNK_SIZE}-sized chunks (default 7,000) instead of the chunked
+     * hybrid loop's default {@code BROWSER_CONTENT_CHUNK_SIZE}-sized iterations (default 900),
+     * cutting DB round trips ~8x on a sparse-match, 20,000-item folder while keeping the ES fan-out
+     * per chunk bounded and the loop stoppable between chunks.
+     *
+     * <p>Takes the raw fields rather than a {@link BrowserQuery} so it stays a pure,
+     * unit-testable predicate — {@code BrowserQuery}'s constructor resolves folder/site/role via
+     * {@code APILocator} and cannot be instantiated outside a full dotCMS context.</p>
+     *
+     * @param fieldCriteria      the request's per-field search criteria
+     * @param workflowSchemeIds  workflow scheme ids the request filters by
+     * @param workflowStepIds    workflow step ids the request filters by
+     * @param filter             the free-text filter term, if any
+     * @param fileName           the fileName filter term, if any
+     * @return true iff the request can be resolved in a single pass
+     */
+    static boolean isSinglePassEligible(final List<FieldSearchCriteria> fieldCriteria,
+            final Set<String> workflowSchemeIds, final Set<String> workflowStepIds,
+            final String filter, final String fileName) {
+        return !fieldCriteria.isEmpty()
+                && fieldCriteria.stream()
+                        .allMatch(criteria -> criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX)
+                && workflowSchemeIds.isEmpty()
+                && workflowStepIds.isEmpty()
+                && !UtilMethods.isSet(filter)
+                && !UtilMethods.isSet(fileName);
+    }
+
+    /**
      * Hybrid Chunked DB + ES: delegates to {@link #getContentByChunks} with
      * {@code applyESFilter=true}, so each DB chunk is text-filtered through Elasticsearch before
-     * permission filtering. Uses a fixed chunk size driven by {@code BROWSER_CONTENT_CHUNK_SIZE}(default 900).
+     * permission filtering. Uses a fixed chunk size driven by {@code BROWSER_CONTENT_CHUNK_SIZE}
+     * (default 900) — unless the request is {@link #isSinglePassEligible}, in which case the chunk
+     * size is widened to {@code BROWSER_SINGLE_PASS_CHUNK_SIZE} (default 7,000) so far fewer DB
+     * round trips are needed to resolve the candidate set (issue #37184, FR-002/SC-001).
+     *
+     * <p>The widened size is a modest multiple of the per-ES-query inode cap rather than the whole
+     * {@code BROWSER_DB_MAX_SCAN_ROWS} guard rail: a chunk that large would fan out into dozens of
+     * concurrent ES sub-queries on the shared submitter pool and would collapse the chunk loop into
+     * a single, non-interruptible iteration. See {@code BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY}.</p>
      *
      * @param browserQuery query containing the text filter, user context, and current cursor
      * @param maxRows      maximum number of permission-visible items to return
@@ -561,9 +639,17 @@ public class BrowserAPIImpl implements BrowserAPI {
     ContentUnderParent doHybridSingleChunkedQueryES(final BrowserQuery browserQuery,
             final int maxRows, final SelectQuery sqlQuery) throws DotDataException, DotSecurityException {
 
-        final int chunkSize = Config.getIntProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
+        final boolean singlePassEligible = isSinglePassEligible(browserQuery.getFieldCriteria(),
+                browserQuery.workflowSchemeIds, browserQuery.workflowStepIds,
+                browserQuery.filter, browserQuery.fileName);
 
-        Logger.debug(this, "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
+        final int chunkSize = singlePassEligible
+                ? Config.getIntProperty(BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY, BROWSER_SINGLE_PASS_CHUNK_SIZE_DEFAULT)
+                : Config.getIntProperty(BROWSER_CONTENT_CHUNK_SIZE_KEY, BROWSER_CONTENT_CHUNK_SIZE_DEFAULT);
+
+        Logger.debug(this, singlePassEligible
+                ? "::::: Using widened-chunk DB+ES query for single-pass-eligible filters (issue #37184) ::::"
+                : "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
         return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, true);
     }
 
@@ -751,6 +837,21 @@ public class BrowserAPIImpl implements BrowserAPI {
     static final String BROWSER_DB_MAX_SCAN_ROWS_KEY = "BROWSER_DB_MAX_SCAN_ROWS";
     static final int BROWSER_DB_MAX_SCAN_ROWS_DEFAULT = 50_000;
 
+    // Default DB chunk size for the hybrid DB+ES text-filtering loop.
+    static final String BROWSER_CONTENT_CHUNK_SIZE_KEY = "BROWSER_CONTENT_CHUNK_SIZE";
+    static final int BROWSER_CONTENT_CHUNK_SIZE_DEFAULT = 900;
+
+    // DB chunk size used by the single-pass-eligible field-filter path (issue #37184). Deliberately
+    // decoupled from BROWSER_DB_MAX_SCAN_ROWS: that property is the outer guard rail (total rows a
+    // request may scan across all chunks), not a working batch size. The default of 7,000 is a
+    // modest multiple (~8x) of the per-ES-query inode cap computed by calculateMaxInodesPerESQuery
+    // (~876 for a typical base query), so each chunk fans out to roughly 8 concurrent ES sub-queries
+    // instead of the ~57 a 50,000-row chunk would submit at once into the shared DotSubmitter pool.
+    // It still cuts DB round trips ~8x versus the BROWSER_CONTENT_CHUNK_SIZE default of 900, and it
+    // keeps the chunk loop interleaved and stoppable between chunks.
+    static final String BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY = "BROWSER_SINGLE_PASS_CHUNK_SIZE";
+    static final int BROWSER_SINGLE_PASS_CHUNK_SIZE_DEFAULT = 7_000;
+
     /**
      * Represents content items under a specific parent along with the total count.
      * This class is immutable and holds a list of content items and their total results count.
@@ -889,7 +990,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             final List<String> inodesList = new ArrayList<>(inodes);
             final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", inodesList));
             final String luceneQuery = inodeFilter + baseQuery;
-            final String esQuery = String.format(ES_QUERY_TEMPLATE, jsonEscape(luceneQuery));
+            final String esQuery = String.format(ES_QUERY_TEMPLATE, jsonEscape(luceneQuery), inodes.size());
 
             Logger.debug(this, String.format("Single ES query: %d inodes", inodes.size()));
 
@@ -1137,6 +1238,65 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         return allContentlets;
+    }
+
+    /**
+     * Collects the distinct set of {@code modUser}/{@code owner} ids a page of listing rows will
+     * need, so {@link #warmUpUserCache(List)} can resolve them once, sequentially, before
+     * {@link #hydrateContentletsInParallel} fans the same rows out into parallel chunks (issue
+     * #37186, FR-001). Pure and side-effect-free: reads fields already present on the
+     * already-loaded {@link Contentlet} objects, no I/O.
+     *
+     * <p>Deliberately does NOT include locked-by ids: resolving one costs a real per-contentlet
+     * {@code versionableAPI.getLockedBy(...)} call, not a free field read, so pulling it into this
+     * sequential warm-up would add new serial work per row instead of per distinct author —
+     * locked-by resolution stays where it already happens today, inside
+     * {@code DefaultTransformStrategy}, per-row, during the parallel phase.</p>
+     *
+     * @param contentlets the page of contentlets about to be hydrated
+     * @return the distinct, non-blank modUser/owner ids referenced by {@code contentlets}
+     */
+    static Set<String> collectWarmUpUserIds(final List<Contentlet> contentlets) {
+        final Set<String> ids = new LinkedHashSet<>();
+        for (final Contentlet contentlet : contentlets) {
+            final String modUser = contentlet.getModUser();
+            if (UtilMethods.isSet(modUser)) {
+                ids.add(modUser);
+            }
+            final String owner = contentlet.getOwner();
+            if (UtilMethods.isSet(owner)) {
+                ids.add(owner);
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Resolves every id from {@link #collectWarmUpUserIds(List)} once, sequentially, so the
+     * `UserCache` entry for each is already warm by the time {@link #hydrateContentletsInParallel}
+     * starts — this is the fix for the concurrent thundering-herd race on
+     * {@code UserFactoryImpl#loadUserById} (issue #37186, FR-001): without it, two parallel chunks
+     * needing the same not-yet-cached id each miss the cache and query the database independently.
+     * A resolution failure for one id (e.g. an orphaned user) is logged and skipped — it must not
+     * abort the warm-up for the remaining ids, and the per-row fallback (FR-004a) still applies
+     * later during hydration for whichever row referenced it.
+     *
+     * <p>Known residual limitation, flagged in review: {@code loadUserById} does not negative-cache
+     * a miss, so an orphan id stays cold after this warm-up attempt and is looked up again by
+     * every row that references it during hydration — i.e. SC-001's "N distinct authors -> exactly
+     * N DB lookups" costs {@code 1 + rowsReferencingTheOrphan} for that one id, not 1. This is
+     * accepted as-is (negative caching was deliberately not reopened for this fix) rather than
+     * silently unbounded.</p>
+     *
+     * @param contentlets the page of contentlets about to be hydrated
+     */
+    private void warmUpUserCache(final List<Contentlet> contentlets) {
+        for (final String userId : collectWarmUpUserIds(contentlets)) {
+            Try.run(() -> userAPI.loadUserById(userId))
+                    .onFailure(e -> Logger.debug(this, String.format(
+                            "Warm-up: could not resolve user '%s' ahead of parallel hydration: %s",
+                            userId, e.getMessage())));
+        }
     }
 
     /**
@@ -1770,6 +1930,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 hasMoreContent = fromDB.hasMore;
                 nextContentCursor = fromDB.nextDbCursor;
 
+                warmUpUserCache(fromDB.contentlets);
                 final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
                 contentCount = contentlets.size();
                 list.addAll(contentlets);
@@ -2020,30 +2181,75 @@ public class BrowserAPIImpl implements BrowserAPI {
         final String workingLiveInode = browserQuery.showWorking || browserQuery.showArchived ?
                 "working_inode" : "live_inode";
 
-        final StringBuilder selectQuery = new StringBuilder(buildSelectBaseQuery(browserQuery, workingLiveInode));
-
         final List<Object> parameters = new ArrayList<>();
+
+        // issue #37229: fold folder (+ per-case host_inode + fileName) scoping into a materialized
+        // CTE, resolved BEFORE this query joins out to contentlet_version_info/structure/
+        // contentlet -- instead of joining the full `identifier` table first and filtering
+        // afterward, which is the source of the unstable-planner behavior on large folders
+        // (FR-002). Scoped ONLY to the folder-scoped case this fix targets: this shared method's
+        // behavior is byte-identical to before for every caller that does not scope by folder
+        // (folder == null, or skipFolder=true) -- forcing materialization of the full identifier
+        // table with no scoping predicate would be a regression, not a fix, for those callers.
+        // NOT validated against EXPLAIN ANALYZE with the real predicate set (FR-010) -- flagged
+        // as an explicit, developer-accepted risk; see PR description.
+        final boolean useFolderCte = browserQuery.folder != null && !browserQuery.skipFolder;
+        // Handle site filtering based on ignoreSiteForFolders flag
+        final boolean shouldApplySiteFiltering = !browserQuery.ignoreSiteForFolders && browserQuery.folder != null;
+        final boolean fileNameHandledByDb = !browserQuery.useElasticsearchFiltering
+                && UtilMethods.isSet(browserQuery.fileName);
+
+        String candidatesCte = BLANK;
+        if (useFolderCte) {
+            final StringBuilder candidatesPredicates = new StringBuilder();
+            appendFolderQuery(candidatesPredicates, browserQuery.folder.getPath(), parameters);
+            if (shouldApplySiteFiltering) {
+                if (browserQuery.site != null) {
+                    appendSiteQuery(candidatesPredicates, browserQuery.site.getIdentifier(),
+                            browserQuery.forceSystemHost, parameters);
+                } else if (browserQuery.forceSystemHost) {
+                    appendSystemHostQuery(candidatesPredicates);
+                }
+            }
+            if (fileNameHandledByDb) {
+                appendFileNameQuery(candidatesPredicates, browserQuery.fileName, parameters);
+            }
+            // Only project what the outer query actually reads through the `candidates` alias
+            // (`id.id` and `id.asset_subtype`, verified by grepping every `id.`-qualified
+            // reference outside this CTE) -- `parent_path`, `host_inode` and `asset_name` are
+            // still scanned (they're referenced in the predicates below) but not materialized,
+            // and everything else `identifier` carries (asset_type, owner, create_date,
+            // syspublish_date, sysexpire_date, full_path_lc, ...) is now skipped entirely instead
+            // of being written into the work table for every row in the folder (code review,
+            // PR #37397).
+            candidatesCte = "with candidates as materialized (select id.id, id.asset_subtype "
+                    + "from identifier id where 1=1 "
+                    + candidatesPredicates + ") ";
+        }
+
+        final StringBuilder selectQuery = new StringBuilder(
+                buildSelectBaseQuery(browserQuery, workingLiveInode, candidatesCte));
 
         if (!browserQuery.languageIds.isEmpty()) {
             appendLanguageQuery(selectQuery, browserQuery.languageIds,
                     browserQuery.showDefaultLangItems);
         }
-        // Handle site filtering based on ignoreSiteForFolders flag
-        final boolean shouldApplySiteFiltering = !browserQuery.ignoreSiteForFolders && browserQuery.folder != null;
-
-        if (shouldApplySiteFiltering) {
-            if (browserQuery.site != null) {
-                appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
-                        browserQuery.forceSystemHost, parameters);
-            } else {
-                if (browserQuery.forceSystemHost) {
-                    appendSystemHostQuery(selectQuery);
+        if (!useFolderCte) {
+            // Pre-existing shape, unchanged: no folder scopes this request (or skipFolder=true),
+            // so there is nothing for the CTE above to target -- site/host filtering (independent
+            // of skipFolder) still applies directly against `identifier` exactly as before this
+            // fix. (The folder predicate itself is never appended here: useFolderCte's negation
+            // means folder == null || skipFolder, the same condition that gated it originally.)
+            if (shouldApplySiteFiltering) {
+                if (browserQuery.site != null) {
+                    appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
+                            browserQuery.forceSystemHost, parameters);
+                } else {
+                    if (browserQuery.forceSystemHost) {
+                        appendSystemHostQuery(selectQuery);
+                    }
                 }
             }
-        }
-        //This property allows the exclusion of the folder in the base query
-        if (browserQuery.folder != null && !browserQuery.skipFolder) {
-            appendFolderQuery(selectQuery, browserQuery.folder.getPath(), parameters);
         }
         // Detect archive-target steps once per request (cached WorkflowAPI lookups, never per row).
         // Only step-pinned entries can be archive-target; scheme-only entries always stay live-only.
@@ -2067,7 +2273,11 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (UtilMethods.isSet(browserQuery.filter)) {
                 appendFilterQuery(selectQuery, browserQuery.filter, parameters);
             }
-            if (UtilMethods.isSet(browserQuery.fileName)) {
+            // fileNameHandledByDb is true under the exact same condition this block already
+            // guards (isSet(fileName), not using ES) -- when useFolderCte, it was already folded
+            // into the candidates CTE above (resolved scoping decision, research.md); appending
+            // it again here would be redundant, not incorrect, but is skipped for clarity.
+            if (fileNameHandledByDb && !useFolderCte) {
                 appendFileNameQuery(selectQuery, browserQuery.fileName, parameters);
             }
         }
@@ -2095,7 +2305,7 @@ public class BrowserAPIImpl implements BrowserAPI {
             appendMIMETypeQuery(selectQuery, browserQuery.mimeTypes, parameters);
         }
         if (null != browserQuery.sortBy) {
-            appendOrderByQuery(selectQuery, browserQuery.sortByDesc);
+            appendOrderByQuery(selectQuery, browserQuery.sortByDesc, useFolderCte);
         }
 
         Logger.debug(this, "Select Query: " + selectQuery);
@@ -2120,17 +2330,28 @@ public class BrowserAPIImpl implements BrowserAPI {
      *
      * @param browserQuery     The {@link BrowserQuery} object specifying the filtering criteria.
      * @param workingLiveInode The identifier of the working live inode.
+     * @param candidatesCte    Issue #37229: when set, a {@code with candidates as materialized
+     *                         (...)} clause that pre-resolves the folder-scoped candidate set
+     *                         (parent_path, and per-case host_inode/fileName) before this query
+     *                         joins out to {@code contentlet_version_info}/{@code structure}/
+     *                         {@code contentlet} -- see {@link #selectQuery(BrowserQuery)}. When
+     *                         blank, the query joins directly against {@code identifier} exactly
+     *                         as before this fix (every non-folder-scoped caller is unaffected).
      * @return The base SQL SELECT query string.
      */
-    private String buildSelectBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode) {
+    private String buildSelectBaseQuery(final BrowserQuery browserQuery, final String workingLiveInode,
+            final String candidatesCte) {
 
-        final String baseClause = " from contentlet_version_info cvi, identifier id, structure struc, contentlet c "
+        final String identifierSource = UtilMethods.isSet(candidatesCte) ? "candidates" : "identifier";
+
+        final String baseClause = " from contentlet_version_info cvi, " + identifierSource
+                + " id, structure struc, contentlet c "
                 + " where cvi.identifier = id.id and struc.velocity_var_name = id.asset_subtype and  "
                 + " c.inode = cvi." + workingLiveInode + " and cvi.variant_id='"
                 + DEFAULT_VARIANT.name() + "' ";
 
-        final StringBuilder baseQuery = new StringBuilder(
-                "select cvi." + workingLiveInode + " as inode " + baseClause);
+        final StringBuilder baseQuery = new StringBuilder(candidatesCte)
+                .append("select cvi.").append(workingLiveInode).append(" as inode ").append(baseClause);
 
         final boolean showAllBaseTypes = browserQuery.baseTypes.contains(BaseContentType.ANY);
         if (!showAllBaseTypes) {
@@ -2700,12 +2921,31 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param sqlQuery
      * @param orderByDesc
      */
-    private void appendOrderByQuery(StringBuilder sqlQuery, boolean orderByDesc) {
+    private void appendOrderByQuery(StringBuilder sqlQuery, boolean orderByDesc, boolean useFolderCte) {
+        // issue #37229 (FR-001): `mod_date` alone has no tiebreaker, so rows sharing the same
+        // mod_date get an unspecified, planner-dependent order today (~1.2% of rows per #37148).
+        // `id.id` (the identifier row's own primary key, already joined/in scope -- no new join)
+        // makes tied-row order -- and the pagination cursor derived from it -- a deterministic,
+        // reproducible-run-to-run guarantee. This is a NEW guarantee, not a reproduction of
+        // whatever arbitrary order those tied rows happened to return before this fix.
+        //
+        // FR-001 scopes this to folder-scoped requests only ("every folder-scoped listing
+        // request"), matching useFolderCte exactly -- every other caller's ORDER BY stays
+        // byte-identical to before (found in review: this was previously unconditional for any
+        // caller with sortBy set, silently changing tie order and pagination cursors for
+        // non-folder-scoped callers too).
+        //
+        // `(mod_date, id.id)` is still not a total order on a multi-language folder: a single
+        // identifier legitimately comes back as several rows, one per language
+        // (appendLanguageQuery's `cvi.lang in (...)`), so id.id is identical across those rows.
+        // When they also share mod_date, nothing is left to break the tie. `cvi.lang` closes it
+        // and is already joined/in scope via contentlet_version_info -- no new join (code
+        // review, PR #37397).
         sqlQuery.append(" order by ");
         if (orderByDesc) {
-            sqlQuery.append(" c.mod_date desc");
+            sqlQuery.append(" c.mod_date desc").append(useFolderCte ? ", id.id desc, cvi.lang desc" : "");
         } else  {
-            sqlQuery.append(" c.mod_date asc");
+            sqlQuery.append(" c.mod_date asc").append(useFolderCte ? ", id.id asc, cvi.lang asc" : "");
         }
     }
 
