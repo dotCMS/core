@@ -1,12 +1,8 @@
 import {
-    afterNextRender,
     Component,
     computed,
-    DestroyRef,
     effect,
-    ElementRef,
     inject,
-    Injector,
     input,
     signal,
     viewChild,
@@ -73,33 +69,7 @@ interface FolderForm {
     ],
     templateUrl: './dot-content-drive-dialog-folder.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
-    host: { class: 'block' },
-    styles: [
-        `
-            /* The three tabs hold different amounts, so switching between them resized the dialog
-               in one frame and it read as a snap. The height is written by the component from the
-               panels' own measurement, because CSS cannot ease to or from the "auto" keyword.
-
-               Clipped only while it moves: "overflow" is cleared as soon as the transition ends,
-               so anything that has to escape the dialog at rest still can. */
-            .tabpanels-viewport {
-                transition: height 200ms ease;
-                will-change: height;
-            }
-
-            .tabpanels-viewport--moving {
-                overflow: hidden;
-            }
-
-            /* Someone who has asked for less motion gets the old instant resize rather than a
-               slower version of the thing they turned off. */
-            @media (prefers-reduced-motion: reduce) {
-                .tabpanels-viewport {
-                    transition: none;
-                }
-            }
-        `
-    ]
+    host: { class: 'block' }
 })
 export class DotContentDriveDialogFolderComponent {
     #fb = inject(FormBuilder);
@@ -137,64 +107,6 @@ export class DotContentDriveDialogFolderComponent {
 
     /** Allowed-file-extensions field; chips are added through its own model. See {@link #addExtension}. */
     readonly $extensionsAutoComplete = viewChild<AutoComplete>('extensionsAutoComplete');
-
-    /** The box whose height is eased so the dialog grows into a taller tab instead of snapping. */
-    readonly $panelsViewport = viewChild<ElementRef<HTMLElement>>('panelsViewport');
-
-    readonly #injector = inject(Injector);
-    readonly #destroyRef = inject(DestroyRef);
-
-    constructor() {
-        // After the first render, because there is nothing to measure until the form exists: the
-        // whole tab set sits behind `@if ($formReady())`.
-        afterNextRender(() => this.#easePanelHeight(), { injector: this.#injector });
-    }
-
-    /**
-     * Keeps the viewport's height in step with whichever panel is showing.
-     *
-     * Driven by a `ResizeObserver` on the panels rather than by the tab selection, because the two
-     * causes of a height change deserve the same treatment: switching tabs, and a tab growing in
-     * place when a file-extension chip is added or a validation message appears. Watching the
-     * result covers both, and cannot fall out of step with how many tabs there happen to be.
-     *
-     * No feedback loop: the observed element sizes itself to its content, and what is written back
-     * is the height of its *parent*, which constrains nothing.
-     */
-    #easePanelHeight(): void {
-        const viewport = this.$panelsViewport()?.nativeElement;
-        const panels = viewport?.firstElementChild;
-
-        if (!viewport || !panels) {
-            return;
-        }
-
-        // The first measurement is the height it opens at, so it must not animate from zero.
-        viewport.style.height = `${panels.getBoundingClientRect().height}px`;
-
-        const clearClip = () => viewport.classList.remove('tabpanels-viewport--moving');
-        viewport.addEventListener('transitionend', clearClip);
-
-        const observer = new ResizeObserver(([entry]) => {
-            const height = entry.contentRect.height;
-
-            if (Math.round(height) === Math.round(parseFloat(viewport.style.height))) {
-                return;
-            }
-
-            // Clipped for the duration only: a panel that is taller than the box it is shrinking
-            // into would otherwise spill over the dialog's footer on the way down.
-            viewport.classList.add('tabpanels-viewport--moving');
-            viewport.style.height = `${height}px`;
-        });
-
-        observer.observe(panels);
-
-        this.#destroyRef.onDestroy(() => {
-            observer.disconnect();
-            viewport.removeEventListener('transitionend', clearClip);
-        });
-    }
 
     folderForm: FormGroup<FolderForm> = this.#fb.group({
         title: this.#fb.control('', { validators: [Validators.required], nonNullable: true }),
