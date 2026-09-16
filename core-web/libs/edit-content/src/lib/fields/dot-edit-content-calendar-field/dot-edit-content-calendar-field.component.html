@@ -19,13 +19,13 @@
     </dot-card-field-content>
     @if ((fieldHasError && isRequired) || hasHint) {
         <dot-card-field-footer>
-            <div class="flex justify-between items-start">
+            <div class="flex items-start justify-between">
                 <!--
                     Error and hint stack rather than replace one another: the hint says what to
                     enter, which is precisely what the author needs while the field is in error.
                     The error goes first as the new information, the hint moves below it.
                 -->
-                <div class="grow flex flex-col gap-1">
+                <div class="flex grow flex-col gap-1">
                     <!--
                         The utilities duplicate what `.form .p-field-error` / `.p-field-hint` in
                         apps/dotcms-ui/src/style.css already declare, because those rules only
