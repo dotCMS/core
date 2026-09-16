@@ -271,26 +271,39 @@ jobs:
       # deliberately NOT strict-clean while #37198 is in flight: authors would be
       # rejected for violations they never wrote.
       #
-      # So fetch the event's real base commit and hand it to the gate. With the base
-      # already AT the divergence point, the harness's base-tip fallback stops being
-      # a degradation and becomes exactly right. It also makes the base branch's name
-      # irrelevant, so a pull request targeting something other than `main` compares
-      # against its own base rather than against main.
+      # So hand the gate the divergence point itself. That point is NOT
+      # github.event.pull_request.base.sha: GitHub pins that field when the pull
+      # request is opened and never moves it as the base branch advances, so on a
+      # long-lived branch it is hundreds of commits stale -- and diffing a stale base
+      # against this checkout blames the author for every one of them.
+      #
+      # It is the checkout's own FIRST PARENT. Both events check out a merge commit
+      # (`refs/pull/N/merge` on pull_request, the queue branch head on merge_group)
+      # whose first parent is the current base tip and whose second is the branch, so
+      # `parent1..HEAD` is precisely the pull request's contribution. Deepening by one
+      # is all it takes to see it, and it needs no knowledge of the base branch's name,
+      # so a pull request targeting something other than `main` compares against its
+      # own base. Requiring two parents keeps this honest: if the checkout is ever
+      # changed to the branch head, HEAD^1 is the previous COMMIT, not the base, and
+      # the gate would silently narrow to the last commit instead.
       - name: Fetch base refs for Nx affected and the strict gate
         if: contains(matrix.maven_args, '-Pvalidate')
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: |
           git fetch --depth=1 origin main:refs/remotes/origin/main
-          if [ -n "$BASE_SHA" ]; then
-            # Not fatal: if the base object cannot be fetched the gate still runs
-            # against origin/main and warns, which is the behaviour before this step.
-            if git fetch --depth=1 origin "$BASE_SHA" 2>/dev/null; then
-              echo "STRICT_GATE_BASE=$BASE_SHA" >> "$GITHUB_ENV"
-              echo "strict-gate base: $BASE_SHA"
-            else
-              echo "::warning::could not fetch base $BASE_SHA; strict-gate will fall back to origin/main"
-            fi
+          # Not fatal: if the parent cannot be resolved the gate still runs against
+          # origin/main and warns, which is the behaviour before this step.
+          git fetch --no-tags --depth=2 origin "$GITHUB_SHA" 2>/dev/null || true
+          # `rev-list --parents` prints "<commit> <parent>...", and a shallow boundary
+          # prints no parents at all -- so the second parent being present is also the
+          # proof that the deepen above landed.
+          PARENTS=$(git rev-list --parents -n 1 HEAD)
+          FIRST_PARENT=$(echo "$PARENTS" | awk '{print $2}')
+          SECOND_PARENT=$(echo "$PARENTS" | awk '{print $3}')
+          if [ -n "$SECOND_PARENT" ]; then
+            echo "STRICT_GATE_BASE=$FIRST_PARENT" >> "$GITHUB_ENV"
+            echo "strict-gate base: $FIRST_PARENT (first parent of $GITHUB_SHA)"
+          else
+            echo "::warning::could not resolve the first parent of $GITHUB_SHA; strict-gate will fall back to origin/main"
           fi
 
       # The libvips image engine (IMAGE_API_USE_LIBVIPS) is exercised by VipsParityTest.

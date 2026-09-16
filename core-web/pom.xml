@@ -66,11 +66,11 @@
           main introduced.
 
           Defaults to ${git.origin.branch} so a local run behaves as before. In CI the
-          strict-gate-explicit-base profile below replaces it with the event's real base commit,
-          which cicd_comp_test-phase.yml fetches. Both sides of the comparison are depth-1 there,
-          so `git merge-base` cannot traverse and the harness falls back to comparing against the
-          base tip, which is correct only when the base IS the divergence point. That SHA is
-          exactly that point.
+          strict-gate-explicit-base profile below replaces it with the divergence point, which
+          cicd_comp_test-phase.yml resolves as the first parent of the merge commit CI checks
+          out. That matters because the checkout is depth-1: `git merge-base` cannot traverse,
+          so the harness falls back to comparing against the base tip, which is correct only
+          when the base IS the divergence point. The first parent is exactly that point.
         -->
         <strict.gate.base>${git.origin.branch}</strict.gate.base>
         <git.origin.branch>origin/main</git.origin.branch>
@@ -597,8 +597,8 @@
 
         <profile>
             <!--
-              Replaces the default base with the event's real base commit, which
-              cicd_comp_test-phase.yml resolves from the payload and exports. Absent everywhere
+              Replaces the default base with the divergence point, which cicd_comp_test-phase.yml
+              resolves from the checkout's first parent and exports. Absent everywhere
               else, including local runs, where strict.gate.base keeps its origin/main default.
             -->
             <id>strict-gate-explicit-base</id>
