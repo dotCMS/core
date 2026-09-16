@@ -41,7 +41,7 @@ import {
     DotContentDriveUploadJob,
     DotContentDriveState
 } from '../../../shared/models';
-import { normalizeFolderRef, toFolderRef } from '../../../utils/functions';
+import { browsedFolderRef, normalizeFolderRef } from '../../../utils/functions';
 
 interface WithActionExecutionState {
     /**
@@ -619,7 +619,7 @@ export function withActionExecution() {
                         // A move changes two folders: the one the rows leave and the one they
                         // arrive in. Every other workflow action changes rows where they already
                         // are, so the browsed folder is the only one affected.
-                        const browsedFolder = toFolderRef(
+                        const browsedFolder = browsedFolderRef(
                             store.currentSite()?.hostname,
                             store.path()
                         );

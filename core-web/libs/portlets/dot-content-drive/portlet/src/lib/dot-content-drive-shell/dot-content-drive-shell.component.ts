@@ -109,6 +109,7 @@ import {
     canAddChildrenTo,
     encodeFilters,
     isFolder,
+    browsedFolderRef,
     normalizeFolderRef,
     toFolderRef
 } from '../utils/functions';
@@ -667,7 +668,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
         !affectedFolders?.length ||
         affectedFolders
             .map(normalizeFolderRef)
-            .includes(toFolderRef(this.#store.currentSite()?.hostname, this.#store.path()));
+            .includes(browsedFolderRef(this.#store.currentSite()?.hostname, this.#store.path()));
 
     /**
      * Reports a finished workflow action as a toast, refreshes the grid, and closes the dialog if it
@@ -788,7 +789,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
         const refusingFolderIsOnScreen =
             affectedRefs.length === 1 &&
             affectedRefs[0] ===
-                toFolderRef(this.#store.currentSite()?.hostname, this.#store.path());
+                browsedFolderRef(this.#store.currentSite()?.hostname, this.#store.path());
 
         // Narrowed the same way the upload itself narrows the selection: the tree's load-more row
         // is a node without a folder behind it, so it carries no filter to name.
@@ -1642,12 +1643,23 @@ export class DotContentDriveShellComponent implements OnDestroy {
                     this.#store.trackUploadJob(
                         event.handle.jobId,
                         [
-                            toFolderRef(
-                                hostFolder?.hostname ?? this.#store.currentSite()?.hostname,
-                                // Same reason: an empty path is the site root, which normalises to
-                                // `//hostname` — the ref the listing computes when browsing it.
-                                hostFolder?.path || '/'
-                            )
+                            hostFolder?.hostname
+                                ? toFolderRef(
+                                      hostFolder.hostname,
+                                      // An empty path is the site root, which normalises to
+                                      // `//hostname` — the ref the listing computes when browsing it.
+                                      hostFolder.path || ROOT_PATH
+                                  )
+                                : // No folder chosen means the batch lands wherever the sidebar is
+                                  // pointing, which is exactly what the browsed reference describes.
+                                  // Rebuilding it from the switcher's site instead named the site
+                                  // root while the files were going to System Host, so the run and
+                                  // the listing disagreed about where they had landed and the grid
+                                  // was never refreshed.
+                                  browsedFolderRef(
+                                      this.#store.currentSite()?.hostname,
+                                      this.#store.path()
+                                  )
                         ],
                         backgroundRunId,
                         // Carried to the outcome because a resubmission means opposite things by

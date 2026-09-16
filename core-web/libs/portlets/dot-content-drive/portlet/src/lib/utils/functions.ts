@@ -26,6 +26,7 @@ import {
     ROOT_PATH,
     SHARED_ASSETS_ENABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
+    SYSTEM_HOST,
     SYSTEM_HOST_PATH,
     USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
@@ -956,3 +957,22 @@ export const toFolderRef = (hostname: string | null | undefined, path: string | 
 /** Normalises an already-formed `//hostname/path` reference. See {@link toFolderRef}. */
 export const normalizeFolderRef = (ref: string | null | undefined): string =>
     (ref ?? '').toLowerCase().replace(/\/+$/, '');
+
+/**
+ * The folder reference for the location the drive is on, in the form runs are compared against.
+ *
+ * Not {@link toFolderRef} applied to the site and the location directly, because the location is
+ * not always a path on the browsed site. System Host belongs to no site, so pairing its reserved
+ * location value with whatever hostname the switcher happens to show produced
+ * `//demo.dotcms.comsystem_host` — a reference to nothing, which matched no run's affected folders.
+ * The listing therefore never reloaded after an upload landed there.
+ *
+ * @param {string | null | undefined} hostname - The browsed site's hostname
+ * @param {string | null | undefined} path - The location, which may not be a folder path at all
+ * @returns {string} the canonical reference for what is on screen
+ */
+export const browsedFolderRef = (
+    hostname: string | null | undefined,
+    path: string | null | undefined
+): string =>
+    path === SYSTEM_HOST_PATH ? toFolderRef(SYSTEM_HOST.hostname, ROOT_PATH) : toFolderRef(hostname, path);

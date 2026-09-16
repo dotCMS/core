@@ -71,6 +71,7 @@ import {
     ERROR_MESSAGE_LIFE,
     SUCCESS_MESSAGE_LIFE,
     SYSTEM_HOST,
+    SYSTEM_HOST_PATH,
     WARNING_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
@@ -2165,6 +2166,36 @@ describe('DotContentDriveShellComponent', () => {
             expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({ siteId: SYSTEM_HOST.identifier })
+            );
+        });
+
+        it('should remember a System Host batch as landing on System Host', () => {
+            // The listing reloads only when the run's folders include the one on screen, and both
+            // sides of that comparison were computed from the switcher's site plus the location.
+            // On System Host that gave `//demo.dotcms.com` for the batch and
+            // `//demo.dotcms.comsystem_host` for the listing — two references to nothing alike, so
+            // an upload finished and the grid it landed in never refreshed.
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.$systemHostSelected.mockReturnValue(true);
+            store.path.mockReturnValue(SYSTEM_HOST_PATH);
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-sh', statusUrl: '/api/v1/jobs/job-sh/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.trackUploadJob).toHaveBeenCalledWith(
+                'job-sh',
+                [`//${SYSTEM_HOST.identifier}`.toLowerCase()],
+                expect.any(String),
+                'DOTASSET'
             );
         });
 
