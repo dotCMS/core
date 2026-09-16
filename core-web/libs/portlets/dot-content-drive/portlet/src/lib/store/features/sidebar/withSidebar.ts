@@ -78,7 +78,17 @@ export function withSidebar() {
                         }
 
                         const siteNode = createSiteNode(currentSite);
-                        const urlFolderPath = store.path() || '';
+
+                        // Only a folder path names a place inside this site's hierarchy. The other
+                        // two locations do not: all site content is the absence of one, and System
+                        // Host is a host rather than a folder. Both were resolved as folder paths
+                        // anyway, so System Host was queried as `/SYSTEM_HOST/` — a folder nobody
+                        // has — and the empty result fell back to selecting the site row. That left
+                        // the site root and System Host both looking selected, and since the shell
+                        // syncs the location *from* the selected node, the site row then rewrote the
+                        // location back to the site root and bounced the user out of System Host.
+                        const location = store.path() || '';
+                        const urlFolderPath = location.startsWith(ROOT_PATH) ? location : '';
 
                         // Only the initial state used to set this, so every later cold load (a site
                         // change) left the previous site's tree on screen while its replacement was
@@ -252,8 +262,13 @@ export function withSidebar() {
                     selectionSync = effect(() => {
                         const path = store.path();
                         const folders = store.folders();
+                        // The tree marks its site row with an empty path, while the site root as a
+                        // *location* is `/` — the same translation the shell makes in the other
+                        // direction. Looking `/` up literally matches no node, so without this the
+                        // sync read the site root as "nowhere" and cleared the selection every time
+                        // the user was standing on it.
                         const match = path?.startsWith(ROOT_PATH)
-                            ? findNodeByPath(folders, path)
+                            ? findNodeByPath(folders, path === ROOT_PATH ? '' : path)
                             : undefined;
 
                         // Only when it actually differs: a folder click already sets the node, and
