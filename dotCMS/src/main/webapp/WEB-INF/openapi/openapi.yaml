@@ -28283,13 +28283,6 @@ components:
       properties:
         createdBy:
           type: string
-        createdByUserName:
-          type: string
-          description: "Display name of the user who created the experiment. Reports\
-            \ \"System\" for the system user and \"unknown\" when the user cannot\
-            \ be resolved or has no name set, so the value is never empty."
-          example: Admin User
-          readOnly: true
         creationDate:
           type: string
           format: date-time
@@ -28387,6 +28380,59 @@ components:
       properties:
         description:
           type: string
+    ExperimentView:
+      type: object
+      properties:
+        createdBy:
+          type: string
+        createdByUserName:
+          type: string
+          description: "Display name of the user who created the experiment. Reports\
+            \ \"System\" for the system user and \"unknown\" when the user cannot\
+            \ be resolved or has no name set, so the value is never empty."
+          example: Admin User
+        creationDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        goals:
+          $ref: "#/components/schemas/Goals"
+        id:
+          type: string
+        lastModifiedBy:
+          type: string
+        lookBackWindowExpireTime:
+          type: integer
+          format: int64
+        modDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+        pageId:
+          type: string
+        runningIds:
+          $ref: "#/components/schemas/RunningIds"
+        scheduling:
+          $ref: "#/components/schemas/Scheduling"
+        status:
+          type: string
+          enum:
+          - RUNNING
+          - SCHEDULED
+          - ENDED
+          - DRAFT
+          - ARCHIVED
+        targetingConditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TargetingCondition"
+        trafficAllocation:
+          type: number
+          format: float
+        trafficProportion:
+          $ref: "#/components/schemas/TrafficProportion"
     ExportSecretForm:
       type: object
       properties:
@@ -33910,7 +33956,7 @@ components:
         entity:
           type: array
           items:
-            $ref: "#/components/schemas/Experiment"
+            $ref: "#/components/schemas/ExperimentView"
         errors:
           type: array
           items:
@@ -35510,7 +35556,7 @@ components:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/Experiment"
+          $ref: "#/components/schemas/ExperimentView"
         errors:
           type: array
           items:

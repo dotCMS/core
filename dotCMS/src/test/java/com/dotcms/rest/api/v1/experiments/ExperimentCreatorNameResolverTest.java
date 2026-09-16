@@ -1,4 +1,4 @@
-package com.dotcms.experiments.model;
+package com.dotcms.rest.api.v1.experiments;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;

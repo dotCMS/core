@@ -20,8 +20,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.XMLUtils;
-import com.dotcms.experiments.model.Experiment;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -328,29 +326,8 @@ public class BundlerUtil {
             objectMapper.registerModule(javaTimeModule);
             objectMapper.registerModule(new Jdk8Module());
             objectMapper.registerModule(new GuavaModule());
-            objectMapper.addMixIn(Experiment.class, ExperimentBundleMixIn.class);
         }
         return objectMapper;
-    }
-
-    /**
-     * Keeps read-time derived fields out of the bundled shape of an {@link Experiment}.
-     *
-     * <p>{@code createdByUserName} is resolved when an Experiment is serialized, so it would
-     * otherwise be written into the bundle and into starter exports. That matters because this
-     * mapper deliberately leaves {@code FAIL_ON_UNKNOWN_PROPERTIES} at Jackson's default: a
-     * receiver running a build that predates the field would reject the file as an unknown
-     * property, and {@link com.dotcms.publisher.receiver.BundlePublisher} runs every handler inside
-     * one transaction — so that rejection rolls back the entire bundle, not just the experiment.
-     *
-     * <p>The field is a display value derived from {@code createdBy}, which IS bundled, so nothing
-     * is lost: the receiver resolves the name itself when it serves the experiment over REST.
-     * Ignoring it here also makes a current receiver tolerant of a bundle that happens to carry it.
-     */
-    private abstract static class ExperimentBundleMixIn {
-
-        @JsonIgnore
-        abstract String createdByUserName();
     }
 
     private static ObjectMapper getCustomMapper() {

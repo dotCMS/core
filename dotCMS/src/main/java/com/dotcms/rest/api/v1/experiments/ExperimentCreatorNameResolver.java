@@ -1,4 +1,4 @@
-package com.dotcms.experiments.model;
+package com.dotcms.rest.api.v1.experiments;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
@@ -9,7 +9,7 @@ import com.liferay.portal.model.User;
 import java.util.function.Supplier;
 
 /**
- * Turns an {@link AbstractExperiment#createdBy()} user ID into the display name published as
+ * Turns an {@code Experiment.createdBy()} user ID into the display name published as
  * {@code createdByUserName} (#37304).
  *
  * <p><b>The field is never null, absent or empty.</b> The system user is reported as

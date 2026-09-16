@@ -16,7 +16,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.vavr.control.Try;
 import java.io.Serializable;
 import java.time.Instant;
@@ -90,41 +89,6 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
 
     @JsonProperty("createdBy")
     String createdBy();
-
-    /**
-     * The display name of the user behind {@link #createdBy()}, resolved when the Experiment is
-     * serialized and never stored, so a creator who renames themselves is reported under the new
-     * name. Reports {@code "System"} for the system user and {@code "unknown"} when the creator
-     * cannot be resolved or has no name set, matching the labels the Content Drive folder view
-     * already uses — the value is never null, absent or empty. See
-     * {@link ExperimentCreatorNameResolver}.
-     *
-     * <p>Deliberately a plain {@code default} method rather than a {@code @Value.Derived} or
-     * {@code @Value.Lazy} attribute: those are computed at construction or memoized per instance,
-     * which would resolve a user on every Experiment built from the database — including the
-     * running-experiments cache fill behind page rendering, which serializes only the experiment
-     * id and never the object — and would let a memoized name outlive a rename inside that cache.
-     * As an ordinary default method it costs nothing until something serializes the Experiment.
-     *
-     * <p>Two paths do serialize the whole Experiment — push-publish bundling
-     * ({@code ExperimentBundler}) and starter export ({@code ExportStarterUtil}) — and both are
-     * deliberately excluded: {@code BundlerUtil} registers a mix-in that ignores this field, so it
-     * never reaches a bundle and those paths pay no lookup. That keeps bundles readable by a
-     * receiver running a build without the field, which would otherwise reject the file as an
-     * unknown property and roll back the whole bundle.
-     *
-     * <p>{@code READ_ONLY} is load-bearing: the generated {@code Experiment.Json} delegate binds
-     * settable attributes only, so without it a payload carrying this field would fail to
-     * deserialize as an unknown property.
-     */
-    @JsonProperty(value = "createdByUserName", access = JsonProperty.Access.READ_ONLY)
-    @Schema(description = "Display name of the user who created the experiment. Reports \"System\" "
-            + "for the system user and \"unknown\" when the user cannot be resolved or has no name "
-            + "set, so the value is never empty.",
-            example = "Admin User")
-    default String createdByUserName() {
-        return ExperimentCreatorNameResolver.INSTANCE.resolve(createdBy());
-    }
 
     @JsonProperty("lastModifiedBy")
     String lastModifiedBy();

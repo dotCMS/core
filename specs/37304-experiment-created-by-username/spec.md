@@ -218,11 +218,9 @@ both the list and the single fetch, and confirm the response succeeds and report
 - **FR-023**: An Experiment payload that contains `createdByUserName` MUST still be readable wherever
   Experiment JSON is parsed back into an Experiment. The added field must not make a round-tripped
   payload fail to parse.
-- **FR-023a**: `createdByUserName` MUST NOT appear in push-publish bundles or starter exports. Those
-  artifacts are read back by a receiver that may be running a build without the field, and that
-  receiver fails the entire bundle rather than the single experiment. The field is derived from
-  `createdBy`, which is bundled, so the receiver can resolve the name itself when it serves the
-  experiment over REST — nothing is lost by excluding it.
+- **FR-023a**: `createdByUserName` MUST NOT appear on the `Experiment` model itself, and therefore
+  MUST NOT reach push-publish bundles or starter exports. It is published by the REST view only, so
+  the endpoint response carries it and nothing else does.
 
 ### Endpoints in scope
 
@@ -322,18 +320,17 @@ Endpoints under `/v1/experiments` that do **not** carry an Experiment, and are t
   That method joins the parts with spaces and never trims, so it returns a single space when every part is blank, and leaves padding like "Admin " when only one part is set, which is exactly the case FR-010
   covers.
 
-- **A5 — The database is not a round-trip, but push publishing is.** Experiments are rebuilt from
-  database columns by a transformer, not by parsing stored Experiment JSON, so persistence itself
-  cannot break. Push publishing is a different story and an earlier draft of this spec had it wrong:
-  `ExperimentBundler` and `ExperimentHandler` are live, they simply live under
-  `dotCMS/src/enterprise/java` rather than `src/main/java`. The bundler serializes the whole
-  Experiment through `BundlerUtil`, and the handler reads it back through a bare `ObjectMapper` that
-  leaves `FAIL_ON_UNKNOWN_PROPERTIES` at Jackson's default. `ExperimentHandler` catches around its
-  entire loop and rethrows, and `BundlePublisher` runs every handler inside one transaction — so a
-  receiver on a build without the field would reject the experiment file and roll back the **whole**
-  bundle, including the pages and contentlets that shipped with it. Nothing in the push-publish path
-  checks that sender and receiver run the same version. Starter export (`ExportStarterUtil`)
-  serializes Experiments the same way. FR-023a is the consequence.
+- **A5 — The name is derived in the REST layer, not on the model.** An earlier revision put the
+  accessor on `AbstractExperiment` itself. That made every serialization of an Experiment resolve a
+  user, and serialization is not only REST: `ExperimentBundler` and `ExperimentHandler` are live —
+  they simply live under `dotCMS/src/enterprise/java` rather than `src/main/java`, which is why an
+  earlier draft of this spec wrongly called them absent. The bundler serializes the whole Experiment
+  and the handler reads it back through a mapper that rejects unknown properties, while
+  `BundlePublisher` runs every handler in one transaction — so a receiver on a build without the
+  field would have rolled back the **entire** bundle. Starter export (`ExportStarterUtil`)
+  serializes Experiments the same way. Review (#37510) asked for the derivation to move to the REST
+  layer, and it did: `ExperimentView` carries it, the model is a plain data object again, and the
+  problem is removed at the source rather than mitigated.
 
 - **A6 — The consumer needs one display string.** #37307 renders a single Created By column, so a
   single pre-joined name is sufficient; separate first/last fields are not required.

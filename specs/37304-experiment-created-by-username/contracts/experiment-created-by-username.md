@@ -73,29 +73,27 @@ Drive folder view, so the same orphaned owner reads the same in both listings.
 
 The field is never `null`, never absent and never `""`.
 
-## Bundles and starter exports (excluded)
+## Where the field is produced
 
-The field is a REST-response concern only. `BundlerUtil` registers a mix-in that ignores it, so it
-does **not** appear in push-publish bundles or starter exports, and those paths perform no user
-lookup.
+`ExperimentView` (`com.dotcms.rest.api.v1.experiments`) wraps the Experiment for a response and adds
+the field; the Experiment is `@JsonUnwrapped`, so the payload stays a flat object and the wire shape
+is unchanged except for the addition. `ResponseEntitySingleExperimentView` and
+`ResponseEntityExperimentView` do the wrapping, so none of the 14 endpoints changed.
 
-The reason is compatibility, not tidiness: bundles are read back through a bare `ObjectMapper` that
-fails on unknown properties, and `BundlePublisher` runs every handler in a single transaction — so a
-receiver on a build without the field would reject the experiment file and roll back the **entire**
-bundle. `createdBy` is bundled as before, and the receiver resolves the name itself when it serves
-the experiment over REST.
+The `Experiment` schema in `openapi.yaml` is therefore untouched, and a new `ExperimentView` schema
+carries the flattened fields plus `createdByUserName`. Both response wrappers now `$ref` the view.
+
+Because the model is a plain data object again, the field does **not** reach push-publish bundles or
+starter exports, and those paths pay no user lookup — no mix-in or other mitigation is needed.
 
 ## Deserialization contract (FR-023)
 
 `createdByUserName` is **read-only**: serialized on the way out, ignored on the way in. A payload
 containing it must still deserialize into an `Experiment` without error.
 
-This is not free. The generated `Experiment.Json` delegate carries settable attributes only and is
-**not** annotated `@JsonIgnoreProperties(ignoreUnknown = true)`, and the REST mapper
-(`DotObjectMapperProvider.createDefaultMapper()`) leaves `FAIL_ON_UNKNOWN_PROPERTIES` at Jackson's
-default — enabled. `@JsonProperty(access = READ_ONLY)` is the mechanism that makes the property
-*known but not bound*; the round-trip test is what proves it, and `@JsonAppend` is the pre-approved
-fallback if it does not hold. See [../research.md](../research.md) R1.
+With the field on the view rather than the model, this is now free: the Experiment payload has no
+serialize-only property, so it round-trips exactly as it did before this change. `ExperimentView` is
+a response type and is never deserialized. The guard is `bareExperiment_stillRoundTripsAndKeepsItsContract`.
 
 ## Verification
 
