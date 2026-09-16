@@ -604,6 +604,17 @@ public class FileAssetAPIImpl implements FileAssetAPI {
      */
     @Deprecated
     public String getRealAssetPath(final String inode, final String fileName, final String ext) {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            try {
+                final File binary = APILocator.getBinaryAssetStorageAPI().getBinaryFile(inode, FileAssetAPI.BINARY_FIELD);
+                if (binary != null && fileName.equals(UtilMethods.getFileName(binary.getName()))
+                        && java.util.Objects.toString(ext, "").equalsIgnoreCase(UtilMethods.getFileExtension(binary.getName()))) {
+                    return binary.getAbsolutePath();
+                }
+            } catch (DotDataException e) {
+                throw new com.dotmarketing.exception.DotRuntimeException("Unable to resolve file asset " + inode, e);
+            }
+        }
         String realPath = Config.getStringProperty("ASSET_REAL_PATH");
         if (UtilMethods.isSet(realPath) && !realPath.endsWith(java.io.File.separator)) {
             realPath += java.io.File.separator;
@@ -819,6 +830,14 @@ public class FileAssetAPIImpl implements FileAssetAPI {
      * @param fileAsset
      */
     public void cleanThumbnailsFromFileAsset(IFileAsset fileAsset) {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            try {
+                APILocator.getBinaryAssetStorageAPI().deleteGeneratedFiles(fileAsset.getInode());
+                return;
+            } catch (DotDataException e) {
+                throw new com.dotmarketing.exception.DotRuntimeException("Unable to invalidate S3 renditions", e);
+            }
+        }
         // Wiping out the thumbnails and resized versions
         // http://jira.dotmarketing.net/browse/DOTCMS-5911
         final String inode = fileAsset.getInode();

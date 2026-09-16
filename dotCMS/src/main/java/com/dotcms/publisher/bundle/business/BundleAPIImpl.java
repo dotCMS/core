@@ -119,6 +119,9 @@ public class BundleAPIImpl implements BundleAPI {
 	@WrapInTransaction
 	@Override
 	public void deleteBundle(String id) throws DotDataException {
+		if (UtilMethods.isSet(id)) {
+			com.dotcms.publishing.output.BundleArchiveCleanupProcessor.enqueue(id);
+		}
 		bundleFactory.deleteBundle(id);
 	}
 

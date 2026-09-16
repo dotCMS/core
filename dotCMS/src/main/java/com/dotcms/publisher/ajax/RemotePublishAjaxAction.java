@@ -413,7 +413,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             Verify if the bundle exist and was created correctly..., meaning, if there is not a .tar.gz file is because
             something happened on the creation of the bundle.
              */
-            File bundleFile = new File( ConfigUtils.getBundlePath() + File.separator + basicConfig.getId() + ".tar.gz" );
+            File bundleFile = com.dotcms.publishing.output.TarGzipBundleOutput.getBundleTarGzipFile(basicConfig.getId());
             if ( !bundleFile.exists() ) {
                 Logger.warn( this.getClass(), "No Push Publish Bundle with id: " + bundleId + " found." );
                 appendMessage( responseMessage, "publisher_retry.error.not.found", bundleId, true );
@@ -520,7 +520,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
         ArrayList<File> list = new ArrayList<>( 1 );
         list.add( bundleRoot );
-        File bundle = new File( bundleRoot + File.separator + ".." + File.separator + config.getId() + ".tar.gz" );
+        File bundle = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? com.dotcms.publishing.output.TarGzipBundleOutput.getBundleTarGzipFile(config.getId())
+                : new File( bundleRoot + File.separator + ".." + File.separator + config.getId() + ".tar.gz" );
         if ( !bundle.exists() ) {
             response.sendError( 500, "No Bundle Found" );
             return;
@@ -634,7 +636,14 @@ public class RemotePublishAjaxAction extends AjaxAction {
             //Clean the just created bundle because on each download we will generate a new bundle file with a new id in order to avoid conflicts with ids
             final File bundleRoot = BundlerUtil.getBundleRoot( bundleId );
             final File compressedBundle = new File( ConfigUtils.getBundlePath() + File.separator + bundleId + ".tar.gz" );
-            if ( compressedBundle.exists() ) {
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                try {
+                    com.dotcms.publishing.output.BundleArchiveStorage.getInstance().delete(bundleId);
+                } catch (DotDataException e) {
+                    Logger.error(this, "Unable to remove generated download bundle " + bundleId, e);
+                }
+            }
+            else if ( compressedBundle.exists() ) {
                 compressedBundle.delete();
                 if ( bundleRoot.exists() ) {
                     com.liferay.util.FileUtil.deltree( bundleRoot );
@@ -689,7 +698,11 @@ public class RemotePublishAjaxAction extends AjaxAction {
             status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, endpointId, bundleFolder );
 
             // Write file on FS
-            FileUtil.writeToFile( bundle, bundlePath + bundleName );
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                com.dotcms.publishing.output.BundleArchiveStorage.getInstance().receive(bundleName, bundle);
+            } else {
+                FileUtil.writeToFile( bundle, bundlePath + bundleName );
+            }
 
             if ( !status.getStatus().equals( Status.PUBLISHING_BUNDLE ) ) {
                 PushPublisherJob.triggerPushPublisherJob(bundleName, status);

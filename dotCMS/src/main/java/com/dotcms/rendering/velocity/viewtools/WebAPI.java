@@ -402,6 +402,9 @@ public class WebAPI implements ViewTool {
 				  : cvi.get().getLiveInode();
 		  FileAsset file  = APILocator.getFileAssetAPI().fromContentlet(APILocator.getContentletAPI().find(conInode,  user, true));
 
+          if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+              return APILocator.getFileAssetAPI().getRealAssetPath(conInode, file.getUnderlyingFileName());
+          }
 		  final File binaryFile = APILocator.getBinaryAssetStorageAPI()
 				  .getBinaryFile(conInode, FileAssetAPI.BINARY_FIELD);
 		  return binaryFile != null ? binaryFile.getAbsolutePath() : null;

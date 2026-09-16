@@ -46,7 +46,14 @@ import org.junit.platform.suite.api.Suite;
         BulkUploadConcurrencyIT.class,
         BulkUploadReclaimIT.class,
         BulkUploadSecurityIT.class,
-        JobProcessorDiscoveryTest.class
+        JobProcessorDiscoveryTest.class,
+        com.dotcms.storage.binary.BinaryAssetStorageIntegrationTest.class,
+        com.dotcms.storage.binary.ContentletBackupStorageTest.class,
+        com.dotcms.storage.binary.SharedAssetStorageIntegrationTest.class,
+        com.dotcms.storage.binary.BinaryAssetStarterRestoreTest.class,
+        com.dotcms.rendering.velocity.services.AssetTemplateStorageTest.class,
+        com.dotcms.csspreproc.CSSAssetStorageTest.class,
+        com.dotcms.publishing.PublishingArchiveStorageTest.class
 })
 public class Junit5Suite1 {
 

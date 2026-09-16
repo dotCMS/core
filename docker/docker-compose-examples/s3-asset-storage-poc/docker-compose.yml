@@ -1,0 +1,94 @@
+name: dotcms-s3-assets-poc
+services:
+  db:
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_USER: dotcms
+      POSTGRES_PASSWORD: local-poc-db
+      POSTGRES_DB: dotcms
+    volumes:
+      - db-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dotcms -d dotcms"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  search:
+    image: opensearchproject/opensearch:1.3.6
+    environment:
+      discovery.type: single-node
+      DISABLE_SECURITY_PLUGIN: "true"
+      OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m -XX:-UseContainerSupport
+    volumes:
+      - search-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9200/_cluster/health >/dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address :9001
+    environment:
+      MINIO_ROOT_USER: s3-poc-admin
+      MINIO_ROOT_PASSWORD: local-s3-poc-password
+      MINIO_DOMAIN: minio
+    networks:
+      default:
+        aliases:
+          - binary-assets-poc.minio
+    ports:
+      - "127.0.0.1:19000:9000"
+      - "127.0.0.1:19001:9001"
+    volumes:
+      - s3-data:/data
+  create-bucket:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        until mc alias set poc http://minio:9000 s3-poc-admin local-s3-poc-password; do sleep 2; done;
+        mc mb --ignore-existing poc/binary-assets-poc
+  dotcms:
+    image: dotcms/s3-assets-poc:legacy-20260915
+    environment:
+      CMS_JAVA_OPTS: -Xms1g -Xmx2g
+      DB_BASE_URL: jdbc:postgresql://db:5432/dotcms
+      DB_USERNAME: dotcms
+      DB_PASSWORD: local-poc-db
+      DOT_ES_ENDPOINTS: http://search:9200
+      DOT_INITIAL_ADMIN_PASSWORD: admin
+      DOT_DOTCMS_CLUSTER_ID: s3-assets-poc
+      DOT_STARTER_DATA_LOAD: /data/starter/demo-starter.zip
+      DOT_FEATURE_FLAG_S3_ASSET_STORAGE: "true"
+      DOT_BINARY_ASSET_STORAGE_TYPE: BINARY_CHAIN
+      DOT_DOTGENERATED_DEFAULT_PATH: LOCAL
+      DOT_STORAGE_FILE_METADATA_DEFAULT_CHAIN: FILE_SYSTEM,S3
+      DOT_STORAGE_FILE_METADATA_S3_BUCKET_NAME: binary-assets-poc
+      DOT_STORAGE_FILE_METADATA_S3_BUCKET_REGION: us-east-1
+      DOT_STORAGE_FILE_METADATA_S3_ACCESS_KEY: s3-poc-admin
+      DOT_STORAGE_FILE_METADATA_S3_SECRET_ACCESS_KEY: local-s3-poc-password
+      DOT_STORAGE_FILE_METADATA_S3_ENDPOINT: http://minio:9000
+      DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED: "false"
+    depends_on:
+      db:
+        condition: service_healthy
+      search:
+        condition: service_healthy
+      create-bucket:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:18080:8080"
+      - "127.0.0.1:18090:8090"
+    volumes:
+      - cms-local:/data/local
+      - cms-shared:/data/shared
+      - ../../../dotCMS/target/s3-poc:/data/starter:ro
+volumes:
+  db-data:
+  search-data:
+  s3-data:
+  cms-local:
+  cms-shared:

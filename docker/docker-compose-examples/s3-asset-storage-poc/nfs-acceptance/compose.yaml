@@ -1,0 +1,20 @@
+name: binary-nfs-it
+services:
+  nfs:
+    build: .
+    image: dotcms/binary-nfs-it:local
+    cap_add: [SYS_ADMIN, DAC_READ_SEARCH]
+    volumes:
+      - data:/export
+  client-a: &client
+    image: dotcms/binary-nfs-it:local
+    cap_add: [SYS_ADMIN]
+    entrypoint: ["/bin/sh", "-c", "timeout 25 mount -t nfs -o vers=4.1,hard,timeo=50,retrans=2 nfs:/ /mnt/nfs && exec sleep infinity"]
+    depends_on: [nfs]
+    volumes:
+      - ../../../..:/workspace:ro
+      - ${HOME}/.m2/repository:/m2:ro
+  client-b:
+    <<: *client
+volumes:
+  data:

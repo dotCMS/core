@@ -22,6 +22,54 @@ public interface BinaryAssetStorageAPI {
      * Group name used for binary asset storage in the underlying StoragePersistenceAPI.
      */
     String BINARY_ASSETS_GROUP = "binary-assets";
+    String GENERATED_ASSETS_GROUP = "generated-assets";
+
+    /** Holds local cache files through synchronous consumption; close on the acquiring thread. */
+    interface CacheLease extends AutoCloseable {
+        @Override
+        void close();
+    }
+
+    /** Acquire before resolving files and release after opening/consuming them. NFS needs no eviction lease. */
+    default CacheLease acquireCacheLease() {
+        return () -> { };
+    }
+
+    /** Opens an authorized local path, restoring an owned binary cache path if necessary. Caller checks access. */
+    default InputStream openLocalFile(File file) throws java.io.IOException, DotDataException {
+        return java.nio.file.Files.newInputStream(file.toPath());
+    }
+
+    /** Stores a new immutable object; the caller persists the returned file reference with its content transaction. */
+    File storeRevision(String inode, String field, String fileName, File source) throws DotDataException;
+
+    /** Restores the exact immutable reference carried by a content snapshot. */
+    File getRevisionFile(String inode, String field, String storageKey) throws DotDataException;
+
+    /** Backfills an existing local binary at its current key without changing the content reference. */
+    boolean backfillBinary(String inode, String field, File file) throws DotDataException;
+
+    /** Migrates completed, inode-owned rendition objects without changing their public cache paths. */
+    default void backfillGeneratedFiles(String inode) throws DotDataException { }
+
+    /** Retrieves a completed rendition at its configured local dotGenerated path, restoring from S3. */
+    default File getGeneratedFile(final File localFile) throws DotDataException {
+        return localFile.isFile() ? localFile : null;
+    }
+
+    /** Durably stores a completed rendition. Filesystem/NFS mode needs no additional copy. */
+    default void storeGeneratedFile(final File localFile) throws DotDataException { }
+
+    /** Invalidates the inode's rendition prefix, including remote-only files. */
+    default void deleteGeneratedFiles(final String inode) throws DotDataException { }
+
+    /**
+     * Deletes a local cache file only when a durable copy of the same contents is verified.
+     * Filesystem-only providers retain the file.
+     */
+    default boolean evictLocalFile(final File file) throws DotDataException {
+        return false;
+    }
 
     /**
      * Retrieves a binary file for the given inode, field, and filename.
@@ -55,9 +103,8 @@ public interface BinaryAssetStorageAPI {
      * don't know the filename — only the inode and field variable name. The implementation
      * lists the field directory and returns the first non-generated, non-hidden file.</p>
      *
-     * <p><strong>Known limitation:</strong> In Phase 2 (FILE_SYSTEM only), this method bypasses
-     * {@code StoragePersistenceAPI} for the directory listing step and goes direct to filesystem.
-     * Phase 3 must add prefix-based listing to the storage layer for S3 support.</p>
+     * <p>Uses the local directory when cached, otherwise discovers the filename through
+     * storage-provider listings.</p>
      *
      * @param inode        the contentlet inode
      * @param fieldVarName the field's velocity variable name (e.g., "fileAsset", "image")
@@ -131,6 +178,9 @@ public interface BinaryAssetStorageAPI {
      */
     void deleteBinary(String inode, String fieldVarName) throws DotDataException;
 
+    /** Deletes only an archived inventory; later uploads in the same field are not included. */
+    void deleteBinaryPaths(String inode, String field, java.util.List<String> paths) throws DotDataException;
+
     /**
      * Checks whether a binary field directory exists for the given inode and field.
      *
@@ -153,5 +203,8 @@ public interface BinaryAssetStorageAPI {
      * @throws DotDataException if a storage error occurs
      */
     void deleteAllBinaries(String inode) throws DotDataException;
+
+    /** Lists local and durable object paths, including unreferenced revisions, for inode cleanup. */
+    java.util.List<String> listBinaryPaths(String inode) throws DotDataException;
 
 }

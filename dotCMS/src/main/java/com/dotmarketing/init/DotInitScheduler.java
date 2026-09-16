@@ -149,7 +149,7 @@ public class DotInitScheduler {
 			}
 
 			// Binary Cache Eviction Job (for BINARY_CHAIN mode — evicts oldest cached files from local FS)
-			if(UtilMethods.isSet(Config.getStringProperty(BinaryCacheEvictionJob.BINARY_CACHE_EVICTION_CRON_PROP, null))) {
+            if(com.dotcms.storage.AssetStorageFeature.isEnabled() && UtilMethods.isSet(Config.getStringProperty(BinaryCacheEvictionJob.BINARY_CACHE_EVICTION_CRON_PROP, null))) {
 				try {
 					isNew = false;
 

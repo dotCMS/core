@@ -46,6 +46,8 @@ import java.util.stream.Stream;
  */
 public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAPI {
 
+    public static final String GROUP_DIRECTORY = "groupDirectory";
+
     private static final String DEFAULT_ROOT = "root";
     private static final String THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED = "The bucketName: `%s`, does not have any files mapped";
     private static final String STORAGE_POOL = "StoragePool";
@@ -86,6 +88,15 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         Logger.debug(this, () -> String.format("Registering new group '%s' mapped to folder '%s' ",groupName, folder));
     }
 
+    private String normalizePath(final String groupName, final String path) {
+        return AssetStorageFeature.isEnabled()
+                && (com.dotcms.storage.binary.BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equalsIgnoreCase(groupName)
+                || com.dotcms.storage.binary.BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equalsIgnoreCase(groupName)
+                || com.dotcms.publishing.output.BundleArchiveStorage.GROUP.equalsIgnoreCase(groupName)
+                || TemporaryAssetStorage.GROUP.equalsIgnoreCase(groupName))
+                ? path : path.toLowerCase();
+    }
+
     @Override
     public boolean existsGroup(final String groupName) throws DotDataException{
         final String groupNameLC = groupName.toLowerCase();
@@ -101,7 +112,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
         final File groupDir = groups.get(groupNameLC);
         try {
-           return Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile().exists();
+           return Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path)).toFile().exists();
         }catch(IOException e){
             throw new DotDataException(e.getMessage(), e);
         }
@@ -114,8 +125,20 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     @Override
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) throws DotDataException {
+        if (extraOptions.get(GROUP_DIRECTORY) instanceof File) {
+            addGroupMapping(groupName, (File) extraOptions.get(GROUP_DIRECTORY));
+            return true;
+        }
         final String groupNameLC = groupName.toLowerCase();
         final File groupNamePath = this.groups.get(groupNameLC);
+        if (AssetStorageFeature.isEnabled() && groupNamePath != null) {
+            try {
+                Files.createDirectories(groupNamePath.toPath());
+                return true;
+            } catch (IOException e) {
+                throw new DotDataException("Unable to create mapped storage directory " + groupNamePath, e);
+            }
+        }
         if (null != groupNamePath && groupNamePath.exists() && groupNamePath.isAbsolute()) {
             return true;
         }
@@ -148,7 +171,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     @Override
     public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
-        return new File(groups.get(groupName.toLowerCase()), path.toLowerCase()).delete();
+        return new File(groups.get(groupName.toLowerCase()), normalizePath(groupName, path)).delete();
     }
 
     @Override
@@ -179,8 +202,25 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         if (null != file && file.exists() && file.canRead() && groupDir.canWrite()) {
 
             try {
-                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
-                FileUtils.copyFile(file, destBucketFile);
+                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path)).toFile();
+                if (!AssetStorageFeature.isEnabled()) {
+                    FileUtils.copyFile(file, destBucketFile);
+                } else if (!file.getCanonicalFile().equals(destBucketFile.getCanonicalFile())) {
+                    final Path destination = destBucketFile.toPath();
+                    Files.createDirectories(destination.getParent());
+                    final Path staged = Files.createTempFile(destination.getParent(), ".restore-", ".tmp");
+                    try {
+                        Files.copy(file.toPath(), staged, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        try {
+                            Files.move(staged, destination, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                            Files.move(staged, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    } finally {
+                        Files.deleteIfExists(staged);
+                    }
+                }
             } catch (IOException e) {
                 Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
                 throw new DotDataException(e.getMessage(), e);
@@ -214,7 +254,27 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 return lockManager.tryLock("fs_" + groupName + path,
                         () -> {
 
-                            final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
+                            final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),normalizePath(groupName, path)).toFile();
+
+                            if (AssetStorageFeature.isEnabled()) {
+                                final Path destination = destBucketFile.toPath();
+                                Files.createDirectories(destination.getParent());
+                                final Path staged = Files.createTempFile(destination.getParent(), ".metadata-", ".tmp");
+                                try {
+                                    try (OutputStream outputStream = FileUtil.createOutputStream(staged, contentMetadataCompressor.get())) {
+                                        writerDelegate.write(outputStream, object);
+                                    }
+                                    try {
+                                        Files.move(staged, destination, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                    } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                                        Files.move(staged, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                    }
+                                    return true;
+                                } finally {
+                                    Files.deleteIfExists(staged);
+                                }
+                            }
 
                             // someone else already wrote the file meanwhile waiting for the lock
                             // so, I do not need to write it again
@@ -284,6 +344,24 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     @Override
     public File pullFile(final String groupName, final String path) throws DotDataException {
 
+        if (AssetStorageFeature.isEnabled()) {
+            final File groupDir = groups.get(groupName.toLowerCase());
+            if (groupDir == null) {
+                return null;
+            }
+            try {
+                final Path file = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path));
+                if (!Files.readAttributes(file, java.nio.file.attribute.BasicFileAttributes.class).isRegularFile()) {
+                    throw new IOException("Stored binary is not a regular file: " + file);
+                }
+                return file.toFile();
+            } catch (NoSuchFileException absent) {
+                return null;
+            } catch (IOException e) {
+                throw new DotDataException("Unable to read stored binary " + path, e);
+            }
+        }
+
         if (!this.existsGroup(groupName)) {
 
             throw new IllegalArgumentException(String.format(
@@ -293,10 +371,13 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         try {
             final File groupDir = groups.get(groupName.toLowerCase());
             if (groupDir.canRead()) {
-                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
+                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path)).toFile();
                 if (destBucketFile.exists()) {
                     clientFile = destBucketFile;
                 } else {
+                    if (AssetStorageFeature.isEnabled()) {
+                        return null;
+                    }
                     throw new IllegalArgumentException(
                             "The group: " + destBucketFile + ", does not exists.");
                 }
@@ -315,6 +396,24 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     public Object pullObject(final String groupName, final String path,
             final ObjectReaderDelegate readerDelegate) throws DotDataException {
 
+        if (AssetStorageFeature.isEnabled()) {
+            final File groupDir = groups.get(groupName.toLowerCase());
+            if (groupDir == null) {
+                return null;
+            }
+            try {
+                final Path file = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path));
+                final String compressor = Config.getStringProperty("CONTENT_METADATA_COMPRESSOR", "none");
+                try (InputStream input = FileUtil.createInputStream(file, compressor)) {
+                    return readerDelegate.read(input);
+                }
+            } catch (NoSuchFileException absent) {
+                return null;
+            } catch (IOException e) {
+                throw new DotDataException("Unable to read stored object " + path, e);
+            }
+        }
+
         Object object;
         if (!this.existsGroup(groupName)) {
 
@@ -328,7 +427,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             File file = null;
 
             try {
-                file = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
+                file = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path)).toFile();
                 // Assume the file is there and open it directly — a failed open reports absence
                 // without the extra stat of an exists() pre-check, which is a hang risk on
                 // network-backed storage (issue #36498).
@@ -336,6 +435,9 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 try (InputStream input = FileUtil.createInputStream(file.toPath(), compressor)) {
                     object = readerDelegate.read(input);
                 } catch (final FileNotFoundException | NoSuchFileException absent) {
+                    if (AssetStorageFeature.isEnabled()) {
+                        return null;
+                    }
                     throw new IllegalArgumentException("The file: " + path + ", does not exists.");
                 }
             } catch (MismatchedInputException e) {
@@ -463,8 +565,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             return List.of();
         }
 
-        try (final Stream<Path> walk = Files.walk(prefixDir, 2)) {
-            final Path groupRoot = groupDir.toPath();
+        try (final Stream<Path> walk = Files.walk(prefixDir)) {
+            final Path groupRoot = groupDir.getCanonicalFile().toPath();
             return walk
                     .filter(Files::isRegularFile)
                     .map(groupRoot::relativize)

@@ -122,6 +122,11 @@ public class MarkdownTool implements ViewTool {
 			template.merge(ctx, writer);
 			return writer.toString();
 		} else {
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				try (var input = asset.getInputStream()) {
+					return new String(input.readAllBytes());
+				}
+			}
 			return new String(FileUtil.getBytes(asset.getFileAsset().getAbsoluteFile()));
 		}
 

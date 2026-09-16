@@ -142,6 +142,9 @@ public class BundlerUtil {
         final File bundleRoot = BundlerUtil.getBundleRoot( basicConfig.getName(), false );
 
         final File bundleStaticFile = new File(bundleRoot.getAbsolutePath() + PublisherConfig.STATIC_SUFFIX);
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            return bundleStaticFile.exists() || com.dotcms.publishing.output.BundleArchiveStorage.getInstance().exists(bundleId);
+        }
         if ( !bundleStaticFile.exists() ) {
             return true;
         }
@@ -210,6 +213,9 @@ public class BundlerUtil {
 		try (final OutputStream outputStream = output.addFile(bundleXmlFilePath)) {
             objectToXML(config, outputStream);
         } catch ( IOException e ) {
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                throw new DotRuntimeException("Unable to include bundle descriptor", e);
+            }
             Logger.error( BundlerUtil.class, e.getMessage(), e );
         }
 	}
@@ -522,6 +528,9 @@ public class BundlerUtil {
     }
 
     public static boolean tarGzipExists(final String bundleId) {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            return com.dotcms.publishing.output.BundleArchiveStorage.getInstance().exists(bundleId);
+        }
         final File bundleTarGzip = TarGzipBundleOutput.getBundleTarGzipFile(bundleId);
         return bundleTarGzip.exists();
     }

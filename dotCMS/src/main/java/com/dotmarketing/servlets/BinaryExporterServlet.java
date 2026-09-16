@@ -181,6 +181,16 @@ public class BinaryExporterServlet extends HttpServlet {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+                serveBinary(req, resp);
+            }
+        } else {
+            serveBinary(req, resp);
+        }
+    }
+
+    private void serveBinary(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String servletPath = req.getServletPath();
 		String uri = req.getRequestURI().substring(servletPath.length());
 		String[] uriPieces = uri.split("/");
@@ -425,6 +435,9 @@ public class BinaryExporterServlet extends HttpServlet {
         // TempFileAPI.createTempFile) so consumers get a usable image preview.
         if (temp.metadata == null && temp.file.exists()) {
           temp = new DotTempFile(temp.id, temp.file);
+        }
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+          temp = tempFileAPI.completeTempFile(temp);
         }
 		copyMetadata(uuid, fieldVarName, temp);
         // The focal point is authoritative in the request URL. Write it straight onto the saved

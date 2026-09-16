@@ -92,6 +92,9 @@ public class Bundle {
 	 * @return boolean - true if the bundle exists.
 	 */
 	public boolean bundleTgzExists() {
+	    if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+	        return com.dotcms.publishing.output.BundleArchiveStorage.getInstance().exists(id);
+	    }
 	    
 	    return Try.of(()->new File(  ConfigUtils.getBundlePath() + File.separator + id + ".tar.gz" ).exists()).getOrElse(false);
 	    

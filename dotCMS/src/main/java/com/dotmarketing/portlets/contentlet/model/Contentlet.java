@@ -310,7 +310,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @param contentlet
 	 */
 	public Contentlet(final Contentlet contentlet) {
-		this(contentlet.getMap());
+		this(com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? new HashMap<>(contentlet.map) : contentlet.getMap());
 		this.setIndexPolicy(contentlet.getIndexPolicy());
 
 	}
@@ -1214,6 +1215,44 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws IOException
 	 */
 	public java.io.File getBinary(String velocityVarName)throws IOException {
+        // Preserve main's filesystem/NFS behavior while S3 assets are disabled.
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+        final Object rawValue = map.get(velocityVarName);
+        File f = (rawValue instanceof File) ? (File) rawValue : null;
+        if((f==null || !f.exists()) ){
+            f=null;
+            map.remove(velocityVarName);
+            if ( map.get( INODE_KEY ) != null && InodeUtils.isSet( (String) map.get( INODE_KEY ) ) ) {
+                String inode = (String) map.get(INODE_KEY);
+                try{
+                    java.io.File binaryFileFolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                        + java.io.File.separator
+                        + inode.charAt(0)
+                        + java.io.File.separator
+                        + inode.charAt(1)
+                        + java.io.File.separator
+                        + inode
+                        + java.io.File.separator
+                        + velocityVarName);
+                        if(binaryFileFolder.exists()){
+                            java.io.File[] files = binaryFileFolder.listFiles(new BinaryFileFilter());
+                            if(null != files && files.length > 0){
+                                f = files[0];
+                                map.put(velocityVarName, f);
+                            }
+                        }
+                }catch(Exception e){
+                    Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+inode+"  velocityVaribleName : "+velocityVarName );
+                    throw new IOException("File System error.");
+                }
+            }
+        }
+
+        return f;
+
+
+        }
+
 		final Object rawValue = map.get(velocityVarName);
 		File f = (rawValue instanceof File) ? (File) rawValue : null;
 		if (f != null && f.exists()) {
@@ -1221,12 +1260,17 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		}
 
 		f = null;
-		map.remove(velocityVarName);
 		if (map.get(INODE_KEY) != null && InodeUtils.isSet((String) map.get(INODE_KEY))) {
 			String inode = (String) map.get(INODE_KEY);
 			try {
-				f = APILocator.getBinaryAssetStorageAPI()
-						.getBinaryFile(inode, velocityVarName);
+                final String revisionKey = rawValue instanceof File
+                        ? com.dotcms.storage.binary.BinaryAssetReference.keyOf((File) rawValue) : null;
+                f = revisionKey == null
+                        ? APILocator.getBinaryAssetStorageAPI().getBinaryFile(inode, velocityVarName)
+                        : APILocator.getBinaryAssetStorageAPI().getRevisionFile(inode, velocityVarName, revisionKey);
+                if (rawValue instanceof File) {
+                    f = com.dotcms.storage.binary.BinaryAssetReference.preserveMetadata(f, (File) rawValue);
+                }
 				if (f != null) {
 					map.put(velocityVarName, f);
 				}
@@ -1246,6 +1290,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws IOException
 	 */
 	public InputStream getBinaryStream(String velocityVarName) throws IOException{
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+                final File binary = getBinary(velocityVarName);
+                if (binary == null) throw new java.io.FileNotFoundException("Missing binary field " + velocityVarName);
+                return Files.newInputStream(binary.toPath());
+            }
+        }
 		InputStream fis = Files.newInputStream(getBinary(velocityVarName).toPath());
 		return fis;
 	}

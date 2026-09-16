@@ -5,7 +5,6 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
 
@@ -35,6 +34,8 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     private final List<StoragePersistenceAPI> storagePersistenceAPIList;
     private final ObjectWriterDelegate defaultWriterDelegate;
     private final Chainable404StorageCache cache;
+    private final com.google.common.util.concurrent.Striped<java.util.concurrent.locks.Lock> assetLocks =
+            com.google.common.util.concurrent.Striped.lock(256);
 
     private static final String SUBMITTER_NAME = Config.getStringProperty("COMPOSITE_STORAGE_SUBMITTER_NAME", "SubmitterCompositeStoragePersistenceAPI");
 
@@ -68,6 +69,18 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
     @Override
     public boolean existsObject(final String groupName, final String objectPath) {
+        if (AssetStorageFeature.isEnabled()) {
+            for (StoragePersistenceAPI storage : storagePersistenceAPIList) {
+                try {
+                    if (storage.existsObject(groupName, objectPath)) {
+                        return true;
+                    }
+                } catch (DotDataException e) {
+                    throw new DotRuntimeException("Unable to check stored object " + objectPath, e);
+                }
+            }
+            return false;
+        }
         if (this.cache.is404(groupName, objectPath)) {
             return false;
         }
@@ -126,6 +139,22 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     @Override
     public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
 
+        if (AssetStorageFeature.isEnabled()) {
+            final var lock = assetLocks.get(groupName + "/" + path);
+            lock.lock();
+            try {
+                // Keep the local copy until all durable providers accept the deletion.
+                boolean deleted = !storagePersistenceAPIList.isEmpty();
+                for (int i = storagePersistenceAPIList.size() - 1; i >= 0; i--) {
+                    deleted &= storagePersistenceAPIList.get(i).deleteObjectAndReferences(groupName, path);
+                }
+                cache.remove(groupName, path);
+                return deleted;
+            } finally {
+                lock.unlock();
+            }
+        }
+
         boolean deleted = !this.storagePersistenceAPIList.isEmpty();
 
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
@@ -172,29 +201,68 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     public List<String> listObjectPaths(final String groupName,
                                         final String pathPrefix) throws DotDataException {
 
-        // Try each provider in order — return first non-empty result.
-        // Matches the chain's read semantics (first provider with data wins).
-        for (final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
-            try {
-                final List<String> paths = storage.listObjectPaths(groupName, pathPrefix);
-                if (!paths.isEmpty()) {
-                    return paths;
-                }
-            } catch (final Exception e) {
-                // Log warning per-provider — do NOT silently swallow.
-                // Silent empty-list on S3 failure would cause getBinaryFile to return null
-                // and deleteAllBinaries to skip S3 cleanup — both undetectable without logging.
-                Logger.warn(this, String.format(
-                        "listObjectPaths failed on provider %s for group '%s', prefix '%s': %s",
-                        storage.getClass().getSimpleName(), groupName, pathPrefix, e.getMessage()));
+        final Set<String> paths = new LinkedHashSet<>();
+        for (final StoragePersistenceAPI storage : storagePersistenceAPIList) {
+            paths.addAll(storage.listObjectPaths(groupName, pathPrefix));
+        }
+        return List.copyOf(paths);
+    }
+
+    @Override
+    public boolean hasDurableCopy(final String groupName, final String path,
+                                  final File file) throws DotDataException {
+        for (final StoragePersistenceAPI storage : storagePersistenceAPIList) {
+            if (storage.hasDurableCopy(groupName, path, file)) {
+                return true;
             }
         }
-        return List.of();
+        return false;
+    }
+
+    @Override
+    public boolean backfillFile(final String groupName, final String path, final File file) throws DotDataException {
+        if (!AssetStorageFeature.isEnabled()) {
+            return false;
+        }
+        boolean durable = false;
+        for (final StoragePersistenceAPI storage : storagePersistenceAPIList) {
+            durable |= storage.backfillFile(groupName, path, file);
+        }
+        return durable;
+    }
+
+    @Override
+    public boolean backfillObject(final String groupName, final String path, final ObjectWriterDelegate writer,
+            final ObjectReaderDelegate reader, final Serializable object) throws DotDataException {
+        if (!AssetStorageFeature.isEnabled()) {
+            return false;
+        }
+        boolean durable = false;
+        for (final StoragePersistenceAPI storage : storagePersistenceAPIList) {
+            durable |= storage.backfillObject(groupName, path, writer, reader, object);
+        }
+        return durable;
     }
 
     @Override
     public Object pushFile(final String groupName, final String path, final File file,
                            final Map<String, Serializable> extraMeta) throws DotDataException {
+
+        if (AssetStorageFeature.isEnabled()) {
+            final var lock = assetLocks.get(groupName + "/" + path);
+            lock.lock();
+            try {
+                Object result = null;
+                // Publish durably before exposing the new local cache contents.
+                for (int i = storagePersistenceAPIList.size() - 1; i >= 0; i--) {
+                    result = storagePersistenceAPIList.get(i).pushFile(groupName, path, file, extraMeta);
+                }
+                cache.remove(groupName, path);
+                return result;
+            } finally {
+                lock.unlock();
+            }
+        }
 
         Object object = null;
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
@@ -214,6 +282,21 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     public Object pushObject(final String groupName, final String path,
                              final ObjectWriterDelegate writerDelegate, final Serializable objectIn,
                              final Map<String, Serializable> extraMeta) throws DotDataException {
+        if (AssetStorageFeature.isEnabled()) {
+            final var lock = assetLocks.get(groupName + "/" + path);
+            lock.lock();
+            try {
+                Object result = null;
+                for (int i = storagePersistenceAPIList.size() - 1; i >= 0; i--) {
+                    result = storagePersistenceAPIList.get(i).pushObject(groupName, path, writerDelegate, objectIn, extraMeta);
+                }
+                cache.remove(groupName, path);
+                return result;
+            } finally {
+                lock.unlock();
+            }
+        }
+
 
         Object objectToReturn = null;
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
@@ -231,6 +314,10 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
     @Override
     public Future<Object> pushFileAsync(final String groupName, final String path, final File file, final Map<String, Serializable> extraMeta) {
+        if (AssetStorageFeature.isEnabled()) {
+            return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(() -> this.pushFile(groupName, path, file, extraMeta));
+        }
+
 
         final List<Future<Object>> futures = new ArrayList<>();
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
@@ -255,6 +342,10 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     public Future<Object> pushObjectAsync(final String bucketName, final String path,
                                           final ObjectWriterDelegate writerDelegate,
                                           final Serializable object, final Map<String, Serializable> extraMeta) {
+        if (AssetStorageFeature.isEnabled()) {
+            return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(() -> this.pushObject(bucketName, path, writerDelegate, object, extraMeta));
+        }
+
 
         final List<Future<Object>> futures = new ArrayList<>();
         for(final StoragePersistenceAPI storage : this.storagePersistenceAPIList) {
@@ -276,7 +367,40 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     }
 
     @Override
-    public File pullFile(final String groupName, final String path) {
+    public File pullFile(final String groupName, final String path) throws DotDataException {
+
+        if (AssetStorageFeature.isEnabled()) {
+            final var lock = assetLocks.get(groupName + "/" + path);
+            lock.lock();
+            try {
+                final List<StoragePersistenceAPI> missing = new ArrayList<>();
+                for (StoragePersistenceAPI storage : storagePersistenceAPIList) {
+                    final File file = storage.pullFile(groupName, path);
+                    if (file == null) {
+                        missing.add(storage);
+                        continue;
+                    }
+                    if (missing.isEmpty()) {
+                        return file;
+                    }
+                    try {
+                        for (StoragePersistenceAPI cacheStorage : missing) {
+                            if (!cacheStorage.existsGroup(groupName)) {
+                                cacheStorage.createGroup(groupName);
+                            }
+                            cacheStorage.pushFile(groupName, path, file, Map.of());
+                        }
+                        return missing.get(0).pullFile(groupName, path);
+                    } finally {
+                        storage.releaseRetrievedFile(file);
+                    }
+                }
+                // Absence is not cached: another node can upload this key at any time.
+                return null;
+            } finally {
+                lock.unlock();
+            }
+        }
 
         if (this.cache.is404(groupName, path)) {
 
@@ -327,6 +451,32 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
                              final String path,
                              final ObjectReaderDelegate readerDelegate) {
 
+        if (AssetStorageFeature.isEnabled()) {
+            final List<StoragePersistenceAPI> missing = new ArrayList<>();
+            try {
+                for (StoragePersistenceAPI storage : storagePersistenceAPIList) {
+                    final Object object = storage.pullObject(groupName, path, readerDelegate);
+                    if (object == null) {
+                        missing.add(storage);
+                    } else {
+                        if (object instanceof Serializable) {
+                            for (StoragePersistenceAPI cacheStorage : missing) {
+                                if (!cacheStorage.existsGroup(groupName)) {
+                                    cacheStorage.createGroup(groupName);
+                                }
+                                cacheStorage.pushObject(groupName, path, defaultWriterDelegate,
+                                        (Serializable) object, Map.of());
+                            }
+                        }
+                        return object;
+                    }
+                }
+                return null;
+            } catch (DotDataException e) {
+                throw new DotRuntimeException("Unable to retrieve stored object " + path, e);
+            }
+        }
+
         if (this.cache.is404(groupName, path)) {
 
             return null;
@@ -372,6 +522,10 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
 
     @Override
     public Future<File> pullFileAsync(final String groupName, final String path) {
+        if (AssetStorageFeature.isEnabled()) {
+            return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(() -> this.pullFile(groupName, path));
+        }
+
 
         if (this.cache.is404(groupName, path)) {
 
@@ -393,6 +547,10 @@ public class ChainableStoragePersistenceAPI implements StoragePersistenceAPI {
     @Override
     public Future<Object> pullObjectAsync(final String groupName, final String path,
                                           final ObjectReaderDelegate readerDelegate) {
+        if (AssetStorageFeature.isEnabled()) {
+            return DotConcurrentFactory.getInstance().getSubmitter(STORAGE_POOL).submit(() -> this.pullObject(groupName, path, readerDelegate));
+        }
+
 
         if (this.cache.is404(groupName, path)) {
 
