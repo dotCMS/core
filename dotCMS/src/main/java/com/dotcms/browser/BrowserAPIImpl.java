@@ -247,6 +247,15 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Pagination resumes from {@link BrowserQuery#contentCursor}, which is the DB row offset
      * returned by the previous page. On the first page it is 0.
      * </p>
+     * <p>
+     * The scan's cost cap depends on {@code applyESFilter}: when {@code true} (text filtering
+     * through Elasticsearch), it is bounded by elapsed time
+     * ({@code BROWSER_DB_MAX_SCAN_TIME_MILLIS}), so an unfiltered global search keeps scanning
+     * while still affordable instead of giving up at an arbitrary row count and silently
+     * dropping matches that sit later in DB order (see issue #37211). When {@code false}
+     * (permission-only filtering), it stays bounded by row count
+     * ({@code BROWSER_DB_MAX_SCAN_ROWS}), unchanged from before.
+     * </p>
      *
      * @param browserQuery  query containing search criteria, user context, and the current cursor
      * @param maxRows       maximum number of permission-visible items to return
@@ -263,7 +272,15 @@ public class BrowserAPIImpl implements BrowserAPI {
             final int maxRows, final SelectQuery sqlQuery, final int chunkSize,
             final boolean applyESFilter) throws DotDataException, DotSecurityException {
 
-        final int scanLimit = Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        final int scanRowLimit = Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        // The ES-narrowed scan (text filter) bounds cost by elapsed time instead of row count --
+        // see BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY. The permission-only scan keeps the original
+        // row-count cutoff; it has no completeness gap to fix (every candidate row already
+        // matches the query's own SQL criteria).
+        final long scanTimeBudgetMillis = applyESFilter
+                ? Config.getLongProperty(BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY, BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT)
+                : -1L;
+        final long scanStartNanos = System.nanoTime();
 
         final List<Contentlet> accumulatedContent = new ArrayList<>();
         List<String> candidateChunkInodes;
@@ -296,10 +313,20 @@ public class BrowserAPIImpl implements BrowserAPI {
 
             dbOffset += candidateChunkInodes.size();
 
-            if (dbOffset >= scanLimit) {
+            // Row-count-only cutoff dropped ES-narrowed matches that sit past it in DB order
+            // without ever sending them to ES (#37211) -- an unfiltered global search's SQL
+            // candidate set is essentially the whole site, so DB position says nothing about
+            // whether a match exists. Bound that scan by elapsed time instead, so it keeps
+            // going while still affordable rather than giving up at an arbitrary row count.
+            final boolean scanBudgetExhausted = applyESFilter
+                    ? TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - scanStartNanos) >= scanTimeBudgetMillis
+                    : dbOffset >= scanRowLimit;
+
+            if (scanBudgetExhausted) {
                 Logger.warn(BrowserAPIImpl.class, String.format(
-                        "Scan limit reached (%d rows) after %d chunks. Returning %d accumulated items.",
-                        dbOffset, chunkCount, accumulatedContent.size()));
+                        "Scan budget reached (%s) after %d chunks, %d rows scanned. Returning %d accumulated items.",
+                        applyESFilter ? scanTimeBudgetMillis + "ms" : scanRowLimit + " rows",
+                        chunkCount, dbOffset, accumulatedContent.size()));
                 nextContentCursor = dbOffset;
                 hasMore = true;
                 break;
@@ -748,8 +775,21 @@ public class BrowserAPIImpl implements BrowserAPI {
     // Maximum total DB rows to scan per request across all chunks. Acts as a safety cap to prevent
     // runaway queries when a restricted user has access to a small fraction of site content.
     // Default of 50,000 covers a worst-case ~5% permission pass rate for a full page of 300 items.
+    // Used as-is (row-count cutoff) for the permission-only scan (applyESFilter=false); see
+    // BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY for the ES-narrowed (text-filter) scan's cost bound.
     static final String BROWSER_DB_MAX_SCAN_ROWS_KEY = "BROWSER_DB_MAX_SCAN_ROWS";
     static final int BROWSER_DB_MAX_SCAN_ROWS_DEFAULT = 50_000;
+
+    // Maximum wall-clock time to spend scanning DB chunks when text-filtering through ES
+    // (applyESFilter=true). A row-count cutoff here silently drops matches that fall later in
+    // DB order than the cutoff, even though they were never actually sent to ES for narrowing
+    // (issue #37211) -- a global search with no content-type filter has a broad, effectively
+    // unbounded-by-type candidate set, so match position in DB order says nothing about whether
+    // the match exists. Bounding by elapsed time instead lets the scan keep going as long as it
+    // is still affordable, rather than giving up at an arbitrary row count regardless of
+    // coverage.
+    static final String BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY = "BROWSER_DB_MAX_SCAN_TIME_MILLIS";
+    static final long BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT = 10_000L;
 
     /**
      * Represents content items under a specific parent along with the total count.
