@@ -15,12 +15,15 @@ import com.dotmarketing.util.json.JSONObject;
  * stack trace, goes to the server log at ERROR under the logger of the tool class that caught it,
  * so operators keep the detail that templates no longer receive.</p>
  *
- * <p>Do not add the prompt, the request body, the query text or the user to the log message; the
- * exception object is the only diagnostic detail passed on, as the throwable argument.</p>
+ * <p>The log message itself is fixed. Do not add the prompt, the request body, the query text or
+ * the user to it. The exception is passed as the throwable argument so its stack trace is logged;
+ * note that the exception chain built by lower layers can itself carry upstream detail (for
+ * example {@code OpenAIImageAPIImpl} includes the request JSON in some messages), and that detail
+ * lands in the server log, as it already does at WARN in those layers.</p>
  *
  * @author hassandotcms
  */
-final class AIViewToolErrorHandler {
+public final class AIViewToolErrorHandler {
 
     /** The only text a template sees when a dotAI viewtool call fails. */
     public static final String GENERIC_ERROR_MESSAGE = "AI request failed. Check the dotCMS log for details.";

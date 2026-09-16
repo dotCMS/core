@@ -40,7 +40,8 @@ import static org.junit.Assert.assertTrue;
  */
 public class AIViewToolErrorHandlerTest {
 
-    private static final Level ORIGINAL_LEVEL = Level.ERROR;
+    /** Level applied to the captured logger for the duration of each test; the prior level is restored after. */
+    private static final Level CAPTURE_LEVEL = Level.ERROR;
 
     private Logger sourceLogger;
     private CapturingAppender appender;
@@ -50,7 +51,7 @@ public class AIViewToolErrorHandlerTest {
     public void attachAppender() {
         sourceLogger = (Logger) LogManager.getLogger(AIViewToolErrorHandlerTest.class);
         previousLevel = sourceLogger.getLevel();
-        sourceLogger.setLevel(ORIGINAL_LEVEL);
+        sourceLogger.setLevel(CAPTURE_LEVEL);
         appender = new CapturingAppender();
         appender.start();
         sourceLogger.addAppender(appender);

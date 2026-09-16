@@ -20,7 +20,7 @@ receives when a call to one of its methods fails. Success results are out of sco
 | `$ai.search.related(contentlet, indexName)` | `SearchTool.related(Contentlet, String)` | Returns the failure payload |
 | `$ai.generateImage(prompt)` | `AIViewTool.generateImage(String)` | Returns the failure payload |
 | `$ai.generateImage(map)` | `AIViewTool.generateImage(Map<String,Object>)` | Returns the failure payload |
-| `$ai.generateText(prompt)` / `$ai.generateText(map)` | `AIViewTool.generateText(...)` | **Unchanged.** The exception propagates to the Velocity engine. For live and preview requests the engine logs it and renders the reference as `null`; the page shows no exception text. See research R5. |
+| `$ai.generateText(prompt)` / `$ai.generateText(map)` | `AIViewTool.generateText(...)` | **Unchanged.** The exception propagates to the Velocity engine. For live and preview requests the engine logs it and renders the reference as `null`; the page shows no exception text. Pinned by `AIViewToolTest.test_generateText_providerFailure_liveRender_showsNoExceptionDetail`. |
 | `$ai.embeddings.*` | `EmbeddingsTool` | Unchanged. No exception handling exists there today. |
 
 ## Failure payload

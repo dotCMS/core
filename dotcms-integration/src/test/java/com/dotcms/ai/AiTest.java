@@ -2,6 +2,7 @@ package com.dotcms.ai;
 
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.viewtool.AIViewToolErrorHandler;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.util.WireMockTestHelper;
@@ -42,9 +43,14 @@ public interface AiTest {
     String FORCE_IMAGE_ERROR = "DOTAI_FORCE_IMAGE_ERROR";
 
     /**
-     * Asserts that a viewtool failure payload is safe to render to a site visitor (#37154):
-     * a {@link JSONObject} with exactly one key, {@code error}, no {@code stackTrace} key, and no
-     * string value anywhere in it that looks like exception or stack-frame text.
+     * Asserts that a viewtool failure payload is exactly what {@link AIViewToolErrorHandler} builds
+     * (#37154): a {@link JSONObject} with exactly one key, {@code error}, holding the fixed generic
+     * message, no {@code stackTrace} key, and no string value anywhere in it that looks like
+     * exception or stack-frame text.
+     *
+     * <p>The equality check against the handler's constant matters: a provider error body such as
+     * {@code {"error":{"message":...,"type":...}}} returned unparsed through a success path is
+     * also a single-key {@code error} object with no trace markers, and would otherwise pass.</p>
      *
      * @param result the object a viewtool method returned on failure
      */
@@ -56,6 +62,8 @@ public interface AiTest {
         assertTrue("failure payload must carry an 'error' key", payload.containsKey("error"));
         assertFalse("failure payload must not carry a 'stackTrace' key", payload.containsKey("stackTrace"));
         assertEquals("failure payload must carry exactly one key, got " + payload.keySet(), 1, payload.size());
+        assertEquals("failure payload must be the handler's fixed message",
+                AIViewToolErrorHandler.GENERIC_ERROR_MESSAGE, payload.get("error"));
         assertNoInternalDetail(payload);
     }
 

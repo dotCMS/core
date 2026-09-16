@@ -53,16 +53,15 @@ public class SearchTool implements ViewTool {
      * @return the search results
      */
     public Object query(final String query, final String indexName) {
-        final User user = PortalUtil.getUser(request);
-        final EmbeddingsDTO searcher = new EmbeddingsDTO.Builder()
-                .withQuery(query)
-                .withIndexName(indexName)
-                .withUser(user)
-                .withLimit(50)
-                .withThreshold(.5f)
-                .build();
-
         try {
+            final User user = PortalUtil.getUser(request);
+            final EmbeddingsDTO searcher = new EmbeddingsDTO.Builder()
+                    .withQuery(query)
+                    .withIndexName(indexName)
+                    .withUser(user)
+                    .withLimit(50)
+                    .withThreshold(.5f)
+                    .build();
             return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
             return AIViewToolErrorHandler.handle(SearchTool.class, e);
@@ -77,10 +76,12 @@ public class SearchTool implements ViewTool {
      * @return the search results
      */
     public Object query(final Map<String, Object> mapIn) {
-        final User user = PortalUtil.getUser(request);
-        final EmbeddingsDTO searcher = EmbeddingsDTO.from(mapIn).withUser(user).build();
-
         try {
+            // argument parsing is inside the handled block on purpose: EmbeddingsDTO.from casts
+            // map values to String, and a template passing another type must still get the
+            // generic payload rather than an exception escaping into the rendering engine
+            final User user = PortalUtil.getUser(request);
+            final EmbeddingsDTO searcher = EmbeddingsDTO.from(mapIn).withUser(user).build();
             return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
         } catch (Exception e) {
             return AIViewToolErrorHandler.handle(SearchTool.class, e);
@@ -107,7 +108,11 @@ public class SearchTool implements ViewTool {
      * @return the search results
      */
     public Object related(final ContentMap contentMap, final String indexName) {
-        return related(contentMap.getContentObject(), indexName);
+        try {
+            return related(contentMap.getContentObject(), indexName);
+        } catch (Exception e) {
+            return AIViewToolErrorHandler.handle(SearchTool.class, e);
+        }
     }
 
     /**

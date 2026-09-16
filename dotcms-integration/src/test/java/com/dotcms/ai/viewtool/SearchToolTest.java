@@ -246,6 +246,21 @@ public class SearchToolTest {
 
     /**
      * Feature: SearchTool failure handling (#37154)
+     * Scenario: Query using a Map whose "query" value is not a String
+     * Given a parameter map where "query" is an Integer, which EmbeddingsDTO.from casts to String
+     * When the user performs a search with the map
+     * Then the failure happens while the search arguments are built, before any provider call
+     * And the result is still the generic error payload, not an exception escaping the viewtool
+     */
+    @Test
+    public void test_query_usingMap_nonStringArgument_returnsGenericError() {
+        final Object result = searchTool.query(Map.of("query", 42, "indexName", "default"));
+
+        AiTest.assertSafeErrorPayload(result);
+    }
+
+    /**
+     * Feature: SearchTool failure handling (#37154)
      * Scenario: Related content for a Contentlet when the embeddings provider fails
      * Given a contentlet whose indexed text carries the embeddings-failure sentinel and a UUID
      * When the user retrieves related content for the contentlet

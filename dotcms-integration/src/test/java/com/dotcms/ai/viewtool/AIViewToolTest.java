@@ -2,6 +2,7 @@ package com.dotcms.ai.viewtool;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.ai.AiTest;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.datagen.UserDataGen;
@@ -13,6 +14,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.liferay.portal.model.User;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -171,7 +173,7 @@ public class AIViewToolTest extends IntegrationTestBase {
         final JSONObject response = aiViewTool.generateImage(prompt);
 
         assertImageProviderWasCalledWith(prompt);
-        assertGenericErrorPayload(response);
+        AiTest.assertSafeErrorPayload(response);
     }
 
     /**
@@ -188,7 +190,7 @@ public class AIViewToolTest extends IntegrationTestBase {
         final JSONObject response = aiViewTool.generateImage(Map.of("prompt", prompt));
 
         assertImageProviderWasCalledWith(prompt);
-        assertGenericErrorPayload(response);
+        AiTest.assertSafeErrorPayload(response);
     }
 
     /**
@@ -203,16 +205,18 @@ public class AIViewToolTest extends IntegrationTestBase {
     public void test_generateImage_map_missingPrompt_returnsGenericError() {
         final JSONObject response = aiViewTool.generateImage(Map.of("size", "1024x1024"));
 
-        assertGenericErrorPayload(response);
+        AiTest.assertSafeErrorPayload(response);
     }
 
     /**
      * Scenario: generateText under a provider failure, rendered by Velocity for a live request
      *           (#37154, AC-005)
      * Given a prompt carrying the chat-failure sentinel, so the mocked provider answers HTTP 500
-     * And no HTTP request is bound to the thread, which the platform's method-exception handler
-     *     treats as a non-edit-mode render (it falls back to scanning the stack for a method named
-     *     like "EditMode"; this test's name deliberately contains none)
+     * And no HTTP request is bound to the rendering thread, which the platform's method-exception
+     *     handler treats as a non-edit-mode render (with no request it falls back to scanning the
+     *     stack for a method named like "EditMode"; this test's name deliberately contains none).
+     *     The thread-local is cleared explicitly because earlier classes in MainSuite2b set it and
+     *     never restore it; the previous value is put back afterwards.
      * When a template calls $!ai.generateText(...) and $ai.generateText(...) and is evaluated
      * Then the provider was called with the prompt
      * And the quiet reference renders empty, the loud one renders its own source text,
@@ -229,7 +233,14 @@ public class AIViewToolTest extends IntegrationTestBase {
         context.put("ai", aiViewTool);
         final String template = "quiet:[$!ai.generateText(\"" + prompt + "\")] loud:[$ai.generateText(\"" + prompt + "\")]";
 
-        final String rendered = VelocityUtil.eval(template, context);
+        final HttpServletRequest leftoverRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final String rendered;
+        try {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            rendered = VelocityUtil.eval(template, context);
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(leftoverRequest);
+        }
 
         wireMockServer.verify(postRequestedFor(urlPathMatching(".*/chat/completions"))
                 .withRequestBody(containing(prompt)));
@@ -241,17 +252,6 @@ public class AIViewToolTest extends IntegrationTestBase {
             assertFalse("rendered page leaks internal detail (" + marker.trim() + "): " + rendered,
                     rendered.contains(marker));
         }
-    }
-
-    /**
-     * The failure payload must be exactly what {@link AIViewToolErrorHandler} builds: a single
-     * "error" key with the fixed message. Comparing against the constant, rather than only checking
-     * for the absence of trace markers, is what makes the missing-prompt case fail before the fix,
-     * because the API's message there carries no class name yet still echoes request detail.
-     */
-    private static void assertGenericErrorPayload(final JSONObject response) {
-        AiTest.assertSafeErrorPayload(response);
-        assertEquals(AIViewToolErrorHandler.GENERIC_ERROR_MESSAGE, response.getString("error"));
     }
 
     /**
