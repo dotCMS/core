@@ -26,7 +26,7 @@ describes the **in-memory and wire** shape only.
 | **Immutables kind** | **None** — deliberately not `@Value.Default/Derived/Lazy`, so it is not an attribute: no field, no builder method, no `equals`/`hashCode`/`toString` participation, no `build()` cost |
 | **Jackson** | `@JsonProperty(value = "createdByUserName", access = JsonProperty.Access.READ_ONLY)` |
 | **Swagger** | `@Schema(description = "...", example = "Admin User")` on the same method |
-| **Type** | `String`, **always non-null and non-empty** (FR-003) |
+| **Type** | `String`, **always non-null and non-empty** (FR-003) — a real name, `System`, or `unknown` |
 | **Persisted** | No — resolved per serialization (FR-016, FR-017) |
 | **Settable** | No — read-only by design; `READ_ONLY` is what keeps an inbound payload parseable (FR-023) |
 | **Derivation** | `ExperimentCreatorNameResolver.resolve(createdBy())` |
@@ -53,14 +53,19 @@ Input: the raw `createdBy` user id. Output: a non-empty display string.
 
 ```
 resolve(createdById):
-  1. createdById not set          -> return createdById as-is  (never null-propagate; FR-003)
-  2. user = userAPI.loadUserById(createdById)      # UserCache-backed (research R3)
-  3. fullName = user.getFullName()                 # first + middle + last
-  4. fullName is set              -> return fullName
-  5. otherwise                    -> return createdById        # blank-name user; FR-010
-  on NoSuchUserException          -> return createdById        # deleted / orphaned; FR-009
-  on DotDataException / any other -> return createdById        # never fail the request; FR-011
+  1. createdById not set          -> return "unknown"          (never null/empty; FR-003)
+  2. createdById is "system"      -> return "System"           (no lookup at all; FR-010a)
+  3. user = userAPI.loadUserById(createdById)      # UserCache-backed (research R3)
+  4. fullName = user.getFullName()                 # first + middle + last
+  5. fullName is set              -> return fullName
+  6. otherwise                    -> return "unknown"          # blank-name user; FR-010
+  on NoSuchUserException          -> return "unknown"          # deleted / orphaned; FR-009
+  on DotDataException / any other -> return "unknown"          # never fail the request; FR-011
 ```
+
+The two labels are `BrowserAPIImpl.ownerName`'s, which answers the same question for the Content
+Drive folder view (FR-010b). That implementation reaches the user through `UserLocalManagerUtil` and
+so bypasses `UserCache`; this one deliberately goes through `APILocator.getUserAPI()` instead.
 
 **Per-entry isolation** (FR-012): the rule is applied independently per experiment, so one bad id in
 a list degrades exactly one entry.
@@ -104,7 +109,16 @@ Unresolvable creator (deleted user, or a user whose name parts are all blank):
 ```json
 {
   "createdBy": "deleted-user-id-4711",
-  "createdByUserName": "deleted-user-id-4711"
+  "createdByUserName": "unknown"
+}
+```
+
+Created by the system user:
+
+```json
+{
+  "createdBy": "system",
+  "createdByUserName": "System"
 }
 ```
 

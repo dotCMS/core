@@ -107,28 +107,28 @@ column, and no row is missing or empty. The listing loads normally.
 failed request that hides every other experiment in the list.
 
 **Independent Test**: Point an experiment's `createdBy` at a user ID that no longer resolves, request
-both the list and the single fetch, and confirm the response succeeds and reports the raw ID.
+both the list and the single fetch, and confirm the response succeeds and reports `unknown`.
 
 **Acceptance Scenarios**:
 
 1. **Given** an experiment whose creator ID does not resolve to any user, **When** the experiment is
-   requested, **Then** the request succeeds and the creator name field carries the raw creator ID.
+   requested, **Then** the request succeeds and the creator name field reports `unknown`.
 2. **Given** an experiment created by the system user, **When** the experiment is requested, **Then**
-   the request succeeds and the creator name field carries a non-empty value.
+   the request succeeds and the creator name field reports `System`.
 3. **Given** a list where one experiment has an unresolvable creator and the others do not, **When**
    the list is requested, **Then** the request succeeds, the resolvable entries report real names and
-   only the affected entry falls back to the raw ID.
+   only the affected entry reports `unknown`.
 
 ---
 
 ### Edge Cases
 
-- **Creator no longer exists** (deleted user, orphaned reference): the field falls back to the raw
-  creator ID. It is never null, never absent and never an empty string.
+- **Creator no longer exists** (deleted user, orphaned reference): the field reports `unknown`. It is
+  never null, never absent and never an empty string.
 - **Creator resolves but has no usable name** (first, middle and last name all blank): treated the
-  same as unresolvable — fall back to the raw creator ID, so the column still identifies something.
-- **Creator is the system user**: resolves normally; if the system user has no usable name, the
-  fallback rule applies. The request never fails because of it.
+  same as unresolvable — report `unknown`, so the column still says something honest.
+- **Creator is the system user**: reported as `System`, short-circuited before any lookup. The
+  request never fails because of it.
 - **User lookup fails for an infrastructure reason** (database error, cache error): the experiment is
   still returned successfully with the fallback value. A failure to decorate must never turn a
   successful experiment read into a failed request.
@@ -171,10 +171,16 @@ both the list and the single fetch, and confirm the response succeeds and report
 
 **Fallback and failure**
 
-- **FR-009**: When the creator ID does not resolve to a user, `createdByUserName` MUST fall back to
-  the raw creator ID.
-- **FR-010**: When the creator resolves to a user whose name is blank, `createdByUserName` MUST fall
-  back to the raw creator ID under the same rule as FR-009.
+- **FR-009**: When the creator ID does not resolve to a user, `createdByUserName` MUST report
+  `unknown`.
+- **FR-010**: When the creator resolves to a user whose name is blank, `createdByUserName` MUST
+  report `unknown` under the same rule as FR-009.
+- **FR-010a**: When the creator is the system user, `createdByUserName` MUST report `System`,
+  without a user lookup.
+- **FR-010b**: These labels MUST match the ones the Content Drive folder view already publishes for
+  the same question (`BrowserAPIImpl.ownerName`): `System` for the system user, `unknown` for an
+  owner that cannot be resolved. Two listings in the same product must not label the same orphaned
+  owner differently.
 - **FR-011**: A failure to resolve the creator MUST NOT fail the experiment request. The endpoint
   still returns its normal success response with the experiment payload and the fallback value.
 - **FR-012**: A failure to resolve one experiment's creator inside a list MUST NOT affect the other
@@ -203,8 +209,8 @@ both the list and the single fetch, and confirm the response succeeds and report
 - **FR-019**: The committed `openapi.yaml` MUST be regenerated from the annotations and committed
   together with the code change, so the CI contract check passes.
 - **FR-020**: Integration tests MUST cover: the happy path from the list endpoint, the happy path
-  from the single-fetch endpoint, and the unresolvable-creator fallback returning success plus the
-  raw ID.
+  from the single-fetch endpoint, and the unresolvable-creator fallback returning success plus
+  `unknown`.
 - **FR-021**: Every new integration test class MUST be registered in a `MainSuite*` / `Junit5Suite*`
   `@SuiteClasses` list, otherwise it never runs in CI.
 - **FR-022**: Existing experiment tests MUST continue to pass unchanged, in particular any asserting
@@ -288,8 +294,11 @@ Endpoints under `/v1/experiments` that do **not** carry an Experiment, and are t
     construction, including the ones that never reach a response (the database transformer, the
     push-publish dependency walk, running-experiment selection during page rendering) — which
     FR-015 forbids;
-  - a lazily-computed attribute is memoized inside the instance, and experiment instances are
-    themselves cached, so a memoized name would outlive a rename — which FR-016 forbids.
+  - a lazily-computed attribute is memoized inside the instance, and the running-experiments list
+    is cached whole, so a memoized name on those long-lived shared entries would outlive a rename —
+    which FR-016 forbids. (The per-experiment cache in `ExperimentsFactoryImpl.find` is commented
+    out with a TODO, so `find` and `list` build fresh instances on every call; only that list cache
+    is live.)
 
   Neither mechanism is settable from JSON, which is where FR-023 comes from. The spec therefore
   states the constraints (FR-014, FR-015, FR-016, FR-023) and leaves the mechanism to `/speckit-plan`,

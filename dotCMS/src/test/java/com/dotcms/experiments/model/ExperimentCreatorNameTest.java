@@ -139,11 +139,12 @@ class ExperimentCreatorNameTest {
      * Method to test: {@code AbstractExperiment.createdByUserName()}
      * Given Scenario: An Experiment whose creator cannot be resolved, serialized with the REST
      *                 mapper.
-     * ExpectedResult: The field is present and carries the raw creator ID, so the column is never
-     *                 blank even at the serialization layer (FR-003, FR-009).
+     * ExpectedResult: The field is present and carries {@code "unknown"} — the same label the
+     *                 Content Drive folder view uses — so the column is never blank even at the
+     *                 serialization layer (FR-003, FR-009).
      */
     @Test
-    void serializedExperiment_withUnresolvableCreator_carriesRawId() throws Exception {
+    void serializedExperiment_withUnresolvableCreator_carriesUnknown() throws Exception {
         final UserAPI userAPI = mock(UserAPI.class);
         when(userAPI.loadUserById(anyString()))
                 .thenThrow(new com.dotmarketing.business.NoSuchUserException("gone"));
@@ -154,7 +155,7 @@ class ExperimentCreatorNameTest {
             final ObjectMapper mapper = DotObjectMapperProvider.createDefaultMapper();
             final JsonNode payload = mapper.readTree(mapper.writeValueAsString(anExperiment()));
 
-            assertEquals(CREATOR_ID, payload.get("createdByUserName").asText());
+            assertEquals("unknown", payload.get("createdByUserName").asText());
         }
     }
 

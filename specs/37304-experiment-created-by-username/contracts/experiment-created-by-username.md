@@ -22,8 +22,9 @@ Under `components.schemas.Experiment.properties`, alphabetically between `create
         createdByUserName:
           type: string
           description: >-
-            Display name of the user who created the experiment. Falls back to the raw
-            createdBy user id when the user cannot be resolved or has no name set.
+            Display name of the user who created the experiment. Reports "System" for the
+            system user and "unknown" when the user cannot be resolved or has no name set,
+            so the value is never empty.
           example: Admin User
         creationDate:
           type: string
@@ -61,11 +62,14 @@ Explicitly **not** carrying it, because they return no Experiment:
 | Condition | `createdBy` | `createdByUserName` | HTTP |
 |---|---|---|---|
 | Creator resolves, has a name | user id | full name (first + middle + last) | 200 |
-| Creator resolves, all name parts blank | user id | the user id | 200 |
-| Creator does not resolve (deleted/orphaned) | user id | the user id | 200 |
-| User lookup fails (infrastructure) | user id | the user id | 200 |
-| Creator is the system user | user id | resolved name, else the user id | 200 |
+| Creator resolves, all name parts blank | user id | `unknown` | 200 |
+| Creator does not resolve (deleted/orphaned) | user id | `unknown` | 200 |
+| User lookup fails (infrastructure) | user id | `unknown` | 200 |
+| Creator is the system user | `system` | `System`, short-circuited before any lookup | 200 |
 | One bad creator among many in a list | per entry | only the affected entry falls back | 200 |
+
+The two fallback labels are the ones `BrowserAPIImpl.ownerName` already publishes for the Content
+Drive folder view, so the same orphaned owner reads the same in both listings.
 
 The field is never `null`, never absent and never `""`.
 

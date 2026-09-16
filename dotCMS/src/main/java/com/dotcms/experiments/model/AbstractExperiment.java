@@ -94,8 +94,10 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
     /**
      * The display name of the user behind {@link #createdBy()}, resolved when the Experiment is
      * serialized and never stored, so a creator who renames themselves is reported under the new
-     * name. Falls back to the raw user ID when the creator cannot be resolved or has no name set —
-     * the value is never null, absent or empty. See {@link ExperimentCreatorNameResolver}.
+     * name. Reports {@code "System"} for the system user and {@code "unknown"} when the creator
+     * cannot be resolved or has no name set, matching the labels the Content Drive folder view
+     * already uses — the value is never null, absent or empty. See
+     * {@link ExperimentCreatorNameResolver}.
      *
      * <p>Deliberately a plain {@code default} method rather than a {@code @Value.Derived} or
      * {@code @Value.Lazy} attribute: those are computed at construction or memoized per instance,
@@ -109,8 +111,9 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
      * deserialize as an unknown property.
      */
     @JsonProperty(value = "createdByUserName", access = JsonProperty.Access.READ_ONLY)
-    @Schema(description = "Display name of the user who created the experiment. Falls back to the "
-            + "raw createdBy user ID when the user cannot be resolved or has no name set.",
+    @Schema(description = "Display name of the user who created the experiment. Reports \"System\" "
+            + "for the system user and \"unknown\" when the user cannot be resolved or has no name "
+            + "set, so the value is never empty.",
             example = "Admin User")
     default String createdByUserName() {
         return ExperimentCreatorNameResolver.INSTANCE.resolve(createdBy());

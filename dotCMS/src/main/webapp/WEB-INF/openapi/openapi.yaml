@@ -28285,9 +28285,9 @@ components:
           type: string
         createdByUserName:
           type: string
-          description: Display name of the user who created the experiment. Falls
-            back to the raw createdBy user ID when the user cannot be resolved or
-            has no name set.
+          description: "Display name of the user who created the experiment. Reports\
+            \ \"System\" for the system user and \"unknown\" when the user cannot\
+            \ be resolved or has no name set, so the value is never empty."
           example: Admin User
           readOnly: true
         creationDate:
