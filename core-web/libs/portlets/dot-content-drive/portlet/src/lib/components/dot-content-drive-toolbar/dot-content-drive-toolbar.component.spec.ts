@@ -69,6 +69,7 @@ describe('DotContentDriveToolbarComponent', () => {
     // Real signals so the component's computeds re-run when they change
     const isTreeExpandedSignal = signal(false);
     const allSiteContentSelectedSignal = signal(false);
+    const systemHostSelectedSignal = signal(false);
     // The toolbar reports a run by raising a status message rather than drawing it, so the spec owns
     // the service it pushes through.
     const messageServiceSpy = { add: vi.fn(), clear: vi.fn() };
@@ -145,6 +146,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 toolbarRunCount: activeRunCountSignal,
                 siteCanAddChildren: siteCanAddChildrenSignal,
                 $allSiteContentSelected: allSiteContentSelectedSignal,
+                $systemHostSelected: systemHostSelectedSignal,
                 // Mirrors the store's own computed so the toolbar tests still drive the gate
                 // through the signals it derives from, not through a hardcoded answer.
                 $canAddChildren: computed(() => {
@@ -1156,6 +1158,45 @@ describe('DotContentDriveToolbarComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$actionExecutionPercent()).toBe(25);
+        });
+    });
+
+    describe('the New menu on System Host', () => {
+        const folderEntry = () =>
+            spectator.component
+                .$items()
+                .find((item) => item.label === 'content-drive.add-new.context-menu.folder');
+
+        it('should not offer a new folder there', () => {
+            // System Host lists no folders: `listsFolders` returns false for that scope and the
+            // sidebar row opens no tree beneath it. A folder created there could never be shown
+            // again by this portlet, and the dialog could not even name where it would land -- the
+            // location is a reserved word, so pasting it after the hostname gave
+            // `//demo.dotcms.comSYSTEM_HOST/`.
+            systemHostSelectedSignal.set(true);
+            spectator.detectChanges();
+
+            expect(folderEntry()).toBeUndefined();
+        });
+
+        it('should still offer content types there', () => {
+            // The other half of the rule: System Host holds content, and adding some is the whole
+            // reason the scope accepts new items at all. Only the folder entry goes.
+            systemHostSelectedSignal.set(true);
+            spectator.detectChanges();
+
+            expect(
+                spectator.component
+                    .$items()
+                    .some((item) => item.label === 'content-drive.add-new.all-content-types')
+            ).toBe(true);
+        });
+
+        it('should offer a new folder everywhere else', () => {
+            systemHostSelectedSignal.set(false);
+            spectator.detectChanges();
+
+            expect(folderEntry()).toBeDefined();
         });
     });
 });

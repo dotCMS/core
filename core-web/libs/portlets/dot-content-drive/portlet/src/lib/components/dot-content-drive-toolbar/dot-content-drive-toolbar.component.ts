@@ -258,7 +258,19 @@ export class DotContentDriveToolbarComponent {
             : null;
     });
 
-    readonly $items = signal<MenuItem[]>([
+    /**
+     * What the "New" menu offers, which depends on where the user is.
+     *
+     * A computed rather than a fixed list because System Host takes one entry away. It lists no
+     * folders -- `listsFolders` answers false for that scope, and its sidebar row opens no tree --
+     * so a folder created there could never be shown again by this portlet. The dialog could not
+     * even name where it would land: the location is a reserved word, so the path preview read
+     * `//demo.dotcms.comSYSTEM_HOST/`.
+     *
+     * Content types stay. System Host holds content, and adding some is the whole reason the scope
+     * accepts new items at all.
+     */
+    readonly $items = computed<MenuItem[]>(() => [
         {
             label: this.#dotMessageService.get('content-drive.add-new.all-content-types'),
             icon: 'grid_view',
@@ -270,17 +282,25 @@ export class DotContentDriveToolbarComponent {
             icon: option.icon,
             command: () => this.#openContentTypeSelector(option.listType)
         })),
-        { separator: true },
-        {
-            label: this.#dotMessageService.get('content-drive.add-new.context-menu.folder'),
-            icon: 'folder',
-            command: () => {
-                this.#store.setDialog({
-                    type: DIALOG_TYPE.FOLDER,
-                    header: this.#dotMessageService.get('content-drive.dialog.folder.header')
-                });
-            }
-        }
+        ...(this.#store.$systemHostSelected()
+            ? []
+            : [
+                  { separator: true },
+                  {
+                      label: this.#dotMessageService.get(
+                          'content-drive.add-new.context-menu.folder'
+                      ),
+                      icon: 'folder',
+                      command: () => {
+                          this.#store.setDialog({
+                              type: DIALOG_TYPE.FOLDER,
+                              header: this.#dotMessageService.get(
+                                  'content-drive.dialog.folder.header'
+                              )
+                          });
+                      }
+                  }
+              ])
     ]);
 
     /**
