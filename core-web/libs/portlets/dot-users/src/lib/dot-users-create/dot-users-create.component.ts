@@ -343,9 +343,9 @@ export class DotUsersCreateComponent {
         // toast, we handle the dialog lifecycle).
         effect(() => {
             const status = this.#store.status();
-            if (status === 'loaded') {
+            if (status === ComponentStatus.LOADED) {
                 untracked(() => this.applyLoadedDetail());
-            } else if (status === 'error') {
+            } else if (status === ComponentStatus.ERROR) {
                 untracked(() => this.#dialogRef.close());
             }
         });
