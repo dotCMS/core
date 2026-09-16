@@ -190,7 +190,7 @@
         </ng-template>
 
         <ng-template pTemplate="body" let-user>
-            @if (store.status() === 'loading') {
+            @if ($isLoading()) {
                 <tr data-testid="users-loading-row" class="cursor-default hover:bg-transparent!">
                     <td><p-skeleton height="1.5rem" width="1.5rem" /></td>
                     <td><p-skeleton height="1.5rem" width="60%" /></td>

@@ -13,6 +13,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersListComponent } from './dot-users-list.component';
@@ -135,7 +136,7 @@ describe('DotUsersListComponent', () => {
                 totalRecords: vi.fn().mockReturnValue(2),
                 sortField: vi.fn().mockReturnValue('lastLoginDate'),
                 sortOrder: vi.fn().mockReturnValue('DESC'),
-                status: vi.fn().mockReturnValue('loaded'),
+                status: vi.fn().mockReturnValue(ComponentStatus.LOADED),
                 setFilter: vi.fn(),
                 setRoleFilter: vi.fn(),
                 applyLazyLoad: vi.fn(),
@@ -451,7 +452,7 @@ describe('DotUsersListComponent — non-enterprise instance', () => {
                 totalRecords: vi.fn().mockReturnValue(2),
                 sortField: vi.fn().mockReturnValue('lastLoginDate'),
                 sortOrder: vi.fn().mockReturnValue('DESC'),
-                status: vi.fn().mockReturnValue('loaded'),
+                status: vi.fn().mockReturnValue(ComponentStatus.LOADED),
                 setFilter: vi.fn(),
                 setRoleFilter: vi.fn(),
                 applyLazyLoad: vi.fn(),

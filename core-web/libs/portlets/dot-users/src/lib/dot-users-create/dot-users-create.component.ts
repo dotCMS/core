@@ -19,6 +19,7 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUsersFormGroup, passwordsMatchValidator } from './dot-users-form.model';
@@ -168,7 +169,9 @@ export class DotUsersCreateComponent {
      * Hydration signals surfaced from the dialog-scoped store — the
      * shell just reads them; the store owns the forkJoin + status.
      */
-    protected readonly $isLoading = computed(() => this.#store.status() === 'loading');
+    protected readonly $isLoading = computed(
+        () => this.#store.status() === ComponentStatus.LOADING
+    );
     /**
      * Signals that the initial data is fully hydrated — profile fields,
      * assigned roles, and the getting-started state. In create mode
@@ -176,7 +179,7 @@ export class DotUsersCreateComponent {
      * is disabled until this flips to `true`.
      */
     protected readonly $dataReady = computed(
-        () => !this.isEdit || this.#store.status() === 'loaded'
+        () => !this.isEdit || this.#store.status() === ComponentStatus.LOADED
     );
 
     /**

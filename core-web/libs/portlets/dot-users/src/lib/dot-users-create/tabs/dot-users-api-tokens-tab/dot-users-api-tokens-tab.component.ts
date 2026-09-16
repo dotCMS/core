@@ -29,6 +29,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUsersRequestTokenDialogComponent } from './dot-users-request-token-dialog.component';
@@ -94,8 +95,17 @@ export class DotUsersApiTokensTabComponent {
 
     protected readonly $tokens = signal<DotApiToken[]>([]);
     protected readonly $showRevoked = signal(false);
-    protected readonly $isLoading = signal(false);
-    protected readonly $loadError = signal(false);
+    /**
+     * Single status field instead of separate `isLoading` / `loadError`
+     * booleans — the standard `ComponentStatus` shape used across
+     * dotCMS portlets. Avoids the loading anti-pattern where two flags
+     * for mutually exclusive states can drift out of sync.
+     * `$isLoading` and `$loadError` stay as computed derivations so the
+     * template and tests keep the same simple yes/no reads.
+     */
+    protected readonly $status = signal<ComponentStatus>(ComponentStatus.IDLE);
+    protected readonly $isLoading = computed(() => this.$status() === ComponentStatus.LOADING);
+    protected readonly $loadError = computed(() => this.$status() === ComponentStatus.ERROR);
 
     /**
      * The reveal dialog's state. `jwt === null` means "still fetching",
@@ -123,12 +133,12 @@ export class DotUsersApiTokensTabComponent {
             const id = this.userId();
             const showRevoked = this.$showRevoked();
             // The load path writes back to the same signals this effect
-            // reads (isLoading, tokens, loadError). Wrap the call so
-            // Angular doesn't re-run us on those writes.
+            // reads (status, tokens). Wrap the call so Angular doesn't
+            // re-run us on those writes.
             untracked(() => {
                 if (!id) {
                     this.$tokens.set([]);
-                    this.$loadError.set(false);
+                    this.$status.set(ComponentStatus.IDLE);
 
                     return;
                 }
@@ -323,19 +333,17 @@ export class DotUsersApiTokensTabComponent {
     }
 
     private loadTokens(userId: string, showRevoked: boolean): void {
-        this.$isLoading.set(true);
-        this.$loadError.set(false);
+        this.$status.set(ComponentStatus.LOADING);
         this.#usersService
             .getApiTokens(userId, showRevoked)
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: (tokens) => {
                     this.$tokens.set(tokens);
-                    this.$isLoading.set(false);
+                    this.$status.set(ComponentStatus.LOADED);
                 },
                 error: (error) => {
-                    this.$isLoading.set(false);
-                    this.$loadError.set(true);
+                    this.$status.set(ComponentStatus.ERROR);
                     this.$tokens.set([]);
                     this.#httpErrorManager.handle(error);
                 }

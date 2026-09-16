@@ -9,7 +9,7 @@ import {
     DotMessageDisplayService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersListStore } from './dot-users-list.store';
@@ -113,7 +113,7 @@ describe('DotUsersListStore', () => {
         });
         expect(store.users()).toEqual(MOCK_USERS);
         expect(store.totalRecords()).toBe(2);
-        expect(store.status()).toBe('loaded');
+        expect(store.status()).toBe(ComponentStatus.LOADED);
     });
 
     describe('includeRoles fast path (#37236)', () => {
@@ -214,7 +214,7 @@ describe('DotUsersListStore', () => {
             store.loadUsers();
 
             expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(1);
-            expect(store.status()).toBe('error');
+            expect(store.status()).toBe(ComponentStatus.ERROR);
         });
     });
 
@@ -380,7 +380,7 @@ describe('DotUsersListStore', () => {
         store.setFilter('will-error');
         spectator.flushEffects();
 
-        expect(store.status()).toBe('error');
+        expect(store.status()).toBe(ComponentStatus.ERROR);
         expect(errorManager.handle).toHaveBeenCalled();
     });
 
@@ -424,7 +424,7 @@ describe('DotUsersListStore', () => {
         });
 
         expect(errorManager.handle).toHaveBeenCalled();
-        expect(store.status()).toBe('loaded');
+        expect(store.status()).toBe(ComponentStatus.LOADED);
     });
 
     it('updateUser should call the service, push a success toast, and reload the list', () => {

@@ -7,10 +7,9 @@ import { inject } from '@angular/core';
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotRolesService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import { DotUserDetail, DotUsersService } from '../../services/dot-users.service';
-
-export type DotUsersCreateStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 /**
  * Compact projection of a role membership we care about on save — both
@@ -25,7 +24,7 @@ export interface DotUsersCreateRole {
 }
 
 export interface DotUsersCreateState {
-    status: DotUsersCreateStatus;
+    status: ComponentStatus;
     /** Full profile returned by getUser — additionalInfo/birthday/etc. */
     detail: DotUserDetail | null;
     /**
@@ -47,7 +46,7 @@ export interface DotUsersCreateState {
 }
 
 const initialState: DotUsersCreateState = {
-    status: 'idle',
+    status: ComponentStatus.IDLE,
     detail: null,
     roles: [],
     additionalInfo: {},
@@ -84,7 +83,7 @@ export const DotUsersCreateStore = signalStore(
              */
             loadUserDetail: rxMethod<string>(
                 pipe(
-                    tap(() => patchState(store, { status: 'loading' })),
+                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap((userId) =>
                         forkJoin({
                             user: usersService.getUser(userId),
@@ -108,12 +107,12 @@ export const DotUsersCreateStore = signalStore(
                                     roles,
                                     additionalInfo: user.additionalInfo ?? {},
                                     gettingStarted,
-                                    status: 'loaded'
+                                    status: ComponentStatus.LOADED
                                 });
                             }),
                             catchError((error) => {
                                 httpErrorManager.handle(error);
-                                patchState(store, { status: 'error' });
+                                patchState(store, { status: ComponentStatus.ERROR });
 
                                 return EMPTY;
                             })

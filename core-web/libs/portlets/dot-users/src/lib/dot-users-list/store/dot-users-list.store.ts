@@ -12,15 +12,18 @@ import {
     DotMessageDisplayService,
     DotMessageService
 } from '@dotcms/data-access';
-import { DotCMSAPIResponse, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSAPIResponse,
+    DotMessageSeverity,
+    DotMessageType
+} from '@dotcms/dotcms-models';
 
 import {
     DotUserFormPayload,
     DotUserListItem,
     DotUsersService
 } from '../../services/dot-users.service';
-
-export type DotUsersListStatus = 'init' | 'loading' | 'loaded' | 'error';
 
 export type DotUsersListSortDirection = 'ASC' | 'DESC';
 
@@ -38,7 +41,7 @@ export interface DotUsersListState {
     roleFilter: string;
     sortField: string;
     sortOrder: DotUsersListSortDirection;
-    status: DotUsersListStatus;
+    status: ComponentStatus;
     /**
      * Role NAMES per userId for the currently displayed page. Filled
      * in one go from the inline `roles` array the list endpoint
@@ -59,7 +62,7 @@ const initialState: DotUsersListState = {
     roleFilter: '',
     sortField: 'lastLoginDate',
     sortOrder: 'DESC',
-    status: 'init',
+    status: ComponentStatus.INIT,
     userRoles: {}
 };
 
@@ -128,7 +131,7 @@ export const DotUsersListStore = signalStore(
          */
         const loadUsers = rxMethod<void>(
             pipe(
-                tap(() => patchState(store, { status: 'loading' })),
+                tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                 switchMap(() => fetchUsersPage(usersService, buildFilterParams(store))),
                 tap((response) => {
                     // Backend returns `roles: [{id, name, roleKey}]` per
@@ -148,13 +151,13 @@ export const DotUsersListStore = signalStore(
                     patchState(store, {
                         users: response.entity,
                         totalRecords: response.pagination?.totalEntries ?? 0,
-                        status: 'loaded',
+                        status: ComponentStatus.LOADED,
                         userRoles: rolesMap
                     });
                 }),
                 catchError((error) => {
                     httpErrorManager.handle(error);
-                    patchState(store, { status: 'error' });
+                    patchState(store, { status: ComponentStatus.ERROR });
 
                     return EMPTY;
                 })
@@ -222,7 +225,7 @@ export const DotUsersListStore = signalStore(
                 gettingStartedChange?: 'add' | 'remove';
             }>(
                 pipe(
-                    tap(() => patchState(store, { status: 'loading' })),
+                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap(({ payload, gettingStartedChange }) =>
                         usersService.createUser(payload).pipe(
                             switchMap((created) => {
@@ -252,7 +255,7 @@ export const DotUsersListStore = signalStore(
                             }),
                             catchError((error) => {
                                 httpErrorManager.handle(error);
-                                patchState(store, { status: 'loaded' });
+                                patchState(store, { status: ComponentStatus.LOADED });
 
                                 return EMPTY;
                             })
@@ -272,7 +275,7 @@ export const DotUsersListStore = signalStore(
                 gettingStartedChange?: 'add' | 'remove';
             }>(
                 pipe(
-                    tap(() => patchState(store, { status: 'loading' })),
+                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap(({ payload, gettingStartedChange }) =>
                         usersService.updateUser(payload).pipe(
                             switchMap((updated) => {
@@ -305,7 +308,7 @@ export const DotUsersListStore = signalStore(
                             }),
                             catchError((error) => {
                                 httpErrorManager.handle(error);
-                                patchState(store, { status: 'loaded' });
+                                patchState(store, { status: ComponentStatus.LOADED });
 
                                 return EMPTY;
                             })
@@ -324,7 +327,7 @@ export const DotUsersListStore = signalStore(
                 replacementUserId?: string;
             }>(
                 pipe(
-                    tap(() => patchState(store, { status: 'loading' })),
+                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap(({ userId, replacementUserId }) =>
                         usersService.deleteUser(userId, replacementUserId).pipe(
                             tap(() => {
@@ -338,7 +341,7 @@ export const DotUsersListStore = signalStore(
                             }),
                             catchError((error) => {
                                 httpErrorManager.handle(error);
-                                patchState(store, { status: 'loaded' });
+                                patchState(store, { status: ComponentStatus.LOADED });
 
                                 return EMPTY;
                             })
@@ -349,10 +352,10 @@ export const DotUsersListStore = signalStore(
 
             deleteSelectedUsers(replacementUserId?: string) {
                 const selected = store.selectedUsers();
-                if (selected.length === 0 || store.status() === 'loading') {
+                if (selected.length === 0 || store.status() === ComponentStatus.LOADING) {
                     return;
                 }
-                patchState(store, { status: 'loading' });
+                patchState(store, { status: ComponentStatus.LOADING });
 
                 const deletions = selected.map((user) =>
                     usersService.deleteUser(user.userId, replacementUserId).pipe(

@@ -24,7 +24,7 @@ import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotEnvironment } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotEnvironment } from '@dotcms/dotcms-models';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotUsersFilterByComponent } from './components/dot-users-filter-by/dot-users-filter-by.component';
@@ -84,6 +84,14 @@ export class DotUsersListComponent {
     readonly #route = inject(ActivatedRoute);
 
     readonly #searchSubject = new Subject<string>();
+
+    /**
+     * Derived from the store's single `status: ComponentStatus` — the
+     * template asks a simple yes/no question via this computed so the
+     * comparison to the enum stays in TS (templates don't have easy
+     * access to the enum).
+     */
+    protected readonly $isLoading = computed(() => this.store.status() === ComponentStatus.LOADING);
 
     protected readonly $bulkDeleteVisible = signal(false);
     protected readonly $bulkReplacementUser = signal<DotUserListItem | null>(null);
