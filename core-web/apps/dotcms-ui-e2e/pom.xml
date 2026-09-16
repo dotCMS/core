@@ -64,7 +64,7 @@
                     <executable>${pnpm.executable}</executable>
                     <workingDirectory>${e2e.frontend.dir}</workingDirectory>
                     <environmentVariables>
-                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                        <PATH>${pnpm.bin.dir}:${node.install.dir}:${env.PATH}</PATH>
                     </environmentVariables>
                 </configuration>
                 <executions>
@@ -103,7 +103,7 @@
                                 <CI>true</CI>
                                 <CURRENT_ENV>${e2e.test.env}</CURRENT_ENV>
                                 <NODE_OPTIONS>${e2e.node.options}</NODE_OPTIONS>
-                                <PATH>${node.install.dir}:${env.PATH}</PATH>
+                                <PATH>${pnpm.bin.dir}:${node.install.dir}:${env.PATH}</PATH>
                             </environmentVariables>
                         </configuration>
                     </execution>
