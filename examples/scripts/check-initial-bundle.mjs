@@ -21,6 +21,7 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
+import { gzipSync } from 'node:zlib';
 
 /**
  * Strings that must not appear in the initial route JavaScript.
@@ -137,10 +138,32 @@ function astroChunkGraph(root) {
     return { chunks, staticImporters, dynamicallyImported };
 }
 
-const [framework, target] = process.argv.slice(2);
+/**
+ * Total weight of the JavaScript a route downloads before any interaction.
+ *
+ * @param files the initial chunk paths
+ * @returns raw and gzip byte totals, and the file count
+ */
+function weigh(files) {
+    let raw = 0;
+    let gzip = 0;
+
+    for (const file of files) {
+        const contents = readFileSync(file);
+        raw += contents.byteLength;
+        gzip += gzipSync(contents).byteLength;
+    }
+
+    return { files: files.length, raw, gzip };
+}
+
+const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
+
+const [framework, target, ...flags] = process.argv.slice(2);
+const reportOnly = flags.includes('--report');
 
 if (!framework || !target) {
-    console.error('Usage: check-initial-bundle.mjs <next|astro> <example-dir>');
+    console.error('Usage: check-initial-bundle.mjs <next|astro> <example-dir> [--report]');
     process.exit(2);
 }
 
@@ -156,7 +179,14 @@ if (framework === 'astro') {
         process.exit(2);
     }
 
-    console.log(`${target}: checking ${chunks.length} client chunk(s)`);
+    const totals = weigh(chunks);
+    console.log(
+        `${target}: ${totals.files} client chunk(s), ${kb(totals.raw)} raw, ${kb(totals.gzip)} gzip`
+    );
+
+    if (reportOnly) {
+        process.exit(0);
+    }
 
     let astroFailed = false;
 
@@ -209,7 +239,14 @@ if (!chunks.length) {
     process.exit(2);
 }
 
-console.log(`${target}: checking ${chunks.length} initial-route chunk(s)`);
+const totals = weigh(chunks);
+console.log(
+    `${target}: ${totals.files} initial-route chunk(s), ${kb(totals.raw)} raw, ${kb(totals.gzip)} gzip`
+);
+
+if (reportOnly) {
+    process.exit(0);
+}
 
 const initial = new Set(chunks);
 const allOutput = walk(join(root, framework === 'next' ? '.next' : 'dist'), (f) =>

@@ -350,6 +350,28 @@ export const pageComponents = {
 > [!WARNING]
 > Avoid re-exporting your content-type components from a barrel (`export * from './Banner'`). Anything importing that barrel makes every component statically reachable, which puts them all back in the initial bundle no matter how the map loads them.
 
+#### Migrating an existing app to dynamic mapping
+
+Earlier versions of our examples showed a static component map, so an app built from them ships **every** mapped component on **every** route. If you have dozens of content types, that is the single biggest thing you can fix — and upgrading the SDK does not fix it for you, because the map lives in your code.
+
+Measured on the Next.js example with 135 mapped content types, one realistic component each:
+
+| Component map | Initial route JS | Mapped components in the initial bundle |
+| --- | --- | --- |
+| Static imports | 892.7 KB raw / 250.4 KB gzip | **135 of 135** |
+| `next/dynamic` | 792.6 KB raw / 238.1 KB gzip | **0 of 135** |
+
+Every mapped component leaves the initial route and is fetched only when a page contains that content type. How much weight that removes depends on your components: the 100 KB above is what 135 modest ones cost, and real component libraries are usually heavier.
+
+To migrate:
+
+1. Wrap each entry in the map with `next/dynamic` (or `React.lazy` outside Next.js). Keep the unmatched-type fallback eager.
+2. Delete any barrel that re-exports your content-type components, and import them directly where you need them elsewhere. A single `export * from './Banner'` re-exports every component from one module and undoes the whole change.
+3. Do the same for the `customRenderers` map you pass to `DotCMSBlockEditorRenderer` if it maps more than a handful of components.
+4. Rebuild and confirm. The quickest check is to map a component no page uses, give it a unique string, and grep the production client chunks for that string — it should appear only in its own chunk. `examples/scripts/check-initial-bundle.mjs` in this repository does exactly that for the Next.js and Astro examples and can be pointed at your build.
+
+`next/dynamic` keeps server rendering on by default, so this does not change what the crawler sees.
+
 
 ### DotCMSEditableText
 
