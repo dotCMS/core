@@ -124,12 +124,13 @@
                     <executable>${pnpm.executable}</executable>
                     <workingDirectory>${project.basedir}</workingDirectory>
                     <!--
-                      installs/node/bin carries the pnpm binary, and nested
-                      `pnpm exec` calls (dotcms-webcomponents' build target)
-                      resolve pnpm from PATH — pnpm never puts its own
-                      directory there. installs/node carries node and npm, so
-                      anything shelling out to them gets our Node 22 rather
-                      than the runner's default.
+                      pnpm 12 is a native binary and needs no interpreter of its
+                      own, but everything it spawns does: node, nx, stencil and the
+                      rest must resolve to the Node 22 this build installed, not the
+                      runner's default Node on PATH (GitHub Actions ships Node 20).
+                      installs/node/bin (pnpm.bin.dir) comes first so any `pnpm`
+                      resolved from PATH — project.json targets run `pnpm exec ...` —
+                      is the version this build pinned rather than an ambient one.
                     -->
                     <environmentVariables>
                         <PATH>${pnpm.bin.dir}:${node.install.dir}:${env.PATH}</PATH>

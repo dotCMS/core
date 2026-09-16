@@ -50,9 +50,9 @@ fi
 #
 #    Both packers are tried because neither is present everywhere. `npm` is missing from a
 #    pnpm-managed local toolchain (`pnpm env` installs node without it), which is what made
-#    `npm pack` report a false failure on a dev machine. `pnpm` — the binary the Maven build
-#    puts on PATH via ${pnpm.bin.dir} — is the one that returned nothing on the CI runner.
-#    Whichever answers
+#    `npm pack` report a false failure on a dev machine. `pnpm` — installed with npm into
+#    installs/node by the Maven build, which puts installs/node/bin on PATH — is the one that
+#    returned nothing on the CI runner. Whichever answers
 #    first decides the check; if neither does, each packer's stderr is printed, because a
 #    silent packer is exactly what made this failure unreadable the first time.
 PACKED=""

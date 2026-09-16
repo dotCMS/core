@@ -205,9 +205,10 @@ runs:
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: installs
-        # nodejs-parent/pom.xml is hashed because it holds <pnpm.version> and drives
-        # how installs/ is laid out — a pnpm bump or a change to the install mechanism
-        # must invalidate this cache, or the job restores a tree with the wrong pnpm.
+        # hash nodejs-parent/pom.xml because that pom is what decides the contents
+        # of installs/: it holds <pnpm.version> and installs pnpm into the same
+        # prefix as Node, so bumping the pinned pnpm (or Node) invalidates this key
+        # instead of restoring a cache built for the previous versions.
         key: node-binary-${{ hashFiles('core-web/.nvmrc', 'nodejs-parent/pom.xml') }}
 
     - name: Verify the pnpm version is in sync across package.json files and nodejs-parent/pom.xml
@@ -215,47 +216,39 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        # nodejs-parent/pom.xml is the source of truth: Maven installs that pnpm, and every
-        # package.json must agree with it. Report every mismatch in one run — fixing one and
-        # re-running CI to discover the next is a wasted round trip.
+        # The pom is the reference: Maven installs that pnpm and every module runs it.
+        # Collect every mismatch before failing, so a contributor who forgot to bump one
+        # manifest does not fix it, re-run CI, and only then learn about the other.
         pom_version=$(grep -oE '<pnpm\.version>[^<]+</pnpm\.version>' nodejs-parent/pom.xml | sed -E 's|</?pnpm\.version>||g')
         fail=0
         for manifest in core-web/package.json dotcms-postman/package.json; do
-          pm=$(jq -r '.packageManager' "$manifest")
-          version="${pm#pnpm@}"
-          if [ "$version" != "$pom_version" ]; then
-            echo "::error file=$manifest::pnpm version mismatch: $manifest=$version vs nodejs-parent/pom.xml=$pom_version. Keep these in sync — Maven uses the pom value, while the pnpm store cache key and pnpm/action-setup read core-web/package.json." >&2
+          declared=$(jq -r '.packageManager' "$manifest")
+          if [ "${declared#pnpm@}" != "$pom_version" ]; then
+            echo "::error file=$manifest::pnpm version mismatch: $manifest declares $declared, nodejs-parent/pom.xml pins $pom_version. Maven installs the pom version and every module runs it, so the manifests must agree." >&2
             fail=1
           fi
         done
         [ "$fail" -eq 0 ] || exit 1
-        echo "pnpm version in sync across all manifests: $pom_version"
+        echo "pnpm version in sync: $pom_version"
 
+    # pnpm/setup downloads pnpm's own standalone binary — no Node and no npm
+    # involved — and with `cache: true` restores and saves the pnpm store itself,
+    # keyed on core-web/pnpm-lock.yaml. That replaces the `pnpm store path` probe
+    # and the paired restore/save cache steps this action used to carry.
+    #
+    # No `version` input: the action reads it from core-web/package.json
+    # (devEngines.packageManager, falling back to packageManager), which the sync
+    # check above already holds against nodejs-parent/pom.xml.
+    #
+    # install: false — the Maven build runs the install itself, in the phase and
+    # with the flags the poms decide.
     - name: Set up pnpm
       if: ${{ inputs.requires-node == 'true' }}
-      uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
       with:
-        package_json_file: core-web/package.json
-        run_install: false
-
-    - name: Get pnpm store directory path
-      id: pnpm-info
-      if: ${{ inputs.requires-node == 'true' }}
-      shell: bash
-      run: |
-        echo "dir=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
-        echo "version=$(pnpm -v)" >> $GITHUB_OUTPUT
-
-    - id: restore-cache-pnpm
-      name: Restore pnpm Store Cache
-      if: ${{ inputs.requires-node == 'true' }}
-      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      with:
-        path: ${{ steps.pnpm-info.outputs.dir }}
-        key: ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}-${{ hashFiles('core-web/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}
-          ${{ runner.os }}-pnpm-
+        working-directory: core-web
+        install: false
+        cache: true
 
 
     - id: cache-sonar
@@ -451,14 +444,6 @@ runs:
       with:
         path: installs
         key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
-
-    - id: save-cache-pnpm
-      name: Save pnpm Store Cache
-      if: ${{ inputs.requires-node == 'true' && inputs.generate-artifacts == 'true' && steps.restore-cache-pnpm.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-      with:
-        path: ${{ steps.pnpm-info.outputs.dir }}
-        key: ${{ steps.restore-cache-pnpm.outputs.cache-primary-key }}
 
     - id: save-cache-sonar
       name: Save SonarQube Cache
