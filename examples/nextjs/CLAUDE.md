@@ -70,7 +70,7 @@ src/
 │   └── globals.css          # Global styles
 ├── components/
 │   ├── content-types/       # Components for dotCMS Content Types
-│   │   ├── index.ts         # Content type to component mapping (pageComponents)
+│   │   ├── index.ts         # Content type to component mapping (pageComponents), via next/dynamic
 │   │   └── *.tsx            # Individual content type components
 │   ├── editor/              # UVE editor components (EditButton, ReorderMenuButton)
 │   ├── header/ footer/      # Site chrome
@@ -109,17 +109,25 @@ const { pageAsset, content } = useEditableDotCMSPage(pageContent);
 
 ### Content Type Mapping
 
-Each dotCMS Content Type maps to a React component:
+Each dotCMS Content Type maps to a React component, loaded through `next/dynamic` so it is fetched only when a page contains that Content Type:
 
 ```ts
 // In src/components/content-types/index.ts
+import dynamic from "next/dynamic";
+
+import { CustomNoComponent } from "./Empty";
+
 export const pageComponents = {
-    Activity: Activity,
-    Banner: Banner,
-    Product: Product,
-    // Key must match Content Type variable name in dotCMS
+    Activity: dynamic(() => import("./Activity")),
+    Banner: dynamic(() => import("./Banner")),
+    Product: dynamic(() => import("./Product")),
+    // Key must match Content Type variable name in dotCMS.
+    // The unmatched-type fallback stays eager — it should not wait on a network request.
+    CustomNoComponent
 };
 ```
+
+Do not convert this back to static imports, and do not re-export the components from a barrel: either makes every mapped component reachable from the client entry, which puts all of them in the initial bundle. `examples/scripts/check-initial-bundle.mjs` guards this by asserting that `UnusedComponentProbe` — a mapped Content Type no page uses — stays out of the initial route JavaScript.
 
 ### Dynamic Routing Strategy
 

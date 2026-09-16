@@ -391,13 +391,18 @@ Here's how this looks in code:
 ```tsx
 "use client";
 
+import dynamic from "next/dynamic";
 import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
 
-// Define custom components for specific Content Types
-// The key is the Content Type variable name in dotCMS
+// Define custom components for specific Content Types.
+// The key is the Content Type variable name in dotCMS.
+//
+// Load them with `next/dynamic` so each becomes its own chunk, fetched only when a page
+// actually contains that content type. A static map makes every component reachable from
+// the client entry, so visitors download all of them on every route.
 const pageComponents = {
-    dotCMSProductContent: MyCustomDotCMSProductComponent,
-    dotCMSBlogPost: BlogPostComponent,
+    dotCMSProductContent: dynamic(() => import("./MyCustomDotCMSProductComponent")),
+    dotCMSBlogPost: dynamic(() => import("./BlogPostComponent")),
 };
 
 interface MyPageProps {
@@ -432,16 +437,30 @@ One of the key concepts in this integration is mapping dotCMS Content Types to R
 1. Each key in the mapping object must match exactly with a Content Type variable name in dotCMS
 2. Each value is a React component that will be used to render that specific Content Type
 3. When content is rendered, the contentlet data from dotCMS is passed as props to your component
+4. Load each component with `next/dynamic`, so it is fetched only when a page contains that Content Type
 
 ```ts
+import dynamic from "next/dynamic";
+
 // Example of mapping dotCMS Content Types to React components
 const pageComponents = {
     // The key "DotCMSProduct" must match a Content Type variable name in dotCMS
-    DotCMSProduct: ProductComponent,
+    DotCMSProduct: dynamic(() => import("./ProductComponent")),
     // The key "DotCMSBlogPost" must match a Content Type variable name in dotCMS
-    DotCMSBlogPost: BlogPostComponent,
+    DotCMSBlogPost: dynamic(() => import("./BlogPostComponent")),
 };
 ```
+
+**Why dynamic imports.** A static map is the obvious thing to write, and it is why this example
+used to ship every mapped component to every visitor: importing them statically makes all of
+them reachable from the client entry, whether or not the page renders them. Wrapping each in
+`next/dynamic` gives it its own chunk, so a page that renders two Content Types downloads two
+components instead of a dozen. See `src/components/content-types/index.ts` for the real map.
+
+Two things to keep in mind:
+
+- Keep the `CustomNoComponent` fallback eagerly imported. It renders when no mapping matches, so it should not wait on a network round-trip.
+- Do not re-export your content-type components from a barrel (`export * from "./Banner"`). Anything importing that barrel makes every component statically reachable again, undoing the split.
 
 **What happens at runtime:**
 
