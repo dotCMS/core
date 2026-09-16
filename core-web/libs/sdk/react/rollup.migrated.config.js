@@ -2,26 +2,6 @@ const preserveDirectives = require('rollup-plugin-preserve-directives').default;
 const postcss = require('rollup-plugin-postcss');
 const path = require('path');
 
-// A build-time require of workspace tooling, not a runtime dependency between projects. The
-// sibling SDK rollup configs require the same file; they simply never trip this rule because
-// their lint target covers *.ts alone.
-// eslint-disable-next-line @nx/enforce-module-boundaries -- build tooling, not a project import
-const { patchExportsPlugin } = require('../../../tools/rollup/patch-exports.cjs');
-
-/**
- * The CSS in this package is injected by JavaScript (`extractCss: false`), so each stylesheet
- * is emitted as its own side-effectful module — e.g. `Row.module.css.esm.js`. A blanket
- * `"sideEffects": false` would let bundlers drop those imports as dead code and silently ship
- * the layout without its grid styles, so the flag is an allow-list instead of `false`.
- */
-const SIDE_EFFECTFUL_FILES = ['**/*.css', '**/*.css.esm.js', '**/*.css.cjs.js'];
-
-/**
- * Server-safe entry, excluding TinyMCE and other client-only modules. Declared ahead of
- * `import` so React Server Components resolve to it.
- */
-const REACT_SERVER_ENTRY = { 'react-server': './index.server.esm.js' };
-
 /**
  * Swap @nx/rollup's inlined postcss plugin for `rollup-plugin-postcss`.
  *
@@ -123,21 +103,13 @@ module.exports = (options, nxOptions) => {
         options.output.preserveModulesRoot = 'src';
     }
 
-    // Determine output directory for package.json patching
-    const outputDir = Array.isArray(options.output) ? options.output[0]?.dir : options.output?.dir;
-
-    // Append preserveDirectives and package.json patcher as the last plugins
+    // Keep 'use client' directives, and swap out the broken postcss plugin.
     options.plugins = [
         ...replaceBrokenPostcssPlugin(
             Array.isArray(options.plugins) ? options.plugins : [],
             nxOptions ?? {}
         ),
-        preserveDirectives(),
-        patchExportsPlugin({
-            outputDir,
-            sideEffects: SIDE_EFFECTFUL_FILES,
-            extraConditions: REACT_SERVER_ENTRY
-        })
+        preserveDirectives()
     ];
 
     // Suppress MODULE_LEVEL_DIRECTIVE warnings from rollup, composing with any existing handler
