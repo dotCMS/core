@@ -1,6 +1,6 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
-import { Mock, Mocked, vi } from 'vitest';
+import { Mocked, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 

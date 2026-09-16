@@ -157,7 +157,7 @@ describe('DotUsersListComponent', () => {
                 useValue: fakeRoute()
             },
             mockProvider(DotPushPublishDialogService, {
-                open: jest.fn()
+                open: vi.fn()
             }),
             mockProvider(DotUsersService, {
                 getUsersPaginated: vi.fn().mockReturnValue(
@@ -202,7 +202,7 @@ describe('DotUsersListComponent', () => {
 
     it('should flip the visible/hidden pair when a selection is active', () => {
         const store = spectator.inject(DotUsersListStore, true);
-        (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
+        (store.selectedUsers as Mock).mockReturnValue([MOCK_USERS[0]]);
         spectator.detectChanges();
 
         const newWrapper = spectator.query(byTestId('users-new-btn-wrapper'));
@@ -217,7 +217,7 @@ describe('DotUsersListComponent', () => {
         // Mocks live at the factory level, so mutations persist across sibling
         // tests. Reset before yielding so the next "no selection" test starts
         // fresh instead of inheriting our non-empty selection.
-        (store.selectedUsers as jest.Mock).mockReturnValue([]);
+        (store.selectedUsers as Mock).mockReturnValue([]);
     });
 
     it('should reveal the selection actions and count when there is a selection', () => {
@@ -313,7 +313,7 @@ describe('DotUsersListComponent', () => {
     describe('bulk push publish + bundle', () => {
         beforeEach(() => {
             const store = spectator.inject(DotUsersListStore, true);
-            (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0], MOCK_USERS[1]]);
+            (store.selectedUsers as Mock).mockReturnValue([MOCK_USERS[0], MOCK_USERS[1]]);
             spectator.detectChanges();
         });
 
@@ -396,7 +396,7 @@ describe('DotUsersListComponent', () => {
 
         it('should surface the footer warning after an invalid confirmBulkDelete click', () => {
             const store = spectator.inject(DotUsersListStore, true);
-            (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
+            (store.selectedUsers as Mock).mockReturnValue([MOCK_USERS[0]]);
             spectator.component['$bulkDeleteVisible'].set(true);
             spectator.detectChanges();
 
@@ -413,7 +413,7 @@ describe('DotUsersListComponent', () => {
 
         it('should hide the footer warning once a valid replacement is picked', () => {
             const store = spectator.inject(DotUsersListStore, true);
-            (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
+            (store.selectedUsers as Mock).mockReturnValue([MOCK_USERS[0]]);
 
             spectator.component.confirmBulkDelete();
             expect(spectator.component['$bulkDeleteWarning']()).toBe(
@@ -441,28 +441,26 @@ describe('DotUsersListComponent — non-enterprise instance', () => {
         detectChanges: false,
         componentProviders: [
             mockProvider(DotUsersListStore, {
-                users: jest.fn().mockReturnValue(MOCK_USERS),
-                userRoles: jest.fn().mockReturnValue({}),
-                selectedUsers: jest.fn().mockReturnValue([]),
-                filter: jest.fn().mockReturnValue(''),
-                roleFilter: jest.fn().mockReturnValue(''),
-                page: jest.fn().mockReturnValue(1),
-                rows: jest.fn().mockReturnValue(20),
-                totalRecords: jest.fn().mockReturnValue(2),
-                sortField: jest.fn().mockReturnValue('lastLoginDate'),
-                sortOrder: jest.fn().mockReturnValue('DESC'),
-                status: jest.fn().mockReturnValue('loaded'),
-                setFilter: jest.fn(),
-                setRoleFilter: jest.fn(),
-                applyLazyLoad: jest.fn(),
-                setSelectedUsers: jest.fn(),
-                deleteSelectedUsers: jest.fn(),
-                loadUsers: jest.fn()
+                users: vi.fn().mockReturnValue(MOCK_USERS),
+                userRoles: vi.fn().mockReturnValue({}),
+                selectedUsers: vi.fn().mockReturnValue([]),
+                filter: vi.fn().mockReturnValue(''),
+                roleFilter: vi.fn().mockReturnValue(''),
+                page: vi.fn().mockReturnValue(1),
+                rows: vi.fn().mockReturnValue(20),
+                totalRecords: vi.fn().mockReturnValue(2),
+                sortField: vi.fn().mockReturnValue('lastLoginDate'),
+                sortOrder: vi.fn().mockReturnValue('DESC'),
+                status: vi.fn().mockReturnValue('loaded'),
+                setFilter: vi.fn(),
+                setRoleFilter: vi.fn(),
+                applyLazyLoad: vi.fn(),
+                setSelectedUsers: vi.fn(),
+                deleteSelectedUsers: vi.fn(),
+                loadUsers: vi.fn()
             }),
             mockProvider(DialogService, {
-                open: jest
-                    .fn()
-                    .mockReturnValue({ onClose: { pipe: () => ({ subscribe: jest.fn() }) } })
+                open: vi.fn().mockReturnValue({ onClose: { pipe: () => ({ subscribe: vi.fn() }) } })
             })
         ],
         providers: [
@@ -474,9 +472,9 @@ describe('DotUsersListComponent — non-enterprise instance', () => {
                 provide: ActivatedRoute,
                 useValue: fakeRoute(false, [])
             },
-            mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
+            mockProvider(DotPushPublishDialogService, { open: vi.fn() }),
             mockProvider(DotUsersService, {
-                getUsersPaginated: jest.fn().mockReturnValue(
+                getUsersPaginated: vi.fn().mockReturnValue(
                     of({
                         entity: [],
                         errors: [],
@@ -504,7 +502,7 @@ describe('DotUsersListComponent — non-enterprise instance', () => {
 
     it('should hide the Push Publish bulk action but keep Add to Bundle promoted', () => {
         const store = spectator.inject(DotUsersListStore, true);
-        (store.selectedUsers as jest.Mock).mockReturnValue([MOCK_USERS[0]]);
+        (store.selectedUsers as Mock).mockReturnValue([MOCK_USERS[0]]);
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('users-bulk-push-publish-btn'))).toBeNull();
