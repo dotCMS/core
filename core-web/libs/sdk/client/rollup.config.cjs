@@ -3,7 +3,7 @@ const path = require('path');
 
 const { withNx } = require('@nx/rollup/with-nx');
 
-const { patchExportsPlugin } = require('../rollup-shared/patch-exports.cjs');
+const { patchExportsPlugin } = require('../../../tools/rollup/patch-exports.cjs');
 
 // These options were migrated by @nx/rollup:convert-to-inferred from project.json
 const options = {

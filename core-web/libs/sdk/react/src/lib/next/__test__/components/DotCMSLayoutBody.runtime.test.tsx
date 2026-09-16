@@ -1,12 +1,14 @@
 import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
+import { useContext } from 'react';
 import { MockInstance, vi } from 'vitest';
 
 import { DotCMSPageAsset } from '@dotcms/types';
 import { ANALYTICS_READY_EVENT } from '@dotcms/uve/internal';
 
 import { DotCMSLayoutBody } from '../../components/DotCMSLayoutBody/DotCMSLayoutBody';
+import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 
 /**
  * Builds a page whose single container holds `count` contentlets, so the cost of rendering
@@ -133,5 +135,33 @@ describe('DotCMSLayoutBody runtime cost', () => {
 
             expect(getBoundingClientRectSpy).toHaveBeenCalled();
         });
+    });
+});
+
+describe('page context stability', () => {
+    // A fresh context value re-renders every container and contentlet in the tree, so the
+    // provider memoizes it. That memo is only as stable as its dependencies: when `components`
+    // and `slots` defaulted to inline `{}` literals, each render produced new objects and the
+    // memo never held.
+    test('should keep one context value across re-renders', () => {
+        const values: unknown[] = [];
+        // Stable across renders, the way a real app passes a page asset and a module-level
+        // component map. The memo can only hold if its inputs do.
+        const page = buildPageAsset(1);
+        const components = {
+            Banner: () => {
+                values.push(useContext(DotCMSPageContext));
+
+                return null;
+            }
+        };
+
+        const { rerender } = render(
+            <DotCMSLayoutBody page={page} components={components} mode="production" />
+        );
+        rerender(<DotCMSLayoutBody page={page} components={components} mode="production" />);
+
+        expect(values.length).toBeGreaterThan(1);
+        expect(new Set(values).size).toBe(1);
     });
 });

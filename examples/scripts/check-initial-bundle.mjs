@@ -249,9 +249,10 @@ if (reportOnly) {
 }
 
 const initial = new Set(chunks);
-const allOutput = walk(join(root, framework === 'next' ? '.next' : 'dist'), (f) =>
-    f.endsWith('.js')
-);
+// Client output only. Walking all of .next would let a needle that survives solely in the
+// server bundle satisfy the "still exists" check, hiding a component that vanished from the
+// browser entirely.
+const allOutput = walk(join(root, '.next/static'), (f) => f.endsWith('.js'));
 
 let failed = false;
 

@@ -1,7 +1,26 @@
 const preserveDirectives = require('rollup-plugin-preserve-directives').default;
 const postcss = require('rollup-plugin-postcss');
 const path = require('path');
-const fs = require('fs');
+
+// A build-time require of workspace tooling, not a runtime dependency between projects. The
+// sibling SDK rollup configs require the same file; they simply never trip this rule because
+// their lint target covers *.ts alone.
+// eslint-disable-next-line @nx/enforce-module-boundaries -- build tooling, not a project import
+const { patchExportsPlugin } = require('../../../tools/rollup/patch-exports.cjs');
+
+/**
+ * The CSS in this package is injected by JavaScript (`extractCss: false`), so each stylesheet
+ * is emitted as its own side-effectful module — e.g. `Row.module.css.esm.js`. A blanket
+ * `"sideEffects": false` would let bundlers drop those imports as dead code and silently ship
+ * the layout without its grid styles, so the flag is an allow-list instead of `false`.
+ */
+const SIDE_EFFECTFUL_FILES = ['**/*.css', '**/*.css.esm.js', '**/*.css.cjs.js'];
+
+/**
+ * Server-safe entry, excluding TinyMCE and other client-only modules. Declared ahead of
+ * `import` so React Server Components resolve to it.
+ */
+const REACT_SERVER_ENTRY = { 'react-server': './index.server.esm.js' };
 
 /**
  * Swap @nx/rollup's inlined postcss plugin for `rollup-plugin-postcss`.
@@ -50,7 +69,12 @@ function replaceBrokenPostcssPlugin(plugins, options) {
  * exist.
  *
  * Injecting inline keeps the stylesheet chunks self-contained. The guard makes it a no-op
- * during SSR (no `document`) and idempotent if the same chunk is evaluated twice.
+ * during SSR (no `document`), and idempotent if two copies of the package end up on one page
+ * — which the dual-package hazard makes possible now that `import` resolves to real ESM.
+ *
+ * The guard compares stylesheet *content*, not a derived key. An earlier version keyed on
+ * `css.length`, which silently skipped injection for any second stylesheet that happened to
+ * be the same byte length as one already on the page.
  *
  * @param {string} cssVariableName identifier holding the stylesheet text
  * @returns {string} code appended to the stylesheet module
@@ -59,66 +83,16 @@ function injectStyleInline(cssVariableName) {
     return `
 (function () {
     if (typeof document === 'undefined') return;
-    var key = '__dotcms_react_style_' + ${cssVariableName}.length;
-    if (document.head.querySelector('style[data-dotcms-style="' + key + '"]')) return;
+    var existing = document.head.querySelectorAll('style[data-dotcms-style]');
+    for (var i = 0; i < existing.length; i++) {
+        if (existing[i].textContent === ${cssVariableName}) return;
+    }
     var style = document.createElement('style');
-    style.setAttribute('data-dotcms-style', key);
+    style.setAttribute('data-dotcms-style', '');
     style.appendChild(document.createTextNode(${cssVariableName}));
     document.head.appendChild(style);
 })();
 `;
-}
-
-/**
- * The CSS in this package is injected by JavaScript (`extractCss: false`), so each stylesheet
- * is emitted as its own side-effectful module — e.g. `Row.module.css.esm.js`. A blanket
- * `"sideEffects": false` would let bundlers drop those imports as dead code and silently ship
- * the layout without its grid styles, so the flag is an allow-list instead of `false`.
- */
-const SIDE_EFFECTFUL_FILES = ['**/*.css', '**/*.css.esm.js', '**/*.css.cjs.js'];
-
-/**
- * Rollup plugin that patches the output package.json:
- *
- * - adds the `react-server` condition, pointing at the server-safe entry that excludes
- *   TinyMCE and other client-only modules;
- * - moves `types` to the front, because conditions resolve in declaration order and an
- *   earlier `import` shadows it;
- * - declares which files carry real side effects, so everything else can be tree-shaken.
- */
-function patchPackageJsonPlugin(outputDir) {
-    return {
-        name: 'patch-package-json',
-        writeBundle() {
-            const pkgPath = path.join(outputDir, 'package.json');
-            if (!fs.existsSync(pkgPath)) return;
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-            const mainExport = pkg.exports && pkg.exports['.'];
-
-            pkg.sideEffects = SIDE_EFFECTFUL_FILES;
-
-            if (mainExport && typeof mainExport === 'object' && !Array.isArray(mainExport)) {
-                const { types, ...rest } = mainExport;
-                pkg.exports['.'] = {
-                    ...(types ? { types } : {}),
-                    'react-server': './index.server.esm.js',
-                    ...rest
-                };
-                fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-            } else if (typeof mainExport === 'string') {
-                pkg.exports['.'] = {
-                    'react-server': './index.server.esm.js',
-                    import: mainExport
-                };
-                fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-            } else {
-                console.warn(
-                    '[patchPackageJsonPlugin] Unrecognized exports["."] shape — react-server condition was NOT added. ' +
-                        'SSR builds may pull in TinyMCE. Check the generated package.json exports field.'
-                );
-            }
-        }
-    };
 }
 
 module.exports = (options, nxOptions) => {
@@ -159,7 +133,11 @@ module.exports = (options, nxOptions) => {
             nxOptions ?? {}
         ),
         preserveDirectives(),
-        ...(outputDir ? [patchPackageJsonPlugin(outputDir)] : [])
+        patchExportsPlugin({
+            outputDir,
+            sideEffects: SIDE_EFFECTFUL_FILES,
+            extraConditions: REACT_SERVER_ENTRY
+        })
     ];
 
     // Suppress MODULE_LEVEL_DIRECTIVE warnings from rollup, composing with any existing handler

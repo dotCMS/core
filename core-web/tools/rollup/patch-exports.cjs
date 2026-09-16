@@ -28,12 +28,18 @@ const path = require('path');
  * factory, UVE reads its state off `window`, types emit no runtime code). Do not apply this
  * blindly to a package that keeps a singleton.
  *
+ * Also used by ESM-only packages (see libs/sdk/react), which have no CJS counterpart to
+ * reorder but still need `types` first and their own extra conditions declared ahead of
+ * `import`.
+ *
  * @param {object} config
  * @param {string} config.outputDir directory holding the generated package.json
  * @param {boolean|string[]} [config.sideEffects] value to write as the `sideEffects` field
+ * @param {Record<string, string>} [config.extraConditions] conditions to declare after `types`
+ *   and before `import` — e.g. `react-server`, which must win over `import` to be reachable
  * @returns {import('rollup').Plugin}
  */
-function patchExportsPlugin({ outputDir, sideEffects }) {
+function patchExportsPlugin({ outputDir, sideEffects, extraConditions = {} }) {
     return {
         name: 'patch-sdk-exports',
         writeBundle() {
@@ -68,10 +74,14 @@ function patchExportsPlugin({ outputDir, sideEffects }) {
                     continue;
                 }
 
-                const esm = conditions.module;
-                const cjs = conditions.default;
+                // A dual build declares `module`; an ESM-only build only has `import`, which
+                // already points at the ESM artifact.
+                const esm = conditions.module ?? conditions.import;
+                const cjs =
+                    typeof conditions.default === 'string' && conditions.default.endsWith('.cjs.js')
+                        ? conditions.default
+                        : undefined;
 
-                // An ESM-only build has no `module`/CJS pair to reorder; leave it as generated.
                 if (!esm) {
                     continue;
                 }
@@ -88,10 +98,13 @@ function patchExportsPlugin({ outputDir, sideEffects }) {
 
                 pkg.exports[subpath] = {
                     ...(conditions.types ? { types: conditions.types } : {}),
+                    ...extraConditions,
                     ...passthrough,
-                    module: esm,
+                    // Only re-declare `module` where it already existed: adding it to an
+                    // ESM-only package would change its published shape for no benefit.
+                    ...(conditions.module ? { module: esm } : {}),
                     import: esm,
-                    ...(cjs && cjs.endsWith('.cjs.js') ? { require: cjs, default: cjs } : {})
+                    ...(cjs ? { require: cjs, default: cjs } : {})
                 };
             }
 

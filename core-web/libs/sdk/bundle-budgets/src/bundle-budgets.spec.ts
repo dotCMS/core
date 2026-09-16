@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 
@@ -120,6 +120,25 @@ describe('SDK export conditions', () => {
                     `${pkg} ${subpath} lists conditions as [${keys.join(', ')}]. Resolvers take the ` +
                         'first match, so anything before `types` makes the type declarations unreachable.'
                 ).toBe('types');
+            }
+        });
+
+        test('should point every export condition at a file that exists', () => {
+            const { exports } = readPackageJson(pkg);
+
+            for (const [subpath, conditions] of Object.entries(exports)) {
+                const targets =
+                    typeof conditions === 'string'
+                        ? [conditions]
+                        : Object.values(conditions as Record<string, string>);
+
+                for (const target of targets) {
+                    expect(
+                        existsSync(join(SDK_DIST, pkg, target)),
+                        `${pkg} ${subpath} points at ${target}, which was not emitted. A consumer ` +
+                            'resolving that condition gets a module-not-found at install time.'
+                    ).toBe(true);
+                }
             }
         });
 
