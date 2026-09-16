@@ -318,8 +318,10 @@ jobs:
       # Deploy CLI Maven artifacts to the S3-compatible repository
       # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
       # Skipped when deploy-cli is false (e.g., manual builds should not publish CLI artifacts)
+      # Not continue-on-error: a missing CLI artifact should be visible. Trunk/nightly
+      # publish snapshots, which publish-to-s3 rejects before requiring credentials,
+      # so this only fails when a real (release) publish is misconfigured.
       - name: CLI Deploy
-        continue-on-error: true
         id: cli_deploy
         if: inputs.deploy-cli && steps.get-sdkman-version.outputs.java_suffix == ''
         uses: ./.github/actions/core-cicd/deployment/deploy-maven-s3

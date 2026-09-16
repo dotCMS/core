@@ -112,6 +112,9 @@ aws_s3() {
 
 require_credentials() {
   if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    # Dry-runs are useful standalone (no secrets), but aws still needs a bucket
+    # to build a valid s3:// destination, so fall back to a placeholder.
+    : "${S3_BUCKET:=dry-run-bucket}"
     return 0
   fi
   [[ -n "$S3_BUCKET" ]] || die "Bucket is empty. Set MAVEN_S3_BUCKET or MAVEN_BUNNY_RW_USERNAME."
@@ -184,9 +187,13 @@ update_artifact_metadata() {
   tmp="$(mktemp -d)"
   CLEANUP_DIRS+=("$tmp")
 
+  # `aws s3 ls` prints directory entries as `PRE <name>/` and file entries as
+  # `<date> <time> <size> <name>`. Only PRE lines are versions; using $2 on a
+  # file line would pick up the timestamp and corrupt the version list (and
+  # therefore <latest>/<release>) on every publish after the first.
   versions="$(
     aws_s3 ls "s3://$S3_BUCKET/$base/" 2>/dev/null \
-      | awk '{print $2}' | sed 's:/$::' || true
+      | awk '$1 == "PRE" {print $2}' | sed 's:/$::' || true
   )"
   versions="$(printf '%s\n%s\n' "$versions" "$version" | sed '/^$/d' | sort -u -V)"
 
@@ -211,9 +218,21 @@ update_artifact_metadata() {
     printf '</metadata>\n'
   } > "$tmp/maven-metadata.xml"
 
-  local args=(--no-progress --content-type application/xml)
-  [[ "${DRY_RUN:-false}" == "true" ]] && args+=(--dryrun)
-  aws_s3 cp "$tmp/maven-metadata.xml" "s3://$S3_BUCKET/$base/maven-metadata.xml" "${args[@]}"
+  # Artifactory also published checksums for the metadata. Maven's default
+  # checksum policy is `warn`, but consumers configured with checksumPolicy=fail
+  # require these.
+  sha1sum "$tmp/maven-metadata.xml" | awk '{print $1}' > "$tmp/maven-metadata.xml.sha1"
+  md5sum "$tmp/maven-metadata.xml" | awk '{print $1}' > "$tmp/maven-metadata.xml.md5"
+
+  local xml_args=(--no-progress --content-type application/xml)
+  local sum_args=(--no-progress --content-type text/plain)
+  if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    xml_args+=(--dryrun)
+    sum_args+=(--dryrun)
+  fi
+  aws_s3 cp "$tmp/maven-metadata.xml" "s3://$S3_BUCKET/$base/maven-metadata.xml" "${xml_args[@]}"
+  aws_s3 cp "$tmp/maven-metadata.xml.sha1" "s3://$S3_BUCKET/$base/maven-metadata.xml.sha1" "${sum_args[@]}"
+  aws_s3 cp "$tmp/maven-metadata.xml.md5" "s3://$S3_BUCKET/$base/maven-metadata.xml.md5" "${sum_args[@]}"
 }
 
 # Non-unique SNAPSHOT deployments would need a version-level maven-metadata.xml
