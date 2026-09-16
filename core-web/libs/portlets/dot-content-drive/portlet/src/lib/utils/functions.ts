@@ -975,4 +975,6 @@ export const browsedFolderRef = (
     hostname: string | null | undefined,
     path: string | null | undefined
 ): string =>
-    path === SYSTEM_HOST_PATH ? toFolderRef(SYSTEM_HOST.hostname, ROOT_PATH) : toFolderRef(hostname, path);
+    path === SYSTEM_HOST_PATH
+        ? toFolderRef(SYSTEM_HOST.hostname, ROOT_PATH)
+        : toFolderRef(hostname, path);
