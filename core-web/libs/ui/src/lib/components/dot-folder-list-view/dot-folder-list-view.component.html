@@ -106,16 +106,20 @@
 
                  Full `role="grid"` wiring (cell navigation, `aria-rowcount`/`aria-colindex`) is
                  tracked in #37439. -->
+            @let isUnselectable = $unselectableSet().has(item[$dataKey()]);
+
             <tr
                 class="group transition-colors duration-200"
                 [class.cursor-grabbing]="state.isDragging()"
                 [class.text-gray-900]="state.dragOverRowId() === item.identifier"
                 [class.bg-primary-100]="state.dragOverRowId() === item.identifier"
+                [class.opacity-50]="isUnselectable"
                 [pSelectableRow]="item"
                 [pSelectableRowIndex]="rowIndex"
                 [attr.aria-selected]="$selectedKeys().has(item[$dataKey()])"
+                [attr.aria-disabled]="isUnselectable || null"
                 [pSelectableRowDisabled]="
-                    $disabled() || $readOnly() || $busyRowsSet().has(item.inode)
+                    $disabled() || $readOnly() || isUnselectable || $busyRowsSet().has(item.inode)
                 "
                 [class.opacity-60]="$busyRowsSet().has(item.inode)"
                 [class.pointer-events-none]="$busyRowsSet().has(item.inode)"
@@ -127,10 +131,34 @@
                 (dragend)="onDragEnd()"
                 (dragover)="onDragOver($event, item)"
                 (drop)="onDrop($event, item)">
+                <!-- A refused row's control is disabled rather than hidden: an empty cell where
+                     every other row has a control reads as a rendering fault, and the greyed-out
+                     control is what the dialog this replaced showed.
+
+                     Refused and allowed are two separate branches rather than one element with a
+                     bound `[disabled]`, because PrimeNG's table controls drive their checkbox
+                     through `[(ngModel)]`: the form directive calls `setDisabledState` on init and
+                     that latches, so a row that was refused and then allowed again keeps a dead
+                     control. Separate branches destroy and rebuild the control on the transition,
+                     which is the only way it comes back correct in **both** directions. -->
                 <td data-testId="item-checkbox" (click)="onCheckboxClick($event, rowIndex)">
-                    @if ($selectionMode() === 'multiple') {
-                        <!-- A busy row cannot be re-selected into another action while the current
-                             one is still running on it. -->
+                    <!-- Two reasons a control is dead, kept apart because they behave differently.
+                         A **busy** row is transient — the operation ends and the same control comes
+                         back — so it takes a bound `[disabled]`. An **unselectable** row is a
+                         standing refusal, and its branch is separate: PrimeNG's table controls drive
+                         their checkbox through `[(ngModel)]`, whose `setDisabledState` latches on
+                         init, so a bound `[disabled]` that flips back to false leaves a dead
+                         control. Rebuilding it is the only way it recovers. -->
+                    @if (isUnselectable) {
+                        @if ($selectionMode() === 'multiple') {
+                            <p-tableCheckbox [value]="item" [disabled]="true" />
+                        } @else {
+                            <p-tableRadioButton
+                                [value]="item"
+                                [disabled]="true"
+                                data-testId="item-radio" />
+                        }
+                    } @else if ($selectionMode() === 'multiple') {
                         <p-tableCheckbox
                             [value]="item"
                             [disabled]="$disabled() || $busyRowsSet().has(item.inode)" />
@@ -356,7 +384,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
         @if (!$loading()) {
-            <tr class="h-max hover:bg-transparent!">
+            <tr class="h-max hover:bg-transparent!" data-testId="empty-state">
                 <td [attr.colspan]="$columnSpan()" class="h-full border-none p-6 text-center">
                     <div class="mx-auto flex max-w-100 flex-col items-center gap-4">
                         <div class="flex size-20 items-center justify-center rounded-full">
