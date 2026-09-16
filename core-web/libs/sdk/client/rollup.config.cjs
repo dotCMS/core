@@ -9,7 +9,13 @@ const { patchExportsPlugin } = require('../rollup-shared/patch-exports.cjs');
 const options = {
     format: ['esm', 'cjs'],
     compiler: 'tsc',
-    additionalEntryPoints: ['./src/internal.ts'],
+    additionalEntryPoints: [
+        './src/internal.ts',
+        './src/page.ts',
+        './src/navigation.ts',
+        './src/content.ts',
+        './src/ai.ts'
+    ],
     generateExportsField: true,
     outputPath: '../../../dist/libs/sdk/client',
     assets: [

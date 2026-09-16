@@ -1,37 +1,10 @@
-import { consola } from 'consola';
-
 import { DotCMSClientConfig, DotRequestOptions, DotHttpClient } from '@dotcms/types';
 
-import { FetchHttpClient } from './adapters/fetch-http-client';
 import { AIClient } from './ai/ai-api';
 import { Content } from './content/content-api';
 import { NavigationClient } from './navigation/navigation-api';
 import { PageClient } from './page/page-api';
-
-/**
- * Parses a string into a URL object.
- *
- * @param url - The URL string to parse
- * @returns A URL object if parsing is successful, undefined otherwise
- */
-function parseURL(url: string): URL | undefined {
-    try {
-        return new URL(url);
-    } catch {
-        consola.error('[DotCMS Client]: Invalid URL:', url);
-
-        return undefined;
-    }
-}
-
-/**
- * Default configuration for the DotCMS client.
- */
-const defaultConfig: DotCMSClientConfig = {
-    dotcmsUrl: '',
-    authToken: '',
-    requestOptions: {}
-};
+import { createClientContext } from './shared/client-context';
 
 /**
  * Client for interacting with the DotCMS REST API.
@@ -66,13 +39,12 @@ class DotCMSClient {
     /**
      * Creates a new DotCMS client instance.
      *
-     * @param config - Configuration options for the client
-     * @throws Warning if dotcmsUrl is invalid or authToken is missing
+     * @param config - Validated configuration and transport for the client
      */
-    constructor(config: DotCMSClientConfig = defaultConfig) {
+    constructor({ config, requestOptions, httpClient }: ReturnType<typeof createClientContext>) {
         this.config = config;
-        this.httpClient = config.httpClient || new FetchHttpClient();
-        this.requestOptions = this.createAuthenticatedRequestOptions(this.config);
+        this.httpClient = httpClient;
+        this.requestOptions = requestOptions;
 
         // Initialize clients with httpClient
         this.page = new PageClient(this.config, this.requestOptions, this.httpClient);
@@ -80,32 +52,21 @@ class DotCMSClient {
         this.content = new Content(this.config, this.requestOptions, this.httpClient);
         this.ai = new AIClient(this.config, this.requestOptions, this.httpClient);
     }
-
-    /**
-     * Creates request options with authentication headers.
-     *
-     * @param config - The client configuration
-     * @returns Request options with authorization headers
-     */
-    private createAuthenticatedRequestOptions(config: DotCMSClientConfig): DotRequestOptions {
-        return {
-            ...config.requestOptions,
-            headers: {
-                ...config.requestOptions?.headers,
-                Authorization: `Bearer ${config.authToken}`
-            }
-        };
-    }
 }
 
 /**
  * Creates and returns a new DotCMS client instance.
  *
+ * This is the full-featured entry point: it exposes page, navigation, content and AI in one
+ * object, which means a bundle that imports it retains all four. Consumers who only need one
+ * area can import a focused factory instead — `@dotcms/client/page`, `/navigation`,
+ * `/content` or `/ai` — and leave the rest out of their bundle entirely.
+ *
  * @param config - Configuration options for the client
  * @returns A configured DotCMS client instance
  * @example
  * ```typescript
- * const client = dotCMSCreateClient({
+ * const client = createDotCMSClient({
  *   dotcmsUrl: 'https://demo.dotcms.com',
  *   authToken: 'your-auth-token'
  * });
@@ -115,22 +76,5 @@ class DotCMSClient {
  * ```
  */
 export const createDotCMSClient = (clientConfig: DotCMSClientConfig): DotCMSClient => {
-    const { dotcmsUrl, authToken } = clientConfig || {};
-    const instanceUrl = parseURL(dotcmsUrl)?.origin;
-
-    if (!instanceUrl) {
-        throw new TypeError("Invalid configuration - 'dotcmsUrl' must be a valid URL");
-    }
-
-    if (!authToken) {
-        throw new TypeError("Invalid configuration - 'authToken' is required");
-    }
-
-    const config = {
-        ...clientConfig,
-        authToken,
-        dotcmsUrl: instanceUrl
-    };
-
-    return new DotCMSClient(config);
+    return new DotCMSClient(createClientContext(clientConfig));
 };

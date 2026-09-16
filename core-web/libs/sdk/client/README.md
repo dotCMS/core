@@ -775,6 +775,46 @@ See the page-editing flow end to end in the official Next.js example — [`examp
 
 ## API Reference
 
+### Entrypoints
+
+`createDotCMSClient` gives you page, navigation, content and AI in one object. That is the right default, but it also means a bundle that imports it retains all four — including the Lucene and collection query builders and the AI search code — even if you only ever call `client.page.get()`.
+
+When an entry point only needs one area, import that area's factory instead. Each returns the same client object you would have found on the corresponding property, configured identically.
+
+| Import | Factory | Returns |
+| --- | --- | --- |
+| `@dotcms/client` | `createDotCMSClient` | Everything: `.page`, `.nav`, `.content`, `.ai` |
+| `@dotcms/client/page` | `createDotCMSPageClient` | The page client only |
+| `@dotcms/client/navigation` | `createDotCMSNavigationClient` | The navigation client only |
+| `@dotcms/client/content` | `createDotCMSContentClient` | The content client and its query builders |
+| `@dotcms/client/ai` | `createDotCMSAIClient` | The AI client only |
+
+```typescript
+// Everything — unchanged, and still the simplest option
+import { createDotCMSClient } from '@dotcms/client';
+
+const client = createDotCMSClient({ dotcmsUrl, authToken });
+const page = await client.page.get('/about-us');
+
+// Page only — leaves AI search and the query builders out of the bundle
+import { createDotCMSPageClient } from '@dotcms/client/page';
+
+const pageClient = createDotCMSPageClient({ dotcmsUrl, authToken });
+const page = await pageClient.get('/about-us');
+```
+
+The subpaths are additive. Existing code keeps working exactly as before, and you can adopt them one entry point at a time.
+
+Pair `@dotcms/client/ai` with a dynamic import to keep AI off the initial route entirely:
+
+```typescript
+const openSearch = async () => {
+    const { createDotCMSAIClient } = await import('@dotcms/client/ai');
+    const ai = createDotCMSAIClient({ dotcmsUrl, authToken });
+    // …
+};
+```
+
 ### Client Initialization
 
 ```typescript
