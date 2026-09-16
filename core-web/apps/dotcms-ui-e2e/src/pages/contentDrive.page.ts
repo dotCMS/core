@@ -31,8 +31,8 @@ export class ContentDrivePage {
     readonly allSiteContentRow: Locator;
     readonly systemHostRow: Locator;
     readonly searchField: Locator;
-    readonly uploadIndicator: Locator;
-    readonly uploadProgress: Locator;
+    readonly statusToast: Locator;
+    readonly statusToastSummary: Locator;
     readonly toasts: Locator;
 
     constructor(private page: Page) {
@@ -51,9 +51,11 @@ export class ContentDrivePage {
         // `tree-node-label`, which is why `currentSiteHostname` above still finds the site row.
         this.allSiteContentRow = this.sidebar.getByTestId('all-site-content');
         this.systemHostRow = this.sidebar.getByTestId('system-host');
-        // The toolbar's in-flight indicator, and the position it shows when a run reports one.
-        this.uploadIndicator = page.getByTestId('action-execution-indicator');
-        this.uploadProgress = page.getByTestId('action-execution-progress');
+        // A run in flight is reported by the status toast, not by the toolbar. The toolbar used to
+        // draw an indicator at the end of the filter row (`action-execution-indicator`); that markup
+        // is gone, so anything still looking for it is asserting on a testid that cannot appear.
+        this.statusToast = page.getByTestId('dot-status-toast');
+        this.statusToastSummary = page.getByTestId('status-toast-summary');
         this.toasts = page.locator('.p-toast-message');
     }
 
@@ -297,10 +299,55 @@ export class ContentDrivePage {
      * learns the rules changed; without the indicator the batch looks finished when it is not.
      */
     async expectHandedToBackground() {
-        await expect(this.toasts.filter({ hasText: 'in the background' }).first()).toBeVisible({
+        // One surface says both halves now. The status toast carries the in-flight wording, which
+        // for a backgrounded batch is the sentence that tells the author the batch is theirs to
+        // leave — so its presence is the indicator, and there is no second element to check.
+        // It used to be two: a wide advisory toast plus the toolbar's indicator, which meant a
+        // backgrounded upload announced itself twice.
+        await expect(this.statusToastSummary.filter({ hasText: 'in the background' })).toBeVisible({
             timeout: OUTCOME_TIMEOUT
         });
-        await expect(this.uploadIndicator).toBeVisible();
+    }
+
+    /** What the status toast is saying right now, if anything. */
+    async expectStatusToastContaining(text: string) {
+        await expect(this.statusToastSummary.filter({ hasText: text }).first()).toBeVisible({
+            timeout: OUTCOME_TIMEOUT
+        });
+    }
+
+    /**
+     * The status toast has stopped reporting.
+     *
+     * A run that never clears its toast leaves the portlet claiming work is in flight forever, and
+     * the toast is sticky precisely so it cannot time itself out -- which makes it the store's job
+     * to end it, and therefore worth asserting.
+     */
+    async expectStatusToastGone() {
+        await expect(this.statusToastSummary).toHaveCount(0, { timeout: OUTCOME_TIMEOUT });
+    }
+
+    /** Opens the New menu and returns the labels it offers. */
+    async openNewMenu(): Promise<string[]> {
+        await this.toolbar.getByTestId('add-new-button').click();
+        const items = this.page.getByRole('menuitem');
+        await expect(items.first()).toBeVisible({ timeout: 10000 });
+
+        return items.allInnerTexts();
+    }
+
+    /**
+     * The path the folder dialog says a new folder will land on.
+     *
+     * Read rather than asserted here because the wrong value is not a missing element: the builder
+     * used to paste a location that is not a folder path straight after the hostname, so the field
+     * was populated and confidently wrong.
+     */
+    async folderDialogPath(): Promise<string> {
+        const path = this.page.getByTestId('folder-path-preview');
+        await expect(path).toBeVisible({ timeout: 10000 });
+
+        return (await path.innerText()).trim();
     }
 
     /** A message the author can read, whatever severity it arrived with. */

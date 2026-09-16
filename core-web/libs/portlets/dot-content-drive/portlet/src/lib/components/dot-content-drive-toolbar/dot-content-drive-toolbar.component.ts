@@ -63,9 +63,10 @@ const HTML_ESCAPES: Record<string, string> = {
 /**
  * Escapes a value that will be interpolated into a message rendered as HTML.
  *
- * Needed only because `content-drive.action-center.applying` carries its own `<b>`, which forces the
- * label to be bound with `[innerHTML]` rather than interpolated. Everything substituted into such a
- * message has to be escaped, or the message stops being the only source of markup in it.
+ * Needed because a run's own copy (`content-drive.upload.indicator` and friends) carries its own
+ * `<b>`, which forces the label to be bound with `[innerHTML]` rather than interpolated. Everything
+ * substituted into such a message has to be escaped, or the message stops being the only source of
+ * markup in it.
  */
 const escapeHtml = (value: string): string =>
     value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
@@ -376,6 +377,14 @@ export class DotContentDriveToolbarComponent {
                 return;
             }
 
+            // A run with nothing to say raises nothing rather than an empty pill.
+            if (!label) {
+                this.#shownRunLabel = undefined;
+                this.#messageService.clear(STATUS_TOAST_KEY);
+
+                return;
+            }
+
             // Only when the wording actually changes. PrimeNG has no update, so re-reporting means
             // clearing and raising again — and the old inline indicator simply changed its text,
             // so re-animating on every store touch would be a behaviour this replaced, not kept.
@@ -421,33 +430,29 @@ export class DotContentDriveToolbarComponent {
                 : '';
         }
 
-        // Both halves are escaped, and the item name matters more: `actionName` is a
-        // `WorkflowAction.name` from the backend, but a target label is content an author typed.
-        const actionName = escapeHtml(execution.actionName);
-
-        // A run carrying its own copy uses it: the "Applying X to Y" form describes an operation
-        // being performed on something, which is not what every run is.
-        if (execution.labelKey) {
-            return this.#dotMessageService.get(
-                execution.labelKey,
-                escapeHtml(execution.targetLabel ?? ''),
-                String(execution.total)
-            );
-        }
-
-        // "Applying Publish to 1 item(s)" tells an author nothing they did not already know. When
-        // the run is over one nameable thing, name it.
-        return execution.targetLabel
+        // A run says whatever it brought, and nothing otherwise.
+        //
+        // There used to be an "Applying X to Y" fallback here for runs with no copy of their own.
+        // Nothing could reach it: only an *unmarked* run arrives here (`toolbarRun` filters to
+        // `targets.length === 0`, because a run whose rows are marked in the grid is already
+        // telling the author where it is), and every unmarked run is an upload, which names
+        // itself. Its one real effect was on uploads before they had their own words, where it
+        // produced "Applying Upload to demo.dotcms.com" -- a sentence for an action performed ON
+        // content rather than for files going INTO a place.
+        //
+        // So a run arriving with no `labelKey` is one nobody has written words for, and inventing
+        // some is what caused that. Silence is the honest answer, and the effect above raises
+        // nothing for an empty label.
+        //
+        // `targetLabel` is escaped because the label is bound with `[innerHTML]` -- the message
+        // carries its own `<b>` -- and a target label is content an author typed.
+        return execution.labelKey
             ? this.#dotMessageService.get(
-                  'content-drive.action-center.applying-item',
-                  actionName,
-                  escapeHtml(execution.targetLabel)
-              )
-            : this.#dotMessageService.get(
-                  'content-drive.action-center.applying',
-                  actionName,
+                  execution.labelKey,
+                  escapeHtml(execution.targetLabel ?? ''),
                   String(execution.total)
-              );
+              )
+            : '';
     });
 
     /**

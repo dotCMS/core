@@ -134,4 +134,116 @@ test.describe('Content Drive Browse Scopes', () => {
         await adminPage.reload();
         await drive.expectSelectedEntry('system-host');
     });
+
+    test('leaves the hierarchy unselected on System Host, and stays there @critical', async ({
+        adminPage
+    }) => {
+        // Reported from the browser as "the root of the site selected and the system host
+        // selected". Two faults met here. The hierarchy load resolved the reserved location
+        // `SYSTEM_HOST` as the folder path `/SYSTEM_HOST/`, found nothing, and fell back to
+        // selecting the site row -- so two entries read as current. Then the shell, which derives
+        // the location *from* the selected node, took that site row and rewrote the location back
+        // to the site root, pushing the author out of the scope they had just chosen.
+        //
+        // A reload is the case that made it reliable: on a cold start the location is already
+        // System Host when the tree is built, so the fallback ran every time.
+        const drive = new ContentDrivePage(adminPage);
+        const tree = new ContentDriveTree(adminPage);
+
+        await drive.goTo();
+        await drive.selectSystemHost();
+        await adminPage.reload();
+
+        await drive.expectSelectedEntry('system-host');
+        await tree.expectNothingSelected();
+        expect(adminPage.url()).toContain('SYSTEM_HOST');
+    });
+
+    test('offers no new folder on System Host @critical', async ({ adminPage }) => {
+        // System Host lists no folders, and its entry opens no tree, so one created there could
+        // never be shown again by this portlet. The dialog could not even name where it would
+        // land: the location is a reserved word, and pasting it after the hostname produced
+        // `//demo.dotcms.comSYSTEM_HOST/`.
+        const drive = new ContentDrivePage(adminPage);
+        await drive.goTo();
+
+        await drive.selectSystemHost();
+        const onSystemHost = await drive.openNewMenu();
+
+        expect(onSystemHost.join(' ')).not.toContain('Folder');
+        // The other half of the rule: System Host holds content, and adding some is the whole
+        // reason the scope accepts new items at all.
+        expect(onSystemHost.join(' ')).toContain('Content');
+    });
+
+    test('names a path that resolves when creating a folder @critical', async ({
+        adminPage,
+        apiHelpers
+    }) => {
+        // The preview is built from the location the drive is open on, and only one of the three
+        // kinds of location is a folder path. Asserted as "starts with the site and carries no
+        // reserved word" rather than as an exact string, so it holds for whichever site the run
+        // lands on.
+        const site = await apiHelpers.getDefaultSite();
+        const drive = new ContentDrivePage(adminPage);
+        await drive.goTo();
+
+        await drive.selectAllSiteContent();
+        await drive.openNewMenu();
+        await adminPage.getByRole('menuitem', { name: 'Folder' }).click();
+
+        const path = await drive.folderDialogPath();
+
+        expect(path).not.toContain('SYSTEM_HOST');
+        expect(path).toBe(`//${site.hostname}/`);
+    });
+
+    test('refreshes the listing after an upload lands on System Host @critical', async ({
+        adminPage,
+        testSuffix
+    }) => {
+        // The grid reloads only when the finished run names the folder on screen, and both sides
+        // of that comparison were built from the switcher's site glued to the location. On System
+        // Host that gave `//demo.dotcms.comSYSTEM_HOST` for the listing and `//demo.dotcms.com`
+        // for the batch -- neither naming where the files actually went, and never equal. The
+        // files arrived; the listing they arrived in sat stale.
+        const drive = new ContentDrivePage(adminPage);
+        const title = `sys-upload-${testSuffix}.png`;
+
+        await drive.goTo();
+        await drive.selectSystemHost();
+        await drive.chooseFilesForUpload([title]);
+
+        // No reload of our own: the refresh arriving by itself is the whole assertion.
+        await drive.expectListContainsTitle(title);
+    });
+
+    test('reports a run in flight and stops when it settles @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        // The toast replaced the toolbar indicator, and it is raised `sticky` so it cannot time
+        // itself out. That makes ending it the store's job rather than PrimeNG's, which is the
+        // half worth pinning: a run that never clears leaves the portlet claiming work is in
+        // flight forever.
+        const site = await apiHelpers.getDefaultSite();
+        const folderName = `cd-toast-${testSuffix}`;
+        await apiHelpers.createFolders(site.hostname, [`/${folderName}`]);
+
+        const drive = new ContentDrivePage(adminPage);
+
+        try {
+            await drive.goTo();
+            await drive.openFolder(folderName);
+            await drive.chooseFilesForUpload([`toast-${testSuffix}.png`]);
+
+            // Its own words, not the workflow sentence: an upload puts files INTO a place rather
+            // than applying an action TO content, which is what "Applying Upload to ..." claimed.
+            await drive.expectStatusToastContaining('Uploading');
+            await drive.expectStatusToastGone();
+        } finally {
+            await apiHelpers.deleteFolders(site.hostname, [`/${folderName}`]);
+        }
+    });
 });

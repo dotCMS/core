@@ -710,7 +710,12 @@ describe('DotContentDriveToolbarComponent', () => {
             // when the run settles. Refusing to open it is the honest version of that state.
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
             activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            actionExecutionSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator',
+                targetLabel: 'demo.dotcms.com'
+            });
             await settleToolbarAnimation(spectator);
 
             const button = spectator
@@ -754,7 +759,12 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should explain why it is disabled while an action is running', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
             activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            actionExecutionSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator',
+                targetLabel: 'demo.dotcms.com'
+            });
             await settleToolbarAnimation(spectator);
 
             expect(spectator.component.$actionCenterTooltip()).toBe(
@@ -772,7 +782,12 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should not open the dialog while an action is running', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
             activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            actionExecutionSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator',
+                targetLabel: 'demo.dotcms.com'
+            });
             await settleToolbarAnimation(spectator);
 
             // Guards the handler too: a disabled attribute alone would leave the store reachable.
@@ -784,7 +799,12 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should become available again once the run settles', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
             activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            actionExecutionSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator',
+                targetLabel: 'demo.dotcms.com'
+            });
             await settleToolbarAnimation(spectator);
 
             // A settled run leaves neither a name nor a count. Clearing only the name described a
@@ -817,49 +837,24 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(statusMessages()).toHaveLength(0);
         });
 
-        it('should report the action and the number of items once a run starts', () => {
-            // The toolbar is the only place still reporting the run after the Action Center dialog
-            // is closed, which is the whole reason this is reported outside it.
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(statusMessages()).toHaveLength(1);
-            expect(spectator.component.$actionExecutionLabel()).toBe(
-                'content-drive.action-center.applying'
-            );
-        });
-
-        it('should say the run is still going rather than reporting an outcome', () => {
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            const [message] = statusMessages();
-
-            expect(message).toEqual(
-                expect.objectContaining({ sticky: true, icon: 'pi pi-spin pi-spinner' })
-            );
-        });
-
-        it('should escape markup carried by the action name', () => {
-            // Workflow action names come from the backend verbatim, and the label is rendered as
-            // HTML so the message's own `<b>` shows. A name carrying markup must not become live
-            // DOM — escaping happens as the label is composed, which is where this now asserts.
+        it('should escape markup carried by the destination an upload names', () => {
+            // The surviving interpolation: a run's own copy carries `<b>`, so the label is bound
+            // with `[innerHTML]`, and the destination is a hostname or a folder path an author can
+            // influence. Escaping is what keeps the message the only source of markup in itself.
             const messageService = spectator.inject(DotMessageService);
 
             vi.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
-                key === 'content-drive.action-center.applying'
-                    ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
+                key === 'content-drive.upload.indicator'
+                    ? `Uploading <b>${args[1]}</b> file(s) to <b>${args[0]}</b>…`
                     : key
             );
 
             activeRunCountSignal.set(1);
             actionExecutionSignal.set({
-                actionName: '<img src=x onerror=alert(1)>',
-                total: 3
+                actionName: 'Upload',
+                total: 2,
+                labelKey: 'content-drive.upload.indicator',
+                targetLabel: '<img src=x onerror=alert(1)>'
             });
             spectator.detectChanges();
             spectator.flushEffects();
@@ -870,9 +865,47 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(label).toContain('&lt;img src=x');
         });
 
-        it('should clear the status once the run settles', () => {
+        it('should stay silent for a run that brought no copy of its own', () => {
+            // Nothing reaches this surface unless it is unmarked, and every unmarked run today is
+            // an upload, which names itself. A run arriving here without a `labelKey` is therefore
+            // a run nobody has written words for, and inventing "Applying X to N item(s)" for it
+            // was how an upload came to read "Applying Upload to demo.dotcms.com" -- a sentence for
+            // an action performed ON content, not for files going INTO a place.
             activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(spectator.component.$actionExecutionLabel()).toBe('');
+            expect(statusMessages()).toHaveLength(0);
+        });
+
+        it('should say the run is still going rather than reporting an outcome', () => {
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator',
+                targetLabel: 'demo.dotcms.com'
+            });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            const [message] = statusMessages();
+
+            expect(message).toEqual(
+                expect.objectContaining({ sticky: true, icon: 'pi pi-spin pi-spinner' })
+            );
+        });
+
+        it('should clear the status once the run settles', () => {
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator',
+                targetLabel: 'demo.dotcms.com'
+            });
             spectator.detectChanges();
             spectator.flushEffects();
 
@@ -888,7 +921,12 @@ describe('DotContentDriveToolbarComponent', () => {
             // The indicator this replaced changed its text in place. Clearing and raising again on
             // every store touch would dismiss and re-animate the toast for no new information.
             activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            actionExecutionSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator',
+                targetLabel: 'demo.dotcms.com'
+            });
             spectator.detectChanges();
             spectator.flushEffects();
 
@@ -904,7 +942,12 @@ describe('DotContentDriveToolbarComponent', () => {
 
         it('should report the new wording when a second run joins', () => {
             activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            actionExecutionSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator',
+                targetLabel: 'demo.dotcms.com'
+            });
             spectator.detectChanges();
             spectator.flushEffects();
 
@@ -929,60 +972,6 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(spectator.component.$actionExecutionLabel()).toBe(
                 'content-drive.action-center.applying-many'
             );
-        });
-
-        it('should name the item, not a count, when the run is over a single thing', () => {
-            // "Applying Publish to 1 item(s)" is worse than useless on a context-menu action: the
-            // author knows it is one item, what they cannot see is *which*.
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({
-                actionName: 'Publish',
-                total: 1,
-                targetLabel: 'My Page'
-            });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(spectator.component.$actionExecutionLabel()).toBe(
-                'content-drive.action-center.applying-item'
-            );
-        });
-
-        it('should keep the count form when several items are in play', () => {
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 12 });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(spectator.component.$actionExecutionLabel()).toBe(
-                'content-drive.action-center.applying'
-            );
-        });
-
-        it('should escape markup carried by the item name', () => {
-            // `actionName` comes from the backend; a title is typed by an author, so this is the
-            // likelier of the two to carry markup.
-            const messageService = spectator.inject(DotMessageService);
-
-            vi.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
-                key === 'content-drive.action-center.applying-item'
-                    ? `Applying <b>${args[0]}</b> to <i>${args[1]}</i>`
-                    : key
-            );
-
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({
-                actionName: 'Publish',
-                total: 1,
-                targetLabel: '<img src=x onerror=alert(1)>'
-            });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            const label = spectator.component.$actionExecutionLabel();
-
-            expect(label).not.toContain('<img src=x');
-            expect(label).toContain('&lt;img src=x');
         });
     });
 
