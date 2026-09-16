@@ -73,6 +73,18 @@ Drive folder view, so the same orphaned owner reads the same in both listings.
 
 The field is never `null`, never absent and never `""`.
 
+## Bundles and starter exports (excluded)
+
+The field is a REST-response concern only. `BundlerUtil` registers a mix-in that ignores it, so it
+does **not** appear in push-publish bundles or starter exports, and those paths perform no user
+lookup.
+
+The reason is compatibility, not tidiness: bundles are read back through a bare `ObjectMapper` that
+fails on unknown properties, and `BundlePublisher` runs every handler in a single transaction — so a
+receiver on a build without the field would reject the experiment file and roll back the **entire**
+bundle. `createdBy` is bundled as before, and the receiver resolves the name itself when it serves
+the experiment over REST.
+
 ## Deserialization contract (FR-023)
 
 `createdByUserName` is **read-only**: serialized on the way out, ignored on the way in. A payload

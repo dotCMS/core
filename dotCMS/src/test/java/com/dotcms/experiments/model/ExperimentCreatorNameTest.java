@@ -13,12 +13,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
@@ -275,6 +278,54 @@ class ExperimentCreatorNameTest {
             assertEquals("Renamed User", after.get("createdByUserName").asText(),
                     "The name must be resolved per serialization, never captured on the instance");
         }
+    }
+
+    /**
+     * Method to test: {@code AbstractExperiment.createdByUserName()} as seen by the push-publish
+     * bundler.
+     * Given Scenario: An Experiment serialized with the mapper push-publish bundling and starter
+     *                 export use ({@link com.dotcms.publishing.BundlerUtil}), rather than the REST
+     *                 mapper.
+     * ExpectedResult: {@code createdByUserName} is <b>absent</b>, while {@code createdBy} is still
+     *                 there.
+     *
+     * <p>Why this matters enough to have its own test: the bundle is read back by
+     * {@code ExperimentHandler} through a bare {@code ObjectMapper}, which fails on unknown
+     * properties. A receiver on a build without this field would therefore reject the file — and
+     * {@code BundlePublisher} runs every handler in one transaction, so that rejection rolls back
+     * the <i>whole</i> bundle, not just the experiment. Keeping the field out of the bundled shape
+     * is what makes the bundle byte-compatible with older receivers.
+     */
+    @Test
+    void bundledExperiment_doesNotCarryTheCreatorName() throws Exception {
+        withResolvableCreator(() -> {
+            final ByteArrayOutputStream out = new ByteArrayOutputStream();
+            BundlerUtil.objectToJSON(anExperiment(), out);
+            final String bundled = out.toString(StandardCharsets.UTF_8);
+
+            assertFalse(bundled.contains("createdByUserName"),
+                    "The bundled shape must not carry createdByUserName: an older receiver would "
+                            + "reject it as an unknown property and roll back the entire bundle");
+            assertTrue(bundled.contains("createdBy"),
+                    "Precondition: the bundled shape should still carry createdBy");
+        });
+    }
+
+    /**
+     * Method to test: {@code AbstractExperiment.createdByUserName()} as seen by the REST layer.
+     * Given Scenario: The same Experiment, serialized with the REST mapper.
+     * ExpectedResult: The field IS present — excluding it from bundles must not remove it from the
+     *                 API response, which is the entire point of the feature.
+     */
+    @Test
+    void excludingItFromBundles_leavesTheApiResponseIntact() throws Exception {
+        withResolvableCreator(() -> {
+            final ObjectMapper mapper = DotObjectMapperProvider.createDefaultMapper();
+
+            final JsonNode payload = mapper.readTree(mapper.writeValueAsString(anExperiment()));
+
+            assertEquals(CREATOR_NAME, payload.get("createdByUserName").asText());
+        });
     }
 
     private static User userNamed(final String first, final String last) {

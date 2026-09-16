@@ -106,11 +106,12 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
      * id and never the object — and would let a memoized name outlive a rename inside that cache.
      * As an ordinary default method it costs nothing until something serializes the Experiment.
      *
-     * <p>Two paths <b>do</b> serialize the whole Experiment and therefore do pay one lookup each:
-     * push-publish bundling ({@code ExperimentBundler}, under {@code dotCMS/src/enterprise/java})
-     * and starter export ({@code ExportStarterUtil}). The resolved value is written into the
-     * bundle and ignored on import by a same-version receiver, since the generated {@code Json}
-     * delegate binds settable attributes only.
+     * <p>Two paths do serialize the whole Experiment — push-publish bundling
+     * ({@code ExperimentBundler}) and starter export ({@code ExportStarterUtil}) — and both are
+     * deliberately excluded: {@code BundlerUtil} registers a mix-in that ignores this field, so it
+     * never reaches a bundle and those paths pay no lookup. That keeps bundles readable by a
+     * receiver running a build without the field, which would otherwise reject the file as an
+     * unknown property and roll back the whole bundle.
      *
      * <p>{@code READ_ONLY} is load-bearing: the generated {@code Experiment.Json} delegate binds
      * settable attributes only, so without it a payload carrying this field would fail to
