@@ -521,6 +521,18 @@ requirement above from the consumer's point of view, so the boundary is explicit
   three survived.
 - **C-010**: **The signal is emitted after the deletions are done**, so a listing refreshed on it
   finds the folders gone. Stated because the client depends on ordering it cannot observe.
+- **C-011**: **The listing of in-flight runs does not mean what its name says, and the client cannot
+  infer that from the name.** The generic endpoint that lists a queue's *active* runs returns every
+  run in a **non-terminal** state — which includes runs that have **failed** and runs the abandonment
+  sweep has marked, not only runs that are working. A folder whose delete failed therefore stays in
+  that list until the framework moves it to its permanent state, so a client reading the list
+  naively tells a second author that a folder is being deleted when the delete has already failed
+  and the folder is perfectly usable.
+
+  A client using that list to mark folders as in-flight MUST filter on each run's own state and keep
+  only the ones that genuinely mean *in progress*. Stated here rather than left to discovery: the
+  state is present in the response and the filter is one line, but the failure it prevents surfaces
+  in QA as "sometimes folders stay marked forever", which reads as a client defect and is not one.
 
 **Explicitly the client's own business, not specified here**: the confirmation dialog and its
 wording, which permissions hide or disable the action, whether the grid and the sidebar tree refresh
@@ -748,6 +760,25 @@ explicitly rather than meet them during implementation.
   *Splitting the transaction* is the larger, riskier half and reopens FR-023. If the first turns out
   to be cheap, the plan should say whether it belongs in this feature after all — that is a decision
   worth making with an estimate in hand rather than by inheriting this spec's scope line.
+- **How a folder is identified, in three places that need not agree** (FR-005a, C-011). The client
+  has both a path and an identifier for every folder it lists, and the server exposes both. Which
+  one travels where is three separate decisions, and they have different costs:
+  - **In the run's recorded parameters** — free, since nothing outside this feature reads them.
+    Carrying both lets the client match its selected rows exactly instead of by string. Worth
+    stating so nobody expects more of it than it gives: an identifier names the *selected* folder
+    and not its subtree, so a row **beneath** a folder being deleted still has to be matched by
+    path. It narrows the string matching to descendants; it does not remove it.
+  - **In the submission** — a real decision, and the argument for identifiers is not convenience.
+    **A path is not a stable identity.** Between the listing being rendered and the author
+    confirming, a folder can be renamed or moved, and a delete resolved by path then acts on
+    whatever occupies that path now. For an operation with no undo that is worth weighing against
+    the cost: the shipped single-folder delete takes a path, and FR-006 keeps it that way, so a
+    bulk endpoint taking only identifiers diverges from its sibling.
+  - **In the per-path outcome** — constrained, and the constraint is deliberate. The shared result
+    carries one identity field. A path keeps the outcome and the durable notification readable to
+    an author reading them a day later; an identifier does not. If both are genuinely needed, the
+    plan should carry the second alongside the results rather than widen a type that bulk upload,
+    bulk refresh, folder copy and folder move all share (D-012).
 - **Signalling liveness from outside a blocking call** (FR-024a). The delete does not return until a
   folder is gone, so nothing inside the run can report progress. Whatever mechanism is chosen has to
   live beside the work rather than in it, and the plan must say where it lives, what it updates, and
