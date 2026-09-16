@@ -181,8 +181,12 @@ public final class InferenceAIClient {
         } catch (final RuntimeException e) {
             // Nothing reached the sink — every model in the chain failed to start — so the sink
             // still has to learn that this stream will not finish.
-            Logger.warn(InferenceAIClient.class,
-                    "Inference stream could not be started: " + e.getClass().getSimpleName());
+            // Logged with the exception rather than just its type. What the caller receives is a
+            // safe sentence that says the detail is in the log, so the detail has to actually be
+            // here — a bare class name leaves an operator with "InvalidRequestException" and no
+            // way to tell an exhausted account from a rejected key from a malformed request. The
+            // buffered path has always logged the full exception; this matches it.
+            Logger.warn(InferenceAIClient.class, "Inference stream could not be started", e);
             state.fail(toInferenceError(e));
         }
     }
@@ -344,8 +348,7 @@ public final class InferenceAIClient {
 
                 @Override
                 public void onError(final Throwable throwable) {
-                    Logger.warn(InferenceAIClient.class,
-                            "Inference stream failed: " + throwable.getClass().getSimpleName());
+                    Logger.warn(InferenceAIClient.class, "Inference stream failed", throwable);
                     state.fail(toInferenceError(throwable));
                 }
             });
