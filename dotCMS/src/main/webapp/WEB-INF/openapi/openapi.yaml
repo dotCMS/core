@@ -19005,7 +19005,10 @@ paths:
           type: integer
           format: int32
           default: 40
-      - description: Column name for sorting results
+      - description: "Field to sort by. Supported: `firstName` (ties broken by last\
+          \ name), `emailAddress`, `lastLoginDate` (users without a recorded login\
+          \ sort last). Unsupported values fall back to the default order (full name\
+          \ ascending)"
         in: query
         name: orderby
         schema:
