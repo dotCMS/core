@@ -170,6 +170,11 @@ jobs:
           digest-mismatch: error
           path: ${{ github.workspace }}/artifacts
           pattern: cli-artifacts-*
+      # TODO(#37567): JReleaser still uploads the CLI runner jar and native
+      # binaries to Artifactory (tools/dotcms-cli/jreleaser.yml). The
+      # EE_REPO_* secrets are being retired with the Artifactory
+      # decommissioning, so this upload must move to the S3 repository (or be
+      # dropped) before those secrets are removed.
       - uses: ./.github/actions/core-cicd/maven-job
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

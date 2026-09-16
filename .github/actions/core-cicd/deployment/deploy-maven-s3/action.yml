@@ -1,0 +1,113 @@
+name: 'Deploy Maven Artifacts to S3'
+description: |
+  Publish the locally-installed dotCMS Maven artifacts to the BunnyCDN
+  S3-compatible storage zone. This replaces the former Artifactory
+  (deploy-jfrog) deployment.
+
+  The action restores the `maven-repo` artifact produced by the build phase,
+  resolves the project version, then delegates to
+  `.github/scripts/publish-to-s3/publish.sh maven`, which uploads every
+  com/dotcms module for that version and regenerates maven-metadata.xml.
+
+inputs:
+  version:
+    description: 'Version of the artifacts to deploy. Defaults to the project version in the checked-out POM.'
+    required: false
+  modules:
+    description: 'Comma-separated artifactIds to publish. Defaults to every com/dotcms module with a directory for the version.'
+    required: false
+  exclude-ext:
+    description: 'Comma-separated file extensions to skip.'
+    required: false
+    default: 'repositories,excludeext'
+  dry-run:
+    description: 'Enable dry-run mode (no writes).'
+    required: false
+  bucket:
+    description: 'S3 bucket / Bunny storage zone. Defaults to MAVEN_BUNNY_RW_USERNAME.'
+    required: false
+  prefix:
+    description: 'Key prefix inside the bucket.'
+    required: false
+    default: 'libs-release'
+  endpoint:
+    description: 'S3 endpoint URL.'
+    required: false
+    default: 'https://ny-s3.storage.bunnycdn.com'
+  region:
+    description: 'S3 signing region.'
+    required: false
+    default: 'ny'
+  access-key-id:
+    description: 'S3 access key id (Bunny storage-zone name).'
+    required: true
+  secret-access-key:
+    description: 'S3 secret access key (Bunny storage-zone password).'
+    required: true
+  checksums:
+    description: 'Upload .sha1/.md5 checksums alongside the artifacts.'
+    required: false
+    default: 'true'
+  github-token:
+    description: 'GitHub Token'
+    required: true
+  artifact-run-id:
+    default: ${{ github.run_id }}
+    description: 'The run id of the core artifacts'
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+    - uses: ./.github/actions/core-cicd/maven-job
+      with:
+        github-token: ${{ inputs.github-token }}
+        stage-name: "Deploy Artifacts Validate"
+        maven-args: "validate" # No build needed; only restore the maven-repo artifact
+        artifacts-from: ${{ inputs.artifact-run-id }}
+
+    - name: 'Extract project version'
+      if: ${{ inputs.version == '' || inputs.version == null }}
+      id: maven-version
+      shell: bash
+      run: |
+        echo "::group::Extract project version"
+        version=$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout)
+        echo "::notice::version: $version"
+        echo "version=$version" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+
+    - name: 'Deploy artifacts to S3'
+      shell: bash
+      env:
+        MAVEN_BUNNY_RW_USERNAME: ${{ inputs.access-key-id }}
+        MAVEN_BUNNY_RW_PASSWORD: ${{ inputs.secret-access-key }}
+        MAVEN_S3_ENDPOINT: ${{ inputs.endpoint }}
+        MAVEN_S3_REGION: ${{ inputs.region }}
+        MAVEN_S3_BUCKET: ${{ inputs.bucket }}
+        MAVEN_S3_PREFIX: ${{ inputs.prefix }}
+        VERSION: ${{ inputs.version || steps.maven-version.outputs.version }}
+        PRJ_MODULES: ${{ inputs.modules }}
+        EXCLUDE_EXT: ${{ inputs.exclude-ext }}
+        DRY_RUN_MODE: ${{ inputs.dry-run }}
+        CHECKSUMS: ${{ inputs.checksums }}
+      run: |
+        echo "::group::Deploy Artifacts to S3"
+        args=(maven --version "$VERSION" --exclude-ext "$EXCLUDE_EXT")
+
+        if [[ -n "${PRJ_MODULES:-}" ]]; then
+          args+=(--modules "$PRJ_MODULES")
+        fi
+        if [[ -n "${MAVEN_S3_BUCKET:-}" ]]; then
+          args+=(--bucket "$MAVEN_S3_BUCKET")
+        fi
+        if [[ "${DRY_RUN_MODE:-false}" == "true" ]]; then
+          args+=(--dry-run)
+        fi
+        if [[ "${CHECKSUMS:-true}" != "true" ]]; then
+          args+=(--no-checksums)
+        fi
+
+        ./.github/scripts/publish-to-s3/publish.sh "${args[@]}"
+        echo "::endgroup::"
