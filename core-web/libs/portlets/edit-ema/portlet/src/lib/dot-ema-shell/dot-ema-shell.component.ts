@@ -18,7 +18,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageModule } from 'primeng/message';
@@ -163,6 +163,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #globalStore = inject(GlobalStore);
     protected readonly experimentsPanel = inject(DotExperimentsPanelStore);
 
+    /** Provided by the `/edit-page` route, beside `ConfirmationService`. */
+    readonly #messageService = inject(MessageService);
+
     /**
      * The page in hand, as the Experiments panel's scope (#37478).
      *
@@ -208,10 +211,34 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         }
 
         untracked(async () => {
-            const { DotExperimentsPanelComponent } =
-                await import('@dotcms/portlets/dot-experiments/portlet');
+            try {
+                const { DotExperimentsPanelComponent } =
+                    await import('@dotcms/portlets/dot-experiments/portlet');
 
-            this.$experimentsPanelComponent.set(DotExperimentsPanelComponent);
+                this.$experimentsPanelComponent.set(DotExperimentsPanelComponent);
+            } catch (error) {
+                /**
+                 * A chunk that never arrives is the one failure this panel can have before it
+                 * exists, and it is silent unless it is said out loud: the class stays null, the
+                 * `@if` renders nothing, and the editor is left on a page where the Experiments
+                 * item does nothing at all. A deploy pointing at a hash the CDN has already
+                 * dropped is the ordinary way to get here.
+                 *
+                 * Closing is part of the report, not tidying up. The store still says the panel is
+                 * open, and the effect above only fires on that transition — so a panel left open
+                 * with nothing in it would swallow the next attempt and the editor could not even
+                 * retry.
+                 */
+                console.error('[UVE] The Experiments panel chunk failed to load', error);
+
+                this.#messageService.add({
+                    severity: 'error',
+                    summary: this.#dotMessageService.get('experiments.panel.error.load.title'),
+                    detail: this.#dotMessageService.get('experiments.panel.error.load.message')
+                });
+
+                this.experimentsPanel.close();
+            }
         });
     });
 

@@ -10,6 +10,38 @@ import { MockComponent } from 'ng-mocks';
 import { Subject, of, throwError } from 'rxjs';
 import { describe, expect, vi } from 'vitest';
 
+/**
+ * The Experiments panel's chunk, under test control.
+ *
+ * The shell reaches the panel through a dynamic `import()`, so the only way to exercise what it
+ * does when that chunk never arrives is to make the module misbehave. A throwing getter rather
+ * than a rejecting factory: the factory's result is cached after the first call, and a test that
+ * depends on which of its siblings ran first is worth less than no test. The throw lands in the
+ * same place a failed fetch does — the `await` in `$experimentsPanelLoader`.
+ */
+const panelChunk = vi.hoisted(() => ({ shouldFail: false }));
+
+vi.mock('@dotcms/portlets/dot-experiments/portlet', async () => {
+    const { Component } = await import('@angular/core');
+
+    @Component({
+        selector: 'dot-experiments-panel',
+        standalone: true,
+        template: '<div data-testid="experiments-panel"></div>'
+    })
+    class MockExperimentsPanelComponent {}
+
+    return {
+        get DotExperimentsPanelComponent() {
+            if (panelChunk.shouldFail) {
+                throw new Error('Failed to fetch dynamically imported module');
+            }
+
+            return MockExperimentsPanelComponent;
+        }
+    };
+});
+
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -1593,6 +1625,7 @@ describe('DotEmaShellComponent', () => {
 
             afterEach(() => {
                 dotPropertiesServiceMock.getKey.mockReturnValue(of('false'));
+                panelChunk.shouldFail = false;
             });
 
             // T052 / FR-016. The exact href a build without this change produces.
@@ -1629,6 +1662,58 @@ describe('DotEmaShellComponent', () => {
 
                 expect(panel.isOpen()).toBe(true);
                 expect(panel.view()).toBe('list');
+            });
+
+            /**
+             * That the panel reaches the screen at all, which nothing here asserted before: these
+             * tests watched the store and stopped there, so the whole mounting path — dynamic
+             * import, component class, `NgComponentOutlet` — was covered only by opening the
+             * editor and looking at it.
+             *
+             * `waitFor` rather than a fixed delay: the chunk is a promise, and how many turns of
+             * the microtask queue it takes is an implementation detail of the bundler, not
+             * something a test should encode.
+             */
+            it('should put the panel on screen once the editor opens it', async () => {
+                withSwitch(true);
+
+                spectator.component.handleItemAction('experiments');
+                spectator.flushEffects();
+
+                await vi.waitFor(() => {
+                    spectator.detectChanges();
+                    expect(spectator.query(byTestId('experiments-panel'))).not.toBeNull();
+                });
+            });
+
+            /**
+             * The one failure this panel can have before it exists. A deploy pointing at a hash
+             * the CDN has already dropped fails exactly here, and unreported it leaves the editor
+             * with an Experiments item that does nothing at all — no panel, no message, nothing in
+             * the console to chase.
+             *
+             * The close is asserted alongside the toast because it is part of the report, not
+             * tidying up: the store would otherwise still say open, and the loader only fires on
+             * that transition, so a second click would be swallowed and the editor could not even
+             * retry.
+             */
+            it('should report a chunk that never arrives, and not leave the panel open on nothing', async () => {
+                panelChunk.shouldFail = true;
+                withSwitch(true);
+
+                const add = vi.spyOn(spectator.inject(MessageService, true), 'add');
+                const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+                spectator.component.handleItemAction('experiments');
+                spectator.flushEffects();
+
+                await vi.waitFor(() => expect(add).toHaveBeenCalled());
+                spectator.detectChanges();
+
+                expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
+                expect(logged).toHaveBeenCalled();
+                expect(spectator.inject(DotExperimentsPanelStore, true).isOpen()).toBe(false);
+                expect(spectator.query(byTestId('experiments-panel'))).toBeNull();
             });
 
             // FR-044. Nothing of the panel is reachable or observable on the shipped default.
