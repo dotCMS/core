@@ -33,6 +33,9 @@ export class ContentDrivePage {
     readonly searchField: Locator;
     readonly statusToast: Locator;
     readonly statusToastSummary: Locator;
+    readonly scopeBar: Locator;
+    readonly scopeBarSummary: Locator;
+    readonly scopeBarToggle: Locator;
     readonly toasts: Locator;
 
     constructor(private page: Page) {
@@ -56,6 +59,12 @@ export class ContentDrivePage {
         // is gone, so anything still looking for it is asserting on a testid that cannot appear.
         this.statusToast = page.getByTestId('dot-status-toast');
         this.statusToastSummary = page.getByTestId('status-toast-summary');
+        // The bar above the listing: what is being shown, and the one control that changes it.
+        // Its slot is always in the DOM and opens by height, so visibility is the question to ask
+        // rather than presence.
+        this.scopeBar = page.getByTestId('scope-bar');
+        this.scopeBarSummary = page.getByTestId('scope-bar-summary');
+        this.scopeBarToggle = page.getByTestId('scope-bar-toggle');
         this.toasts = page.locator('.p-toast-message');
     }
 
@@ -325,6 +334,23 @@ export class ContentDrivePage {
      */
     async expectStatusToastGone() {
         await expect(this.statusToastSummary).toHaveCount(0, { timeout: OUTCOME_TIMEOUT });
+    }
+
+    /** Whether the scope bar is open, which is a question about height rather than presence. */
+    async scopeBarIsOpen(): Promise<boolean> {
+        const slot = this.page.getByTestId('scope-bar-slot');
+        const box = await slot.boundingBox();
+
+        return (box?.height ?? 0) > 0;
+    }
+
+    /** Flips the System Host toggle and waits for the listing it re-requests. */
+    async toggleSystemHostInScopeBar() {
+        const listing = this.page.waitForResponse(
+            (response) => response.url().includes('/v1/drive/search') && response.ok()
+        );
+        await this.scopeBarToggle.click();
+        await listing;
     }
 
     /** Opens the New menu and returns the labels it offers. */

@@ -2109,7 +2109,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
 
             const lockInFlight = store.actionExecution();
-            expect(lockInFlight).toEqual(expect.objectContaining({ actionName: 'Lock', total: 1 }));
+            expect(lockInFlight).toEqual(expect.objectContaining({ operation: 'LOCK', total: 1 }));
 
             store.reportRefreshCompleted('Refresh', {
                 jobId: 'job-1',
@@ -2170,7 +2170,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
 
             const lockInFlight = store.actionExecution();
-            expect(lockInFlight).toEqual(expect.objectContaining({ actionName: 'Lock', total: 1 }));
+            expect(lockInFlight).toEqual(expect.objectContaining({ operation: 'LOCK', total: 1 }));
 
             store.reportRefreshCompleted('Refresh', {
                 jobId: 'job-1',
@@ -2290,7 +2290,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
             expect(store.actionExecution()).toEqual(
-                expect.objectContaining({ actionName: 'Lock', total: 2 })
+                expect.objectContaining({ operation: 'LOCK', total: 2 })
             );
         });
 
@@ -2576,7 +2576,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
 
             expect(store.actionExecution()).toEqual(
-                expect.objectContaining({ actionName: 'Add to Bundle', total: 2 })
+                expect.objectContaining({ operation: 'Add to Bundle', total: 2 })
             );
         });
 
@@ -2750,7 +2750,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
 
             expect(store.actionExecution()).toEqual(
-                expect.objectContaining({ actionName: 'Push Publish', total: 2 })
+                expect.objectContaining({ operation: 'Push Publish', total: 2 })
             );
         });
 

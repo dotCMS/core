@@ -246,4 +246,59 @@ test.describe('Content Drive Browse Scopes', () => {
             await apiHelpers.deleteFolders(site.hostname, [`/${folderName}`]);
         }
     });
+
+    test('says what all site content is showing, and only there @critical', async ({
+        adminPage
+    }) => {
+        // The bar carries the sentence and the System Host toggle that used to be a chip in the
+        // filter row. Only all site content gets one: the site root is this site's root and
+        // nothing else, and System Host is shared content and nothing else, so neither leaves a
+        // sentence anything to qualify.
+        const drive = new ContentDrivePage(adminPage);
+        await drive.goTo();
+
+        await drive.selectAllSiteContent();
+        await expect(drive.scopeBar).toBeVisible();
+        await expect(drive.scopeBarToggle).toBeVisible();
+
+        await drive.selectSystemHost();
+        expect(await drive.scopeBarIsOpen()).toBe(false);
+    });
+
+    test('flips the sentence with the System Host toggle @critical', async ({ adminPage }) => {
+        // The sentence and the switch are one statement: if the toggle can say "included" while
+        // the words say "excluded", the bar is worse than no bar.
+        const drive = new ContentDrivePage(adminPage);
+        await drive.goTo();
+        await drive.selectAllSiteContent();
+
+        const before = (await drive.scopeBarSummary.innerText()).trim();
+        await drive.toggleSystemHostInScopeBar();
+        const after = (await drive.scopeBarSummary.innerText()).trim();
+
+        expect(after).not.toBe(before);
+        // Whichever way round the run starts, the pair must be the two halves of the same choice.
+        expect([before, after].sort()).toEqual(
+            [
+                'All Files in site (System Host shared files excluded)',
+                'All Files in site (System Host shared files included)'
+            ].sort()
+        );
+    });
+
+    test('carries the toggle into the URL so a reload keeps it @critical', async ({
+        adminPage
+    }) => {
+        // The filter is written either way rather than cleared, so the applied state is spelled
+        // out rather than implied by an absent key that happens to read as on.
+        const drive = new ContentDrivePage(adminPage);
+        await drive.goTo();
+        await drive.selectAllSiteContent();
+
+        await drive.toggleSystemHostInScopeBar();
+        const summary = (await drive.scopeBarSummary.innerText()).trim();
+
+        await adminPage.reload();
+        await expect(drive.scopeBarSummary).toHaveText(summary);
+    });
 });

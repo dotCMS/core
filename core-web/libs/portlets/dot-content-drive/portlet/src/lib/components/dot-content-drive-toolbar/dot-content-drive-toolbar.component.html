@@ -78,21 +78,6 @@
                  than named by a registry, which is what lets the two portlet-local ones — Workflow
                  and the field filters — sit in the same row as the shared ones. -->
             <dot-filter-bar>
-                <!-- Leads the row: it scopes *which* assets are in play at all, so it reads as a
-                     precondition for the filters that narrow within them.
-
-                     Only while all site content is selected. System Host content can only ever sit
-                     at the System Host root, so it can never turn up inside a site folder — and
-                     the site-root and System Host scopes each answer the question this chip asks,
-                     leaving it nothing to decide. It animates the way the field-filter chips
-                     beside it do, collapsing its width rather than vanishing, so the rest of the
-                     row slides instead of jumping under the pointer. -->
-                @if ($allSiteContentSelected()) {
-                    <dot-shared-assets-filter
-                        animate.enter="field-filter-enter"
-                        animate.leave="field-filter-leave"
-                        data-testid="shared-assets-filter" />
-                }
                 <dot-content-type-filter-chip data-testid="content-type-filter" />
                 <dot-content-drive-workflow-filter data-testid="workflow-filter" />
                 <!-- Sits beside the workflow filter: both ask where content is in its lifecycle. It

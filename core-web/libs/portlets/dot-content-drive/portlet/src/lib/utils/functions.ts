@@ -33,7 +33,9 @@ import {
 import {
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
-    DotKnownContentDriveFilters
+    DotKnownContentDriveFilters,
+    FolderTreeHierarchyLevel,
+    WorkflowFilterEntry
 } from '../shared/models';
 
 /**
@@ -58,12 +60,6 @@ const multiSelector = (value = ''): string[] =>
  * @return {*}  {string}
  */
 const singleSelector: DotContentDriveDecodeFunction = (value = ''): string => value.trim();
-
-/** A single workflow filter entry: one scheme, optionally pinned to a step. */
-export interface WorkflowFilterEntry {
-    scheme: string;
-    step?: string;
-}
 
 /** Separator for the `schemeId[:stepId]` workflow token encoding. */
 export const WORKFLOW_TOKEN_SEPARATOR = ':';
@@ -437,25 +433,6 @@ export function folderSearchViewToDotFolder(view: FolderSearchView, hostName: st
         permissions: view.permissions ?? undefined
     };
 }
-
-/**
- * One level of the folder hierarchy returned by {@link getFolderHierarchyByPath}.
- * `path` is the parent path that was queried; `folders` are its direct children (first page).
- */
-export type FolderTreeHierarchyLevel = {
-    path: string;
-    folders: DotFolder[];
-    totalEntries: number;
-    /**
-     * The 1-based page "Load more" should request next for this level, expressed in
-     * {@link FOLDER_TREE_PAGE_SIZE} units because that is what load-more pages by.
-     *
-     * Derived from the folders actually fetched, never from the rendered node count: a level can
-     * carry one extra folder that {@link resolveHierarchyAncestor} appended out of sort order, and
-     * counting that as paged-through would make load-more skip a page of real folders.
-     */
-    nextPage: number;
-};
 
 /**
  * The last segment of a folder path: `/a/b/` → `b`, `/a/` → `a`.
@@ -978,3 +955,23 @@ export const browsedFolderRef = (
     path === SYSTEM_HOST_PATH
         ? toFolderRef(SYSTEM_HOST.hostname, ROOT_PATH)
         : toFolderRef(hostname, path);
+
+/**
+ * Which wording an upload run names itself with.
+ *
+ * The messages spell "file" or "files" out instead of hedging with "file(s)", so the count has to
+ * choose between them, and only the caller knows the count. Nothing here names a destination: the
+ * drive already shows where the author is, and the sentence was long enough that the part they
+ * could read at a glance was getting lost behind the part they could not.
+ *
+ * @param {number} count - How many files the batch carries
+ * @param {{ backgrounded?: boolean }} [options] - Whether the batch is the server's now
+ * @returns {string} the message key for that run
+ */
+export const uploadIndicatorKey = (count: number, options?: { backgrounded?: boolean }): string => {
+    const base = options?.backgrounded
+        ? 'content-drive.upload.indicator.background'
+        : 'content-drive.upload.indicator';
+
+    return count === 1 ? `${base}.one` : base;
+};

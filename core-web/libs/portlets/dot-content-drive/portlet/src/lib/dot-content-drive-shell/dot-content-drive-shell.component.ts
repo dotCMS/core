@@ -69,12 +69,14 @@ import {
     DotStatusToastComponent,
     DotToastComponent,
     DotUploadDropzoneComponent,
-    DotUploadTypeSelectorComponent
+    DotUploadTypeSelectorComponent,
+    STATUS_TOAST_KEY
 } from '@dotcms/ui';
 
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
+import { DotContentDriveScopeBarComponent } from '../components/dot-content-drive-scope-bar/dot-content-drive-scope-bar.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
@@ -111,30 +113,11 @@ import {
     isFolder,
     browsedFolderRef,
     normalizeFolderRef,
-    toFolderRef
+    toFolderRef,
+    uploadIndicatorKey
 } from '../utils/functions';
 import { refuseOverCeiling } from '../utils/upload-ceilings';
 import { describeUploadFailures } from '../utils/upload-failures';
-/**
- * Which wording an upload run names itself with.
- *
- * The messages spell "file" or "files" out instead of hedging with "file(s)", so the count has to
- * choose between them, and only the caller knows the count. Nothing here names a destination: the
- * drive already shows where the author is, and the sentence was long enough that the part they
- * could read at a glance was getting lost behind the part they could not.
- *
- * @param {number} count - How many files the batch carries
- * @param {{ backgrounded?: boolean }} [options] - Whether the batch is the server's now
- * @returns {string} the message key for that run
- */
-const uploadIndicatorKey = (count: number, options?: { backgrounded?: boolean }): string => {
-    const base = options?.backgrounded
-        ? 'content-drive.upload.indicator.background'
-        : 'content-drive.upload.indicator';
-
-    return count === 1 ? `${base}.one` : base;
-};
-
 @Component({
     selector: 'dot-content-drive-shell',
     imports: [
@@ -156,7 +139,8 @@ const uploadIndicatorKey = (count: number, options?: { backgrounded?: boolean })
         DotToastComponent,
         DotEditContentSidePanelComponent,
         ProgressSpinnerModule,
-        DotContentDriveActionCenterComponent
+        DotContentDriveActionCenterComponent,
+        DotContentDriveScopeBarComponent
     ],
     providers: [
         DotContentDriveStore,
@@ -187,7 +171,7 @@ const uploadIndicatorKey = (count: number, options?: { backgrounded?: boolean })
     templateUrl: './dot-content-drive-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]',
+        class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_min-content_1fr]',
         // Bound here rather than with addEventListener: Angular unbinds it when the shell is
         // destroyed. A hand-rolled window listener outlives the portlet unless every teardown path
         // remembers to remove it, and then a stale closure keeps guarding the page on a count that
@@ -252,6 +236,15 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * `isTreeVisuallyExpanded` on the store for why these are kept separate.
      */
     readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
+
+    /**
+     * Whether the scope bar has anything to say.
+     *
+     * Only all site content gets one: the site root and System Host each answer the question the
+     * bar asks simply by being chosen, leaving nothing for its sentence to qualify or its toggle to
+     * decide.
+     */
+    readonly $allSiteContentSelected = this.#store.$allSiteContentSelected;
 
     /**
      * Folder a dropped file lands in. The shared dropzone is presentational, so the target comes
@@ -688,6 +681,132 @@ export class DotContentDriveShellComponent implements OnDestroy {
         affectedFolders
             .map(normalizeFolderRef)
             .includes(browsedFolderRef(this.#store.currentSite()?.hostname, this.#store.path()));
+
+    /**
+     * The action currently being applied, surfaced here because the run outlives the Action Center
+     * dialog. Once the user closes that dialog the toolbar is the only place still reporting the run,
+     * so without this the work would continue with no indication until the completion toast fired.
+     */
+    readonly $actionExecution = this.#store.toolbarRun;
+
+    /**
+     * How many runs are in flight. With several at once the store leaves the run undefined on
+     * purpose, so keying anything off the run alone would go quiet exactly when the most is
+     * happening.
+     */
+    readonly $activeRunCount = this.#store.toolbarRunCount;
+
+    readonly $hasRunInFlight = computed(() => this.$activeRunCount() > 0);
+
+    /**
+     * Resolved indicator label. Built here rather than in the template because `DotMessagePipe` takes
+     * `string[]` arguments and the item count is a number.
+     *
+     * The action name is escaped because this label is bound with `[innerHTML]` — the message itself
+     * carries a `<b>`, which is the only reason it is not plain interpolation. For a workflow action
+     * that name is `WorkflowAction.name` straight from the backend, so without this a name containing
+     * markup becomes real DOM. Angular's sanitizer already drops event-handler attributes, so this is
+     * not an XSS fix; what it stops is structural injection that survives sanitizing — an `<img>`
+     * pointing at an arbitrary URL, a link, or markup that simply breaks the toolbar's layout.
+     */
+    readonly $actionExecutionLabel = computed(() => {
+        const execution = this.$actionExecution();
+
+        // Several at once: name none of them and report the number instead (FR-017).
+        if (!execution) {
+            return this.$activeRunCount() > 1
+                ? this.#dotMessageService.get(
+                      'content-drive.action-center.applying-many',
+                      String(this.$activeRunCount())
+                  )
+                : '';
+        }
+
+        // A run says whatever it brought, and nothing otherwise.
+        //
+        // There used to be an "Applying X to Y" fallback here for runs with no copy of their own.
+        // Nothing could reach it: only an *unmarked* run arrives here (`toolbarRun` filters to
+        // `targets.length === 0`, because a run whose rows are marked in the grid is already
+        // telling the author where it is), and every unmarked run is an upload, which names
+        // itself. Its one real effect was on uploads before they had their own words, where it
+        // produced "Applying Upload to demo.dotcms.com" -- a sentence for an action performed ON
+        // content rather than for files going INTO a place.
+        //
+        // So a run arriving with no `labelKey` is one nobody has written words for, and inventing
+        // some is what caused that. Silence is the honest answer, and the effect above raises
+        // nothing for an empty label.
+        //
+        // The count is the only thing interpolated. It is a number this code produced, so nothing
+        // here needs escaping even though the message carries its own `<b>` and is therefore bound
+        // with `[innerHTML]`. Anything author-written that is ever added to these messages does.
+        return execution.labelKey
+            ? this.#dotMessageService.get(execution.labelKey, String(execution.total))
+            : '';
+    });
+
+    /** What the status toast is currently saying, so an unchanged run is not re-raised. */
+    #shownRunLabel: string | undefined;
+
+    /**
+     * Mirrors the run in flight into the status toast.
+     *
+     * The toolbar used to draw this itself, at the end of the filter row. It moved because the row
+     * is where the user works — filter chips come and go beside it — and a status that appears and
+     * disappears there shifts the controls under the pointer. A toast says the same thing without
+     * competing for that space, and gives the in-flight state and its outcome one surface instead
+     * of an indicator here and a toast elsewhere.
+     *
+     * Sticky while the run lasts and cleared when it settles: the outcome toast that follows is
+     * raised by the shell, which is where results are turned into copy.
+     *
+     * The percentage the old indicator could show is deliberately not carried over. Nothing ever
+     * sets a run's `processed` — `updateExternalRun` has no callers — so it could not render, and
+     * the app's HTTP backend does not report upload progress either.
+     */
+    readonly runToastSync = effect(() => {
+        const running = this.$hasRunInFlight();
+        const label = this.$actionExecutionLabel();
+
+        untracked(() => {
+            if (!running) {
+                this.#shownRunLabel = undefined;
+                this.#messageService.clear(STATUS_TOAST_KEY);
+
+                return;
+            }
+
+            // A run with nothing to say raises nothing rather than an empty pill.
+            if (!label) {
+                this.#shownRunLabel = undefined;
+                this.#messageService.clear(STATUS_TOAST_KEY);
+
+                return;
+            }
+
+            // Only when the wording actually changes. PrimeNG has no update, so re-reporting means
+            // clearing and raising again — and the old inline indicator simply changed its text,
+            // so re-animating on every store touch would be a behaviour this replaced, not kept.
+            // The label does change while runs are in flight: a second run starting collapses it to
+            // the count form, and finishing brings the named form back.
+            if (label === this.#shownRunLabel) {
+                return;
+            }
+
+            this.#shownRunLabel = label;
+            this.#messageService.clear(STATUS_TOAST_KEY);
+            this.#messageService.add({
+                key: STATUS_TOAST_KEY,
+                severity: 'info',
+                summary: label,
+                icon: 'pi pi-spin pi-spinner',
+                sticky: true,
+                // PrimeNG reads this off the message, not the outlet, and defaults to closable.
+                // A status is not the reader's to dismiss: it reports work already under way and
+                // clears itself when that work settles.
+                closable: false
+            });
+        });
+    });
 
     /**
      * Reports a finished workflow action as a toast, refreshes the grid, and closes the dialog if it
@@ -1496,32 +1615,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * @param {DotFolderTreeNodeData} [hostFolder]
      * @memberof DotContentDriveShellComponent
      */
-    /**
-     * What the progress indicator calls an upload's destination.
-     *
-     * `||`, not `??`: the site root's node carries an *empty* path, which is present but names
-     * nothing, so the indicator would otherwise read "Applying Upload to " with a blank target.
-     *
-     * With no folder the destination is whichever host the sidebar is showing — and in the System
-     * Host scope that is not the site in the switcher, which still names one. Saying the site's
-     * name there tells the author their files are going somewhere they are not. The name is the
-     * sidebar entry's own label, so the indicator and the row the user clicked agree.
-     */
-    private uploadTargetLabel(hostFolder?: { path?: string }): string | undefined {
-        if (hostFolder?.path) {
-            return hostFolder.path;
-        }
-
-        if (this.#store.$systemHostSelected()) {
-            return this.#dotMessageService.get('content-drive.sidebar.system-host');
-        }
-
-        // The site. With no folder chosen the files land at its root, but which SITE received them
-        // is the part an author needs, and the site row and the flat view put content in the same
-        // place anyway -- so naming the root adds words without adding an answer.
-        return this.#store.currentSite()?.hostname;
-    }
-
     protected uploadByBaseType(
         files: File[],
         baseType: string,
@@ -1560,7 +1653,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
             // action there is nothing to guard against here: each submission carries its own
             // freshly chosen files, so two uploads at once is legitimate rather than a double-fire.
             operation: `${UPLOAD_BATCH_OPERATION}:${(this.#uploadSequence += 1)}`,
-            actionName: this.#dotMessageService.get('content-drive.upload'),
             // Its own wording rather than the workflow sentence. Without this the run reads
             // "Applying Upload to demo.dotcms.com" — a phrasing for an action applied TO content,
             // which is not what putting files INTO a place is.
@@ -1570,7 +1662,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
             // "file(s)", which is what the count is for.
             labelKey: uploadIndicatorKey(files.length),
             total: files.length,
-            targetLabel: this.uploadTargetLabel(hostFolder),
             // Empty on purpose. The indicator speaks only for runs with nothing to mark, since a
             // run over rows is already reported by those rows dimming. An upload's content does not
             // exist until the run creates it, so the indicator is its only surface — naming the
@@ -1651,10 +1742,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
                     const backgroundRunId = this.#store.startExternalRun({
                         operation: `${UPLOAD_BATCH_OPERATION}:${event.handle.jobId}`,
-                        actionName: this.#dotMessageService.get('content-drive.upload'),
                         labelKey: uploadIndicatorKey(submitted, { backgrounded: true }),
                         total: submitted,
-                        targetLabel: this.uploadTargetLabel(hostFolder),
                         targets: []
                     });
 
@@ -1796,7 +1885,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return;
         }
 
-        const { folderName, pathToMove, dragItems } = this.getMoveMetadata(event);
+        const { pathToMove, dragItems } = this.getMoveMetadata(event);
 
         const dragItemsInodes = dragItems.contentlets.map((item) => item.inode);
         const assetContentletsCount = dragItems.contentlets.length;
@@ -1806,9 +1895,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // which the indicator says better and without stacking up over the outcome that follows.
         const runId = this.#store.startExternalRun({
             operation: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
-            actionName: this.#dotMessageService.get('content-drive.context-menu.move'),
             total: assetContentletsCount,
-            targetLabel: folderName,
             targets: dragItemsInodes
         });
 

@@ -20,13 +20,37 @@
 <dot-content-drive-toolbar (upload)="onUpload($event)" data-testid="toolbar" />
 
 <div
-    class="col-start-1 row-span-2 row-start-2 flex flex-col items-center justify-center overflow-hidden border-r border-gray-300 font-semibold transition-all duration-300 ease-in-out"
+    class="col-start-1 row-span-3 row-start-2 flex flex-col items-center justify-center overflow-hidden border-r border-gray-300 font-semibold transition-all duration-300 ease-in-out"
     [class]="$treeExpanded() ? 'w-66' : 'w-0'"
     data-testid="tree-selector">
     <dot-content-drive-sidebar
         data-testid="sidebar"
         (uploadFiles)="onRequestUpload($event)"
         (moveItems)="onMoveItems($event)" />
+</div>
+
+<!-- Only all site content gets a bar: the other two scopes answer the question it asks simply by
+     being chosen.
+
+     Always mounted, opening and closing by height, exactly as the tree column beside it does. An
+     `@if` with `animate.enter` was tried first and did nothing visible — the element is created and
+     destroyed, so there is no before-state to move from. Keeping it in the DOM and transitioning a
+     property is what the sidebar does, and it is why the sidebar's animation works. -->
+<div
+    class="col-start-2 row-start-3 grid transition-all duration-300 ease-in-out"
+    [class]="
+        $allSiteContentSelected() ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+    "
+    data-testid="scope-bar-slot">
+    <!-- A grid row from `0fr` to `1fr` rather than a max-height: max-height has to be given a
+         ceiling, and the visible motion then finishes as soon as the real height is reached, part
+         way through the duration. A fractional row resolves to exactly the content's height, so the
+         movement lasts as long as it says it does and no number has to be guessed.
+
+         `overflow-hidden` belongs on this inner element: it is the one being squeezed. -->
+    <div class="overflow-hidden">
+        <dot-content-drive-scope-bar data-testid="scope-bar-host" />
+    </div>
 </div>
 
 <dot-upload-dropzone
@@ -36,7 +60,7 @@
     [targetFolder]="$selectedFolder()"
     (uploadFiles)="onRequestUpload($event)"
     (dragEnter)="onDropzoneDragEnter()"
-    class="col-start-2 row-start-3 overflow-auto">
+    class="col-start-2 row-start-4 overflow-auto">
     <!-- `dataKey="inode"`: the language filter is multi-select, so one identifier can occupy
          several rows here. On the component's `identifier` default, ticking one language version
          ticked them all. The search service already backfills folder inodes for exactly this. -->
@@ -78,7 +102,7 @@
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
 <div
-    class="col-start-3 row-span-2 row-start-2 flex w-0 flex-col items-center justify-center font-semibold"></div>
+    class="col-start-3 row-span-3 row-start-2 flex w-0 flex-col items-center justify-center font-semibold"></div>
 <p-dialog
     [visible]="$dialogVisible()"
     [header]="$activeDialog()?.header"

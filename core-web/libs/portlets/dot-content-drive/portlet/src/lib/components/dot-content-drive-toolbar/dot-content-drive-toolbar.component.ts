@@ -11,7 +11,7 @@ import {
     untracked
 } from '@angular/core';
 
-import { MenuItem, MessageService } from 'primeng/api';
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -26,14 +26,12 @@ import {
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import {
     DotContentTypeFilterChipComponent,
-    STATUS_TOAST_KEY,
     DotFieldFilterComponent,
     DotFieldFilterMenuComponent,
     DotFilterBarComponent,
     DotFilterChipError,
     DotLanguageFilterChipComponent,
     DotMessagePipe,
-    DotSharedAssetsFilterComponent,
     DotStatusFilterComponent,
     DotUploadButtonComponent
 } from '@dotcms/ui';
@@ -50,26 +48,6 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
  */
 const ANIMATION_DELAY = 135;
-
-/** Characters that would let an interpolated value become markup. */
-const HTML_ESCAPES: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-};
-
-/**
- * Escapes a value that will be interpolated into a message rendered as HTML.
- *
- * Needed because a run's own copy (`content-drive.upload.indicator` and friends) carries its own
- * `<b>`, which forces the label to be bound with `[innerHTML]` rather than interpolated. Everything
- * substituted into such a message has to be escaped, or the message stops being the only source of
- * markup in it.
- */
-const escapeHtml = (value: string): string =>
-    value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
 
 /**
  * Base-type options in the "New" menu (all base types except FORM, which is deprecated).
@@ -147,7 +125,6 @@ interface ToolbarAnimationState {
         DotContentDriveWorkflowFilterComponent,
         DotFieldFilterComponent,
         DotFieldFilterMenuComponent,
-        DotSharedAssetsFilterComponent,
         DotFilterBarComponent,
         DotStatusFilterComponent,
         TooltipModule
@@ -213,7 +190,6 @@ interface ToolbarAnimationState {
 export class DotContentDriveToolbarComponent {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
-    readonly #messageService = inject(MessageService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
     // Emits the click event so the shell can anchor the upload-type popover to the button.
@@ -331,155 +307,13 @@ export class DotContentDriveToolbarComponent {
     readonly $defaultLanguageId = computed(() => this.#store.defaultLanguageId() ?? null);
 
     /**
-     * The action currently being applied, surfaced here because the run outlives the Action Center
-     * dialog. Once the user closes that dialog the toolbar is the only place still reporting the run,
-     * so without this the work would continue with no indication until the completion toast fired.
-     */
-    readonly $actionExecution = this.#store.toolbarRun;
-
-    /**
-     * How many runs are in flight. Drives whether the indicator is shown at all: with several runs
-     * `$actionExecution` is deliberately undefined, so keying visibility off it alone would hide the
-     * indicator exactly when the most is happening.
+     * Whether anything is in flight, which is all the toolbar needs to know: it disables the Action
+     * Center while a run is going and says so in the tooltip. Reporting the run is the shell's job,
+     * because the shell owns the outlet it is reported through and outlives every dialog.
      */
     readonly $activeRunCount = this.#store.toolbarRunCount;
 
     readonly $hasRunInFlight = computed(() => this.$activeRunCount() > 0);
-
-    /** What the status toast is currently saying, so an unchanged run is not re-raised. */
-    #shownRunLabel: string | undefined;
-
-    /**
-     * Mirrors the run in flight into the status toast.
-     *
-     * The toolbar used to draw this itself, at the end of the filter row. It moved because the row
-     * is where the user works — filter chips come and go beside it — and a status that appears and
-     * disappears there shifts the controls under the pointer. A toast says the same thing without
-     * competing for that space, and gives the in-flight state and its outcome one surface instead
-     * of an indicator here and a toast elsewhere.
-     *
-     * Sticky while the run lasts and cleared when it settles: the outcome toast that follows is
-     * raised by the shell, which is where results are turned into copy.
-     *
-     * The percentage the old indicator could show is deliberately not carried over. Nothing ever
-     * sets a run's `processed` — `updateExternalRun` has no callers — so it could not render, and
-     * the app's HTTP backend does not report upload progress either.
-     */
-    readonly runToastSync = effect(() => {
-        const running = this.$hasRunInFlight();
-        const label = this.$actionExecutionLabel();
-
-        untracked(() => {
-            if (!running) {
-                this.#shownRunLabel = undefined;
-                this.#messageService.clear(STATUS_TOAST_KEY);
-
-                return;
-            }
-
-            // A run with nothing to say raises nothing rather than an empty pill.
-            if (!label) {
-                this.#shownRunLabel = undefined;
-                this.#messageService.clear(STATUS_TOAST_KEY);
-
-                return;
-            }
-
-            // Only when the wording actually changes. PrimeNG has no update, so re-reporting means
-            // clearing and raising again — and the old inline indicator simply changed its text,
-            // so re-animating on every store touch would be a behaviour this replaced, not kept.
-            // The label does change while runs are in flight: a second run starting collapses it to
-            // the count form, and finishing brings the named form back.
-            if (label === this.#shownRunLabel) {
-                return;
-            }
-
-            this.#shownRunLabel = label;
-            this.#messageService.clear(STATUS_TOAST_KEY);
-            this.#messageService.add({
-                key: STATUS_TOAST_KEY,
-                severity: 'info',
-                summary: label,
-                icon: 'pi pi-spin pi-spinner',
-                sticky: true,
-                // PrimeNG reads this off the message, not the outlet, and defaults to closable.
-                // A status is not the reader's to dismiss: it reports work already under way and
-                // clears itself when that work settles.
-                closable: false
-            });
-        });
-    });
-
-    /**
-     * Resolved indicator label. Built here rather than in the template because `DotMessagePipe` takes
-     * `string[]` arguments and the item count is a number.
-     *
-     * The action name is escaped because this label is bound with `[innerHTML]` — the message itself
-     * carries a `<b>`, which is the only reason it is not plain interpolation. For a workflow action
-     * that name is `WorkflowAction.name` straight from the backend, so without this a name containing
-     * markup becomes real DOM. Angular's sanitizer already drops event-handler attributes, so this is
-     * not an XSS fix; what it stops is structural injection that survives sanitizing — an `<img>`
-     * pointing at an arbitrary URL, a link, or markup that simply breaks the toolbar's layout.
-     */
-    readonly $actionExecutionLabel = computed(() => {
-        const execution = this.$actionExecution();
-
-        // Several at once: name none of them and report the number instead (FR-017).
-        if (!execution) {
-            return this.$activeRunCount() > 1
-                ? this.#dotMessageService.get(
-                      'content-drive.action-center.applying-many',
-                      String(this.$activeRunCount())
-                  )
-                : '';
-        }
-
-        // A run says whatever it brought, and nothing otherwise.
-        //
-        // There used to be an "Applying X to Y" fallback here for runs with no copy of their own.
-        // Nothing could reach it: only an *unmarked* run arrives here (`toolbarRun` filters to
-        // `targets.length === 0`, because a run whose rows are marked in the grid is already
-        // telling the author where it is), and every unmarked run is an upload, which names
-        // itself. Its one real effect was on uploads before they had their own words, where it
-        // produced "Applying Upload to demo.dotcms.com" -- a sentence for an action performed ON
-        // content rather than for files going INTO a place.
-        //
-        // So a run arriving with no `labelKey` is one nobody has written words for, and inventing
-        // some is what caused that. Silence is the honest answer, and the effect above raises
-        // nothing for an empty label.
-        //
-        // `targetLabel` is escaped because the label is bound with `[innerHTML]` -- the message
-        // carries its own `<b>` -- and a target label is content an author typed.
-        return execution.labelKey
-            ? this.#dotMessageService.get(
-                  execution.labelKey,
-                  escapeHtml(execution.targetLabel ?? ''),
-                  String(execution.total)
-              )
-            : '';
-    });
-
-    /**
-     * How far the run has got, as a percentage, or `undefined` when it does not report progress.
-     *
-     * `undefined` and `0` are deliberately different answers: a run that has done nothing yet is not
-     * the same as a run that cannot say. A truthiness check would collapse the two and show an empty
-     * bar for a run that has no bar to show.
-     *
-     * Counts items, and only items. An upload measures itself in bytes, which this cannot express —
-     * but it has no position to report here anyway: the app runs on Angular's fetch backend, which
-     * never emits upload progress, and the XHR backend that would is deprecated. An upload shows the
-     * indeterminate spinner instead, which is the honest rendering of a wait with no denominator.
-     */
-    readonly $actionExecutionPercent = computed(() => {
-        const execution = this.$actionExecution();
-
-        if (!execution || execution.processed === undefined || !execution.total) {
-            return undefined;
-        }
-
-        return Math.round((execution.processed / execution.total) * 100);
-    });
 
     /**
      * Active field-filter chips, in the order the user added them (the store keeps `userSearchableActive`

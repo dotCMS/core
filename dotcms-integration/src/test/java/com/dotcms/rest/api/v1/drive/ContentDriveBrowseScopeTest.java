@@ -11,6 +11,7 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -23,7 +24,6 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.BadRequestException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -380,6 +380,11 @@ public class ContentDriveBrowseScopeTest extends IntegrationTestBase {
      */
     @Test
     public void testAScopeWithAFolderPathIsRefused() {
+        // `com.dotcms.rest.exception.BadRequestException`, not the JAX-RS class of the same name.
+        // They are siblings rather than subtypes -- this one extends `HttpStatusCodeException` --
+        // so naming the wrong one compiles and then fails the moment the test first runs. The
+        // unit-level twin of this assertion deliberately catches `RuntimeException` and checks the
+        // message, which is why it never noticed.
         assertThrows("A scope is only meaningful at the site root",
                 BadRequestException.class,
                 () -> requestAt(childFolderPath).browseScope(BrowseScope.ROOT).build());

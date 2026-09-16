@@ -23,10 +23,9 @@ import {
     SYSTEM_HOST,
     SYSTEM_HOST_PATH
 } from '../../../shared/constants';
-import { DotContentDriveState } from '../../../shared/models';
+import { DotContentDriveState, FolderTreeHierarchyLevel } from '../../../shared/models';
 import {
     applyLoadMoreToHierarchy,
-    FolderTreeHierarchyLevel,
     getFolderHierarchyByPath,
     getFolderNodesByPath
 } from '../../../utils/functions';
@@ -213,19 +212,6 @@ export function withSidebar() {
                     selectedNode: undefined,
                     pagination: { ...store.pagination(), page: 1, offset: 0 },
                     pages: [DEFAULT_PAGE]
-                });
-            },
-
-            /**
-             * Selects the tree's root row, the one that stands for the site rather than a folder.
-             *
-             * Used when a search spans the whole site, where no single folder is the selected one.
-             * A tree of plain folders has no such row, and then nothing is selected, which says the
-             * same thing.
-             */
-            selectRootNode: () => {
-                patchState(store, {
-                    selectedNode: store.folders().find((folder) => !folder.data?.path)
                 });
             },
 

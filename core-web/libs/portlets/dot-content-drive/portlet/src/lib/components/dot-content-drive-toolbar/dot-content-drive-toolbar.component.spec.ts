@@ -32,8 +32,7 @@ import {
     DotFilterFacade,
     DotFilterValue,
     DotLanguageFilterChipComponent,
-    isCanonicalChipOrder,
-    STATUS_TOAST_KEY
+    isCanonicalChipOrder
 } from '@dotcms/ui';
 import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -325,7 +324,6 @@ describe('DotContentDriveToolbarComponent', () => {
             );
 
             expect(chips).toEqual([
-                'sharedAssets',
                 'contentType',
                 'workflow',
                 'status',
@@ -351,7 +349,9 @@ describe('DotContentDriveToolbarComponent', () => {
                 spectator.element.querySelectorAll<HTMLElement>('[data-filter-chip]')
             );
 
-            expect(chips.length).toBe(6);
+            // Five since the System Host toggle moved out of this row and into the scope bar,
+            // where it sits beside the sentence describing what it does.
+            expect(chips.length).toBe(5);
             chips.forEach((chip) => {
                 const focusable = chip.matches('[tabindex]')
                     ? chip
@@ -821,168 +821,6 @@ describe('DotContentDriveToolbarComponent', () => {
         });
     });
 
-    describe('running-action reporting', () => {
-        // The toolbar used to draw this at the end of its filter row. It now raises a status toast
-        // instead, so these assert the message rather than markup the toolbar no longer owns — the
-        // label itself is still composed here, which is why those assertions are unchanged.
-        const statusMessages = () =>
-            (messageServiceSpy.add.mock.calls as unknown[][])
-                .map(([message]) => message as { key?: string; summary?: string })
-                .filter((message) => message.key === STATUS_TOAST_KEY);
-
-        it('should raise nothing when nothing is running', () => {
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(statusMessages()).toHaveLength(0);
-        });
-
-        it('should escape markup carried by the destination an upload names', () => {
-            // The surviving interpolation: a run's own copy carries `<b>`, so the label is bound
-            // with `[innerHTML]`, and the destination is a hostname or a folder path an author can
-            // influence. Escaping is what keeps the message the only source of markup in itself.
-            const messageService = spectator.inject(DotMessageService);
-
-            vi.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
-                key === 'content-drive.upload.indicator'
-                    ? `Uploading <b>${args[1]}</b> file(s) to <b>${args[0]}</b>…`
-                    : key
-            );
-
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({
-                actionName: 'Upload',
-                total: 2,
-                labelKey: 'content-drive.upload.indicator',
-                targetLabel: '<img src=x onerror=alert(1)>'
-            });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            const label = spectator.component.$actionExecutionLabel();
-
-            expect(label).not.toContain('<img src=x');
-            expect(label).toContain('&lt;img src=x');
-        });
-
-        it('should stay silent for a run that brought no copy of its own', () => {
-            // Nothing reaches this surface unless it is unmarked, and every unmarked run today is
-            // an upload, which names itself. A run arriving here without a `labelKey` is therefore
-            // a run nobody has written words for, and inventing "Applying X to N item(s)" for it
-            // was how an upload came to read "Applying Upload to demo.dotcms.com" -- a sentence for
-            // an action performed ON content, not for files going INTO a place.
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(spectator.component.$actionExecutionLabel()).toBe('');
-            expect(statusMessages()).toHaveLength(0);
-        });
-
-        it('should say the run is still going rather than reporting an outcome', () => {
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({
-                actionName: 'Upload',
-                total: 3,
-                labelKey: 'content-drive.upload.indicator',
-                targetLabel: 'demo.dotcms.com'
-            });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            const [message] = statusMessages();
-
-            // `closable: false` belongs on the message because that is where PrimeNG looks for
-            // it — its template reads `message?.closable !== false` and the outlet has no input
-            // that can set it. Sticky for the same reason the run owns the toast's life: it ends
-            // when the work ends, not on a timer that could blank it mid-upload.
-            expect(message).toEqual(
-                expect.objectContaining({
-                    sticky: true,
-                    closable: false,
-                    icon: 'pi pi-spin pi-spinner'
-                })
-            );
-        });
-
-        it('should clear the status once the run settles', () => {
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({
-                actionName: 'Upload',
-                total: 3,
-                labelKey: 'content-drive.upload.indicator',
-                targetLabel: 'demo.dotcms.com'
-            });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            activeRunCountSignal.set(0);
-            actionExecutionSignal.set(undefined);
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(messageServiceSpy.clear).toHaveBeenCalledWith(STATUS_TOAST_KEY);
-        });
-
-        it('should not re-raise while the same run keeps going', () => {
-            // The indicator this replaced changed its text in place. Clearing and raising again on
-            // every store touch would dismiss and re-animate the toast for no new information.
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({
-                actionName: 'Upload',
-                total: 3,
-                labelKey: 'content-drive.upload.indicator',
-                targetLabel: 'demo.dotcms.com'
-            });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            const raisedOnce = statusMessages().length;
-
-            // Something unrelated changes; the run and its wording do not.
-            siteCanAddChildrenSignal.set(false);
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(statusMessages()).toHaveLength(raisedOnce);
-        });
-
-        it('should report the new wording when a second run joins', () => {
-            activeRunCountSignal.set(1);
-            actionExecutionSignal.set({
-                actionName: 'Upload',
-                total: 3,
-                labelKey: 'content-drive.upload.indicator',
-                targetLabel: 'demo.dotcms.com'
-            });
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            // A second run collapses the label to the count form, which IS new information.
-            activeRunCountSignal.set(2);
-            actionExecutionSignal.set(undefined);
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(statusMessages().length).toBeGreaterThan(1);
-        });
-
-        it('should collapse to a count when several runs are in flight', () => {
-            // With several at once the store leaves the run undefined on purpose: name none of
-            // them and report the number instead.
-            activeRunCountSignal.set(3);
-            actionExecutionSignal.set(undefined);
-            spectator.detectChanges();
-            spectator.flushEffects();
-
-            expect(statusMessages().length).toBeGreaterThan(0);
-            expect(spectator.component.$actionExecutionLabel()).toBe(
-                'content-drive.action-center.applying-many'
-            );
-        });
-    });
-
     describe('field-filter chips', () => {
         it('should render a chip only for active variables resolved against loaded fields', () => {
             store.userSearchableFields.set([
@@ -1021,27 +859,6 @@ describe('DotContentDriveToolbarComponent', () => {
             await withPermissions(['READ', 'EDIT', 'CAN_ADD_CHILDREN']);
 
             expect(spectator.component.$canAddChildren()).toBe(true);
-        });
-
-        describe('the Show System Host chip', () => {
-            afterEach(() => allSiteContentSelectedSignal.set(false));
-
-            it('should be offered while all site content is selected', async () => {
-                allSiteContentSelectedSignal.set(true);
-                await settleToolbarAnimation(spectator);
-
-                expect(spectator.query(byTestId('shared-assets-filter'))).toBeTruthy();
-            });
-
-            it('should be taken away everywhere else', async () => {
-                // System Host content only ever sits at the System Host root, so it can never
-                // appear inside a site folder: outside all site content the chip has nothing to
-                // decide, and a control with nothing to decide should not be sitting there.
-                allSiteContentSelectedSignal.set(false);
-                await settleToolbarAnimation(spectator);
-
-                expect(spectator.query(byTestId('shared-assets-filter'))).toBeFalsy();
-            });
         });
 
         // All site content spans every folder in the site, which for a while was read as "there is
@@ -1142,19 +959,6 @@ describe('DotContentDriveToolbarComponent', () => {
             await withPermissions(['CAN_ADD_CHILDREN']);
 
             expect(spectator.component.$addChildrenTooltip()).toBe('');
-        });
-    });
-
-    describe('progress the run measures itself', () => {
-        it('should fall back to the item ratio when the run reports no percent', () => {
-            actionExecutionSignal.set({
-                actionName: 'Publish',
-                total: 4,
-                processed: 1
-            } as DotContentDriveActionExecution);
-            spectator.detectChanges();
-
-            expect(spectator.component.$actionExecutionPercent()).toBe(25);
         });
     });
 

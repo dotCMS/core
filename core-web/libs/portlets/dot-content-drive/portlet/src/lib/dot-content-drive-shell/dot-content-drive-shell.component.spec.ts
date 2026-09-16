@@ -57,7 +57,11 @@ import {
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
-import { DotFolderListViewComponent, DotUploadTypeSelectorComponent } from '@dotcms/ui';
+import {
+    DotFolderListViewComponent,
+    DotUploadTypeSelectorComponent,
+    STATUS_TOAST_KEY
+} from '@dotcms/ui';
 import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
@@ -84,6 +88,7 @@ import {
 } from '../shared/mocks';
 import {
     DotContentDriveDialog,
+    DotContentDriveActionExecution,
     DotContentDriveActionExecutionResult,
     DotContentDriveDialogDrillDown,
     DotContentDriveSortOrder,
@@ -128,6 +133,11 @@ describe('DotContentDriveShellComponent', () => {
     >;
     // Reactive so the shell's $extraColumns computed recomputes when the fields change.
     let showInListFieldsSignal: WritableSignal<DotCMSContentTypeField[]>;
+
+    // The run the toolbar surface speaks for, driven from here so the shell's status-toast effect
+    // can be exercised. Only unmarked runs reach it; the store's own computed does that filtering.
+    const toolbarRunSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    const toolbarRunCountSignal = signal(0);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
@@ -268,8 +278,8 @@ describe('DotContentDriveShellComponent', () => {
                     trackUploadJob: vi.fn(),
                     updateExternalRun: vi.fn(),
                     activeRunCount: signal(0),
-                    toolbarRun: signal(undefined),
-                    toolbarRunCount: signal(0),
+                    toolbarRun: toolbarRunSignal,
+                    toolbarRunCount: toolbarRunCountSignal,
                     busyRows: signal<string[]>([]),
                     endExternalRun: vi.fn(),
                     setPagination: vi.fn(),
@@ -399,6 +409,12 @@ describe('DotContentDriveShellComponent', () => {
         router = spectator.inject(Router);
         location = spectator.inject(Location);
         messageService = spectator.inject(MessageService);
+
+        // Module-level, so whatever the last test left here is what the next one starts with. The
+        // shell raises the status toast off these, which made an unrelated test see a message it
+        // never asked for.
+        toolbarRunSignal.set(undefined);
+        toolbarRunCountSignal.set(0);
         uploadService = spectator.inject(DotUploadFileService);
         routerService = spectator.inject(DotRouterService);
         dotMessageService = spectator.inject(DotMessageService);
@@ -2036,6 +2052,100 @@ describe('DotContentDriveShellComponent', () => {
         });
     });
 
+    describe('reporting a run in flight', () => {
+        // Moved here with the effect itself. The toolbar raised this while it still drew the
+        // indicator in its filter row; now that the status is a toast rendered by the shell, the
+        // shell owns raising it -- it holds the outlet and outlives every dialog the run may have
+        // started from.
+        const statusMessages = () =>
+            (messageService.add as unknown as { mock: { calls: unknown[][] } }).mock.calls
+                .map(([message]) => message as { key?: string; summary?: string })
+                .filter((message) => message.key === STATUS_TOAST_KEY);
+
+        it('should raise nothing while nothing is running', () => {
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(0);
+        });
+
+        it('should report a run that brought its own wording', () => {
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(1);
+        });
+
+        it('should stay silent for a run that brought none', () => {
+            // Only unmarked runs arrive here, and every one of those is an upload, which names
+            // itself. Anything else is a run nobody wrote words for, and inventing "Applying X to
+            // Y" for it is what made an upload read "Applying Upload to demo.dotcms.com".
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Publish',
+                total: 3
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(0);
+        });
+
+        it('should clear the status once the run settles', () => {
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            toolbarRunCountSignal.set(0);
+            toolbarRunSignal.set(undefined);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            // Sticky on purpose, so nothing times it out mid-upload. That makes ending it the
+            // store's job, which is the half worth pinning.
+            expect(messageService.clear).toHaveBeenCalledWith(STATUS_TOAST_KEY);
+        });
+
+        it('should raise it as something the reader cannot dismiss', () => {
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            // PrimeNG reads `closable` off the message, not the outlet, so this is the only place
+            // that can turn the close button off for real.
+            expect(statusMessages()[0]).toEqual(
+                expect.objectContaining({ sticky: true, closable: false })
+            );
+        });
+
+        it('should collapse to a count when several runs are in flight', () => {
+            // With several at once the store leaves the run undefined on purpose: name none of
+            // them and report the number instead.
+            toolbarRunCountSignal.set(3);
+            toolbarRunSignal.set(undefined);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(1);
+        });
+    });
+
     describe('upload — a batch of files', () => {
         beforeEach(() => {
             spectator.detectChanges();
@@ -2095,43 +2205,6 @@ describe('DotContentDriveShellComponent', () => {
             expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({ siteId: MOCK_SITES[0].identifier })
-            );
-        });
-
-        it('should name the site when no folder is chosen', () => {
-            // The site, not the root of it. Naming the root was tried and read as fussy for what
-            // it bought: the destination that matters to the author is which site received the
-            // files, and the site row and the flat view put them in the same place anyway.
-            store.currentSite.mockReturnValue(MOCK_SITES[0]);
-            store.$systemHostSelected.mockReturnValue(false);
-
-            selectUploadType({
-                targetFolder: undefined,
-                files: createFileList([createFile('a.png')]),
-                baseType: 'DOTASSET'
-            });
-
-            expect(store.startExternalRun).toHaveBeenCalledWith(
-                expect.objectContaining({ targetLabel: MOCK_SITES[0].hostname })
-            );
-        });
-
-        it('should name System Host as the upload destination, not the switcher site', () => {
-            // The indicator is the only surface an upload has before the handle comes back, so a
-            // wrong destination there tells the author their files are going somewhere else.
-            store.currentSite.mockReturnValue(MOCK_SITES[0]);
-            store.$systemHostSelected.mockReturnValue(true);
-
-            selectUploadType({
-                targetFolder: undefined,
-                files: createFileList([createFile('a.png')]),
-                baseType: 'DOTASSET'
-            });
-
-            // The message mock echoes keys, so the key IS the observable outcome here: the
-            // indicator asks for the sidebar entry's own label rather than naming a site.
-            expect(store.startExternalRun).toHaveBeenCalledWith(
-                expect.objectContaining({ targetLabel: 'content-drive.sidebar.system-host' })
             );
         });
 
@@ -3035,10 +3108,17 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            // Nothing at all now. The handoff advisory this used to assert was removed because
-            // the status toast beside it already said the upload was in the background, and one
-            // upload announcing itself twice is the noise this replaced.
-            expect(addSpy).not.toHaveBeenCalled();
+            // Nothing on the wide outlet. The handoff advisory this used to assert was removed
+            // because the status toast beside it already said the upload was in the background,
+            // and one upload announcing itself twice is the noise this replaced.
+            //
+            // Keyed rather than absolute: the status toast is raised by this same service, and it
+            // is the one thing that SHOULD appear while a run is in flight.
+            const wideOutletMessages = addSpy.mock.calls
+                .map(([message]) => message as { key?: string })
+                .filter((message) => message.key !== STATUS_TOAST_KEY);
+
+            expect(wideOutletMessages).toEqual([]);
         });
 
         it('should not announce an upload the listing now shows', () => {
