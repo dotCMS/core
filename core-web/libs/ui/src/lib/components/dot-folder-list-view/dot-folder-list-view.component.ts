@@ -34,7 +34,8 @@ import {
     DotContentDriveBrowseItem,
     DotContentDriveItem,
     DotContentDrivePaginateEvent,
-    DotLanguage
+    DotLanguage,
+    isActionableBrowseItem
 } from '@dotcms/dotcms-models';
 
 import {
@@ -329,6 +330,43 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
 
     /** Flagged inodes as a set — one lookup per row instead of a scan. */
     protected readonly $lockedByOthersSet = computed(() => new Set(this.$lockedByOthers()));
+
+    /**
+     * Rows the caller will not accept, by `dataKey`. Rendered greyed out with their control
+     * disabled, exactly as `disabled` renders the whole table.
+     *
+     * The row is still **listed**: it exists, and hiding it would leave the user hunting for
+     * content they can see elsewhere. What it must not do is look pickable. Without this the
+     * control still toggles on click while the caller silently drops the pick — the user sees a
+     * selected row, confirms, and gets nothing back, with nothing on screen explaining why.
+     *
+     * Why the caller decides: the reason a row is refused is never the table's to know. For the
+     * relationship picker it is a child already claimed by another parent through a one-to-one or
+     * one-to-many relationship, which takes a query over every parent of the type to determine.
+     *
+     * @type {InputSignal<string[]>}
+     * @alias unselectable
+     */
+    $unselectable = input<string[]>([], { alias: 'unselectable' });
+
+    /** Refused keys as a set — one lookup per row instead of a scan. */
+    protected readonly $unselectableSet = computed(() => new Set(this.$unselectable()));
+
+    /**
+     * Inodes an operation is currently running on.
+     *
+     * The listing's own `loading` state means "the whole listing is being fetched"; this is the
+     * narrower statement, that *these rows* are busy. Keyed by **inode**, not identifier, because a
+     * multi-language view legitimately shows one identifier on several rows and marking by
+     * identifier would mark siblings nothing is happening to.
+     *
+     * @type {InputSignal<string[]>}
+     * @alias busyRows
+     */
+    readonly $busyRows = input<string[]>([], { alias: 'busyRows' });
+
+    /** Busy inodes as a set — one lookup per row instead of a scan. */
+    protected readonly $busyRowsSet = computed(() => new Set(this.$busyRows()));
 
     /**
      * Caller-owned checked set — makes the table **controlled**: it renders this and only reports
@@ -1177,7 +1215,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
 
         // A menu link carries no workflow state, so every action the menu offers is meaningless for
         // one. Content Drive never lists links, so this only ever fires in the asset picker.
-        if (!isActionable(contentlet)) {
+        if (!isActionableBrowseItem(contentlet)) {
             return;
         }
 
@@ -1260,10 +1298,19 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * Handles double click on a content item
      * @param contentlet The content item that was double clicked
      */
-    onDoubleClick(contentlet: DotContentDriveBrowseItem) {
+    onDoubleClick(contentlet: DotContentDriveBrowseItem, event?: MouseEvent) {
         // Guarded here rather than per template binding: the row's dblclick, the title and the
         // thumbnail all land on this, and opening an item from a dialog would navigate away from it.
         if (this.$readOnly()) {
+            return;
+        }
+
+        // Shift belongs to the selection, so nothing carrying it opens anything. Without this a
+        // second click inside a Shift range, or a stray double, opened the item and took the
+        // author out of the listing — losing the selection they were partway through building.
+        // The event is optional because callers that have no gesture to judge (the context menu's
+        // own open action) legitimately pass none.
+        if (event?.shiftKey) {
             return;
         }
 
@@ -1285,7 +1332,16 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             return;
         }
 
-        this.onDoubleClick(contentlet);
+        // Shift never opens, so by the rule above there is nothing to swallow the click for, and
+        // it has to reach the row that does the selecting. Ahead of the swallow rather than inside
+        // `onDoubleClick`: that one only decides whether to open, and returning from it while the
+        // `stopPropagation()` below still ran left the title a dead spot where the gesture neither
+        // opened the item nor extended the selection it belongs to.
+        if ((event as MouseEvent).shiftKey) {
+            return;
+        }
+
+        this.onDoubleClick(contentlet, event as MouseEvent);
         event.stopPropagation();
     }
 
@@ -1318,7 +1374,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         // permissions and nowhere to be moved to, so they are never part of a drag payload.
         const itemsToDrag = (
             isDraggingSelectedItem && selected.length > 0 ? selected : [contentlet]
-        ).filter(isActionable);
+        ).filter(isActionableBrowseItem);
 
         if (!itemsToDrag.length) {
             return;
@@ -1371,7 +1427,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         event.stopPropagation();
         patchState(this.state, { dragOverRowId: null });
 
-        if (!isActionable(targetItem)) {
+        if (!isActionableBrowseItem(targetItem)) {
             return;
         }
 
@@ -1483,16 +1539,4 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             dataTable.first = this.$offset();
         }
     }
-}
-
-/**
- * Whether a row is something the shared folder actions can act on.
- *
- * Everything except a menu link: links have no workflow state, no permissions of their own and no
- * editor to open, so they are displayed and selectable but never actionable.
- */
-function isActionable(item: DotContentDriveBrowseItem): item is DotContentDriveItem {
-    const row = item as { type?: string; extension?: string };
-
-    return row.type !== 'link' && row.extension !== 'link';
 }

@@ -54,6 +54,30 @@ export class ContentDriveKeyboard {
         await this.rowBody(index).click({ modifiers: ['Shift'] });
     }
 
+    /**
+     * A Shift-held double click on the row body.
+     *
+     * Real, not synthesised: the guard this exercises reads `shiftKey` off the browser's own
+     * `dblclick`, and a constructed event carrying the modifier is exactly the thing that passed
+     * a green unit run while the browser still opened the item.
+     */
+    async shiftDoubleClickRow(index: number) {
+        await this.rowBody(index).dblclick({ modifiers: ['Shift'] });
+    }
+
+    /**
+     * A Shift-held click on the row's *title*, which is the open affordance.
+     *
+     * Distinct from {@link shiftClickRow} on purpose: the title swallows its click so the row does
+     * not also select on the way out of an open. A Shift click does not open, so the swallow must
+     * not run and the click has to reach the row that does the selecting.
+     */
+    async shiftClickRowTitle(index: number) {
+        await this.row(index)
+            .getByTestId('item-title-text')
+            .click({ modifiers: ['Shift'] });
+    }
+
     async expectRowCount(count: number) {
         await expect(this.rows).toHaveCount(count, { timeout: 20000 });
     }

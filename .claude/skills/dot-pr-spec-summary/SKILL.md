@@ -58,7 +58,9 @@ simple spec):
 - **Test coverage** — what tests exist in THIS PR (for spec-only PRs: typically none, by
   design — say so and cite the TDD/process rule if applicable), and what the spec's success
   criteria / acceptance scenarios commit future tests to prove. Flag success criteria that
-  are qualitative ("low count", "a handful") and will need pinning down.
+  are qualitative ("low count", "a handful") and will need pinning down. Describe each
+  criterion or scenario by what it checks ("the page loads with one query instead of
+  hundreds"), never by its spec identifier (see Style rules).
 
 Close with anything a reviewer should push back on: ambiguities, unstated assumptions,
 missing sections, or scope creep. If there is nothing, don't invent it.
@@ -71,8 +73,10 @@ and a picture would add nothing; don't force one.
 
 **Mermaid diagram (always, when a visual helps).** One mermaid diagram of the core
 mechanism, ~5–12 nodes, real names (config keys, classes, endpoints) and real numbers,
-quoted labels where they contain parentheses/colons. Include it in the chat summary as a
-```mermaid fence — it renders if pasted into GitHub (PR comments render mermaid natively).
+quoted labels where they contain parentheses/colons. Node and edge labels describe the
+step in words; no spec identifiers (`FR-012`, `SC-001`) as labels. Include it in the chat
+summary as a ```mermaid fence — it renders if pasted into GitHub (PR comments render
+mermaid natively).
 
 **Designed SVG visuals (only in HTML deliverables — see below).** When producing an HTML
 deliverable, build:
@@ -135,6 +139,14 @@ available, skip verification and say so.
 - Simple words. Explain jargon inline the first time it appears (e.g. "N+1 pattern — one
   query per row instead of one query total").
 - Keep the key measurements and identifiers exact (query counts, config keys, class names).
+- **No spec-internal reference codes.** Never carry identifiers like `FR-012`, `SC-001`,
+  `AC-002`, `US-3`, `NFR-4` or `T-017` into the summary, the visuals, or the HTML page.
+  They only mean something with the spec open, which is exactly what the reader is trying
+  to avoid. Say what the item is instead: "the requirement that saving a page never blocks
+  on the cache" rather than "FR-012". Prose such as "the third acceptance scenario" is fine
+  when the position matters; a bare code is not. The one exception is the reviewer's
+  closing push-back list, where a code may follow the plain-language description in
+  parentheses so the author can find the line to fix.
 - Link every PR/issue mentioned as a markdown link.
 - Match the user's language (English or Spanish).
 - Selective, not compressed: drop detail that doesn't change the approve/request-changes
