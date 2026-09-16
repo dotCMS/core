@@ -188,7 +188,7 @@ update_artifact_metadata() {
   local artifact="$1" version="$2" ts
   ts="$(date -u +%Y%m%d%H%M%S)"
   local base="$S3_PREFIX/com/dotcms/$artifact"
-  local tmp versions latest release v plain
+  local tmp versions latest release v plain listing
 
   tmp="$(mktemp -d)"
   CLEANUP_DIRS+=("$tmp")
@@ -197,10 +197,17 @@ update_artifact_metadata() {
   # `<date> <time> <size> <name>`. Only PRE lines are versions; using $2 on a
   # file line would pick up the timestamp and corrupt the version list (and
   # therefore <latest>/<release>) on every publish after the first.
-  versions="$(
-    aws_s3 ls "s3://$S3_BUCKET/$base/" 2>/dev/null \
-      | awk '$1 == "PRE" {print $2}' | sed 's:/$::' || true
-  )"
+  #
+  # If the listing itself fails (throttling, network, endpoint hiccup), do NOT
+  # rebuild metadata from an empty list: that would overwrite the existing file
+  # with a single-version one and silently drop every prior version. Leave the
+  # last-good metadata in place instead.
+  local listing
+  if ! listing="$(aws_s3 ls "s3://$S3_BUCKET/$base/" 2>/dev/null)"; then
+    warn "Could not list versions for $artifact (aws s3 ls failed); leaving maven-metadata.xml unchanged."
+    return 0
+  fi
+  versions="$(printf '%s\n' "$listing" | awk '$1 == "PRE" {print $2}' | sed 's:/$::')"
   versions="$(printf '%s\n%s\n' "$versions" "$version" | sed '/^$/d' | sort -u -V)"
 
   # Maven's ComparableVersion ranks a qualifier (e.g. 26.09.14-01-java25) BEFORE

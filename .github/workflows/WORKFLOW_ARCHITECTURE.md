@@ -762,7 +762,7 @@ After clicking "Run workflow", you'll be redirected to the workflow run page sho
 ### Post-Release
 
 - **Docker Images**: Available immediately at `dotcms/dotcms:{version}`
-- **Maven Artifacts**: Available at repo.dotcms.com
+- **Maven Artifacts**: Available at dotcms-repo.b-cdn.net
 - **Javadocs**: Published to `static.dotcms.com/docs/{version}/javadocs`
 - **GitHub Release**: Created with SBOM attached
 - **Issue Labels**: All "Next Release" issues tagged with actual version
