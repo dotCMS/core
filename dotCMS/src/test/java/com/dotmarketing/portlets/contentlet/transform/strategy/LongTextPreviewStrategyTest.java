@@ -404,6 +404,40 @@ public class LongTextPreviewStrategyTest {
                 preview.contains("Real visible text"));
     }
 
+    /**
+     * The budget-limited extract can land on exactly {@code MAX_PREVIEW_LENGTH} visible characters
+     * while the raw HTML is longer than {@code HTML_PARSE_BUDGET} and genuinely carries more text
+     * past the cut point -- the same one-character gap already closed for the Story Block path,
+     * mirrored here: {@code truncate} alone cannot distinguish "150 characters and nothing more"
+     * from "150 characters because that is all the budget-limited prefix had room for" (found in
+     * review).
+     */
+    @Test
+    public void transform_wysiwygField_exactBudgetBoundary_stillMarksTruncation() throws Exception {
+        final Field wysiwygField = mockField(WysiwygField.class, WYSIWYG_VAR);
+        final ContentType contentType = mockContentType(List.of(wysiwygField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        // Exactly 150 visible characters, then an HTML comment long enough that it is still open
+        // (unclosed) at the HTML_PARSE_BUDGET (4096) cut point -- Jsoup contributes no text for an
+        // unterminated comment, so the budget-limited extract comes back at exactly 150, even
+        // though the paragraph after the comment is never seen by that first pass.
+        final String html = "<p>" + "a".repeat(150) + "</p>"
+                + "<!--" + "x".repeat(6000) + "-->"
+                + "<p>more visible text after the cutoff</p>";
+        final Map<String, Object> map = new HashMap<>();
+        map.put(WYSIWYG_VAR, html);
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String preview = (String) map.get(WYSIWYG_VAR);
+        assertTrue("A budget-limited extract that landed exactly on the bound must still be "
+                        + "marked as truncated, since the html itself was cut",
+                preview.endsWith("…"));
+        assertTrue("Preview must still honor the <=150-character bound including the marker",
+                preview.length() <= 150);
+    }
+
     // --- T012: TransformOptions ordinal placement ----------------------------------------------
 
     /**

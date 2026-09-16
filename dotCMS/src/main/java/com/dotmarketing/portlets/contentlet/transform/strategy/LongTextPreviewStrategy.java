@@ -111,7 +111,18 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
         final String html = (String) rawValue;
         final String raw = extractVisibleText(html, HTML_PARSE_BUDGET);
         if (raw.length() >= MAX_PREVIEW_LENGTH || html.length() <= HTML_PARSE_BUDGET) {
-            return truncate(raw);
+            // A budget-limited extract (html longer than HTML_PARSE_BUDGET) that came back at or
+            // over the preview bound may still have dropped real text past the cut point -- the
+            // parse only ever saw the first HTML_PARSE_BUDGET characters of the raw value, never
+            // the rest. `truncate` alone cannot tell the difference between "exactly 150 visible
+            // characters and nothing more" and "150 visible characters because that's all this
+            // prefix had room for" once it is handed exactly MAX_PREVIEW_LENGTH characters (the
+            // same one-character gap already closed for the Story Block path -- found in review).
+            // Forcing the marker whenever the html itself was cut removes the ambiguity.
+            final boolean htmlWasCut = html.length() > HTML_PARSE_BUDGET;
+            return truncate(htmlWasCut && raw.length() >= MAX_PREVIEW_LENGTH
+                    ? raw + TRUNCATION_MARKER
+                    : raw);
         }
         // The narrow budget's extracted text is shorter than the preview bound, even though the
         // raw value is long enough that it might carry more visible text further in -- a body
