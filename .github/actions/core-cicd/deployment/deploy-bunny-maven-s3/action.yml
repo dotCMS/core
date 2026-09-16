@@ -1,4 +1,4 @@
-name: 'Deploy Maven Artifacts to S3'
+name: 'Deploy Maven Artifacts to Bunny S3'
 description: |
   Publish the locally-installed dotCMS Maven artifacts to the BunnyCDN
   S3-compatible storage zone. This replaces the former Artifactory

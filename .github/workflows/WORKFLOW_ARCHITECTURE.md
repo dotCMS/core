@@ -81,7 +81,7 @@ graph TB
         direction LR
         ATitle["🔧 Composite Actions"]
         A1["Core CI/CD:<br/>maven-job • setup-java<br/>prepare-runner • cleanup-runner"]
-        A2["Deployment:<br/>deploy-docker • deploy-maven-s3<br/>deploy-cli-npm • deploy-javadoc"]
+        A2["Deployment:<br/>deploy-docker • deploy-bunny-maven-s3<br/>deploy-cli-npm • deploy-javadoc"]
         A3["Support:<br/>notify-slack • issue-fetcher<br/>issue-labeler • sbom-generator"]
     end
 
@@ -613,7 +613,7 @@ on:
 | Action | Purpose | Used By |
 |--------|---------|---------|
 | **deploy-docker** | Multi-platform Docker builds | Deployment phase |
-| **deploy-maven-s3** | S3 Maven repository deployment | Deployment, Release |
+| **deploy-bunny-maven-s3** | S3 Maven repository deployment | Deployment, Release |
 | **deploy-cli-npm** | CLI NPM publishing | Deployment phase |
 | **deploy-javadoc** | Javadoc S3 upload | Release phase |
 | **deploy-javascript-sdk** | SDK NPM publishing | Deployment phase |

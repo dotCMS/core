@@ -324,7 +324,7 @@ jobs:
       - name: CLI Deploy
         id: cli_deploy
         if: inputs.deploy-cli && steps.get-sdkman-version.outputs.java_suffix == ''
-        uses: ./.github/actions/core-cicd/deployment/deploy-maven-s3
+        uses: ./.github/actions/core-cicd/deployment/deploy-bunny-maven-s3
         with:
           # Release builds carry the real version from the release build; other
           # environments publish the project version (e.g. 1.0.0-SNAPSHOT).

@@ -33,7 +33,7 @@ Artifactory used to create.
 
 ```yaml
 - name: Deploy Maven artifacts
-  uses: ./.github/actions/core-cicd/deployment/deploy-maven-s3
+  uses: ./.github/actions/core-cicd/deployment/deploy-bunny-maven-s3
   with:
     access-key-id: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
     secret-access-key: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}

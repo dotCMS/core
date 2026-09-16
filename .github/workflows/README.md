@@ -218,7 +218,7 @@ Located in `.github/actions/`:
 
 ### Deployment Actions  
 - **deploy-docker**: Multi-platform Docker builds and pushes
-- **deploy-maven-s3**: S3 Maven repository deployments
+- **deploy-bunny-maven-s3**: S3 Maven repository deployments
 - **deploy-cli-npm**: CLI NPM package publishing
 - **deploy-javadoc**: S3 javadoc uploads
 - **deploy-javascript-sdk**: SDK NPM publishing
