@@ -14,6 +14,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.transform.strategy.DefaultTransformStrategy;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -100,7 +101,13 @@ public class ContentletToMapTransformer {
         try {
             final Host host = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser()
                 , true);
-            properties.put(Contentlet.HOST_NAME, host != null ? host.getHostname() : NA );
+            //`hostName` is a derived property - the name of the Site this Contentlet lives on - but
+            //the Host Content Type declares a real field with that same variable ("Site Key"). See
+            //DefaultTransformStrategy.declaresField: writing the derived value over a declared
+            //field would make every Site report "System Host", since every Site lives on it.
+            if (!DefaultTransformStrategy.declaresField(type, Contentlet.HOST_NAME)) {
+                properties.put(Contentlet.HOST_NAME, host != null ? host.getHostname() : NA );
+            }
         } catch (DotDataException | DotSecurityException e) {
             Logger.warn(this, "Unable to set property: " + Contentlet.HOST_NAME, e);
         }
