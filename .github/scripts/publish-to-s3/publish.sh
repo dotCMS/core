@@ -188,7 +188,7 @@ update_artifact_metadata() {
   local artifact="$1" version="$2" ts
   ts="$(date -u +%Y%m%d%H%M%S)"
   local base="$S3_PREFIX/com/dotcms/$artifact"
-  local tmp versions latest release v
+  local tmp versions latest release v plain
 
   tmp="$(mktemp -d)"
   CLEANUP_DIRS+=("$tmp")
