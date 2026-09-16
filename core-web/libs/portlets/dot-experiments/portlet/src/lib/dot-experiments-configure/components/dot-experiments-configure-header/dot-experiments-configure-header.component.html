@@ -70,7 +70,14 @@
         </p-button>
     }
 
-    <p-menu #actionsMenu [model]="$menuItems()" [popup]="true" appendTo="body" />
+    <!--
+        `hidden` on the host, not on the menu: `appendTo="body"` moves the *popup* out, but this
+        element stays in the flex row as a zero-width item and drags the row's `gap` with it,
+        pushing the kebab 7px in from the header's edge — where it stopped lining up with the
+        panel's own buttons above it. The popup is positioned against the button passed to
+        `toggle($event)`, so the host's display has nothing to do with where it opens.
+    -->
+    <p-menu #actionsMenu [model]="$menuItems()" [popup]="true" appendTo="body" class="hidden" />
 
     @if ($addToBundleAssetId(); as assetIdentifier) {
         <dot-add-to-bundle

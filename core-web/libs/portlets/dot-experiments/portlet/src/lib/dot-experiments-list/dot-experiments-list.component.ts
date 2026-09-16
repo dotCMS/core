@@ -123,7 +123,10 @@ import {
         DotExperimentsService
     ],
     host: {
-        class: 'flex flex-col h-full min-h-0 animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
+        class: 'flex flex-col h-full min-h-0 animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none',
+        // Reaching the datatable's cells needs a hook the stylesheet can see; `$inPanel` is a
+        // field, so this is fixed for the component's life, like the mode it reflects.
+        '[class.dot-experiments-list--in-panel]': '$inPanel'
     }
 })
 export class DotExperimentsListComponent {

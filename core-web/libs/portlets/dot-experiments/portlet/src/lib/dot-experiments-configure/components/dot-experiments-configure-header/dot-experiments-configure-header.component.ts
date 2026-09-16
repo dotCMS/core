@@ -11,8 +11,10 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
+import { confirmLeavingUnsavedChanges } from '../../../guards/unsaved-changes.guard';
 import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
 import {
     NEW_EXPERIMENT_TITLE_KEY,
@@ -54,11 +56,22 @@ const SUBLINE_SEPARATOR = ' · ';
     ],
     templateUrl: './dot-experiments-configure-header.component.html',
     host: {
-        class: 'flex flex-none items-center justify-between gap-6 border-b border-surface-200 bg-white px-8 py-4'
+        class: 'flex flex-none items-center justify-between gap-6 border-b border-surface-200 bg-white py-4',
+        /**
+         * The fourth surface in the panel's column, and it was the odd one out: `px-8` is 28px
+         * against the 17.5px the drawer header, the list toolbar and the table's outer cells now
+         * share, so the experiment's title sat a centimetre right of the panel's own. The portlet
+         * keeps `px-8` — it is a full page there, with room to breathe that the panel does not have.
+         */
+        '[class.px-8]': '!$inPanel',
+        '[class.px-5!]': '$inPanel'
     }
 })
 export class DotExperimentsConfigureHeaderComponent {
     readonly store = inject(DotExperimentsConfigureStore);
+
+    /** Panel mode, for the host's inset. Fixed for this component's life, like the mode it reflects. */
+    protected readonly $inPanel = !!inject(DotExperimentsPanelStore, { optional: true });
 
     /** Name as typed, so the title follows the Details card without waiting for the autosave. */
     readonly $title = computed<string>(() => {
@@ -198,7 +211,26 @@ export class DotExperimentsConfigureHeaderComponent {
      * `/experiments/new` for the experiment's own URL, and this button has to answer the same way
      * on either side of that swap.
      */
-    onBackToList(): void {
+    async onBackToList(): Promise<void> {
+        /**
+         * The panel has no `canDeactivate`, so the same Back that is guarded in the portlet is
+         * unguarded here — this button changes a store field rather than a URL, and
+         * `experimentsUnsavedChangesGuard` never runs (FR-019).
+         *
+         * Only in panel mode: in the portlet the router navigation raises the guard, and asking
+         * here as well would put the same dialog in front of the editor twice.
+         */
+        if (this.#experimentsRouter.inPanel) {
+            const mayLeave = await confirmLeavingUnsavedChanges(
+                { store: this.store, confirmationService: this.#confirmationService },
+                this.#dotMessageService
+            );
+
+            if (!mayLeave) {
+                return;
+            }
+        }
+
         this.#experimentsRouter.toList();
     }
 

@@ -20,7 +20,10 @@
             (buttonAction)="onRetry()" />
     </div>
 } @else {
-    <p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
+    <p-toolbar
+        class="justify-start gap-1 border-x-0! border-t-0!"
+        [class.px-3]="!$inPanel"
+        [class.px-5!]="$inPanel">
         <div class="flex w-full items-center gap-2 py-3">
             <p-iconField iconPosition="left">
                 <p-inputIcon>
