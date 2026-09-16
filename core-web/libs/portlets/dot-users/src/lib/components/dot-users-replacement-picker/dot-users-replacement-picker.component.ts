@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 
+import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUsersReplacementPickerStore } from './store/dot-users-replacement-picker.store';
@@ -51,8 +52,17 @@ export class DotUsersReplacementPickerComponent {
     /** Emits every selection change (user or null when cleared). */
     readonly selectionChange = output<DotUserListItem | null>();
 
-    protected readonly $isLoading = this.#store.isLoading;
-    protected readonly $hasError = this.#store.hasError;
+    /**
+     * Derived from the single `status` signal on the store. The store
+     * uses `ComponentStatus` (LOADING / LOADED / IDLE / ERROR) instead
+     * of separate `isLoading` / `hasError` booleans so the mutually
+     * exclusive states cannot drift out of sync. The template keeps
+     * asking simple yes/no questions via these computeds.
+     */
+    protected readonly $isLoading = computed(
+        () => this.#store.status() === ComponentStatus.LOADING
+    );
+    protected readonly $hasError = computed(() => this.#store.status() === ComponentStatus.ERROR);
 
     /**
      * Server suggestions minus any user id the caller marked as

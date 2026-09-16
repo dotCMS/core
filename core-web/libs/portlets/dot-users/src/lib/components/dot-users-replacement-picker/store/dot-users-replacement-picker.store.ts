@@ -6,23 +6,33 @@ import { inject } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
 import { DotUserListItem, DotUsersService } from '../../../services/dot-users.service';
 
 export interface DotUsersReplacementPickerState {
     suggestions: DotUserListItem[];
-    isLoading: boolean;
     /**
-     * Distinct from "no matches" so a 500 doesn't look like an empty
-     * result set. Consumed by the picker's empty-template to swap the
-     * copy.
+     * Single status field instead of separate `isLoading` / `hasError`
+     * booleans — the standard `ComponentStatus` shape used across the
+     * dotCMS portlets. Avoids the loading anti-pattern where mutually
+     * exclusive states can drift out of sync.
+     *
+     * States we hit:
+     *   IDLE    → picker just mounted, or a search resolved to no
+     *             results (no error, nothing loading).
+     *   LOADING → a request is in flight.
+     *   LOADED  → the last request returned successfully; suggestions
+     *             may be a non-empty list or an empty one (no matches).
+     *   ERROR   → the last request failed; the empty-template swaps
+     *             to the error copy.
      */
-    hasError: boolean;
+    status: ComponentStatus;
 }
 
 const initialState: DotUsersReplacementPickerState = {
     suggestions: [],
-    isLoading: false,
-    hasError: false
+    status: ComponentStatus.IDLE
 };
 
 /**
@@ -49,7 +59,7 @@ export const DotUsersReplacementPickerStore = signalStore(
              * subscription lifetime automatically (no `take(1)` here,
              * per the portlet guide).
              *
-             * A failed fetch flips `hasError` and clears the
+             * A failed fetch flips `status` to `ERROR` and clears the
              * suggestion list — the empty-template then swaps to the
              * error copy. We don't route through `httpErrorManager`
              * because the picker embeds inline (delete confirm,
@@ -59,7 +69,7 @@ export const DotUsersReplacementPickerStore = signalStore(
              */
             search: rxMethod<string>(
                 pipe(
-                    tap(() => patchState(store, { isLoading: true, hasError: false })),
+                    tap(() => patchState(store, { status: ComponentStatus.LOADING })),
                     switchMap((query) =>
                         usersService
                             .getUsersPaginated({ filter: query, page: 1, perPage: 10 })
@@ -67,13 +77,12 @@ export const DotUsersReplacementPickerStore = signalStore(
                                 tap((response) =>
                                     patchState(store, {
                                         suggestions: response.entity ?? [],
-                                        isLoading: false
+                                        status: ComponentStatus.LOADED
                                     })
                                 ),
                                 catchError(() => {
                                     patchState(store, {
-                                        isLoading: false,
-                                        hasError: true,
+                                        status: ComponentStatus.ERROR,
                                         suggestions: []
                                     });
 
