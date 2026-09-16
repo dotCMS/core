@@ -1,6 +1,8 @@
 package com.dotcms.storage.binary;
 
 import com.dotmarketing.util.Config;
+import com.dotmarketing.business.APILocator;
+import java.util.function.Supplier;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import org.quartz.JobExecutionContext;
@@ -52,18 +54,20 @@ public class BinaryCacheEvictionJob implements StatefulJob {
     private static final long BYTES_PER_MB = 1024L * 1024L;
     private static final int LARGE_CACHE_FILE_WARNING_THRESHOLD = 500_000;
 
+    private final Supplier<BinaryAssetStorageAPI> binaryStorage;
+
     public BinaryCacheEvictionJob() {
-        // Empty constructor required by Quartz
+        this(APILocator::getBinaryAssetStorageAPI);
+    }
+
+    BinaryCacheEvictionJob(final Supplier<BinaryAssetStorageAPI> binaryStorage) {
+        this.binaryStorage = binaryStorage;
     }
 
     @Override
     public void execute(final JobExecutionContext ctx) throws JobExecutionException {
 
-        // Gate: only run in BINARY_CHAIN mode
-        final String storageType = Config.getStringProperty(
-                BinaryAssetStorageAPIImpl.BINARY_ASSET_STORAGE_TYPE_PROP, "FILE_SYSTEM");
-        if (!"BINARY_CHAIN".equalsIgnoreCase(storageType)) {
-            Logger.info(this, "BinaryCacheEvictionJob skipped — not in BINARY_CHAIN mode");
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
             return;
         }
 
@@ -80,6 +84,11 @@ public class BinaryCacheEvictionJob implements StatefulJob {
         final List<FileInfo> files;
         try {
             files = collectBinaryAssetFiles(assetRoot);
+            // Completed renditions share the cache budget; transient files are never candidates.
+            final String generatedRoot = ConfigUtils.getDotGeneratedPath();
+            if (generatedRoot != null) {
+                files.addAll(collectBinaryAssetFiles(new File(generatedRoot), true));
+            }
         } catch (final IOException e) {
             Logger.error(this, "BinaryCacheEvictionJob: failed to walk asset directory: " + e.getMessage(), e);
             return;
@@ -122,12 +131,16 @@ public class BinaryCacheEvictionJob implements StatefulJob {
             }
 
             try {
-                if (Files.deleteIfExists(fileInfo.path)) {
+                if (Files.size(fileInfo.path) != fileInfo.size
+                        || Files.getLastModifiedTime(fileInfo.path).toMillis() != fileInfo.lastModified) {
+                    continue;
+                }
+                if (binaryStorage.get().evictLocalFile(fileInfo.path.toFile())) {
                     totalBytes -= fileInfo.size;
                     freedBytes += fileInfo.size;
                     evictedCount++;
                 }
-            } catch (final IOException e) {
+            } catch (final Exception e) {
                 Logger.warn(this, String.format(
                         "BinaryCacheEvictionJob: failed to delete %s: %s",
                         fileInfo.path, e.getMessage()));
@@ -155,7 +168,11 @@ public class BinaryCacheEvictionJob implements StatefulJob {
      * @throws IOException if the directory walk fails
      */
     List<FileInfo> collectBinaryAssetFiles(final File assetRoot) throws IOException {
+        return collectBinaryAssetFiles(assetRoot, false);
+    }
 
+    private List<FileInfo> collectBinaryAssetFiles(final File assetRoot, final boolean generated) throws IOException {
+        final boolean s3 = com.dotcms.storage.AssetStorageFeature.isEnabled();
         final List<FileInfo> files = new ArrayList<>();
 
         if (!assetRoot.exists() || !assetRoot.isDirectory()) {
@@ -164,7 +181,8 @@ public class BinaryCacheEvictionJob implements StatefulJob {
 
         // Level 1: single-char prefix directories (inode first char)
         final File[] level1Dirs = assetRoot.listFiles(
-                f -> f.isDirectory() && f.getName().length() == 1);
+                f -> f.isDirectory() && f.getName().length() == 1
+                        && (!s3 || !Files.isSymbolicLink(f.toPath())));
         if (level1Dirs == null) {
             return files;
         }
@@ -172,15 +190,19 @@ public class BinaryCacheEvictionJob implements StatefulJob {
         for (final File l1 : level1Dirs) {
             // Level 2: single-char prefix directories (inode second char)
             final File[] level2Dirs = l1.listFiles(
-                    f -> f.isDirectory() && f.getName().length() == 1);
+                    f -> f.isDirectory() && f.getName().length() == 1
+                        && (!s3 || !Files.isSymbolicLink(f.toPath())));
             if (level2Dirs == null) {
                 continue;
             }
 
             for (final File l2 : level2Dirs) {
-                // Walk 3 levels deep: inode/field/file
-                try (final Stream<Path> walk = Files.walk(l2.toPath(), 3)) {
-                    walk.filter(Files::isRegularFile)
+                // Immutable revisions add two levels: inode/field/.revisions/revision/file.
+                final int depth = com.dotcms.storage.AssetStorageFeature.isEnabled() ? 5 : 3;
+                try (final Stream<Path> walk = Files.walk(l2.toPath(), depth)) {
+                    walk.filter(path -> !Files.isSymbolicLink(path) && Files.isRegularFile(path))
+                            .filter(path -> !s3 || BinaryAssetStorageAPIImpl.isEvictableAssetPath(
+                                    assetRoot.toPath().relativize(path), generated))
                             .forEach(path -> {
                                 try {
                                     files.add(new FileInfo(

@@ -398,6 +398,15 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
      */
     private Optional<File> getBinary(final Field field, final String inode,
             final FieldValue<?> storedValue) {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()
+                && storedValue instanceof com.dotcms.content.model.type.system.AbstractBinaryFieldType) {
+            final String key = ((com.dotcms.content.model.type.system.AbstractBinaryFieldType) storedValue).storageKey();
+            if (key != null) {
+                return Optional.of(com.dotcms.storage.binary.BinaryAssetReference.withMetadata(
+                        com.dotcms.storage.binary.BinaryAssetReference.localFile(inode, field.variable(), key),
+                        inode, field.variable(), ((com.dotcms.content.model.type.system.AbstractBinaryFieldType) storedValue).metadataStorageKey()));
+            }
+        }
         // This validation is here to prevent an exception.
         // Cause the json gets saved twice by internalCheckin and the first time it does it no inode is set yet
 
@@ -419,7 +428,18 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         final Object storedName = null != storedValue ? storedValue.value() : null;
         if (storedName instanceof String && isSet((String) storedName)
                 && !((String) storedName).contains("/") && !((String) storedName).contains("\\")) {
-            return Optional.of(new java.io.File(binaryFileFolder, (String) storedName));
+            final File file = new java.io.File(binaryFileFolder, (String) storedName);
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()
+                    && storedValue instanceof com.dotcms.content.model.type.system.AbstractBinaryFieldType) {
+                return Optional.of(com.dotcms.storage.binary.BinaryAssetReference.withMetadata(file, inode,
+                        field.variable(), ((com.dotcms.content.model.type.system.AbstractBinaryFieldType) storedValue).metadataStorageKey()));
+            }
+            return Optional.of(file);
+        }
+
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            final File[] files = binaryFileFolder.listFiles(new com.dotmarketing.portlets.contentlet.business.BinaryFileFilter());
+            return files != null && files.length > 0 ? Optional.of(files[0]) : Optional.empty();
         }
 
         // Legacy json without a stored filename resolves through binary storage.
@@ -474,6 +494,14 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         final Optional<FieldValueBuilder> fieldValueBuilder = field.fieldValue(value);
         if (fieldValueBuilder.isPresent()) {
             FieldValueBuilder builder = fieldValueBuilder.get();
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled() && value instanceof File
+                    && builder instanceof com.dotcms.content.model.type.system.BinaryFieldType.Builder) {
+                ((com.dotcms.content.model.type.system.BinaryFieldType.Builder) builder).storageKey(
+                        com.dotcms.storage.binary.BinaryAssetReference.keyOf((File) value,
+                                contentlet.getInode(), field.variable()))
+                        .metadataStorageKey(com.dotcms.storage.binary.BinaryAssetReference.metadataKeyOf(
+                                (File) value, contentlet.getInode(), field.variable()));
+            }
             final List<Tuple2<HydrationDelegate,String>> delegateAndFields = getHydrationDelegatesFromAnnotations(builder.getClass());
             for (Tuple2<HydrationDelegate,String> delegateAndField : delegateAndFields) {
                 final HydrationDelegate delegate = delegateAndField._1();

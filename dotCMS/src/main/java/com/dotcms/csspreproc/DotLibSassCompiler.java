@@ -65,6 +65,17 @@ public class DotLibSassCompiler extends DotCSSCompiler {
     @Override
     public void compile() throws DotSecurityException, DotStateException, DotDataException, IOException {
 
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+                compileInternal();
+            }
+        } else {
+            compileInternal();
+        }
+    }
+
+    private void compileInternal() throws DotSecurityException, DotDataException, IOException {
+
         String trying = inputURI.substring(0, inputURI.lastIndexOf('.')) + "." + getDefaultExtension();
         final File compileDir  = createCompileDir( inputHost, trying, inputLive );
 
@@ -88,7 +99,9 @@ public class DotLibSassCompiler extends DotCSSCompiler {
             }
 
             final FileAsset mainFile = APILocator.getFileAssetAPI()
-                .fromContentlet(APILocator.getContentletAPI().find(info.get().getWorkingInode(),
+                .fromContentlet(APILocator.getContentletAPI().find(
+                        com.dotcms.storage.AssetStorageFeature.isEnabled() && live
+                                ? info.get().getLiveInode() : info.get().getWorkingInode(),
                         APILocator.systemUser(), true));
 
             // build directories to build scss
@@ -102,10 +115,23 @@ public class DotLibSassCompiler extends DotCSSCompiler {
             }
             final File compileDestinationFile = new File(compileTargetFile.getAbsoluteFile() + ".css");
             final CompilerOptions options = new CompilerOptions.Builder().sourceMap(this.sourceMap).build();
+            // Source maps remain request-private and uncached, as in the servlet's existing contract.
+            final File storedCSS = com.dotcms.storage.AssetStorageFeature.isEnabled() && !sourceMap
+                    ? compiledCacheFile(mainFile.getInode(), options) : null;
+            if (storedCSS != null) {
+                final File cached = APILocator.getBinaryAssetStorageAPI().getGeneratedFile(storedCSS);
+                if (cached != null && (req == null || req.getParameter("recompile") == null)) {
+                    this.output = java.nio.file.Files.readAllBytes(cached.toPath());
+                    return;
+                }
+            }
             final DartSassCompiler compiler = new DartSassCompiler(options, compileTargetFile, compileDestinationFile);
             final Optional<String> out = compiler.compile();
             handleOutput(compiler.terminalOutput());
             this.output = out.isPresent() ? out.get().getBytes() : null;
+            if (storedCSS != null && this.output != null && compiler.terminalOutput().exitValue() == 0) {
+                storeCompiledOutput(storedCSS);
+            }
         } catch (final Exception ex) {
             final String errorMsg = String.format("Unable to compile SASS code in %s:%s [ live:%s ]: %s", inputHost,
                     inputURI, inputLive, ex.getMessage());
@@ -116,6 +142,47 @@ public class DotLibSassCompiler extends DotCSSCompiler {
           DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
             FileUtil.deltree(compileDir);
           });
+        }
+    }
+
+    private File compiledCacheFile(final String inode, final CompilerOptions options) {
+        final StringBuilder identity = new StringBuilder("css-v1:")
+                .append(com.liferay.portal.util.ReleaseInfo.getVersion()).append(':')
+                .append(com.liferay.portal.util.ReleaseInfo.getBuildNumber()).append(':')
+                .append(inputHost.getIdentifier()).append(':').append(inputURI).append(':')
+                .append(live).append(':').append(options.generate());
+        sourceDigests.forEach((path, digest) -> identity.append(':').append(path.length())
+                .append(':').append(path).append(':').append(digest));
+        final String hash = org.apache.commons.codec.digest.DigestUtils.md5Hex(identity.toString());
+        return new File(com.dotmarketing.util.ConfigUtils.getDotGeneratedPath(),
+                inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/dotGenerated_css_" + hash + ".css");
+    }
+
+    private void storeCompiledOutput(final File target) throws IOException, DotDataException {
+        final java.nio.file.Path path = target.toPath();
+        java.nio.file.Files.createDirectories(path.getParent());
+        final java.nio.file.Path temporary = java.nio.file.Files.createTempFile(path.getParent(), "css-", ".tmp");
+        try {
+            java.nio.file.Files.write(temporary, this.output);
+            try {
+                java.nio.file.Files.move(temporary, path, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                java.nio.file.Files.move(temporary, path, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            try {
+                APILocator.getBinaryAssetStorageAPI().storeGeneratedFile(target);
+            } catch (DotDataException e) {
+                // Failed publication must not leave a warm-only result that is never uploaded on retry.
+                try {
+                    java.nio.file.Files.deleteIfExists(path);
+                } catch (IOException cleanup) {
+                    e.addSuppressed(cleanup);
+                }
+                throw e;
+            }
+        } finally {
+            java.nio.file.Files.deleteIfExists(temporary);
         }
     }
 

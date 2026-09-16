@@ -66,6 +66,18 @@ public class BinaryCleanupJob implements StatefulJob {
     Logger.info(this.getClass(), "STARTING TMP/TRASH FILE CLEANUP");
 
     cleanUpTmpUploadedFiles();
+    if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+      try {
+        com.dotcms.storage.TemporaryAssetStorage.getInstance().cleanupExpired();
+      } catch (com.dotmarketing.exception.DotDataException e) {
+        Logger.error(this.getClass(), "Unable to clean expired S3 temporary uploads; next cleanup will retry", e);
+      }
+      try {
+        com.dotcms.storage.WebdavTemporaryStorage.getInstance().cleanupExpired();
+      } catch (com.dotmarketing.exception.DotDataException e) {
+        Logger.error(this.getClass(), "Unable to clean expired S3 WebDAV uploads; next cleanup will retry", e);
+      }
+    }
     cleanUpOldBundles();
     cleanUpTrashFolder();
     cleanUpLocalBackupDirectory();

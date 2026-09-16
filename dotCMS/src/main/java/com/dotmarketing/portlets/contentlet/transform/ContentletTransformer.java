@@ -333,8 +333,30 @@ public class ContentletTransformer implements DBTransformer<Contentlet> {
                     } else {
                         if (LegacyFieldTypes.BINARY.legacyValue()
                                 .equals(field.getFieldType())) {
+                            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
                             value = APILocator.getBinaryAssetStorageAPI()
                                     .getBinaryFile(inode, field.getVelocityVarName());
+                            } else {
+                            java.io.File binaryFile = null;
+                            final java.io.File binaryFilefolder = new java.io.File(
+                                    APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                                            + java.io.File.separator
+                                            + inode.charAt(0)
+                                            + java.io.File.separator
+                                            + inode.charAt(1)
+                                            + java.io.File.separator
+                                            + inode
+                                            + java.io.File.separator
+                                            + field.getVelocityVarName());
+                            if (binaryFilefolder.exists()) {
+                                java.io.File[] files = binaryFilefolder
+                                        .listFiles(new com.dotmarketing.portlets.contentlet.business.BinaryFileFilter());
+                                if (files.length > 0) {
+                                    binaryFile = files[0];
+                                }
+                            }
+                            value = binaryFile;
+                            }
                         } else {
                             value = getObjectValue(originalMap, field);
                         }

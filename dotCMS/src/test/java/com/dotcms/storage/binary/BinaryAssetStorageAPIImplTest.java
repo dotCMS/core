@@ -28,6 +28,19 @@ import static org.mockito.Mockito.*;
  * Verifies delegation to {@link StoragePersistenceAPI} with correct group names and paths.
  */
 class BinaryAssetStorageAPIImplTest {
+    private String previousFeatureFlag;
+
+    @org.junit.jupiter.api.BeforeEach
+    void enableS3FeatureForTest() {
+        previousFeatureFlag = Config.getStringProperty(com.dotcms.storage.AssetStorageFeature.FLAG, null);
+        Config.setProperty(com.dotcms.storage.AssetStorageFeature.FLAG, true);
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void restoreS3FeatureAfterTest() {
+        Config.setProperty(com.dotcms.storage.AssetStorageFeature.FLAG, previousFeatureFlag);
+    }
+
 
     private static final String GROUP = BinaryAssetStorageAPI.BINARY_ASSETS_GROUP;
     private static final String INODE = "abc123";
@@ -93,13 +106,14 @@ class BinaryAssetStorageAPIImplTest {
     }
 
     @Test
-    void test_existsBinary_delegates_to_existsObject_at_field_level() throws Exception {
-        when(mockStorage.existsObject(GROUP, EXPECTED_FIELD_PATH)).thenReturn(true);
+    void test_existsBinary_lists_files_at_field_level() throws Exception {
+        when(mockStorage.listObjectPaths(GROUP, EXPECTED_FIELD_PATH))
+                .thenReturn(java.util.List.of(EXPECTED_FILE_PATH));
 
         final boolean result = api.existsBinary(INODE, FIELD_VAR);
 
         assertTrue(result);
-        verify(mockStorage).existsObject(GROUP, EXPECTED_FIELD_PATH);
+        verify(mockStorage).listObjectPaths(GROUP, EXPECTED_FIELD_PATH);
     }
 
     @Test
@@ -223,6 +237,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final File result = api.getBinaryFile(INODE, FIELD_VAR);
 
@@ -241,6 +257,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final File result = api.getBinaryFile(INODE, FIELD_VAR);
 
@@ -259,6 +277,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final File result = api.getBinaryFile(INODE, FIELD_VAR);
 
@@ -275,6 +295,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final File result = api.getBinaryFile(INODE, FIELD_VAR);
 
@@ -292,6 +314,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final File result = api.getBinaryFile(INODE, FIELD_VAR);
 
@@ -305,6 +329,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final File result = api.getBinaryFile(INODE, FIELD_VAR);
 
@@ -321,6 +347,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 try (InputStream result = api.getBinaryStream(INODE, FIELD_VAR)) {
                     assertNotNull(result);
@@ -335,6 +363,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final InputStream result = api.getBinaryStream(INODE, FIELD_VAR);
 
@@ -399,6 +429,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 fsApi.storeBinary(INODE, FIELD_VAR, "Report.PDF", sourceFile, true);
 
@@ -422,6 +454,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 fsApi.storeBinary(INODE, FIELD_VAR, "MyImage.JPG", sourceFile, true);
 
@@ -445,6 +479,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 // Field dir doesn't exist yet — storeBinary should create it
                 fsApi.storeBinary(INODE, FIELD_VAR, "test.txt", sourceFile, true);
@@ -468,6 +504,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 fsApi.copyBinary(INODE, destInode, FIELD_VAR, "report.pdf");
 
@@ -491,6 +529,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 fsApi.copyBinary(INODE, destInode, FIELD_VAR, "MyDoc.PDF");
 
@@ -532,6 +572,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 api.deleteAllBinaries(INODE);
 
@@ -550,6 +592,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 // Should not throw — non-existent inode is a no-op
                 assertDoesNotThrow(() -> api.deleteAllBinaries(INODE));
@@ -738,6 +782,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final File result = chainApi.getBinaryFile(INODE, FIELD_VAR);
 
@@ -767,6 +813,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final File result = chainApi.getBinaryFile(INODE, FIELD_VAR);
 
@@ -805,6 +853,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 chainApi.deleteAllBinaries(INODE);
 
@@ -830,6 +880,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 fsApi.deleteAllBinaries(INODE);
 
@@ -863,6 +915,8 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final File result = chainApi.getBinaryFile(INODE, FIELD_VAR);
 
@@ -896,7 +950,10 @@ class BinaryAssetStorageAPIImplTest {
             when(mockFs.deleteObjectAndReferences(eq(GROUP), eq(path1))).thenReturn(true);
             when(mockS3.deleteObjectAndReferences(eq(GROUP), eq(path1))).thenReturn(true);
 
-            when(mockFs.deleteObjectAndReferences(eq(GROUP), eq(path2)))
+            final Path retainedCache = assetRoot.resolve(path2);
+            Files.createDirectories(retainedCache.getParent());
+            Files.writeString(retainedCache, "last cached copy");
+            when(mockS3.deleteObjectAndReferences(eq(GROUP), eq(path2)))
                     .thenThrow(new DotDataException("S3 delete failed for path2"));
 
             when(mockFs.deleteObjectAndReferences(eq(GROUP), eq(path3))).thenReturn(true);
@@ -908,12 +965,16 @@ class BinaryAssetStorageAPIImplTest {
                          mockStatic(com.dotmarketing.util.ConfigUtils.class)) {
                 configUtils.when(com.dotmarketing.util.ConfigUtils::getAssetPath)
                         .thenReturn(assetRoot.toString());
+                configUtils.when(com.dotmarketing.util.ConfigUtils::getDotGeneratedPath)
+                        .thenReturn(assetRoot.resolve("dotGenerated").toString());
 
                 final DotDataException ex = assertThrows(DotDataException.class,
                         () -> chainApi.deleteAllBinaries(INODE));
 
                 // Summary exception should mention the failure count
                 assertTrue(ex.getMessage().contains("1 of 3"));
+                assertEquals("last cached copy", Files.readString(retainedCache));
+                verify(mockFs, never()).deleteObjectAndReferences(GROUP, path2);
 
                 // All 3 deletes should have been attempted (not short-circuited on path2 failure)
                 verify(mockFs).deleteObjectAndReferences(GROUP, path1);

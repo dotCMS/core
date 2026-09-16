@@ -78,7 +78,10 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
             final String hostFolderPath = new StringBuilder(File.separator).append(host.getHostname())
 					.append(!folderPath.endsWith(File.separator)?folderPath + File.separator : folderPath).toString();
 
-            dotDavHelper.createTempFolder(hostFolderPath + newName);
+            final File created = dotDavHelper.createTempFolder(hostFolderPath + newName);
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				return new TempFolderResourceImpl(path + (path.endsWith("/") ? "" : "/") + newName, created, isAutoPub);
+			}
 			File file = new File(File.separator + host.getHostname() + folderPath);
 			TempFolderResourceImpl tempFolderResource = new TempFolderResourceImpl(file.getPath(),file ,isAutoPub);
 			return tempFolderResource;
@@ -115,6 +118,11 @@ public class FolderResourceImpl extends BasicFolderResourceImpl implements Locka
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
 		for (final Resource resource : children) {
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()
+					&& (resource instanceof TempFolderResourceImpl || resource instanceof TempFileResourceImpl)) {
+				if (resource.getName().equals(childName)) return resource;
+				continue;
+			}
 			if(resource instanceof FolderResourceImpl){
 				final String name = ((FolderResourceImpl)resource).getFolder().getName();
 				if(name.equalsIgnoreCase(childName)){
