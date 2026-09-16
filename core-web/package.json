@@ -326,5 +326,17 @@
     "nx": {
         "includedScripts": []
     },
-    "packageManager": "pnpm@12.4.2"
+    "packageManager": "pnpm@12.4.2",
+    "devEngines": {
+        "runtime": {
+            "name": "node",
+            "version": "22.22.3",
+            "onFail": "download"
+        },
+        "packageManager": {
+            "name": "pnpm",
+            "version": "12.4.2",
+            "onFail": "download"
+        }
+    }
 }
