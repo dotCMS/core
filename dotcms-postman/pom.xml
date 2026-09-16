@@ -47,7 +47,7 @@
                     <executable>${pnpm.executable}</executable>
                     <workingDirectory>${project.basedir}</workingDirectory>
                     <environmentVariables>
-                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                        <PATH>${pnpm.bin.dir}:${node.install.dir}:${env.PATH}</PATH>
                     </environmentVariables>
                 </configuration>
                 <executions>

@@ -17,8 +17,14 @@
         <node.install.dir>${maven.multiModuleProjectDirectory}/installs/node</node.install.dir>
         <!-- npm exposes the pnpm binary under <prefix>/bin, not directly in the prefix
              the way corepack's shim used to sit at ${node.install.dir}/pnpm. Consuming
-             modules must invoke this property rather than hardcoding a path. -->
-        <pnpm.executable>${node.install.dir}/bin/pnpm</pnpm.executable>
+             modules must invoke these properties rather than hardcoding a path, and must
+             keep ${pnpm.bin.dir} on PATH: nested `pnpm exec` calls resolve pnpm from PATH
+             (dotcms-webcomponents' build target, libs/sdk/create-app/scripts/verify-package.sh),
+             and pnpm prepends only node_modules/.bin to a child's environment — never the
+             directory holding its own executable. Without it the build silently falls back
+             to whatever pnpm the machine happens to have. -->
+        <pnpm.bin.dir>${node.install.dir}/bin</pnpm.bin.dir>
+        <pnpm.executable>${pnpm.bin.dir}/pnpm</pnpm.executable>
     </properties>
     <build>
         <plugins>
@@ -65,7 +71,7 @@
                       in its default PATH (GitHub Actions ships Node 20).
                     -->
                     <environmentVariables>
-                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                        <PATH>${pnpm.bin.dir}:${node.install.dir}:${env.PATH}</PATH>
                     </environmentVariables>
                 </configuration>
                 <executions>

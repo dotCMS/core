@@ -124,12 +124,15 @@
                     <executable>${pnpm.executable}</executable>
                     <workingDirectory>${project.basedir}</workingDirectory>
                     <!--
-                      Prepend installs/node to PATH so the pnpm shim's
-                      `#!/usr/bin/env node` shebang resolves to our installed
-                      Node 22, not the runner's default Node on PATH.
+                      installs/node/bin carries the pnpm binary, and nested
+                      `pnpm exec` calls (dotcms-webcomponents' build target)
+                      resolve pnpm from PATH — pnpm never puts its own
+                      directory there. installs/node carries node and npm, so
+                      anything shelling out to them gets our Node 22 rather
+                      than the runner's default.
                     -->
                     <environmentVariables>
-                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                        <PATH>${pnpm.bin.dir}:${node.install.dir}:${env.PATH}</PATH>
                         <!--
                           Vitest runs each project's suite in worker processes with
                           separate heaps, so the single-process heap growth that made
@@ -446,7 +449,7 @@
                             <executable>${pnpm.executable}</executable>
                             <workingDirectory>${project.basedir}</workingDirectory>
                             <environmentVariables>
-                                <PATH>${node.install.dir}:${env.PATH}</PATH>
+                                <PATH>${pnpm.bin.dir}:${node.install.dir}:${env.PATH}</PATH>
                             </environmentVariables>
                         </configuration>
                         <executions>
