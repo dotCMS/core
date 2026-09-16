@@ -95,7 +95,7 @@ Common options:
   --region <region>     S3 signing region             (default: ny)
   --dry-run             Print what would be uploaded; do not write
   --no-metadata         (maven) Do not (re)generate maven-metadata.xml
-  --no-checksums        (maven) Do not upload .sha1/.md5 checksums
+  --no-checksums        Do not upload .sha1/.md5 checksums
   --allow-snapshots     (maven) Publish a -SNAPSHOT version (default: refuse)
 
 maven options:
@@ -360,6 +360,7 @@ cmd_file() {
       --endpoint) S3_ENDPOINT="${2:?}"; shift 2 ;;
       --region) S3_REGION="${2:?}"; shift 2 ;;
       --dry-run) dry_run=true; shift ;;
+      --no-checksums) CHECKSUMS=false; shift ;;
       -h|--help) usage; exit 0 ;;
       *) die "Unknown file option: $1" ;;
     esac
@@ -378,6 +379,22 @@ cmd_file() {
 
   log "Uploading $source -> $dest"
   aws_s3 cp "$source" "$dest" "${args[@]}"
+
+  # Publish .sha1/.md5 beside the file, matching the maven mode and the
+  # pre-migration repository, so consumers never hit
+  # "Checksum validation failed, no checksums available".
+  if [[ "$CHECKSUMS" == "true" ]]; then
+    local tmp
+    tmp="$(mktemp -d)"
+    CLEANUP_DIRS+=("$tmp")
+    sha1sum "$source" | awk '{print $1}' > "$tmp/sha1"
+    md5sum "$source" | awk '{print $1}' > "$tmp/md5"
+    local sum_args=(--no-progress --content-type text/plain)
+    [[ "$DRY_RUN" == "true" ]] && sum_args+=(--dryrun)
+    aws_s3 cp "$tmp/sha1" "$dest.sha1" "${sum_args[@]}"
+    aws_s3 cp "$tmp/md5" "$dest.md5" "${sum_args[@]}"
+    log "Uploaded checksums: $dest.sha1, $dest.md5"
+  fi
 
   local public_url="$S3_PUBLIC_URL/$S3_PREFIX/$key"
   log "Artifact URL: $public_url"

@@ -20,6 +20,11 @@ duplicating endpoint/credential wiring in each workflow.
 .github/scripts/publish-to-s3/publish.sh maven --version 26.09.14-01 --dry-run
 ```
 
+Both modes publish `.sha1`/`.md5` sidecars beside the artifacts so consumers
+never hit `Checksum validation failed, no checksums available`; pass
+`--no-checksums` to skip that. `maven` also (re)generates `maven-metadata.xml`
+and its sidecars.
+
 ## Configuration
 
 CLI flags take precedence over these environment variables:
