@@ -1,5 +1,5 @@
 <form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <p class="mb-4 text-xs text-gray-500">{{ 'tools.section-dialog.description' | dm }}</p>
+    <p class="text-color-secondary mb-4">{{ 'tools.section-dialog.description' | dm }}</p>
 
     <div class="field">
         <label for="tools-section-name">
@@ -59,20 +59,19 @@
     <div class="mt-4 flex items-center gap-2">
         @if ($submitted() && form.invalid) {
             <span
-                class="mr-auto inline-flex items-center gap-2 text-xs text-red-600"
+                class="mr-auto inline-flex items-center gap-2 text-red-600"
                 data-testid="tools-section-form-error">
-                <span class="material-symbols-outlined text-base leading-none">warning</span>
+                <span class="material-symbols-outlined text-base! leading-none!">warning</span>
                 <span>{{ 'tools.form.error.summary' | dm }}</span>
             </span>
         } @else {
-            <span class="mr-auto text-xs text-gray-500">
+            <span class="text-color-secondary mr-auto">
                 {{ 'tools.section-dialog.footer.order-hint' | dm }}
             </span>
         }
         <p-button
             [label]="'tools.form.cancel' | dm"
-            severity="secondary"
-            [outlined]="true"
+            [text]="true"
             (onClick)="onCancel()"
             data-testid="tools-section-cancel-btn" />
         <p-button

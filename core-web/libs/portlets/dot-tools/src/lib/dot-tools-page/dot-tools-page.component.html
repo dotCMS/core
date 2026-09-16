@@ -9,6 +9,7 @@
             <p-button
                 [label]="'tools.new-section' | dm"
                 size="small"
+                [outlined]="true"
                 (onClick)="openNewSectionDialog()"
                 data-testid="tools-new-section-btn" />
         </header>
@@ -102,10 +103,10 @@
                             <span
                                 cdkDragHandle
                                 [attr.aria-label]="'tools.section.drag-handle.aria-label' | dm"
-                                class="material-symbols-outlined cursor-grab text-base leading-none text-gray-400 opacity-0 group-hover:opacity-100 active:cursor-grabbing">
+                                class="material-symbols-outlined cursor-grab text-base! leading-none! text-gray-400 opacity-0 group-hover:opacity-100 active:cursor-grabbing">
                                 drag_indicator
                             </span>
-                            <span class="material-symbols-outlined text-lg leading-none">
+                            <span class="material-symbols-outlined text-lg! leading-none!">
                                 {{ section.icon }}
                             </span>
                             <span class="flex-1 truncate">{{ section.name }}</span>
@@ -131,10 +132,10 @@
                             data-row
                             class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-800 opacity-40">
                             <span
-                                class="material-symbols-outlined text-base leading-none text-gray-400">
+                                class="material-symbols-outlined text-base! leading-none! text-gray-400">
                                 drag_indicator
                             </span>
-                            <span class="material-symbols-outlined text-lg leading-none">
+                            <span class="material-symbols-outlined text-lg! leading-none!">
                                 {{ section.icon }}
                             </span>
                             <span class="flex-1 truncate">{{ section.name }}</span>
@@ -145,10 +146,10 @@
                             *cdkDragPreview
                             class="flex w-72 items-center gap-2 rounded-md bg-white px-3 py-2 text-sm text-gray-800 opacity-70 shadow-lg">
                             <span
-                                class="material-symbols-outlined text-base leading-none text-gray-400">
+                                class="material-symbols-outlined text-base! leading-none! text-gray-400">
                                 drag_indicator
                             </span>
-                            <span class="material-symbols-outlined text-lg leading-none">
+                            <span class="material-symbols-outlined text-lg! leading-none!">
                                 {{ section.icon }}
                             </span>
                             <span class="flex-1 truncate">{{ section.name }}</span>
@@ -177,13 +178,13 @@
                                         data-row
                                         (cdkDragMoved)="onToolDragMoved($event, toolListEl)"
                                         (cdkDragEnded)="onToolDragEnded(toolIndex)"
-                                        class="group/tool flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-700 hover:bg-gray-100">
+                                        class="group/tool flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-500 hover:bg-gray-100">
                                         <span
                                             cdkDragHandle
                                             [attr.aria-label]="
                                                 'tools.tool.drag-handle.aria-label' | dm
                                             "
-                                            class="material-symbols-outlined cursor-grab text-sm leading-none text-gray-400 opacity-0 group-hover/tool:opacity-100 active:cursor-grabbing">
+                                            class="material-symbols-outlined cursor-grab text-base! leading-none! text-gray-400 opacity-0 group-hover/tool:opacity-100 active:cursor-grabbing">
                                             drag_indicator
                                         </span>
                                         <span class="flex-1 truncate">{{ tool.title }}</span>
@@ -206,9 +207,9 @@
                                         <div
                                             *cdkDragPlaceholder
                                             data-row
-                                            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-gray-700 opacity-40">
+                                            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-500 opacity-40">
                                             <span
-                                                class="material-symbols-outlined text-sm leading-none text-gray-400">
+                                                class="material-symbols-outlined text-base! leading-none! text-gray-400">
                                                 drag_indicator
                                             </span>
                                             <span class="flex-1 truncate">
@@ -218,9 +219,9 @@
 
                                         <div
                                             *cdkDragPreview
-                                            class="flex w-64 items-center gap-2 rounded-md bg-white px-2 py-1.5 text-xs text-gray-700 opacity-70 shadow-lg">
+                                            class="flex w-64 items-center gap-2 rounded-md bg-white px-2 py-1.5 text-sm text-slate-500 opacity-70 shadow-lg">
                                             <span
-                                                class="material-symbols-outlined text-sm leading-none text-gray-400">
+                                                class="material-symbols-outlined text-base! leading-none! text-gray-400">
                                                 drag_indicator
                                             </span>
                                             <span class="flex-1 truncate">
@@ -247,19 +248,29 @@
                 }
             </ul>
 
-            <footer class="border-t border-gray-100 px-4 py-2 text-xs text-gray-500">
+            <footer class="border-t border-gray-100 p-4 text-sm text-gray-500">
                 {{ 'tools.sections.footer' | dm }}
             </footer>
         }
     </aside>
 
-    <section class="flex min-h-0 flex-1 flex-col px-6 pt-5" data-testid="tools-available-panel">
+    <section
+        class="flex min-h-0 flex-1 flex-col px-6 pt-5 pb-6"
+        data-testid="tools-available-panel">
         @if (store.selectedSection(); as section) {
             <header class="mb-4 flex items-center gap-3">
                 <span class="material-symbols-outlined text-2xl text-gray-700">
                     {{ section.icon }}
                 </span>
                 <h2 class="m-0 text-xl font-semibold tracking-tight">{{ section.name }}</h2>
+                <span
+                    class="material-symbols-outlined text-lg! text-primary cursor-help"
+                    [pTooltip]="'tools.available-tools.info.tooltip' | dm"
+                    tooltipPosition="right"
+                    [attr.aria-label]="'tools.available-tools.info.tooltip' | dm"
+                    data-testid="tools-available-info">
+                    info
+                </span>
             </header>
             <p class="mb-3 text-xs text-gray-500">
                 {{ 'tools.available-tools.instruction' | dm }}
@@ -268,13 +279,14 @@
             <div
                 class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-gray-200 bg-white">
                 <div
-                    class="flex h-12 items-center justify-between border-b border-gray-200 bg-gray-50 px-4">
+                    class="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
                     <span class="text-xs font-bold tracking-wider text-gray-500 uppercase">
                         {{ 'tools.available-tools' | dm }}
                     </span>
                     <p-button
                         [label]="'tools.new-tool' | dm"
                         size="small"
+                        [outlined]="true"
                         (onClick)="openNewToolDialog()"
                         data-testid="tools-new-tool-btn" />
                 </div>
