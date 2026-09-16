@@ -101,10 +101,16 @@ public interface AbstractExperiment extends Serializable, ManifestItem, Ruleable
      *
      * <p>Deliberately a plain {@code default} method rather than a {@code @Value.Derived} or
      * {@code @Value.Lazy} attribute: those are computed at construction or memoized per instance,
-     * which would resolve a user on every Experiment built from the database — including on the
-     * page-render and push-publish paths, which never serialize the object — and would let a
-     * memoized name outlive a rename inside the running-experiments cache. As an ordinary default
-     * method it costs nothing until something serializes the Experiment.
+     * which would resolve a user on every Experiment built from the database — including the
+     * running-experiments cache fill behind page rendering, which serializes only the experiment
+     * id and never the object — and would let a memoized name outlive a rename inside that cache.
+     * As an ordinary default method it costs nothing until something serializes the Experiment.
+     *
+     * <p>Two paths <b>do</b> serialize the whole Experiment and therefore do pay one lookup each:
+     * push-publish bundling ({@code ExperimentBundler}, under {@code dotCMS/src/enterprise/java})
+     * and starter export ({@code ExportStarterUtil}). The resolved value is written into the
+     * bundle and ignored on import by a same-version receiver, since the generated {@code Json}
+     * delegate binds settable attributes only.
      *
      * <p>{@code READ_ONLY} is load-bearing: the generated {@code Experiment.Json} delegate binds
      * settable attributes only, so without it a payload carrying this field would fail to

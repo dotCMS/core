@@ -314,7 +314,7 @@ Endpoints under `/v1/experiments` that do **not** carry an Experiment, and are t
 
 - **A4 — "Full name" means the platform's existing notion of a full name**: first, middle and last
   name joined as `User.getFullName()` already does, rather than a new formatting rule invented here.
-  That method returns an empty string when every part is blank, which is exactly the case FR-010
+  That method joins the parts with spaces and never trims, so it returns a single space when every part is blank, and leaves padding like "Admin " when only one part is set, which is exactly the case FR-010
   covers.
 
 - **A5 — There is no persistence round-trip to break.** Experiments are rebuilt from database columns

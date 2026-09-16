@@ -71,9 +71,11 @@ class ExperimentCreatorNameResolverTest {
     /**
      * Method to test: {@link ExperimentCreatorNameResolver#resolve(String)}
      * Given Scenario: The creator resolves to a User whose first, middle and last name are all
-     *                 blank. {@code User.getFullName()} returns an empty string for that user.
-     * ExpectedResult: {@code "unknown"}, not the empty string — the field is never empty
-     *                 (FR-003, FR-010).
+     *                 blank. {@code User.getFullName()} joins the blank parts with a space, so it
+     *                 returns {@code " "} — a single space, NOT the empty string.
+     * ExpectedResult: {@code "unknown"} — the field is never blank (FR-003, FR-010). Note what
+     *                 makes this work: {@code UtilMethods.isSet} trims before measuring length.
+     *                 A non-trimming emptiness check would let the space through to the column.
      */
     @Test
     void resolve_userWithBlankName_fallsBackToUnknown() throws Exception {
@@ -119,6 +121,37 @@ class ExperimentCreatorNameResolverTest {
     @Test
     void resolve_unexpectedRuntimeFailure_fallsBackToUnknown() throws Exception {
         when(userAPI.loadUserById(CREATOR_ID)).thenThrow(new IllegalStateException("unexpected"));
+
+        assertEquals(UNKNOWN, resolver.resolve(CREATOR_ID));
+    }
+
+    /**
+     * Method to test: {@link ExperimentCreatorNameResolver#resolve(String)}
+     * Given Scenario: The creator has a first name but no last name (or the reverse).
+     *                 {@code User.getFullName()} concatenates unconditionally with a space and
+     *                 does not trim, so it hands back {@code "Admin "}.
+     * ExpectedResult: {@code "Admin"} — the padding must not reach the portlet's Created By
+     *                 column. This is the branch adjacent to the all-blank one, and the reason
+     *                 the resolver trims rather than trusting the source.
+     */
+    @Test
+    void resolve_userWithOnlyAFirstName_returnsTheNameWithoutPadding() throws Exception {
+        when(userAPI.loadUserById(CREATOR_ID)).thenReturn(userNamed("Admin", "", ""));
+
+        assertEquals("Admin", resolver.resolve(CREATOR_ID));
+    }
+
+    /**
+     * Method to test: {@link ExperimentCreatorNameResolver#resolve(String)}
+     * Given Scenario: The user layer returns {@code null} instead of throwing. The production
+     *                 {@code UserAPIImpl} throws {@link NoSuchUserException} rather than returning
+     *                 null, so this pins a defensive branch reachable through any other
+     *                 {@code UserAPI} implementation or decorator.
+     * ExpectedResult: {@code "unknown"}, with no NullPointerException.
+     */
+    @Test
+    void resolve_nullUser_fallsBackToUnknown() throws Exception {
+        when(userAPI.loadUserById(CREATOR_ID)).thenReturn(null);
 
         assertEquals(UNKNOWN, resolver.resolve(CREATOR_ID));
     }

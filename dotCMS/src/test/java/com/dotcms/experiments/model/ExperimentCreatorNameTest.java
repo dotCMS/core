@@ -3,10 +3,12 @@ package com.dotcms.experiments.model;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -50,18 +52,27 @@ class ExperimentCreatorNameTest {
     private static final String CREATOR_NAME = "Admin User";
 
     /**
+     * Deliberately different from {@link #CREATOR_ID}. If both ids were the same, every test here
+     * would still pass with the accessor reading {@code lastModifiedBy()} instead of
+     * {@code createdBy()} — the one mapping this feature exists to get right would be unasserted.
+     */
+    private static final String MODIFIER_ID = "dotcms.org.2";
+    private static final String MODIFIER_NAME = "Other Person";
+
+    /**
      * {@code lookBackWindowExpireTime} is set explicitly on purpose. Leaving it unset makes
-     * Immutables evaluate its {@code @Value.Default}, which reads {@code ConfigExperimentUtil} and
-     * therefore {@code Config} — unavailable in a plain unit-test JVM, where it fails with
-     * {@code ExceptionInInitializerError} long before this feature gets a say. Setting the value
-     * keeps the test failing (and passing) for reasons that belong to #37304.
+     * Immutables evaluate its {@code @Value.Default}, which calls
+     * {@code ConfigExperimentUtil.lookBackWindowDefaultExpireTime()} and through it
+     * {@code APILocator.getExperimentsAPI()} — dragging in the CDI/OpenSearch wiring that no plain
+     * unit-test JVM has, and which is mocked to a stub here anyway. Setting the value keeps the
+     * test failing (and passing) for reasons that belong to #37304.
      */
     private static Experiment anExperiment() {
         return Experiment.builder()
                 .name("Homepage CTA test")
                 .pageId("2d8b8b1e-0000-0000-0000-000000000001")
                 .createdBy(CREATOR_ID)
-                .lastModifiedBy(CREATOR_ID)
+                .lastModifiedBy(MODIFIER_ID)
                 .id("0e8b8b1e-0000-0000-0000-000000000002")
                 .lookBackWindowExpireTime(1_800_000L)
                 .build();
@@ -72,12 +83,14 @@ class ExperimentCreatorNameTest {
     }
 
     /**
-     * Runs the body with {@code APILocator.getUserAPI()} answering with a stub that resolves
-     * {@link #CREATOR_ID} to {@link #adminUser()}.
+     * Runs the body with {@code APILocator.getUserAPI()} answering a stub that resolves
+     * {@link #CREATOR_ID} and {@link #MODIFIER_ID} to <b>different</b> users, so an accessor
+     * reading the wrong field is visible rather than silently equivalent.
      */
     private static void withResolvableCreator(final ThrowingRunnable body) throws Exception {
         final UserAPI userAPI = mock(UserAPI.class);
-        when(userAPI.loadUserById(anyString())).thenReturn(adminUser());
+        when(userAPI.loadUserById(CREATOR_ID)).thenReturn(adminUser());
+        when(userAPI.loadUserById(MODIFIER_ID)).thenReturn(userNamed("Other", "Person"));
 
         try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
             apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
@@ -107,6 +120,8 @@ class ExperimentCreatorNameTest {
             assertTrue(payload.has("createdByUserName"),
                     "The payload should carry createdByUserName");
             assertEquals(CREATOR_NAME, payload.get("createdByUserName").asText());
+            assertNotEquals(MODIFIER_NAME, payload.get("createdByUserName").asText(),
+                    "The name must come from createdBy, never from lastModifiedBy");
         });
     }
 
@@ -178,8 +193,10 @@ class ExperimentCreatorNameTest {
                     "createdBy must still be the user ID");
             assertEquals(CREATOR_ID, experiment.getOwner(),
                     "getOwner() must still resolve from createdBy, not from the new field");
-            assertEquals(CREATOR_ID, payload.get("lastModifiedBy").asText(),
-                    "lastModifiedBy is out of scope and must be untouched");
+            assertEquals(MODIFIER_ID, payload.get("lastModifiedBy").asText(),
+                    "lastModifiedBy is out of scope: still the raw id, and no name companion");
+            assertFalse(payload.has("lastModifiedByUserName"),
+                    "lastModifiedBy must not gain a name companion (FR-008)");
 
             for (final String computed : new String[]{"owner", "identifier", "permissionId",
                     "manifestInfo", "parentPermissionable", "acceptedPermissions"}) {
@@ -224,6 +241,7 @@ class ExperimentCreatorNameTest {
             DotObjectMapperProvider.createDefaultMapper().writeValueAsString(experiment);
 
             verify(userAPI).loadUserById(CREATOR_ID);
+            verify(userAPI, never()).loadUserById(MODIFIER_ID);
         }
     }
 
