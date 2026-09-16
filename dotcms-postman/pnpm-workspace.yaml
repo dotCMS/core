@@ -1,0 +1,21 @@
+# pnpm configuration for dotcms-postman.
+#
+# This module is a pnpm project of its own — its own package.json, its own
+# pnpm-lock.yaml, installed by its own pom — so nothing in core-web reaches it.
+# Without this file it would take pnpm 12's bare defaults while its larger
+# sibling declares a posture; the point of the file is that the choice is made
+# here rather than inherited. See core-web/pnpm-workspace.yaml, which carries the
+# same settings plus everything that only a workspace of that size needs.
+#
+# Single-project setup: no `packages:` key on purpose.
+
+# pnpm 11 changed the default to `install`, which would inject a dependency
+# install into the middle of a Maven build: this module's pom runs its own
+# `pnpm install` and then execs the Newman runner through pnpm, expecting an
+# already-installed tree.
+verifyDepsBeforeRun: warn
+
+# Security posture, stated rather than inherited, matching core-web.
+trustPolicy: no-downgrade
+blockExoticSubdeps: true
+strictDepBuilds: true
