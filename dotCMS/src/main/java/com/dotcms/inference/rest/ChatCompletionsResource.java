@@ -190,7 +190,7 @@ public class ChatCompletionsResource {
     @Path("/completions")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, EVENT_STREAM})
-    public final Response completions(@Context final HttpServletRequest request,
+    public Response completions(@Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
                                       @QueryParam("siteId") final String siteId,
                                       @RequestBody(description = "The completion to run",

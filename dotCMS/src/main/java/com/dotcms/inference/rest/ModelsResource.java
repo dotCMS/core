@@ -127,7 +127,7 @@ public class ModelsResource {
     @InferenceEndpoint
     @RequestCost(Price.HTTP_FETCH)
     @Produces(MediaType.APPLICATION_JSON)
-    public final Response models(@Context final HttpServletRequest request,
+    public Response models(@Context final HttpServletRequest request,
                                  @Context final HttpServletResponse response,
                                  @QueryParam("siteId") final String siteId) {
 

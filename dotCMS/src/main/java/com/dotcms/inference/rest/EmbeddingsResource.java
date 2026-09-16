@@ -152,7 +152,7 @@ public class EmbeddingsResource {
     @RequestCost(Price.HTTP_FETCH)
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public final Response embeddings(@Context final HttpServletRequest request,
+    public Response embeddings(@Context final HttpServletRequest request,
                                      @Context final HttpServletResponse response,
                                      @QueryParam("siteId") final String siteId,
                                      @RequestBody(description = "What to embed",

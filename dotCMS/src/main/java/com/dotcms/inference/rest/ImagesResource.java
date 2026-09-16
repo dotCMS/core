@@ -175,7 +175,7 @@ public class ImagesResource {
     @Path("/generations")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public final Response generations(@Context final HttpServletRequest request,
+    public Response generations(@Context final HttpServletRequest request,
                                       @Context final HttpServletResponse response,
                                       @QueryParam("siteId") final String siteId,
                                       @RequestBody(description = "What to generate",
