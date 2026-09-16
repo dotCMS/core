@@ -105,11 +105,21 @@ strictDepBuilds: true
 # Maven and CI builds that expect to run against an already-installed tree.
 verifyDepsBeforeRun: warn
 
-# minimumReleaseAge is deliberately NOT set. Our registry mirror dotcms-npm.b-cdn.net
-# returns no `time` field on any metadata document (verified live; registry.npmjs.org
-# returns it on the full document), so pnpm cannot evaluate the maturity check through
-# it and the default 1440-minute policy is inert today. Setting
-# minimumReleaseAgeIgnoreMissingTime: false would therefore fail every install, and
-# setting minimumReleaseAge explicitly would flip minimumReleaseAgeStrict to true
-# (pnpm 12.3.0+). Both are left at their defaults until the mirror preserves `time`.
-# Tracked in dotCMS/core#37562 (mirror to preserve `time`, or be retired).
+# Maturity gate. pnpm refuses to resolve a version until it has been public for this
+# long, which is the defence against a freshly compromised release: those are usually
+# detected and pulled within hours. 7 days rather than the 1440-minute (1 day) default,
+# to leave more room for that detection.
+#
+# Declaring this explicitly also turns on minimumReleaseAgeStrict (pnpm 12.3.0+): when no
+# version in a range is old enough, resolution fails instead of quietly falling back to a
+# young one. `pnpm audit --fix` records a security update that must skip the wait in
+# minimumReleaseAgeExclude.
+#
+# minimumReleaseAgeIgnoreMissingTime: false closes the silent hole. The check needs the
+# registry's `time` field; when it is missing, the default is to skip the check without
+# saying so. Our mirror dotcms-npm.b-cdn.net did not return `time` consistently until the
+# Cloud team fixed its cache to honour the Accept header (dotCMS/core#37562) — with that
+# fixed, the data is there, and a future regression should fail loudly rather than
+# silently disable the gate.
+minimumReleaseAge: 10080
+minimumReleaseAgeIgnoreMissingTime: false
