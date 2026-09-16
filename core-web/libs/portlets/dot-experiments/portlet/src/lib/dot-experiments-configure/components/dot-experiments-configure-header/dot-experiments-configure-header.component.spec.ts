@@ -11,7 +11,7 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { Component, input } from '@angular/core';
 import { ActivatedRoute, Params, provideRouter, Router } from '@angular/router';
 
-import { Confirmation, ConfirmationService, MenuItem } from 'primeng/api';
+import { Confirmation, ConfirmationService, ConfirmEventType, MenuItem } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
@@ -106,7 +106,8 @@ const createStoreMock = () => ({
     draftName: vi.fn().mockReturnValue(EXPERIMENT.name),
     selectedPage: vi.fn().mockReturnValue(SELECTED_PAGE),
     $status: vi.fn().mockReturnValue(DotExperimentStatus.DRAFT),
-    $allowedActions: vi.fn().mockReturnValue(allowedActionsFor(DotExperimentStatus.DRAFT))
+    $allowedActions: vi.fn().mockReturnValue(allowedActionsFor(DotExperimentStatus.DRAFT)),
+    $hasUnsavedChanges: vi.fn().mockReturnValue(false)
 });
 
 describe('DotExperimentsConfigureHeaderComponent', () => {
@@ -507,14 +508,68 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
             spectator.detectChanges();
         };
 
-        it('should return to the list as a view, not a navigation', () => {
+        it('should return to the list as a view, not a navigation', async () => {
             inPanel();
             const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
 
-            spectator.component.onBackToList();
+            await spectator.component.onBackToList();
 
             expect(panelStore?.backToList).toHaveBeenCalledTimes(1);
             expect(navigate).not.toHaveBeenCalled();
+        });
+
+        /**
+         * FR-019. Back in the panel is not a navigation, so `experimentsUnsavedChangesGuard` never
+         * fires on it — the prompt has to be raised here or the editor loses everything typed
+         * since the last Save Draft to a stray click on an arrow.
+         */
+        it('should ask before leaving unsaved work, and stay put when the answer is no', async () => {
+            inPanel();
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            // "Keep Editing" — the primary action, which cancels the departure.
+            confirm.mockImplementation((options: Confirmation) => options.accept?.());
+
+            await spectator.component.onBackToList();
+
+            expect(confirm).toHaveBeenCalledTimes(1);
+            expect(panelStore?.backToList).not.toHaveBeenCalled();
+        });
+
+        it('should leave once the editor chooses to discard', async () => {
+            inPanel();
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            confirm.mockImplementation((options: Confirmation) =>
+                options.reject?.(ConfirmEventType.REJECT)
+            );
+
+            await spectator.component.onBackToList();
+
+            expect(panelStore?.backToList).toHaveBeenCalledTimes(1);
+        });
+
+        /**
+         * A dismissal is not an answer. PrimeNG funnels the X, ESC and a mask click through the
+         * same `reject` callback as the secondary button, and reading them alike would throw the
+         * work away on a mis-click.
+         */
+        it('should treat a dismissal as staying, not as discarding', async () => {
+            inPanel();
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            confirm.mockImplementation((options: Confirmation) =>
+                options.reject?.(ConfirmEventType.CANCEL)
+            );
+
+            await spectator.component.onBackToList();
+
+            expect(panelStore?.backToList).not.toHaveBeenCalled();
+        });
+
+        /** In the portlet the router navigation raises the guard; asking twice is the bug. */
+        it('should not ask in the portlet, where the guard already does', async () => {
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            await spectator.component.onBackToList();
+
+            expect(confirm).not.toHaveBeenCalled();
         });
 
         it('should open results in the panel', () => {

@@ -2,13 +2,16 @@ import { Component, computed, DestroyRef, inject, signal, viewChild } from '@ang
 
 import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
+import { TooltipModule } from 'primeng/tooltip';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotKeyboardShortcutService, DotMessagePipe, hasOverlayAbove } from '@dotcms/ui';
 
 import { DotExperimentsConfigureComponent } from '../dot-experiments-configure/dot-experiments-configure.component';
 import { DotExperimentsListComponent } from '../dot-experiments-list/dot-experiments-list.component';
 import { DotExperimentsResultsComponent } from '../dot-experiments-results/dot-experiments-results.component';
+import { confirmLeavingUnsavedChanges } from '../guards/unsaved-changes.guard';
 import { PANEL_EXPANDED_WIDTH, PANEL_WIDTH } from '../shared/constants';
 
 /** localStorage key persisting the editor's expanded (wide) preference for this panel. */
@@ -88,7 +91,8 @@ function writeExpandedPreference(expanded: boolean): void {
         DotExperimentsListComponent,
         DotExperimentsConfigureComponent,
         DotExperimentsResultsComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        TooltipModule
     ],
     templateUrl: './dot-experiments-panel.component.html',
     // Click-outside closes the panel, bound at document level because `appendTo="body"` moves the
@@ -107,6 +111,8 @@ export class DotExperimentsPanelComponent {
      * clicked node against THIS mask rather than against the shared `p-drawer-mask` class, so a
      * mask belonging to another drawer never closes this panel.
      */
+    readonly #dotMessageService = inject(DotMessageService);
+
     protected readonly $drawer = viewChild(Drawer);
 
     protected readonly PANEL_WIDTH = PANEL_WIDTH;
@@ -154,15 +160,36 @@ export class DotExperimentsPanelComponent {
     }
 
     /**
+     * The Configure screen, when it is the one on show.
+     *
+     * `undefined` on every other view, and that is the test this panel needs: only configuration
+     * holds work the server has not seen, so only configuration can have anything to lose on a
+     * close.
+     */
+    private readonly $configure = viewChild(DotExperimentsConfigureComponent);
+
+    /**
      * Dismissal, as opposed to the panel closing because the editor left to see a variant.
      *
      * Routed through the store's `close()` so the two stay distinguishable: `close()` discards the
      * view state, `suspendForVariant()` keeps it (FR-039 vs FR-023).
      *
-     * Phase 2 puts the unsaved-changes confirm in front of this (FR-019, T062) — which is the
-     * point at which this panel and Edit Content's want the same `closeRequested` seam.
+     * **Asks first when there is unsaved work (FR-019).** Every way out of this panel — the X, the
+     * mask, Escape — lands here, and none of them is a navigation, so `experimentsUnsavedChangesGuard`
+     * cannot see any of them. The same prompt the guard raises is called directly instead, so the
+     * editor is asked the same question in the same words whichever world they are in.
      */
-    protected requestClose(): void {
+    protected async requestClose(): Promise<void> {
+        const configure = this.$configure();
+
+        if (configure) {
+            const mayClose = await confirmLeavingUnsavedChanges(configure, this.#dotMessageService);
+
+            if (!mayClose) {
+                return;
+            }
+        }
+
         this.store.close();
     }
 
