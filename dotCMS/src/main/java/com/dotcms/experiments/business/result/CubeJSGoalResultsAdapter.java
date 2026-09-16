@@ -19,6 +19,13 @@ import graphql.VisibleForTesting;
  * this adapter needs to be deleted; the CAEM implementations and factory dispatch logic require
  * no changes at that point.
  * </p>
+ * <p>
+ * CubeJS handles the {@link com.dotcms.experiments.model.Goal.GoalType#MINIMIZE} inversion
+ * server-side via its cube schema definitions (e.g. {@code bounceRateSuccesses} already
+ * represents non-bounced sessions). Therefore this adapter overrides
+ * {@link #executeAggregate} and {@link #executeByDay} directly — bypassing the template in
+ * {@link ExperimentGoalResultsQuery} — so that the client-side inversion is not applied twice.
+ * </p>
  *
  * @see ExperimentGoalResultsQuery
  * @see ExperimentResultsQueryFactory
@@ -32,23 +39,41 @@ public class CubeJSGoalResultsAdapter implements ExperimentGoalResultsQuery {
     }
 
     /**
-     * Returns per-day per-variant results by executing {@code createWithDayGranularity()} against CubeJS.
+     * Raw per-day CubeJS fetch — satisfies the abstract contract; not used directly by callers.
      */
     @Override
-    public AnalyticsResultSet executeByDay(final Experiment experiment,
-                                           final User user) throws DotDataException, DotSecurityException {
+    public AnalyticsResultSet doExecuteByDay(final Experiment experiment,
+                                             final User user) throws DotDataException, DotSecurityException {
         final CubeJSClient client = cubeJSClientFactory().create(user);
         return client.send(ExperimentResultsQueryFactory.INSTANCE.buildDayGranularityQuery(experiment, metricQuery));
     }
 
     /**
-     * Returns aggregate per-variant totals by executing {@code create()} against CubeJS.
+     * Raw aggregate CubeJS fetch — satisfies the abstract contract; not used directly by callers.
+     */
+    @Override
+    public AnalyticsResultSet doExecuteAggregate(final Experiment experiment,
+                                                 final User user) throws DotDataException, DotSecurityException {
+        final CubeJSClient client = cubeJSClientFactory().create(user);
+        return client.send(ExperimentResultsQueryFactory.INSTANCE.buildAggregateQuery(experiment, metricQuery));
+    }
+
+    /**
+     * Bypasses the MINIMIZE template — CubeJS already returns correctly inverted values.
+     */
+    @Override
+    public AnalyticsResultSet executeByDay(final Experiment experiment,
+                                           final User user) throws DotDataException, DotSecurityException {
+        return doExecuteByDay(experiment, user);
+    }
+
+    /**
+     * Bypasses the MINIMIZE template — CubeJS already returns correctly inverted values.
      */
     @Override
     public AnalyticsResultSet executeAggregate(final Experiment experiment,
                                                final User user) throws DotDataException, DotSecurityException {
-        final CubeJSClient client = cubeJSClientFactory().create(user);
-        return client.send(ExperimentResultsQueryFactory.INSTANCE.buildAggregateQuery(experiment, metricQuery));
+        return doExecuteAggregate(experiment, user);
     }
 
     /**

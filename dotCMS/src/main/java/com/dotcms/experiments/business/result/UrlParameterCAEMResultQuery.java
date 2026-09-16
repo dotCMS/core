@@ -57,14 +57,14 @@ public class UrlParameterCAEMResultQuery implements ExperimentGoalResultsQuery {
     }
 
     @Override
-    public AnalyticsResultSet executeByDay(final Experiment experiment,
-                                           final User user) throws DotDataException, DotSecurityException {
+    public AnalyticsResultSet doExecuteByDay(final Experiment experiment,
+                                             final User user) throws DotDataException, DotSecurityException {
         return caemHttpClient.get(BEHAVIOR_PATH, buildParams(experiment, "variant,day"), null);
     }
 
     @Override
-    public AnalyticsResultSet executeAggregate(final Experiment experiment,
-                                               final User user) throws DotDataException, DotSecurityException {
+    public AnalyticsResultSet doExecuteAggregate(final Experiment experiment,
+                                                 final User user) throws DotDataException, DotSecurityException {
         return caemHttpClient.get(BEHAVIOR_PATH, buildParams(experiment, "variant"), null);
     }
 

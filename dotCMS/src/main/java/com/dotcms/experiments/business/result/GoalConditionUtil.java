@@ -3,6 +3,9 @@ package com.dotcms.experiments.business.result;
 import com.dotcms.analytics.metrics.Condition;
 import com.dotcms.analytics.metrics.QueryParameter;
 import com.dotcms.experiments.model.Experiment;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 
 import java.util.Optional;
 
@@ -30,6 +33,22 @@ class GoalConditionUtil {
                         .filter(c -> parameterName.equals(c.parameter()))
                         .map(c -> c.value().toString())
                         .findFirst());
+    }
+
+    /**
+     * Resolves the URI of the experiment page from {@link Experiment#pageId()}.
+     * Used as the {@code referencePage} parameter in CAEM queries that need to scope
+     * results to the page the experiment is running on.
+     *
+     * @param experiment the experiment whose page URI to resolve
+     * @return the page URI (e.g. {@code /about-us})
+     * @throws DotDataException if the page cannot be found or loaded
+     */
+    static String resolvePageUri(final Experiment experiment) throws DotDataException {
+        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                APILocator.getContentletAPI()
+                        .findContentletByIdentifierAnyLanguage(experiment.pageId(), false));
+        return page.getURI();
     }
 
     /**

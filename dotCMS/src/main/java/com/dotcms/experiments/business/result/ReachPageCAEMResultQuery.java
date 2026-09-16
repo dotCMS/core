@@ -19,7 +19,8 @@ import java.util.Map;
  *       enforced by CAEM, not by dotCMS</li>
  *   <li>{@code experimentId} — the experiment's identifier</li>
  *   <li>{@code runningId} — the current running ID of the experiment</li>
- *   <li>{@code referencePage} — the entry page (condition parameter {@code "referer"})</li>
+ *   <li>{@code referencePage} — the URI of the experiment page, resolved from
+ *       {@link Experiment#pageId()} via {@link GoalConditionUtil#resolvePageUri}</li>
  *   <li>{@code targetUrl} — the destination page (condition parameter {@code "url"})</li>
  *   <li>{@code dimensions=variant} for {@link #executeAggregate} (aggregate per-variant totals)</li>
  *   <li>{@code dimensions=variant,day} for {@link #executeByDay} (per-day per-variant breakdown)</li>
@@ -54,27 +55,26 @@ public class ReachPageCAEMResultQuery implements ExperimentGoalResultsQuery {
     }
 
     @Override
-    public AnalyticsResultSet executeByDay(final Experiment experiment,
-                                           final User user) throws DotDataException, DotSecurityException {
+    public AnalyticsResultSet doExecuteByDay(final Experiment experiment,
+                                             final User user) throws DotDataException, DotSecurityException {
         return caemHttpClient.get(BEHAVIOR_PATH, buildParams(experiment, "variant,day"), null);
     }
 
     @Override
-    public AnalyticsResultSet executeAggregate(final Experiment experiment,
-                                               final User user) throws DotDataException, DotSecurityException {
+    public AnalyticsResultSet doExecuteAggregate(final Experiment experiment,
+                                                 final User user) throws DotDataException, DotSecurityException {
         return caemHttpClient.get(BEHAVIOR_PATH, buildParams(experiment, "variant"), null);
     }
 
     private static Map<String, String> buildParams(final Experiment experiment,
-                                                   final String dimensions) {
+                                                   final String dimensions) throws DotDataException {
         final String runningId = experiment.runningIds().getCurrent().orElseThrow().id();
         final Map<String, String> params = new HashMap<>();
         params.put("experimentId", experiment.getIdentifier());
         params.put("runningId", runningId);
         params.put("behavior", "reachTarget");
         params.put("dimensions", dimensions);
-        GoalConditionUtil.findConditionValue(experiment, "referer")
-                .ifPresent(ref -> params.put("referencePage", ref));
+        params.put("referencePage", GoalConditionUtil.resolvePageUri(experiment));
         GoalConditionUtil.findConditionValue(experiment, "url")
                 .ifPresent(url -> params.put("targetUrl", url));
         return params;

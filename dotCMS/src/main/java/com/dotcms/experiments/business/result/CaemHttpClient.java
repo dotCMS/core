@@ -17,6 +17,8 @@ import com.dotmarketing.util.UtilMethods;
 
 import javax.ws.rs.core.HttpHeaders;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -203,7 +205,8 @@ public class CaemHttpClient {
         }
 
         sb.append('?');
-        allParams.forEach((k, v) -> sb.append(k).append('=').append(v).append('&'));
+        allParams.forEach((k, v) ->
+                sb.append(k).append('=').append(URLEncoder.encode(v, StandardCharsets.UTF_8)).append('&'));
         sb.setLength(sb.length() - 1);
 
         return sb.toString();
