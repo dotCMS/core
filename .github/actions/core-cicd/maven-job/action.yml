@@ -211,25 +211,45 @@ runs:
         # instead of restoring a cache built for the previous versions.
         key: node-binary-${{ hashFiles('core-web/.nvmrc', 'nodejs-parent/pom.xml') }}
 
-    - name: Verify the pnpm version is in sync across package.json files and nodejs-parent/pom.xml
+    - name: Verify the pinned toolchain versions are in sync
       if: ${{ inputs.requires-node == 'true' }}
       shell: bash
       run: |
         set -euo pipefail
-        # The pom is the reference: Maven installs that pnpm and every module runs it.
+        # nodejs-parent/pom.xml is the reference: Maven installs those versions and every
+        # module runs them. Every other declaration has to agree, including the ones that
+        # only the workflow reads — pnpm/setup resolves its version from
+        # devEngines.packageManager *before* falling back to packageManager, so checking
+        # packageManager alone would let a devEngines-only bump install a different pnpm
+        # than Maven's, with nothing failing. Same for devEngines.runtime and Node.
         # Collect every mismatch before failing, so a contributor who forgot to bump one
-        # manifest does not fix it, re-run CI, and only then learn about the other.
-        pom_version=$(grep -oE '<pnpm\.version>[^<]+</pnpm\.version>' nodejs-parent/pom.xml | sed -E 's|</?pnpm\.version>||g')
+        # declaration does not fix it, re-run CI, and only then learn about the next.
+        pom_pnpm=$(grep -oE '<pnpm\.version>[^<]+</pnpm\.version>' nodejs-parent/pom.xml | sed -E 's|</?pnpm\.version>||g')
+        pom_node=$(grep -oE '<node\.js\.version>[^<]+</node\.js\.version>' nodejs-parent/pom.xml | sed -E 's|</?node\.js\.version>||g')
+        pom_node=${pom_node#v}
         fail=0
-        for manifest in core-web/package.json dotcms-postman/package.json; do
-          declared=$(jq -r '.packageManager' "$manifest")
-          if [ "${declared#pnpm@}" != "$pom_version" ]; then
-            echo "::error file=$manifest::pnpm version mismatch: $manifest declares $declared, nodejs-parent/pom.xml pins $pom_version. Maven installs the pom version and every module runs it, so the manifests must agree." >&2
+
+        # An absent declaration is fine; a present one must match. Written as a plain `if`
+        # rather than a `&&` chain because under `set -e` a short-circuited chain returns
+        # non-zero and would abort the step instead of recording the mismatch.
+        check() { # <file> <label> <declared> <expected>
+          if [ -n "$3" ] && [ "$3" != "$4" ]; then
+            echo "::error file=$1::$2 declares $3, nodejs-parent/pom.xml pins $4. Maven installs the pom version and every module runs it, so all declarations must agree." >&2
             fail=1
           fi
+        }
+
+        for manifest in core-web/package.json dotcms-postman/package.json; do
+          declared=$(jq -r '.packageManager // ""' "$manifest")
+          check "$manifest" "$manifest packageManager" "${declared#pnpm@}" "$pom_pnpm"
+          check "$manifest" "$manifest devEngines.packageManager" \
+            "$(jq -r 'if .devEngines.packageManager.name == "pnpm" then .devEngines.packageManager.version else "" end' "$manifest")" "$pom_pnpm"
+          check "$manifest" "$manifest devEngines.runtime" \
+            "$(jq -r 'if .devEngines.runtime.name == "node" then .devEngines.runtime.version else "" end' "$manifest")" "$pom_node"
         done
+
         [ "$fail" -eq 0 ] || exit 1
-        echo "pnpm version in sync: $pom_version"
+        echo "toolchain in sync: pnpm $pom_pnpm, node $pom_node"
 
     # pnpm/setup downloads pnpm's own standalone binary — no Node and no npm
     # involved — and with `cache: true` restores and saves the pnpm store itself,
