@@ -51,12 +51,18 @@ ALLOW_SNAPSHOTS="${MAVEN_S3_ALLOW_SNAPSHOTS:-false}"
 # Resolve S3 credentials. Org secrets are exposed under the MAVEN_BUNNY_* names;
 # the AWS CLI reads the standard AWS_* variables. These must be exported so the
 # `aws` child process inherits them.
-if [[ -z "${AWS_ACCESS_KEY_ID:-}" && -n "${MAVEN_BUNNY_RW_USERNAME:-}" ]]; then
+#
+# Bunny credentials are authoritative for this repository. AWS credentials may
+# already be in the environment (the release job configures AWS creds for the
+# Javadoc upload before this runs), so override them rather than only filling in
+# blanks, and drop any inherited session token or Bunny rejects the request.
+if [[ -n "${MAVEN_BUNNY_RW_USERNAME:-}" ]]; then
   AWS_ACCESS_KEY_ID="$MAVEN_BUNNY_RW_USERNAME"
 fi
-if [[ -z "${AWS_SECRET_ACCESS_KEY:-}" && -n "${MAVEN_BUNNY_RW_PASSWORD:-}" ]]; then
+if [[ -n "${MAVEN_BUNNY_RW_PASSWORD:-}" ]]; then
   AWS_SECRET_ACCESS_KEY="$MAVEN_BUNNY_RW_PASSWORD"
 fi
+unset AWS_SESSION_TOKEN AWS_SECURITY_TOKEN
 export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
 export AWS_DEFAULT_REGION="$S3_REGION"
 
@@ -197,8 +203,16 @@ update_artifact_metadata() {
   )"
   versions="$(printf '%s\n%s\n' "$versions" "$version" | sed '/^$/d' | sort -u -V)"
 
-  latest="$(printf '%s\n' "$versions" | tail -n1)"
-  release="$(printf '%s\n' "$versions" | grep -v -- '-SNAPSHOT$' | tail -n1 || true)"
+  # Maven's ComparableVersion ranks a qualifier (e.g. 26.09.14-01-java25) BEFORE
+  # the plain release, unlike GNU sort -V which ranks it after. Compute
+  # <latest>/<release> from unqualified versions only so a Java-variant release
+  # cannot become the default that consumers (e.g. the dotCLI action) resolve.
+  # The full list is still written to <versions>.
+  plain="$(printf '%s\n' "$versions" | grep -v -- '-[A-Za-z]' || true)"
+  [[ -n "$plain" ]] || plain="$versions"
+
+  latest="$(printf '%s\n' "$plain" | tail -n1)"
+  release="$(printf '%s\n' "$plain" | grep -v -- '-SNAPSHOT$' | tail -n1 || true)"
   [[ -n "$release" ]] || release="$latest"
 
   {
