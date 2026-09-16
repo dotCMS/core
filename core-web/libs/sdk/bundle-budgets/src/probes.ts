@@ -37,12 +37,6 @@ export const PROBES: Probe[] = [
         ]
     },
     {
-        name: 'client-page-only',
-        source: `import { createDotCMSPageClient } from '@dotcms/client/page';\nexport { createDotCMSPageClient };\n`,
-        packages: ['client', 'types'],
-        forbidden: ['ai-api', 'ai/search', 'content-api', 'lucene', 'collection', 'raw-query']
-    },
-    {
         name: 'analytics-neutral',
         source: `import { initializeContentAnalytics } from '@dotcms/analytics';\nexport { initializeContentAnalytics };\n`,
         packages: ['analytics', 'uve', 'types'],

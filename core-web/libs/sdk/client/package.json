@@ -22,32 +22,12 @@
   "exports": {
     "./package.json": "./package.json",
     ".": "./src/index.ts",
-    "./internal": "./src/internal.ts",
-    "./page": "./src/page.ts",
-    "./navigation": "./src/navigation.ts",
-    "./content": "./src/content.ts",
-    "./ai": "./src/ai.ts"
+    "./internal": "./src/internal.ts"
   },
   "typesVersions": {
     "*": {
-      ".": [
-        "./src/index.d.ts"
-      ],
-      "internal": [
-        "./src/internal.d.ts"
-      ],
-      "page": [
-        "./src/page.d.ts"
-      ],
-      "navigation": [
-        "./src/navigation.d.ts"
-      ],
-      "content": [
-        "./src/content.d.ts"
-      ],
-      "ai": [
-        "./src/ai.d.ts"
-      ]
+      ".": ["./src/index.d.ts"],
+      "internal": ["./src/internal.d.ts"]
     }
   },
   "author": "dotcms <dev@dotcms.com>",
