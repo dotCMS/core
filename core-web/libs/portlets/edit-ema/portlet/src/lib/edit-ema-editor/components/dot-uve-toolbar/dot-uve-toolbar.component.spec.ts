@@ -1809,8 +1809,13 @@ describe('DotUveToolbarComponent', () => {
                         const PAGE_ID = 'page-1';
                         /** The marker goes with them: once the editor is back there is no round
                          * trip left for it to describe. */
+                        /**
+                         * `mode` is named rather than nulled. A null only ever meant "let the
+                         * shell's default put it back", and the shell applies that default when it
+                         * re-reads the route — which a `pageLoad` never makes it do.
+                         */
                         const CLEARED = {
-                            mode: null,
+                            mode: UVE_MODE.EDIT,
                             variantName: null,
                             experimentId: null,
                             [EXPERIMENT_RETURN_PARAM]: null
@@ -1960,6 +1965,34 @@ describe('DotUveToolbarComponent', () => {
                                     experimentId: null,
                                     [EXPERIMENT_RETURN_PARAM]: null
                                 });
+                            });
+
+                            /**
+                             * The control previewed is still a mode change, and a mode change is
+                             * not a param change. `PREVIEW` and `EDIT` render different canvases,
+                             * so patching the param without loading would leave the toolbar
+                             * claiming one mode over an iframe still showing the other — and the
+                             * mode selector with nothing selected, which is how this surfaced.
+                             *
+                             * Previewing the Original is the only way into this state, and it is
+                             * the common one: it is what the Variants card does for the control.
+                             */
+                            it('should load when the control was previewed, not just patch', () => {
+                                panelWith(true);
+                                setAddress({
+                                    variantName: DEFAULT_VARIANT_ID,
+                                    experimentId: EXPERIMENT_ID,
+                                    mode: UVE_MODE.PREVIEW
+                                });
+                                spectator.detectChanges();
+                                (baseUVEState.pageLoad as Mock).mockClear();
+                                (baseUVEState.pageUpdateParams as Mock).mockClear();
+
+                                leaveVariant();
+
+                                expect(baseUVEState.pageLoad).toHaveBeenCalledWith(CLEARED);
+                                expect(baseUVEState.pageUpdateParams).not.toHaveBeenCalled();
+                                expect(navigate).not.toHaveBeenCalled();
                             });
 
                             /**

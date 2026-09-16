@@ -4,8 +4,7 @@ import {
     computed,
     effect,
     inject,
-    model,
-    OnInit,
+    linkedSignal,
     untracked
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -29,7 +28,7 @@ interface EditorModeOption {
     templateUrl: './dot-editor-mode-selector.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditorModeSelectorComponent implements OnInit {
+export class DotEditorModeSelectorComponent {
     readonly #store = inject(UVEStore);
     readonly #dotMessageService = inject(DotMessageService);
     /**
@@ -78,7 +77,24 @@ export class DotEditorModeSelectorComponent implements OnInit {
     });
 
     readonly $currentMode = computed(() => this.#store.pageParams().mode);
-    readonly selectedModeModel = model<EditorModeOption | null>(null);
+
+    /**
+     * The option the select shows, **derived** from the store rather than copied into it once.
+     *
+     * It used to be a plain `model` seeded in `ngOnInit`, which held only because every mode change
+     * either came from this select — which writes the model itself — or from a router navigation
+     * that rebuilt the whole toolbar. Neither is true of the way back from a variant: that changes
+     * the mode through `pageLoad` on a toolbar that stays mounted, and the select went on naming
+     * the mode the editor had left. `linkedSignal` keeps the two-way binding the template needs
+     * while re-deriving whenever the store's mode moves underneath it.
+     *
+     * `null` when no option matches — the Draft entry is absent for a user without edit access —
+     * which is what leaves the select showing nothing rather than the wrong thing.
+     */
+    readonly selectedModeModel = linkedSignal<UVE_MODE, EditorModeOption | null>({
+        source: this.$currentMode,
+        computation: (mode) => this.$menuItems().find((item) => item.id === mode) ?? null
+    });
 
     /**
      * TODO: This should be in the shell or in the store
@@ -117,12 +133,6 @@ export class DotEditorModeSelectorComponent implements OnInit {
             class: 'text-primary-500'
         }
     };
-
-    ngOnInit() {
-        const currentMode = this.$currentMode();
-        const match = this.$menuItems().find((item) => item.id === currentMode);
-        this.selectedModeModel.set(match ?? null);
-    }
 
     onModeChange(mode: UVE_MODE) {
         if (mode === this.$currentMode()) return;

@@ -81,11 +81,22 @@ const CLEARED_EXPERIMENT_PARAMS = {
 } as const;
 
 /**
- * Cleared on every way back, so no variant, experiment or mode survives the return (FR-006).
+ * Cleared on every way back, so no variant or experiment survives the return (FR-006).
+ *
+ * **`mode` is named, not nulled, and the difference is the whole of #37478's mode bug.** A null
+ * here used to mean "drop it from the address and let the default put it back", which held while
+ * this was the `queryParams` of a `router.navigate`: the shell re-read the route, found no mode
+ * and applied `UVE_MODE.EDIT`. It is now handed to `pageLoad`, which writes straight into
+ * `pageParams` and is mirrored to the address with `Location.go` — a write the router never hears,
+ * so `#getPageParams` never runs and the default never lands. The null survived as a null: the
+ * mode selector had no option to select and the address lost `mode=` altogether.
+ *
+ * `EDIT` is not a new choice. It is exactly where a return has always landed, since dropping the
+ * param and re-reading the route produced it — including when the editor left from LIVE.
  */
 const CLEARED_VARIANT_PARAMS = {
     ...CLEARED_EXPERIMENT_PARAMS,
-    mode: null,
+    mode: UVE_MODE.EDIT,
     variantName: null
 } as const;
 
@@ -397,14 +408,23 @@ export class DotUveToolbarComponent {
      * variant". Reading it as presence is what restarted UVE for nothing.
      */
     #leaveTheVariant(): void {
-        if (getIsDefaultVariant(this.#store.pageParams()?.variantName)) {
+        const params = this.#store.pageParams();
+
+        if (getIsDefaultVariant(params?.variantName) && params?.mode === UVE_MODE.EDIT) {
             /**
-             * The control was never a different page, so there is nothing to fetch — but the
-             * experiment params still have to go, or the chip they feed outlives the trip and the
-             * editor is left with a bar offering a way back it has already taken.
+             * Nothing to fetch, and this is the only shape in which that is true: the editor is on
+             * the control, which is the page itself, and already in the mode they are going back
+             * to. All that is left is the experiment params, which have to go or the chip they
+             * feed outlives the trip and offers a way back that has already been taken.
              *
              * `pageUpdateParams` is the load-free half of `pageLoad`: it patches the params, the
              * shell mirrors them into the address, and the canvas is never touched.
+             *
+             * The mode is half of the test because a mode change is not a param change. `PREVIEW`
+             * and `EDIT` render different canvases — no palette, no contentlet tools — so patching
+             * the param without loading would leave the chrome claiming one mode over an iframe
+             * still showing the other. Previewing the control is exactly that case, which is why
+             * it takes the load below.
              */
             this.#store.pageUpdateParams(CLEARED_EXPERIMENT_PARAMS);
 
