@@ -53,7 +53,16 @@ import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions'
            that first row on the toolbar's search box and tree toggler beside it, so it has to
            travel with the row rather than stay on the tree. */
         :host ::ng-deep .p-tree {
-            padding: 0 0.75rem 0.75rem;
+            /* Almost no left inset, so the tree's chevron sits in the same column as the icons on
+               the rows above and below it.
+
+               What has to match is the middle of each mark, not the left of its box. The chevron is
+               a 10.5px glyph centred in a 24.5px button, while those rows carry a 16px icon, so
+               lining the boxes up leaves the chevron looking 4px to the right of everything else.
+               Working back from the icon centre through the row's own 0.625rem leaves this much for
+               the tree, and it belongs to the sidebar layout rather than to the shared tree, which
+               knows nothing about the rows it happens to sit between. */
+            padding: 0 0.75rem 0.75rem 1px;
         }
     `
 })
