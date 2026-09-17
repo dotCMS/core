@@ -47,6 +47,7 @@ import org.junit.Test;
  * referenced asset must be published to the same state as the holder or the fetcher resolves
  * nothing.
  */
+@SuppressWarnings("unchecked")
 public class AssetSubtypeAccessTest extends IntegrationTestBase {
 
     private static final String IMAGE_FIELD_VAR = "subtypeImage";
@@ -206,6 +207,49 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                 "Created Late", assetContent.get(CUSTOM_PROPERTY_VAR));
         assertEquals("__typename must name the customer's own type",
                 lateType.variable(), assetContent.get("__typename"));
+    }
+
+    /**
+     * Given: an Image field pointing at content that is not an asset at all — nothing stops this,
+     * since the field stores a bare identifier and {@code FileFieldDataFetcher} falls back to the
+     * raw contentlet when {@code FileAssetAPI.fromContentlet} cannot convert it.
+     * When: the new asset description is selected.
+     * Then: it resolves to nothing, and the request still succeeds.
+     *
+     * <p>A resolved type that does not implement the interface must not surface a GraphQL error:
+     * the misconfiguration is in the data, and failing the whole request would take the rest of
+     * the query down with it.
+     */
+    @Test
+    public void test_fieldPointingAtNonAssetContent_resolvesToNullWithoutError() throws Exception {
+        final ContentType plainType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet plainContent = new ContentletDataGen(plainType.id())
+                .host(site).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        ContentletDataGen.publish(plainContent);
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, plainContent);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { identifier %s { fileName %s { "
+                        + "identifier } } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR, ASSET_CONTENT_FIELD);
+
+        final Map<String, Object> data =
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser);
+
+        final List<Map<String, Object>> rows =
+                (List<Map<String, Object>>) data.get(holder.variable() + "Collection");
+        assertNotNull("the rest of the query must still be delivered", rows);
+        assertEquals("expected exactly one row", 1, rows.size());
+        assertEquals("the rest of the row must still be delivered",
+                content.getIdentifier(), rows.get(0).get("identifier"));
+
+        final Map<String, Object> assetField =
+                (Map<String, Object>) rows.get(0).get(IMAGE_FIELD_VAR);
+        assertNotNull("the flat view must still resolve", assetField);
+        assertEquals("non-asset content must resolve to nothing, not an error",
+                null, assetField.get(ASSET_CONTENT_FIELD));
     }
 
     // ---------------------------------------------------------------- helpers
