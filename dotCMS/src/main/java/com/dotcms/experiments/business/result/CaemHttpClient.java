@@ -4,7 +4,6 @@ import com.dotcms.cube.AnalyticsResultSet;
 import com.dotcms.cube.AnalyticsResultSetImpl;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotcms.util.JsonUtil;
@@ -24,7 +23,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Authenticated HTTP client for the CAEM analytics API.
@@ -174,13 +172,15 @@ public class CaemHttpClient {
 
     protected Map<String, String> buildHeaders(@Nullable final Host host) throws DotDataException {
         final Host resolvedHost = host != null ? host : resolveCurrentHost();
-        final String token = ContentAnalyticsUtil.getBearerTokenFromAppSecrets(resolvedHost)
+        // Delegates to buildAuthHeader so both token sources are tried in order:
+        // (1) per-site app secrets, (2) DOT_ANALYTICS_BEARER_TOKEN global property.
+        final String authHeader = EventAnalyticsProxyHelper.buildAuthHeader(resolvedHost)
                 .orElseThrow(() -> new DotDataException(
                         "CAEM authentication failed: no bearer token found for host '"
                         + (resolvedHost != null ? resolvedHost.getHostname() : "unresolved")
-                        + "'. Ensure the Analytics app is configured for this site."));
+                        + "'. Configure the Analytics app or set DOT_ANALYTICS_BEARER_TOKEN."));
         final Map<String, String> headers = new HashMap<>();
-        headers.put(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+        headers.put(HttpHeaders.AUTHORIZATION, authHeader);
         return headers;
     }
 
