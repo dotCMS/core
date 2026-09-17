@@ -15,6 +15,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil.ImportAuditResults;
@@ -385,7 +386,15 @@ public class ImportContentletsAction extends DotPortletAction {
 
 		// The fields must be resolved before any download header is committed, otherwise a
 		// failed lookup leaves the response flagged as an attachment with an empty error body
-		List<Field> fields = FieldsCache.getFieldsByStructureInode(importForm.getStructure());
+		final List<Field> fields;
+		try {
+			fields = FieldsCache.getFieldsByStructureInode(importForm.getStructure());
+		} catch (final DotStateException e) {
+			Logger.warn(this, "Unable to generate CSV template: selected Content Type does not exist", e);
+			SessionMessages.add(req, ERROR, "Workflow-does-not-exists-content-type");
+			setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
+			return;
+		}
 
 		httpRes.setContentType("application/octet-stream");
 		httpRes.setHeader("Content-Disposition", "attachment; filename=\"CSV_Template.csv\"");
