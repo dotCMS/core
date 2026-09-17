@@ -168,8 +168,9 @@ public final class ExceptionMapperUtil {
             }
             // e.g. new BadRequestException("why"): the status is right but the body is
             // empty, so the container would send its HTML error page and the client
-            // never sees "why". Keep the status, carry the message as JSON.
-            return Response.status(own.getStatus())
+            // never sees "why". Keep status and headers (WWW-Authenticate, Location),
+            // carry the message as JSON.
+            return Response.fromResponse(own)
                     .entity(Map.of("message", getI18NMessage(exception.getMessage())))
                     .header("error-key", key)
                     .type(MediaType.APPLICATION_JSON)
