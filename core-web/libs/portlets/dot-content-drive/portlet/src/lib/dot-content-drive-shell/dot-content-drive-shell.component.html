@@ -41,13 +41,20 @@
     [class]="
         $allSiteContentSelected() ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
     "
+    [attr.inert]="$allSiteContentSelected() ? null : ''"
+    [attr.aria-hidden]="$allSiteContentSelected() ? null : 'true'"
     data-testid="scope-bar-slot">
     <!-- A grid row from `0fr` to `1fr` rather than a max-height: max-height has to be given a
          ceiling, and the visible motion then finishes as soon as the real height is reached, part
          way through the duration. A fractional row resolves to exactly the content's height, so the
          movement lasts as long as it says it does and no number has to be guessed.
 
-         `overflow-hidden` belongs on this inner element: it is the one being squeezed. -->
+         `overflow-hidden` belongs on this inner element: it is the one being squeezed.
+
+         Closed means zero-height and transparent, which hides the bar from the eye but not from
+         the keyboard: without `inert` its toggle stays tabbable, and stays in the accessibility
+         tree, in every scope that does not show the bar. `inert` removes it from both; the
+         `aria-hidden` beside it covers anything that does not honour `inert` yet. -->
     <div class="overflow-hidden">
         <dot-content-drive-scope-bar data-testid="scope-bar-host" />
     </div>

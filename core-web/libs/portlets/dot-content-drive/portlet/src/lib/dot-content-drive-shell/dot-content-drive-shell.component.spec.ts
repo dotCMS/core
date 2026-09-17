@@ -109,6 +109,7 @@ const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
 // as the one above: two store mocks in this file read it from describes with no shared `beforeEach`.
 const siteCanAddChildrenSignal: WritableSignal<boolean | undefined> = signal(undefined);
 const systemHostCanReadSignal = signal(true);
+const allSiteContentSelectedSignal = signal(false);
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -228,6 +229,7 @@ describe('DotContentDriveShellComponent', () => {
         canAddChildrenSignal.set(true);
         siteCanAddChildrenSignal.set(undefined);
         systemHostCanReadSignal.set(true);
+        allSiteContentSelectedSignal.set(false);
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
@@ -318,7 +320,7 @@ describe('DotContentDriveShellComponent', () => {
                     selectedNode: vi.fn(),
                     setSelectedNode: vi.fn(),
                     // The shell renders the sidebar, which asks the store which entry is selected.
-                    $allSiteContentSelected: vi.fn().mockReturnValue(false),
+                    $allSiteContentSelected: allSiteContentSelectedSignal,
                     $systemHostSelected: systemHostSelectedMock,
                     // Mirrors the store's own computed rather than hardcoding an answer, so these
                     // tests keep driving the destination through the signals they already control:
@@ -2054,6 +2056,31 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(spectator.component.$uploadSelectorPayload()).toBeTruthy();
             expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
+        });
+    });
+
+    describe('the scope bar slot', () => {
+        it('should take the bar out of reach while it is closed', () => {
+            // Closed is zero-height and transparent, which hides it from the eye and from nothing
+            // else: the toggle inside stayed tabbable and stayed in the accessibility tree in
+            // every scope that does not show the bar.
+            allSiteContentSelectedSignal.set(false);
+            spectator.detectChanges();
+
+            const slot = spectator.query(byTestId('scope-bar-slot'));
+
+            expect(slot?.hasAttribute('inert')).toBe(true);
+            expect(slot?.getAttribute('aria-hidden')).toBe('true');
+        });
+
+        it('should put it back in reach when all site content is selected', () => {
+            allSiteContentSelectedSignal.set(true);
+            spectator.detectChanges();
+
+            const slot = spectator.query(byTestId('scope-bar-slot'));
+
+            expect(slot?.hasAttribute('inert')).toBe(false);
+            expect(slot?.hasAttribute('aria-hidden')).toBe(false);
         });
     });
 
