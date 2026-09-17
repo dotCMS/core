@@ -302,5 +302,45 @@ describe('withLoad', () => {
         });
     });
 
-    afterEach(() => jest.clearAllMocks());
+    describe('reloadPageAfterLockChange – source tagging', () => {
+        it('should tag pageAssetResponse.source as rest when reloading via REST', () => {
+            jest.spyOn(spectator.inject(DotPageApiService), 'get').mockReturnValue(
+                of(MOCK_RESPONSE_HEADLESS)
+            );
+            store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+            spectator.flushEffects();
+
+            store.workflowToggleLock(MOCK_RESPONSE_HEADLESS.page.inode, false, false);
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should tag pageAssetResponse.source as graphql when reloading via GraphQL', () => {
+            store.setCustomClient({ query: 'query', variables: { depth: '1' } });
+            jest.spyOn(spectator.inject(DotPageApiService), 'getGraphQLPage').mockReturnValue(
+                of({ pageAsset: MOCK_RESPONSE_HEADLESS, content: { some: 'data' } })
+            );
+            store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+            spectator.flushEffects();
+
+            store.workflowToggleLock(MOCK_RESPONSE_HEADLESS.page.inode, false, false);
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+    });
+
+    afterEach(() => {
+        // restoreAllMocks: DotLanguagesService is a shared `useValue` instance across every
+        // test in this file, so a jest.spyOn(...).mockReturnValue() from one test (e.g. the
+        // atomicity test's Subject-based getLanguagesUsedPage stub) otherwise leaks into every
+        // later test — restoreAllMocks reverts spyOn-wrapped methods to their original
+        // implementation, which clearAllMocks alone does not do.
+        jest.restoreAllMocks();
+        // clearAllMocks: restoreAllMocks only affects jest.spyOn-created mocks; the plain
+        // jest.fn() mocks provided via `useValue` (e.g. dotContentletLockerService.lock/unlock)
+        // still need their call history reset between tests.
+        jest.clearAllMocks();
+    });
 });
