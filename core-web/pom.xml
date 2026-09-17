@@ -23,6 +23,56 @@
         <skip.npm.install>false</skip.npm.install>
         <skip.core-web.updates>false</skip.core-web.updates>
         <skip.validate>true</skip.validate>
+        <!--
+          The diff-scoped strict typecheck gate (issue #37536). Default ON-skip; the two
+          activation profiles below flip it to false, on pull_request and on merge_group.
+
+          Its own property, NOT ${skip.validate}. `-Pvalidate -Dskip.validate=true` turns off
+          lint-test and format-test and leaves this running, by design: a blocking gate that the
+          documented way to silence its two neighbours also silences is not much of a gate. The
+          flip side is that a plain local `./mvnw -Pvalidate` runs lint and prettier but not this,
+          unlike its neighbours.
+
+          Both are needed, for different reasons. The pull-request run is where inline
+          annotations render on the diff, so it is what an author actually reads. The
+          merge-queue run is what ENFORCES: this repository declares no required status checks
+          on main (the ruleset requires a pull request, one approval, thread resolution and
+          signed commits, and no checks), so a red check on a pull request does not by itself
+          stop a merge. A job that fails in the merge queue ejects the pull request, and that
+          is the only place a failing gate actually blocks.
+
+          Every other event leaves this at true. On a trunk push or a nightly that is also what
+          you would want (HEAD is origin/main, so there would be nothing to report), but the
+          skip is by EVENT NAME, not by diff emptiness. Do not "fix the coverage gap" by adding a
+          `push` profile on the belief it would be a harmless no-op: cicd_3-trunk.yml and
+          cicd_4-nightly.yml also accept workflow_dispatch (HEAD != origin/main from a feature
+          branch), cicd_4-nightly.yml disables change detection so the frontend suite runs every
+          night, and cicd_5-lts.yml runs it on release-* pushes, where diffing against origin/main
+          would be meaningless.
+
+          One caveat on the "no required status checks" claim above: it holds today, but the
+          ruleset providing it is an org-level one named `2026-08-24_incident-response`. A separate
+          `Default Merge Queue` ruleset DOES define required_status_checks and is currently
+          `enforcement: disabled`. Whoever re-enables it should know this design assumed the
+          opposite.
+        -->
+        <skip.strict.gate>true</skip.strict.gate>
+        <!--
+          What the gate diffs against. Deliberately its OWN property rather than reusing
+          ${git.origin.branch}: lint-test and format-test tolerate a base that is merely close
+          (over-including projects for lint is harmless on a lint-clean main), but this gate
+          blocks, and main is deliberately not strict-clean while #37198 is in flight. Given a
+          base that is only near the divergence point, it would reject authors for violations
+          main introduced.
+
+          Defaults to ${git.origin.branch} so a local run behaves as before. In CI the
+          strict-gate-explicit-base profile below replaces it with the divergence point, which
+          cicd_comp_test-phase.yml resolves as the first parent of the merge commit CI checks
+          out. That matters because the checkout is depth-1: `git merge-base` cannot traverse,
+          so the harness falls back to comparing against the base tip, which is correct only
+          when the base IS the divergence point. The first parent is exactly that point.
+        -->
+        <strict.gate.base>${git.origin.branch}</strict.gate.base>
         <git.origin.branch>origin/main</git.origin.branch>
         <nx.affected.options>--base=${git.origin.branch} --head=HEAD</nx.affected.options>
         <pretty.quick.options>--branch=${git.origin.branch}</pretty.quick.options>
@@ -430,6 +480,154 @@
             <id>validate</id>
             <properties>
                 <skip.validate>false</skip.validate>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <!--
+                          No plugin-level <configuration> here on purpose. This entry merges with
+                          the one in the base <build>, so `executable`, `workingDirectory` and the
+                          environment (PATH with the installed Node prepended, NODE_OPTIONS) are
+                          inherited. Restating them would fork the PATH comment at lines 126-131
+                          into a second copy that a future edit to the base would silently miss.
+                        -->
+                        <executions>
+                            <!--
+                              Diff-scoped strict typecheck (issue #37536). Reports strict-mode
+                              violations on the lines a pull request actually wrote, so main stops
+                              accumulating strict debt while the workspace-wide migration (#37198)
+                              is in flight. Harness: tools/scripts/strict-gate/ (merged by #37403).
+
+                              Declared inside the `validate` profile on purpose: without
+                              -Pvalidate the execution does not exist at all, so a plain local
+                              ./mvnw never pays for it. Nothing runs this on a developer machine;
+                              to get the answer before pushing, run the harness yourself (see its
+                              README).
+                            -->
+                            <execution>
+                                <id>strict-gate</id>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <phase>generate-resources</phase>
+                                <configuration>
+                                    <skip>${skip.strict.gate}</skip>
+                                    <!--
+                                      0 = clean, and that is the only outcome that passes.
+
+                                      1 = new strict-mode violations on lines this pull request
+                                      wrote. 2 = the harness could not run at all. Both fail, and
+                                      both must: a gate nobody has to obey is a report, and a gate
+                                      that reports "clean" without having looked is worse than no
+                                      gate, because it is indistinguishable from a clean pull
+                                      request.
+
+                                      Do not add codes here to get a build through. The violations
+                                      are on lines the pull request itself wrote. Fix them, or if
+                                      the finding is wrong, that is a harness bug worth an issue.
+                                    -->
+                                    <successCodes>
+                                        <successCode>0</successCode>
+                                    </successCodes>
+                                    <!--
+                                      Keep false. It is already the default, and that default is
+                                      the only reason the harness's `::error file=...` lines reach
+                                      the log at column 0, which is what GitHub's workflow-command
+                                      parser requires to render them inline on the diff. Setting
+                                      this true routes every line through the Maven logger, prefixes
+                                      it "[INFO] ", and silently kills every annotation while the
+                                      build stays green and the job summary still looks correct.
+                                    -->
+                                    <useMavenLogger>false</useMavenLogger>
+                                    <!--
+                                      3 minutes. Measured runtime is 8.4-9.4s typical, 12s at the
+                                      tail, against the 10s budget the spike set. This ceiling is
+                                      ~15x the tail, so a slow-but-healthy run can never reach it;
+                                      only a pathological case can, chiefly the harness's
+                                      unshallow git-fetch fallback when the base ref cannot be
+                                      resolved (a full fetch here is ~1.1GB / ~20min). Timing out
+                                      fails the build through the plugin's watchdog, which throws
+                                      directly and never consults successCodes at all - so adding
+                                      a success code to "allow timeouts" would have no effect. An
+                                      unfinished check is not a passing one.
+                                    -->
+                                    <timeout>180000</timeout>
+                                    <arguments>
+                                        <argument>exec</argument>
+                                        <argument>node</argument>
+                                        <argument>tools/scripts/strict-gate/run.mjs</argument>
+                                        <argument>--base=${strict.gate.base}</argument>
+                                        <argument>--flags=strict</argument>
+                                        <argument>--granularity=line</argument>
+                                        <argument>--scope=core-web</argument>
+                                        <argument>--format=github</argument>
+                                    </arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <!--
+          Activation for the strict-gate execution above. Two profiles rather than one because
+          Maven property activation has no OR, and both events need it.
+
+          Activation is on the runner's own event name, so no workflow file needs to change:
+          cicd_1-pr.yml triggers on `pull_request` and cicd_2-merge-queue.yml on `merge_group`,
+          and the runner exports GITHUB_EVENT_NAME for each. Trunk and nightly export something
+          else and leave skip.strict.gate at its true default.
+        -->
+        <profile>
+            <!-- Where the author reads it: annotations render inline on the diff. -->
+            <id>strict-gate-pull-request</id>
+            <activation>
+                <property>
+                    <name>env.GITHUB_EVENT_NAME</name>
+                    <value>pull_request</value>
+                </property>
+            </activation>
+            <properties>
+                <skip.strict.gate>false</skip.strict.gate>
+            </properties>
+        </profile>
+
+        <profile>
+            <!--
+              Replaces the default base with the divergence point, which cicd_comp_test-phase.yml
+              resolves from the checkout's first parent and exports. Absent everywhere
+              else, including local runs, where strict.gate.base keeps its origin/main default.
+            -->
+            <id>strict-gate-explicit-base</id>
+            <activation>
+                <property>
+                    <name>env.STRICT_GATE_BASE</name>
+                </property>
+            </activation>
+            <properties>
+                <strict.gate.base>${env.STRICT_GATE_BASE}</strict.gate.base>
+            </properties>
+        </profile>
+
+        <profile>
+            <!--
+              Where it is enforced. main declares no required status checks, so a red check on a
+              pull request does not stop a merge; a job failing here ejects the pull request from
+              the queue, which does. Costs 9-12s against the ~15min this queue takes for a
+              frontend-only change (ADR-0013), i.e. under 2%.
+            -->
+            <id>strict-gate-merge-queue</id>
+            <activation>
+                <property>
+                    <name>env.GITHUB_EVENT_NAME</name>
+                    <value>merge_group</value>
+                </property>
+            </activation>
+            <properties>
+                <skip.strict.gate>false</skip.strict.gate>
             </properties>
         </profile>
 
