@@ -1022,6 +1022,64 @@
       "name": "Search and Filtering Tests",
       "item": [
         {
+          "name": "Search - Unfiltered Baseline (for Alpha Filter narrowing check)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "// Captured for Text Search - Alpha Filter's narrowing assertion, run as an",
+                  "// ordinary preceding request (not pm.sendRequest) so it inherits the",
+                  "// collection's bearer auth like every other request here, and so the",
+                  "// narrowing check stays a plain synchronous pm.test -- this repo's Postman",
+                  "// collections have no other use of the async pm.test(name, done) pattern",
+                  "// (found in review).",
+                  "pm.test(\"Capture unfiltered baseline count\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('unfilteredBaselineCount', jsonData.entity.list.length);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"filters\": {\n        \"text\": \"\"\n    },\n    \"maxResults\": 50\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/drive/search",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drive",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Text Search - Alpha Filter",
           "event": [
             {
@@ -1047,20 +1105,42 @@
                   "    pm.expect(hasAlphaItems).to.be.true;",
                   "});",
                   "",
-                  "pm.test(\"Search filters out non-matching items\", function () {",
+                  "pm.test(\"Alpha item TextArea field is previewed under its own key, not omitted\", function () {",
                   "    var jsonData = pm.response.json();",
                   "    var list = jsonData.entity.list;",
                   "    ",
-                  "    // Should not include items without 'Alpha' when filtering",
-                  "    var allItemsMatch = list.every(item => {",
-                  "        var title = item.title || item.name || '';",
-                  "        var body = item.body || '';",
-                  "        return title.toLowerCase().includes('alpha') || body.toLowerCase().includes('alpha');",
-                  "    });",
+                  "    // The test content type declares a TextArea field named body (seeded with real",
+                  "    // content in the setup step above), and issue #37185 previews it in place under",
+                  "    // its own key rather than omitting it -- the endpoint own integration test",
+                  "    // asserts exactly this. A prior version of this test claimed a body key is",
+                  "    // never present, which this content type own field contradicts (found in",
+                  "    // review) -- asserting on it directly here is the only end-to-end proof over",
+                  "    // REST that a TextArea field actually gets previewed.",
+                  "    var alphaItem = list.find(function(item) { return (item.title || '').toLowerCase().includes('alpha'); });",
+                  "    pm.expect(alphaItem, 'an Alpha item in the results').to.not.be.undefined;",
+                  "    pm.expect(alphaItem.body, \"the previewed body field\").to.be.a(\"string\");",
+                  "    pm.expect(alphaItem.body.length).to.be.at.most(150);",
+                  "    pm.expect(alphaItem.body).to.not.include('<');",
+                  "    pm.expect(alphaItem.body).to.not.include('>');",
+                  "});",
+                  "",
+                  "pm.test(\"Search narrows results relative to the unfiltered baseline\", function () {",
+                  "    // The unfiltered baseline is captured by the preceding \"Search - Unfiltered",
+                  "    // Baseline\" request into a collection variable, rather than fetched here with",
+                  "    // pm.sendRequest -- that call does not inherit the collection's bearer auth,",
+                  "    // so the sibling request came back 401 and threw, and the done()-callback",
+                  "    // pattern it required has no other user anywhere in this repo's Postman",
+                  "    // collections and is not guaranteed to be supported by the collection",
+                  "    // runner (found in review). A plain preceding request keeps this test",
+                  "    // synchronous and correctly authenticated like every other request here,",
+                  "    // while still proving filtering rather than just repeating the",
+                  "    // contains-Alpha check above.",
+                  "    var filteredCount = pm.response.json().entity.list.length;",
+                  "    var unfilteredCount = parseInt(pm.collectionVariables.get('unfilteredBaselineCount'), 10);",
                   "    ",
-                  "    // Note: Due to Elasticsearch behavior, this might not be 100% strict",
-                  "    // but most results should match",
-                  "    pm.expect(list.length).to.be.at.most(10); // Should be filtered down",
+                  "    pm.expect(unfilteredCount, 'unfiltered baseline count').to.be.a('number').and.not.NaN;",
+                  "    pm.expect(filteredCount, 'Alpha-filtered result count')",
+                  "        .to.be.below(unfilteredCount);",
                   "});"
                 ],
                 "type": "text/javascript"

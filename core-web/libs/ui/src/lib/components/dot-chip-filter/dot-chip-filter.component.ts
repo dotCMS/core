@@ -39,8 +39,25 @@ export type DotChipFilterMode = 'dropdown' | 'toggle';
 export class DotChipFilterComponent {
     readonly #dotMessageService = inject(DotMessageService);
 
+    /**
+     * The chip's fixed label, e.g. `Locale`.
+     *
+     * May be empty for a chip whose **value is its label** — the browsed site, where "Site:
+     * demo.dotcms.com" says nothing the folder icon and the hostname do not already say. The values
+     * span drops its separator in that case.
+     */
     title = input.required<string>();
     selections = input<string[]>([]);
+
+    /**
+     * PrimeIcon class to render before the title, e.g. `pi pi-folder`.
+     *
+     * Opt-in and empty by default, so every chip that does not ask for one is unchanged. It exists
+     * because a chip whose value is a *place* — the site and folder a search is scoped to — reads
+     * better with the affordance its overlay carries, while the value chips beside it (Locale,
+     * Status) are plain text and should stay that way.
+     */
+    icon = input<string>('');
     tabIndex = input<number>(0);
     /**
      * Whether the chip offers its "remove" X while it has a selection. Defaults to `true`, which is
@@ -101,6 +118,18 @@ export class DotChipFilterComponent {
             String(selections.length - 1)
         );
     });
+
+    /**
+     * What the bold half of the chip shows.
+     *
+     * The title when there is one; otherwise the value itself, because a chip with no title is one
+     * whose value IS its label. That also keeps the value out of the second span, which is what
+     * lets both halves stay on a single template line — an interpolation split across lines picks
+     * up its indentation as whitespace *inside* the span.
+     */
+    protected readonly titleLabel = computed(() =>
+        this.title() ? this.title() : this.active() ? this.valuesLabel() : ''
+    );
 
     protected readonly stateClasses = computed(
         () => `${BASE_CLASSES} ${this.active() ? ACTIVE_CLASSES : INACTIVE_CLASSES}`
