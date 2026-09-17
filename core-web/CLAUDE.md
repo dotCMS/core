@@ -78,7 +78,7 @@ spectator.setInput('prop', value);           // ALWAYS use setInput
 - **Standalone**: All new components must be standalone
 - **State**: Use NgRx signals (`@ngrx/signals`) for state management
 - **Styling**: Tailwind CSS + PrimeNG theme (PrimeFlex deprecated/removed — use Tailwind utilities instead)
-- **Testing**: Jest + Spectator, use `data-testid` for selectors
+- **Testing**: Vitest + Spectator, use `data-testid` for selectors
 - **Dialogs**: All dialogs must have `closable: true` and `closeOnEscape: true` to allow closing via X button and ESC key
 
 ### Form Markup
@@ -94,29 +94,46 @@ New portlets go in `libs/portlets/`. For full patterns, architecture, testing, a
 
 > **See [`libs/portlets/CLAUDE.md`](libs/portlets/CLAUDE.md)** — the complete portlet development guide with `dot-tags` as canonical reference.
 
-## Testing (Jest + Spectator)
+## Testing (Vitest + Spectator)
 
 ### Config
 
 - Use `dot-content-drive` portlet as reference for test config
-- `tsconfig.spec.json` tsconfig.spec.json must have "isolatedModules": true in compilerOptions
+- `tsconfig.spec.json` must set `"types": ["vitest/globals", "node"]` and **include the component
+  sources** (`src/**/*.ts`), not only the specs — Angular's compiler needs them in the compilation
+  unit. ts-jest did not, because it transpiled per file
 - `tsconfig.json` — do NOT add `"strict": true` or `"module": "preserve"`
 - `tsconfig.spec.json` — keep minimal (only `module`, `target`, `types`)
-- Import `mockProvider` from `@openng/spectator/jest` (not `@openng/spectator`)
+- Import `mockProvider` from `@openng/spectator/vitest` (not `@openng/spectator`)
+
+### Vite config gotcha (the one that will bite you)
+
+Every package that imports `@angular/core` must be listed in `test.server.deps.inline` —
+Angular itself, Spectator, zone.js, **and PrimeNG / @primeuix / @ngrx**. Left externalised, a
+package loads its own `@angular/core` while the specs use Vite's copy, its directives register
+against a different runtime, and components fail with
+`Cannot read properties of null (reading 'firstCreatePass')`. Regenerate configs with
+`node tools/generate-vite-configs.mjs <project>` rather than hand-editing.
+
+### Suite run time
+
+Measure with `pnpm test:profile <project>` before changing any Vitest performance option — test
+execution is under 2% of the suite's work, and `pool: 'threads'` and `happy-dom` are both **measured
+regressions** here. See [Testing Performance](../docs/frontend/TESTING_PERFORMANCE.md).
 
 ### SignalStore Tests
 
 - Use `createServiceFactory` from Spectator
 - Call `spectator.flushEffects()` in `beforeEach` to trigger the `withHooks` `onInit` effect
-- Mock services with `mockProvider(Service, { method: jest.fn().mockReturnValue(of(...)) })`
+- Mock services with `mockProvider(Service, { method: vi.fn().mockReturnValue(of(...)) })`
 - Test error paths: mock service to `throwError(() => error)`, assert `httpErrorManager.handle` was called
-- For `jest.mock()` of utilities: place the mock **before** the import
+- For `vi.mock()` of utilities: place the mock **before** the import
 
 ### Component Tests (with Mocked Store)
 
 - Use `createComponentFactory` from Spectator
 - Store goes in `componentProviders` (component-level injection), not `providers`
-- Mock all signal getters as `jest.fn().mockReturnValue(...)` and all methods as `jest.fn()`
+- Mock all signal getters as `vi.fn().mockReturnValue(...)` and all methods as `vi.fn()`
 - PrimeNG button clicks: `spectator.query(byTestId('btn'))?.querySelector('button')` then `spectator.click(el)`
 
 ### Dialog Tests
@@ -127,13 +144,13 @@ New portlets go in `libs/portlets/`. For full patterns, architecture, testing, a
 
 ### DotSiteComponent Mocking
 
-- Use `jest.mock('@dotcms/ui', ...)` with a stub implementing `ControlValueAccessor`
+- Use `vi.mock('@dotcms/ui', ...)` with a stub implementing `ControlValueAccessor`
 - Add `CUSTOM_ELEMENTS_SCHEMA` when mocking complex child components
 
 ### Debounce / Timer Tests
 
-- Use `jest.useFakeTimers()` in `beforeEach`, `jest.useRealTimers()` in `afterEach`
-- Advance with `jest.advanceTimersByTime(300)` to trigger debounced actions
+- Use `vi.useFakeTimers()` in `beforeEach`, `vi.useRealTimers()` in `afterEach`
+- Advance with `vi.advanceTimersByTime(300)` to trigger debounced actions
 
 ## Backend Integration
 

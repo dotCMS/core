@@ -41,6 +41,8 @@
  * Contract: contracts/cli-exit-contract.md X6. Decision: cli-design-decisions.md D3.
  */
 
+import { Mock, MockInstance, vi } from 'vitest';
+
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -67,25 +69,25 @@ function options(overrides: Partial<Parameters<typeof resolvePortConflict>[0]> =
         busyPorts: [],
         isInteractive: false,
         host: HOST,
-        probeInstance: jest.fn().mockResolvedValue(true),
-        askAction: jest.fn().mockResolvedValue('reuse'),
+        probeInstance: vi.fn().mockResolvedValue(true),
+        askAction: vi.fn().mockResolvedValue('reuse'),
         owner: { project: 'my-app', description: 'Docker project "my-app" · healthy' },
-        notify: jest.fn(),
+        notify: vi.fn(),
         ...overrides
     };
 }
 
 describe('resolvePortConflict', () => {
-    let exitSpy: jest.SpyInstance;
+    let exitSpy: MockInstance;
 
     beforeEach(() => {
-        exitSpy = jest.spyOn(process, 'exit').mockImplementation(((code?: number) => {
+        exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code?: number) => {
             throw new Error(`process.exit(${code}) must never be called here`);
         }) as never);
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('nothing in the way', () => {
@@ -117,7 +119,7 @@ describe('resolvePortConflict', () => {
 
             expect(opts.notify).toHaveBeenCalled();
 
-            const said = (opts.notify as jest.Mock).mock.calls.flat().join('\n');
+            const said = (opts.notify as Mock).mock.calls.flat().join('\n');
 
             expect(said).toContain('8082');
             expect(said).toMatch(/reus/i);
@@ -127,7 +129,7 @@ describe('resolvePortConflict', () => {
             const opts = options({
                 busyPorts: A_REAL_RUNNING_STACK,
                 isInteractive: true,
-                askAction: jest.fn().mockResolvedValue('reuse')
+                askAction: vi.fn().mockResolvedValue('reuse')
             });
 
             const outcome = await resolvePortConflict(opts);
@@ -140,7 +142,7 @@ describe('resolvePortConflict', () => {
             const opts = options({
                 busyPorts: A_REAL_RUNNING_STACK,
                 isInteractive: true,
-                askAction: jest.fn().mockResolvedValue('cancel')
+                askAction: vi.fn().mockResolvedValue('cancel')
             });
 
             const outcome = await resolvePortConflict(opts);
@@ -154,7 +156,7 @@ describe('resolvePortConflict', () => {
             const opts = options({
                 busyPorts: [DOTCMS_HTTP],
                 isInteractive: false,
-                probeInstance: jest.fn().mockResolvedValue(false)
+                probeInstance: vi.fn().mockResolvedValue(false)
             });
 
             const outcome = await resolvePortConflict(opts);
@@ -170,7 +172,7 @@ describe('resolvePortConflict', () => {
             const opts = options({
                 busyPorts: [DOTCMS_HTTP],
                 isInteractive: true,
-                probeInstance: jest.fn().mockResolvedValue(false)
+                probeInstance: vi.fn().mockResolvedValue(false)
             });
 
             const outcome = await resolvePortConflict(opts);
@@ -229,7 +231,7 @@ describe('resolvePortConflict', () => {
             const opts = options({
                 busyPorts: A_REAL_RUNNING_STACK,
                 isInteractive: true,
-                askAction: jest.fn().mockResolvedValue('replace')
+                askAction: vi.fn().mockResolvedValue('replace')
             });
 
             const outcome = await resolvePortConflict(opts);
@@ -238,7 +240,7 @@ describe('resolvePortConflict', () => {
         });
 
         it('tells the prompt whether replacing is even possible', async () => {
-            const askAction = jest.fn().mockResolvedValue('reuse');
+            const askAction = vi.fn().mockResolvedValue('reuse');
 
             await resolvePortConflict(
                 options({ busyPorts: A_REAL_RUNNING_STACK, isInteractive: true, askAction })
@@ -260,7 +262,7 @@ describe('resolvePortConflict', () => {
         });
 
         it('never replaces without being asked — non-interactive stays reuse-only', async () => {
-            const askAction = jest.fn();
+            const askAction = vi.fn();
             const opts = options({
                 busyPorts: A_REAL_RUNNING_STACK,
                 isInteractive: false,
@@ -275,7 +277,7 @@ describe('resolvePortConflict', () => {
         });
 
         it('passes the owner description through so the prompt can say what it found', async () => {
-            const askAction = jest.fn().mockResolvedValue('cancel');
+            const askAction = vi.fn().mockResolvedValue('cancel');
 
             await resolvePortConflict(
                 options({ busyPorts: A_REAL_RUNNING_STACK, isInteractive: true, askAction })
@@ -292,7 +294,7 @@ describe('resolvePortConflict', () => {
             await resolvePortConflict(options());
             await resolvePortConflict(options({ busyPorts: [DOTCMS_HTTP] }));
             await resolvePortConflict(
-                options({ busyPorts: [FOREIGN], probeInstance: jest.fn().mockResolvedValue(false) })
+                options({ busyPorts: [FOREIGN], probeInstance: vi.fn().mockResolvedValue(false) })
             );
 
             expect(exitSpy).not.toHaveBeenCalled();

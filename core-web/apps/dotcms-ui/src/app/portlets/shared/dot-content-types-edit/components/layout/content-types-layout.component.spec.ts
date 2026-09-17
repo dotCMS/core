@@ -3,19 +3,20 @@
 
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(),
-        removeListener: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 
 import { EMPTY, of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -185,7 +186,7 @@ describe('ContentTypesLayoutComponent', () => {
                 {
                     provide: DotMenuService,
                     useValue: {
-                        loadMenu: jest.fn().mockReturnValue(
+                        loadMenu: vi.fn().mockReturnValue(
                             of([
                                 {
                                     id: '123',
@@ -210,43 +211,43 @@ describe('ContentTypesLayoutComponent', () => {
                 {
                     provide: DotIframeService,
                     useValue: {
-                        reloadData: jest.fn(),
-                        reloaded: jest.fn().mockReturnValue(of({})),
-                        ran: jest.fn().mockReturnValue(of({})),
-                        reloadedColors: jest.fn().mockReturnValue(of({}))
+                        reloadData: vi.fn(),
+                        reloaded: vi.fn().mockReturnValue(of({})),
+                        ran: vi.fn().mockReturnValue(of({})),
+                        reloadedColors: vi.fn().mockReturnValue(of({}))
                     }
                 },
                 {
                     provide: DotRouterService,
                     useValue: { currentPortlet: { id: 'test-portlet-id' } }
                 },
-                { provide: DotUiColorsService, useValue: { setColors: jest.fn() } },
+                { provide: DotUiColorsService, useValue: { setColors: vi.fn() } },
                 {
                     provide: DotLoadingIndicatorService,
                     useValue: {
                         display: false,
-                        show: jest.fn(),
-                        hide: jest.fn()
+                        show: vi.fn(),
+                        hide: vi.fn()
                     }
                 },
                 {
                     provide: IframeOverlayService,
                     useValue: {
                         overlay: of(false),
-                        show: jest.fn(),
-                        hide: jest.fn(),
-                        toggle: jest.fn()
+                        show: vi.fn(),
+                        hide: vi.fn(),
+                        toggle: vi.fn()
                     }
                 },
-                { provide: LoggerService, useValue: { debug: jest.fn(), error: jest.fn() } },
+                { provide: LoggerService, useValue: { debug: vi.fn(), error: vi.fn() } },
                 { provide: LoginService, useValue: { isLogin$: of(true) } },
                 {
                     provide: DotHttpErrorManagerService,
-                    useValue: { handle: jest.fn().mockReturnValue(of({})) }
+                    useValue: { handle: vi.fn().mockReturnValue(of({})) }
                 },
                 {
                     provide: DotAlertConfirmService,
-                    useValue: { confirm: jest.fn(), alert: jest.fn() }
+                    useValue: { confirm: vi.fn(), alert: vi.fn() }
                 },
                 {
                     provide: ActivatedRoute,
@@ -301,7 +302,7 @@ describe('ContentTypesLayoutComponent', () => {
         const fieldDragDropService: FieldDragDropService =
             fixture.debugElement.injector.get(FieldDragDropService);
         fixture.componentRef.setInput('contentType', fakeContentType);
-        jest.spyOn(fieldDragDropService, 'setBagOptions');
+        vi.spyOn(fieldDragDropService, 'setBagOptions');
         fixture.detectChanges();
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
@@ -311,7 +312,7 @@ describe('ContentTypesLayoutComponent', () => {
         fixture.detectChanges();
 
         const router = fixture.debugElement.injector.get(Router);
-        jest.spyOn(router, 'navigate');
+        vi.spyOn(router, 'navigate');
 
         de.componentInstance.onTabChange('permissions');
 
@@ -394,7 +395,7 @@ describe('ContentTypesLayoutComponent', () => {
             });
 
             // Hiding the rows list for 5.0
-            xit('should have a field row list', () => {
+            it.skip('should have a field row list', () => {
                 const fieldRowList = pTabPanel.query(By.css('dot-content-type-fields-row-list'));
                 expect(fieldRowList).not.toBeNull();
             });
@@ -406,7 +407,7 @@ describe('ContentTypesLayoutComponent', () => {
                 beforeEach(() => {
                     splitButton = pTabPanel.query(By.css('p-splitbutton'));
                     dotEventsService = fixture.debugElement.injector.get(DotEventsService);
-                    jest.spyOn(dotEventsService, 'notify');
+                    vi.spyOn(dotEventsService, 'notify');
                 });
 
                 it('should have the correct label', () => {
@@ -432,7 +433,7 @@ describe('ContentTypesLayoutComponent', () => {
                     expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
 
                     // Clear the mock before the second call
-                    (dotEventsService.notify as jest.Mock).mockClear();
+                    (dotEventsService.notify as Mock).mockClear();
 
                     addTabDivider.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');

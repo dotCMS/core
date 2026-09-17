@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -99,7 +100,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
     });
 
     it('should save form when is valid ', () => {
-        jest.spyOn(store, 'setSelectedTrafficProportion');
+        vi.spyOn(store, 'setSelectedTrafficProportion');
         const submitButtonWrapper = spectator.query(byTestId('add-traffic-split-button'));
         const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
 
@@ -137,7 +138,7 @@ describe('DotExperimentsConfigurationTrafficSplitAddComponent', () => {
     });
 
     it('should close sidebar ', () => {
-        jest.spyOn(store, 'closeSidebar');
+        vi.spyOn(store, 'closeSidebar');
         sidebar = spectator.query(Drawer);
         sidebar.hide();
 

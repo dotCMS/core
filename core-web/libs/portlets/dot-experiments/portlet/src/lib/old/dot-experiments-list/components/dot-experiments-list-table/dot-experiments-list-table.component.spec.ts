@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { NO_ERRORS_SCHEMA, Pipe, PipeTransform } from '@angular/core';
 
@@ -149,7 +150,7 @@ describe('DotExperimentsListTableComponent', () => {
         });
 
         it('should emit action when a row is clicked', () => {
-            jest.spyOn(spectator.component.$goToContainer, 'emit');
+            vi.spyOn(spectator.component.$goToContainer, 'emit');
             const groupedExperimentByStatus: GroupedExperimentByStatus[] = [
                 { status: DotExperimentStatus.DRAFT, experiments: [DRAFT_EXPERIMENT_MOCK] }
             ];

@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -100,7 +101,7 @@ describe('ContentTypesFormComponent', () => {
             {
                 provide: DotSiteService,
                 useValue: {
-                    getSites: jest.fn().mockReturnValue(
+                    getSites: vi.fn().mockReturnValue(
                         of({
                             sites: [
                                 {
@@ -113,7 +114,7 @@ describe('ContentTypesFormComponent', () => {
                             pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
                         })
                     ),
-                    getSiteById: jest.fn().mockReturnValue(
+                    getSiteById: vi.fn().mockReturnValue(
                         of({
                             hostname: 'demo.dotcms.com',
                             identifier: '123-xyz-567-xxl',
@@ -132,7 +133,7 @@ describe('ContentTypesFormComponent', () => {
                 provide: DotWorkflowsActionsSelectorFieldService,
                 useValue: {
                     get: () => of([]),
-                    load: jest.fn()
+                    load: vi.fn()
                 }
             }
         ],
@@ -413,7 +414,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should set value to the form', async () => {
-        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+        vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
         const base = {
             icon: null,
@@ -453,20 +454,18 @@ describe('ContentTypesFormComponent', () => {
             systemActionMappings: {
                 NEW: ''
             },
-            workflows: [
-                {
-                    ...mockWorkflows[2],
-                    creationDate: '2018-04-05T14:21:33.321Z',
-                    modDate: '2018-04-03T22:35:58.958Z'
-                }
-            ],
+            // The fixture's own Date values, not ISO strings. DotWorkflowServiceMock
+            // hands the workflows over through `structuredClone`, which preserves a Date
+            // — the string overrides that used to be here were an artifact of the old
+            // environment's structuredClone flattening them.
+            workflows: [{ ...mockWorkflows[2] }],
             newEditContent: false
         });
     });
 
     describe('systemActionMappings', () => {
         beforeEach(() => {
-            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+            vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
         });
 
         it('should set value to the form with systemActionMappings', () => {
@@ -646,7 +645,7 @@ describe('ContentTypesFormComponent', () => {
         spectator.detectChanges();
 
         let data = null;
-        jest.spyOn(spectator.component, 'submitForm');
+        vi.spyOn(spectator.component, 'submitForm');
 
         spectator.component.$send.subscribe((res) => (data = res));
         spectator.component.submitForm();
@@ -662,8 +661,8 @@ describe('ContentTypesFormComponent', () => {
             layout: layout
         });
         spectator.detectChanges();
-        jest.spyOn(spectator.component, 'submitForm');
-        jest.spyOn(spectator.component.$send, 'emit');
+        vi.spyOn(spectator.component, 'submitForm');
+        vi.spyOn(spectator.component.$send, 'emit');
 
         spectator.component.submitForm();
 
@@ -686,14 +685,14 @@ describe('ContentTypesFormComponent', () => {
         let data;
 
         beforeEach(() => {
-            jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+            vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
             spectator.setInput('contentType', {
                 ...dotcmsContentTypeBasicMock,
                 baseType: 'CONTENT'
             });
             spectator.detectChanges();
             data = null;
-            jest.spyOn(spectator.component, 'submitForm');
+            vi.spyOn(spectator.component, 'submitForm');
             spectator.component.$send.subscribe((res) => (data = res));
             spectator.component.form.controls.name.setValue('A content type name');
             // Set host to match SiteServiceMock currentSite identifier
@@ -716,20 +715,9 @@ describe('ContentTypesFormComponent', () => {
                 folder: '',
                 system: false,
                 name: 'A content type name',
-                workflows: [
-                    {
-                        id: 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2',
-                        creationDate: '2018-04-05T14:21:33.321Z',
-                        name: 'System Workflow',
-                        description: '',
-                        archived: false,
-                        mandatory: false,
-                        defaultScheme: false,
-                        modDate: '2018-04-03T22:35:58.958Z',
-                        entryActionId: null,
-                        system: true
-                    }
-                ],
+                // Same as above: the mock structuredClones the fixture, so the Date
+                // instances survive.
+                workflows: [{ ...mockWorkflows[2] }],
                 systemActionMappings: { NEW: '' },
                 detailPage: '',
                 urlMapPattern: '',
@@ -749,7 +737,7 @@ describe('ContentTypesFormComponent', () => {
 
             describe('community license true', () => {
                 beforeEach(() => {
-                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+                    vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                     spectator.detectChanges();
                 });
 
@@ -768,7 +756,7 @@ describe('ContentTypesFormComponent', () => {
             describe('community license true', () => {
                 it('should show workflow enable and no message if the license community its false', () => {
                     // Mock before creating the component
-                    jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+                    vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
                     // Create new component with enterprise license
                     const enterpriseSpectator = createComponent();
@@ -811,7 +799,7 @@ describe('ContentTypesFormComponent', () => {
                         }
                     ]
                 });
-                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+                vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                 spectator.detectChanges();
                 expect(spectator.component.form.get('workflows').value).toEqual([
                     {
@@ -833,7 +821,7 @@ describe('ContentTypesFormComponent', () => {
                     baseType: 'CONTENT',
                     id: '123'
                 });
-                jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
+                vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
                 spectator.detectChanges();
                 expect(spectator.component.form.get('workflows').value).toEqual([]);
             });

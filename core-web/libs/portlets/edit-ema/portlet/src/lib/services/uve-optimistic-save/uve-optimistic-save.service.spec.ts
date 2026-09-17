@@ -1,5 +1,5 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { computed, signal } from '@angular/core';
 
@@ -63,10 +63,10 @@ describe('UveOptimisticSaveService', () => {
     let pageTypeSignal: ReturnType<typeof signal<PageType>>;
     let mockUveStore: {
         pageAsset: ReturnType<typeof computed>;
-        setPageAsset: jest.Mock;
+        setPageAsset: Mock;
         pageType: ReturnType<typeof signal<PageType>>;
     };
-    let mockIframeMessenger: { sendPageData: jest.Mock; reloadPage: jest.Mock };
+    let mockIframeMessenger: { sendPageData: Mock; reloadPage: Mock };
 
     const createService = createServiceFactory({
         service: UveOptimisticSaveService,
@@ -88,8 +88,8 @@ describe('UveOptimisticSaveService', () => {
         pageTypeSignal = signal<PageType>(PageType.HEADLESS);
 
         mockIframeMessenger = {
-            sendPageData: jest.fn(),
-            reloadPage: jest.fn()
+            sendPageData: vi.fn(),
+            reloadPage: vi.fn()
         };
 
         mockUveStore = {
@@ -98,7 +98,7 @@ describe('UveOptimisticSaveService', () => {
                 if (!asset) return null;
                 return includeClientResponse() ? { ...asset, clientResponse: asset } : { ...asset };
             }),
-            setPageAsset: jest.fn((payload: { pageAsset: DotCMSPageAsset | null }) => {
+            setPageAsset: vi.fn((payload: { pageAsset: DotCMSPageAsset | null }) => {
                 pageAssetSignal.set(payload?.pageAsset ?? null);
             }),
             pageType: pageTypeSignal
@@ -237,7 +237,7 @@ describe('UveOptimisticSaveService', () => {
 
             service.updateIframeOptimistically(MOCK_ACTIVE_CONTENTLET, { testProp: 'v' });
 
-            const { pageAsset } = (mockUveStore.setPageAsset as jest.Mock).mock.calls[0][0] as {
+            const { pageAsset } = (mockUveStore.setPageAsset as Mock).mock.calls[0][0] as {
                 pageAsset: DotCMSPageAsset & {
                     content?: unknown;
                     requestMetadata?: unknown;

@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
@@ -155,7 +156,7 @@ describe('DotFolderSearchResultsComponent', () => {
         });
 
         it('emits resultSelect with the clicked node', () => {
-            const onSelect = jest.fn();
+            const onSelect = vi.fn();
             spectator.output('resultSelect').subscribe(onSelect);
 
             spectator.click(rows()[1]);
@@ -164,7 +165,7 @@ describe('DotFolderSearchResultsComponent', () => {
         });
 
         it('emits resultSelect on keyboard activation', () => {
-            const onSelect = jest.fn();
+            const onSelect = vi.fn();
             spectator.output('resultSelect').subscribe(onSelect);
 
             // A <button> activates on Enter/Space by dispatching a click — asserting the click
@@ -208,8 +209,8 @@ describe('DotFolderSearchResultsComponent', () => {
             spectator.setInput('loadMoreLabelKey', 'dot.file.field.host.folder.action.load.more');
             spectator.detectChanges();
 
-            const onLoadMore = jest.fn();
-            const onSelect = jest.fn();
+            const onLoadMore = vi.fn();
+            const onSelect = vi.fn();
             spectator.output('loadMore').subscribe(onLoadMore);
             spectator.output('resultSelect').subscribe(onSelect);
 

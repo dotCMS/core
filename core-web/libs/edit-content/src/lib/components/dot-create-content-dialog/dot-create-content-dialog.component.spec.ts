@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { Subject, of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -26,6 +27,7 @@ import {
 import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
+import { DOT_SYSTEM_CONFIG_SERVICE_MOCK } from '@dotcms/utils-testing';
 
 import { DotEditContentDialogComponent } from './dot-create-content-dialog.component';
 
@@ -40,7 +42,7 @@ describe('DotEditContentDialogComponent', () => {
     let spectator: Spectator<DotEditContentDialogComponent>;
     let component: DotEditContentDialogComponent;
     let onCloseSubject: Subject<DotCMSContentlet | null>;
-    let closeSpy: jest.Mock;
+    let closeSpy: Mock;
 
     const createComponent = createComponentFactory({
         component: DotEditContentDialogComponent,
@@ -50,40 +52,40 @@ describe('DotEditContentDialogComponent', () => {
                 snapshot: { params: {} }
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn(() => of({ id: 'test-user' }))
+                getCurrentUser: vi.fn(() => of({ id: 'test-user' }))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotEditContentService, {
-                getContentById: jest.fn(() => of({}))
+                getContentById: vi.fn(() => of({}))
             }),
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn(() => of({}))
+                getContentType: vi.fn(() => of({}))
             }),
             mockProvider(DotWorkflowsActionsService, {
-                getDefaultActions: jest.fn(() => of([])),
-                getByInode: jest.fn(() => of([])),
-                getWorkFlowActions: jest.fn(() => of([]))
+                getDefaultActions: vi.fn(() => of([])),
+                getByInode: vi.fn(() => of([])),
+                getWorkFlowActions: vi.fn(() => of([]))
             }),
             mockProvider(DotWorkflowService, {
-                getWorkflowStatus: jest.fn(() => of({}))
+                getWorkflowStatus: vi.fn(() => of({}))
             }),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(MessageService),
             ConfirmationService,
             mockProvider(DotMessageService, {
-                get: jest.fn(() => 'Test Message'),
-                init: jest.fn(() => of({}))
+                get: vi.fn(() => 'Test Message'),
+                init: vi.fn(() => of({}))
             }),
             mockProvider(DotContentletService, {
-                getLanguages: jest.fn(() => of([]))
+                getLanguages: vi.fn(() => of([]))
             }),
             mockProvider(DotLanguagesService, {
-                getDefault: jest.fn(() => of({}))
+                getDefault: vi.fn(() => of({}))
             }),
             mockProvider(DialogService),
             mockProvider(DotVersionableService),
             mockProvider(DotSiteService),
-            mockProvider(DotSystemConfigService),
+            mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
             GlobalStore,
             provideHttpClient(),
             provideHttpClientTesting()
@@ -95,7 +97,7 @@ describe('DotEditContentDialogComponent', () => {
         onCloseSubject = new Subject<DotCMSContentlet | null>();
         // Capture the original mock before DotEditContentLayoutComponent's
         // #interceptDirtyClose() replaces dialogRef.close with its override.
-        closeSpy = jest.fn();
+        closeSpy = vi.fn();
 
         spectator = createComponent({
             providers: [
@@ -167,7 +169,7 @@ describe('DotEditContentDialogComponent', () => {
     });
 
     it('should call onContentSaved callback only after onClose emits', () => {
-        const onContentSaved = jest.fn();
+        const onContentSaved = vi.fn();
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'edit', contentletInode: 'inode', onContentSaved };
         spectator.detectChanges();
@@ -186,7 +188,7 @@ describe('DotEditContentDialogComponent', () => {
     });
 
     it('should call onCancel callback only after onClose emits', () => {
-        const onCancel = jest.fn();
+        const onCancel = vi.fn();
         const dialogConfig = spectator.inject(DynamicDialogConfig);
         dialogConfig.data = { mode: 'edit', contentletInode: 'inode', onCancel };
         spectator.detectChanges();
@@ -236,7 +238,7 @@ describe('DotEditContentDialogComponent', () => {
         dialogConfig.data = { mode: 'edit', contentletInode: 'inode' };
         spectator.detectChanges();
 
-        const closeDialogSpy = jest.spyOn(component, 'closeDialog');
+        const closeDialogSpy = vi.spyOn(component, 'closeDialog');
         const cancelBtn = spectator
             .query('[data-testid="edit-content-dialog-cancel-btn"]')
             ?.querySelector('button');

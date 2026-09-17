@@ -1,5 +1,5 @@
-import { expect, it, describe, beforeEach } from '@jest/globals';
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { signal, WritableSignal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -35,9 +35,9 @@ describe('DotAppsImportExportDialogComponent', () => {
         dialogHeaderKey: signal(''),
         isLoading: signal(false),
         status: signal(ComponentStatus.INIT),
-        close: jest.fn(),
-        exportConfiguration: jest.fn(),
-        importConfiguration: jest.fn()
+        close: vi.fn(),
+        exportConfiguration: vi.fn(),
+        importConfiguration: vi.fn()
     };
 
     const messageServiceMock = new MockDotMessageService({
@@ -146,7 +146,7 @@ describe('DotAppsImportExportDialogComponent', () => {
         });
 
         it('should call closeDialog when cancel action is triggered', () => {
-            jest.spyOn(spectator.component, 'closeDialog');
+            vi.spyOn(spectator.component, 'closeDialog');
 
             spectator.component.dialogActions.cancel.action();
 
@@ -247,7 +247,7 @@ describe('DotAppsImportExportDialogComponent', () => {
 
         it('should reset form and call store.close', () => {
             spectator.component.form.setValue({ password: 'test' });
-            jest.spyOn(spectator.component.form, 'reset');
+            vi.spyOn(spectator.component.form, 'reset');
 
             spectator.component.closeDialog();
 

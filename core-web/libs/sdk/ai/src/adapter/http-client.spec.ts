@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { createApiAdapter, isBinaryResponseEnvelope } from './http-client';
 
 import type { Adapter, AdapterMethod } from '../sandbox/types';
@@ -58,7 +60,7 @@ function makeResponse(
 }
 
 describe('createApiAdapter response parsing', () => {
-    const fetchMock = jest.fn();
+    const fetchMock = vi.fn();
 
     beforeEach(() => {
         fetchMock.mockReset();
@@ -149,7 +151,7 @@ describe('createApiAdapter response parsing', () => {
 
     it('rejects an oversized binary response via Content-Length before buffering', async () => {
         const oversized = String(26 * 1024 * 1024); // 26MB > 25MB cap
-        const arrayBuffer = jest.fn();
+        const arrayBuffer = vi.fn();
         fetchMock.mockResolvedValue({
             ok: true,
             status: 200,

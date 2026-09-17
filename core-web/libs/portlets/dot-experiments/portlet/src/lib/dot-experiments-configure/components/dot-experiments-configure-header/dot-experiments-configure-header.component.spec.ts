@@ -1,5 +1,11 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { Component, input } from '@angular/core';
@@ -94,11 +100,11 @@ const allowedActionsFor = (status: DotExperimentStatus): Record<ExperimentListAc
     );
 
 const createStoreMock = () => ({
-    experiment: jest.fn().mockReturnValue(EXPERIMENT),
-    draftName: jest.fn().mockReturnValue(EXPERIMENT.name),
-    selectedPage: jest.fn().mockReturnValue(SELECTED_PAGE),
-    $status: jest.fn().mockReturnValue(DotExperimentStatus.DRAFT),
-    $allowedActions: jest.fn().mockReturnValue(allowedActionsFor(DotExperimentStatus.DRAFT))
+    experiment: vi.fn().mockReturnValue(EXPERIMENT),
+    draftName: vi.fn().mockReturnValue(EXPERIMENT.name),
+    selectedPage: vi.fn().mockReturnValue(SELECTED_PAGE),
+    $status: vi.fn().mockReturnValue(DotExperimentStatus.DRAFT),
+    $allowedActions: vi.fn().mockReturnValue(allowedActionsFor(DotExperimentStatus.DRAFT))
 });
 
 describe('DotExperimentsConfigureHeaderComponent', () => {
@@ -106,8 +112,8 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
     let storeMock: ReturnType<typeof createStoreMock>;
     /** The address the screen arrived on, as `ActivatedRoute` reports it. */
     let routeQueryParams: Params;
-    let dispatch: jest.SpyInstance;
-    let confirm: jest.SpyInstance;
+    let dispatch: MockInstance;
+    let confirm: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigureHeaderComponent,
@@ -176,15 +182,15 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
         storeMock = createStoreMock();
         routeQueryParams = {};
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
         const confirmationService = spectator.inject(ConfirmationService, true);
-        confirm = jest
+        confirm = vi
             .spyOn(confirmationService, 'confirm')
-            .mockReturnValue(confirmationService) as jest.SpyInstance;
+            .mockReturnValue(confirmationService) as MockInstance;
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('title', () => {
@@ -249,7 +255,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
         it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.ENDED])(
             'should open the results screen for %s',
             (status) => {
-                const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+                const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
                 renderWith(status);
 
                 const button = spectator
@@ -274,7 +280,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
          */
         it('should carry the page narrowing across to Results', () => {
             routeQueryParams = { pageId: 'page-1', language_id: '2' };
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
             renderWith(DotExperimentStatus.RUNNING);
 
             clickButton('experiments-configure-results-btn');
@@ -302,7 +308,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
             expect(spectator.query(byTestId('experiments-configure-stop-btn'))).not.toBeNull();
         });
 
-        // One status per test: the store mock's signals are plain `jest.fn()`s, so a second
+        // One status per test: the store mock's signals are plain `vi.fn()`s, so a second
         // `renderWith` in the same test would not recompute what the header derives from them.
         it.each([
             DotExperimentStatus.DRAFT,
@@ -424,7 +430,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
     describe('back', () => {
         it('should leave for the experiments list', () => {
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
             spectator.detectChanges();
 
             clickButton('experiments-configure-back-btn');
@@ -442,7 +448,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
          */
         it('should return to the list still narrowed to the page it arrived with', () => {
             routeQueryParams = { pageId: 'page-1', language_id: '2' };
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
             spectator.detectChanges();
 
             clickButton('experiments-configure-back-btn');
@@ -454,7 +460,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
         it('should carry no language when the address brought none', () => {
             routeQueryParams = { pageId: 'page-1' };
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
             spectator.detectChanges();
 
             clickButton('experiments-configure-back-btn');
@@ -468,7 +474,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
             // `url` and `section` are this screen's own arrival hints; echoing them would put
             // dead params on the list's address, which it then writes back on every filter change.
             routeQueryParams = { pageId: 'page-1', url: '/index', section: 'variants' };
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
             spectator.detectChanges();
 
             clickButton('experiments-configure-back-btn');

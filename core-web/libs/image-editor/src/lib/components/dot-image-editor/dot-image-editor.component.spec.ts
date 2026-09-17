@@ -5,9 +5,10 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -54,8 +55,8 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             providers: [
                 provideNoopAnimations(),
                 Dispatcher,
-                mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
-                mockProvider(DynamicDialogRef, { close: jest.fn() }),
+                mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+                mockProvider(DynamicDialogRef, { close: vi.fn() }),
                 { provide: DynamicDialogConfig, useValue: { data } }
             ],
             // `componentProviders` overrides the component's own `providers`, so
@@ -117,7 +118,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             // The DynamicDialogRef `close` mock is shared across tests in this
             // describe; clear it so prior tests' close() calls don't leak into the
             // "not closed" assertions.
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             isDirty.set(false);
             canUndo.set(false);
             canRedo.set(false);
@@ -127,21 +128,21 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
             // Spy before creation so the constructor's assetRequested dispatch is
             // captured (injectDispatch dispatches through Dispatcher.prototype).
-            jest.spyOn(Dispatcher.prototype, 'dispatch');
+            vi.spyOn(Dispatcher.prototype, 'dispatch');
 
             spectator = createComponent();
             dispatcher = spectator.inject(Dispatcher, true);
             dialogRef = spectator.inject(DynamicDialogRef, true);
             // Resolve the component-scoped instance and spy on its confirm method.
             confirmationService = spectator.inject(ConfirmationService, true);
-            jest.spyOn(confirmationService, 'confirm');
+            vi.spyOn(confirmationService, 'confirm');
         });
 
         afterEach(() => {
             // Restore the `Dispatcher.prototype.dispatch` and `confirm` spies (clearAllMocks
             // only resets call records, not the spied methods) so a prototype-level spy
             // never leaks across these suites.
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
         });
 
         it('should render the root and the four child components', () => {
@@ -188,7 +189,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
             spectator.query(DotImageEditorFooterComponent)!.$cancel.emit();
 
-            const confirmation = (confirmationService.confirm as jest.Mock).mock
+            const confirmation = (confirmationService.confirm as Mock).mock
                 .calls[0][0] as Confirmation;
             confirmation.reject?.(ConfirmEventType.REJECT);
 
@@ -200,7 +201,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
             spectator.query(DotImageEditorFooterComponent)!.$cancel.emit();
 
-            const confirmation = (confirmationService.confirm as jest.Mock).mock
+            const confirmation = (confirmationService.confirm as Mock).mock
                 .calls[0][0] as Confirmation;
             confirmation.accept?.();
 
@@ -212,7 +213,7 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
             spectator.query(DotImageEditorFooterComponent)!.$cancel.emit();
 
-            const confirmation = (confirmationService.confirm as jest.Mock).mock
+            const confirmation = (confirmationService.confirm as Mock).mock
                 .calls[0][0] as Confirmation;
             confirmation.reject?.(ConfirmEventType.CANCEL);
 
@@ -360,11 +361,11 @@ describe('DotImageEditorComponent — full screen', () => {
     const container = document.createElement('div');
     const dialog: {
         maximized: boolean | undefined;
-        maximize: jest.Mock;
+        maximize: Mock;
         container: () => HTMLElement;
     } = {
         maximized: undefined,
-        maximize: jest.fn(() => (dialog.maximized = !dialog.maximized)),
+        maximize: vi.fn(() => (dialog.maximized = !dialog.maximized)),
         container: () => container
     };
 
@@ -379,8 +380,8 @@ describe('DotImageEditorComponent — full screen', () => {
         providers: [
             provideNoopAnimations(),
             Dispatcher,
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             { provide: DynamicDialogConfig, useValue: { data } }
         ],
         componentProviders: [
@@ -502,19 +503,19 @@ describe('DotImageEditorComponent (no ambient MessageService)', () => {
         providers: [
             provideNoopAnimations(),
             Dispatcher,
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             { provide: DynamicDialogConfig, useValue: { data } },
             // Stub the boundaries the real tree reaches — HTTP and server config — so the mount
             // needs no backend. Everything else resolves from the library itself.
             mockProvider(DotImageEditorService, {
-                loadAssetMeta: jest.fn(() => of(assetMeta)),
-                loadPreviewImage: jest.fn(() => of('blob:preview')),
-                getFileSize: jest.fn(() => of(null)),
-                triggerDownload: jest.fn(),
-                saveEditedImage: jest.fn()
+                loadAssetMeta: vi.fn(() => of(assetMeta)),
+                loadPreviewImage: vi.fn(() => of('blob:preview')),
+                getFileSize: vi.fn(() => of(null)),
+                triggerDownload: vi.fn(),
+                saveEditedImage: vi.fn()
             }),
-            mockProvider(DotPropertiesService, { getKey: jest.fn(() => of('false')) })
+            mockProvider(DotPropertiesService, { getKey: vi.fn(() => of('false')) })
         ]
     });
 

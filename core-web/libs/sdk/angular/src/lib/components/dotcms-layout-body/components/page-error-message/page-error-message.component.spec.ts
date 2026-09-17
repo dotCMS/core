@@ -1,4 +1,5 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mocked, vi } from 'vitest';
 
 import { PageErrorMessageComponent } from './page-error-message.component';
 
@@ -7,7 +8,7 @@ import { DotCMSStore } from '../../../../store/dotcms.store';
 describe('PageErrorMessageComponent', () => {
     let spectator: Spectator<PageErrorMessageComponent>;
     let component: PageErrorMessageComponent;
-    let dotcmsContextService: jest.Mocked<DotCMSStore>;
+    let dotcmsContextService: Mocked<DotCMSStore>;
 
     const createComponent = createComponentFactory({
         component: PageErrorMessageComponent,
@@ -17,8 +18,8 @@ describe('PageErrorMessageComponent', () => {
 
     beforeEach(() => {
         dotcmsContextService = {
-            isDevMode: jest.fn()
-        } as unknown as jest.Mocked<DotCMSStore>;
+            isDevMode: vi.fn()
+        } as unknown as Mocked<DotCMSStore>;
 
         spectator = createComponent({
             providers: [
@@ -30,7 +31,7 @@ describe('PageErrorMessageComponent', () => {
         });
 
         component = spectator.component;
-        jest.spyOn(console, 'warn').mockImplementation();
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     });
 
     it('should create', () => {

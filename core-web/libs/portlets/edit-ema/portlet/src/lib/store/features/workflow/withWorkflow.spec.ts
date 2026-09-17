@@ -1,12 +1,12 @@
-import { describe, expect, it } from '@jest/globals';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import {
     createServiceFactory,
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, Subject } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -64,7 +64,7 @@ describe('withLoad', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             {
                 provide: DotPageApiService,
@@ -72,20 +72,20 @@ describe('withLoad', () => {
                     get: () => of({}),
                     getClientPage: () => of({}),
                     getGraphQLPage: () => of({}),
-                    save: jest.fn()
+                    save: vi.fn()
                 }
             },
             {
                 provide: DotWorkflowsActionsService,
                 useValue: {
-                    getByInode: jest.fn().mockReturnValue(of(mockWorkflowsActions))
+                    getByInode: vi.fn().mockReturnValue(of(mockWorkflowsActions))
                 }
             },
             {
                 provide: DotContentletLockerService,
                 useValue: {
-                    unlock: jest.fn().mockReturnValue(of({})),
-                    lock: jest.fn().mockReturnValue(of({}))
+                    unlock: vi.fn().mockReturnValue(of({})),
+                    lock: vi.fn().mockReturnValue(of({}))
                 }
             },
             { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() }
@@ -106,7 +106,7 @@ describe('withLoad', () => {
     });
 
     it('should fetch workflow actions when page asset inode changes (effect)', () => {
-        const getByInodeSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
+        const getByInodeSpy = vi.spyOn(dotWorkflowsActionsService, 'getByInode');
         store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
         spectator.flushEffects();
         expect(getByInodeSpy).toHaveBeenCalledWith(MOCK_RESPONSE_HEADLESS.page.inode);
@@ -117,7 +117,7 @@ describe('withLoad', () => {
     describe('withMethods', () => {
         describe('workflowFetch', () => {
             it('should call get workflow actions using the provided inode', () => {
-                const spyWorkflowActions = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
+                const spyWorkflowActions = vi.spyOn(dotWorkflowsActionsService, 'getByInode');
                 store.workflowFetch('123');
                 expect(store.workflowIsLoading()).toBe(false);
                 expect(store.workflowActions()).toEqual(mockWorkflowsActions);
@@ -274,11 +274,10 @@ describe('withLoad', () => {
             };
             const languagesSubject = new Subject<DotLanguage[]>();
 
-            jest.spyOn(spectator.inject(DotPageApiService), 'get').mockReturnValue(of(freshPage));
-            jest.spyOn(
-                spectator.inject(DotLanguagesService),
-                'getLanguagesUsedPage'
-            ).mockReturnValue(languagesSubject);
+            vi.spyOn(spectator.inject(DotPageApiService), 'get').mockReturnValue(of(freshPage));
+            vi.spyOn(spectator.inject(DotLanguagesService), 'getLanguagesUsedPage').mockReturnValue(
+                languagesSubject
+            );
 
             store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
             spectator.flushEffects();
@@ -304,7 +303,7 @@ describe('withLoad', () => {
 
     describe('reloadPageAfterLockChange – source tagging', () => {
         it('should tag pageAssetResponse.source as rest when reloading via REST', () => {
-            jest.spyOn(spectator.inject(DotPageApiService), 'get').mockReturnValue(
+            vi.spyOn(spectator.inject(DotPageApiService), 'get').mockReturnValue(
                 of(MOCK_RESPONSE_HEADLESS)
             );
             store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
@@ -318,7 +317,7 @@ describe('withLoad', () => {
 
         it('should tag pageAssetResponse.source as graphql when reloading via GraphQL', () => {
             store.setCustomClient({ query: 'query', variables: { depth: '1' } });
-            jest.spyOn(spectator.inject(DotPageApiService), 'getGraphQLPage').mockReturnValue(
+            vi.spyOn(spectator.inject(DotPageApiService), 'getGraphQLPage').mockReturnValue(
                 of({ pageAsset: MOCK_RESPONSE_HEADLESS, content: { some: 'data' } })
             );
             store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
@@ -333,14 +332,14 @@ describe('withLoad', () => {
 
     afterEach(() => {
         // restoreAllMocks: DotLanguagesService is a shared `useValue` instance across every
-        // test in this file, so a jest.spyOn(...).mockReturnValue() from one test (e.g. the
+        // test in this file, so a vi.spyOn(...).mockReturnValue() from one test (e.g. the
         // atomicity test's Subject-based getLanguagesUsedPage stub) otherwise leaks into every
         // later test — restoreAllMocks reverts spyOn-wrapped methods to their original
         // implementation, which clearAllMocks alone does not do.
-        jest.restoreAllMocks();
-        // clearAllMocks: restoreAllMocks only affects jest.spyOn-created mocks; the plain
-        // jest.fn() mocks provided via `useValue` (e.g. dotContentletLockerService.lock/unlock)
+        vi.restoreAllMocks();
+        // clearAllMocks: restoreAllMocks only affects vi.spyOn-created mocks; the plain
+        // vi.fn() mocks provided via `useValue` (e.g. dotContentletLockerService.lock/unlock)
         // still need their call history reset between tests.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 });

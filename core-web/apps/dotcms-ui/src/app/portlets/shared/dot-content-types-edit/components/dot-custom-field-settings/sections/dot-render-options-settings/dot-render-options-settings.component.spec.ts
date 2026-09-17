@@ -1,5 +1,11 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    SpyObject,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { FieldTree } from '@angular/forms/signals';
 
@@ -92,7 +98,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             imports: [InputTextModule, ToggleSwitchModule, DotMessagePipe],
             providers: [
                 mockProvider(DotFieldVariablesService, {
-                    save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
+                    save: vi.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
                 { provide: DotMessageService, useValue: messageServiceMock }
             ],
@@ -100,7 +106,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
         });
 
         beforeEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             spectator = createComponent();
             spectator.setInput('field', MOCK_FIELD_BASE);
             dotFieldVariablesService = spectator.inject(DotFieldVariablesService);
@@ -246,7 +252,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
 
                 component.save(MOCK_FIELD_BASE).subscribe();
 
-                const savedArg = (dotFieldVariablesService.save as jest.Mock).mock.calls[0][1];
+                const savedArg = (dotFieldVariablesService.save as Mock).mock.calls[0][1];
                 const parsed = JSON.parse(savedArg.value);
                 expect(parsed.width).toBe('398px');
                 expect(parsed.height).toBe('400px');
@@ -258,13 +264,13 @@ describe('DotRenderOptionsSettingsComponent', () => {
                 // Call save again — it should now carry the id from the first save
                 component.save(MOCK_FIELD_BASE).subscribe();
 
-                const secondCallArg = (dotFieldVariablesService.save as jest.Mock).mock
+                const secondCallArg = (dotFieldVariablesService.save as Mock).mock
                     .calls[1][1] as DotFieldVariable;
                 expect(secondCallArg.id).toBe(MOCK_SAVED_VARIABLE.id);
             });
 
             it('should propagate errors from DotFieldVariablesService.save', () => {
-                jest.spyOn(dotFieldVariablesService, 'save').mockReturnValue(
+                vi.spyOn(dotFieldVariablesService, 'save').mockReturnValue(
                     throwError(() => new Error('Save failed'))
                 );
 
@@ -353,7 +359,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             imports: [InputTextModule, ToggleSwitchModule, DotMessagePipe],
             providers: [
                 mockProvider(DotFieldVariablesService, {
-                    save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
+                    save: vi.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
                 { provide: DotMessageService, useValue: messageServiceMock }
             ],
@@ -392,7 +398,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
         it('should include existing variable id in save payload (PUT-style update)', () => {
             component.save(fieldWithVariable).subscribe();
 
-            const savedArg = (dotFieldVariablesService.save as jest.Mock).mock
+            const savedArg = (dotFieldVariablesService.save as Mock).mock
                 .calls[0][1] as DotFieldVariable;
             expect(savedArg.id).toBe(MOCK_FIELD_VARIABLE_OPTIONS.id);
         });
@@ -421,7 +427,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             imports: [InputTextModule, ToggleSwitchModule, DotMessagePipe],
             providers: [
                 mockProvider(DotFieldVariablesService, {
-                    save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
+                    save: vi.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
                 { provide: DotMessageService, useValue: messageServiceMock }
             ],
@@ -511,7 +517,7 @@ describe('DotRenderOptionsSettingsComponent', () => {
             imports: [InputTextModule, ToggleSwitchModule, DotMessagePipe],
             providers: [
                 mockProvider(DotFieldVariablesService, {
-                    save: jest.fn(() => of(MOCK_SAVED_VARIABLE))
+                    save: vi.fn(() => of(MOCK_SAVED_VARIABLE))
                 }),
                 { provide: DotMessageService, useValue: messageServiceMock }
             ],

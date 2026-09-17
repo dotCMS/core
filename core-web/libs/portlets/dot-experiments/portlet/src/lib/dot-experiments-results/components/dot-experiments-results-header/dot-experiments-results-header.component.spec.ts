@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { ActivatedRoute, Params, provideRouter, Router } from '@angular/router';
@@ -28,10 +29,10 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const createStoreMock = () => ({
-    experiment: jest.fn().mockReturnValue(EXPERIMENT),
-    page: jest.fn().mockReturnValue(null),
-    $status: jest.fn().mockReturnValue(DotExperimentStatus.RUNNING),
-    $isSaving: jest.fn().mockReturnValue(false)
+    experiment: vi.fn().mockReturnValue(EXPERIMENT),
+    page: vi.fn().mockReturnValue(null),
+    $status: vi.fn().mockReturnValue(DotExperimentStatus.RUNNING),
+    $isSaving: vi.fn().mockReturnValue(false)
 });
 
 /**
@@ -47,7 +48,7 @@ describe('DotExperimentsResultsHeaderComponent', () => {
     let storeMock: ReturnType<typeof createStoreMock>;
     /** The address the screen arrived on, as `ActivatedRoute` reports it. */
     let routeQueryParams: Params;
-    let navigate: jest.SpyInstance;
+    let navigate: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsResultsHeaderComponent,
@@ -83,7 +84,7 @@ describe('DotExperimentsResultsHeaderComponent', () => {
         storeMock = createStoreMock();
         routeQueryParams = {};
         spectator = createComponent();
-        navigate = jest.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+        navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
         spectator.detectChanges();
     });
 

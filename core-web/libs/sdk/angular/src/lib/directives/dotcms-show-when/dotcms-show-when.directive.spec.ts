@@ -1,17 +1,17 @@
-import { describe, it, expect } from '@jest/globals';
-import { byTestId, createDirectiveFactory } from '@openng/spectator/jest';
+import { byTestId, createDirectiveFactory } from '@openng/spectator/vitest';
+import { Mock, describe, expect, it, vi } from 'vitest';
 
 import { UVE_MODE, UVEState } from '@dotcms/types';
 import { getUVEState } from '@dotcms/uve';
 
 import { DotCMSShowWhenDirective } from './dotcms-show-when.directive';
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 describe('DotCMSShowWhenDirective', () => {
-    const getUVEStateMock = getUVEState as jest.Mock;
+    const getUVEStateMock = getUVEState as Mock;
 
     const createDirective = createDirectiveFactory({
         directive: DotCMSShowWhenDirective

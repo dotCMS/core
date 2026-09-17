@@ -22,28 +22,30 @@ describe('CanDeactivateGuardService', () => {
         expect(service).toBeTruthy();
     });
 
-    it('should let the user leave the route when allowRouteDeactivation has been called', (done) => {
-        dotRouterService.allowRouteDeactivation();
-        service.canDeactivate().subscribe((deactivate) => {
-            expect(deactivate).toBeTruthy();
-            done();
-        });
-    });
+    it('should let the user leave the route when allowRouteDeactivation has been called', () =>
+        new Promise<void>((done) => {
+            dotRouterService.allowRouteDeactivation();
+            service.canDeactivate().subscribe((deactivate) => {
+                expect(deactivate).toBeTruthy();
+                done();
+            });
+        }));
 
     it('canBeDesactivated should be false', () => {
         dotRouterService.forbidRouteDeactivation();
         service.canDeactivate().subscribe(() => {
-            fail('Should not be called if canBeDesactivated is false');
+            expect.fail('Should not be called if canBeDesactivated is false');
         });
     });
 
-    it('should set request a page leave', (done) => {
-        dotRouterService.pageLeaveRequest$.subscribe(() => {
-            done();
-        });
-        dotRouterService.forbidRouteDeactivation();
-        service.canDeactivate().subscribe(() => {
-            fail('Should not be called if canBeDesactivated is false');
-        });
-    });
+    it('should set request a page leave', () =>
+        new Promise<void>((done) => {
+            dotRouterService.pageLeaveRequest$.subscribe(() => {
+                done();
+            });
+            dotRouterService.forbidRouteDeactivation();
+            service.canDeactivate().subscribe(() => {
+                expect.fail('Should not be called if canBeDesactivated is false');
+            });
+        }));
 });

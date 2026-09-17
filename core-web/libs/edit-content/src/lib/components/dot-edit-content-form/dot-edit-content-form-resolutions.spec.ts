@@ -1,3 +1,5 @@
+import { Mock, vi } from 'vitest';
+
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSClazzes,
@@ -12,8 +14,8 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { attachOrderedFields, parsePreservingKeyOrder } from '../../utils/key-value-order.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
-jest.mock('../../utils/relationshipFromContentlet', () => ({
-    getRelationshipFromContentlet: jest.fn()
+vi.mock('../../utils/relationshipFromContentlet', () => ({
+    getRelationshipFromContentlet: vi.fn()
 }));
 
 // Ensure resolutionValue is properly initialized before each test
@@ -76,7 +78,7 @@ describe('DotEditContentFormResolutions', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Restore resolutionValue to its original state before each test
         // This prevents test contamination from other tests
@@ -387,7 +389,7 @@ describe('DotEditContentFormResolutions', () => {
         const mockRelationships = [{ identifier: 'id1' }, { identifier: 'id2' }];
 
         beforeEach(() => {
-            (getRelationshipFromContentlet as jest.Mock).mockReturnValue(mockRelationships);
+            (getRelationshipFromContentlet as Mock).mockReturnValue(mockRelationships);
         });
 
         it('should join relationship identifiers with commas', () => {
@@ -404,7 +406,7 @@ describe('DotEditContentFormResolutions', () => {
         });
 
         it('should handle empty relationships', () => {
-            (getRelationshipFromContentlet as jest.Mock).mockReturnValue([]);
+            (getRelationshipFromContentlet as Mock).mockReturnValue([]);
             const result = resolutionValue[FIELD_TYPES.RELATIONSHIP](mockContentlet, mockField);
             expect(result).toBe('');
         });

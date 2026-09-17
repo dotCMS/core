@@ -31,6 +31,14 @@ export interface DotContentDriveLazyLoadEvent {
 export interface DotContentDriveActionableFolder {
     type: 'folder';
     identifier: string;
+    /**
+     * The row's key in the listing, which the grid marks busy by.
+     *
+     * Optional because the search service only backfills it from `identifier` when the API returned
+     * none, leaving legacy data with whatever it has. A caller registering a run over this folder
+     * should target both, since neither is reliably the key the row carries.
+     */
+    inode?: string;
     /** The folder's own name (last path segment). */
     name: string;
     /** The folder's own full path, e.g. `/application/blog/`. */
@@ -120,6 +128,24 @@ export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
  * these, and only that caller uses this type.
  */
 export type DotContentDriveBrowseItem = DotContentDriveItem | DotContentDriveLink;
+
+/**
+ * Whether a browse row is one the content actions can act on.
+ *
+ * Everything except a menu link: links have no workflow state, no permissions of their own and no
+ * editor to open, so they are displayed and selectable but never actionable.
+ *
+ * Lives with the union rather than beside either consumer, because both the shared listing and the
+ * portlets that bind to it have to narrow the same way. A caller that takes the narrower type
+ * without going through this is asserting something the emitter does not promise.
+ */
+export function isActionableBrowseItem(
+    item: DotContentDriveBrowseItem
+): item is DotContentDriveItem {
+    const row = item as { type?: string; extension?: string };
+
+    return row.type !== 'link' && row.extension !== 'link';
+}
 
 /**
  * An item the shared folder actions (context menu, Edit-folder dialog) can act on.
@@ -430,3 +456,27 @@ export interface DotBulkRefreshCompletedEvent extends Partial<DotBulkRefreshCoun
      */
     jobId?: string;
 }
+
+/**
+ * Why a single file in a bulk upload batch did not make it.
+ *
+ * The closed set fixed by the submission contract
+ * (`specs/37166-bulk-file-upload/contracts/bulk-upload-api.md` §3), carried as `results[].reason`
+ * on a `FAILED` item. Adding a member is a change to both halves of #37166.
+ *
+ * It lives here rather than beside the copy that renders it because it is a **wire** vocabulary:
+ * the service that reads a run's outcome sits in `data-access`, and a service there cannot import
+ * a type out of a portlet. Resolving a reason to product copy is the portlet's business and stays
+ * there.
+ */
+export const DOT_BULK_UPLOAD_FAILURE_REASONS = [
+    'OVER_SIZE_LIMIT',
+    'DISALLOWED_FILE_TYPE',
+    'FOLDER_FILTER_MISMATCH',
+    'NAME_COLLISION',
+    'PERMISSION_DENIED',
+    'STAGED_CONTENT_UNAVAILABLE',
+    'UNCLASSIFIED'
+] as const;
+
+export type DotBulkUploadFailureReason = (typeof DOT_BULK_UPLOAD_FAILURE_REASONS)[number];

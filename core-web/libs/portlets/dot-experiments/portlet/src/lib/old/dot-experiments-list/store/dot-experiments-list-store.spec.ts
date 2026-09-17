@@ -3,8 +3,9 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -93,237 +94,264 @@ describe('DotExperimentsListStore', () => {
 
     beforeEach(() => {
         // No show warnings about store livecycle
-        jest.spyOn(console, 'warn').mockImplementation(jest.fn());
+        vi.spyOn(console, 'warn').mockImplementation(vi.fn());
 
         spectator = storeService();
         dotExperimentsService = spectator.inject(DotExperimentsService);
 
         dotExperimentsService.getAll.mockReturnValue(of(EXPERIMENT_MOCK_ALL));
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
+        // The store pipes each of these, so a bare mockProvider — which returns
+        // undefined — made it dereference nothing. The tests below assert only that the
+        // call happened; rxjs reported the failure asynchronously, so Jest dropped it
+        // and Vitest counts it as an unhandled error.
+        dotExperimentsService.archive.mockReturnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsService.cancelSchedule.mockReturnValue(of(EXPERIMENT_MOCK));
+        dotExperimentsService.stop.mockReturnValue(of(EXPERIMENT_MOCK));
 
         store = spectator.inject(DotExperimentsListStore);
         messageService = spectator.inject(MessageService);
         store.ngrxOnStateInit();
     });
 
-    it('should have getState$ from the store', (done) => {
-        store.state$.subscribe((state) => {
-            expect(state.status).toEqual(ComponentStatus.LOADED);
-            done();
-        });
-    });
-
-    it('should  load initial filter status with the correct states', (done) => {
-        store.state$.subscribe(({ filterStatus }) => {
-            expect(filterStatus).toEqual([
-                DotExperimentStatus.RUNNING,
-                DotExperimentStatus.SCHEDULED,
-                DotExperimentStatus.DRAFT,
-                DotExperimentStatus.ENDED
-            ]);
-            done();
-        });
-    });
-
-    it('should update status to the store', (done) => {
-        store.setComponentStatus(ComponentStatus.LOADED);
-        store.state$.subscribe(({ status }) => {
-            expect(status).toEqual(ComponentStatus.LOADED);
-            done();
-        });
-    });
-    it('should update experiments to the store', (done) => {
-        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
-        store.state$.subscribe(({ experiments }) => {
-            expect(experiments).toEqual(EXPERIMENT_MOCK_ALL);
-            done();
-        });
-    });
-    it('should update status filtered to the store', (done) => {
-        const statusSelectedMock = [DotExperimentStatus.DRAFT, DotExperimentStatus.ENDED];
-        store.setFilterStatus(statusSelectedMock);
-        store.state$.subscribe(({ filterStatus }) => {
-            expect(filterStatus).toEqual(statusSelectedMock);
-            done();
-        });
-    });
-
-    it('should delete experiment by id of the store', (done) => {
-        const expected: string[] = [EXPERIMENT_MOCK.id, EXPERIMENT_MOCK_2.id];
-
-        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
-        store.deleteExperimentById(EXPERIMENT_MOCK_1.id);
-        store.state$.subscribe(({ experiments }) => {
-            expect(experiments.map((experiment) => experiment.id)).toEqual(expected);
-            done();
-        });
-    });
-
-    it('should change status to archived', (done) => {
-        store.archiveExperiment({ ...getExperimentMock(1) });
-        store.state$.subscribe(() => {
-            expect(dotExperimentsService.archive).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
-            done();
-        });
-    });
-
-    it('should change status to Draft when cancel schedule', (done) => {
-        store.cancelSchedule({ ...getExperimentMock(1) });
-        store.state$.subscribe(() => {
-            expect(dotExperimentsService.cancelSchedule).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
-            done();
-        });
-    });
-
-    it('should change status to ended', (done) => {
-        store.stopExperiment({ ...getExperimentMock(1) });
-        store.state$.subscribe(() => {
-            expect(dotExperimentsService.stop).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
-            done();
-        });
-    });
-
-    it('should get ordered experiment by status', (done) => {
-        const endedExperiments: DotExperimentsWithActions[] = [
-            { id: '111', status: DotExperimentStatus.ENDED }
-        ] as DotExperimentsWithActions[];
-        const archivedExperiments: DotExperimentsWithActions[] = [
-            { id: '10', status: DotExperimentStatus.ARCHIVED }
-        ] as DotExperimentsWithActions[];
-
-        const runningExperiments: DotExperimentsWithActions[] = [
-            { id: '45', status: DotExperimentStatus.RUNNING }
-        ] as DotExperimentsWithActions[];
-
-        const draftExperiments: DotExperimentsWithActions[] = [
-            { id: '33', status: DotExperimentStatus.DRAFT }
-        ] as DotExperimentsWithActions[];
-
-        const scheduledExperiments: DotExperimentsWithActions[] = [
-            { id: '1', status: DotExperimentStatus.SCHEDULED }
-        ] as DotExperimentsWithActions[];
-
-        const expected: GroupedExperimentByStatus[] = [
-            {
-                status: DotExperimentStatus.RUNNING,
-                experiments: [...runningExperiments]
-            },
-            {
-                status: DotExperimentStatus.SCHEDULED,
-                experiments: [...scheduledExperiments]
-            },
-            { status: DotExperimentStatus.DRAFT, experiments: [...draftExperiments] },
-            { status: DotExperimentStatus.ENDED, experiments: [...endedExperiments] },
-            {
-                status: DotExperimentStatus.ARCHIVED,
-                experiments: [...archivedExperiments]
-            }
-        ];
-
-        store.setExperiments([
-            ...draftExperiments,
-            ...scheduledExperiments,
-            ...endedExperiments,
-            ...archivedExperiments,
-            ...runningExperiments
-        ]);
-
-        store.getExperimentsFilteredAndGroupedByStatus$.subscribe((groupedExperiments) => {
-            groupedExperiments.map((groupedExperiment) => {
-                const expectedExperimentId = expected.find(
-                    (group) => group.status === groupedExperiment.status
-                ).experiments[0].id;
-                expect(groupedExperiment.experiments[0].id).toEqual(expectedExperimentId);
-            });
-            done();
-        });
-    });
-
-    it('should have the MenuItems in all status', (done) => {
-        const EXPERIMENTS_MOCK: DotExperiment[] = [
-            { ...EXPERIMENT_MOCK, status: DotExperimentStatus.DRAFT },
-            { ...EXPERIMENT_MOCK, status: DotExperimentStatus.RUNNING },
-            { ...EXPERIMENT_MOCK, status: DotExperimentStatus.ARCHIVED },
-            { ...EXPERIMENT_MOCK, status: DotExperimentStatus.ENDED },
-            { ...EXPERIMENT_MOCK, status: DotExperimentStatus.SCHEDULED }
-        ];
-
-        store.setExperiments([...EXPERIMENTS_MOCK]);
-
-        store.getExperimentsFilteredAndGroupedByStatus$.subscribe(
-            (experimentsFilteredAndGroupedByStatus: GroupedExperimentByStatus[]) => {
-                experimentsFilteredAndGroupedByStatus.forEach((groupedExperiment) => {
-                    const { status, experiments } = groupedExperiment;
-
-                    expect(experiments[0].actionsItemsMenu.length).toEqual(MENU_ITEMS_QTY);
-
-                    expect(
-                        experiments[0].actionsItemsMenu[MENU_ITEMS_CANCEL_SCHEDULE_INDEX].visible
-                    ).toEqual(AllowedActionsByExperimentStatus['cancelSchedule'].includes(status));
-                    expect(
-                        experiments[0].actionsItemsMenu[MENU_ITEMS_CONFIGURATION_INDEX].visible
-                    ).toEqual(AllowedActionsByExperimentStatus['configuration'].includes(status));
-                    expect(
-                        experiments[0].actionsItemsMenu[MENU_ITEMS_RESULTS_INDEX].visible
-                    ).toEqual(AllowedActionsByExperimentStatus['results'].includes(status));
-                    expect(
-                        experiments[0].actionsItemsMenu[MENU_ITEMS_DELETE_INDEX].visible
-                    ).toEqual(AllowedActionsByExperimentStatus['delete'].includes(status));
-
-                    expect(
-                        experiments[0].actionsItemsMenu[MENU_ITEMS_ARCHIVE_INDEX].visible
-                    ).toEqual(AllowedActionsByExperimentStatus['archive'].includes(status));
-                    expect(experiments[0].actionsItemsMenu[MENU_ITEMS_END_INDEX].visible).toEqual(
-                        AllowedActionsByExperimentStatus['end'].includes(status)
-                    );
-                    expect(experiments[0].actionsItemsMenu[MENU_ITEMS_ABORT_INDEX].visible).toEqual(
-                        AllowedActionsByExperimentStatus['abort'].includes(status)
-                    );
-                    expect(
-                        experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible
-                    ).toEqual(AllowedActionsByExperimentStatus['pushPublish'].includes(status));
-                    expect(
-                        experiments[0].actionsItemsMenu[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible
-                    ).toEqual(AllowedActionsByExperimentStatus['addToBundle'].includes(status));
-                });
-
+    it('should have getState$ from the store', () =>
+        new Promise<void>((done) => {
+            store.state$.subscribe((state) => {
+                expect(state.status).toEqual(ComponentStatus.LOADED);
                 done();
-            }
-        );
-    });
+            });
+        }));
 
-    it('should not show Push Publish is there is no environments', (done) => {
-        spectator.service.patchState({ pushPublishEnvironments: [] });
+    it('should  load initial filter status with the correct states', () =>
+        new Promise<void>((done) => {
+            store.state$.subscribe(({ filterStatus }) => {
+                expect(filterStatus).toEqual([
+                    DotExperimentStatus.RUNNING,
+                    DotExperimentStatus.SCHEDULED,
+                    DotExperimentStatus.DRAFT,
+                    DotExperimentStatus.ENDED
+                ]);
+                done();
+            });
+        }));
 
-        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+    it('should update status to the store', () =>
+        new Promise<void>((done) => {
+            store.setComponentStatus(ComponentStatus.LOADED);
+            store.state$.subscribe(({ status }) => {
+                expect(status).toEqual(ComponentStatus.LOADED);
+                done();
+            });
+        }));
+    it('should update experiments to the store', () =>
+        new Promise<void>((done) => {
+            store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+            store.state$.subscribe(({ experiments }) => {
+                expect(experiments).toEqual(EXPERIMENT_MOCK_ALL);
+                done();
+            });
+        }));
+    it('should update status filtered to the store', () =>
+        new Promise<void>((done) => {
+            const statusSelectedMock = [DotExperimentStatus.DRAFT, DotExperimentStatus.ENDED];
+            store.setFilterStatus(statusSelectedMock);
+            store.state$.subscribe(({ filterStatus }) => {
+                expect(filterStatus).toEqual(statusSelectedMock);
+                done();
+            });
+        }));
 
-        store.getExperimentsWithActions$.pipe(take(1)).subscribe((experiments) => {
-            // Push Publish
-            expect(experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible).toEqual(
-                false
+    it('should delete experiment by id of the store', () =>
+        new Promise<void>((done) => {
+            const expected: string[] = [EXPERIMENT_MOCK.id, EXPERIMENT_MOCK_2.id];
+
+            store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+            store.deleteExperimentById(EXPERIMENT_MOCK_1.id);
+            store.state$.subscribe(({ experiments }) => {
+                expect(experiments.map((experiment) => experiment.id)).toEqual(expected);
+                done();
+            });
+        }));
+
+    it('should change status to archived', () =>
+        new Promise<void>((done) => {
+            store.archiveExperiment({ ...getExperimentMock(1) });
+            store.state$.subscribe(() => {
+                expect(dotExperimentsService.archive).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+                done();
+            });
+        }));
+
+    it('should change status to Draft when cancel schedule', () =>
+        new Promise<void>((done) => {
+            store.cancelSchedule({ ...getExperimentMock(1) });
+            store.state$.subscribe(() => {
+                expect(dotExperimentsService.cancelSchedule).toHaveBeenCalledWith(
+                    EXPERIMENT_MOCK_1.id
+                );
+                done();
+            });
+        }));
+
+    it('should change status to ended', () =>
+        new Promise<void>((done) => {
+            store.stopExperiment({ ...getExperimentMock(1) });
+            store.state$.subscribe(() => {
+                expect(dotExperimentsService.stop).toHaveBeenCalledWith(EXPERIMENT_MOCK_1.id);
+                done();
+            });
+        }));
+
+    it('should get ordered experiment by status', () =>
+        new Promise<void>((done) => {
+            const endedExperiments: DotExperimentsWithActions[] = [
+                { id: '111', status: DotExperimentStatus.ENDED }
+            ] as DotExperimentsWithActions[];
+            const archivedExperiments: DotExperimentsWithActions[] = [
+                { id: '10', status: DotExperimentStatus.ARCHIVED }
+            ] as DotExperimentsWithActions[];
+
+            const runningExperiments: DotExperimentsWithActions[] = [
+                { id: '45', status: DotExperimentStatus.RUNNING }
+            ] as DotExperimentsWithActions[];
+
+            const draftExperiments: DotExperimentsWithActions[] = [
+                { id: '33', status: DotExperimentStatus.DRAFT }
+            ] as DotExperimentsWithActions[];
+
+            const scheduledExperiments: DotExperimentsWithActions[] = [
+                { id: '1', status: DotExperimentStatus.SCHEDULED }
+            ] as DotExperimentsWithActions[];
+
+            const expected: GroupedExperimentByStatus[] = [
+                {
+                    status: DotExperimentStatus.RUNNING,
+                    experiments: [...runningExperiments]
+                },
+                {
+                    status: DotExperimentStatus.SCHEDULED,
+                    experiments: [...scheduledExperiments]
+                },
+                { status: DotExperimentStatus.DRAFT, experiments: [...draftExperiments] },
+                { status: DotExperimentStatus.ENDED, experiments: [...endedExperiments] },
+                {
+                    status: DotExperimentStatus.ARCHIVED,
+                    experiments: [...archivedExperiments]
+                }
+            ];
+
+            store.setExperiments([
+                ...draftExperiments,
+                ...scheduledExperiments,
+                ...endedExperiments,
+                ...archivedExperiments,
+                ...runningExperiments
+            ]);
+
+            store.getExperimentsFilteredAndGroupedByStatus$.subscribe((groupedExperiments) => {
+                groupedExperiments.map((groupedExperiment) => {
+                    const expectedExperimentId = expected.find(
+                        (group) => group.status === groupedExperiment.status
+                    )!.experiments[0].id;
+                    expect(groupedExperiment.experiments[0].id).toEqual(expectedExperimentId);
+                });
+                done();
+            });
+        }));
+
+    it('should have the MenuItems in all status', () =>
+        new Promise<void>((done) => {
+            const EXPERIMENTS_MOCK: DotExperiment[] = [
+                { ...EXPERIMENT_MOCK, status: DotExperimentStatus.DRAFT },
+                { ...EXPERIMENT_MOCK, status: DotExperimentStatus.RUNNING },
+                { ...EXPERIMENT_MOCK, status: DotExperimentStatus.ARCHIVED },
+                { ...EXPERIMENT_MOCK, status: DotExperimentStatus.ENDED },
+                { ...EXPERIMENT_MOCK, status: DotExperimentStatus.SCHEDULED }
+            ];
+
+            store.setExperiments([...EXPERIMENTS_MOCK]);
+
+            store.getExperimentsFilteredAndGroupedByStatus$.subscribe(
+                (experimentsFilteredAndGroupedByStatus: GroupedExperimentByStatus[]) => {
+                    experimentsFilteredAndGroupedByStatus.forEach((groupedExperiment) => {
+                        const { status, experiments } = groupedExperiment;
+
+                        expect(experiments[0].actionsItemsMenu.length).toEqual(MENU_ITEMS_QTY);
+
+                        expect(
+                            experiments[0].actionsItemsMenu[MENU_ITEMS_CANCEL_SCHEDULE_INDEX]
+                                .visible
+                        ).toEqual(
+                            AllowedActionsByExperimentStatus['cancelSchedule'].includes(status)
+                        );
+                        expect(
+                            experiments[0].actionsItemsMenu[MENU_ITEMS_CONFIGURATION_INDEX].visible
+                        ).toEqual(
+                            AllowedActionsByExperimentStatus['configuration'].includes(status)
+                        );
+                        expect(
+                            experiments[0].actionsItemsMenu[MENU_ITEMS_RESULTS_INDEX].visible
+                        ).toEqual(AllowedActionsByExperimentStatus['results'].includes(status));
+                        expect(
+                            experiments[0].actionsItemsMenu[MENU_ITEMS_DELETE_INDEX].visible
+                        ).toEqual(AllowedActionsByExperimentStatus['delete'].includes(status));
+
+                        expect(
+                            experiments[0].actionsItemsMenu[MENU_ITEMS_ARCHIVE_INDEX].visible
+                        ).toEqual(AllowedActionsByExperimentStatus['archive'].includes(status));
+                        expect(
+                            experiments[0].actionsItemsMenu[MENU_ITEMS_END_INDEX].visible
+                        ).toEqual(AllowedActionsByExperimentStatus['end'].includes(status));
+                        expect(
+                            experiments[0].actionsItemsMenu[MENU_ITEMS_ABORT_INDEX].visible
+                        ).toEqual(AllowedActionsByExperimentStatus['abort'].includes(status));
+                        expect(
+                            experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible
+                        ).toEqual(AllowedActionsByExperimentStatus['pushPublish'].includes(status));
+                        expect(
+                            experiments[0].actionsItemsMenu[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible
+                        ).toEqual(AllowedActionsByExperimentStatus['addToBundle'].includes(status));
+                    });
+
+                    done();
+                }
             );
-            done();
-        });
-    });
+        }));
 
-    it('should not show Push Publish and Add to Bundle is there  no EnterpriseLicense', (done) => {
-        spectator.service.patchState({ hasEnterpriseLicense: false });
+    it('should not show Push Publish is there is no environments', () =>
+        new Promise<void>((done) => {
+            spectator.service.patchState({ pushPublishEnvironments: [] });
 
-        store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+            store.setExperiments([...EXPERIMENT_MOCK_ALL]);
 
-        store.getExperimentsWithActions$.pipe(take(1)).subscribe((experiments) => {
-            // Push Publish
-            expect(experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible).toEqual(
-                false
-            );
+            store.getExperimentsWithActions$.pipe(take(1)).subscribe((experiments) => {
+                // Push Publish
+                expect(
+                    experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible
+                ).toEqual(false);
+                done();
+            });
+        }));
 
-            //Add to Bundle
-            expect(experiments[0].actionsItemsMenu[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible).toEqual(
-                false
-            );
-            done();
-        });
-    });
+    it('should not show Push Publish and Add to Bundle is there  no EnterpriseLicense', () =>
+        new Promise<void>((done) => {
+            spectator.service.patchState({ hasEnterpriseLicense: false });
+
+            store.setExperiments([...EXPERIMENT_MOCK_ALL]);
+
+            store.getExperimentsWithActions$.pipe(take(1)).subscribe((experiments) => {
+                // Push Publish
+                expect(
+                    experiments[0].actionsItemsMenu[MENU_ITEMS_PUSH_PUBLISH_INDEX].visible
+                ).toEqual(false);
+
+                //Add to Bundle
+                expect(
+                    experiments[0].actionsItemsMenu[MENU_ITEMS_ADD_T0_BUNDLE_INDEX].visible
+                ).toEqual(false);
+                done();
+            });
+        }));
 
     describe('Effects', () => {
         beforeEach(() => {
@@ -332,66 +360,71 @@ describe('DotExperimentsListStore', () => {
             store.initStore();
             store.loadExperiments(routerParamsPageId);
         });
-        it('should load experiments to store', (done) => {
-            expect(dotExperimentsService.getAll).toHaveBeenCalledWith(routerParamsPageId);
-            store.state$.subscribe(({ experiments }) => {
-                expect(experiments).toEqual(EXPERIMENT_MOCK_ALL);
-                done();
-            });
-        });
+        it('should load experiments to store', () =>
+            new Promise<void>((done) => {
+                expect(dotExperimentsService.getAll).toHaveBeenCalledWith(routerParamsPageId);
+                store.state$.subscribe(({ experiments }) => {
+                    expect(experiments).toEqual(EXPERIMENT_MOCK_ALL);
+                    done();
+                });
+            }));
 
-        it('should delete experiment from the store', (done) => {
-            dotExperimentsService.delete.mockReturnValue(of('deleted'));
+        it('should delete experiment from the store', () =>
+            new Promise<void>((done) => {
+                dotExperimentsService.delete.mockReturnValue(of('deleted'));
 
-            const expectedExperimentsInStore = [EXPERIMENT_MOCK_1, EXPERIMENT_MOCK_2];
-            const experimentToDelete = { ...EXPERIMENT_MOCK };
+                const expectedExperimentsInStore = [EXPERIMENT_MOCK_1, EXPERIMENT_MOCK_2];
+                const experimentToDelete = { ...EXPERIMENT_MOCK };
 
-            store.deleteExperiment(experimentToDelete);
+                store.deleteExperiment(experimentToDelete);
 
-            expect(dotExperimentsService.delete).toHaveBeenCalled();
-            expect(dotExperimentsService.delete).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
-            store.state$.subscribe(({ experiments }) => {
-                expect(experiments).toEqual(expectedExperimentsInStore);
-                done();
-            });
-        });
+                expect(dotExperimentsService.delete).toHaveBeenCalled();
+                expect(dotExperimentsService.delete).toHaveBeenCalledWith(EXPERIMENT_MOCK.id);
+                store.state$.subscribe(({ experiments }) => {
+                    expect(experiments).toEqual(expectedExperimentsInStore);
+                    done();
+                });
+            }));
 
-        it('should change experiment status to archive in the store', (done) => {
-            const expectedExperimentsInStore = [...EXPERIMENT_MOCK_ALL];
+        it('should change experiment status to archive in the store', () =>
+            new Promise<void>((done) => {
+                const expectedExperimentsInStore = [...EXPERIMENT_MOCK_ALL];
 
-            expectedExperimentsInStore[0].status = DotExperimentStatus.ARCHIVED;
+                expectedExperimentsInStore[0].status = DotExperimentStatus.ARCHIVED;
 
-            dotExperimentsService.archive.mockReturnValue(of(expectedExperimentsInStore[0]));
+                dotExperimentsService.archive.mockReturnValue(of(expectedExperimentsInStore[0]));
 
-            const experimentToArchive = EXPERIMENT_MOCK;
+                const experimentToArchive = EXPERIMENT_MOCK;
 
-            store.archiveExperiment(experimentToArchive);
+                store.archiveExperiment(experimentToArchive);
 
-            expect(dotExperimentsService.archive).toHaveBeenCalled();
-            expect(dotExperimentsService.archive).toHaveBeenCalledWith(experimentToArchive.id);
-            store.state$.subscribe(({ experiments }) => {
-                expect(experiments).toEqual(expectedExperimentsInStore);
-                done();
-            });
-        });
+                expect(dotExperimentsService.archive).toHaveBeenCalled();
+                expect(dotExperimentsService.archive).toHaveBeenCalledWith(experimentToArchive.id);
+                store.state$.subscribe(({ experiments }) => {
+                    expect(experiments).toEqual(expectedExperimentsInStore);
+                    done();
+                });
+            }));
 
-        it('should update sidebar isSaving to the store', (done) => {
-            store.setSidebarStatus({ status: ComponentStatus.SAVING, isOpen: true });
-            store.isSidebarSaving$.subscribe((isSaving) => {
-                expect(isSaving).toBe(true);
-                done();
-            });
-        });
+        it('should update sidebar isSaving to the store', () =>
+            new Promise<void>((done) => {
+                store.setSidebarStatus({ status: ComponentStatus.SAVING, isOpen: true });
+                store.isSidebarSaving$.subscribe((isSaving) => {
+                    expect(isSaving).toBe(true);
+                    done();
+                });
+            }));
 
-        it('should update isOpen and isSaving to the store', (done) => {
-            store.setSidebarStatus({ status: ComponentStatus.IDLE, isOpen: false });
-            store.createVm$.subscribe(({ sidebar, isSaving }) => {
-                expect(sidebar.isOpen).toBe(false);
-                expect(sidebar.status).toBe(ComponentStatus.IDLE);
-                expect(isSaving).toBe(false);
-                done();
-            });
-        });
+        it('should update isOpen and isSaving to the store', () =>
+            new Promise<void>((done) => {
+                store.setSidebarStatus({ status: ComponentStatus.IDLE, isOpen: false });
+                store.createVm$.subscribe(({ sidebar, isSaving }) => {
+                    expect(sidebar.isOpen).toBe(false);
+                    expect(sidebar.status).toBe(ComponentStatus.IDLE);
+                    expect(isSaving).toBe(false);
+                    done();
+                });
+            }));
 
         it('should save the experiment', () => {
             const isSavingSatuses = [];

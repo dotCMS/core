@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -57,11 +58,11 @@ describe('DotAssetPickerComponent — legacy Dojo host (no Router, no app shell)
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
             mockProvider(DotUploadService),
             mockProvider(DotWorkflowActionsFireService),
             { provide: DynamicDialogConfig, useValue: { data: CONFIG } },
-            mockProvider(DynamicDialogRef, { close: jest.fn(), onClose: of(undefined) })
+            mockProvider(DynamicDialogRef, { close: vi.fn(), onClose: of(undefined) })
         ],
         shallow: true
     });
