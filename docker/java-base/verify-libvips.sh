@@ -94,7 +94,7 @@ FORBIDDEN_PACKAGES=(
 )
 
 if [ "$VIPS_VERIFY_SCOPE" != "image" ]; then
-	printf '  skip  host package checks not asserted (scope=%s: the host may legitimately install these)\n' "$VIPS_VERIFY_SCOPE"
+	printf '  skip  package checks not asserted (scope=%s: a build machine may legitimately install these)\n' "$VIPS_VERIFY_SCOPE"
 elif command -v dpkg-query >/dev/null 2>&1; then
 	for pkg in "${FORBIDDEN_PACKAGES[@]}"; do
 		if dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q 'install ok installed'; then
@@ -115,7 +115,7 @@ section "forbidden shared libraries"
 
 FORBIDDEN_LIB_GLOBS=('libMagickCore*' 'libMagickWand*' 'libOpenEXR*' 'libIlmThread*' 'libImath*')
 if [ "$VIPS_VERIFY_SCOPE" != "image" ]; then
-	printf '  skip  host library scan not asserted (scope=%s: the host may legitimately install these)\n' "$VIPS_VERIFY_SCOPE"
+	printf '  skip  library scan not asserted (scope=%s: a build machine may legitimately install these)\n' "$VIPS_VERIFY_SCOPE"
 else
 	for glob in "${FORBIDDEN_LIB_GLOBS[@]}"; do
 		found="$(find /usr/lib /usr/lib64 /lib /lib64 -maxdepth 3 -name "$glob" 2>/dev/null | head -5)"
