@@ -201,6 +201,18 @@ describe('DotContentDriveSearchInputComponent', () => {
             expect(trigger.style.justifyContent).toBe('space-between');
         });
 
+        // The gray of `p-button-secondary` must go white through the PT inline style, not a
+        // Tailwind class: PrimeNG's styles are appended to the head after the Tailwind stylesheet,
+        // so `bg-white` loses the cascade war at equal specificity. The value is the input's own
+        // token variable, so both halves of the field stay the same white in any theme.
+        it('should paint the trigger with the field background', () => {
+            spectator.detectChanges();
+
+            const trigger = spectator.query(byTestId('search-scope-trigger')) as HTMLElement;
+
+            expect(trigger.style.background).toBe('var(--p-inputtext-background)');
+        });
+
         it('should offer a distinct explanation for each option in the panel', () => {
             spectator.detectChanges();
 

@@ -126,17 +126,28 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     );
 
     /**
-     * The trigger's own border, removed via PT rather than a Tailwind `!important` class, and its
-     * content pinned to the edges so the active scope reads from the same place no matter which
-     * scope is active.
+     * The trigger's own border removed and its background set to the field's white, both via PT
+     * rather than Tailwind classes, and its content pinned to the edges so the active scope reads
+     * from the same place no matter which scope is active.
      *
      * `pButtonPT`'s `root.style` is consumed through `[style]`/`[class]` HOST BINDINGS on the
      * directive's own host element (see `Bind`, the directive backing this), which Angular applies
      * the same way any `[style]` binding is — as a real inline style. That wins the cascade over
      * PrimeNG's own injected `.p-button-secondary` rule unconditionally, the same guarantee
-     * `!important` gives, without reaching for it.
+     * `!important` gives, without reaching for it. A plain `bg-white` class cannot: PrimeNG's
+     * styles are appended to the head at runtime, after the Tailwind stylesheet, so at equal
+     * specificity the injected rule wins — which is why the border went through PT first and the
+     * background follows it.
      *
-     * The second entry exists because Lara centers a button's content (`justify-content: center`,
+     * The background value is the same design token the neighboring input paints with —
+     * `inputtext.background`, read as the CSS variable PrimeNG emits for every token — so the two
+     * halves of the field stay the same white in any theme, including dark mode, and a restyling
+     * of the input re-whites the trigger for free. As a side effect the hover recolor
+     * `.p-button-secondary` would apply is also beaten by the inline style, which is what a
+     * dropdown trigger wants: the surface does not change under the pointer, the way `p-select`
+     * behaves.
+     *
+     * The last entry exists because Lara centers a button's content (`justify-content: center`,
      * hardcoded in the injected stylesheet — no design token exposes it). Centered, the label and
      * the chevron are one group that recenters itself as its width changes, so "Title" and
      * "All Fields" rendered with both at different offsets. `space-between` — the layout PrimeNG's
@@ -144,7 +155,13 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
      * edge of the fixed-width button, so switching scopes moves neither.
      */
     protected readonly TRIGGER_PT = {
-        root: { style: { border: 'none', justifyContent: 'space-between' } }
+        root: {
+            style: {
+                border: 'none',
+                background: 'var(--p-inputtext-background)',
+                justifyContent: 'space-between'
+            }
+        }
     };
 
     /**

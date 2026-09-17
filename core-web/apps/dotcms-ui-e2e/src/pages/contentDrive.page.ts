@@ -21,6 +21,18 @@ import { Portlet } from '@utils/portlets';
  */
 const OUTCOME_TIMEOUT = 60000;
 
+/**
+ * The part of the `/api/v1/drive/search` request body the scope tests assert on. Deliberately
+ * partial — the full form is the backend's business — so a new server-side field does not break
+ * these tests, while the two that matter (`text`, `searchScope`) are named.
+ */
+interface DriveSearchPayload {
+    filters: {
+        text?: string;
+        searchScope?: string;
+    };
+}
+
 export class ContentDrivePage {
     readonly toolbar: Locator;
     readonly treeSelector: Locator;
@@ -134,6 +146,74 @@ export class ContentDrivePage {
         await expect(this.listTitles.filter({ hasText: title }).first()).toBeVisible({
             timeout: 20000
         });
+    }
+
+    /**
+     * Runs `action` and returns the JSON request body of the drive search it triggers.
+     *
+     * The wait is armed BEFORE `action` runs — the only order that works — and the predicate also
+     * pins the method and status, so a failing search fails here at the capture rather than
+     * downstream as a missing row.
+     *
+     * `matches` guards against a race the portlet's own startup creates: it can still be settling
+     * its initial listing when this is called, and those searches carry their own (usually empty)
+     * text. Every attempt arms before anything pending can slip past, so `action`'s own request
+     * is never missed — a settling search only costs one round of the loop.
+     */
+    async captureSearchPayload(
+        action: () => Promise<void>,
+        matches?: (payload: DriveSearchPayload) => boolean
+    ): Promise<DriveSearchPayload> {
+        for (let attempt = 0; attempt < 6; attempt++) {
+            const search = this.page.waitForResponse(
+                (r) =>
+                    r.url().includes('/api/v1/drive/search') &&
+                    r.request().method() === 'POST' &&
+                    r.status() === 200,
+                { timeout: 15000 }
+            );
+
+            if (attempt === 0) {
+                await action();
+            }
+
+            const response = await search;
+            const payload = (await response.request().postDataJSON()) as DriveSearchPayload;
+
+            if (!matches || matches(payload)) {
+                return payload;
+            }
+        }
+
+        throw new Error('no drive search matching the expected payload was captured');
+    }
+
+    /**
+     * Runs `body` and fails if any drive search was submitted while it did.
+     *
+     * The evidence a negative needs: "re-selecting the active scope must not re-search" (FR-006)
+     * cannot be asserted on copy or on rows that did not appear — only watching the wire can. The
+     * same pattern `expectNothingUploadedWhile` uses for uploads.
+     */
+    async expectNoSearchWhile(body: () => Promise<void>) {
+        const searches: string[] = [];
+        const record = (request: Request) => {
+            if (request.url().includes('/api/v1/drive/search') && request.method() === 'POST') {
+                searches.push(request.url());
+            }
+        };
+
+        this.page.on('request', record);
+
+        try {
+            await body();
+        } finally {
+            this.page.off('request', record);
+        }
+
+        expect(searches, 'a drive search fired, so the scope re-selection was not ignored').toEqual(
+            []
+        );
     }
 
     /** Navigates into a folder by clicking its row in the tree. */
