@@ -44,7 +44,7 @@ public class CaemHttpClient {
     /**
      * Sends an authenticated GET request to the CAEM analytics API.
      *
-     * @param relativePath  CAEM path, e.g. {@code /v1/analytics/sessions}
+     * @param relativePath  CAEM path, e.g. {@code /v1/sessions}
      * @param queryParams   query parameters to append
      * @param host          site context for per-site HMAC token lookup; {@code null} when the
      *                      current host is resolved from the request context by the caller

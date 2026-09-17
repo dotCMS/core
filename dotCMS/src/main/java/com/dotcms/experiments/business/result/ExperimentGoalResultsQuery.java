@@ -158,10 +158,10 @@ public interface ExperimentGoalResultsQuery {
             }
             final long totalSessions = ((Number) totalSessionsRaw).longValue();
 
-            // Assumption: each row carries exactly one *Successes field and one *ConversionRate
-            // field. All current goal types (BOUNCE_RATE, EXIT_RATE, REACH_PAGE, URL_PARAMETER)
-            // satisfy this. If a future goal type emits multiple *Successes fields, only the first
-            // encountered will be inverted — extend this method to handle that case.
+            // Invariant (FR-003–FR-006): each goal type defines exactly one *Successes field and
+            // one *ConversionRate field per row. findFirst() relies on this — if a future goal type
+            // produces multiple *Successes fields, only the first encountered would be inverted and
+            // the rest silently skipped. Extend this method before adding such a goal type.
             original.keySet().stream()
                     .filter(k -> k.endsWith("Successes"))
                     .findFirst()
