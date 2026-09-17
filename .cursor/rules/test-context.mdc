@@ -19,7 +19,7 @@ alwaysApply: false
 
 ## Backend (Java)
 - DotConnect for DB; APILocator for services. Structure: *Test.java (unit), *IT.java (integration).
-- **Suite registration (CRITICAL)**: a new integration test class MUST be added to a `MainSuite*`/`Junit5Suite*` `@SuiteClasses` list in `dotcms-integration/src/test/java/com/dotcms/`. Unregistered it compiles, passes review and is **silently never run in CI** — green build, zero coverage. It only runs locally via `-Dit.test=`. JUnit 5 → `Junit5Suite1`; JUnit 4 → one of `MainSuite1a`, `MainSuite1b`, `MainSuite2a`, `MainSuite2b`, `MainSuite3a`.
+- **Suite registration (CRITICAL)**: a new integration test class must be registered in one of the `@SuiteClasses` aggregator suites, or it compiles, passes review and is **silently never run in CI** — green build, zero coverage. It still runs locally via `-Dit.test=`, which is why this is easy to miss. Which suite to pick is a live decision, not a fixed list: read `@docs/testing/INTEGRATION_TESTS.md` → "Registering Tests in a MainSuite (CI gate)" before registering. Don't hardcode suite names here — the set grows, and the choice depends on current CI timings.
 
 ## Commands
 ```bash
