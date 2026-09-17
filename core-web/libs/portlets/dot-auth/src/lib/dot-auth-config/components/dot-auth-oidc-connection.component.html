@@ -137,6 +137,20 @@
             </div>
         </div>
 
+        <!-- Effective redirect URI: visible without expanding Advanced -->
+        <div class="field full">
+            <label>{{ 'dotauth.field.redirectUri' | dm }}</label>
+            <div class="flex items-center gap-2">
+                <code class="discovered-val min-w-0 flex-1" data-testid="redirect-uri">
+                    {{ redirectUri() }}
+                </code>
+                <dot-copy-button [copy]="redirectUri()" />
+            </div>
+            <small class="text-(--text-color-secondary)">
+                {{ 'dotauth.help.redirectUri' | dm }}
+            </small>
+        </div>
+
         <!-- Advanced toggle -->
         <button
             type="button"
@@ -167,18 +181,6 @@
                         placeholder="https://cms.example.com" />
                     <small class="text-(--text-color-secondary)">
                         {{ 'dotauth.help.callbackUrl' | dm }}
-                    </small>
-                </div>
-                <div class="field full">
-                    <label>{{ 'dotauth.field.redirectUri' | dm }}</label>
-                    <div class="flex items-center gap-2">
-                        <code class="discovered-val min-w-0 flex-1" data-testid="redirect-uri">
-                            {{ redirectUri() }}
-                        </code>
-                        <dot-copy-button [copy]="redirectUri()" />
-                    </div>
-                    <small class="text-(--text-color-secondary)">
-                        {{ 'dotauth.help.redirectUri' | dm }}
                     </small>
                 </div>
                 @if (oidc().discoveryStatus !== 'ok') {

@@ -74,12 +74,12 @@ describe('DotAuthOidcConnectionComponent', () => {
     describe('effective redirect URI', () => {
         const CALLBACK = '/api/v1/oauth/callback';
 
-        beforeEach(() => {
-            spectator.component.showAdvanced.set(true);
-            spectator.detectChanges();
-        });
-
         const shown = () => spectator.query(byTestId('redirect-uri'))?.textContent?.trim();
+
+        it('is visible while the advanced section is collapsed', () => {
+            expect(spectator.component.showAdvanced()).toBe(false);
+            expect(spectator.query(byTestId('redirect-uri'))).toBeTruthy();
+        });
 
         it('falls back to the current origin when the override is empty', () => {
             expect(shown()).toBe(`${window.location.origin}${CALLBACK}`);
