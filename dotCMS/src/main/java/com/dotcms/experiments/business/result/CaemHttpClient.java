@@ -77,10 +77,12 @@ public class CaemHttpClient {
     /**
      * Executes the HTTP GET. Overridable for testing — subclass overrides this to return a stub
      * response without making a real HTTP call or requiring DOT_ANALYTICS_BASE_URL to be set.
+     *
+     * @throws DotDataException if CAEM is misconfigured or the HTTP request fails
      */
     protected CaemResponse doGet(final String relativePath,
                                  final Map<String, String> queryParams,
-                                 final Map<String, String> headers) {
+                                 final Map<String, String> headers) throws DotDataException {
         final String baseUrl = Config.getStringProperty(
                 EventAnalyticsProxyHelper.DOT_ANALYTICS_BASE_URL, "");
         final String tenant  = Config.getStringProperty(
@@ -89,13 +91,13 @@ public class CaemHttpClient {
                 EventAnalyticsProxyHelper.DOT_ANALYTICS_PROJECT, "");
 
         if (!UtilMethods.isSet(baseUrl)) {
-            throw new RuntimeException("CAEM is not configured: DOT_ANALYTICS_BASE_URL is missing");
+            throw new DotDataException("CAEM is not configured: DOT_ANALYTICS_BASE_URL is missing");
         }
         if (!UtilMethods.isSet(tenant)) {
-            throw new RuntimeException("CAEM is not configured: DOT_ANALYTICS_TENANT is missing");
+            throw new DotDataException("CAEM is not configured: DOT_ANALYTICS_TENANT is missing");
         }
         if (!UtilMethods.isSet(project)) {
-            throw new RuntimeException("CAEM is not configured: DOT_ANALYTICS_PROJECT is missing");
+            throw new DotDataException("CAEM is not configured: DOT_ANALYTICS_PROJECT is missing");
         }
 
         final String url = buildUrl(baseUrl, relativePath, queryParams, project);
@@ -110,7 +112,7 @@ public class CaemHttpClient {
                     .doResponse();
             return new CaemResponse(raw.getStatusCode(), raw.getResponse());
         } catch (final Exception e) {
-            throw new RuntimeException("Failed to execute CAEM HTTP request for: " + url, e);
+            throw new DotDataException("Failed to execute CAEM HTTP request for: " + url, e);
         }
     }
 
