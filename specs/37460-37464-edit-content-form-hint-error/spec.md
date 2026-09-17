@@ -305,7 +305,7 @@ Per the constitution's Principle V, every test below is written, developer-appro
 
 All three open questions are resolved. Recorded here because each one either contradicts an acceptance criterion as written in the issues, or adds scope the issues do not mention.
 
-### Decision 1 — the legacy-bundle exception is kept, and #37460's AC to delete that SCSS is withdrawn
+### Decision 1 — the legacy-bundle exception is kept, and why is documented on the PR
 
 **Decision: the component SCSS under `dot-edit-content-file-field` stays. Only `dot-form-file-editor.component.html:47` changes, adopting `dotFieldRequired`.**
 
@@ -318,7 +318,7 @@ This is not an arbitrary carve-out: of the library's 24 `.scss` files, exactly t
 
 The one part that **is** safe there: `.p-label-input-required::after` lives in `libs/dotcms-scss/angular/dotcms-theme/_misc.scss:56`, which the binary-field-builder's `project.json` **does** load, and the chain's encapsulation is `Emulated` rather than `ShadowDom`, so global stylesheets of that bundle do reach the components. Switching line 47 from a hand-written class to the directive produces the same class and renders identically in both bundles.
 
-Withdrawing that AC edits #37460's description — developer-approved bookkeeping, same channel as the #37465 FR-016 withdrawals.
+**The AC stays in #37460 as written.** Rather than withdraw it, the PR records why the SCSS is retained: these two dialogs ship inside the `dotcms-binary-field` custom element that the legacy Dojo editor loads, and that bundle has neither the global stylesheet nor Tailwind. Deleting the SCSS would leave both dialogs unstyled there. Documenting the constraint is more useful to the next reader than removing the criterion that surfaced it.
 
 ### Decision 2 — Text Area gains the shared hint/error slot
 
@@ -346,4 +346,5 @@ Phase 1 satisfies its intent. **`apps/dotcms-ui/src/style.css` is not edited at 
 - **"Same base branch" means both PRs branch from this feature branch**, PR 2 stacks on PR 1, and PR 1 is reviewed and approved before PR 2 opens — per the repo's two-PR spec-gated flow.
 - **`html { font-size: 14px }` still holds** (`libs/dotcms-scss/angular/styles.scss:9` — #37460's body cites `:38`, which is wrong; verified, along with the absence of any typography scale override in `libs/dotcms-scss/tailwind/theme.css`), and no typography scale override exists in `libs/dotcms-scss/tailwind/theme.css`. The accepted-deltas table is computed from that; if it changes, the table is recomputed, not the ACs.
 - **"Save or publish attempt" means firing any workflow action** through `fireWorkflowAction`. There is no separate save button with different semantics.
+- **Design approved these changes.** Confirmed by the developer. The original report that opened #37460 was Design's own, and they are on board with the resulting deltas, including the checkbox/radio option labels dropping to 12.25px (research R3), which #37460's measured-impact table does not list.
 - **Design asked for this change; the label deltas are what it does.** #37460 was opened on Design's own report — *"the edit content screen is not taking the classes from the `.form > .field > label`"* — so the label deltas (14px→12.25px, weight 400→500, gap 7px→3.5px) are the requested outcome, not a side effect awaiting separate approval. **One delta is genuinely unreviewed**: the checkbox/radio *option* labels also drop to 12.25px (research R3), which #37460's measured-impact table does not list. Surface that one when PR 1 is up (task T005). Note that AC-112 forbids a local override to walk any of it back.
