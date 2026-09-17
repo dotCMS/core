@@ -261,9 +261,50 @@ jobs:
       # Frontend Unit Tests runs `nx affected` (lint-test, -Pvalidate) which diffs
       # against origin/main (core-web/pom.xml git.origin.branch). The shallow
       # checkout above has no origin/main ref, so fetch just that ref, shallow.
-      - name: Fetch origin/main for Nx affected
+      #
+      # The strict-gate (#37536) additionally needs a base it can diff against
+      # HONESTLY. Both sides here are depth-1, so `git merge-base` cannot traverse
+      # and the harness falls back to comparing against the TIP of origin/main --
+      # which attributes every commit main moved ahead to the pull request. That is
+      # survivable for `nx affected` (over-including projects for lint is harmless
+      # on a lint-clean main) but not for a blocking strict check, because main is
+      # deliberately NOT strict-clean while #37198 is in flight: authors would be
+      # rejected for violations they never wrote.
+      #
+      # So hand the gate the divergence point itself. That point is NOT
+      # github.event.pull_request.base.sha: GitHub pins that field when the pull
+      # request is opened and never moves it as the base branch advances, so on a
+      # long-lived branch it is hundreds of commits stale -- and diffing a stale base
+      # against this checkout blames the author for every one of them.
+      #
+      # It is the checkout's own FIRST PARENT. Both events check out a merge commit
+      # (`refs/pull/N/merge` on pull_request, the queue branch head on merge_group)
+      # whose first parent is the current base tip and whose second is the branch, so
+      # `parent1..HEAD` is precisely the pull request's contribution. Deepening by one
+      # is all it takes to see it, and it needs no knowledge of the base branch's name,
+      # so a pull request targeting something other than `main` compares against its
+      # own base. Requiring two parents keeps this honest: if the checkout is ever
+      # changed to the branch head, HEAD^1 is the previous COMMIT, not the base, and
+      # the gate would silently narrow to the last commit instead.
+      - name: Fetch base refs for Nx affected and the strict gate
         if: contains(matrix.maven_args, '-Pvalidate')
-        run: git fetch --depth=1 origin main:refs/remotes/origin/main
+        run: |
+          git fetch --depth=1 origin main:refs/remotes/origin/main
+          # Not fatal: if the parent cannot be resolved the gate still runs against
+          # origin/main and warns, which is the behaviour before this step.
+          git fetch --no-tags --depth=2 origin "$GITHUB_SHA" 2>/dev/null || true
+          # `rev-list --parents` prints "<commit> <parent>...", and a shallow boundary
+          # prints no parents at all -- so the second parent being present is also the
+          # proof that the deepen above landed.
+          PARENTS=$(git rev-list --parents -n 1 HEAD)
+          FIRST_PARENT=$(echo "$PARENTS" | awk '{print $2}')
+          SECOND_PARENT=$(echo "$PARENTS" | awk '{print $3}')
+          if [ -n "$SECOND_PARENT" ]; then
+            echo "STRICT_GATE_BASE=$FIRST_PARENT" >> "$GITHUB_ENV"
+            echo "strict-gate base: $FIRST_PARENT (first parent of $GITHUB_SHA)"
+          else
+            echo "::warning::could not resolve the first parent of $GITHUB_SHA; strict-gate will fall back to origin/main"
+          fi
 
       # The libvips image engine (IMAGE_API_USE_LIBVIPS) is exercised by VipsParityTest.
       # Install native libvips on the JVM unit-test runner so those tests run instead of
