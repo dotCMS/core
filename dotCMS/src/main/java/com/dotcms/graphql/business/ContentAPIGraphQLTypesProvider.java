@@ -16,6 +16,7 @@ import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
@@ -29,6 +30,9 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.ContentFields;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
@@ -44,6 +48,7 @@ import com.dotcms.graphql.datafetcher.StoryBlockFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.TagsFieldDataFetcher;
 import com.dotcms.graphql.exception.FieldGenerationException;
 import com.dotcms.graphql.util.TypeUtil;
+import com.dotcms.graphql.util.TypeUtil.TypeFetcher;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.LowerKeyMap;
@@ -61,6 +66,7 @@ import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeReference;
 import graphql.schema.PropertyDataFetcher;
 import io.vavr.control.Try;
 import java.util.ArrayList;
@@ -87,6 +93,12 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
     private final Map<Class<? extends Field>, DataFetcher> fieldClassGraphqlDataFetcher = new HashMap<>();
 
+    /**
+     * Suffix of the companion field generated beside every Image and File field, e.g. an
+     * {@code image} field gains an {@code imageContent} companion. See #34540.
+     */
+    public static final String ASSET_CONTENT_FIELD_SUFFIX = "Content";
+
     private final Map<String, GraphQLType> typesMap = new HashMap<>();
 
     ContentAPIGraphQLTypesProvider() {
@@ -94,8 +106,15 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         this.fieldClassGraphqlTypeMap.put(BinaryField.class, CustomFieldType.BINARY.getType());
         this.fieldClassGraphqlTypeMap
                 .put(CategoryField.class, list(CustomFieldType.CATEGORY.getType()));
-        this.fieldClassGraphqlTypeMap.put(ImageField.class, CustomFieldType.FILEASSET.getType());
-        this.fieldClassGraphqlTypeMap.put(FileField.class, CustomFieldType.FILEASSET.getType());
+        // An asset-pointing field is described by what it actually points at, not by a single flat
+        // view. A GraphQL object type has no subtypes, so while these were typed
+        // `CustomFieldType.FILEASSET` no client could narrow to a concrete asset type; an interface
+        // can. Referenced by name to avoid resolving InterfaceType during this enum's own
+        // initialization, which would close a cycle. See #34540.
+        this.fieldClassGraphqlTypeMap.put(ImageField.class,
+                new GraphQLTypeReference(InterfaceType.ASSET_CONTENT_INTERFACE_NAME));
+        this.fieldClassGraphqlTypeMap.put(FileField.class,
+                new GraphQLTypeReference(InterfaceType.ASSET_CONTENT_INTERFACE_NAME));
         this.fieldClassGraphqlTypeMap
                 .put(KeyValueField.class, list(CustomFieldType.KEY_VALUE.getType()));
         this.fieldClassGraphqlTypeMap.put(CheckboxField.class, list(GraphQLString));
@@ -248,7 +267,54 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         fieldDefinitions.addAll(TypeUtil
                 .getGraphQLFieldDefinitionsFromMap(ContentFields.getContentFields()));
 
+        addAssetFlatFields(contentType, fieldDefinitions);
+
         return fieldDefinitions;
+    }
+
+    /**
+     * Gives a DOTASSET-derived object type the flat properties an asset-pointing field has always
+     * exposed, so that retyping such a field to the asset-content interface leaves those selections
+     * working.
+     *
+     * <p>FILEASSET-derived types already carry them as real fields and are skipped. For
+     * DOTASSET-derived ones the properties do not exist at all — {@code fileName} was never stored
+     * there, the flat view answered it with the contentlet name — so they are synthesized with the
+     * very same fetchers the flat view uses, which is what makes them answer identically.
+     *
+     * <p>A field the customer already defined always wins: a duplicate definition would fail the
+     * whole schema build and take every other content type down with it.
+     */
+    private void addAssetFlatFields(final ContentType contentType,
+            final List<GraphQLFieldDefinition> fieldDefinitions) {
+
+        if (!InterfaceType.isAssetBaseType(contentType.baseType())) {
+            return;
+        }
+
+        final Set<String> alreadyDefined = fieldDefinitions.stream()
+                .map(GraphQLFieldDefinition::getName).collect(Collectors.toSet());
+
+        // Only what this type is actually missing. A FILEASSET-derived type usually defines most
+        // of these itself -- but not always: a customer-created one carries only the required
+        // fields, so `showOnMenu` and `sortOrder` can be absent and must be filled in too. A field
+        // the customer already defined always wins; a duplicate would fail the whole schema build.
+        final Map<String, TypeFetcher> missing = CustomFieldType.getAssetFlatFields().entrySet()
+                .stream()
+                .filter(entry -> !alreadyDefined.contains(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (missing.isEmpty()) {
+            return;
+        }
+
+        Logger.debug(this, () -> "Synthesizing asset properties " + missing.keySet()
+                + " on Content Type '" + contentType.variable() + "'");
+
+        // Built through TypeUtil rather than by hand: it attaches the `render` argument every
+        // generated field carries, and an interface field and its implementation must agree on
+        // arguments or the schema is rejected.
+        fieldDefinitions.addAll(TypeUtil.getGraphQLFieldDefinitionsFromMap(missing));
     }
 
     public GraphQLOutputType getGraphqlTypeForFieldClass(final Class<? extends Field> fieldClass,

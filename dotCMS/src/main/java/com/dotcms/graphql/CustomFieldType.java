@@ -1,7 +1,6 @@
 package com.dotcms.graphql;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.graphql.datafetcher.AssetContentDataFetcher;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
@@ -20,6 +19,7 @@ import graphql.schema.GraphQLTypeReference;
 import graphql.schema.PropertyDataFetcher;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -47,7 +47,7 @@ public enum CustomFieldType {
     KEY_VALUE("DotKeyValue"),
     LANGUAGE("DotLanguage"),
     USER("DotUser"),
-    FILEASSET("DotFileasset"),
+    FILEASSET("DotFileassetFlat"),
     STORY_BLOCK("DotStoryBlock");
 
     CustomFieldType(String typeName) {
@@ -60,13 +60,18 @@ public enum CustomFieldType {
         return typeName;
     }
 
-    /**
-     * Name of the field on {@code DotFileasset} that exposes the referenced asset described by its
-     * real content type.
-     */
-    public static final String ASSET_CONTENT_FIELD_VAR = "content";
-
     private static Map<String, GraphQLObjectType> customFieldTypes = new HashMap<>();
+
+    private static Map<String, TypeFetcher> assetFlatFields;
+
+    /**
+     * @return the long-standing flat properties of an asset-pointing field, minus
+     * {@code description}, for reuse by the asset-content interface and by the object types that
+     * implement it.
+     */
+    public static Map<String, TypeFetcher> getAssetFlatFields() {
+        return Collections.unmodifiableMap(assetFlatFields);
+    }
 
     static {
         final Map<String, GraphQLOutputType> binaryTypeFields = new HashMap<>();
@@ -166,22 +171,18 @@ public enum CustomFieldType {
         fileAssetTypeFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString), new MultiValueFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt, new FieldDataFetcher()));
 
-        // The referenced asset, described by its real content type. The six fields above are a
-        // flat view that reports asset content using property names borrowed from the FILEASSET
-        // base type, so a customer's own fields -- and even the asset's identifier -- are
-        // unreachable through them. This field is purely additive: nothing above changes. See
-        // issue #34540.
-        //
-        // Referenced by NAME rather than by calling InterfaceType.getAssetContentInterface().
-        // InterfaceType's static initializer reaches ContentAPIGraphQLTypesProvider, which reads
-        // this enum -- resolving the instance here would close that cycle and observe a
-        // half-initialized class. The constant is a compile-time String, so it does not trigger
-        // InterfaceType's initialization.
-        fileAssetTypeFields.put(ASSET_CONTENT_FIELD_VAR, new TypeFetcher(
-                new GraphQLTypeReference(InterfaceType.ASSET_CONTENT_INTERFACE_NAME),
-                new AssetContentDataFetcher()));
-
         customFieldTypes.put("FILEASSET", TypeUtil.createObjectType(FILEASSET.getTypeName(), fileAssetTypeFields));
+
+        // The same properties, minus `description`, reused as the flat half of the asset-content
+        // interface and synthesized onto DOTASSET-derived object types. Reusing these exact
+        // TypeFetchers is what guarantees the synthesized fields answer identically to the flat
+        // view -- notably `fileName`, which is not a stored value for DOTASSET content, and the
+        // binary, which BinaryFieldDataFetcher already maps to `asset` for that base type.
+        //
+        // `description` is excluded on purpose: DOTASSET-derived types either have their own with
+        // a different meaning, or none at all. See InterfaceType#ASSET_CONTENT_INTERFACE_NAME.
+        assetFlatFields = new HashMap<>(fileAssetTypeFields);
+        assetFlatFields.remove(FILEASSET_DESCRIPTION_FIELD_VAR);
 
         final Map<String, TypeFetcher> siteTypeFields = new HashMap<>(ContentFields.getContentFields());
         siteTypeFields.remove(HOST_KEY); // remove myself

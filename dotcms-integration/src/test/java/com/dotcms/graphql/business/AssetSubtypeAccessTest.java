@@ -3,7 +3,6 @@ package com.dotcms.graphql.business;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -39,12 +38,16 @@ import org.junit.Test;
  * the properties of the content type that field actually points at — including properties the
  * customer defined on their own type — and can tell which type it received.
  *
- * <p>Today an asset-pointing field resolves to {@code DotFileasset}, a flat six-property type, so
- * none of the below is reachable at any depth. These tests are expected to FAIL until the new
- * asset description is in place; they are the Red signal for User Story 1.
+ * <p>The new description arrives as a <b>companion field</b> beside the asset field
+ * ({@code image} gains {@code imageContent}) rather than as a property of the flat
+ * {@code DotFileasset} view. A GraphQL field has exactly one type and a resolved value has exactly
+ * one runtime type, so the flat view and the asset itself — two descriptions of the same thing —
+ * cannot occupy the same position. Putting the new one beside the old is what lets a client narrow
+ * to a concrete asset type at the same level as the flat properties, with none of those properties
+ * changing.
  *
- * <p>Two traps already paid for in {@link AssetFieldValueContractTest} and repeated here: an
- * asset-reference field needs {@code DataTypes.TEXT} or its value never persists, and the
+ * <p>Two fixture traps already paid for in {@link AssetFieldValueContractTest} and repeated here:
+ * an asset-reference field needs {@code DataTypes.TEXT} or its value never persists, and the
  * referenced asset must be published to the same state as the holder or the fetcher resolves
  * nothing.
  */
@@ -55,8 +58,12 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     private static final String FILE_FIELD_VAR = "subtypeFile";
     private static final String CUSTOM_PROPERTY_VAR = "campaignName";
 
-    /** The new field on {@code DotFileasset} that exposes the properly described asset. */
-    private static final String ASSET_CONTENT_FIELD = "content";
+    /**
+     * The asset field itself is now the polymorphic position: it is typed by the asset-content
+     * interface, so narrowing clauses sit directly on it, beside the flat properties.
+     */
+    private static final String IMAGE_COMPANION = IMAGE_FIELD_VAR;
+    private static final String FILE_COMPANION = FILE_FIELD_VAR;
 
     private static User systemUser;
     private static Host site;
@@ -71,7 +78,7 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     /**
      * Given: a customer-defined content type extending DOTASSET with a property of its own, and an
      * Image field pointing at content of it.
-     * When: that property is requested through the Image field.
+     * When: that property is requested through the companion field.
      * Then: its stored value is returned.
      *
      * <p>This is the capability the issue exists for, and the one with no workaround today.
@@ -84,13 +91,9 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         final ContentType holder = newHolderType();
         final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
 
-        final String query = String.format(
-                "{ %sCollection(query: \"+identifier:%s\") { %s { %s { "
-                        + "... on %s { %s } } } } }",
-                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
-                ASSET_CONTENT_FIELD, assetType.variable(), CUSTOM_PROPERTY_VAR);
+        final Map<String, Object> assetContent = queryCompanion(holder, content, IMAGE_COMPANION,
+                String.format("... on %s { %s }", assetType.variable(), CUSTOM_PROPERTY_VAR));
 
-        final Map<String, Object> assetContent = queryAssetContent(query, holder, IMAGE_FIELD_VAR);
         assertEquals("the customer's own property must be readable through the Image field",
                 "Summer Sale", assetContent.get(CUSTOM_PROPERTY_VAR));
     }
@@ -98,7 +101,7 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     /**
      * Given: a customer-defined content type extending FILEASSET with a property of its own, and a
      * File field pointing at content of it.
-     * When: that property is requested through the File field.
+     * When: that property is requested through the companion field.
      * Then: its stored value is returned.
      */
     @Test
@@ -109,23 +112,19 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         final ContentType holder = newHolderType();
         final Contentlet content = newHolderContent(holder, FILE_FIELD_VAR, asset);
 
-        final String query = String.format(
-                "{ %sCollection(query: \"+identifier:%s\") { %s { %s { "
-                        + "... on %s { %s } } } } }",
-                holder.variable(), content.getIdentifier(), FILE_FIELD_VAR,
-                ASSET_CONTENT_FIELD, assetType.variable(), CUSTOM_PROPERTY_VAR);
+        final Map<String, Object> assetContent = queryCompanion(holder, content, FILE_COMPANION,
+                String.format("... on %s { %s }", assetType.variable(), CUSTOM_PROPERTY_VAR));
 
-        final Map<String, Object> assetContent = queryAssetContent(query, holder, FILE_FIELD_VAR);
         assertEquals("the customer's own property must be readable through the File field",
                 "Datasheets", assetContent.get(CUSTOM_PROPERTY_VAR));
     }
 
     /**
      * Given: an asset carrying tags.
-     * When: its tags are requested through the field pointing at it.
+     * When: its tags are requested through the companion field.
      * Then: they are returned.
      *
-     * <p>This is the AI tagging blocker named in the issue: {@code tags} is not on the flat type,
+     * <p>This is the AI tagging blocker named in the issue: {@code tags} is not on the flat view,
      * so generated tags cannot be read back at all.
      */
     @Test
@@ -136,13 +135,9 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         final ContentType holder = newHolderType();
         final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
 
-        final String query = String.format(
-                "{ %sCollection(query: \"+identifier:%s\") { %s { %s { "
-                        + "... on %s { tags } } } } }",
-                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
-                ASSET_CONTENT_FIELD, assetType.variable());
+        final Map<String, Object> assetContent = queryCompanion(holder, content, IMAGE_COMPANION,
+                String.format("... on %s { tags }", assetType.variable()));
 
-        final Map<String, Object> assetContent = queryAssetContent(query, holder, IMAGE_FIELD_VAR);
         assertNotNull("tags must be reachable through an asset field", assetContent.get("tags"));
     }
 
@@ -151,8 +146,8 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
      * When: the asset's own identity is requested — identifier, inode, live state, title.
      * Then: each is returned and matches the asset's record.
      *
-     * <p>None of these are on the flat type today, so an Image field cannot currently tell a
-     * client *which* asset it is pointing at.
+     * <p>None of these are on the flat view, so an Image field cannot currently tell a client
+     * <i>which</i> asset it is pointing at.
      */
     @Test
     public void test_assetOwnIdentity_isReadableThroughAssetField() throws Exception {
@@ -162,12 +157,9 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         final ContentType holder = newHolderType();
         final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
 
-        final String query = String.format(
-                "{ %sCollection(query: \"+identifier:%s\") { %s { %s { "
-                        + "identifier inode live title } } } }",
-                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR, ASSET_CONTENT_FIELD);
+        final Map<String, Object> assetContent =
+                queryCompanion(holder, content, IMAGE_COMPANION, "identifier inode live title");
 
-        final Map<String, Object> assetContent = queryAssetContent(query, holder, IMAGE_FIELD_VAR);
         assertEquals("the asset's identifier must be reachable",
                 asset.getIdentifier(), assetContent.get("identifier"));
         assertEquals("the asset's inode must be reachable",
@@ -179,12 +171,12 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     /**
      * Given: the schema has already been built.
      * When: a customer creates a brand-new content type extending an asset base type, and
-     * immediately queries a property of it through an asset field.
+     * immediately queries a property of it.
      * Then: it works, with no administrative step in between.
      *
      * <p>This is the test that distinguishes a derived set of asset types from an enumerated one
-     * (FR-001a). A hardcoded list of known asset types would satisfy every other test in this
-     * class and fail this one.
+     * (FR-001a). A hardcoded list of known asset types would satisfy every other test in this class
+     * and fail this one.
      */
     @Test
     public void test_contentTypeCreatedAfterSchemaBuild_isImmediatelyReachable() throws Exception {
@@ -197,13 +189,10 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         final ContentType holder = newHolderType();
         final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
 
-        final String query = String.format(
-                "{ %sCollection(query: \"+identifier:%s\") { %s { %s { "
-                        + "__typename ... on %s { %s } } } } }",
-                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
-                ASSET_CONTENT_FIELD, lateType.variable(), CUSTOM_PROPERTY_VAR);
+        final Map<String, Object> assetContent = queryCompanion(holder, content, IMAGE_COMPANION,
+                String.format("__typename ... on %s { %s }",
+                        lateType.variable(), CUSTOM_PROPERTY_VAR));
 
-        final Map<String, Object> assetContent = queryAssetContent(query, holder, IMAGE_FIELD_VAR);
         assertEquals("a type created after the schema was built must still be reachable",
                 "Created Late", assetContent.get(CUSTOM_PROPERTY_VAR));
         assertEquals("__typename must name the customer's own type",
@@ -211,55 +200,42 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     }
 
     /**
-     * Given: an Image field pointing at content that is not an asset at all — nothing stops this,
-     * since the field stores a bare identifier and {@code FileFieldDataFetcher} falls back to the
-     * raw contentlet when {@code FileAssetAPI.fromContentlet} cannot convert it.
-     * When: the new asset description is selected.
-     * Then: it resolves to nothing, and the request still succeeds.
+     * Given: an Image field and its companion, selected together.
+     * When: the flat properties and a narrowing clause are requested at the <b>same level</b>.
+     * Then: both come back, and the flat properties are unchanged.
      *
-     * <p>A resolved type that does not implement the interface must not surface a GraphQL error:
-     * the misconfiguration is in the data, and failing the whole request would take the rest of
-     * the query down with it.
+     * <p>This is the shape the whole design exists to enable: flat properties and a narrowing
+     * clause in one block, on one field.
      */
     @Test
-    public void test_fieldPointingAtNonAssetContent_resolvesToNullWithoutError() throws Exception {
-        final ContentType plainType = new ContentTypeDataGen().nextPersisted();
-        final Contentlet plainContent = new ContentletDataGen(plainType.id())
-                .host(site).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
-        ContentletDataGen.publish(plainContent);
+    public void test_flatViewAndNarrowingClause_coexistAtTheSameLevel() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Side by side");
 
         final ContentType holder = newHolderType();
-        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, plainContent);
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
 
         final String query = String.format(
-                "{ %sCollection(query: \"+identifier:%s\") { identifier %s { fileName %s { "
-                        + "identifier } } } }",
-                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR, ASSET_CONTENT_FIELD);
+                "{ %sCollection(query: \"+identifier:%s\") { %s { "
+                        + "fileName __typename ... on %s { %s } } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
+                assetType.variable(), CUSTOM_PROPERTY_VAR);
 
-        final Map<String, Object> data =
-                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser);
+        final Map<String, Object> row = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder);
+        final Map<String, Object> field = (Map<String, Object>) row.get(IMAGE_FIELD_VAR);
 
-        final List<Map<String, Object>> rows =
-                (List<Map<String, Object>>) data.get(holder.variable() + "Collection");
-        assertNotNull("the rest of the query must still be delivered", rows);
-        assertEquals("expected exactly one row", 1, rows.size());
-        assertEquals("the rest of the row must still be delivered",
-                content.getIdentifier(), rows.get(0).get("identifier"));
-
-        final Map<String, Object> assetField =
-                (Map<String, Object>) rows.get(0).get(IMAGE_FIELD_VAR);
-        assertNotNull("the flat view must still resolve", assetField);
-        assertEquals("non-asset content must resolve to nothing, not an error",
-                null, assetField.get(ASSET_CONTENT_FIELD));
+        assertEquals("the flat property must keep returning the contentlet name",
+                asset.getName(), field.get("fileName"));
+        assertEquals("and the narrowing clause must work in the SAME block",
+                "Side by side", field.get(CUSTOM_PROPERTY_VAR));
+        assertEquals(assetType.variable(), field.get("__typename"));
     }
 
     /**
      * Given: two fields, one pointing at image-style content and one at file-style content.
      * When: the type of each is requested in a single query.
      * Then: each names its own concrete content type, and the two differ.
-     *
-     * <p>Today both come back as {@code DotFileasset}, so a client rendering a mixed feed has no
-     * way to branch other than guessing from which properties happen to be populated.
      */
     @Test
     public void test_typename_distinguishesTwoDifferentAssetTypes() throws Exception {
@@ -269,30 +245,19 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         final Contentlet fileAsset = newFileAssetOf(fileStyle, "File side");
 
         final ContentType holder = newHolderType();
-        final Contentlet content = new ContentletDataGen(holder.id())
-                .host(site)
-                .setProperty(IMAGE_FIELD_VAR, imageAsset.getIdentifier())
-                .setProperty(FILE_FIELD_VAR, fileAsset.getIdentifier())
-                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
-        ContentletDataGen.publish(content);
+        final Contentlet content = newHolderContentWithBoth(holder, imageAsset, fileAsset);
 
         final String query = String.format(
-                "{ %sCollection(query: \"+identifier:%s\") { "
-                        + "%s { %s { __typename } } %s { %s { __typename } } } }",
-                holder.variable(), content.getIdentifier(),
-                IMAGE_FIELD_VAR, ASSET_CONTENT_FIELD, FILE_FIELD_VAR, ASSET_CONTENT_FIELD);
+                "{ %sCollection(query: \"+identifier:%s\") { %s { __typename } %s { __typename } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_COMPANION, FILE_COMPANION);
 
-        final Map<String, Object> data =
-                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser);
-        final Map<String, Object> row =
-                ((List<Map<String, Object>>) data.get(holder.variable() + "Collection")).get(0);
+        final Map<String, Object> row = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder);
 
-        final String imageTypeName = (String) ((Map<String, Object>)
-                ((Map<String, Object>) row.get(IMAGE_FIELD_VAR)).get(ASSET_CONTENT_FIELD))
-                .get("__typename");
-        final String fileTypeName = (String) ((Map<String, Object>)
-                ((Map<String, Object>) row.get(FILE_FIELD_VAR)).get(ASSET_CONTENT_FIELD))
-                .get("__typename");
+        final String imageTypeName =
+                (String) ((Map<String, Object>) row.get(IMAGE_COMPANION)).get("__typename");
+        final String fileTypeName =
+                (String) ((Map<String, Object>) row.get(FILE_COMPANION)).get("__typename");
 
         assertEquals("the image-style asset must name its own type",
                 imageStyle.variable(), imageTypeName);
@@ -322,30 +287,21 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         final Contentlet imageAsset = newAssetOf(imageStyle, "Behind the file field");
 
         final ContentType holder = newHolderType();
-        final Contentlet content = new ContentletDataGen(holder.id())
-                .host(site)
-                .setProperty(IMAGE_FIELD_VAR, fileAsset.getIdentifier())
-                .setProperty(FILE_FIELD_VAR, imageAsset.getIdentifier())
-                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
-        ContentletDataGen.publish(content);
+        final Contentlet content = newHolderContentWithBoth(holder, fileAsset, imageAsset);
 
         final String query = String.format(
                 "{ %sCollection(query: \"+identifier:%s\") { "
-                        + "%s { %s { __typename ... on %s { %s } } } "
-                        + "%s { %s { __typename ... on %s { %s } } } } }",
+                        + "%s { __typename ... on %s { %s } } "
+                        + "%s { __typename ... on %s { %s } } } }",
                 holder.variable(), content.getIdentifier(),
-                IMAGE_FIELD_VAR, ASSET_CONTENT_FIELD, fileStyle.variable(), CUSTOM_PROPERTY_VAR,
-                FILE_FIELD_VAR, ASSET_CONTENT_FIELD, imageStyle.variable(), CUSTOM_PROPERTY_VAR);
+                IMAGE_COMPANION, fileStyle.variable(), CUSTOM_PROPERTY_VAR,
+                FILE_COMPANION, imageStyle.variable(), CUSTOM_PROPERTY_VAR);
 
-        final Map<String, Object> data =
-                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser);
-        final Map<String, Object> row =
-                ((List<Map<String, Object>>) data.get(holder.variable() + "Collection")).get(0);
+        final Map<String, Object> row = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder);
 
-        final Map<String, Object> behindImageField = (Map<String, Object>)
-                ((Map<String, Object>) row.get(IMAGE_FIELD_VAR)).get(ASSET_CONTENT_FIELD);
-        final Map<String, Object> behindFileField = (Map<String, Object>)
-                ((Map<String, Object>) row.get(FILE_FIELD_VAR)).get(ASSET_CONTENT_FIELD);
+        final Map<String, Object> behindImageField = (Map<String, Object>) row.get(IMAGE_COMPANION);
+        final Map<String, Object> behindFileField = (Map<String, Object>) row.get(FILE_COMPANION);
 
         assertEquals("an Image field must offer the file-style type it actually holds",
                 fileStyle.variable(), behindImageField.get("__typename"));
@@ -358,25 +314,67 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                 "Behind the file field", behindFileField.get(CUSTOM_PROPERTY_VAR));
     }
 
+    /**
+     * Given: an Image field pointing at content that is not an asset at all — nothing stops this,
+     * since the field stores a bare identifier and {@code FileFieldDataFetcher} falls back to the
+     * raw contentlet when {@code FileAssetAPI.fromContentlet} cannot convert it.
+     * When: the companion field is selected.
+     * Then: it resolves to nothing, and the request still succeeds.
+     *
+     * <p>A resolved type that does not implement the interface must not surface a GraphQL error:
+     * graphql-java answers that by failing the <b>whole request</b>, so one mis-pointed field would
+     * take every other collection in the query down with it.
+     */
+    @Test
+    public void test_fieldPointingAtNonAssetContent_resolvesToNullWithoutError() throws Exception {
+        final ContentType plainType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet plainContent = new ContentletDataGen(plainType.id())
+                .host(site).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        ContentletDataGen.publish(plainContent);
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, plainContent);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { identifier %s { fileName } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
+
+        final Map<String, Object> row = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder);
+
+        assertEquals("the rest of the row must still be delivered",
+                content.getIdentifier(), row.get("identifier"));
+        // The whole field reports nothing, not merely the narrowing part: now that the field is
+        // described by the asset interface, a contentlet outside that interface cannot be handed
+        // on at all. Its flat properties go with it — a deliberate, visible consequence of typing
+        // the field polymorphically.
+        assertEquals("non-asset content must resolve to nothing, not an error",
+                null, row.get(IMAGE_FIELD_VAR));
+    }
+
     // ---------------------------------------------------------------- helpers
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> queryAssetContent(final String query, final ContentType holder,
-            final String fieldVar) throws Exception {
-        final Map<String, Object> data =
-                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser);
+    /** Runs a query selecting {@code selection} on {@code companionField} and returns that object. */
+    private Map<String, Object> queryCompanion(final ContentType holder, final Contentlet content,
+            final String companionField, final String selection) throws Exception {
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { %s } } }",
+                holder.variable(), content.getIdentifier(), companionField, selection);
+
+        final Map<String, Object> row = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder);
+
+        final Map<String, Object> companion = (Map<String, Object>) row.get(companionField);
+        assertNotNull("'" + companionField + "' resolved to nothing — check the fixture", companion);
+        return companion;
+    }
+
+    private Map<String, Object> firstRow(final Map<String, Object> data, final ContentType holder) {
         final List<Map<String, Object>> rows =
                 (List<Map<String, Object>>) data.get(holder.variable() + "Collection");
         assertNotNull("no collection returned for " + holder.variable(), rows);
         assertEquals("expected exactly one row", 1, rows.size());
-
-        final Map<String, Object> assetField = (Map<String, Object>) rows.get(0).get(fieldVar);
-        assertNotNull("the asset field resolved to nothing — check the fixture", assetField);
-
-        final Map<String, Object> assetContent =
-                (Map<String, Object>) assetField.get(ASSET_CONTENT_FIELD);
-        assertNotNull("the asset field exposed no '" + ASSET_CONTENT_FIELD + "'", assetContent);
-        return assetContent;
+        return rows.get(0);
     }
 
     /** A customer-defined content type extending DOTASSET, with a property of its own. */
@@ -456,6 +454,17 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         final Contentlet content = new ContentletDataGen(holder.id())
                 .host(site)
                 .setProperty(fieldVar, asset.getIdentifier())
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        ContentletDataGen.publish(content);
+        return content;
+    }
+
+    private Contentlet newHolderContentWithBoth(final ContentType holder,
+            final Contentlet behindImageField, final Contentlet behindFileField) throws Exception {
+        final Contentlet content = new ContentletDataGen(holder.id())
+                .host(site)
+                .setProperty(IMAGE_FIELD_VAR, behindImageField.getIdentifier())
+                .setProperty(FILE_FIELD_VAR, behindFileField.getIdentifier())
                 .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
         ContentletDataGen.publish(content);
         return content;

@@ -23,6 +23,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.graphql.business.GraphqlAPITest.class,
         com.dotcms.graphql.business.AssetFieldValueContractTest.class,
         com.dotcms.graphql.business.AssetSubtypeAccessTest.class,
+        com.dotcms.graphql.business.AssetTypeHierarchyTest.class,
         com.dotcms.contenttype.test.ContentTypeTest.class,
         com.dotcms.contenttype.test.DeleteFieldJobTest.class,
         com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,

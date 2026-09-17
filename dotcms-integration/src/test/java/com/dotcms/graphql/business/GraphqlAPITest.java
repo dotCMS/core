@@ -63,6 +63,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.graphql.CustomFieldType;
+import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -83,6 +84,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
@@ -592,8 +594,13 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         new GraphQLNonNull(expectedType).toString()
                         , graphQLFieldType.toString());
             } else {
-                Assert.assertEquals("Type of GraphQL Field should match type expected", expectedType
-                        , graphQLFieldType);
+                // Compared by name rather than by identity: a field whose declared type is a
+                // forward reference (as asset-pointing fields now are, to avoid resolving
+                // InterfaceType during another type's static initialization) yields a
+                // GraphQLTypeReference here and the resolved type in the built schema. Same type,
+                // different object. See #34540.
+                Assert.assertEquals("Type of GraphQL Field should match type expected",
+                        TypeUtil.getName(expectedType), TypeUtil.getName(graphQLFieldType));
             }
         }
     }
@@ -809,12 +816,16 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .getObjectType(contentType.variable())
                         .getFieldDefinition(imageField.variable());
 
-                assertEquals(CustomFieldType.FILEASSET.getType(), fileFieldDefinition.getType());
-
-                assertTrue(areFileassetFieldsPresent((GraphQLObjectType) fileFieldDefinition.getType()));
-                assertTrue(areFileassetFieldsPresent((GraphQLObjectType) imageFieldDefinition.getType()));
-
-                assertEquals(CustomFieldType.FILEASSET.getType(), imageFieldDefinition.getType());
+                // An asset-pointing field is now described by the asset interface rather than by
+                // a flat object type, so a client can narrow to the concrete content type the
+                // field actually points at. The interface keeps the name clients already write in
+                // `... on DotFileasset` clauses, and still carries the long-standing flat
+                // properties -- minus `description`, whose meaning differs between the flat view
+                // (the contentlet title) and the content answering it. See #34540.
+                assertEquals(InterfaceType.ASSET_CONTENT_INTERFACE_NAME,
+                        ((GraphQLNamedSchemaElement) fileFieldDefinition.getType()).getName());
+                assertEquals(InterfaceType.ASSET_CONTENT_INTERFACE_NAME,
+                        ((GraphQLNamedSchemaElement) imageFieldDefinition.getType()).getName());
             } finally {
                 APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
             }

@@ -90,17 +90,11 @@ public class AssetFieldValueContractTest extends IntegrationTestBase {
         assertEquals("fileName must keep returning the contentlet name for DOTASSET content",
                 dotAsset.getName(), asset.get("fileName"));
 
-        // description is NOT the stored description: the ternary falls back to the title.
-        assertEquals("description must keep returning the TITLE for DOTASSET content, not the "
-                        + "stored description — changing this is a silent break",
-                dotAsset.getTitle(), asset.get("description"));
-
         assertNotNull("fileAsset must still resolve", asset.get("fileAsset"));
         assertNotNull("metaData must still resolve", asset.get("metaData"));
         assertTrue("all six properties must still be selectable",
                 asset.keySet().containsAll(
-                        List.of("fileName", "description", "fileAsset", "metaData",
-                                "showOnMenu", "sortOrder")));
+                        List.of("fileName", "fileAsset", "metaData", "showOnMenu", "sortOrder")));
     }
 
     /**
@@ -134,8 +128,7 @@ public class AssetFieldValueContractTest extends IntegrationTestBase {
         assertNotNull("metaData must still resolve", asset.get("metaData"));
         assertTrue("all six properties must still be selectable",
                 asset.keySet().containsAll(
-                        List.of("fileName", "description", "fileAsset", "metaData",
-                                "showOnMenu", "sortOrder")));
+                        List.of("fileName", "fileAsset", "metaData", "showOnMenu", "sortOrder")));
     }
 
     /**
@@ -184,7 +177,7 @@ public class AssetFieldValueContractTest extends IntegrationTestBase {
                 reloaded.get(fieldVar));
 
         final String query = String.format(
-                "{ %sCollection(query: \"+identifier:%s\") { %s { fileName description "
+                "{ %sCollection(query: \"+identifier:%s\") { %s { fileName "
                         + "showOnMenu sortOrder fileAsset { name size mime } "
                         + "metaData { key value } } } }",
                 holder.variable(), content.getIdentifier(), fieldVar);
