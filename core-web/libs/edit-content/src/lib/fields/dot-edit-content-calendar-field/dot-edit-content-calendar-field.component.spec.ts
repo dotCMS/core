@@ -303,7 +303,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
         // T011 — FR-007b. The expire-date field is the one field that could already be cleared,
         // so making the clear control unconditional must not leave it with two of them.
-        it('should render exactly ONE clear control on the expire date field holding a value', () => {
+        it('should render exactly ONE clear control on the expire date field holding a value', async () => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
@@ -325,9 +325,8 @@ describe('DotEditContentCalendarFieldComponent', () => {
                 }
             );
             spectator.detectChanges();
-            // The DatePicker is OnPush and writes the input's DOM value without marking itself
-            // dirty, so the clear control's condition is only re-evaluated by its own detector.
-            spectator.query(DatePicker).cd.detectChanges();
+            await Promise.resolve();
+            spectator.detectChanges();
 
             expect(spectator.queryAll('[data-testid="calendar-clear-button"]')).toHaveLength(1);
             expect(spectator.query(DatePicker).placeholder).toBe('Never expires');
@@ -796,46 +795,13 @@ describe('DotEditContentCalendarFieldComponent', () => {
         // through handleChangeValue when the control transitions to null.
         const fieldWithoutDefault = { ...DATE_FIELD_MOCK, defaultValue: undefined };
 
-        const buildSeededHost = (field: DotCMSContentTypeField) =>
-            createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [field.variable]: new FormControl(EXISTING_TIMESTAMP)
-                        }),
-                        field,
-                        utcTimezone: MOCK_TIMEZONE,
-                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [field.variable]: EXISTING_TIMESTAMP
-                        })
-                    }
-                }
-            );
-
-        it.each([
-            ['DATE', FIELD_TYPES.DATE],
-            ['DATE_AND_TIME', FIELD_TYPES.DATE_AND_TIME],
-            ['TIME', FIELD_TYPES.TIME]
-        ])(
-            'should clear the parent form value via onClearClick for %s field',
-            (_label, fieldType) => {
-                const field = { ...fieldWithoutDefault, fieldType };
-                spectator = buildSeededHost(field);
-                spectator.detectChanges();
-
-                const formGroup = spectator.hostComponent.formGroup;
-                expect(formGroup.get(field.variable)?.value).toBe(EXISTING_TIMESTAMP);
-
-                spectator.triggerEventHandler(DatePicker, 'onClearClick', {});
-                spectator.detectChanges();
-
-                expect(formGroup.get(field.variable)?.value).toBeNull();
-            }
-        );
+        // The `(onClearClick)` tests that lived here drove the event synthetically with
+        // triggerEventHandler. PrimeNG emits onClearClick from exactly one place —
+        // onClearButtonClick (primeng-datepicker.mjs:3129) — reachable only from the stock footer
+        // Clear button this feature removes, or from the buttonbar template's clearCallback, which
+        // we deliberately do not use. The on-field X goes through clear(), which emits onClear
+        // only (:1746). So they asserted a path production can no longer take; the onClear test
+        // below covers the real one.
 
         it('should clear the parent form value via onClear (X icon path) for an expire date field', () => {
             const field = { ...fieldWithoutDefault, fieldType: FIELD_TYPES.DATE_AND_TIME };

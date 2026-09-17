@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { DatePickerModule } from 'primeng/datepicker';
@@ -52,7 +52,6 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotCalendarFieldComponent
     ],
     templateUrl: 'dot-edit-content-calendar-field.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
             provide: ControlContainer,

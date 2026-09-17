@@ -2,7 +2,6 @@ import { signalMethod } from '@ngrx/signals';
 
 import {
     afterNextRender,
-    ChangeDetectionStrategy,
     Component,
     computed,
     effect,
@@ -62,7 +61,6 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
     imports: [ButtonModule, DatePickerModule, ReactiveFormsModule, DotMessagePipe],
     templateUrl: 'calendar-field.component.html',
     styleUrls: ['./calendar-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
@@ -183,6 +181,19 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      * exists.
      */
     $picker = viewChild(DatePicker);
+
+    /**
+     * Whether the footer action can be trusted to resolve against the server's clock.
+     *
+     * `getCurrentServerTime` branches on `!systemTimezone?.id` and falls back to reading the
+     * browser's UTC components as local time. That was harmless while its only caller was
+     * `$defaultDate`, which merely positions the calendar on open — but the footer action
+     * *persists* what it returns, so on a non-UTC server that fallback commits an instant off by
+     * the browser's offset, with nothing on screen to hint at it (the timezone label is hidden in
+     * exactly this state). A server explicitly on UTC is a different case and stays enabled: there
+     * the branch is correct, not a fallback.
+     */
+    $canResolveServerTime = computed(() => !!this.$systemTimezone()?.id);
 
     /**
      * Message key for the footer action: a time-only field jumps to "now", the two that carry

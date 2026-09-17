@@ -106,9 +106,9 @@ describe('DotCalendarFieldComponent', () => {
     const A_VALUE = new Date(2026, 3, 9, 9, 33).getTime();
 
     /**
-     * The clear control as the user meets it: something focusable and activatable, not the
-     * bare <svg> PrimeNG renders by default. Queried by role rather than by class so the
-     * test fails if the control is present but not a real button.
+     * The clear control as the user meets it. Queried by test id, the repo convention; that it
+     * is a real focusable button — rather than the bare <svg> PrimeNG renders by default — is
+     * asserted separately (FR-007a).
      */
     const queryClearControl = (): HTMLElement | null =>
         spectator.query('[data-testid="calendar-clear-button"]');
@@ -131,6 +131,11 @@ describe('DotCalendarFieldComponent', () => {
     /**
      * Opens the picker overlay. The overlay is appended to `body`, so it lives outside the
      * fixture and has to be queried through the document rather than through Spectator.
+     *
+     * This is the one place that drives the picker's own detector on purpose, and it is not the
+     * pattern `settle()` was rewritten to avoid: `showOverlay()` is called on the instance rather
+     * than through a real click, so nothing marks the OnPush picker dirty the way a user
+     * interaction would. It stands in for the click, not for a pass the component owes.
      */
     const openPicker = (): void => {
         const picker = spectator.query(DatePicker);
@@ -289,7 +294,7 @@ describe('DotCalendarFieldComponent', () => {
 
     describe('Picker footer — timezone (US2)', () => {
         // T018 — FR-008
-        it('should show the timezone in the picker footer for a Date-and-Time field', async () => {
+        it('should show the timezone in the picker footer for a Date-and-Time field', () => {
             spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
             openPicker();
 
@@ -300,7 +305,7 @@ describe('DotCalendarFieldComponent', () => {
         });
 
         // T019 — FR-008
-        it('should show the timezone in the picker footer for a Time field', async () => {
+        it('should show the timezone in the picker footer for a Time field', () => {
             spectator = buildHost(FIELD_TYPES.TIME);
             openPicker();
 
@@ -312,14 +317,14 @@ describe('DotCalendarFieldComponent', () => {
 
         // T020 — FR-008a. A date carries no time, so the zone it would be read in is not a fact
         // the author needs. Decided explicitly in the issue's refinement table.
-        it('should NOT show the timezone in the picker footer for a Date field', async () => {
+        it('should NOT show the timezone in the picker footer for a Date field', () => {
             spectator = buildHost(FIELD_TYPES.DATE);
             openPicker();
 
             expect(queryInOverlay('[data-testid="calendar-field-timezone"]')).toBeNull();
         });
 
-        it('should render the timezone as non-interactive text, not a control', async () => {
+        it('should render the timezone as non-interactive text, not a control', () => {
             spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
             openPicker();
 
@@ -354,8 +359,7 @@ describe('DotCalendarFieldComponent', () => {
          * looks like the handler ran and did the wrong thing.
          */
         const queryActionButton = (): HTMLElement | null =>
-            queryInOverlay('[data-testid="calendar-field-today-button"] button') ??
-            queryInOverlay('[data-testid="calendar-field-today-button"]');
+            queryInOverlay('[data-testid="calendar-field-today-button"] button');
 
         const controlValue = (): number | null =>
             spectator.hostComponent.formGroup.get(DATE_FIELD_MOCK.variable)?.value ?? null;
@@ -376,7 +380,7 @@ describe('DotCalendarFieldComponent', () => {
         // is the redundancy this feature removes.
         it.each([...ALL_TYPES])(
             'should render exactly one footer action and no Clear button on a %s field',
-            async (fieldType) => {
+            (fieldType) => {
                 spectator = buildHost(fieldType);
                 openPicker();
 
@@ -423,7 +427,20 @@ describe('DotCalendarFieldComponent', () => {
             await settle();
 
             expect(spectator.component.internalFormControl.value?.getHours()).toBe(SERVER_HOUR);
-            expect(controlValue()).not.toBeNull();
+
+            // Not just "a value": the TIME branch keeps the server's time against TODAY's date in
+            // the runner's zone, so a regression storing the right hour on the wrong date base
+            // would slip past a null check. Derived the same way production derives it.
+            const today = new Date();
+            const expected = new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate(),
+                SERVER_HOUR,
+                FAKE_NOW_UTC.getUTCMinutes(),
+                FAKE_NOW_UTC.getUTCSeconds()
+            );
+            expect(controlValue()).toBe(expected.getTime());
         });
 
         // FR-015b — symmetric with FR-007a for the clear control. p-button renders a native
@@ -455,11 +472,46 @@ describe('DotCalendarFieldComponent', () => {
 
             const btn = queryActionButton() as HTMLButtonElement;
             btn.focus();
-            btn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', which: 27, bubbles: true }));
+            btn.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'Escape', which: 27, bubbles: true })
+            );
             spectator.detectChanges();
 
             expect(picker.overlayVisible).toBe(false);
             expect(document.activeElement).toBe(document.getElementById(DATE_FIELD_MOCK.variable));
+        });
+
+        // oidacra's finding: the footer action stayed clickable in exactly the state where the
+        // timezone label is hidden, and `getCurrentServerTime` then falls back to reading the
+        // browser's UTC components as local time — persisting an instant off by the browser's
+        // offset, silently. No test covered the timezone-unavailable state at all.
+        describe('when the system timezone has not resolved', () => {
+            it('should render no timezone text in the footer', () => {
+                spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, { utcTimezone: null });
+                openPicker();
+
+                expect(queryInOverlay('[data-testid="calendar-field-timezone"]')).toBeNull();
+            });
+
+            it.each([...ALL_TYPES])(
+                'should disable the footer action on a %s field',
+                (fieldType) => {
+                    spectator = buildHost(fieldType, null, { utcTimezone: null });
+                    openPicker();
+
+                    expect((queryActionButton() as HTMLButtonElement).disabled).toBe(true);
+                }
+            );
+
+            it('should keep the footer action enabled when the server is explicitly on UTC', () => {
+                // Not a fallback: on a UTC server that branch of getCurrentServerTime is correct.
+                spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, {
+                    utcTimezone: { id: 'UTC', label: 'Coordinated Universal Time (UTC)', offset: 0 }
+                });
+                openPicker();
+
+                expect((queryActionButton() as HTMLButtonElement).disabled).toBe(false);
+            });
         });
 
         // T036 — FR-014
@@ -476,8 +528,7 @@ describe('DotCalendarFieldComponent', () => {
             expect(control?.dirty).toBe(true);
         });
 
-        // T037 — FR-014a. A date-only pick is complete, so it closes; the two types carrying a
-        // time stay open so the hour can still be adjusted.
+        // T037 — FR-014a.
         // The footer action never closes the picker, matching a day click: hideOnDateTimeSelect
         // is false for all three types, so selecting a value keeps the overlay open until the
         // author clicks outside it.
