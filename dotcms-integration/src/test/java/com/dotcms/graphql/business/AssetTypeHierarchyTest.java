@@ -34,22 +34,28 @@ import org.junit.Test;
  * Locks the shape of the asset type hierarchy, as opposed to the behaviour of queries against it —
  * that is {@link AssetSubtypeAccessTest}'s job. Issue #34540.
  *
+ * <p>Four <b>independent</b> interfaces — none implements another, and graphql-java's
+ * interface-implements-interface support is not used here:
+ *
  * <pre>
- *                        DotContentlet            (every content type)
- *                              ▲
- *          ┌───────────────────┼───────────────────┐
- *   ContentBaseType     DotAssetBaseType     FileBaseType
- *                       (DOTASSET only)     (FILEASSET only)
- *                              └────────┬──────────┘
- *                                       │
- *                                 DotFileasset     (spans BOTH base types)
- *                                       │
- *              Images · BannerImages · Image2 · Video · dotAsset · Document
- *              FileAsset · PDFDocuments · fileAsset2 · …
+ *   DotContentlet      every content type
+ *   ContentBaseType    CONTENT-derived
+ *   DotAssetBaseType   DOTASSET-derived
+ *   FileBaseType       FILEASSET-derived
+ *   DotFileasset       every asset content type, BOTH base types
  * </pre>
  *
- * <p>The three interfaces are siblings on each object type, not nested: every asset content type
- * declares all of them directly.
+ * <p>The only structure is that each object type declares the ones that apply, side by side:
+ *
+ * <pre>
+ *   Images    implements DotContentlet, DotAssetBaseType, DotFileasset
+ *   FileAsset implements DotContentlet, FileBaseType,     DotFileasset
+ *   Blog      implements DotContentlet, ContentBaseType
+ * </pre>
+ *
+ * <p>They share the flat properties because the same fields are declared on each, not because one
+ * inherits from another. Adding a field to one does <b>not</b> give it to the others, and every
+ * implementing object type must carry it or the whole schema build fails.
  *
  * <p>Two invariants here are easy to break without noticing, and neither shows up as a failing
  * query — the first fails the <b>entire schema build</b>, the second only makes a client's query
@@ -93,13 +99,13 @@ public class AssetTypeHierarchyTest extends IntegrationTestBase {
 
         assertEquals("a DOTASSET-derived type must declare exactly these interfaces",
                 Set.of(InterfaceType.DOTASSET_INTERFACE_NAME,
-                        InterfaceType.ASSET_CONTENT_INTERFACE_NAME,
+                        InterfaceType.ASSET_INTERFACE_NAME,
                         InterfaceType.DOT_CONTENTLET),
                 interfacesOf(schema, dotAssetType.variable()));
 
         assertEquals("a FILEASSET-derived type must declare exactly these interfaces",
                 Set.of(InterfaceType.FILE_INTERFACE_NAME,
-                        InterfaceType.ASSET_CONTENT_INTERFACE_NAME,
+                        InterfaceType.ASSET_INTERFACE_NAME,
                         InterfaceType.DOT_CONTENTLET),
                 interfacesOf(schema, fileAssetType.variable()));
     }
@@ -120,7 +126,7 @@ public class AssetTypeHierarchyTest extends IntegrationTestBase {
         final GraphQLSchema schema = rebuiltSchema();
         final Set<String> possible = schema
                 .getImplementations((GraphQLInterfaceType) schema
-                        .getType(InterfaceType.ASSET_CONTENT_INTERFACE_NAME))
+                        .getType(InterfaceType.ASSET_INTERFACE_NAME))
                 .stream().map(GraphQLObjectType::getName).collect(Collectors.toSet());
 
         assertTrue("the DOTASSET-derived type must be a possible type",
@@ -147,7 +153,7 @@ public class AssetTypeHierarchyTest extends IntegrationTestBase {
         final GraphQLSchema schema = rebuiltSchema();
 
         for (final String surface : List.of(
-                InterfaceType.ASSET_CONTENT_INTERFACE_NAME,
+                InterfaceType.ASSET_INTERFACE_NAME,
                 InterfaceType.DOTASSET_INTERFACE_NAME,
                 InterfaceType.FILE_INTERFACE_NAME,
                 dotAssetType.variable(),
@@ -178,7 +184,7 @@ public class AssetTypeHierarchyTest extends IntegrationTestBase {
         final GraphQLSchema schema = rebuiltSchema();
 
         for (final String surface : List.of(
-                InterfaceType.ASSET_CONTENT_INTERFACE_NAME,
+                InterfaceType.ASSET_INTERFACE_NAME,
                 InterfaceType.DOTASSET_INTERFACE_NAME,
                 InterfaceType.FILE_INTERFACE_NAME)) {
             assertFalse("'description' must not be declared on '" + surface

@@ -83,7 +83,7 @@ public enum InterfaceType {
      * does change, from object to interface, which query text does not notice but client code
      * generators do: anyone with generated types must regenerate them. See #34540.
      */
-    public static final String ASSET_CONTENT_INTERFACE_NAME = "DotFileasset";
+    public static final String ASSET_INTERFACE_NAME = "DotFileasset";
 
     public static final String DOT_CONTENTLET = "DotContentlet";
 
@@ -164,7 +164,7 @@ public enum InterfaceType {
         final Map<String, TypeFetcher> assetContentFields = new HashMap<>(contentFields);
         assetContentFields.putAll(CustomFieldType.getAssetFlatFields());
 
-        assetContentInterface = createInterfaceType(ASSET_CONTENT_INTERFACE_NAME,
+        assetContentInterface = createInterfaceType(ASSET_INTERFACE_NAME,
                 assetContentFields, new ContentResolver());
     }
 

@@ -7217,7 +7217,11 @@
 									"    var myFile = dotasset.myFile;",
 									"    // general attributes",
 									"    pm.expect(myFile.fileName).to.eql(\"Brave.pdf\");",
-									"    pm.expect(myFile.description).to.eql(\"Brave.pdf\");",
+									"    // `description` is no longer selectable on an asset-pointing field.",
+									"    // It never returned a stored description here: the flat view answered",
+									"    // with the contentlet TITLE, which is why it equalled the file name.",
+									"    // The stored value is now reached through the concrete content type.",
+									"    // See dotCMS/core#34540.",
 									"    pm.expect(myFile.sortOrder).to.eql(0);",
 									"",
 									"    var fileAsset = myFile.fileAsset;",
@@ -7302,7 +7306,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{\n  TypeWithFileCollection(query: \"+identifier: 98254e93fc0fa5bd51d73a787935efd9\") \n  {  \n    myFile {\n      fileName\n      description\n      sortOrder\n      showOnMenu\n      fileAsset {\n        path\n        height\n        focalPoint\n        height\n        idPath\n        isImage\n        mime\n        modDate\n        name\n        path\n        sha256\n        size\n        title\n        versionPath\n        width\n\n      }\n      metaData {\n        key\n        value\n      }\n    }\n  }\n\n}\n",
+								"query": "{\n  TypeWithFileCollection(query: \"+identifier: 98254e93fc0fa5bd51d73a787935efd9\") \n  {  \n    myFile {\n      fileName\n      sortOrder\n      showOnMenu\n      fileAsset {\n        path\n        height\n        focalPoint\n        height\n        idPath\n        isImage\n        mime\n        modDate\n        name\n        path\n        sha256\n        size\n        title\n        versionPath\n        width\n\n      }\n      metaData {\n        key\n        value\n      }\n    }\n  }\n\n}\n",
 								"variables": ""
 							}
 						},
@@ -7321,7 +7325,7 @@
 					"response": []
 				}
 			],
-			"description": "This test that the custom type Image contains the expecte fields.\nExpected fields:\n\n* fileName\n* description\n* fileAsset (Composed/Custom Type. see Binary type on our GraphQL doc)\n* metaData (Custom Type. See Key Value type on our GraphQL doc)\n* showOnMenu\n* sortOrder"
+			"description": "This test that the custom type Image contains the expecte fields.\nExpected fields:\n\n* fileName\n* fileAsset (Composed/Custom Type. see Binary type on our GraphQL doc)\n* metaData (Custom Type. See Key Value type on our GraphQL doc)\n* showOnMenu\n* sortOrder\n\n`description` is no longer among them: an asset-pointing field is now described by the content type it points at, and that name meant the contentlet title here rather than a stored description. It is reached through the concrete type instead. See dotCMS/core#34540."
 		},
 		{
 			"name": "Related content respects language in query for parent",

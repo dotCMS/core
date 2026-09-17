@@ -70,6 +70,14 @@ public enum CustomFieldType {
      * implement it.
      */
     public static Map<String, TypeFetcher> getAssetFlatFields() {
+        if (null == assetFlatFields) {
+            // Only reachable if something reads this while this class is still initializing --
+            // i.e. a new static-init cycle. Returning null would surface much later as an
+            // unexplained NPE inside schema construction; say so here instead.
+            throw new IllegalStateException("CustomFieldType is still initializing: asset flat "
+                    + "fields were read from within its own static initialization, which means a "
+                    + "type-initialization cycle has been introduced.");
+        }
         return Collections.unmodifiableMap(assetFlatFields);
     }
 
@@ -171,7 +179,11 @@ public enum CustomFieldType {
         fileAssetTypeFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString), new MultiValueFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt, new FieldDataFetcher()));
 
-        customFieldTypes.put("FILEASSET", TypeUtil.createObjectType(FILEASSET.getTypeName(), fileAssetTypeFields));
+        // Deliberately NOT registered as a schema type. Asset-pointing fields are described by
+        // the asset interface now, so nothing references this object type; registering it would
+        // leave an orphan in every customer's schema, visible in introspection and reachable by
+        // nobody. The field map below is still built because the interface and the object types
+        // that implement it reuse these exact fetchers.
 
         // The same properties, minus `description`, reused as the flat half of the asset-content
         // interface and synthesized onto DOTASSET-derived object types. Reusing these exact
@@ -180,7 +192,7 @@ public enum CustomFieldType {
         // binary, which BinaryFieldDataFetcher already maps to `asset` for that base type.
         //
         // `description` is excluded on purpose: DOTASSET-derived types either have their own with
-        // a different meaning, or none at all. See InterfaceType#ASSET_CONTENT_INTERFACE_NAME.
+        // a different meaning, or none at all. See InterfaceType#ASSET_INTERFACE_NAME.
         assetFlatFields = new HashMap<>(fileAssetTypeFields);
         assetFlatFields.remove(FILEASSET_DESCRIPTION_FIELD_VAR);
 

@@ -112,9 +112,9 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         // can. Referenced by name to avoid resolving InterfaceType during this enum's own
         // initialization, which would close a cycle. See #34540.
         this.fieldClassGraphqlTypeMap.put(ImageField.class,
-                new GraphQLTypeReference(InterfaceType.ASSET_CONTENT_INTERFACE_NAME));
+                new GraphQLTypeReference(InterfaceType.ASSET_INTERFACE_NAME));
         this.fieldClassGraphqlTypeMap.put(FileField.class,
-                new GraphQLTypeReference(InterfaceType.ASSET_CONTENT_INTERFACE_NAME));
+                new GraphQLTypeReference(InterfaceType.ASSET_INTERFACE_NAME));
         this.fieldClassGraphqlTypeMap
                 .put(KeyValueField.class, list(CustomFieldType.KEY_VALUE.getType()));
         this.fieldClassGraphqlTypeMap.put(CheckboxField.class, list(GraphQLString));
