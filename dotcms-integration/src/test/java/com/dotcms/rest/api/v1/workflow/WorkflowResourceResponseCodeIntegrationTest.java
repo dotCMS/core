@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.workflow;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.mock.response.MockAsyncResponse;
@@ -14,6 +15,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.workflow.form.*;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
@@ -24,6 +26,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
@@ -727,6 +730,71 @@ public class WorkflowResourceResponseCodeIntegrationTest {
         assertNotNull(view);
         assertFalse("A contentlet with a workflow task must still return its timeline",
                 view.getEntity().isEmpty());
+    }
+
+    /**
+     * Given Scenario: A Contentlet has a Workflow task, carrying a comment, in one language only,
+     * and the timeline is requested for a different language.
+     * <p>
+     * Expected Result: an empty timeline for the language with no task, and the populated one for
+     * the language that has it. A Workflow task is per language — {@code findTaskByContentlet}
+     * keys on identifier <i>and</i> languageId — so the timeline belongs to the language version
+     * being viewed rather than to the identifier as a whole.
+     * <p>
+     * Pins the behavior raised in review on
+     * <a href="https://github.com/dotCMS/core/pull/37589">#37589</a>: before the #37584 fix this
+     * path threw an NPE (HTTP 500) for any language with no task; it must now be an empty timeline,
+     * and it must not leak another language's history.
+     */
+    @Test
+    public void History_Comments_Are_Scoped_To_The_Requested_Language() throws Exception {
+
+        final User systemUser = APILocator.systemUser();
+        final long defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final Language otherLanguage = new LanguageDataGen().nextPersisted();
+
+        // Both versions must be live: a mocked request carries no back-end user, so
+        // PageMode.get() resolves to LIVE and the endpoint only finds published versions.
+        final Contentlet contentlet = ContentletDataGen.publish(newContentlet("language-scoped-task-"));
+        assertEquals(defaultLanguage, contentlet.getLanguageId());
+
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(contentlet);
+        assertNotNull("The fixture needs a task in the default language", task);
+
+        final WorkflowComment comment = new WorkflowComment();
+        comment.setComment("Only in the default language");
+        comment.setCreationDate(new Date());
+        comment.setPostedBy(systemUser.getUserId());
+        comment.setWorkflowtaskId(task.getId());
+        workflowAPI.saveComment(comment);
+
+        // The other language needs a version of its own: without one the endpoint throws
+        // DoesNotExistException while resolving the Contentlet, and never reaches the task lookup
+        // this test is about. Persisting that version also creates a task for it, so remove it —
+        // "exists in this language, has no task of its own" is the case under test.
+        final Contentlet otherVersion = ContentletDataGen.publish(ContentletDataGen.createNewVersion(
+                contentlet, VariantAPI.DEFAULT_VARIANT, otherLanguage, null));
+        workflowAPI.deleteWorkflowTaskByContentlet(otherVersion, otherLanguage.getId(), systemUser);
+        assertNull("The other language must have no task of its own for this test to mean anything",
+                workflowAPI.findTaskByContentlet(otherVersion));
+
+        // The language that owns the task still returns its history.
+        final ResponseEntityWorkflowHistoryCommentsView owning = workflowResource
+                .getWorkflowTasksHistoryComments(mock(HttpServletRequest.class),
+                        new EmptyHttpResponse(), contentlet.getIdentifier(),
+                        String.valueOf(defaultLanguage));
+        assertFalse("The language owning the task must return its timeline",
+                owning.getEntity().isEmpty());
+
+        // A language with no task of its own returns empty rather than throwing, and must not
+        // borrow the other language's comments.
+        final ResponseEntityWorkflowHistoryCommentsView other = workflowResource
+                .getWorkflowTasksHistoryComments(mock(HttpServletRequest.class),
+                        new EmptyHttpResponse(), contentlet.getIdentifier(),
+                        String.valueOf(otherLanguage.getId()));
+        assertNotNull(other);
+        assertTrue("A language with no task of its own must yield an empty timeline",
+                other.getEntity().isEmpty());
     }
 
 }

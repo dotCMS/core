@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -1121,6 +1122,44 @@ public class ContentletTransformerTest extends IntegrationTestBase {
         assertEquals("A Site read through the editor path must save without forceExecution, "
                         + "and without its name changing",
                 originalName, saved.getHostname());
+    }
+
+    /**
+     * Given Scenario: A custom Content Type declares its own {@code hostName} field but a
+     * Contentlet of that type leaves it unset, and is hydrated through the editor's options.
+     * <p>
+     * Expected Result: the key is still present, carrying the {@code N/A} sentinel. The transform
+     * map has always guaranteed a non-null {@code hostName}, so the collision guard must not turn
+     * a declared-but-empty field into a missing key — raised in review on
+     * <a href="https://github.com/dotCMS/core/pull/37589">#37589</a>.
+     */
+    @Test
+    public void Test_Transform_Declared_But_Unset_HostName_Falls_Back_To_Sentinel() {
+
+        final ContentType customType = new ContentTypeDataGen()
+                // FieldDataGen seeds a defaultValue by default; null it out so the field really is
+                // unset on the contentlet, which is the case under test.
+                .field(new FieldDataGen().name("Site Key").velocityVarName(Contentlet.HOST_NAME)
+                        .type(TextField.class).defaultValue(null).next())
+                .field(new FieldDataGen().name("Title").velocityVarName("title")
+                        .type(TextField.class).next())
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(customType.id())
+                .setProperty("title", "declared-but-unset-" + System.currentTimeMillis())
+                .host(site)
+                .nextPersisted();
+
+        final Map<String, Object> map = new DotTransformerBuilder()
+                .contentResourceOptions(false)
+                .content(contentlet).build().toMaps().get(0);
+
+        assertTrue("A declared but unset hostName must not drop the key",
+                map.containsKey(Contentlet.HOST_NAME));
+        // AbstractTransformStrategy.NOT_APPLICABLE is package-private; assert its value rather
+        // than widening its visibility for a test.
+        assertEquals("An unset declared field falls back to the sentinel, not to the Site name",
+                "N/A", map.get(Contentlet.HOST_NAME));
     }
 
     /**

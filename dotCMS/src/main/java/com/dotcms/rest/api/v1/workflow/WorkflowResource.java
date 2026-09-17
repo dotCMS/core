@@ -6215,6 +6215,11 @@ public class WorkflowResource {
      * timeline. A Site never has one at all, because Workflow actions are prohibited on the Host
      * Content Type. Both cases return an empty list rather than an error.
      * <p>
+     * A Workflow task is per language — {@code findTaskByContentlet} keys on identifier <i>and</i>
+     * language — so this timeline is the one belonging to the language version being viewed. A
+     * Contentlet whose task and comments live under another language therefore returns an empty
+     * timeline here, not that other language's history.
+     * <p>
      * Here's an example of how to use this endpoint:
      * <pre>
      *     http://localhost:8080/api/v1/workflow/tasks/history/comments/{contentletIdentifier}
@@ -6293,6 +6298,15 @@ public class WorkflowResource {
                 // A Contentlet that has never been through a Workflow has no task, and a Site never
                 // can have one at all, since Workflow actions are prohibited on the Host Content
                 // Type. That is an empty timeline, not an error.
+                //
+                // Note this is per LANGUAGE: findTaskByContentlet keys on identifier AND
+                // languageId, so a Contentlet whose task lives under another language resolves
+                // here too. That is the intended reading - the timeline belongs to the language
+                // version being viewed - and it is pinned by
+                // History_Comments_Are_Scoped_To_The_Requested_Language.
+                Logger.debug(this, () -> String.format(
+                        "No Workflow task for Contentlet '%s' in language '%d'; returning an empty timeline",
+                        contentletIdentifier, currentContentlet.get().getLanguageId()));
                 return new ResponseEntityWorkflowHistoryCommentsView(List.of());
             }
             final List<WorkflowTimelineItem> workflowComments = this.workflowAPI.getCommentsAndChangeHistory(currentWorkflowTask);

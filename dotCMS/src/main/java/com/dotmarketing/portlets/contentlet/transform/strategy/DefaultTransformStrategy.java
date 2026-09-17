@@ -128,7 +128,12 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         //a custom type may too, so writing the derived value would destroy the stored one - every
         //Site lives on the System Host, so every Site would report "System Host". Same reasoning as
         //the URL_FIELD guard below. HOST_KEY needs no guard: "host" is a reserved field variable.
-        if (!declaresField(type, HOST_NAME)) {
+        if (declaresField(type, HOST_NAME)) {
+            //The stored field wins, but the key still has to be there: this map has always carried
+            //a non-null hostName, so a declared-but-unset field falls back to the sentinel rather
+            //than dropping the key and handing callers a null.
+            map.putIfAbsent(HOST_NAME, NOT_APPLICABLE);
+        } else {
             map.put(HOST_NAME, site != null ? site.getHostname() : NOT_APPLICABLE);
         }
         map.put(HOST_KEY, site != null ? site.getIdentifier() : NOT_APPLICABLE);

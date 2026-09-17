@@ -99,13 +99,17 @@ public class ContentletToMapTransformer {
         properties.put(Contentlet.HAS_TITLE_IMAGE_KEY, contentlet.getTitleImage().isPresent() );
         properties.put(Contentlet.BASE_TYPE_KEY, type != null ? type.baseType().name() : NA);
         try {
-            final Host host = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser()
-                , true);
             //`hostName` is a derived property - the name of the Site this Contentlet lives on - but
             //the Host Content Type declares a real field with that same variable ("Site Key"). See
             //DefaultTransformStrategy.declaresField: writing the derived value over a declared
             //field would make every Site report "System Host", since every Site lives on it.
-            if (!DefaultTransformStrategy.declaresField(type, Contentlet.HOST_NAME)) {
+            if (DefaultTransformStrategy.declaresField(type, Contentlet.HOST_NAME)) {
+                //Stored field wins. The key stays present so callers keep their non-null guarantee,
+                //and the Site lookup is skipped entirely - its result would only be discarded.
+                properties.putIfAbsent(Contentlet.HOST_NAME, NA);
+            } else {
+                final Host host = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.systemUser()
+                    , true);
                 properties.put(Contentlet.HOST_NAME, host != null ? host.getHostname() : NA );
             }
         } catch (DotDataException | DotSecurityException e) {
