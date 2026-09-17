@@ -64,11 +64,22 @@ export const PUSH_PUBLISH_ACTION_ID = 'PUSH_PUBLISH';
  */
 export const REFRESH_ACTION_ID = 'REFRESH';
 
+/**
+ * Bulk folder delete (#37063).
+ *
+ * Folder-only: deleting a contentlet is a workflow action and deleting a folder is not, so one
+ * label over two mechanisms would be two result shapes and two failure modes behind one word. The
+ * row reports how many of the selection it will act on, which is what the registry already
+ * computes in a single pass.
+ */
+export const DELETE_FOLDER_ACTION_ID = 'DELETE_FOLDER';
+
 export type DotActionCenterQuickActionId =
     | WORKFLOW_ACTION_ID
     | typeof ADD_TO_BUNDLE_ACTION_ID
     | typeof PUSH_PUBLISH_ACTION_ID
-    | typeof REFRESH_ACTION_ID;
+    | typeof REFRESH_ACTION_ID
+    | typeof DELETE_FOLDER_ACTION_ID;
 
 /** Quick action as rendered in the dialog (with eligibility counts). */
 export interface DotActionCenterQuickAction {

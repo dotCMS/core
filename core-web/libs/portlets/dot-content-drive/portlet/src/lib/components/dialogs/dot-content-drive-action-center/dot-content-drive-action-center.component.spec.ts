@@ -239,7 +239,8 @@ describe('DotContentDriveActionCenterComponent', () => {
                 executeWorkflowAction: vi.fn(),
                 executeAddToBundle: vi.fn(),
                 executePushPublish: vi.fn(),
-                executeRefresh: vi.fn()
+                executeRefresh: vi.fn(),
+                executeFolderBulkDelete: vi.fn()
             }),
             // The trigger toast for a backgrounded reindex goes through PrimeNG's MessageService,
             // which in the app resolves to the shell's instance so the toast outlives this dialog.
@@ -2597,6 +2598,72 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(spectator.query('[data-testid="action-center-done"]')).toBeNull();
             expect(store.closeDialog).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * Bulk folder delete's confirmation (#37063 US1, FR-007 … FR-011).
+     *
+     * Written before the action exists (T009 before T017/T018). `DotMessageService.get` is mocked to
+     * return the key, so these assert on keys rather than on English — the copy itself is reviewed at
+     * the T055 gate, but which *claims* it does and does not make is a requirement and is pinned here.
+     */
+    describe('Delete confirmation (#37063)', () => {
+        const folderSelection = [
+            { type: 'folder', identifier: 'id-a', inode: 'inode-a', name: 'old-a' },
+            { type: 'folder', identifier: 'id-b', inode: 'inode-b', name: 'old-b' }
+        ] as unknown as DotContentDriveItem[];
+
+        beforeEach(() => {
+            spectator = createComponent();
+            mockSelectedItems.set(folderSelection);
+        });
+
+        it('should require a confirmation step before anything is submitted', () => {
+            openQuickActionPreview('DELETE_FOLDER');
+
+            expect(store.executeFolderBulkDelete).not.toHaveBeenCalled();
+        });
+
+        it('should say the folders AND their contents are permanently deleted', () => {
+            openQuickActionPreview('DELETE_FOLDER');
+
+            const warning = spectator.query('[data-testid="delete-warning"]');
+
+            // The single most important sentence in the feature: what makes this different from every
+            // other bulk action is that it destroys things the author never selected.
+            expect(warning?.textContent).toContain('content-drive.action-center.delete.warning');
+        });
+
+        it('should make NO claim about workflow', () => {
+            // The issue text proposed saying no workflow action fires on the contents. That is false —
+            // a content type declaring an action for the destroy system action will run it — so the copy
+            // states what is certain and asserts nothing about workflow (FR-010).
+            openQuickActionPreview('DELETE_FOLDER');
+
+            const body = spectator.query('[data-testid="delete-warning"]')?.textContent ?? '';
+
+            expect(body).not.toContain('workflow');
+        });
+
+        it('should say how many folders it is about', () => {
+            openQuickActionPreview('DELETE_FOLDER');
+
+            expect(spectator.query('[data-testid="delete-warning"]')?.textContent).toContain('2');
+        });
+
+        it('should submit the selected folders when confirmed', () => {
+            executeQuickAction('DELETE_FOLDER');
+
+            expect(store.executeFolderBulkDelete).toHaveBeenCalled();
+        });
+
+        it('should submit nothing when the confirmation is dismissed', () => {
+            openQuickActionPreview('DELETE_FOLDER');
+            spectator.click('[data-testid="action-center-back"]');
+            spectator.detectChanges();
+
+            expect(store.executeFolderBulkDelete).not.toHaveBeenCalled();
         });
     });
 });

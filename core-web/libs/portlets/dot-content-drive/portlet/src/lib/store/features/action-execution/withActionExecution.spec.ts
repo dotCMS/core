@@ -821,4 +821,77 @@ describe('withActionExecution', () => {
             expect(store.actionExecutionResult()).toBeUndefined();
         });
     });
+
+    /**
+     * Bulk folder delete (#37063 US1) — the store's half.
+     *
+     * Written before `executeFolderBulkDelete` exists (T010/T011 before T019). Two things are pinned
+     * here rather than in a component spec, because this is where they are actually decided: what the
+     * run is marked with, and how wide the guard is.
+     */
+    describe('executeFolderBulkDelete (#37063)', () => {
+        const PATH_A = '//demo.dotcms.com/old-a/';
+        const PATH_B = '//demo.dotcms.com/old-b/';
+
+        it('should mark both the inode and the identifier of every folder', () => {
+            build();
+
+            // Neither field is reliably the key the row carries — the search service only backfills
+            // `inode` from `identifier` when the API returned none — so a run that targets one of them
+            // leaves half the selection looking untouched.
+            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a', 'id-a']);
+
+            expect(store.busyRows()).toEqual(['inode-a', 'id-a']);
+        });
+
+        it('should report the total the SERVER accepted, not the number of rows selected', () => {
+            build();
+
+            // The two disagree whenever the server drops a duplicate or a nested path. Substituting the
+            // selection size turns a partially-accepted submission into a report that overstates it
+            // (FR-025, CR-03) — the same trap every other action in this file already avoids.
+            store.executeFolderBulkDelete('Delete', [PATH_A, PATH_B], ['inode-a', 'inode-b']);
+
+            expect(store.actionExecution()?.total).toBe(2);
+        });
+
+        it('should refuse a repeat of the same delete over the same folders', () => {
+            build();
+
+            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
+            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
+
+            expect(store.activeRunCount()).toBe(1);
+        });
+
+        it('should allow a second delete over DIFFERENT folders', () => {
+            build();
+
+            // A run lasts minutes. A guard that stopped this would freeze the portlet for the length of
+            // the operation that was made asynchronous precisely so the author could keep working.
+            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
+            store.executeFolderBulkDelete('Delete', [PATH_B], ['inode-b']);
+
+            expect(store.activeRunCount()).toBe(2);
+        });
+
+        it('should not block an unrelated action, nor be blocked by one', () => {
+            build();
+            fireDefaultAction.mockReturnValue(new Subject());
+
+            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
+            store.executeQuickAction('lock-id', 'Lock', ['inode-z']);
+
+            expect(fireDefaultAction).toHaveBeenCalledTimes(1);
+            expect(store.activeRunCount()).toBe(2);
+        });
+
+        it('should do nothing when there are no paths to delete', () => {
+            build();
+
+            store.executeFolderBulkDelete('Delete', [], []);
+
+            expect(store.activeRunCount()).toBe(0);
+        });
+    });
 });

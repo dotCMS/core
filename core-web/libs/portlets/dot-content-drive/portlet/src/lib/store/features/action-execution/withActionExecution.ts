@@ -780,6 +780,33 @@ export function withActionExecution() {
                      *
                      * @param affectedFolders where the batch landed, as `//hostname/path` refs
                      */
+                    /**
+                     * Submits a bulk folder delete and marks the folders it accepted (#37063 US1).
+                     *
+                     * Two separate identities, deliberately:
+                     *
+                     * - `assetPaths` is what the **server** works in — site-qualified folder paths,
+                     *   the same form the shipped single delete accepts. The caller builds them,
+                     *   because it is the one that knows the site.
+                     * - `targets` is what the **listing** marks by, and must carry **both** a
+                     *   folder's `inode` and its `identifier`: the search service only backfills
+                     *   `inode` from `identifier` when the API returned none, so neither is reliably
+                     *   the key the row actually carries.
+                     *
+                     * The guard is the shared one — this operation over these folders — so a delete
+                     * running for minutes never blocks an unrelated action, or a delete of different
+                     * folders (FR-018).
+                     *
+                     * NOT YET IMPLEMENTED — stub so the specs compile and fail on behaviour (T019).
+                     */
+                    executeFolderBulkDelete: (
+                        _actionName: string,
+                        _assetPaths: string[],
+                        _targets: string[]
+                    ): void => {
+                        throw new Error('executeFolderBulkDelete is not implemented yet (T019)');
+                    },
+
                     trackUploadJob: (
                         jobId: string,
                         affectedFolders: string[] = [],
