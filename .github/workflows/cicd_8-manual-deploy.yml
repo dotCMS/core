@@ -102,7 +102,7 @@ on:
         type: string
         default: ''
       allow_release_override:
-        description: '⚠️ DANGER: Allow overriding actual release artifacts in Maven/Artifactory. Only enable if you know what you are doing!'
+        description: '⚠️ DANGER: Allow overriding actual release artifacts in Maven/S3 repository. Only enable if you know what you are doing!'
         type: boolean
         default: false
 
@@ -161,7 +161,7 @@ jobs:
           if [[ "${EFFECTIVE_VERSION}" =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}(-[0-9]{1,2}|_lts_v[0-9]{1,2})$ ]]; then
             if [[ "${ALLOW_OVERRIDE}" != "true" ]]; then
               echo "❌ ERROR: Version '${EFFECTIVE_VERSION}' matches release version pattern!"
-              echo "This could overwrite actual release artifacts in Maven/Artifactory."
+              echo "This could overwrite actual release artifacts in Maven/S3 repository."
               echo ""
               echo "To proceed, you must:"
               echo "1. Use a different version name (e.g., ${EFFECTIVE_VERSION}-test, manual-${EFFECTIVE_VERSION})"
@@ -287,8 +287,8 @@ jobs:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+      MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
 

@@ -7,7 +7,7 @@
 # Key features:
 # - Release preparation (branch creation, version setting)
 # - Standard build phase for artifact generation
-# - Release-specific deployment (Artifactory, Javadocs, plugins)
+# - Release-specific publishing (S3 Maven repository, Javadocs, plugins)
 # - Docker image deployment via standard deployment phase
 # - SBOM generation
 # - GitHub label management
@@ -30,7 +30,7 @@ on:
         description: 'Commit Hash (default to latest commit)'
         required: false
       deploy_artifact:
-        description: 'Deploy Artifact to Artifactory'
+        description: 'Publish Maven artifacts to the S3 repository'
         type: boolean
         default: true
         required: false
@@ -265,8 +265,8 @@ jobs:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+      MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
 
@@ -480,7 +480,7 @@ jobs:
             > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
           slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
 
-  # Release - release-specific operations (Artifactory, Javadocs, Plugins, SBOM, Labels)
+  # Release - release-specific operations (S3 Maven repository, Javadocs, Plugins, SBOM, Labels)
   # Waits for deployment to complete to safely update labels only if both succeed
   release:
     name: Release
@@ -498,8 +498,8 @@ jobs:
       java-version: ${{ github.event.inputs.java-version }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
     secrets:
-      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+      MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}

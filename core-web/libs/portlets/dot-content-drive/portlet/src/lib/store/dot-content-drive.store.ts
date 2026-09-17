@@ -40,9 +40,11 @@ import {
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
+    DEFAULT_SEARCH_SCOPE,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     MAP_NUMBERS_TO_BASE_TYPES,
+    SEARCH_SCOPE_FILTER_KEY,
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST,
@@ -52,6 +54,7 @@ import {
     DotContentDriveFilters,
     DotContentDriveInit,
     DotContentDrivePagination,
+    DotContentDriveSearchScope,
     DotContentDriveSort,
     DotContentDriveState,
     DotContentDriveStatus
@@ -135,7 +138,19 @@ export const DotContentDriveStore = signalStore(
                                 SHARED_ASSETS_DISABLED_VALUE,
                             filters: {
                                 text: filters()?.title || '',
-                                filterFolders: true
+                                filterFolders: true,
+                                // Sent only when a term is present and the scope is not the
+                                // default. The server rejects a scope without text as the contract
+                                // error it is, and an omitted scope is processed exactly as it was
+                                // before this field existed — which is what leaves the AssetPicker,
+                                // the one other caller of this endpoint, untouched.
+                                ...(filters()?.title && filters()?.[SEARCH_SCOPE_FILTER_KEY]
+                                    ? {
+                                          searchScope: filters()?.[
+                                              SEARCH_SCOPE_FILTER_KEY
+                                          ] as DotContentDriveSearchScope
+                                      }
+                                    : {})
                             },
                             language: filters()?.languageId,
                             contentTypes: filters()?.contentType,
@@ -231,6 +246,10 @@ export const DotContentDriveStore = signalStore(
                     filters.title = searchValue;
                 } else {
                     delete filters.title;
+                    // The scope qualifies the term — with no term it is nonsense (FR-025), and a
+                    // leftover scope would keep "Clear all" lit on a drive with nothing filtered
+                    // (FR-020), the exact affordance setSearchScope deletes the key to avoid.
+                    delete filters[SEARCH_SCOPE_FILTER_KEY];
                 }
 
                 patchState(store, {
@@ -242,6 +261,26 @@ export const DotContentDriveStore = signalStore(
                     },
                     path: DEFAULT_PATH
                 });
+            },
+            /**
+             * Records which fields the search term is matched against.
+             *
+             * Written into the filter state only while it differs from the default, and deleted
+             * when it returns to it. That is not cosmetic: `hasNonDefaultFilters` counts every
+             * filter key except two, and that signal is what shows the chip bar's "Clear all". A
+             * scope written on every selection would offer "Clear all" the moment someone picked
+             * the default on a drive with nothing filtered at all.
+             *
+             * Mirrors how `setGlobalSearch` already deletes its own key when the term goes empty.
+             */
+            setSearchScope(scope: DotContentDriveSearchScope) {
+                if (scope === DEFAULT_SEARCH_SCOPE) {
+                    this.removeFilter(SEARCH_SCOPE_FILTER_KEY);
+
+                    return;
+                }
+
+                this.patchFilters({ [SEARCH_SCOPE_FILTER_KEY]: scope });
             },
             clearFilters() {
                 patchState(store, {
@@ -442,10 +481,26 @@ export const DotContentDriveStore = signalStore(
                         });
                     });
             },
-            loadItems() {
+            /**
+             * @param options.quiet Refetch without putting the listing into LOADING.
+             *
+             * A reload that follows an action is not the same event as a search. The rows are on
+             * screen, the author is watching the ones an action just touched, and blanking the whole
+             * table to swap them produces a visible jump straight after the per-row marks clear.
+             * Quiet keeps the current rows rendered until the new ones arrive.
+             *
+             * It is still a real refetch, which is what keeps the outcome filter-correct: a row
+             * archived or unpublished by the action simply is not in the new result. An optimistic
+             * in-place update could never manage that, because the client cannot know whether the
+             * new state still matches an active filter.
+             */
+            loadItems(options?: { quiet?: boolean }) {
                 const request = store.$request();
                 const currentSite = store.currentSite();
-                patchState(store, { status: DotContentDriveStatus.LOADING, selectedItems: [] });
+                patchState(store, {
+                    ...(options?.quiet ? {} : { status: DotContentDriveStatus.LOADING }),
+                    selectedItems: []
+                });
 
                 // Avoid fetching content for SYSTEM_HOST sites
                 if (currentSite?.identifier == SYSTEM_HOST.identifier) {
@@ -478,11 +533,16 @@ export const DotContentDriveStore = signalStore(
                     return;
                 }
 
-                // Since we are using scored search for the title we need to sort by score desc
                 dotContentDriveService
                     .search(request)
                     .pipe(
                         take(1),
+                        // Deliberate deviation from the portlet convention of routing every HTTP
+                        // error through DotHttpErrorManagerService: a transient toast over an
+                        // empty grid reads as "found nothing", the exact misread that sent a
+                        // #37532 customer looking for a document that was there all along. The
+                        // ERROR status renders the shell's persistent banner + Retry instead (see
+                        // dot-content-drive-shell.component.html).
                         catchError(() => {
                             patchState(store, { status: DotContentDriveStatus.ERROR });
                             return EMPTY;
@@ -535,8 +595,22 @@ export const DotContentDriveStore = signalStore(
                         });
                     });
             },
-            reloadContentDrive() {
-                this.loadItems();
+            /**
+             * @param options.quiet Refetch without the skeleton. Pass this **only** when rows are
+             * already marked busy.
+             *
+             * The skeleton is not noise by default: it is the only signal an author has that
+             * anything is happening. Suppressing it wholesale would leave a folder rename looking
+             * like nothing happened until the rows silently changed underneath.
+             *
+             * It is redundant exactly when the affected rows are already marked, which is the case
+             * this exists for: a run marks its rows, settles, and reloading with a full blank would
+             * produce a second load right after the first and a visible jump. The caller knows
+             * whether it marked anything; the store cannot, since the run registry is composed after
+             * these methods and is not reachable from here.
+             */
+            reloadContentDrive(options?: { quiet?: boolean }) {
+                this.loadItems({ quiet: options?.quiet });
             }
         };
     }),
@@ -650,6 +724,22 @@ export const DotContentDriveStore = signalStore(
     withActionExecution(),
     withPushPublishEnvironments(),
     withSitePermissions(),
+    withComputed(() => {
+        const globalStore = inject(GlobalStore);
+
+        return {
+            /**
+             * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
+             *
+             * Read through the store rather than injected into the shell so the component keeps to
+             * rendering: the ceilings are data, and every other piece of server state this portlet
+             * shows arrives the same way. Null covers both a configuration that has not loaded and
+             * an instance older than the field, which callers must treat alike — no readable
+             * ceiling, so the refusing is left to the server.
+             */
+            uploadCeilings: computed(() => globalStore.systemBulkUpload())
+        };
+    }),
     withComputed(({ selectedNode, siteCanAddChildren }) => ({
         /**
          * Whether the browsed folder accepts new children.

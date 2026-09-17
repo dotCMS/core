@@ -7,7 +7,9 @@ import {
 import { Subject } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
-import { ConfirmationService } from 'primeng/api';
+import { signal } from '@angular/core';
+
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -15,6 +17,7 @@ import { DotAiIndex } from '@dotcms/dotcms-models';
 
 import DotAiEmbeddingsComponent from './dot-ai-embeddings.component';
 
+import { DOT_AI_INDEX_OPERATION, DotAiIndexNotice } from '../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../store/dot-ai.store';
 
 const index = (overrides: Partial<DotAiIndex> = {}): DotAiIndex => ({
@@ -30,8 +33,10 @@ const index = (overrides: Partial<DotAiIndex> = {}): DotAiIndex => ({
 describe('DotAiEmbeddingsComponent', () => {
     let spectator: Spectator<DotAiEmbeddingsComponent>;
     let onClose: Subject<unknown>;
+    let onDialogDestroy: Subject<unknown>;
     let dialogService: DialogService;
     let confirmSpy: MockInstance;
+    let toastSpy: MockInstance;
 
     const storeMock = {
         indexes: vi.fn().mockReturnValue([index()]),
@@ -41,9 +46,11 @@ describe('DotAiEmbeddingsComponent', () => {
         isConfigured: vi.fn().mockReturnValue(true),
         setIndexFilter: vi.fn(),
         buildIndex: vi.fn(),
-        indexBuildNotice: vi.fn().mockReturnValue(null),
-        dismissBuildNotice: vi.fn(),
-        deleteFromIndex: vi.fn(),
+        // A real signal, not a mock fn: the component reads this inside an `effect`, which
+        // only re-runs for tracked dependencies.
+        indexNotice: signal<DotAiIndexNotice | null>(null),
+        indexNoticeOwner: signal<{ operation: string; indexName: string } | null>(null),
+        removeFromIndex: vi.fn(),
         deleteIndex: vi.fn(),
         rebuildEmbeddingsDb: vi.fn()
     };
@@ -56,7 +63,10 @@ describe('DotAiEmbeddingsComponent', () => {
         componentProviders: [
             { provide: DotAiStore, useValue: storeMock },
             ConfirmationService,
-            { provide: DialogService, useValue: { open: vi.fn() } }
+            { provide: DialogService, useValue: { open: vi.fn() } },
+            // Real, for the same reason ConfirmationService is: p-toast subscribes to its
+            // messageObserver at construction and a bare mock has none.
+            MessageService
         ],
         // Echoes the key, so assertions on dialog copy read as the key that was asked
         // for rather than `undefined`.
@@ -69,10 +79,14 @@ describe('DotAiEmbeddingsComponent', () => {
         storeMock.indexesForbidden.mockReturnValue(false);
         storeMock.filteredIndexes.mockReturnValue([index()]);
         onClose = new Subject();
+        onDialogDestroy = new Subject();
+        storeMock.indexNotice.set(null);
+        storeMock.indexNoticeOwner.set(null);
         spectator = createComponent();
         dialogService = spectator.inject(DialogService, true);
-        (dialogService.open as Mock).mockReturnValue({ onClose });
+        (dialogService.open as Mock).mockReturnValue({ onClose, onDestroy: onDialogDestroy });
         confirmSpy = vi.spyOn(spectator.inject(ConfirmationService, true), 'confirm');
+        toastSpy = vi.spyOn(spectator.inject(MessageService, true), 'add');
     });
 
     const clickButton = (testId: string) =>
@@ -143,64 +157,120 @@ describe('DotAiEmbeddingsComponent', () => {
                 expect.objectContaining({
                     width: '700px',
                     closable: true,
-                    closeOnEscape: true
+                    // The dialog handles Escape itself, so that it can decline while a
+                    // request is in flight — PrimeNG binds its own listener once at open.
+                    closeOnEscape: false
                 })
             );
         });
 
-        it('should build without forwarding the dialog-only mode field', () => {
-            // The server answers 400 "Unrecognized field 'mode'" rather than ignoring it, so
-            // passing the dialog result through verbatim broke every index build.
+        it('should still report an outcome no open dialog owns', () => {
+            // A delete fails while the build dialog happens to be up. The dialog renders only
+            // outcomes for the request it submitted, so suppressing on "a dialog is open"
+            // alone left this reported by nobody at all.
             clickButton('dotai-embeddings-new-index');
-
-            onClose.next({ mode: 'add', indexName: 'blogs', query: '+contentType:Blog' });
-
-            expect(storeMock.buildIndex).toHaveBeenCalledWith({
-                indexName: 'blogs',
-                query: '+contentType:Blog'
+            storeMock.indexNoticeOwner.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                indexName: 'other'
             });
-            expect(storeMock.buildIndex.mock.calls[0][0]).not.toHaveProperty('mode');
-            expect(storeMock.deleteFromIndex).not.toHaveBeenCalled();
+            storeMock.indexNotice.set({
+                operation: DOT_AI_INDEX_OPERATION.DELETE_INDEX,
+                outcome: 'failed',
+                indexName: 'blogs',
+                detail: 'boom'
+            });
+            spectator.detectChanges();
+
+            expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
         });
 
-        it('should still forward the optional build fields', () => {
+        it('should stay quiet about an outcome the dialog is there to render', () => {
+            // Otherwise the failure appears twice — once in the form holding the query, once
+            // as a toast over a modal, which is the report nobody could act on.
             clickButton('dotai-embeddings-new-index');
-
-            onClose.next({
-                mode: 'add',
-                indexName: 'blogs',
-                query: '+contentType:Blog',
-                fields: 'title,body',
-                velocityTemplate: '$!{title}'
+            storeMock.indexNoticeOwner.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                indexName: 'blogs'
             });
-
-            expect(storeMock.buildIndex).toHaveBeenCalledWith({
+            storeMock.indexNotice.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'failed',
                 indexName: 'blogs',
-                query: '+contentType:Blog',
-                fields: 'title,body',
-                velocityTemplate: '$!{title}'
+                detail: 'Cannot parse query'
             });
+            spectator.detectChanges();
+
+            expect(toastSpy).not.toHaveBeenCalled();
         });
 
-        it('should delete from the index on a delete-mode result (FR-030)', () => {
+        it('should report a build abandoned mid-flight once the dialog has gone', () => {
+            // Escape or the header X while the build is still running: the outcome arrives
+            // after the dialog is destroyed, so this tab is the only thing left that can show
+            // it. It used to render the success only, so a failure disappeared.
             clickButton('dotai-embeddings-new-index');
-
-            onClose.next({ mode: 'delete', indexName: 'blogs', query: '+contentType:Blog' });
-
-            expect(storeMock.deleteFromIndex).toHaveBeenCalledWith({
+            storeMock.indexNoticeOwner.set(null);
+            storeMock.indexNotice.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'failed',
                 indexName: 'blogs',
-                query: '+contentType:Blog'
+                detail: 'Cannot parse query'
             });
-            expect(storeMock.buildIndex).not.toHaveBeenCalled();
+            spectator.detectChanges();
+
+            expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
         });
 
-        it('should do nothing when the dialog is dismissed', () => {
+        it('should not toast a failure the dialog already showed inline', () => {
+            // Suppressed while the dialog is up, and marked reported all the same — otherwise
+            // closing the dialog toasts the error the user has just read and dismissed.
+            clickButton('dotai-embeddings-new-index');
+            storeMock.indexNoticeOwner.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                indexName: 'blogs'
+            });
+            storeMock.indexNotice.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'failed',
+                indexName: 'blogs',
+                detail: 'Cannot parse query'
+            });
+            spectator.detectChanges();
+
+            storeMock.indexNoticeOwner.set(null);
+            spectator.detectChanges();
+
+            expect(toastSpy).not.toHaveBeenCalled();
+        });
+
+        it('should keep suppressing while the dialog is still closing', () => {
+            // `close()` fires onClose and only then plays the leave animation, so the dialog is
+            // still up and still showing the outcome. Ownership is released in the dialog's own
+            // teardown, which runs after that — so this is about ownership, not the close event.
+            clickButton('dotai-embeddings-new-index');
+            storeMock.indexNoticeOwner.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                indexName: 'blogs'
+            });
+            storeMock.indexNotice.set({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'failed',
+                indexName: 'blogs'
+            });
+            onClose.next(undefined);
+            spectator.detectChanges();
+
+            expect(toastSpy).not.toHaveBeenCalled();
+        });
+
+        it('should leave the build to the dialog rather than submitting on close', () => {
+            // The dialog owns the submit now: a rejected Lucene query has to be correctable in
+            // the form that produced it, not reported here after the modal took the query away.
             clickButton('dotai-embeddings-new-index');
 
             onClose.next(undefined);
 
             expect(storeMock.buildIndex).not.toHaveBeenCalled();
-            expect(storeMock.deleteFromIndex).not.toHaveBeenCalled();
+            expect(storeMock.removeFromIndex).not.toHaveBeenCalled();
         });
     });
 
@@ -239,22 +309,73 @@ describe('DotAiEmbeddingsComponent', () => {
         });
     });
 
+    describe('removing content', () => {
+        it('should be a toolbar action beside New Index, not a row action', () => {
+            // The two are the same shape of operation — a Lucene query plus an index to scope
+            // it to. On a row it implied it knew what was in that index, and nothing records
+            // the query that built one, so the query here is written blind either way.
+            expect(spectator.query(byTestId('dotai-embeddings-remove-content'))).toBeTruthy();
+            expect(spectator.query(byTestId('dotai-embeddings-row-actions'))).toBeFalsy();
+        });
+
+        it('should open its dialog at the mandated width and be dismissible', () => {
+            clickButton('dotai-embeddings-remove-content');
+
+            expect(dialogService.open).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({
+                    width: '700px',
+                    closable: true,
+                    // The dialog handles Escape itself, so that it can decline while a
+                    // request is in flight — PrimeNG binds its own listener once at open.
+                    closeOnEscape: false
+                })
+            );
+        });
+
+        it('should report a removal outcome for an index no open dialog claimed', () => {
+            clickButton('dotai-embeddings-remove-content');
+            storeMock.indexNoticeOwner.set({
+                operation: DOT_AI_INDEX_OPERATION.REMOVE_CONTENT,
+                indexName: 'other'
+            });
+            storeMock.indexNotice.set({
+                operation: DOT_AI_INDEX_OPERATION.REMOVE_CONTENT,
+                outcome: 'failed',
+                indexName: 'blogs'
+            });
+            spectator.detectChanges();
+
+            expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
+        });
+
+        it('should be unavailable when there is no index to remove from', () => {
+            storeMock.indexes.mockReturnValue([]);
+            spectator = createComponent();
+
+            expect(
+                spectator
+                    .query(byTestId('dotai-embeddings-remove-content'))
+                    ?.querySelector('button')?.disabled
+            ).toBe(true);
+        });
+    });
+
     describe('the per-row delete action', () => {
-        const deleteButton = () =>
+        const trigger = () =>
             spectator.query(byTestId('dotai-embeddings-delete'))?.querySelector('button');
 
         it('should be secondary, so a red control does not sit on every row', () => {
             // The destructive step is the confirm dialog, whose accept button carries
             // p-button-danger; the row action only opens it.
-            expect(deleteButton()?.className).toContain('p-button-secondary');
-            expect(deleteButton()?.className).not.toContain('p-button-danger');
+            expect(trigger()?.className).toContain('p-button-secondary');
+            expect(trigger()?.className).not.toContain('p-button-danger');
         });
 
         it('should force its own square rather than rely on the icon-only token', () => {
             // PrimeNG's icon-only width sets a width and leaves the height to padding plus
             // content, so with a full-size glyph the button came out 28x37 — the distortion.
-            // dot-plugins and dot-locales both pin the box in `styleClass` for this reason.
-            const classes = deleteButton()?.className.split(/\s+/) ?? [];
+            const classes = trigger()?.className.split(/\s+/) ?? [];
 
             expect(classes).toContain('w-8');
             expect(classes).toContain('h-8');
@@ -262,27 +383,21 @@ describe('DotAiEmbeddingsComponent', () => {
         });
 
         it('should collapse the glyph line box, which is what inflated the height', () => {
-            // `leading-none` is the other half: without it the glyph's own line-height sets
-            // the button's content height and no width class can square it up.
-            const glyph = deleteButton()?.querySelector('.material-symbols-outlined');
+            const glyph = trigger()?.querySelector('.material-symbols-outlined');
 
             expect(glyph?.className).toContain('leading-none!');
             expect(glyph?.className).toContain('text-lg!');
         });
 
-        it('should be a borderless round action, like the other tables row actions', () => {
-            const classes = deleteButton()?.className.split(/\s+/) ?? [];
+        it('should keep Rebuild DB a plain outlined button, not a red one', () => {
+            // A permanently-red control in the toolbar read as a warning about the screen.
+            // The destructive step is the confirm dialog it opens.
+            const rebuild = spectator
+                .query(byTestId('dotai-embeddings-rebuild'))
+                ?.querySelector('button');
 
-            expect(classes).toContain('p-button-text');
-            expect(classes).toContain('p-button-rounded');
-            expect(classes).not.toContain('p-button-outlined');
-        });
-
-        it('should keep Rebuild DB red, since that one drops every embedding', () => {
-            expect(
-                spectator.query(byTestId('dotai-embeddings-rebuild'))?.querySelector('button')
-                    ?.className
-            ).toContain('p-button-danger');
+            expect(rebuild?.className).toContain('p-button-outlined');
+            expect(rebuild?.className).not.toContain('p-button-danger');
         });
     });
 });

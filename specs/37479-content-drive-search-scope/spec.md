@@ -4,11 +4,12 @@
 
 **Created**: 2026-09-11
 
-**Last revised**: 2026-09-14 — review round 1, then merged with #37532 (see
-[Review Decisions](#review-decisions-settled-2026-09-13) and
-[Merge of #37532](#merge-of-37532-settled-2026-09-14))
+**Last revised**: 2026-09-15 — two requirements amended during implementation (FR-029 narrowed
+2026-09-14, FR-003 narrowed 2026-09-15 — see each requirement inline, and `tasks.md` for the full
+record). **Approved on PR #37518 at `1ce8cdd1bf` predates both amendments — re-approval is
+required before PR 2 opens.**
 
-**Status**: Draft
+**Status**: Draft — pending re-approval of the FR-029 and FR-003 amendments
 
 **Type**: New Feature
 
@@ -311,7 +312,9 @@ disappears from the list, while the row whose name matches stays. Delivers the n
 
 1. **Given** the Content Drive is open with no search term, **When** the author looks at the search
    box, **Then** a search scope control is visible next to the input, reading **All Fields**, and
-   the placeholder describes an all-fields search.
+   the placeholder shows the search box's fixed default text. ~~the placeholder describes an
+   all-fields search~~ — **corrected 2026-09-15** to match FR-003 as amended: the placeholder does
+   not vary by scope.
 2. **Given** a term is present in **All Fields** scope, **When** the author opens the search scope
    control and selects **Title**, **Then** the search re-runs immediately with the same term,
    results are restricted to name matches, pagination returns to page 1, and the control reads
@@ -423,9 +426,13 @@ with or without the search scope control on screen.
    matched as literal text and never alters the structure of the query.
 4. **Given** a term containing consecutive spaces or separators, **When** the search runs, **Then**
    no empty clause is emitted and the results are the same as for the single-separator form.
-5. **Given** a search request that nonetheless fails to execute, **When** the drive renders the
-   response, **Then** the author is shown an error state, **not** an empty result list presented as
-   a successful search.
+5. **Given** a search fails in a way the front end can itself observe (a network or server error
+   reaching the browser), **When** the drive renders the response, **Then** the author is shown an
+   error state, **not** an empty result list presented as a successful search. ~~Given a search
+   request that nonetheless fails to execute... the author is shown an error state~~ — **narrowed
+   2026-09-15** to match FR-029 as amended: an internal `BrowserAPIImpl` execution failure that
+   never reaches the front end as an observable error stays logged-only, exactly as before this
+   feature; only failures the browser itself can observe are covered.
 
 ---
 
@@ -476,8 +483,13 @@ with or without the search scope control on screen.
   **All Fields**.
 - **FR-002**: The control MUST display the active search scope as its label, and MUST mark the
   active option with a check when opened.
-- **FR-003**: The search input's placeholder MUST describe the active search scope, so the box
-  states what it will do before the author types.
+- **FR-003**: ~~The search input's placeholder MUST describe the active search scope, so the box
+  states what it will do before the author types.~~ **Amended 2026-09-15.** The placeholder MUST
+  NOT vary by search scope. It is always the shared search box's own default ("Search"), in both
+  Title and All Fields. Direct instruction from the issue owner during UI review — not a defect or
+  a constraint discovered while building; FR-003 as originally written was fully implementable and
+  had been implemented and tested. Consequence: User Story 1's acceptance scenario **1** (corrected
+  in place, 2026-09-15) described a scope-aware placeholder and is superseded by this wording.
 - **FR-004**: Selecting a search scope MUST re-run the current search immediately, without requiring
   the author to retype or re-submit the term.
 - **FR-005**: Selecting a search scope MUST reset pagination to the first page.
@@ -564,9 +576,23 @@ with or without the search scope control on screen.
   introduced by FR-010 is subject to it exactly as the existing all-fields clause is.
 - **FR-028**: Consecutive separators in a term MUST NOT produce empty clauses. A term that reduces
   to no usable token MUST produce no text clause at all, rather than a clause with an empty value.
-- **FR-029**: A search request whose query fails to execute MUST surface an error state to the
+- **FR-029**: ~~A search request whose query fails to execute MUST surface an error state to the
   author. It MUST NOT be reported as a successful search that found nothing. The failure MUST
-  remain logged, but logging MUST NOT be the only response to it.
+  remain logged, but logging MUST NOT be the only response to it.~~ **Amended 2026-09-14.** The
+  front end MUST surface, as an error state rather than an empty result, every search failure it
+  can itself observe (network and server errors reaching the browser). The **browsing service**
+  (`BrowserAPIImpl`) MUST NOT be required to distinguish "the query failed" from "nothing matched"
+  for its own internal execution failures — that distinction MUST remain logged only, exactly as
+  before this feature.
+
+  Narrowed after building the stronger version and reverting it, for two reasons: (1) FR-027's
+  escaping removes every user-reachable way to break the query, so what remained was infrastructure
+  failure only, forceable through the public API solely via a term wide enough to hit the
+  Elasticsearch boolean-clause ceiling; (2) raising it broke a security guarantee —
+  `ContentDriveFieldFilterTest#testMalformedDateBoundIsSafe` requires a Lucene-injection attempt to
+  be escaped, match nothing, and produce no 500, and surfacing query failures turned that into an
+  error response, telling an attacker their probe had landed. Consequence: #37532's UI criterion is
+  met for observable front-end failures, not for every internal query failure.
 - **FR-030**: Content Drive's per-field filters MUST match terms literally on the same reserved set
   as FR-027, and this MUST be confirmed by test rather than by inspection. The implementation
   already satisfies this; the requirement exists so a regression would be caught and so #37532's
@@ -626,8 +652,12 @@ with or without the search scope control on screen.
 - **SC-010**: Every character in the reserved set `\ + - ! ( ) : ^ [ ] " { } ~ * ? | & /` is
   covered by a test that seeds a title containing it and finds that title by searching for it
   verbatim — the full set, not a sample, in both search scopes.
-- **SC-011**: A search whose query fails to execute produces a visible error state in 100% of
-  attempts, and zero of those attempts render as a successful empty result list.
+- **SC-011**: A search that fails in a way the front end can itself observe (network or server
+  errors reaching the browser) produces a visible error state in 100% of such attempts, and zero of
+  those attempts render as a successful empty result list. ~~A search whose query fails to
+  execute... in 100% of attempts~~ — **narrowed 2026-09-15** to match FR-029 as amended: an internal
+  `BrowserAPIImpl` execution failure that the front end never observes as an error stays
+  logged-only, exactly as before this feature.
 - **SC-012**: Content Drive's per-field filters pass the same reserved-set coverage as SC-010,
   confirming #37532's field-filter criterion by test rather than by inspection.
 
