@@ -802,14 +802,34 @@
                      * This is a workaround to get the contentlet from the API
                      * because there is no way to get the same contentlet the AP retreive from the dwr call.
                      */
-                    fetch('/api/v1/content/<%=inode%>', {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(({ entity: contentlet }) => {
+                    const inode = "<%=inode%>";
+
+                    /*
+                     * When creating content there is no inode yet, and '/api/v1/content/' matches no
+                     * route, so the request can only ever 404. Skip it entirely rather than handle the
+                     * failure: the body of that 404 is not reliably JSON (it varies with page mode and
+                     * the SIMPLE_ERROR_PAGES_FOR_BACKEND setting), so parsing it is what used to leave
+                     * the field spinning forever.
+                     */
+                    const contentletPromise = inode
+                        ? fetch('/api/v1/content/' + inode, {
+                              method: 'GET',
+                              headers: {
+                                  'Content-Type': 'application/json'
+                              }
+                          })
+                          .then(response => {
+                              if (!response.ok) {
+                                  throw new Error('HTTP ' + response.status);
+                              }
+
+                              return response.json();
+                          })
+                          .then(({ entity }) => entity)
+                        : Promise.resolve({});
+
+                    contentletPromise
+                    .then((contentlet) => {
                         const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                         const variable = "<%=field.getVelocityVarName()%>";
 
@@ -887,7 +907,7 @@
                         });
                     })
                     .catch(() => {
-                        binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
+                        binaryFieldContainer.innerHTML = '<div class="callOutBox">Error loading the binary field</div>';
                     })
                 })();
             </script>
