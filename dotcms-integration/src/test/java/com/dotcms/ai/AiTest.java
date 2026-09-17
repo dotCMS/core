@@ -100,11 +100,6 @@ public interface AiTest {
         });
     }
 
-    /** Same keys at every depth, same array lengths, same non-string leaves; string values are not compared. */
-    static void assertSameShape(final Object expected, final Object actual) {
-        assertSameShape("", expected, actual, Set.of());
-    }
-
     /**
      * Deep equality including string values, skipping the given key names wherever they appear
      * (for values that legitimately differ between two calls, e.g. {@code timeToEmbeddings}).

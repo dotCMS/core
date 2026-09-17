@@ -51,6 +51,8 @@ public class SearchToolTest {
 
     /** Title carried by the probe embedding rows; must come back untouched (contentlet field). */
     private static final String PROBE_TITLE = AiTest.PROBE_MARKUP + " title";
+    /** Dedicated index for the probe rows so they can never appear in another test's results. */
+    private static final String PROBE_INDEX = "escape-probe";
 
     private Host host;
     private SearchTool searchTool;
@@ -183,11 +185,11 @@ public class SearchToolTest {
     @Test
     public void test_query_escapedByDefault_rawThroughUnsafe() {
         final String text = "Escaping probe search " + AiTest.PROBE_MARKUP;
-        seedProbeEmbeddings(text, "default");
+        seedProbeEmbeddings(text, PROBE_INDEX);
 
         for (final JSONObject escaped : List.of(
-                (JSONObject) searchTool.query(text, "default"),
-                (JSONObject) searchTool.query(Map.of("query", text, "indexName", "default")))) {
+                (JSONObject) searchTool.query(text, PROBE_INDEX),
+                (JSONObject) searchTool.query(Map.of("query", text, "indexName", PROBE_INDEX)))) {
             assertEquals(Encode.forHtml(text), escaped.getString("query"));
             assertEquals("<=>", escaped.getString("operator"));
             final JSONObject probeResult = AiTest.findResultByTitle(escaped, PROBE_TITLE);
@@ -196,7 +198,7 @@ public class SearchToolTest {
                     probeResult.getJSONArray("matches").getJSONObject(0).getString("extractedText"));
         }
 
-        final JSONObject raw = (JSONObject) unsafeSearchTool.query(text, "default");
+        final JSONObject raw = (JSONObject) unsafeSearchTool.query(text, PROBE_INDEX);
         assertEquals(text, raw.getString("query"));
         assertEquals(text, AiTest.findResultByTitle(raw, PROBE_TITLE)
                 .getJSONArray("matches").getJSONObject(0).getString("extractedText"));

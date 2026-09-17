@@ -169,6 +169,19 @@ public class AIViewToolOutputEscaperTest {
     }
 
     /**
+     * Scenario: a leaf that is neither a JSON type nor a scalar (the SearchTool error payload carries
+     * StackTraceElement objects). When deepEscape is applied, the leaf is stringified and encoded, so a
+     * constructor frame's {@code <init>} cannot reach the page raw.
+     */
+    @Test
+    public void deepEscape_nonJsonLeaf_isStringifiedAndEscaped() {
+        final StackTraceElement frame = new StackTraceElement("com.dotcms.Foo", "<init>", "Foo.java", 12);
+        final Object out = AIViewToolOutputEscaper.deepEscape(List.of(frame));
+
+        assertEquals("com.dotcms.Foo.&lt;init&gt;(Foo.java:12)", ((JSONArray) out).get(0));
+    }
+
+    /**
      * Scenario: empty structures.
      * When deepEscape is applied to an empty object and an empty array
      * Then equally empty copies are returned.

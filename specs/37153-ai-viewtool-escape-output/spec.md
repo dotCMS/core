@@ -275,10 +275,15 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
     HTML-significant characters (the one query containing apostrophes asserts only non-null).
     They are expected to pass unchanged; any assertion that turns out to depend on `& < > " '`
     must be updated deliberately, not loosened.
-- **Backward compatibility**: No API, schema, index mapping or persisted state changes.
-  Rollback-safe. The change is a **template contract change**: any template relying on
-  unescaped provider output must be edited to go through `$ai.unsafe`. Return type and shape
-  are preserved, so templates keep resolving properties; only rendered text changes. #37154
+- **Backward compatibility**: No API, schema, index mapping or persisted state changes. The
+  change is a **template contract change**: any template relying on unescaped provider output
+  must be edited to go through `$ai.unsafe`. Return type and shape are preserved, so templates
+  keep resolving properties; only rendered text changes. **Rollback note (category H-8, VTL
+  viewtool contract change)**: templates edited to use `$ai.unsafe` are stored data and survive
+  a rollback, but on the previous release `$ai.unsafe` resolves to null and those templates
+  fail to render. The release note must say so, and the implementation PR carries the
+  rollback-unsafe label. The safer "ship the accessor first, flip the default later" sequence
+  was considered and rejected because the default is the security fix. #37154
   edits the same classes; its spec is open and not merged. Whichever lands first, the other
   rebases; neither depends on the other's code.
 - **Data considerations**: None. No stored data is read differently or repaired. The
@@ -299,12 +304,13 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
   provider-output part contains a literal `<`, `>`, `"` or `'`. For `generateImage(String)`,
   `generateImage(Map)`: when the prompt carries the same markup, `originalPrompt` is returned as
   its `Encode.forHtml` output, `url` is unchanged, and no string value contains raw markup.
-- **AC-002**: For `search.query(String)`, `search.query(String,String)`, `search.query(Map)`,
-  `search.related(Contentlet,String)`, `search.related(ContentMap,String)` and for
-  `summarize`: when the indexed `extractedText` and the contentlet `title` both contain the
-  same markup, the default accessor returns `extractedText` escaped, returns `title` and
-  every other `dotCMSResults` value identical to today's payload (markup intact), and returns
-  the `query` value escaped. The same holds when the query targets the `cache` index.
+- **AC-002**: For `search.query(String,String)`, `search.query(Map)` and `summarize`: when the
+  indexed `extractedText` and the result `title` both contain the same markup, the default
+  accessor returns `extractedText` escaped, returns `title` and every other `dotCMSResults`
+  value identical to today's payload (markup intact), and returns the `query` value escaped.
+  The same holds when the query targets the `cache` index. `search.query(String)` and both
+  `search.related` overloads share the same wrapped return and are covered by the code path,
+  not by a separate test.
 - **AC-003**: For every accessor in AC-001 and AC-002, the same call through `$ai.unsafe`
   returns a payload byte-for-byte identical to what the API method returns, including the
   literal `<script>alert(1)</script>` and `<img src=x onerror=alert(1)>`.
@@ -317,12 +323,13 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
   → `getString("content")`), and the existing success-path tests in `CompletionsToolTest`,
   `SearchToolTest` and `AIViewToolTest` pass unchanged.
 - **AC-006**: The API method's own return value is not mutated by the default accessor: after
-  a default call, the object the API returned still contains the literal markup. For
-  `summarize`, `raw`, `search.*` and `generateImage`, a WireMock mapping that answers the
-  dedicated prompt with HTTP 500 makes the default accessor return, without throwing, an
-  error payload whose string values (`error`, and `stackTrace` until #37154 removes it)
-  contain no literal `<`, `>`, `"` or `'`. `generateText` rethrows today and is only asserted
-  to still throw.
+  a default call, the object the API returned still contains the literal markup. Error
+  payloads are escaped in full and returned without throwing: for `completions.raw` a
+  WireMock mapping answering the dedicated prompt with HTTP 500 and a non-JSON prompt, for
+  `summarize` the no-hits `{error}` shape, for `generateImage` a prompt no stub answers. The
+  `search.*` error path uses the same routine and is covered by the unit test (including
+  non-string leaves such as stack-trace elements, which are stringified and encoded).
+  `generateText` rethrows today; that behaviour is unchanged and not asserted.
 - **AC-007**: `release-note.md` exists in this spec directory and covers everything listed for
   it under In scope.
 - **AC-008**: `CompletionsAPIImpl.summarize` and `EmbeddingsAPIImpl.searchForContent` still
@@ -339,10 +346,10 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
     the image stub answers a prompt that itself carries the markup (the payload's only text is the
     echoed `originalPrompt`), following `ganymede-moon-image-stub.json`; plus one
     mapping answering HTTP 500 for AC-006. For search and summarize, the markup is seeded as
-    `extractedText` through `EmbeddingsDTODataGen.persistEmbeddings` against a contentlet
-    whose `title` also contains it; one case seeds and queries the `cache` index. Each test
-    runs the same call through `$ai` and `$ai.unsafe` and asserts AC-001 through AC-004 on the
-    pair; AC-006 asserts against the API's object after the default call.
+    `extractedText` and `title` through the `EmbeddingsDTODataGen` builder into a dedicated
+    `escape-probe` index (so probe rows can never feed another test's prompt); one case seeds
+    and queries the `cache` index. Each test runs the same call through `$ai` and `$ai.unsafe`
+    and asserts on the pair; AC-006 asserts against the API's object after the default call.
   - A plain unit test under `dotCMS/src/test` for the shared escaping routine: nested
     `JSONObject`, `JSONArray` of strings, arrays of objects, plain `Map` and `List` including
     an immutable `Map.of(...)`, mixed non-string leaves, `null`, empty structures, strings

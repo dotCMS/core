@@ -73,6 +73,12 @@ There is no configuration setting to restore the old behaviour globally.
 Search-result templates that print `$result.title`, `$m.extractedText` or content fields see no
 visible change: the excerpt is plain text already and content fields are not escaped.
 
+## If you roll back to the previous release
+
+Templates you edited to use `$ai.unsafe` keep that code after a rollback, but the previous
+release does not know `$ai.unsafe`: those templates fail to render until you remove the prefix
+again or roll forward. Plan the template edits together with the upgrade.
+
 ## Not affected
 
 The REST endpoints under `/api/v1/ai/*` return the same bodies as before. This change is limited

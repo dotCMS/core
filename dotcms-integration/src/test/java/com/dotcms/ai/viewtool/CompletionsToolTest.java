@@ -55,6 +55,8 @@ public class CompletionsToolTest {
 
     /** Title carried by the probe embedding rows; must come back untouched (contentlet field). */
     private static final String PROBE_TITLE = AiTest.PROBE_MARKUP + " title";
+    /** Dedicated index for the probe rows so they can never appear in another test's summarize prompt. */
+    private static final String PROBE_INDEX = "escape-probe";
 
     private CompletionsTool completionsTool;
     private CompletionsTool unsafeCompletionsTool;
@@ -201,7 +203,7 @@ public class CompletionsToolTest {
         final String text = AiTest.PROBE_CHAT_PROMPT + " summarize default " + AiTest.PROBE_MARKUP;
         seedProbeEmbeddings(text);
 
-        final JSONObject result = (JSONObject) completionsTool.summarize(text);
+        final JSONObject result = (JSONObject) completionsTool.summarize(text, PROBE_INDEX);
 
         assertResult(result);
         assertEquals(AiTest.PROBE_MARKUP_ESCAPED, AiTest.summarizeContent(result));
@@ -225,7 +227,7 @@ public class CompletionsToolTest {
         final String text = AiTest.PROBE_CHAT_PROMPT + " summarize unsafe " + AiTest.PROBE_MARKUP;
         seedProbeEmbeddings(text);
 
-        final JSONObject unsafeResult = (JSONObject) unsafeCompletionsTool.summarize(text);
+        final JSONObject unsafeResult = (JSONObject) unsafeCompletionsTool.summarize(text, PROBE_INDEX);
 
         assertResult(unsafeResult);
         assertEquals(AiTest.PROBE_MARKUP, AiTest.summarizeContent(unsafeResult));
@@ -249,8 +251,8 @@ public class CompletionsToolTest {
         final String text = AiTest.PROBE_CHAT_PROMPT + " summarize shape " + AiTest.PROBE_MARKUP;
         seedProbeEmbeddings(text);
 
-        final JSONObject unsafeResult = (JSONObject) unsafeCompletionsTool.summarize(text);
-        final JSONObject defaultResult = (JSONObject) completionsTool.summarize(text);
+        final JSONObject unsafeResult = (JSONObject) unsafeCompletionsTool.summarize(text, PROBE_INDEX);
+        final JSONObject defaultResult = (JSONObject) completionsTool.summarize(text, PROBE_INDEX);
 
         assertResult(unsafeResult);
         assertResult(defaultResult);
@@ -333,7 +335,7 @@ public class CompletionsToolTest {
         final String text = AiTest.PROBE_CHAT_PROMPT + " summarize api " + AiTest.PROBE_MARKUP;
         seedProbeEmbeddings(text);
 
-        final JSONObject escaped = (JSONObject) completionsTool.summarize(text);
+        final JSONObject escaped = (JSONObject) completionsTool.summarize(text, PROBE_INDEX);
         assertEquals(AiTest.PROBE_MARKUP_ESCAPED, AiTest.summarizeContent(escaped));
 
         final JSONObject apiResult = APILocator.getDotAIAPI().getCompletionsAPI(appConfig).summarize(summarizeForm(text));
@@ -353,11 +355,11 @@ public class CompletionsToolTest {
         // explicit inode: the data-gen default derives it from the current millisecond, and two rows
         // sharing an inode are merged into one result whose matches[0] may then belong to another test
         final String inode = "probe-" + UUIDGenerator.generateUuid();
-        new EmbeddingsDTODataGen().generate(inode, "default", text).withTitle(PROBE_TITLE).nextPersisted();
+        new EmbeddingsDTODataGen().generate(inode, PROBE_INDEX, text).withTitle(PROBE_TITLE).nextPersisted();
     }
 
     private static CompletionsForm summarizeForm(final String text) {
-        return new CompletionsForm.Builder().indexName("default").prompt(text).user(user).build();
+        return new CompletionsForm.Builder().indexName(PROBE_INDEX).prompt(text).user(user).build();
     }
 
     private static String rawPrompt(final String userMessage) {
