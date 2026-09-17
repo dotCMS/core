@@ -166,6 +166,52 @@ public class InferenceErrorTranslationTest {
     }
 
     /**
+     * Given a provider that rejected the request itself, delivered as a plain HTTP failure
+     * When it is translated
+     * Then the caller is told it is terminal, not asked to retry
+     *
+     * <p>The case that broke image generation. OpenAI answers {@code 400 unknown_parameter} when
+     * sent a field the model does not accept, and that arrives as a bare {@link HttpException}
+     * rather than one of the library's classified exception types — so it fell past the
+     * non-retriable check and was reported as a retryable 502. A malformed request is as permanent
+     * as an empty account: the same request will be rejected the same way forever.</p>
+     *
+     * <p>Checked across the 4xx range rather than on 400 alone, since the same reasoning covers a
+     * model the provider does not serve and an account it will not bill.</p>
+     */
+    @Test
+    public void test_providerRejectedTheRequest_isTerminal() {
+        for (final int status : new int[]{400, 403, 404, 422}) {
+            final InferenceError error = InferenceError.fromProviderFailure(
+                    new HttpException(status, "{\"error\":{\"message\":\"Unknown parameter: "
+                            + "'response_format'.\",\"code\":\"unknown_parameter\"}}"),
+                    UPSTREAM);
+
+            assertFalse("A provider " + status + " will be a " + status + " on retry too, so it "
+                    + "must not carry a retryable status", error.isRetryable());
+            assertFalse("The provider's own wording stays in the log",
+                    error.message().contains("response_format"));
+        }
+    }
+
+    /**
+     * Given a provider 5xx delivered as a plain HTTP failure
+     * When it is translated
+     * Then it stays retryable
+     *
+     * <p>The boundary. Narrowing 4xx to terminal must not drag the 5xx range with it — a provider
+     * having a bad minute is the case 502 and a client back-off exist for.</p>
+     */
+    @Test
+    public void test_providerServerError_staysRetryable() {
+        final InferenceError error =
+                InferenceError.fromProviderFailure(new HttpException(503, LEAKY), UPSTREAM);
+
+        assertEquals(502, error.httpStatus());
+        assertTrue(error.isRetryable());
+    }
+
+    /**
      * Given a genuine upstream fault
      * When it is translated
      * Then it stays a retryable 502

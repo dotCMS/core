@@ -93,9 +93,19 @@ public record InferenceError(String type, String message, String param, int http
             if (current instanceof dev.langchain4j.exception.RateLimitException) {
                 return rateLimited();
             }
-            if (current instanceof dev.langchain4j.exception.HttpException httpFailure
-                    && httpFailure.statusCode() == 429) {
-                return rateLimited();
+            if (current instanceof dev.langchain4j.exception.HttpException httpFailure) {
+                if (httpFailure.statusCode() == 429) {
+                    return rateLimited();
+                }
+                // Any other 4xx is the provider saying the request itself is wrong — a parameter
+                // it does not accept, a model it does not serve, an account it will not bill. It
+                // will say the same thing to an identical retry, so it must not leave here with a
+                // retryable status. This arrives as a bare HttpException rather than one of the
+                // library's classified types, which is how a permanently malformed request used
+                // to be reported as a temporary upstream fault.
+                if (httpFailure.statusCode() >= 400 && httpFailure.statusCode() < 500) {
+                    return providerRefused();
+                }
             }
             if (current instanceof dev.langchain4j.exception.NonRetriableException) {
                 return providerRefused();

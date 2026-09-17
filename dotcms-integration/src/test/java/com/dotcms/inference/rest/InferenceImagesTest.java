@@ -15,6 +15,7 @@ import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import com.liferay.portal.model.User;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -31,6 +32,7 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -787,6 +789,42 @@ public class InferenceImagesTest {
                 + "}",
                 AiTest.API_KEY, CHAT_MODEL, String.format("http://localhost:%d/", AiTest.PORT),
                 EMBEDDINGS_MODEL, GEMINI_IMAGE_MODEL);
+    }
+
+    /**
+     * Given an ordinary image request
+     * When the provider is called
+     * Then the outbound request carries no output-format parameter
+     *
+     * <p>Every other test in this file stubs a provider that accepts whatever it is sent, so all
+     * of them passed while image generation was broken against every current OpenAI image model.
+     * Those models reject the format parameter outright — "Unknown parameter: 'response_format'" —
+     * because they only ever return base64 and there is nothing to choose. Sending it was a
+     * deliberate attempt to stop a provider minting a hosted artifact, and it worked against the
+     * older models these stubs imitate; against the current ones it turned every request into a
+     * provider-side 400.</p>
+     *
+     * <p>Asserted on what leaves dotCMS rather than on what comes back, because a stub cannot fail
+     * the way a real provider does unless it is told to. The requirement this protects is still
+     * met: those models return base64 by themselves, and a legacy model that answers with a URL is
+     * fetched and re-encoded before the caller sees anything.</p>
+     */
+    @Test
+    public void test_generations_sendsNoOutputFormatParameter() throws Exception {
+        final Response response = resource.generations(
+                mockRequest(host.getHostname(), bearerToken), mockResponse(),
+                host.getIdentifier(), generationFor(IMAGE_MODEL, PROMPT));
+
+        assertEquals(200, response.getStatus());
+
+        final List<LoggedRequest> sent =
+                wireMockServer.findAll(postRequestedFor(urlPathEqualTo(IMAGES_PATH)));
+        assertEquals("Exactly one provider call is expected", 1, sent.size());
+
+        final JsonNode body = OBJECT_MAPPER.readTree(sent.get(0).getBodyAsString());
+        assertFalse("The current image models reject this field, and asking for a format they "
+                        + "already produce breaks every request to them: " + body,
+                body.has("response_format"));
     }
 
     /**

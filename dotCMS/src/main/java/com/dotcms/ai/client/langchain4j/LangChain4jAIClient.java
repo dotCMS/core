@@ -83,7 +83,6 @@ public class LangChain4jAIClient implements AIClient {
      * Response format asked of an image provider by the {@code /api/inference/v1} family, so the
      * bytes arrive inline and no separately-addressable artifact is minted upstream.
      */
-    private static final String INLINE_IMAGE_FORMAT = "b64_json";
 
     /**
      * Cache-key discriminator for models the inference family borrows. Those differ from the ones
@@ -215,9 +214,17 @@ public class LangChain4jAIClient implements AIClient {
      * <p>The image counterpart of {@link #withChatModel}, with two differences that are the
      * caller's request rather than the site's configuration. The requested {@code size} is applied
      * over the configured one, because a caller who named a size changed both what they receive
-     * and what the site pays. And {@code responseFormat} is set to {@value #INLINE_IMAGE_FORMAT}
-     * so a provider that offers the choice never mints a hosted artifact in the first place;
-     * providers that ignore it still answer, and the caller re-encodes what comes back.</p>
+     * and what the site pays.</p>
+     *
+     * <p><strong>The output-format parameter is deliberately not sent.</strong> Asking for the
+     * inline form was the obvious way to stop a provider minting a hosted artifact, and it is what
+     * this did first — but the current generation of image models rejects the parameter outright
+     * ("Unknown parameter: 'response_format'"), because they only ever return base64 and there is
+     * nothing to choose. Sending it broke image generation against every one of them while working
+     * against the older models this family's tests stubbed. Not sending it is both simpler and
+     * safer than naming the models that accept it: the set that rejects it grows with every
+     * release, so any list would rot. Where a legacy model returns a URL instead, the caller still
+     * receives base64 — the answer is fetched and re-encoded, which this family already does.</p>
      *
      * <p>Both are folded into the cache key, so a model asked for one size is never handed to a
      * request that asked for another, and the legacy image endpoint — which wants the provider's
@@ -235,8 +242,7 @@ public class LangChain4jAIClient implements AIClient {
         final ProviderConfig baseConfig = parseSection(appConfig.getProviderConfig(), IMAGE_SECTION);
         final boolean sized = size != null && !size.isBlank();
         final ProviderConfig requestConfig = ImmutableProviderConfig.copyOf(baseConfig)
-                .withSize(sized ? size : baseConfig.size())
-                .withResponseFormat(INLINE_IMAGE_FORMAT);
+                .withSize(sized ? size : baseConfig.size());
 
         return executeWithFallbackTyped(
                 cacheKeyPrefix(appConfig) + INFERENCE_KEY_SEGMENT

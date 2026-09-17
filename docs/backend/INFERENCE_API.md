@@ -252,7 +252,7 @@ curl -X POST "https://demo.dotcms.com/api/inference/v1/images/generations" \
 { "created": 1789000000, "data": [ { "b64_json": "iVBORw0KGgo…" }, { "b64_json": "R0lGODlhAQAB…" } ] }
 ```
 
-**Results are always base64 (`b64_json`), never a hosted URL.** The response shape has no `url` component at all. A URL would mean deciding storage, authentication and lifetime for an artifact generated from a prompt that may carry customer data, so this family declines to create a separately-addressable artifact. Where a provider offers the choice, dotCMS asks it for the inline form so nothing is minted upstream either; where a provider only returns a link, dotCMS fetches and re-encodes it. On those providers an artifact does exist upstream — the guarantee is that a caller never receives one.
+**Results are always base64 (`b64_json`), never a hosted URL.** The response shape has no `url` component at all. A URL would mean deciding storage, authentication and lifetime for an artifact generated from a prompt that may carry customer data, so this family declines to create a separately-addressable artifact. dotCMS does not send an output-format parameter: the current image models reject it — they only ever return base64, so there is nothing to ask for — and sending it broke every request to them. Where a model answers with a link instead, dotCMS fetches and re-encodes it before the caller sees anything. On those providers an artifact does exist upstream — the guarantee is that a caller never receives one.
 
 `n` is honored; omitting it means one image. It is refused with a `400` naming `n` — never clamped, and never surfaced as a retryable upstream error — when it is:
 
