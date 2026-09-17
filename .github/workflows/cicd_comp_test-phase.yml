@@ -276,11 +276,16 @@ jobs:
       - name: Install native libvips (image engine parity tests)
         if: matrix.test_type == 'jvm'
         timeout-minutes: 15
+        env:
+          # Passed through env rather than interpolated into the script body: `${{ }}` is
+          # substituted before the shell parses the line, so embedding it in `run:` is a
+          # script-injection vector even when quoted.
+          INPUT_JAVA_VERSION: ${{ inputs.java-version }}
         run: |
           set -euo pipefail
           # dotcms/java-base is tagged by the SDKMAN java version with '+' rewritten to '-' (docker
           # tags cannot contain '+'); see cicd_manual_build-java-base.yml.
-          JAVA_VERSION='${{ inputs.java-version }}'
+          JAVA_VERSION="${INPUT_JAVA_VERSION}"
           if [ -z "$JAVA_VERSION" ]; then
             JAVA_VERSION=$(awk -F '=' '/^java=/ {print $2}' .sdkmanrc)
           fi
