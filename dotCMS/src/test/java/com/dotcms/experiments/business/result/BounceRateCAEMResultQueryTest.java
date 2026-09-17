@@ -4,6 +4,8 @@ import com.dotcms.analytics.model.ResultSetItem;
 import com.dotcms.cube.AnalyticsResultSet;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.Goal;
+import com.dotcms.experiments.model.Goals;
 import com.dotcms.experiments.model.RunningIds;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
@@ -227,6 +229,46 @@ public class BounceRateCAEMResultQueryTest {
                 .thenThrow(new DotDataException("CAEM 503"));
 
         query.executeAggregate(experiment, user);
+    }
+
+    // -------------------------------------------------------------------------
+    // MINIMIZE goal inversion
+    // -------------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link BounceRateCAEMResultQuery#executeAggregate(Experiment, User)}
+     * When: the experiment goal type is {@link Goal.GoalType#MINIMIZE} and CAEM returns a
+     *       bounce rate of 35.0% (percentage scale, 0–100)
+     * Should: invert successes to {@code totalSessions - bounceSessions = 65} and conversion
+     *         rate to {@code 100.0 - 35.0 = 65.0} — confirming percentage-scale arithmetic.
+     *         If CAEM ever switched to decimal scale (0.0–1.0), the result would be 99.65,
+     *         not 65.0, and this assertion would catch the regression.
+     */
+    @Test
+    public void executeAggregate_minimizeGoal_invertsBounceRateOnPercentageScale()
+            throws DotDataException, DotSecurityException {
+        final Goal goal = org.mockito.Mockito.mock(Goal.class);
+        when(goal.type()).thenReturn(Goal.GoalType.MINIMIZE);
+        final Goals goals = org.mockito.Mockito.mock(Goals.class);
+        when(goals.primary()).thenReturn(goal);
+        when(experiment.goals()).thenReturn(Optional.of(goals));
+
+        final AnalyticsResultSet caemResult = resultSetOf(Map.of(
+                "Events.variant",                  "control",
+                "Events.totalSessions",            100L,
+                "Events.bounceRateSuccesses",      35L,
+                "Events.bounceRateConversionRate", 35.0
+        ));
+        when(caemHttpClient.get(any(), any(), any())).thenReturn(caemResult);
+
+        final AnalyticsResultSet result = query.executeAggregate(experiment, user);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        final ResultSetItem item = result.iterator().next();
+        assertEquals(65L, item.get("Events.bounceRateSuccesses").orElseThrow());
+        assertEquals(65.0, (Double) item.get("Events.bounceRateConversionRate").orElseThrow(), 0.001);
+        assertEquals(100L, item.get("Events.totalSessions").orElseThrow());
     }
 
     // -------------------------------------------------------------------------
