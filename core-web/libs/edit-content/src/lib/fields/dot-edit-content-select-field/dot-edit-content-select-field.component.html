@@ -11,6 +11,7 @@
     <dot-card-field-content>
         <p-select
             [inputId]="field.variable"
+            [ariaLabelledBy]="'label-' + field.variable"
             class="w-full"
             [formControlName]="field.variable"
             [name]="field.variable"

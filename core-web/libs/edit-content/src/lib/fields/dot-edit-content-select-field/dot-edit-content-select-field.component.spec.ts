@@ -216,3 +216,44 @@ describe('DotEditContentSelectFieldComponent', () => {
         });
     });
 });
+
+/**
+ * AC-209 — `<label for>` only associates with LABELABLE elements. PrimeNG's select puts the id on
+ * a `<span role="combobox">`, which is not one, so the browser resolves `label.control` to nothing
+ * and a screen reader announces the field unnamed. `ariaLabelledBy` is PrimeNG's own way to name
+ * that span, pointing back at the label's id.
+ */
+describe('DotEditContentSelectFieldComponent — accessible name (AC-209)', () => {
+    let spectator: SpectatorHost<DotEditContentSelectFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentSelectFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false
+    });
+
+    it('should name the combobox from the field label', () => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-select-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [SELECT_FIELD_TEXT_MOCK.variable]: new FormControl(null)
+                    }),
+                    field: SELECT_FIELD_TEXT_MOCK,
+                    contentlet: createFakeContentlet({ [SELECT_FIELD_TEXT_MOCK.variable]: null })
+                }
+            }
+        );
+        spectator.detectChanges();
+
+        const combobox = spectator.query('[role="combobox"]');
+
+        expect(combobox.getAttribute('aria-labelledby')).toBe(
+            'label-' + SELECT_FIELD_TEXT_MOCK.variable
+        );
+    });
+});
