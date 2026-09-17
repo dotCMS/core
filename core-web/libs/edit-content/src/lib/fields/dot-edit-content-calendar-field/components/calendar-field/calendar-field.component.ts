@@ -1,6 +1,7 @@
 import { signalMethod } from '@ngrx/signals';
 
 import {
+    afterNextRender,
     ChangeDetectionStrategy,
     Component,
     computed,
@@ -122,16 +123,30 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
             }
         });
 
-        // PrimeNG decides whether to render the clear control by reading the input element's DOM
-        // value, and `updateInputfield()` writes that value without marking the component dirty.
-        // The DatePicker is OnPush, so on the load path — a value arriving from a saved
-        // contentlet — the condition is evaluated before the value lands and nothing ever
-        // re-evaluates it: the field shows a value the author has no way to clear until they
-        // happen to focus it. The microtask lets PrimeNG's writeValue finish first.
-        effect(() => {
-            this.$value();
-            queueMicrotask(() => this.$picker()?.cd.detectChanges());
-        });
+        // Forces one extra change-detection pass over the picker after the first render.
+        //
+        // PrimeNG gates the clear control on a DOM read — `showClear && !$disabled() &&
+        // inputfieldViewChild?.nativeElement?.value` (primeng 21.1.3,
+        // primeng-datepicker.mjs:3322) — and `inputfieldViewChild` is a NON-static view query
+        // (`viewQueries: [{ propertyName: "inputfieldViewChild", first: true, ... }]`, no
+        // `static: true`), so it is still unresolved while that condition is first evaluated.
+        // The condition therefore reads `undefined` on the first pass.
+        //
+        // `writeControlValue` does call `cd.markForCheck()` (:3262) — this is NOT a missing-
+        // markForCheck bug, so do not go looking for one on the next PrimeNG bump. Marking a
+        // view that has already been refreshed in the current cycle only takes effect on the
+        // next cycle, and on the load path no next cycle comes: a saved contentlet renders its
+        // value with no way to clear it until the author happens to focus the field.
+        //
+        // `afterNextRender` is the hook that matches a first-render race: it runs once and is
+        // torn down with the component, so there is no deferred callback left to fire against a
+        // destroyed view. If a later write ever turns out to need this too, replace it with an
+        // effect AND say so here — the claim and the mechanism must stay in step.
+        //
+        // Caveat: `$picker().cd` reaches into the `ChangeDetectorRef` that PrimeNG's
+        // `BaseComponent` injects. It is public, so this compiles, but it is not part of the
+        // documented DatePicker API — nothing will warn us if it moves.
+        afterNextRender(() => this.$picker()?.cd.detectChanges());
 
         this.handleDisabledChange(this.$isDisabled);
         this.handleChangeValue(this.$value);
@@ -244,6 +259,24 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
         // Send numeric timestamp to the parent form control for consistent storage
         this.onChange(formValue.getTime());
         this.onTouched();
+    }
+
+    /**
+     * Forwards the footer button's keydown to the picker, restoring the overlay's own keyboard
+     * behaviour.
+     *
+     * Every control PrimeNG renders inside the panel is wired with
+     * `(keydown)="onContainerButtonKeydown($event)"`, including the two stock footer buttons this
+     * template replaces. The panel root binds only `(click)`, so that per-control binding is the
+     * only place the overlay's keyboard handling lives: Escape (focus back to the input, close the
+     * overlay) and Tab (`trapFocus`, since `focusTrap` defaults to true). Replacing the footer
+     * without forwarding the event leaves focus able to walk straight out of the body-appended
+     * overlay, and Escape doing nothing.
+     *
+     * @param event the keyboard event from the footer action
+     */
+    onFooterButtonKeydown(event: KeyboardEvent): void {
+        this.$picker()?.onContainerButtonKeydown(event);
     }
 
     /**

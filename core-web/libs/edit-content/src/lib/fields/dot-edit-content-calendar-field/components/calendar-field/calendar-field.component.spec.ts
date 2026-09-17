@@ -441,6 +441,27 @@ describe('DotCalendarFieldComponent', () => {
             expect(btn.textContent?.trim()).toBeTruthy();
         });
 
+        // The behavioural half of the same requirement. Being a focusable, named button is not
+        // enough: PrimeNG wires every control it renders inside the panel with
+        // `(keydown)="onContainerButtonKeydown($event)"`, and the panel root binds only (click),
+        // so replacing the footer without forwarding the event silently removes Escape and the
+        // focus trap from the overlay. This is the assertion that catches that.
+        it('should close the picker and restore focus when Escape is pressed on the footer action', () => {
+            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);
+            openPicker();
+
+            const picker = spectator.query(DatePicker);
+            expect(picker.overlayVisible).toBe(true);
+
+            const btn = queryActionButton() as HTMLButtonElement;
+            btn.focus();
+            btn.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', which: 27, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(picker.overlayVisible).toBe(false);
+            expect(document.activeElement).toBe(document.getElementById(DATE_FIELD_MOCK.variable));
+        });
+
         // T036 — FR-014
         it('should mark the control touched and dirty after using the footer action', async () => {
             spectator = buildHost(FIELD_TYPES.DATE_AND_TIME);

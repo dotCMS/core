@@ -51,6 +51,7 @@
                 [outlined]="true"
                 data-testid="calendar-field-today-button"
                 [label]="$footerActionLabel() | dm"
+                (keydown)="onFooterButtonKeydown($event)"
                 (onClick)="setCurrentServerDateTime()" />
         </div>
     </ng-template>
