@@ -663,9 +663,12 @@ built a second time**.
   untouched (FR-006). The per-item outcome contract is shared with shipped features and MUST be
   extended additively — a new reason value is additive, a renamed field is not.
 - **Known related decisions**: the job-queue framework and the shared batch outcome contract landed
-  with #37131 and #37166 and are consumed here unchanged. A **proposed** ADR on durable per-item
-  state for job-queue batch processors exists in `dotCMS/platform-adrs` and bears directly on FR-030
-  and on §Planning Obligations; `/speckit-plan` consults it. ADR-0020 (batch permission filtering
+  with #37131 and #37166 and are consumed here unchanged. **That framework holds no durable per-item
+  state**, and nothing in this repository proposes adding it: a run records its parameters once,
+  a single progress value, and a result harvested at the terminal state. Whether the framework
+  *should* offer such a state is a conversation that has not happened, so this specification treats
+  its absence as a fact to design around rather than as a gap something else will close — see FR-030
+  and §Planning Obligations. ADR-0020 (batch permission filtering
   over per-item checks) applies to any per-path permission gate this feature adds.
 
 ---
@@ -858,12 +861,20 @@ explicitly rather than meet them during implementation.
 - **Overlap detection at submission** (FR-029). The plan must say how in-flight runs' paths are
   discovered and compared. The job framework exposes active jobs per queue with their parameters,
   which makes this possible but not obviously cheap, and the comparison is a path-prefix one in both
-  directions. It must also state what happens to the race between the check and the enqueue.
+  directions.
+
+  **The race in FR-029b is a required output of the plan, not an optional one.** Two submissions
+  arriving together can both pass a check neither has yet invalidated, and the guard exists precisely
+  to stop the case that corrupts a tree. The plan MUST record one of: the window is closed, and how;
+  or the window is accepted, with the reasoning and what the run does when it loses that race. What it
+  MUST NOT do is pass over FR-029b in silence, which would leave the guard looking complete while the
+  case it was built for stays open.
 - **Re-queued runs and already-deleted folders** (FR-030). There is no durable mid-run state: a
   re-queued run restarts from the first path, and the folders the first attempt deleted no longer
   resolve. Reporting them as "not found" would tell an author their delete failed when it succeeded.
   The plan must either make the outcome idempotent — a folder that is already gone is a success —
-  or resolve the proposed durable-per-item-state ADR first. #37166 deliberately did not carry a
+  first. There is no durable per-item state in the job framework to lean on and nothing proposing
+  one, so the plan must solve this with what exists rather than wait. #37166 deliberately did not carry a
   private store for this, and that decision's cost lands here.
 - **Where the run gets its context** (a known trap). The worker thread has no HTTP request: anything
   the run needs from the submitting request — the user, the site context — must be captured into the
