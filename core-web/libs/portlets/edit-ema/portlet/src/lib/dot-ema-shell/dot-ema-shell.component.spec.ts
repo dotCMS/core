@@ -98,7 +98,7 @@ import { DotEmaShellComponent } from './dot-ema-shell.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
@@ -1726,10 +1726,10 @@ describe('DotEmaShellComponent', () => {
             describe('opening where the editor is', () => {
                 const onAVariantOf = (experimentId: string) => {
                     withSwitch(true);
-                    const uveStore = spectator.inject(UVEStore, true);
+                    const current = spectator.inject(UVEStore, true).pageParams();
                     patchState(writableStore(), {
                         pageParams: {
-                            ...uveStore.pageParams(),
+                            ...(current as DotPageApiParams),
                             variantName: 'variant-b',
                             experimentId
                         }
@@ -1760,8 +1760,8 @@ describe('DotEmaShellComponent', () => {
                     // leaving the control patches, leaving a real variant loads, and what the
                     // editor sees is the same either way — nothing left claiming a variant.
                     const params = spectator.inject(UVEStore, true).pageParams();
-                    expect(params['experimentId']).toBeFalsy();
-                    expect(getIsDefaultVariant(params.variantName)).toBe(true);
+                    expect(params?.['experimentId']).toBeFalsy();
+                    expect(getIsDefaultVariant(params?.['variantName'])).toBe(true);
                 });
 
                 /** A panel put aside to go and look at a variant gets its own place back. */
@@ -1777,7 +1777,7 @@ describe('DotEmaShellComponent', () => {
                     expect(panel.experimentId()).toBe('exp-9');
                     expect(
                         getIsDefaultVariant(
-                            spectator.inject(UVEStore, true).pageParams().variantName
+                            spectator.inject(UVEStore, true).pageParams()?.['variantName']
                         )
                     ).toBe(true);
                 });

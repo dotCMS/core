@@ -124,7 +124,11 @@ describe('DotExperimentsPanelComponent', () => {
         document.body.appendChild(mask);
 
         if (ownedByPanel) {
-            spectator.query(Drawer).mask = mask;
+            const drawer = spectator.query(Drawer);
+
+            if (drawer) {
+                drawer.mask = mask;
+            }
         }
 
         mask.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -190,6 +194,14 @@ describe('DotExperimentsPanelComponent', () => {
 
             const confirm = vi.fn();
             const configure = spectator.query(DotExperimentsConfigureComponent);
+
+            // The `@switch` is on `configure`, so the screen is mounted — but the query's type
+            // does not know that, and an unguarded assign would be the one line of this spec that
+            // silently does nothing if the view ever stops rendering it.
+            if (!configure) {
+                throw new Error('the Configure screen should be on show');
+            }
+
             Object.assign(configure, {
                 store: { $hasUnsavedChanges: () => hasUnsavedChanges },
                 confirmationService: { confirm }

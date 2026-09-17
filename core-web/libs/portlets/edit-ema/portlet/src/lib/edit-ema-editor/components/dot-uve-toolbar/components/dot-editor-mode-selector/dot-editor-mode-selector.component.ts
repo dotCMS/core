@@ -91,7 +91,7 @@ export class DotEditorModeSelectorComponent {
      * `null` when no option matches — the Draft entry is absent for a user without edit access —
      * which is what leaves the select showing nothing rather than the wrong thing.
      */
-    readonly selectedModeModel = linkedSignal<UVE_MODE, EditorModeOption | null>({
+    readonly selectedModeModel = linkedSignal<UVE_MODE | undefined, EditorModeOption | null>({
         source: this.$currentMode,
         computation: (mode) => this.$menuItems().find((item) => item.id === mode) ?? null
     });

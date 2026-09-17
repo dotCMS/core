@@ -277,7 +277,7 @@ const baseUVEState = {
     editorPaletteOpen: signal(true),
     editorCanEditContent: signal(true),
     pageLanguages: signal(MOCK_PAGE_LANGUAGES),
-    pageExperiment: signal(null),
+    pageExperiment: signal<DotExperiment | null>(null),
     viewDevice: deviceSignal,
     viewSocialMedia: socialMediaSignal,
     viewDeviceOrientation: orientationSignal,
@@ -2068,9 +2068,14 @@ describe('DotUveToolbarComponent', () => {
                             it.each([
                                 {
                                     origin: 'the portlet',
-                                    params: { [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET }
+                                    params: {
+                                        [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                                    } as Record<string, string>
                                 },
-                                { origin: 'nowhere — a pasted link', params: {} }
+                                {
+                                    origin: 'nowhere — a pasted link',
+                                    params: {} as Record<string, string>
+                                }
                             ])('should stay in the editor, coming from $origin', ({ params }) => {
                                 panelWith(false);
                                 setAddress({ ...params, experimentId: EXPERIMENT_ID });
@@ -2136,7 +2141,7 @@ describe('DotUveToolbarComponent', () => {
                                 panelStore = {
                                     suspendedForVariant: vi.fn().mockReturnValue(false),
                                     resumeFromVariant: vi.fn(),
-                                    returnFromVariant: vi.fn(),
+                                    openVariants: vi.fn(),
                                     experimentId: vi.fn().mockReturnValue(null),
                                     openResults: vi.fn()
                                 };
@@ -2146,7 +2151,7 @@ describe('DotUveToolbarComponent', () => {
 
                                 spectator.component.handleRunningExperimentClick(RUNNING);
 
-                                expect(panelStore.openResults).toHaveBeenCalledWith('running-1');
+                                expect(panelStore?.openResults).toHaveBeenCalledWith('running-1');
                             });
 
                             /**
@@ -2159,7 +2164,15 @@ describe('DotUveToolbarComponent', () => {
                                 spectator = createComponent({ detectChanges: false });
                                 spectator.detectChanges();
 
-                                expect(spectator.component.$experimentsPanelEnabled()).toBe(false);
+                                // Protected, so not on the component's public type — read through
+                                // the same cast the rest of this file uses for internals.
+                                expect(
+                                    (
+                                        spectator.component as unknown as {
+                                            $experimentsPanelEnabled: () => boolean;
+                                        }
+                                    ).$experimentsPanelEnabled()
+                                ).toBe(false);
                             });
                         });
 

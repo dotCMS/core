@@ -25,7 +25,10 @@ import { WINDOW } from '@dotcms/utils';
 
 import { withPageApi } from './withPageApi';
 
-import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
+import {
+    DotPageApiParams,
+    DotPageApiService
+} from '../../../services/dot-page-api/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
@@ -150,16 +153,19 @@ describe('withPageApi', () => {
                 }
             });
 
+        /** What the Page API was actually asked for, typed so the assertions can read it. */
+        const askedFor = () => getSpy.mock.calls.at(-1)?.[0] as DotPageApiParams;
+
         it('should drop the experiment params when the page changes', () => {
             onAVariant();
 
             store.pageLoad({ url: 'another-page' });
             spectator.flushEffects();
 
-            const asked = getSpy.mock.calls.at(-1)?.[0];
-            expect(asked.url).toBe('another-page');
-            expect(asked.variantName).toBeUndefined();
-            expect(asked.experimentId).toBeUndefined();
+            const asked = askedFor();
+            expect(asked['url']).toBe('another-page');
+            expect(asked['variantName']).toBeUndefined();
+            expect(asked['experimentId']).toBeUndefined();
             expect(asked[EXPERIMENT_RETURN_PARAM]).toBeUndefined();
         });
 
@@ -174,9 +180,9 @@ describe('withPageApi', () => {
             store.pageLoad({ language_id: '2' });
             spectator.flushEffects();
 
-            const asked = getSpy.mock.calls.at(-1)?.[0];
-            expect(asked.variantName).toBe('variant-b');
-            expect(asked.experimentId).toBe('exp-1');
+            const asked = askedFor();
+            expect(asked['variantName']).toBe('variant-b');
+            expect(asked['experimentId']).toBe('exp-1');
         });
 
         it("should still carry the editor's own params to the new page", () => {
@@ -185,9 +191,9 @@ describe('withPageApi', () => {
             store.pageLoad({ url: 'another-page' });
             spectator.flushEffects();
 
-            const asked = getSpy.mock.calls.at(-1)?.[0];
-            expect(asked.language_id).toBe('1');
-            expect(asked.mode).toBe(UVE_MODE.EDIT);
+            const asked = askedFor();
+            expect(asked['language_id']).toBe('1');
+            expect(asked['mode']).toBe(UVE_MODE.EDIT);
         });
     });
 

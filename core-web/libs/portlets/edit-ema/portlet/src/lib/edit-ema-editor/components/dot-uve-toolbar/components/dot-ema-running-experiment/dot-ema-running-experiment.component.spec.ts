@@ -6,7 +6,7 @@ import {
 } from '@openng/spectator/vitest';
 
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, UrlTree } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -126,12 +126,14 @@ describe('DotEmaRunningExperimentComponent', () => {
             const tag = spectator.debugElement.query(
                 By.css('[data-testid="runningExperimentTag"]')
             );
-            const href = spectator
-                .inject(Router)
-                .serializeUrl(tag.injector.get(RouterLink).urlTree);
+            // `urlTree` is nullable on RouterLink, and the mock's experiment is optional. Both are
+            // present here — the assertion is about where the link points, so read them as such
+            // rather than letting a null slip through as a passing comparison.
+            const urlTree = tag.injector.get(RouterLink).urlTree;
 
-            expect(href).toBe(
-                `/edit-page/experiments/${runningExperiment.pageId}/${runningExperiment.id}/reports`
+            expect(urlTree).not.toBeNull();
+            expect(spectator.inject(Router).serializeUrl(urlTree as UrlTree)).toBe(
+                `/edit-page/experiments/${runningExperiment?.pageId}/${runningExperiment?.id}/reports`
             );
         });
     });

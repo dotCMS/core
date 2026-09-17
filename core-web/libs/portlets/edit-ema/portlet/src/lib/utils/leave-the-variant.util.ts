@@ -59,10 +59,10 @@ export function leaveTheVariant(store: InstanceType<typeof UVEStore>): void {
     const params = store.pageParams();
 
     if (getIsDefaultVariant(params?.variantName) && params?.mode === UVE_MODE.EDIT) {
-        store.pageUpdateParams(CLEARED_EXPERIMENT_PARAMS);
+        store['pageUpdateParams'](CLEARED_EXPERIMENT_PARAMS);
 
         return;
     }
 
-    store.pageLoad(CLEARED_VARIANT_PARAMS);
+    store['pageLoad'](CLEARED_VARIANT_PARAMS);
 }

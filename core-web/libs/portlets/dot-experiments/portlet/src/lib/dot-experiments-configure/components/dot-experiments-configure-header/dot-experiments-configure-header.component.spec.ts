@@ -5,7 +5,7 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { MockInstance, vi } from 'vitest';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { Component, input } from '@angular/core';
