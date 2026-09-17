@@ -241,7 +241,11 @@ if (!chunks.length) {
 
 const totals = weigh(chunks);
 console.log(
-    `${target}: ${totals.files} initial-route chunk(s), ${kb(totals.raw)} raw, ${kb(totals.gzip)} gzip`
+    // The union across every route, which is what the assertions need — a module must be
+    // absent from all of them. It is larger than any single route's download, since routes
+    // share most of the shell. For per-route figures use the example's own `npm run analyze`.
+    `${target}: ${totals.files} chunk(s) across all routes' initial loads, ` +
+        `${kb(totals.raw)} raw, ${kb(totals.gzip)} gzip`
 );
 
 if (reportOnly) {

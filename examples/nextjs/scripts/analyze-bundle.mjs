@@ -10,7 +10,7 @@
  *
  * Usage:
  *   npm run build
- *   npm run analyze                              # initial-route totals
+ *   npm run analyze                              # per-route totals
  *   npm run analyze -- "pointer-events-none abs" # is that component's code downloaded up front?
  *
  * Search for a string from the component's OUTPUT — a class name, a label — not its name.
@@ -40,50 +40,68 @@ function walk(dir, match, found = []) {
 }
 
 /**
- * The chunks the browser loads to render a route, before it interacts with anything:
- * the shared app shell plus every chunk the route's client modules pull in.
+ * The chunks each route loads before any interaction: the shared app shell plus everything
+ * that route's client modules pull in.
+ *
+ * Reported per route on purpose. Summing every route together inflates the number — routes
+ * share most of the shell, so the union is larger than anything a visitor actually downloads.
+ *
+ * @returns route path to the chunk files it loads
  */
-function initialChunks() {
-  const chunks = new Set();
+function chunksByRoute() {
   const manifest = JSON.parse(readFileSync(join(NEXT_DIR, "build-manifest.json"), "utf-8"));
-
-  for (const file of manifest.rootMainFiles ?? []) chunks.add(join(NEXT_DIR, file));
+  const shell = (manifest.rootMainFiles ?? []).map((file) => join(NEXT_DIR, file));
+  const routes = {};
 
   for (const file of walk(join(NEXT_DIR, "server"), (f) =>
     f.endsWith("page_client-reference-manifest.js"),
   )) {
     globalThis.__RSC_MANIFEST = {};
     new Function(readFileSync(file, "utf-8"))();
-    for (const route of Object.values(globalThis.__RSC_MANIFEST)) {
-      for (const entry of Object.values(route.clientModules ?? {})) {
+
+    for (const [route, data] of Object.entries(globalThis.__RSC_MANIFEST)) {
+      const chunks = new Set(shell);
+      for (const entry of Object.values(data.clientModules ?? {})) {
         for (const chunk of entry.chunks ?? []) {
           chunks.add(join(NEXT_DIR, chunk.replace(/^\/_next\//, "")));
         }
       }
+      routes[route] = [...chunks].filter((f) => existsSync(f) && statSync(f).isFile());
     }
   }
   delete globalThis.__RSC_MANIFEST;
 
-  return [...chunks].filter((f) => existsSync(f) && statSync(f).isFile());
+  return routes;
 }
 
-const initial = initialChunks();
+const routes = chunksByRoute();
 const allClient = walk(join(NEXT_DIR, "static"), (f) => f.endsWith(".js"));
-const lazy = allClient.filter((f) => !initial.includes(f));
+const everyInitial = new Set(Object.values(routes).flat());
+const lazy = allClient.filter((f) => !everyInitial.has(f));
 
-let raw = 0;
-let gzip = 0;
-for (const file of initial) {
-  const contents = readFileSync(file);
-  raw += contents.byteLength;
-  gzip += gzipSync(contents).byteLength;
-}
+const weigh = (files) =>
+  files.reduce(
+    (totals, file) => {
+      const contents = readFileSync(file);
+      totals.raw += contents.byteLength;
+      totals.gzip += gzipSync(contents).byteLength;
+      return totals;
+    },
+    { raw: 0, gzip: 0 },
+  );
 
 const kb = (n) => `${(n / 1024).toFixed(1)} KB`;
 
-console.log(`\nInitial route JavaScript`);
-console.log(`  ${initial.length} chunks — ${kb(raw)} raw, ${kb(gzip)} gzip`);
-console.log(`  ${lazy.length} more chunks load on demand\n`);
+console.log(`\nJavaScript downloaded before any interaction, per route:\n`);
+
+for (const [route, chunks] of Object.entries(routes).sort()) {
+  const { raw, gzip } = weigh(chunks);
+  console.log(
+    `  ${route.padEnd(30)} ${String(chunks.length).padStart(2)} chunks   ${kb(raw).padStart(9)} raw   ${kb(gzip).padStart(9)} gzip`,
+  );
+}
+
+console.log(`\n  ${lazy.length} further chunks load on demand.\n`);
 
 const needle = process.argv[2];
 
@@ -97,7 +115,7 @@ if (!needle) {
   process.exit(0);
 }
 
-const inInitial = initial.filter((f) => readFileSync(f, "utf-8").includes(needle));
+const inInitial = [...everyInitial].filter((f) => readFileSync(f, "utf-8").includes(needle));
 const inLazy = lazy.filter((f) => readFileSync(f, "utf-8").includes(needle));
 
 if (inInitial.length) {

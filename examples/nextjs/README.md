@@ -467,12 +467,16 @@ npm run analyze
 ```
 
 ```
-Initial route JavaScript
-  14 chunks — 713.4 KB raw, 212.8 KB gzip
-  20 more chunks load on demand
+JavaScript downloaded before any interaction, per route:
+
+  /[[...slug]]/page              10 chunks    594.7 KB raw    172.7 KB gzip
+  /blog/page                     11 chunks    609.7 KB raw    178.6 KB gzip
+  /blog/post/[[...slug]]/page    10 chunks    596.3 KB raw    173.2 KB gzip
+
+  20 further chunks load on demand.
 ```
 
-Those "on demand" chunks are the win: one per Content Type, fetched only when a page contains it. Convert the map back to static imports and watch the initial number climb while that count drops to near zero.
+Those "on demand" chunks are the win: one per Content Type, fetched only when a page contains it. Convert the map back to static imports and that count drops to 6 while every route grows.
 
 To check a specific component, pass a string it renders — a class name, a label:
 
