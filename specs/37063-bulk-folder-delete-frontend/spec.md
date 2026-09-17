@@ -296,12 +296,10 @@ unavailable; as an author colliding with a running delete, confirm the refusal e
   between). The outcome is still reported for it; the listing simply has nothing to remove.
 - **A run's folders lie on a site the author is not currently browsing.** The marking applies wherever
   those folders are visible, and nowhere else.
-- **The author selects nothing and reaches Delete by keyboard.** It is unavailable, as the other bulk
-  actions already are.
 - **The in-flight listing is momentarily unavailable on load.** Nothing is marked and the listing works
   (Story 3, scenario 6) — the client does not block rendering on it.
-- **Another author starts a delete while this page is open.** Not marked here until the page is opened
-  again (FR-020a). The author is no worse off than today, where nothing marks it at all.
+- **Another author starts a delete while this page is open.** Marked here as it begins, from the
+  announcement the server makes — no reload needed (FR-020a, backend C-012).
 - **An observed run ends while the author is looking at a different site.** The mark clears anyway; it
   is held per folder, not per screen.
 - **A discovered run's observation drops** (connection lost, server restart). The mark MUST NOT be
