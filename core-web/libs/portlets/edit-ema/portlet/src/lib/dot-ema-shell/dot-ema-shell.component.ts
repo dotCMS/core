@@ -63,6 +63,7 @@ import {
     shouldNavigate
 } from '../utils';
 import { readExperimentsPortletSwitch } from '../utils/experiments-portlet-switch.util';
+import { leaveTheVariant } from '../utils/leave-the-variant.util';
 
 /**
  * Query params for the breadcrumb's address — the same page, spelled the way `editEmaGuard` wants
@@ -162,6 +163,39 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
     protected readonly experimentsPanel = inject(DotExperimentsPanelStore);
+
+    /**
+     * Opens the panel where the editor already is, rather than always at the list.
+     *
+     * The entry point is one gesture with three honest answers. A panel the editor left to go and
+     * see a variant is *resumed*, which gives back the exact screen and card they were on. Failing
+     * that, a page whose address names an experiment opens on that experiment's Variants card —
+     * standing on a variant and asking for the panel means asking for *that* experiment, not for a
+     * list to search through it. Only a page with nothing to say opens on the list.
+     *
+     * All three take the editor off the variant on the way, which is the same thing the banner's
+     * own back arrow does — the two doors out of an experiment have to agree, or the banner
+     * survives one of them and goes on announcing a variant the editor has left.
+     */
+    #openExperimentsPanel(): void {
+        if (this.experimentsPanel.suspendedForVariant()) {
+            leaveTheVariant(this.uveStore);
+            this.experimentsPanel.resumeFromVariant();
+
+            return;
+        }
+
+        const experimentId = this.uveStore.pageParams()?.['experimentId'];
+
+        if (experimentId) {
+            leaveTheVariant(this.uveStore);
+            this.experimentsPanel.openVariants(experimentId);
+
+            return;
+        }
+
+        this.experimentsPanel.open();
+    }
 
     /** Provided by the `/edit-page` route, beside `ConfirmationService`. */
     readonly #messageService = inject(MessageService);
@@ -556,7 +590,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         if (itemId === 'experiments') {
             // Only reachable with the switch on: with it off the item carries an `href` and the
             // navigation bar navigates instead of emitting (#37478, FR-001).
-            this.experimentsPanel.open();
+            this.#openExperimentsPanel();
         } else if (itemId === 'page-tools') {
             this.pageTools.toggleDialog();
         } else if (itemId === 'properties') {

@@ -62,43 +62,10 @@ import { PageType } from '../../../store/models';
 import {
     convertLocalTimeToUTC,
     convertUTCToLocalTime,
-    createFavoritePagesURL,
-    getIsDefaultVariant
+    createFavoritePagesURL
 } from '../../../utils';
 import { readExperimentsPortletSwitch } from '../../../utils/experiments-portlet-switch.util';
-
-/**
- * What says the editor is inside an experiment — and nothing about what is on the canvas.
- *
- * These two are why the chip is there: `experimentId` names the experiment being previewed, and
- * the origin marker answers "where did this round trip start". Once the editor is back, neither
- * describes anything, so both go. Clearing them changes no rendered pixel, which is what lets the
- * control's return skip the page load entirely.
- */
-const CLEARED_EXPERIMENT_PARAMS = {
-    experimentId: null,
-    [EXPERIMENT_RETURN_PARAM]: null
-} as const;
-
-/**
- * Cleared on every way back, so no variant or experiment survives the return (FR-006).
- *
- * **`mode` is named, not nulled, and the difference is the whole of #37478's mode bug.** A null
- * here used to mean "drop it from the address and let the default put it back", which held while
- * this was the `queryParams` of a `router.navigate`: the shell re-read the route, found no mode
- * and applied `UVE_MODE.EDIT`. It is now handed to `pageLoad`, which writes straight into
- * `pageParams` and is mirrored to the address with `Location.go` — a write the router never hears,
- * so `#getPageParams` never runs and the default never lands. The null survived as a null: the
- * mode selector had no option to select and the address lost `mode=` altogether.
- *
- * `EDIT` is not a new choice. It is exactly where a return has always landed, since dropping the
- * param and re-reading the route produced it — including when the editor left from LIVE.
- */
-const CLEARED_VARIANT_PARAMS = {
-    ...CLEARED_EXPERIMENT_PARAMS,
-    mode: UVE_MODE.EDIT,
-    variantName: null
-} as const;
+import { CLEARED_VARIANT_PARAMS, leaveTheVariant } from '../../../utils/leave-the-variant.util';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -394,61 +361,6 @@ export class DotUveToolbarComponent {
     }
 
     /**
-     * Takes the editor off the variant — and only when they are actually on one.
-     *
-     * This is the other half of what the chip means. Everywhere else in this bar the single
-     * action button gets the editor out of the state they are in — device, social media — and
-     * the variant must read the same way, or the one control that looks like every other one
-     * behaves differently (FR-023: bring the editor back *and* reopen the panel).
-     *
-     * The shell watches these params, so writing them reloads the canvas. That is unavoidable
-     * when the editor really is on a variant — the original page has to be fetched to be
-     * shown — and pure cost otherwise. `variantName` alone cannot tell the two apart: the
-     * CONTROL is previewed as `variantName=DEFAULT`, which is present and means "not on a
-     * variant". Reading it as presence is what restarted UVE for nothing.
-     */
-    #leaveTheVariant(): void {
-        const params = this.#store.pageParams();
-
-        if (getIsDefaultVariant(params?.variantName) && params?.mode === UVE_MODE.EDIT) {
-            /**
-             * Nothing to fetch, and this is the only shape in which that is true: the editor is on
-             * the control, which is the page itself, and already in the mode they are going back
-             * to. All that is left is the experiment params, which have to go or the chip they
-             * feed outlives the trip and offers a way back that has already been taken.
-             *
-             * `pageUpdateParams` is the load-free half of `pageLoad`: it patches the params, the
-             * shell mirrors them into the address, and the canvas is never touched.
-             *
-             * The mode is half of the test because a mode change is not a param change. `PREVIEW`
-             * and `EDIT` render different canvases — no palette, no contentlet tools — so patching
-             * the param without loading would leave the chrome claiming one mode over an iframe
-             * still showing the other. Previewing the control is exactly that case, which is why
-             * it takes the load below.
-             */
-            this.#store.pageUpdateParams(CLEARED_EXPERIMENT_PARAMS);
-
-            return;
-        }
-
-        /**
-         * `pageLoad`, not `router.navigate`, and that is the difference between a page changing
-         * and the editor blinking.
-         *
-         * `/edit-page` declares `data: { reuseRoute: false }` and route data is inherited, so the
-         * custom reuse strategy tears down and rebuilds this whole subtree on *any* router
-         * navigation beneath it — even one that only touches query params. The toolbar, the canvas
-         * and the iframe are all replaced, which is the jump the editor sees.
-         *
-         * So UVE never routes to change what it is showing: it loads, and the shell's
-         * `$updateQueryParamsEffect` mirrors the new params into the address through
-         * `Location.go`, which does not notify the router. Same path the persona and language
-         * selectors take.
-         */
-        this.#store.pageLoad(CLEARED_VARIANT_PARAMS);
-    }
-
-    /**
      * The running-experiment tag was used (#37478, FR-025c, FR-025d, D14).
      *
      * Straight to its results, because that is what the tag is about: it announces what is
@@ -493,7 +405,7 @@ export class DotUveToolbarComponent {
          * answer from the switch — a suspended panel only exists if the panel was being used.
          */
         if (this.#panel?.suspendedForVariant()) {
-            this.#leaveTheVariant();
+            leaveTheVariant(this.#store);
             this.#panel.resumeFromVariant();
 
             return;
@@ -557,19 +469,21 @@ export class DotUveToolbarComponent {
                      * draft of another. Answering with it reopened the panel on a experiment the
                      * editor never clicked.
                      *
-                     * The address named it on the way in; the panel's own memory is the fallback
+                     * Read from `pageParams` rather than the route snapshot, which UVE never
+                     * updates: navigating to another page inside the editor drops the experiment
+                     * params, and a snapshot read would resurrect the one the editor had left
+                     * behind on a page it is no longer on. The panel's own memory is the fallback
                      * for a reload that took the address with it.
                      */
                     const previewed =
-                        this.#activatedRoute.snapshot.queryParams['experimentId'] ??
-                        this.#panel.experimentId();
+                        this.#store.pageParams()?.['experimentId'] ?? this.#panel.experimentId();
 
                     if (!previewed) {
                         return;
                     }
 
-                    this.#leaveTheVariant();
-                    this.#panel.returnFromVariant(previewed);
+                    leaveTheVariant(this.#store);
+                    this.#panel.openVariants(previewed);
 
                     return;
                 }

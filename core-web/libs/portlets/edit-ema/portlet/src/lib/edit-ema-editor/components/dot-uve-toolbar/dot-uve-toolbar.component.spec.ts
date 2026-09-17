@@ -534,7 +534,7 @@ describe('DotUveToolbarComponent', () => {
     let panelStore: {
         suspendedForVariant: Mock;
         resumeFromVariant: Mock;
-        returnFromVariant: Mock;
+        openVariants: Mock;
         experimentId: Mock;
         openResults?: Mock;
     } | null = null;
@@ -1853,7 +1853,7 @@ describe('DotUveToolbarComponent', () => {
                                 panelStore = {
                                     suspendedForVariant: vi.fn().mockReturnValue(suspended),
                                     resumeFromVariant: vi.fn(),
-                                    returnFromVariant: vi.fn(),
+                                    openVariants: vi.fn(),
                                     // What the panel was showing, for a reload that took the
                                     // address with it.
                                     experimentId: vi.fn().mockReturnValue(null)
@@ -1887,7 +1887,7 @@ describe('DotUveToolbarComponent', () => {
                                 leaveVariant();
 
                                 expect(panelStore?.resumeFromVariant).toHaveBeenCalledTimes(1);
-                                expect(panelStore?.returnFromVariant).not.toHaveBeenCalled();
+                                expect(panelStore?.openVariants).not.toHaveBeenCalled();
                             });
 
                             /**
@@ -1908,7 +1908,7 @@ describe('DotUveToolbarComponent', () => {
 
                                 leaveVariant();
 
-                                expect(panelStore?.returnFromVariant).toHaveBeenCalledWith(
+                                expect(panelStore?.openVariants).toHaveBeenCalledWith(
                                     'the-draft-i-clicked'
                                 );
                             });
@@ -2060,7 +2060,7 @@ describe('DotUveToolbarComponent', () => {
 
                                 leaveVariant();
 
-                                expect(panelStore?.returnFromVariant).toHaveBeenCalledWith(
+                                expect(panelStore?.openVariants).toHaveBeenCalledWith(
                                     EXPERIMENT_ID
                                 );
                             });
@@ -2078,7 +2078,7 @@ describe('DotUveToolbarComponent', () => {
 
                                 leaveVariant();
 
-                                expect(panelStore?.returnFromVariant).toHaveBeenCalledWith(
+                                expect(panelStore?.openVariants).toHaveBeenCalledWith(
                                     EXPERIMENT_ID
                                 );
                                 expect(navigate).not.toHaveBeenCalledWith(

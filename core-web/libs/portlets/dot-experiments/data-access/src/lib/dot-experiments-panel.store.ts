@@ -236,15 +236,18 @@ export const DotExperimentsPanelStore = signalStore(
         },
 
         /**
-         * The return leg of the variant round trip (#37478, FR-023, FR-046).
+         * Open on an experiment's Variants card.
          *
-         * **Reconstructed, not remembered.** The experiment is named by the editor's own address
-         * for as long as the editor is on the variant, so the way back does not depend on any
-         * state surviving the trip — not a reload, not a re-scope, not the panel being destroyed
-         * while the editor was away. Whatever happened in between, this lands on the same
-         * experiment's configuration, at the card the trip started from.
+         * Two ways in, one destination. The chip takes it on the way back from a variant, rebuilt
+         * rather than resumed — the round trip began in the full-screen portlet, or a reload took
+         * the panel's memory with it. And the editor's own entry point takes it whenever the page
+         * on the canvas names an experiment: standing on a variant and asking for the panel means
+         * asking for *that* experiment, not for a list the editor would then have to search.
+         *
+         * Named for where it lands rather than for either journey, so neither call site has to
+         * read as the other one.
          */
-        returnFromVariant(experimentId: string): void {
+        openVariants(experimentId: string): void {
             patchState(store, {
                 isOpen: true,
                 view: 'configure',

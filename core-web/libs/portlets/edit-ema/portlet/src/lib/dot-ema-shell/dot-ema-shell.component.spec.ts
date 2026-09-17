@@ -112,6 +112,7 @@ import {
 import { UVEStore } from '../store/dot-uve.store';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { UVEState } from '../store/models';
+import { getIsDefaultVariant } from '../utils';
 
 // Mock structuredClone for Jest environment (not available in jsdom)
 if (typeof globalThis.structuredClone === 'undefined') {
@@ -1714,6 +1715,85 @@ describe('DotEmaShellComponent', () => {
                 expect(logged).toHaveBeenCalled();
                 expect(spectator.inject(DotExperimentsPanelStore, true).isOpen()).toBe(false);
                 expect(spectator.query(byTestId('experiments-panel'))).toBeNull();
+            });
+
+            /**
+             * The entry point answers with where the editor already is.
+             *
+             * Standing on a variant and asking for the panel meant asking for *that* experiment;
+             * the list made the editor search for what the banner above them was already naming.
+             */
+            describe('opening where the editor is', () => {
+                const onAVariantOf = (experimentId: string) => {
+                    withSwitch(true);
+                    const uveStore = spectator.inject(UVEStore, true);
+                    patchState(writableStore(), {
+                        pageParams: {
+                            ...uveStore.pageParams(),
+                            variantName: 'variant-b',
+                            experimentId
+                        }
+                    });
+                };
+
+                it('should open on the experiment the page is showing', () => {
+                    onAVariantOf('exp-1');
+                    const panel = spectator.inject(DotExperimentsPanelStore, true);
+
+                    spectator.component.handleItemAction('experiments');
+
+                    expect(panel.isOpen()).toBe(true);
+                    expect(panel.view()).toBe('configure');
+                    expect(panel.experimentId()).toBe('exp-1');
+                });
+
+                /**
+                 * The two doors out of an experiment have to agree. The banner's back arrow takes
+                 * the editor off the variant; this one has to as well, or the banner survives it
+                 * and goes on announcing a variant the editor has already left behind.
+                 */
+                it('should take the editor off the variant on the way', () => {
+                    onAVariantOf('exp-1');
+                    spectator.component.handleItemAction('experiments');
+
+                    // Asserted on the params themselves rather than on which writer was used:
+                    // leaving the control patches, leaving a real variant loads, and what the
+                    // editor sees is the same either way — nothing left claiming a variant.
+                    const params = spectator.inject(UVEStore, true).pageParams();
+                    expect(params['experimentId']).toBeFalsy();
+                    expect(getIsDefaultVariant(params.variantName)).toBe(true);
+                });
+
+                /** A panel put aside to go and look at a variant gets its own place back. */
+                it('should resume a suspended panel rather than rebuild it', () => {
+                    onAVariantOf('exp-9');
+                    const panel = spectator.inject(DotExperimentsPanelStore, true);
+                    panel.showResults('exp-9');
+                    panel.suspendForVariant();
+                    spectator.component.handleItemAction('experiments');
+
+                    expect(panel.isOpen()).toBe(true);
+                    expect(panel.view()).toBe('results');
+                    expect(panel.experimentId()).toBe('exp-9');
+                    expect(
+                        getIsDefaultVariant(
+                            spectator.inject(UVEStore, true).pageParams().variantName
+                        )
+                    ).toBe(true);
+                });
+
+                /** Nothing to leave, so nothing is loaded — the canvas is not touched at all. */
+                it('should open on the list when the page names no experiment', () => {
+                    withSwitch(true);
+                    const panel = spectator.inject(DotExperimentsPanelStore, true);
+                    const load = vi.spyOn(pageApi(), 'pageLoad');
+
+                    spectator.component.handleItemAction('experiments');
+
+                    expect(panel.isOpen()).toBe(true);
+                    expect(panel.view()).toBe('list');
+                    expect(load).not.toHaveBeenCalled();
+                });
             });
 
             // FR-044. Nothing of the panel is reachable or observable on the shipped default.

@@ -70,7 +70,7 @@ describe('DotExperimentsPanelStore', () => {
             pageId.set(PAGE_A);
             spectator.flushEffects();
 
-            store.returnFromVariant('exp-1');
+            store.openVariants('exp-1');
 
             // The way back reloads the page, which blanks the asset while it is in flight.
             pageId.set(null);
@@ -95,7 +95,7 @@ describe('DotExperimentsPanelStore', () => {
         it('should adopt the first page it sees rather than re-scope to it', () => {
             initStore(null);
 
-            store.returnFromVariant('exp-1');
+            store.openVariants('exp-1');
 
             pageId.set(PAGE_A);
             spectator.flushEffects();
@@ -277,7 +277,7 @@ describe('DotExperimentsPanelStore', () => {
     describe('re-scoping on the editor page', () => {
         it('should not re-scope while the page asset is between loads', () => {
             initStore();
-            store.returnFromVariant('exp-9');
+            store.openVariants('exp-9');
 
             pageId.set(null);
             spectator.flushEffects();
@@ -288,7 +288,7 @@ describe('DotExperimentsPanelStore', () => {
 
         it('should re-scope once the editor is really on another page', () => {
             initStore();
-            store.returnFromVariant('exp-9');
+            store.openVariants('exp-9');
 
             pageId.set(PAGE_B);
             spectator.flushEffects();
@@ -300,7 +300,7 @@ describe('DotExperimentsPanelStore', () => {
         /** The same page coming back from a reload is not a move either. */
         it('should not re-scope when the same page returns after a gap', () => {
             initStore();
-            store.returnFromVariant('exp-9');
+            store.openVariants('exp-9');
 
             pageId.set(null);
             spectator.flushEffects();
@@ -312,11 +312,11 @@ describe('DotExperimentsPanelStore', () => {
         });
     });
 
-    describe('returnFromVariant()', () => {
+    describe('openVariants()', () => {
         it('should land on that experiment configuration, at the Variants card', () => {
             initStore();
 
-            store.returnFromVariant('exp-9');
+            store.openVariants('exp-9');
 
             expect(store.isOpen()).toBe(true);
             expect(store.view()).toBe('configure');
@@ -334,7 +334,7 @@ describe('DotExperimentsPanelStore', () => {
             initStore();
             expect(store.suspendedForVariant()).toBe(false);
 
-            store.returnFromVariant('exp-9');
+            store.openVariants('exp-9');
 
             expect(store.isOpen()).toBe(true);
             expect(store.experimentId()).toBe('exp-9');
@@ -345,7 +345,7 @@ describe('DotExperimentsPanelStore', () => {
             store.showConfigure('exp-9');
             store.suspendForVariant();
 
-            store.returnFromVariant('exp-9');
+            store.openVariants('exp-9');
 
             expect(store.suspendedForVariant()).toBe(false);
         });
@@ -353,7 +353,7 @@ describe('DotExperimentsPanelStore', () => {
         /** Only the return asks for a card; everything else starts at the top of the form. */
         it('should leave the Variants card behind on the next move', () => {
             initStore();
-            store.returnFromVariant('exp-9');
+            store.openVariants('exp-9');
 
             store.backToList();
 
