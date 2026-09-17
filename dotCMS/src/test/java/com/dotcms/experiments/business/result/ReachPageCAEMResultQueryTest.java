@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
  * <p>Covers the following behaviours (see FR-005, FR-006a, FR-006b, FR-014, FR-017):</p>
  * <ul>
  *   <li><strong>executeByDay param construction</strong> — verifies that the CAEM request targets
- *       {@code /v1/analytics/sessions/behavior} with {@code behavior=reachTarget},
+ *       {@code /v1/sessions/behavior} with {@code behavior=reachTarget},
  *       {@code dimensions=variant,day}, the correct {@code experimentId} / {@code runningId},
  *       {@code referencePage} extracted from the goal's {@code "referer"} condition, and
  *       {@code targetUrl} extracted from the {@code "url"} condition.</li>
@@ -96,7 +96,7 @@ public class ReachPageCAEMResultQueryTest {
     /**
      * Method to test: {@link ReachPageCAEMResultQuery#executeByDay(Experiment, User)}
      * When: called with a running experiment with a reach-target goal
-     * Should: call {@code GET /v1/analytics/sessions/behavior} with {@code behavior=reachTarget},
+     * Should: call {@code GET /v1/sessions/behavior} with {@code behavior=reachTarget},
      *         {@code referencePage} from the goal's {@code "referer"} condition,
      *         {@code targetUrl} from the {@code "url"} condition, and {@code dimensions=variant,day}
      */
@@ -108,7 +108,7 @@ public class ReachPageCAEMResultQueryTest {
         query.executeByDay(experiment, user);
 
         verify(caemHttpClient).get(
-                eq("/v1/analytics/sessions/behavior"),
+                eq("/v1/sessions/behavior"),
                 argThat(params ->
                         "reachTarget".equals(params.get("behavior"))
                         && REFERENCE_PAGE.equals(params.get("referencePage"))
@@ -132,7 +132,7 @@ public class ReachPageCAEMResultQueryTest {
         query.executeAggregate(experiment, user);
 
         verify(caemHttpClient).get(
-                eq("/v1/analytics/sessions/behavior"),
+                eq("/v1/sessions/behavior"),
                 argThat(params ->
                         "variant".equals(params.get("dimensions"))
                         && "reachTarget".equals(params.get("behavior"))

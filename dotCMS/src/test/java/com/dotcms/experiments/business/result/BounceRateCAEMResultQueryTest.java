@@ -83,7 +83,7 @@ public class BounceRateCAEMResultQueryTest {
     /**
      * Method to test: {@link BounceRateCAEMResultQuery#executeByDay(Experiment, User)}
      * When: called with a running experiment
-     * Should: call {@code GET /v1/analytics/sessions} with {@code dimensions=variant,day},
+     * Should: call {@code GET /v1/sessions} with {@code dimensions=variant,day},
      *         bounce metrics, and the correct {@code experimentId} / {@code runningId}
      */
     @Test
@@ -93,7 +93,7 @@ public class BounceRateCAEMResultQueryTest {
         query.executeByDay(experiment, user);
 
         verify(caemHttpClient).get(
-                eq("/v1/analytics/sessions"),
+                eq("/v1/sessions"),
                 argThat(params ->
                         "variant,day".equals(params.get("dimensions"))
                         && EXPERIMENT_ID.equals(params.get("experimentId"))
@@ -111,7 +111,7 @@ public class BounceRateCAEMResultQueryTest {
     /**
      * Method to test: {@link BounceRateCAEMResultQuery#executeAggregate(Experiment, User)}
      * When: called with a running experiment
-     * Should: call {@code GET /v1/analytics/sessions} with {@code dimensions=variant} only
+     * Should: call {@code GET /v1/sessions} with {@code dimensions=variant} only
      *         (no day granularity) — used by the aggregate totals loop in {@code ExperimentsAPIImpl}
      */
     @Test
@@ -121,7 +121,7 @@ public class BounceRateCAEMResultQueryTest {
         query.executeAggregate(experiment, user);
 
         verify(caemHttpClient).get(
-                eq("/v1/analytics/sessions"),
+                eq("/v1/sessions"),
                 argThat(params ->
                         "variant".equals(params.get("dimensions"))
                         && EXPERIMENT_ID.equals(params.get("experimentId"))

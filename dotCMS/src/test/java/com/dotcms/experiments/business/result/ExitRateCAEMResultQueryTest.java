@@ -80,7 +80,7 @@ public class ExitRateCAEMResultQueryTest {
     /**
      * Method to test: {@link ExitRateCAEMResultQuery#executeByDay(Experiment, User)}
      * When: called with a running experiment
-     * Should: call {@code GET /v1/analytics/sessions} with exit metrics,
+     * Should: call {@code GET /v1/sessions} with exit metrics,
      *         {@code dimensions=variant,day}, and the correct {@code experimentId} / {@code runningId}
      */
     @Test
@@ -91,7 +91,7 @@ public class ExitRateCAEMResultQueryTest {
         query.executeByDay(experiment, user);
 
         verify(caemHttpClient).get(
-                eq("/v1/analytics/sessions"),
+                eq("/v1/sessions"),
                 argThat(params ->
                         "variant,day".equals(params.get("dimensions"))
                         && EXPERIMENT_ID.equals(params.get("experimentId"))
@@ -104,7 +104,7 @@ public class ExitRateCAEMResultQueryTest {
     /**
      * Method to test: {@link ExitRateCAEMResultQuery#executeAggregate(Experiment, User)}
      * When: called with a running experiment
-     * Should: call {@code GET /v1/analytics/sessions} with {@code dimensions=variant} only
+     * Should: call {@code GET /v1/sessions} with {@code dimensions=variant} only
      *         (no day granularity) — used by the aggregate totals loop in {@code ExperimentsAPIImpl}
      */
     @Test
@@ -115,7 +115,7 @@ public class ExitRateCAEMResultQueryTest {
         query.executeAggregate(experiment, user);
 
         verify(caemHttpClient).get(
-                eq("/v1/analytics/sessions"),
+                eq("/v1/sessions"),
                 argThat(params ->
                         "variant".equals(params.get("dimensions"))
                         && EXPERIMENT_ID.equals(params.get("experimentId"))

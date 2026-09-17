@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
  * <p>Covers the following behaviours (see FR-006, FR-006a, FR-006b, FR-014, FR-017):</p>
  * <ul>
  *   <li><strong>executeByDay param construction</strong> — verifies that the CAEM request targets
- *       {@code /v1/analytics/sessions/behavior} with {@code behavior=urlParam},
+ *       {@code /v1/sessions/behavior} with {@code behavior=urlParam},
  *       {@code dimensions=variant,day}, the correct {@code experimentId} / {@code runningId},
  *       {@code paramName} sourced from {@link com.dotcms.analytics.metrics.QueryParameter#getName()},
  *       and {@code paramValue} sourced from {@link com.dotcms.analytics.metrics.QueryParameter#getValue()}
@@ -102,7 +102,7 @@ public class UrlParameterCAEMResultQueryTest {
     /**
      * Method to test: {@link UrlParameterCAEMResultQuery#executeByDay(Experiment, User)}
      * When: called with a running experiment with a URL-parameter goal
-     * Should: call {@code GET /v1/analytics/sessions/behavior} with {@code behavior=urlParam},
+     * Should: call {@code GET /v1/sessions/behavior} with {@code behavior=urlParam},
      *         {@code paramName} and {@code paramValue} from the goal's {@code QueryParameter}
      *         condition, and {@code dimensions=variant,day}
      */
@@ -114,7 +114,7 @@ public class UrlParameterCAEMResultQueryTest {
         query.executeByDay(experiment, user);
 
         verify(caemHttpClient).get(
-                eq("/v1/analytics/sessions/behavior"),
+                eq("/v1/sessions/behavior"),
                 argThat(params ->
                         "urlParam".equals(params.get("behavior"))
                         && PARAM_NAME.equals(params.get("paramName"))
@@ -138,7 +138,7 @@ public class UrlParameterCAEMResultQueryTest {
         query.executeAggregate(experiment, user);
 
         verify(caemHttpClient).get(
-                eq("/v1/analytics/sessions/behavior"),
+                eq("/v1/sessions/behavior"),
                 argThat(params ->
                         "variant".equals(params.get("dimensions"))
                         && "urlParam".equals(params.get("behavior"))
