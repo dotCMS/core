@@ -16,6 +16,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Factory for experiment result queries. Dispatches each call to either the CubeJS or CAEM
@@ -78,11 +79,17 @@ public enum ExperimentResultsQueryFactory {
     /**
      * Resolves the correct {@link ExperimentGoalResultsQuery} for the given metric type,
      * reading the feature flag on every call so runtime toggles take effect immediately.
+     *
+     * @throws NullPointerException with a diagnostic message if {@code metricType} has no
+     *                              registered implementation — prevents a silent NPE at the call site
      */
     public ExperimentGoalResultsQuery resolveImpl(final MetricType metricType) {
-        return ConfigExperimentUtil.INSTANCE.isCaemExperimentResultsEnabled()
-                ? caemQueries.get(metricType)
-                : cubeJSAdapters.get(metricType);
+        final ExperimentGoalResultsQuery impl =
+                ConfigExperimentUtil.INSTANCE.isCaemExperimentResultsEnabled()
+                        ? caemQueries.get(metricType)
+                        : cubeJSAdapters.get(metricType);
+        return Objects.requireNonNull(impl,
+                () -> "No ExperimentGoalResultsQuery registered for MetricType: " + metricType);
     }
 
     // -------------------------------------------------------------------------
