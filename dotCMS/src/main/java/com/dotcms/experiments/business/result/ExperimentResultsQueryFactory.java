@@ -128,7 +128,6 @@ public enum ExperimentResultsQueryFactory {
     // -------------------------------------------------------------------------
 
     private static MetricType primaryMetricType(final Experiment experiment) {
-        DotPreconditions.notNull(experiment.goals().orElse(null), "Experiment must have a Goal");
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("Experiment must have a Goal"));
         return goals.primary().getMetric().type();

@@ -571,8 +571,8 @@ public class ExperimentsResource {
         if (secrets.isEmpty()) {
             return Health.NOT_CONFIGURED;
         }
-        final Secret siteAuth = secrets.get("siteAuth");
-        final Secret bearerToken = secrets.get("bearerToken");
+        final Secret siteAuth = secrets.get(ContentAnalyticsUtil.SITE_AUTH_KEY);
+        final Secret bearerToken = secrets.get(ContentAnalyticsUtil.BEARER_TOKEN_KEY);
         final boolean configured = siteAuth != null && UtilMethods.isSet(siteAuth.getString())
                 && bearerToken != null && UtilMethods.isSet(bearerToken.getString());
         return configured ? Health.OK : Health.CONFIGURATION_ERROR;
