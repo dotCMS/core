@@ -13,6 +13,15 @@
 #   VIPS_PREFIX=/opt/libvips verify-libvips.sh
 #   EXPECTED_VIPS_VERSION=8.18.6 VIPS_PREFIX=/usr/local/libvips verify-libvips.sh
 #
+# Scope (VIPS_VERIFY_SCOPE):
+#   image   (default) full image gate. Additionally asserts that the host carries none
+#           of the forbidden packages or shared libraries. Only meaningful inside the
+#           images we build.
+#   prefix  assert the extracted prefix only: version, soname, no MagickCore/OpenEXR
+#           linkage, delegates, operations, and encode/decode round trips. Use this on a
+#           CI runner, which legitimately ships ImageMagick for unrelated reasons and
+#           would otherwise fail the host-wide checks.
+#
 # Exit status is non-zero if any check fails.
 #
 # Rationale for the two "forbidden" checks: the reported CVEs live in
@@ -26,6 +35,7 @@ set -uo pipefail
 VIPS_PREFIX="${VIPS_PREFIX:-/usr/local/libvips}"
 VIPS_BIN="${VIPS_BIN:-${VIPS_PREFIX}/bin/vips}"
 EXPECTED_VIPS_VERSION="${EXPECTED_VIPS_VERSION:-8.18.6}"
+VIPS_VERIFY_SCOPE="${VIPS_VERIFY_SCOPE:-image}"
 
 FAILURES=0
 CHECKS=0
@@ -38,7 +48,7 @@ TMPDIR_RUN="$(mktemp -d)"
 cleanup() { rm -rf "$TMPDIR_RUN"; }
 trap cleanup EXIT
 
-echo "verify-libvips: prefix=${VIPS_PREFIX} bin=${VIPS_BIN} expect=${EXPECTED_VIPS_VERSION}"
+echo "verify-libvips: prefix=${VIPS_PREFIX} bin=${VIPS_BIN} expect=${EXPECTED_VIPS_VERSION} scope=${VIPS_VERIFY_SCOPE}"
 
 # ---------------------------------------------------------------------------
 # 1. The prefix and CLI are present and report the pinned version.
@@ -83,7 +93,9 @@ FORBIDDEN_PACKAGES=(
 	libvips42t64
 )
 
-if command -v dpkg-query >/dev/null 2>&1; then
+if [ "$VIPS_VERIFY_SCOPE" != "image" ]; then
+	printf '  skip  host package checks not asserted (scope=%s: the host may legitimately install these)\n' "$VIPS_VERIFY_SCOPE"
+elif command -v dpkg-query >/dev/null 2>&1; then
 	for pkg in "${FORBIDDEN_PACKAGES[@]}"; do
 		if dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q 'install ok installed'; then
 			fail "package installed: ${pkg}"
@@ -102,14 +114,18 @@ fi
 section "forbidden shared libraries"
 
 FORBIDDEN_LIB_GLOBS=('libMagickCore*' 'libMagickWand*' 'libOpenEXR*' 'libIlmThread*' 'libImath*')
-for glob in "${FORBIDDEN_LIB_GLOBS[@]}"; do
-	found="$(find /usr/lib /usr/lib64 /lib /lib64 -maxdepth 3 -name "$glob" 2>/dev/null | head -5)"
-	if [ -n "$found" ]; then
-		fail "forbidden library present (${glob}): $(echo "$found" | tr '\n' ' ')"
-	else
-		pass "no ${glob}"
-	fi
-done
+if [ "$VIPS_VERIFY_SCOPE" != "image" ]; then
+	printf '  skip  host library scan not asserted (scope=%s: the host may legitimately install these)\n' "$VIPS_VERIFY_SCOPE"
+else
+	for glob in "${FORBIDDEN_LIB_GLOBS[@]}"; do
+		found="$(find /usr/lib /usr/lib64 /lib /lib64 -maxdepth 3 -name "$glob" 2>/dev/null | head -5)"
+		if [ -n "$found" ]; then
+			fail "forbidden library present (${glob}): $(echo "$found" | tr '\n' ' ')"
+		else
+			pass "no ${glob}"
+		fi
+	done
+fi
 
 # ---------------------------------------------------------------------------
 # 4. Delegate configuration. Disabled delegates render as 'false' rather than

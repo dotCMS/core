@@ -306,8 +306,13 @@ jobs:
           sudo ldconfig
 
           # Fail loudly when the native engine is unusable rather than letting VipsParityTest
-          # self-skip into a green build.
-          sudo /usr/local/libvips/share/verify-libvips.sh
+          # self-skip into a green build. This runs the verifier from the checkout rather than the
+          # copy embedded in the image, so a change to the verifier does not require republishing
+          # java-base first. Scope=prefix because this runner legitimately has ImageMagick
+          # preinstalled, so only the extracted prefix's own state can be asserted here - the full
+          # image scope (host carries none of the forbidden packages) is asserted by the image
+          # builds themselves.
+          sudo env VIPS_VERIFY_SCOPE=prefix bash docker/java-base/verify-libvips.sh
 
           echo "LD_LIBRARY_PATH=/usr/local/libvips/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
           echo "/usr/local/libvips/bin" >> "$GITHUB_PATH"
