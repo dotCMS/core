@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -41,18 +47,18 @@ const SITE: DotSite = {
     archived: false
 };
 
-/** Only the slice of the store the toolbar reads. Signals, not `jest.fn()`s, so `computed` reacts. */
+/** Only the slice of the store the toolbar reads. Signals, not `vi.fn()`s, so `computed` reacts. */
 const createMockStore = (config: DotAssetPickerConfig) => ({
     config: signal(config),
     filters: signal({}),
     selectedNode: signal(undefined),
     userSearchableFields: signal<DotCMSContentTypeField[]>([]),
     userSearchableActive: signal<string[]>([]),
-    setSearch: jest.fn(),
-    patchFilters: jest.fn(),
-    removeFilter: jest.fn(),
-    clearFilters: jest.fn(),
-    getFilterValue: jest.fn(() => undefined),
+    setSearch: vi.fn(),
+    patchFilters: vi.fn(),
+    removeFilter: vi.fn(),
+    clearFilters: vi.fn(),
+    getFilterValue: vi.fn(() => undefined),
     $hasNonDefaultFilters: signal(false)
 });
 
@@ -63,13 +69,13 @@ describe('DotAssetPickerToolbarComponent', () => {
         component: DotAssetPickerToolbarComponent,
         providers: [
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of([])),
-                getContentTypesWithPagination: jest
+                getAllContentTypes: vi.fn().mockReturnValue(of([])),
+                getContentTypesWithPagination: vi
                     .fn()
                     .mockReturnValue(of({ contentTypes: [], pagination: {} }))
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of([]))
+                get: vi.fn().mockReturnValue(of([]))
             }),
             // Reached by the field-filter chips, one service per field type that fetches options.
             mockProvider(DotContentletService),
@@ -83,10 +89,10 @@ describe('DotAssetPickerToolbarComponent', () => {
             {
                 provide: DOT_FILTER_FACADE,
                 useValue: {
-                    getFilterValue: jest.fn(() => undefined),
-                    patchFilters: jest.fn(),
-                    removeFilter: jest.fn(),
-                    clearFilters: jest.fn(),
+                    getFilterValue: vi.fn(() => undefined),
+                    patchFilters: vi.fn(),
+                    removeFilter: vi.fn(),
+                    clearFilters: vi.fn(),
                     $hasNonDefaultFilters: signal(false)
                 } satisfies DotFilterFacade
             },
@@ -96,9 +102,9 @@ describe('DotAssetPickerToolbarComponent', () => {
                 useValue: {
                     $activeFields: signal<string[]>([]),
                     $fields: signal<DotCMSContentTypeField[]>([]),
-                    addField: jest.fn(),
-                    setFields: jest.fn(),
-                    clearFields: jest.fn()
+                    addField: vi.fn(),
+                    setFields: vi.fn(),
+                    clearFields: vi.fn()
                 } satisfies DotFieldFilterHost
             }
         ],
@@ -293,7 +299,7 @@ describe('DotAssetPickerToolbarComponent', () => {
         });
 
         it('should re-emit a failed field fetch instead of handling it', () => {
-            const reported = jest.fn();
+            const reported = vi.fn();
             spectator.output('fieldFilterError').subscribe(reported);
 
             spectator.triggerEventHandler('dot-field-filter-menu', 'error', {
@@ -404,7 +410,7 @@ describe('DotAssetPickerToolbarComponent', () => {
         it('should hand the shortcut back to the surface underneath when it closes', () => {
             setup({ site: SITE });
 
-            const portletSearch = jest.fn();
+            const portletSearch = vi.fn();
             const shortcuts = spectator.inject(DotKeyboardShortcutService);
             shortcuts.register({
                 combination: 'mod+k',

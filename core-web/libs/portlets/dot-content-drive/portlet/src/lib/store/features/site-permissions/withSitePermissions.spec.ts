@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { DotPermissionsService } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
@@ -40,7 +40,7 @@ describe('withSitePermissions', () => {
     let spectator: SpectatorService<InstanceType<typeof sitePermissionsStoreMock>>;
     let store: InstanceType<typeof sitePermissionsStoreMock>;
 
-    const canAddChildren = jest.fn();
+    const canAddChildren = vi.fn();
 
     const createService = createServiceFactory({
         service: sitePermissionsStoreMock,

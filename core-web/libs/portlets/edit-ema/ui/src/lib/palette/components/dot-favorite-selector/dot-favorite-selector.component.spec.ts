@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -38,9 +39,9 @@ const MOCK_FAVORITE_CONTENT_TYPES: DotCMSContentType[] = [MOCK_CONTENT_TYPES[0]]
 
 describe('DotFavoriteSelectorComponent', () => {
     let spectator: Spectator<DotFavoriteSelectorComponent>;
-    let mockPageContentTypeService: jest.Mocked<DotPageContentTypeService>;
-    let mockFavoriteContentTypeService: jest.Mocked<DotFavoriteContentTypeService>;
-    let mockStore: jest.Mocked<InstanceType<typeof DotPaletteListStore>>;
+    let mockPageContentTypeService: Mocked<DotPageContentTypeService>;
+    let mockFavoriteContentTypeService: Mocked<DotFavoriteContentTypeService>;
+    let mockStore: Mocked<InstanceType<typeof DotPaletteListStore>>;
 
     const createComponent = createComponentFactory({
         component: DotFavoriteSelectorComponent,
@@ -54,7 +55,7 @@ describe('DotFavoriteSelectorComponent', () => {
                 {
                     provide: DotPageContentTypeService,
                     useValue: {
-                        getAllContentTypes: jest.fn().mockReturnValue(
+                        getAllContentTypes: vi.fn().mockReturnValue(
                             of({
                                 contenttypes: MOCK_CONTENT_TYPES,
                                 pagination: {
@@ -69,15 +70,15 @@ describe('DotFavoriteSelectorComponent', () => {
                 {
                     provide: DotFavoriteContentTypeService,
                     useValue: {
-                        getAll: jest.fn().mockReturnValue(MOCK_FAVORITE_CONTENT_TYPES),
-                        set: jest.fn().mockReturnValue(MOCK_FAVORITE_CONTENT_TYPES)
+                        getAll: vi.fn().mockReturnValue(MOCK_FAVORITE_CONTENT_TYPES),
+                        set: vi.fn().mockReturnValue(MOCK_FAVORITE_CONTENT_TYPES)
                     }
                 },
                 {
                     provide: DotPaletteListStore,
                     useValue: {
                         contenttypes: signal(MOCK_CONTENT_TYPES),
-                        setContentTypesFromFavorite: jest.fn()
+                        setContentTypesFromFavorite: vi.fn()
                     }
                 }
             ]
@@ -277,7 +278,7 @@ describe('DotFavoriteSelectorComponent', () => {
             const overlayPanelInstance = spectator.component.$overlayPanel();
 
             // Spy on the toggle method
-            const toggleSpy = jest.spyOn(overlayPanelInstance, 'toggle');
+            const toggleSpy = vi.spyOn(overlayPanelInstance, 'toggle');
 
             // Create a mock event
             const mockEvent = new MouseEvent('click', {
@@ -301,7 +302,7 @@ describe('DotFavoriteSelectorComponent', () => {
 
         it('should call toggle with different event types', () => {
             const overlayPanelInstance = spectator.component.$overlayPanel();
-            const toggleSpy = jest.spyOn(overlayPanelInstance, 'toggle');
+            const toggleSpy = vi.spyOn(overlayPanelInstance, 'toggle');
 
             // Test with click event
             const clickEvent = new MouseEvent('click');
@@ -341,7 +342,7 @@ describe('DotFavoriteSelectorComponent', () => {
 
         it('should reset listbox filter when overlay hides', () => {
             const listboxInstance = spectator.component.$listbox();
-            const resetFilterSpy = jest.spyOn(listboxInstance, 'resetFilter');
+            const resetFilterSpy = vi.spyOn(listboxInstance, 'resetFilter');
 
             const overlayPanelInstance = spectator.component.$overlayPanel();
 
@@ -417,7 +418,7 @@ describe('DotFavoriteSelectorComponent', () => {
 
         it('should handle toggle -> filter -> close workflow', fakeAsync(() => {
             const overlayPanelInstance = spectator.component.$overlayPanel();
-            const toggleSpy = jest.spyOn(overlayPanelInstance, 'toggle');
+            const toggleSpy = vi.spyOn(overlayPanelInstance, 'toggle');
 
             // Step 1: Open overlay
             const clickEvent = new MouseEvent('click');

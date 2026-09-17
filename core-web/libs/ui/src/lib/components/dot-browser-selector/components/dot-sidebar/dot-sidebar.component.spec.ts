@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import type { TreeNode } from 'primeng/api';
 import { Tooltip } from 'primeng/tooltip';
@@ -144,11 +145,11 @@ describe('DotSideBarComponent', () => {
 
     describe('overflow tooltip', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
         });
 
         afterEach(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
             document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
         });
 
@@ -165,7 +166,7 @@ describe('DotSideBarComponent', () => {
 
             element.dispatchEvent(new MouseEvent('mouseenter'));
             spectator.detectChanges();
-            jest.advanceTimersByTime(1000);
+            vi.advanceTimersByTime(1000);
         };
 
         it('should not show a tooltip for a name that fits', () => {

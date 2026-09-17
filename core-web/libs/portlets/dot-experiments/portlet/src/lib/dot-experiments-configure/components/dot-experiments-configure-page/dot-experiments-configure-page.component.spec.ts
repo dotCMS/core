@@ -1,6 +1,7 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { Injector, signal, WritableSignal } from '@angular/core';
 import { disabled, form, max, min } from '@angular/forms/signals';
@@ -118,14 +119,14 @@ const createStoreMock = () => ({
 describe('DotExperimentsConfigurePageComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurePageComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
+    let dispatch: MockInstance;
     /** What the AssetPicker closes with. */
     let dialogClosed: Subject<DotCMSContentlet | undefined>;
     /** What the Change Page confirmation closes with: `true` once the variants are gone. */
     let changePageClosed: Subject<true | undefined>;
     /** The reference the card holds on to, so a test can see it being closed. */
-    let changePageRef: { onClose: Subject<true | undefined>; close: jest.Mock };
-    let dialogService: { open: jest.Mock };
+    let changePageRef: { onClose: Subject<true | undefined>; close: Mock };
+    let dialogService: { open: Mock };
     let siteDetails: WritableSignal<DotSite | null>;
     let trafficAllocation: WritableSignal<number>;
 
@@ -133,15 +134,15 @@ describe('DotExperimentsConfigurePageComponent', () => {
     beforeAll(() => {
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query: string) => ({
+            value: vi.fn().mockImplementation((query: string) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
     });
@@ -220,24 +221,24 @@ describe('DotExperimentsConfigurePageComponent', () => {
         // is closed with is what its `onClose` emits.
         changePageRef = {
             onClose: changePageClosed,
-            close: jest.fn((result?: true) => changePageClosed.next(result))
+            close: vi.fn((result?: true) => changePageClosed.next(result))
         };
         dialogService = {
             // The card opens two different dialogs, and the Change Page one hands over to the
             // picker: a single stream would have each of them hearing the other's answer.
-            open: jest.fn((component: unknown) =>
+            open: vi.fn((component: unknown) =>
                 component === DotExperimentsChangePageDialogComponent
                     ? changePageRef
                     : { onClose: dialogClosed }
             )
         };
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
         mountWith();
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
         document.querySelectorAll('.p-tooltip').forEach((tooltip) => tooltip.remove());
     });
 

@@ -1,10 +1,11 @@
-import { DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
+import { DotAiIndex } from '@dotcms/dotcms-models';
 
 import {
     CACHE_INDEX_NAME,
-    deriveIndexStatuses,
+    stillBuildingSeeds,
     toIndexOptions,
-    toRetrievalIndexes
+    toRetrievalIndexes,
+    withPendingIndexes
 } from './dot-ai-index.utils';
 
 const index = (overrides: Partial<DotAiIndex> = {}): DotAiIndex => ({
@@ -46,49 +47,73 @@ describe('dot-ai-index.utils', () => {
         });
     });
 
-    describe('deriveIndexStatuses', () => {
-        it('should report READY when there is no previous snapshot', () => {
-            const result = deriveIndexStatuses([index({ name: 'a' })], {}, new Set());
+    describe('withPendingIndexes', () => {
+        it('should stand in for a seeded build the server has not listed yet', () => {
+            const result = withPendingIndexes([index({ name: 'a' })], new Set(['blogs']));
 
-            expect(result['a']).toBe(DOT_AI_INDEX_STATUS.READY);
+            expect(result.map((i) => i.name)).toEqual(['a', 'blogs']);
+            expect(result.at(-1)?.fragments).toBe(0);
         });
 
-        it('should report BUILDING when a build was just seeded for that index', () => {
-            const result = deriveIndexStatuses([index({ name: 'a' })], {}, new Set(['a']));
+        it('should return the same array when every seed is already listed', () => {
+            // Identity matters: markIndexBuilding patches `indexes` with this, and a fresh
+            // array there would churn every reader of the list on each poll.
+            const indexes = [index({ name: 'blogs' })];
 
-            expect(result['a']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+            expect(withPendingIndexes(indexes, new Set(['blogs']))).toBe(indexes);
+        });
+    });
+
+    describe('stillBuildingSeeds', () => {
+        it('should keep a seed whose index the server has not listed yet', () => {
+            expect(stillBuildingSeeds([], {}, new Set(['a']))).toEqual(new Set(['a']));
         });
 
-        it('should keep BUILDING while the fragment count is still moving', () => {
-            const result = deriveIndexStatuses(
+        it('should keep a seed with no snapshot to compare against', () => {
+            expect(stillBuildingSeeds([index({ name: 'a' })], {}, new Set(['a']))).toEqual(
+                new Set(['a'])
+            );
+        });
+
+        it('should keep a seed while the fragment count is still moving', () => {
+            const result = stillBuildingSeeds(
                 [index({ name: 'a', fragments: 20 })],
                 { a: 10 },
                 new Set(['a'])
             );
 
-            expect(result['a']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+            expect(result).toEqual(new Set(['a']));
         });
 
-        it('should settle to READY once the fragment count stops changing', () => {
-            const result = deriveIndexStatuses(
+        it('should drop a seed once the fragment count stops changing', () => {
+            const result = stillBuildingSeeds(
                 [index({ name: 'a', fragments: 10 })],
                 { a: 10 },
                 new Set(['a'])
             );
 
-            expect(result['a']).toBe(DOT_AI_INDEX_STATUS.READY);
+            expect(result.size).toBe(0);
         });
 
-        it('should derive status per index, not portlet-wide', () => {
+        it('should settle each index on its own, not portlet-wide', () => {
             // The legacy portlet flipped every row at once off a single global delta.
-            const result = deriveIndexStatuses(
+            const result = stillBuildingSeeds(
                 [index({ name: 'a', fragments: 20 }), index({ name: 'b', fragments: 5 })],
                 { a: 10, b: 5 },
                 new Set(['a', 'b'])
             );
 
-            expect(result['a']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
-            expect(result['b']).toBe(DOT_AI_INDEX_STATUS.READY);
+            expect(result).toEqual(new Set(['a']));
+        });
+
+        it('should ignore an index nobody seeded a build for', () => {
+            const result = stillBuildingSeeds(
+                [index({ name: 'a', fragments: 20 })],
+                { a: 10 },
+                new Set()
+            );
+
+            expect(result.size).toBe(0);
         });
     });
 });

@@ -1,6 +1,7 @@
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -10,7 +11,11 @@ import { DotAiEmbeddingsBuildResult, DotAiIndex } from '@dotcms/dotcms-models';
 import { withAiEmbeddings } from './with-ai-embeddings.feature';
 import { withAiIndexes } from './with-ai-indexes.feature';
 
-import { DOT_AI_INITIAL_STATE, DotAiPortletState } from '../../models/dot-ai-portlet.models';
+import {
+    DOT_AI_INDEX_OPERATION,
+    DOT_AI_INITIAL_STATE,
+    DotAiPortletState
+} from '../../models/dot-ai-portlet.models';
 
 const index = (overrides: Partial<DotAiIndex> = {}): DotAiIndex => ({
     name: 'blogs',
@@ -38,7 +43,7 @@ const TestStore = signalStore(
 describe('withAiEmbeddings', () => {
     let spectator: SpectatorService<InstanceType<typeof TestStore>>;
     let store: InstanceType<typeof TestStore>;
-    let service: jest.Mocked<DotAiEmbeddingsService>;
+    let service: Mocked<DotAiEmbeddingsService>;
 
     const createService = createServiceFactory({
         service: TestStore,
@@ -48,13 +53,13 @@ describe('withAiEmbeddings', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        service = spectator.inject(DotAiEmbeddingsService) as jest.Mocked<DotAiEmbeddingsService>;
-        service.getIndexes = jest.fn().mockReturnValue(of([index()]));
+        service = spectator.inject(DotAiEmbeddingsService) as Mocked<DotAiEmbeddingsService>;
+        service.getIndexes = vi.fn().mockReturnValue(of([index()]));
     });
 
     describe('buildIndex', () => {
         it('should post an EmbeddingsForm and refresh the list (FR-033)', () => {
-            service.buildIndex = jest.fn().mockReturnValue(of(buildResult()));
+            service.buildIndex = vi.fn().mockReturnValue(of(buildResult()));
 
             store.buildIndex({ indexName: 'blogs', query: '+contentType:Blog' });
 
@@ -66,7 +71,7 @@ describe('withAiEmbeddings', () => {
         });
 
         it('should seed BUILDING from the index the build response names (FR-027)', () => {
-            service.buildIndex = jest.fn().mockReturnValue(of(buildResult('blogs')));
+            service.buildIndex = vi.fn().mockReturnValue(of(buildResult('blogs')));
 
             store.buildIndex({ indexName: 'blogs', query: 'q' });
 
@@ -75,7 +80,7 @@ describe('withAiEmbeddings', () => {
 
         it('should not fire twice on a double submit (exhaustMap, FR-035)', () => {
             const pending = new Subject<DotAiEmbeddingsBuildResult>();
-            service.buildIndex = jest.fn().mockReturnValue(pending);
+            service.buildIndex = vi.fn().mockReturnValue(pending);
 
             store.buildIndex({ indexName: 'blogs', query: 'q' });
             store.buildIndex({ indexName: 'blogs', query: 'q' });
@@ -90,12 +95,13 @@ describe('withAiEmbeddings', () => {
                 status: 500,
                 error: { error: 'Index -1 out of bounds for length 0' }
             });
-            service.buildIndex = jest.fn().mockReturnValue(throwError(() => error));
+            service.buildIndex = vi.fn().mockReturnValue(throwError(() => error));
 
             store.buildIndex({ indexName: 'blogs', query: '+++[' });
 
-            expect(store.indexBuildNotice()).toEqual({
-                kind: 'failed',
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'failed',
                 indexName: 'blogs',
                 detail: 'Index -1 out of bounds for length 0'
             });
@@ -105,7 +111,7 @@ describe('withAiEmbeddings', () => {
         it('should flag a build that matched nothing rather than looking successful', () => {
             // The server answers 200 with totalToEmbed 0, and the empty index never comes back
             // from indexCount — so silence here reads as "the build did nothing".
-            service.buildIndex = jest
+            service.buildIndex = vi
                 .fn()
                 .mockReturnValue(
                     of({ indexName: 'blogs', totalToEmbed: 0, timeToEmbeddings: '3ms' })
@@ -113,11 +119,15 @@ describe('withAiEmbeddings', () => {
 
             store.buildIndex({ indexName: 'blogs', query: '+contentType:NoSuchType' });
 
-            expect(store.indexBuildNotice()).toEqual({ kind: 'empty', indexName: 'blogs' });
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'empty',
+                indexName: 'blogs'
+            });
         });
 
         it('should report how much was embedded on success', () => {
-            service.buildIndex = jest
+            service.buildIndex = vi
                 .fn()
                 .mockReturnValue(
                     of({ indexName: 'blogs', totalToEmbed: 6, timeToEmbeddings: '3ms' })
@@ -125,30 +135,73 @@ describe('withAiEmbeddings', () => {
 
             store.buildIndex({ indexName: 'blogs', query: '+contentType:Blog' });
 
-            expect(store.indexBuildNotice()).toEqual({
-                kind: 'built',
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.BUILD,
+                outcome: 'ok',
                 indexName: 'blogs',
                 detail: '6'
             });
         });
     });
 
-    describe('deleteFromIndex', () => {
+    describe('removeFromIndex', () => {
         it('should send the query as a deletion criterion, not as content to embed', () => {
-            service.deleteFromIndex = jest.fn().mockReturnValue(of(3));
+            service.deleteFromIndex = vi.fn().mockReturnValue(of(3));
 
-            store.deleteFromIndex({ indexName: 'blogs', query: '+contentType:Blog' });
+            store.removeFromIndex({ indexName: 'blogs', query: '+contentType:Blog' });
 
             expect(service.deleteFromIndex).toHaveBeenCalledWith('blogs', '+contentType:Blog');
             expect(service.getIndexes).toHaveBeenCalled();
         });
+
+        it('should report how much it removed', () => {
+            // The count came back from the server and was dropped on the floor, so a removal
+            // confirmed and then said nothing at all.
+            service.deleteFromIndex = vi.fn().mockReturnValue(of(3));
+
+            store.removeFromIndex({ indexName: 'blogs', query: '+contentType:Blog' });
+
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.REMOVE_CONTENT,
+                outcome: 'ok',
+                indexName: 'blogs',
+                detail: '3'
+            });
+        });
+
+        it('should flag a removal that matched nothing rather than looking successful', () => {
+            // The server answers 200 with `deleted: 0` when the query matches nothing.
+            service.deleteFromIndex = vi.fn().mockReturnValue(of(0));
+
+            store.removeFromIndex({ indexName: 'blogs', query: '+contentType:NoSuchType' });
+
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.REMOVE_CONTENT,
+                outcome: 'empty',
+                indexName: 'blogs',
+                detail: '0'
+            });
+        });
     });
 
     describe('deleteIndex (FR-034)', () => {
+        it('should end any build outstanding for the index it deletes', () => {
+            // A surviving seed put the deleted index straight back in the table as a zeroed
+            // BUILDING row, for the rest of the two-minute grace period.
+            service.getIndexes = vi.fn().mockReturnValue(of([]));
+            service.deleteIndex = vi.fn().mockReturnValue(of(4));
+            store.markIndexBuilding('blogs');
+
+            store.deleteIndex('blogs');
+
+            expect(store.indexBuildSeeds()).toEqual({});
+            expect(store.indexes().map((row) => row.name)).not.toContain('blogs');
+        });
+
         it('should let concurrent deletions of different indexes both complete', () => {
             const first = new Subject<number>();
             const second = new Subject<number>();
-            service.deleteIndex = jest.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
+            service.deleteIndex = vi.fn().mockReturnValueOnce(first).mockReturnValueOnce(second);
 
             store.deleteIndex('a');
             store.deleteIndex('b');
@@ -165,19 +218,57 @@ describe('withAiEmbeddings', () => {
         });
     });
 
+    describe('a failure that settles nothing (FR-050)', () => {
+        it('should still notify on a 403, so a dialog waiting on it can settle', () => {
+            // The dialogs cannot be dismissed while their request is outstanding and settle
+            // only on a notice, so a branch that returns without one leaves a modal nobody can
+            // close but a page reload.
+            const error = new HttpErrorResponse({ status: 403 });
+            service.buildIndex = vi.fn().mockReturnValue(throwError(() => error));
+
+            store.buildIndex({ indexName: 'blogs', query: '+contentType:Blog' });
+
+            expect(store.indexesForbidden()).toBe(true);
+            expect(store.indexNotice()).toEqual(
+                expect.objectContaining({
+                    operation: DOT_AI_INDEX_OPERATION.BUILD,
+                    outcome: 'failed',
+                    indexName: 'blogs'
+                })
+            );
+        });
+    });
+
     describe('rebuildEmbeddingsDb', () => {
+        it('should end every outstanding build, since every index went with the store', () => {
+            service.getIndexes = vi.fn().mockReturnValue(of([]));
+            service.rebuildEmbeddingsDb = vi.fn().mockReturnValue(of(true));
+            store.markIndexBuilding('blogs');
+            store.markIndexBuilding('other');
+
+            store.rebuildEmbeddingsDb();
+
+            expect(store.indexBuildSeeds()).toEqual({});
+            expect(store.indexes()).toEqual([]);
+        });
+
         it('should rebuild and refresh', () => {
-            service.rebuildEmbeddingsDb = jest.fn().mockReturnValue(of(true));
+            service.rebuildEmbeddingsDb = vi.fn().mockReturnValue(of(true));
 
             store.rebuildEmbeddingsDb();
 
             expect(service.rebuildEmbeddingsDb).toHaveBeenCalled();
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.REBUILD_DB,
+                outcome: 'ok',
+                indexName: ''
+            });
             expect(service.getIndexes).toHaveBeenCalled();
         });
 
         it('should not fire twice on a double click (exhaustMap)', () => {
             const pending = new Subject<boolean>();
-            service.rebuildEmbeddingsDb = jest.fn().mockReturnValue(pending);
+            service.rebuildEmbeddingsDb = vi.fn().mockReturnValue(pending);
 
             store.rebuildEmbeddingsDb();
             store.rebuildEmbeddingsDb();
@@ -193,7 +284,7 @@ describe('withAiEmbeddings', () => {
         const forbidden = () => throwError(() => new HttpErrorResponse({ status: 403 }));
 
         it('should put the tab in its forbidden state rather than raising a dialog', () => {
-            service.deleteIndex = jest.fn().mockReturnValue(forbidden());
+            service.deleteIndex = vi.fn().mockReturnValue(forbidden());
 
             store.deleteIndex('blogs');
 
@@ -201,20 +292,30 @@ describe('withAiEmbeddings', () => {
             expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
         });
 
-        it('should still route other failures through the error manager', () => {
-            const error = new HttpErrorResponse({ status: 500 });
-            service.rebuildEmbeddingsDb = jest.fn().mockReturnValue(throwError(() => error));
+        it("should report other failures in the portlet's own words", () => {
+            // Not through DotHttpErrorManagerService: it renders these as "Unknown Error" over
+            // a raw Java message and loses which operation and index it was about.
+            const error = new HttpErrorResponse({
+                status: 500,
+                error: { message: 'relation does not exist' }
+            });
+            service.rebuildEmbeddingsDb = vi.fn().mockReturnValue(throwError(() => error));
 
             store.rebuildEmbeddingsDb();
 
             expect(store.indexesForbidden()).toBe(false);
-            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
+            expect(store.indexNotice()).toEqual({
+                operation: DOT_AI_INDEX_OPERATION.REBUILD_DB,
+                outcome: 'failed',
+                indexName: '',
+                detail: 'relation does not exist'
+            });
         });
     });
 
     describe('client-side filtering (FR-028)', () => {
         beforeEach(() => {
-            service.getIndexes = jest
+            service.getIndexes = vi
                 .fn()
                 .mockReturnValue(of([index({ name: 'blogs' }), index({ name: 'news' })]));
             store.loadIndexes();

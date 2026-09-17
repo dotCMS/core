@@ -1,6 +1,7 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { BehaviorSubject, of } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -52,7 +53,7 @@ const EXPERIMENT_MOCK_SCHEDULED = {
 describe('DotExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
     let store: DotExperimentsListStore;
-    let router: jest.Mocked<Router>;
+    let router: Mocked<Router>;
     let vmSubject: BehaviorSubject<VmListExperiments>;
 
     const createComponent = createComponentFactory({
@@ -76,7 +77,7 @@ describe('DotExperimentsListComponent', () => {
                 getPageTitle$: of('Test Page')
             }),
             mockProvider(Router, {
-                navigate: jest.fn().mockReturnValue(Promise.resolve(true))
+                navigate: vi.fn().mockReturnValue(Promise.resolve(true))
             }),
             mockProvider(ActivatedRoute, {
                 snapshot: {
@@ -109,9 +110,9 @@ describe('DotExperimentsListComponent', () => {
 
         const mockStore = {
             vm$: vmSubject.asObservable(),
-            setFilterStatus: jest.fn(),
-            openSidebar: jest.fn(),
-            closeSidebar: jest.fn()
+            setFilterStatus: vi.fn(),
+            openSidebar: vi.fn(),
+            closeSidebar: vi.fn()
         };
 
         spectator = createComponent({
@@ -125,7 +126,7 @@ describe('DotExperimentsListComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should create', () => {

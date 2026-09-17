@@ -1,6 +1,6 @@
-import { expect } from '@jest/globals';
 import { fireEvent, render, screen } from '@testing-library/react';
 import * as tinymceReact from '@tinymce/tinymce-react';
+import { MockInstance, Mocked, MockedFunction, expect, vi } from 'vitest';
 
 import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
@@ -10,7 +10,7 @@ import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
 import { DotCMSEditableText } from '../../components/DotCMSEditableText/DotCMSEditableText';
 import { MOCK_CONTENTLET } from '../mock';
 
-// Define mockEditor before using it in jest.mock
+// Define mockEditor before using it in vi.mock
 const TINYMCE_EDITOR_MOCK = {
     focus: () => {
         /* empty */
@@ -33,8 +33,8 @@ const MOCK_UVE_STATE = {
     publishDate: null
 };
 
-jest.mock('@tinymce/tinymce-react', () => ({
-    Editor: jest.fn(({ onInit, onMouseDown, onFocusOut }) => {
+vi.mock('@tinymce/tinymce-react', async () => ({
+    Editor: vi.fn(({ onInit, onMouseDown, onFocusOut }) => {
         onInit({}, TINYMCE_EDITOR_MOCK);
 
         return <div data-testid="tinymce-editor" onMouseDown={onMouseDown} onBlur={onFocusOut} />;
@@ -42,32 +42,32 @@ jest.mock('@tinymce/tinymce-react', () => ({
 }));
 
 // Mock @dotcms/uve module
-jest.mock('@dotcms/uve', () => ({
-    ...jest.requireActual('@dotcms/uve'),
-    sendMessageToUVE: jest.fn(),
-    getUVEState: jest.fn().mockImplementation(() => MOCK_UVE_STATE)
+vi.mock('@dotcms/uve', async () => ({
+    ...(await vi.importActual('@dotcms/uve')),
+    sendMessageToUVE: vi.fn(),
+    getUVEState: vi.fn().mockImplementation(() => MOCK_UVE_STATE)
 }));
 
-const { Editor } = tinymceReact as jest.Mocked<typeof tinymceReact>;
-const mockedGetUVEState = getUVEState as jest.MockedFunction<typeof getUVEState>;
+const { Editor } = tinymceReact as Mocked<typeof tinymceReact>;
+const mockedGetUVEState = getUVEState as MockedFunction<typeof getUVEState>;
 
 describe('DotCMSEditableText', () => {
-    let getUVEStateSpy: jest.SpyInstance;
-    let consoleErrorSpy: jest.SpyInstance;
-    let consoleWarnSpy: jest.SpyInstance;
+    let getUVEStateSpy: MockInstance;
+    let consoleErrorSpy: MockInstance;
+    let consoleWarnSpy: MockInstance;
 
     beforeEach(() => {
-        consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+        consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {
             /* empty */
         });
-        consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {
+        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
             /* empty */
         });
-        getUVEStateSpy = jest.spyOn(dotcmsUVE, 'getUVEState');
+        getUVEStateSpy = vi.spyOn(dotcmsUVE, 'getUVEState');
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         consoleErrorSpy.mockRestore();
         consoleWarnSpy.mockRestore();
         getUVEStateSpy.mockRestore();
@@ -209,11 +209,11 @@ describe('DotCMSEditableText', () => {
         });
 
         describe('DotEditableText events', () => {
-            let focusSpy: jest.SpyInstance;
+            let focusSpy: MockInstance;
 
             describe('Window Message', () => {
                 beforeEach(() => {
-                    focusSpy = jest.spyOn(TINYMCE_EDITOR_MOCK, 'focus');
+                    focusSpy = vi.spyOn(TINYMCE_EDITOR_MOCK, 'focus');
                 });
 
                 it("should focus on the editor when the message is 'UVE_COPY_CONTENTLET_INLINE_EDITING_SUCCESS' and the field name matches", () => {
@@ -295,16 +295,16 @@ describe('DotCMSEditableText', () => {
             });
 
             describe('onFocusOut', () => {
-                let isDirtySpy: jest.SpyInstance;
-                let getContentSpy: jest.SpyInstance;
+                let isDirtySpy: MockInstance;
+                let getContentSpy: MockInstance;
 
                 const event = new FocusEvent('focusout', {
                     bubbles: true
                 });
 
                 beforeEach(() => {
-                    isDirtySpy = jest.spyOn(TINYMCE_EDITOR_MOCK, 'isDirty');
-                    getContentSpy = jest.spyOn(TINYMCE_EDITOR_MOCK, 'getContent');
+                    isDirtySpy = vi.spyOn(TINYMCE_EDITOR_MOCK, 'isDirty');
+                    getContentSpy = vi.spyOn(TINYMCE_EDITOR_MOCK, 'getContent');
                 });
 
                 it('should not postMessage the UVE if the editor is not dirty', () => {

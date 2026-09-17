@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -46,10 +52,10 @@ describe('DotFieldFilterComponent without a relationship picker', () => {
     let spectator: Spectator<DotFieldFilterComponent>;
 
     const facade: DotFilterFacade = {
-        getFilterValue: jest.fn(() => undefined),
-        patchFilters: jest.fn(),
-        removeFilter: jest.fn(),
-        clearFilters: jest.fn(),
+        getFilterValue: vi.fn(() => undefined),
+        patchFilters: vi.fn(),
+        removeFilter: vi.fn(),
+        clearFilters: vi.fn(),
         $hasNonDefaultFilters: signal(false)
     };
 
@@ -60,7 +66,7 @@ describe('DotFieldFilterComponent without a relationship picker', () => {
             mockProvider(DotTagsService),
             mockProvider(DotCategoriesService),
             mockProvider(DotContentletService, {
-                getContentletByInode: jest.fn().mockReturnValue(of(null))
+                getContentletByInode: vi.fn().mockReturnValue(of(null))
             }),
             {
                 provide: DotMessageService,
@@ -73,7 +79,7 @@ describe('DotFieldFilterComponent without a relationship picker', () => {
         detectChanges: false
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     describe('a Relationship field', () => {
         beforeEach(() => {

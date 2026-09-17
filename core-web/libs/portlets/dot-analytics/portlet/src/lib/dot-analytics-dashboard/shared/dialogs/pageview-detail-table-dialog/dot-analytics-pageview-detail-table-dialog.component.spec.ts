@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
@@ -30,7 +31,7 @@ describe('DotAnalyticsPageviewDetailTableDialogComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: {
-                    get: jest.fn((key: string, ...rest: unknown[]) =>
+                    get: vi.fn((key: string, ...rest: unknown[]) =>
                         rest.length ? `${key}[${rest.join(',')}]` : key
                     )
                 }
@@ -94,7 +95,7 @@ describe('DotAnalyticsPageviewDetailTableDialogComponent', () => {
                 {
                     provide: DotMessageService,
                     useValue: {
-                        get: jest.fn((key: string, ...rest: unknown[]) =>
+                        get: vi.fn((key: string, ...rest: unknown[]) =>
                             rest.length ? `${key}[${rest.join(',')}]` : key
                         )
                     }
@@ -117,7 +118,7 @@ describe('DotAnalyticsPageviewDetailTableDialogComponent', () => {
                 },
                 {
                     provide: DotMessageService,
-                    useValue: { get: jest.fn((k: string) => k) }
+                    useValue: { get: vi.fn((k: string) => k) }
                 }
             ]
         });

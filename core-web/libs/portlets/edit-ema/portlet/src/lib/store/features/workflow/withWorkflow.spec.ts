@@ -1,12 +1,12 @@
-import { describe, expect, it } from '@jest/globals';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import {
     createServiceFactory,
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, Subject } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -64,7 +64,7 @@ describe('withLoad', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             {
                 provide: DotPageApiService,
@@ -72,20 +72,20 @@ describe('withLoad', () => {
                     get: () => of({}),
                     getClientPage: () => of({}),
                     getGraphQLPage: () => of({}),
-                    save: jest.fn()
+                    save: vi.fn()
                 }
             },
             {
                 provide: DotWorkflowsActionsService,
                 useValue: {
-                    getByInode: jest.fn().mockReturnValue(of(mockWorkflowsActions))
+                    getByInode: vi.fn().mockReturnValue(of(mockWorkflowsActions))
                 }
             },
             {
                 provide: DotContentletLockerService,
                 useValue: {
-                    unlock: jest.fn().mockReturnValue(of({})),
-                    lock: jest.fn().mockReturnValue(of({}))
+                    unlock: vi.fn().mockReturnValue(of({})),
+                    lock: vi.fn().mockReturnValue(of({}))
                 }
             },
             { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() }
@@ -106,7 +106,7 @@ describe('withLoad', () => {
     });
 
     it('should fetch workflow actions when page asset inode changes (effect)', () => {
-        const getByInodeSpy = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
+        const getByInodeSpy = vi.spyOn(dotWorkflowsActionsService, 'getByInode');
         store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
         spectator.flushEffects();
         expect(getByInodeSpy).toHaveBeenCalledWith(MOCK_RESPONSE_HEADLESS.page.inode);
@@ -117,7 +117,7 @@ describe('withLoad', () => {
     describe('withMethods', () => {
         describe('workflowFetch', () => {
             it('should call get workflow actions using the provided inode', () => {
-                const spyWorkflowActions = jest.spyOn(dotWorkflowsActionsService, 'getByInode');
+                const spyWorkflowActions = vi.spyOn(dotWorkflowsActionsService, 'getByInode');
                 store.workflowFetch('123');
                 expect(store.workflowIsLoading()).toBe(false);
                 expect(store.workflowActions()).toEqual(mockWorkflowsActions);
@@ -274,11 +274,10 @@ describe('withLoad', () => {
             };
             const languagesSubject = new Subject<DotLanguage[]>();
 
-            jest.spyOn(spectator.inject(DotPageApiService), 'get').mockReturnValue(of(freshPage));
-            jest.spyOn(
-                spectator.inject(DotLanguagesService),
-                'getLanguagesUsedPage'
-            ).mockReturnValue(languagesSubject);
+            vi.spyOn(spectator.inject(DotPageApiService), 'get').mockReturnValue(of(freshPage));
+            vi.spyOn(spectator.inject(DotLanguagesService), 'getLanguagesUsedPage').mockReturnValue(
+                languagesSubject
+            );
 
             store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
             spectator.flushEffects();
@@ -302,5 +301,5 @@ describe('withLoad', () => {
         });
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 });

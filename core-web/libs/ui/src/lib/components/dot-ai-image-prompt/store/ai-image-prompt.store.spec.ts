@@ -1,5 +1,5 @@
 import { patchState } from '@ngrx/signals';
-import { SpyObject, mockProvider } from '@openng/spectator/jest';
+import { SpyObject, mockProvider } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';

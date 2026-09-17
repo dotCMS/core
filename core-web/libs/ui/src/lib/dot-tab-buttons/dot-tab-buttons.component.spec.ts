@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -65,7 +66,7 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should emit openMenu when onClickDropdown is called with correct target', () => {
-        const openMenuSpy = jest.spyOn(spectator.component.openMenu, 'emit');
+        const openMenuSpy = vi.spyOn(spectator.component.openMenu, 'emit');
         const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
         const button = spectator.fixture.debugElement.queryAll(
             By.css('[data-testId="dot-tab-button-text"]')
@@ -83,7 +84,7 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should emit openMenu when dropdown button is clicked via template', () => {
-        const openMenuSpy = jest.spyOn(spectator.component.openMenu, 'emit');
+        const openMenuSpy = vi.spyOn(spectator.component.openMenu, 'emit');
         const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
 
         const button = spectator.fixture.debugElement.queryAll(
@@ -106,7 +107,7 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should not emit openMenu when onClickDropdown is called for option without showDropdownButton', () => {
-        const openMenuSpy = jest.spyOn(spectator.component.openMenu, 'emit');
+        const openMenuSpy = vi.spyOn(spectator.component.openMenu, 'emit');
         spectator.component.onClickDropdown(pointerEvent, editID);
         const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
 
@@ -118,7 +119,7 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should emit clickOption event when onClickOption is called with a PREVIEW value', () => {
-        const clickOptionSpy = jest.spyOn(spectator.component.clickOption, 'emit');
+        const clickOptionSpy = vi.spyOn(spectator.component.clickOption, 'emit');
         spectator.component.activeId = DotPageMode.EDIT;
 
         const button = spectator.fixture.debugElement.queryAll(
@@ -134,7 +135,7 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should not emit clickOption event when onClickOption is called if the user is in the same tab', () => {
-        const clickOptionSpy = jest.spyOn(spectator.component.clickOption, 'emit');
+        const clickOptionSpy = vi.spyOn(spectator.component.clickOption, 'emit');
         spectator.component.activeId = DotPageMode.PREVIEW;
 
         const buttons = spectator.queryAll(byTestId('dot-tab-button-text'));
@@ -144,7 +145,7 @@ describe('DotTabButtonsComponent', () => {
     });
 
     it('should call showMenu when onClickDropdown is called ', () => {
-        const openMenuSpy = jest.spyOn(spectator.component.openMenu, 'emit');
+        const openMenuSpy = vi.spyOn(spectator.component.openMenu, 'emit');
         const tab = spectator.queryAll(byTestId('dot-tab-container'))[1] as HTMLElement;
         const dropdownButton = spectator.fixture.debugElement.query(
             By.css('[data-testId="dot-tab-button-dropdown"]')

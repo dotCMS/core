@@ -1,4 +1,5 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { Mocked, vi } from 'vitest';
 
 import { DotCMSContentType } from '@dotcms/dotcms-models';
 
@@ -46,7 +47,7 @@ const MOCK_CONTENT_TYPE_3: DotCMSContentType = {
 
 describe('DotFavoriteContentTypeService', () => {
     let spectator: SpectatorService<DotFavoriteContentTypeService>;
-    let localStorageService: jest.Mocked<DotLocalstorageService>;
+    let localStorageService: Mocked<DotLocalstorageService>;
 
     const createService = createServiceFactory({
         service: DotFavoriteContentTypeService,
@@ -383,7 +384,7 @@ describe('DotFavoriteContentTypeService', () => {
         });
 
         it('should call getAll() internally', () => {
-            const getAllSpy = jest.spyOn(spectator.service, 'getAll');
+            const getAllSpy = vi.spyOn(spectator.service, 'getAll');
             localStorageService.getItem.mockReturnValue([MOCK_CONTENT_TYPE_1]);
 
             spectator.service.isFavorite('content-type-1');

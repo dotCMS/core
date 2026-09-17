@@ -33,7 +33,9 @@ Unsure? **Codegen first** (`npx playwright codegen http://localhost:4200/dotAdmi
 ## Angular + Dojo
 
 - **Angular:** shell, edit form, dialogs — main `page`.
-- **Dojo:** content listing in `#detailFrame` — `getLegacyFrame(page)` from `@utils/iframe`.
+- **Dojo:** content listing and Publishing Queue in `#detailFrame` — `getLegacyFrame(page)` from `@utils/iframe`.
+- **Dojo tabs:** a portlet may open on a tab you don't want. Publishing Queue's `#mainTabContainer` opens on *Status / History*; the queue list only exists after clicking **Pending** (`#queue`). Click the tab in your page object's `goto()`.
+- **Dojo widget state:** ask `dijit.byId(id)`, don't infer from the DOM. `dijit.form.CheckBox` moves the source node's classes onto its wrapper `<div>` and nests the real `<input>` inside, so `.myClass input` matches and `input.myClass` does **not** — while the widget id stays on the `<input>`. A selector like `input[type=checkbox][id^=...]` matches upgraded and un-upgraded checkboxes alike and proves nothing.
 - **Nav:** `Portlet` from `@utils/portlets`; new content via `NewEditContentFormPage.goToNew()` (listing → New), not direct `/content/new/` URL.
 - **Dojo menus:** wait for menu visibility, then click normally (no `force: true`).
 
@@ -52,7 +54,7 @@ Field-specific selectors and flows: copy `tests/.../helpers/` and nearest `*.spe
 
 **Always create test data through the REST API** — never via the UI during setup. Specs and fixtures import helpers from `src/requests/`; raw endpoint calls live there, not in test files.
 
-Modules: `contentType.ts`, `contentlets.ts`, `sites.ts`, `folders.ts`, `pages.ts`, `templates.ts`, `schemas.ts`, `workflow.ts`, `workflowActions.ts`, `field-variables.ts`, `updateFeatureFlag.ts`.
+Modules: `bundles.ts`, `contentType.ts`, `contentlets.ts`, `sites.ts`, `folders.ts`, `pages.ts`, `templates.ts`, `schemas.ts`, `workflow.ts`, `workflowActions.ts`, `field-variables.ts`, `updateFeatureFlag.ts`.
 
 **Adding a new helper:**
 
@@ -76,3 +78,6 @@ Modules: `contentType.ts`, `contentlets.ts`, `sites.ts`, `folders.ts`, `pages.ts
 4. Single-cardinality: menu items disable with `aria-disabled`; `+` button stays enabled.
 5. Custom types for editor v2: `metadata.CONTENT_EDITOR2_ENABLED`; HTML pages need real `hostFolder` from `GET /api/v1/site`, not `'default'`.
 6. HTML edit: no `data-testid="title"` — `goToContent()` may hang; use direct `#/content/{inode}` + wait for sidebar.
+7. Native dialogs: register `page.on('dialog', ...)` **before** the click. Playwright auto-dismisses them, so a handler attached afterwards sees nothing and the test hangs to timeout instead of failing usefully.
+8. Running against a container: `E2E_BASE_URL=http://localhost:<port> CURRENT_ENV=ci` — under `dev` Playwright tries to start its own server on :4200. `just test-integration-ide` starts Postgres + OpenSearch only, **no webapp**, so it cannot serve these tests on its own.
+9. A change that only touches a JSP can be `docker cp`'d into the container (Tomcat recompiles). A JSP referencing **new Java** cannot — it compiles against the container's classes and fails with *"method ... is not applicable for the arguments"*, rendering the page blank. Rebuild and recreate the container instead.

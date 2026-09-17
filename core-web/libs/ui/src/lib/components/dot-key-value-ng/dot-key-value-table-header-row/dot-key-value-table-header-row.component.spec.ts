@@ -1,4 +1,5 @@
-import { SpectatorHost, byTestId, createHostFactory } from '@openng/spectator/jest';
+import { SpectatorHost, byTestId, createHostFactory } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -100,7 +101,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
         });
 
         it('should not emit when the form is invalid', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
 
             spectator.click(byTestId('save-button'));
             spectator.detectChanges();
@@ -113,7 +114,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
     describe('adding a pair', () => {
         it('should emit the completed pair', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
 
             fill('newKey', 'newValue');
             spectator.click(byTestId('save-button'));
@@ -127,7 +128,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
         });
 
         it('should emit on Enter from the value input', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
 
             fill('fromKeyboard', 'value');
             spectator
@@ -246,7 +247,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
         };
 
         it('should turn a pasted block into pairs, in the order pasted', () => {
-            const spy = jest.spyOn(spectator.component.saveMany, 'emit');
+            const spy = vi.spyOn(spectator.component.saveMany, 'emit');
 
             paste('SOME=TEST\nJEJE=JEJE\nFOO=BAR');
 
@@ -265,7 +266,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
         it('should leave an ordinary paste alone', () => {
             // Text with no assignment in it is someone pasting a key name, not a block.
-            const spy = jest.spyOn(spectator.component.saveMany, 'emit');
+            const spy = vi.spyOn(spectator.component.saveMany, 'emit');
             const event = paste('JustAKeyName');
 
             expect(spy).not.toHaveBeenCalled();
@@ -274,7 +275,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
         it('should not offer a key the list already holds', () => {
             spectator.setHostInput({ forbiddenkeys: { TAKEN: true } });
-            const spy = jest.spyOn(spectator.component.saveMany, 'emit');
+            const spy = vi.spyOn(spectator.component.saveMany, 'emit');
 
             paste('TAKEN=new\nFRESH=ok');
 
