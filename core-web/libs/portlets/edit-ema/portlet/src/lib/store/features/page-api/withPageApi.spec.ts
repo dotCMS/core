@@ -1,4 +1,10 @@
-import { patchState, signalStore, withFeature, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withFeature,
+    withState,
+    WritableStateSource
+} from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
@@ -12,7 +18,7 @@ import {
     DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotLanguage, EXPERIMENT_RETURN_PARAM } from '@dotcms/dotcms-models';
 import { withFlags } from '@dotcms/store';
 import { DotPageAssetLayoutRow, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
@@ -126,6 +132,63 @@ describe('withPageApi', () => {
         spectator = createService();
         store = spectator.service;
         spectator.flushEffects();
+    });
+
+    /**
+     * The merge is what makes this editor feel like one screen: language, persona and mode follow
+     * the editor from page to page. The experiment params are not the editor's, they are the
+     * page's, and they were following too.
+     */
+    describe('pageLoad – what a different page keeps', () => {
+        const onAVariant = () =>
+            patchState(store as unknown as WritableStateSource<UVEState>, {
+                pageParams: {
+                    ...pageParamsBase,
+                    variantName: 'variant-b',
+                    experimentId: 'exp-1',
+                    [EXPERIMENT_RETURN_PARAM]: 'portlet'
+                }
+            });
+
+        it('should drop the experiment params when the page changes', () => {
+            onAVariant();
+
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            const asked = getSpy.mock.calls.at(-1)?.[0];
+            expect(asked.url).toBe('another-page');
+            expect(asked.variantName).toBeUndefined();
+            expect(asked.experimentId).toBeUndefined();
+            expect(asked[EXPERIMENT_RETURN_PARAM]).toBeUndefined();
+        });
+
+        /**
+         * The variant round trip reloads the *same* page to take the variant off, and the panel's
+         * own screens reload it to change language. Dropping on every load would make the editor
+         * unable to stay on a variant at all.
+         */
+        it('should keep them when the same page is loaded again', () => {
+            onAVariant();
+
+            store.pageLoad({ language_id: '2' });
+            spectator.flushEffects();
+
+            const asked = getSpy.mock.calls.at(-1)?.[0];
+            expect(asked.variantName).toBe('variant-b');
+            expect(asked.experimentId).toBe('exp-1');
+        });
+
+        it("should still carry the editor's own params to the new page", () => {
+            onAVariant();
+
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            const asked = getSpy.mock.calls.at(-1)?.[0];
+            expect(asked.language_id).toBe('1');
+            expect(asked.mode).toBe(UVE_MODE.EDIT);
+        });
     });
 
     describe('pageLoad – fetch vs GraphQL', () => {
