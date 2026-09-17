@@ -84,16 +84,11 @@ public class CaemHttpClient {
                                  final Map<String, String> headers) throws DotDataException {
         final String baseUrl = Config.getStringProperty(
                 EventAnalyticsProxyHelper.DOT_ANALYTICS_BASE_URL, "");
-        final String tenant  = Config.getStringProperty(
-                EventAnalyticsProxyHelper.DOT_ANALYTICS_TENANT, "");
         final String project = Config.getStringProperty(
                 EventAnalyticsProxyHelper.DOT_ANALYTICS_PROJECT, "");
 
         if (!UtilMethods.isSet(baseUrl)) {
             throw new DotDataException("CAEM is not configured: DOT_ANALYTICS_BASE_URL is missing");
-        }
-        if (!UtilMethods.isSet(tenant)) {
-            throw new DotDataException("CAEM is not configured: DOT_ANALYTICS_TENANT is missing");
         }
         if (!UtilMethods.isSet(project)) {
             throw new DotDataException("CAEM is not configured: DOT_ANALYTICS_PROJECT is missing");
