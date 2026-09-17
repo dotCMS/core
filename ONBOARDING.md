@@ -226,8 +226,8 @@ More detail: [`docs/testing/`](docs/testing/) and [`docs/frontend/TESTING_FRONTE
     [`dotCMS/src/main/java/com/dotcms/featureflag/FeatureFlagName.java`](dotCMS/src/main/java/com/dotcms/featureflag/FeatureFlagName.java).
 - **Starter site:** a **starter** is a ZIP of seed content (sites, content types,
   pages, assets) that dotCMS loads on first startup to give you a populated instance
-  instead of an empty one. Published starters live in our Artifactory:
-  [`repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/`](https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/).
+  instead of an empty one. Published starters live in our Maven repository on
+  BunnyCDN: [`dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/`](https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/).
   To pick one, set the `<starter.deploy.version>` property in `parent/pom.xml`, drop a
   renamed `starter.zip` into `dotCMS/target/starter/`, or point `DOT_STARTER_DATA_LOAD`
   at a starter URL. Full details in [`dotBackendOnboarding.md`](dotBackendOnboarding.md).

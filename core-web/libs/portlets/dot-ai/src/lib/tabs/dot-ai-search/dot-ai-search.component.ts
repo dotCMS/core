@@ -7,12 +7,18 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 
-import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
+import { DotMessageService } from '@dotcms/data-access';
+import {
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    DotRelativeDatePipe,
+    PrincipalConfiguration
+} from '@dotcms/ui';
 
-import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
 import { DotAiWorkspaceComponent } from '../../components/dot-ai-workspace/dot-ai-workspace.component';
 import { DotAiStore } from '../../store/dot-ai.store';
 import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
+import { toEmptyStateConfig } from '../../utils/dot-ai-empty-state.utils';
 
 /**
  * Search tab: a hero query field over a ranked result list, with the shared retrieval-settings
@@ -25,7 +31,7 @@ import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
 @Component({
     selector: 'dot-ai-search',
     imports: [
-        DotAiEmptyStateComponent,
+        DotEmptyContainerComponent,
         ButtonModule,
         InputGroupModule,
         InputGroupAddonModule,
@@ -41,6 +47,29 @@ import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
 })
 export default class DotAiSearchComponent {
     protected readonly store = inject(DotAiStore);
+
+    readonly #messageService = inject(DotMessageService);
+
+    protected readonly firstRunConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.search.first-run.title',
+        subtitle: 'dotai.search.first-run.sub',
+        icon: 'search'
+    });
+
+    protected readonly noResultsConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.search.no-results.title',
+        subtitle: 'dotai.search.no-results.sub',
+        icon: 'search_off'
+    });
+
+    /** The only one that has to be computed — the subtitle is the index name from the server. */
+    protected readonly $missingIndexConfig = computed<PrincipalConfiguration>(() => ({
+        ...toEmptyStateConfig(this.#messageService, {
+            title: 'dotai.search.index-missing',
+            icon: 'database_off'
+        }),
+        subtitle: this.store.searchMissingIndex() ?? ''
+    }));
 
     /**
      * Typed rather than `$any($event.target).value`, and a handler rather than `ngModel`:
