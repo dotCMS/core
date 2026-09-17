@@ -128,6 +128,10 @@ public class CaemHttpClient {
                 mapped.add(mapCaemFieldsToEventFields(row));
             }
             return new AnalyticsResultSetImpl(mapped);
+        } catch (final ClassCastException e) {
+            throw new DotDataException(
+                    "Unexpected 'rows' type in CAEM response for " + path
+                    + " — schema may have changed: " + e.getMessage(), e);
         } catch (final IOException e) {
             throw new DotDataException(
                     "Failed to parse CAEM response for path " + path + ": " + e.getMessage(), e);
