@@ -162,22 +162,34 @@ public interface ExperimentGoalResultsQuery {
             // one *ConversionRate field per row. findFirst() relies on this — if a future goal type
             // produces multiple *Successes fields, only the first encountered would be inverted and
             // the rest silently skipped. Extend this method before adding such a goal type.
-            original.keySet().stream()
+            final java.util.Optional<String> successKeyOpt = original.keySet().stream()
                     .filter(k -> k.endsWith("Successes"))
-                    .findFirst()
-                    .ifPresent(successKey -> {
-                        final long successes = ((Number) original.get(successKey)).longValue();
-                        row.put(successKey, totalSessions - successes);
-                    });
+                    .findFirst();
+            if (successKeyOpt.isPresent()) {
+                final String successKey = successKeyOpt.get();
+                final Object successRaw = original.get(successKey);
+                if (successRaw == null) {
+                    throw new DotDataException(
+                            "Analytics response row has key '" + successKey + "' with a null value; "
+                            + "cannot invert MINIMIZE goal results.");
+                }
+                row.put(successKey, totalSessions - ((Number) successRaw).longValue());
+            }
 
-            original.keySet().stream()
+            final java.util.Optional<String> rateKeyOpt = original.keySet().stream()
                     .filter(k -> k.endsWith("ConversionRate"))
-                    .findFirst()
-                    .ifPresent(rateKey -> {
-                        final double rate = ((Number) original.get(rateKey)).doubleValue();
-                        // CAEM returns rates as percentages (0–100); invert on the same scale
-                        row.put(rateKey, 100.0 - rate);
-                    });
+                    .findFirst();
+            if (rateKeyOpt.isPresent()) {
+                final String rateKey = rateKeyOpt.get();
+                final Object rateRaw = original.get(rateKey);
+                if (rateRaw == null) {
+                    throw new DotDataException(
+                            "Analytics response row has key '" + rateKey + "' with a null value; "
+                            + "cannot invert MINIMIZE goal results.");
+                }
+                // CAEM returns rates as percentages (0–100); invert on the same scale
+                row.put(rateKey, 100.0 - ((Number) rateRaw).doubleValue());
+            }
 
             rows.add(row);
         }
