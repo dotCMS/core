@@ -27,6 +27,13 @@ import java.util.Optional;
  * It uses the EmbeddingsAPI to perform these operations.
  *
  * This class is a ViewTool, meaning it can be used in Velocity templates to provide functionality related to embeddings.
+ *
+ * <p>Output is HTML-escaped by default (#37153): the echoed {@code query} and each match's
+ * {@code extractedText} are encoded (the latter because the embeddings API stores every visitor's query
+ * text in the {@code cache} index, which a template can search); error payloads are escaped in full.
+ * {@code title} and the contentlet fields under {@code dotCMSResults} are returned as stored. Templates
+ * that need the unescaped payload go through {@code $ai.unsafe.search}, which constructs this tool with
+ * escaping off and behaves exactly as before #37153.
  */
 public class SearchTool implements ViewTool {
 
@@ -34,10 +41,21 @@ public class SearchTool implements ViewTool {
 
     private final HttpServletRequest request;
     private final Host host;
+    private final boolean escapeOutput;
 
     SearchTool(final Object initData) {
+        this(initData, true);
+    }
+
+    /**
+     * @param initData     the Velocity {@link ViewContext}
+     * @param escapeOutput {@code true} to HTML-escape results (the {@code $ai} default),
+     *                     {@code false} for the {@code $ai.unsafe} behaviour
+     */
+    SearchTool(final Object initData, final boolean escapeOutput) {
         this.request = ((ViewContext) initData).getRequest();
         this.host = host();
+        this.escapeOutput = escapeOutput;
     }
 
     @Override
@@ -64,9 +82,9 @@ public class SearchTool implements ViewTool {
                 .build();
 
         try {
-            return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
+            return escapeSearchShaped(APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher));
         } catch (Exception e) {
-            return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
+            return escape(Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace())));
         }
     }
 
@@ -82,9 +100,9 @@ public class SearchTool implements ViewTool {
         final EmbeddingsDTO searcher = EmbeddingsDTO.from(mapIn).withUser(user).build();
 
         try {
-            return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
+            return escapeSearchShaped(APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher));
         } catch (Exception e) {
-            return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
+            return escape(Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace())));
         }
     }
 
@@ -137,10 +155,20 @@ public class SearchTool implements ViewTool {
                     .withLimit(50)
                     .withThreshold(.5f)
                     .build();
-            return APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher);
+            return escapeSearchShaped(APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher));
         } catch (Exception e) {
-            return Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace()));
+            return escape(Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace())));
         }
+    }
+
+    /** Whole-payload escaping (error payloads), or pass-through when unsafe. */
+    private Object escape(final Object payload) {
+        return escapeOutput ? AIViewToolOutputEscaper.deepEscape(payload) : payload;
+    }
+
+    /** By-source escaping for the search shape, or pass-through when unsafe. */
+    private Object escapeSearchShaped(final Object payload) {
+        return escapeOutput ? AIViewToolOutputEscaper.escapeSearchShaped(payload) : payload;
     }
 
     @VisibleForTesting

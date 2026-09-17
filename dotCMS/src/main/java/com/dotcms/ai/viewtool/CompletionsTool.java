@@ -24,6 +24,13 @@ import java.util.Map;
 /**
  * This class is a ViewTool that provides functionality related to completions.
  * It interacts with the CompletionsAPI to perform operations such as summarizing and raw processing.
+ *
+ * <p>Output is HTML-escaped by default (#37153): {@code summarize} escapes the provider's
+ * {@code openAiResponse} subtree, the echoed {@code query} and each match's {@code extractedText};
+ * {@code raw} escapes the whole provider payload; error payloads are escaped in full. Contentlet
+ * fields under {@code dotCMSResults} are returned as stored. Templates that need the unescaped
+ * payload go through {@code $ai.unsafe.completions}, which constructs this tool with escaping off
+ * and behaves exactly as before #37153.
  */
 public class CompletionsTool implements ViewTool {
 
@@ -32,13 +39,24 @@ public class CompletionsTool implements ViewTool {
     private final Host host;
     private final AppConfig config;
     private final User user;
+    private final boolean escapeOutput;
 
-    CompletionsTool(Object initData) {
+    CompletionsTool(final Object initData) {
+        this(initData, true);
+    }
+
+    /**
+     * @param initData     the Velocity {@link ViewContext}
+     * @param escapeOutput {@code true} to HTML-escape results (the {@code $ai} default),
+     *                     {@code false} for the {@code $ai.unsafe} behaviour
+     */
+    CompletionsTool(final Object initData, final boolean escapeOutput) {
         this.context = (ViewContext) initData;
         this.request = this.context.getRequest();
         this.host = host();
         this.config = config();
         this.user = user();
+        this.escapeOutput = escapeOutput;
     }
 
     @Override
@@ -80,9 +98,9 @@ public class CompletionsTool implements ViewTool {
                 .user(user)
                 .build();
         try {
-            return APILocator.getDotAIAPI().getCompletionsAPI(config).summarize(form);
+            return escapeSearchShaped(APILocator.getDotAIAPI().getCompletionsAPI(config).summarize(form));
         } catch (Exception e) {
-            return handleException(e);
+            return escape(handleException(e));
         }
     }
 
@@ -110,7 +128,7 @@ public class CompletionsTool implements ViewTool {
         try {
             return raw(new JSONObject(prompt));
         } catch (Exception e) {
-            return handleException(e);
+            return escape(handleException(e));
         }
     }
 
@@ -121,11 +139,11 @@ public class CompletionsTool implements ViewTool {
      */
     public Object raw(final JSONObject prompt) {
         try {
-            return APILocator.getDotAIAPI()
+            return escape(APILocator.getDotAIAPI()
                     .getCompletionsAPI(config)
-                    .raw(prompt, UtilMethods.extractUserIdOrNull(user));
+                    .raw(prompt, UtilMethods.extractUserIdOrNull(user)));
         } catch (Exception e) {
-            return handleException(e);
+            return escape(handleException(e));
         }
     }
 
@@ -138,8 +156,18 @@ public class CompletionsTool implements ViewTool {
         try {
             return raw(new JSONObject(prompt));
         } catch (Exception e) {
-            return handleException(e);
+            return escape(handleException(e));
         }
+    }
+
+    /** Whole-payload escaping (provider output and error payloads), or pass-through when unsafe. */
+    private Object escape(final Object payload) {
+        return escapeOutput ? AIViewToolOutputEscaper.deepEscape(payload) : payload;
+    }
+
+    /** By-source escaping for the summarize shape, or pass-through when unsafe. */
+    private Object escapeSearchShaped(final Object payload) {
+        return escapeOutput ? AIViewToolOutputEscaper.escapeSearchShaped(payload) : payload;
     }
 
     @VisibleForTesting

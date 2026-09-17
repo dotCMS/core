@@ -70,10 +70,11 @@ summarize(prompt[, index])            search.query(...) / search.related(...)
 summarize with no index hits: { "error": "no matching content found ..." }
 
 raw(...) / generateText(...)          generateImage(...)
-*{ provider JSON verbatim:            *{ provider data[0] verbatim:
-   "choices":[{"message":{               "url": "...", "revised_prompt": "model text",
-       "content": "model text"}}],       + added by dotCMS: "originalPrompt": "...",
-   "model": "...", "id": "..." }         "tempFileName": "...", "response": "...", "tempFile": "..." }
+*{ provider response as rebuilt      *{ provider data[0] as rebuilt by the client:
+   by the dotAI client:                  "url": "...",
+   "choices":[{"message":{               + added by dotCMS: "originalPrompt": "<echoed prompt>",
+       "content": "model text"}}],       "tempFileName": "...", "response": "...", "tempFile": "..." }
+   "model": "...", "id": "..." }
 ```
 
 ## Reproduction *(mandatory)*
@@ -93,8 +94,8 @@ will echo markup when asked.
    ```
    Equivalent forms for the other accessors: `$ai.completions.summarize("...")` rendering
    `$r.openAiResponse.choices[0].message.content`; `$ai.generateText("...")` rendering
-   `$r.choices[0].message.content`; `$ai.generateImage("...")` rendering `$r.revised_prompt`
-   (the model's rewritten prompt, passed through from the provider).
+   `$r.choices[0].message.content`; `$ai.generateImage($request.getParameter("q"))` rendering
+   `$r.originalPrompt` (the echoed prompt; reflected XSS when the prompt comes from the request).
 3. Publish the page and load it as an anonymous visitor.
 4. View source and observe the `<img ...>` tag inside the `<div>`; observe the alert dialog.
 
@@ -123,8 +124,10 @@ provider reply contains active markup.
   - **Provider output** (text the AI wrote, or the provider's response object): the whole
     payload of `completions.raw(String|JSONObject|Map)`, `generateText(String|Map)` and
     `generateImage(String|Map)`; the `openAiResponse` subtree of
-    `completions.summarize(String|String,String)`. For image generation the provider object
-    carries `revised_prompt`, model-written text, so it is provider output on its merits.
+    `completions.summarize(String|String,String)`. The dotAI client (langchain4j) rebuilds every
+    provider response before dotCMS sees it: chat as `choices[].message.content` plus `model`/`id`,
+    image as `data[].url` only. The image payload therefore carries no model-written text; it is in
+    scope for its echoed `originalPrompt` and for one uniform rule.
   - **Echoed caller input**: the `query` value and the image `originalPrompt` value, copied
     from the caller's arguments into the payload. A template that prints "Results for
     $r.query" with a query taken from a request parameter is reflected XSS through the tool.
@@ -167,8 +170,9 @@ Each viewtool method calls the corresponding API method and returns its result u
 output encoding exists anywhere between the provider and the page.
 
 Three shape facts drive the fix. First, the payloads are **nested objects, not strings**: the
-model text sits at `openAiResponse.choices[n].message.content` (summarize), at
-`choices[n].message.content` (raw, generateText) and at `revised_prompt` (generateImage).
+model text sits at `openAiResponse.choices[n].message.content` (summarize) and at
+`choices[n].message.content` (raw, generateText); the image payload has no model text, only the
+provider `url` and the echoed `originalPrompt`.
 Second, the provider output is attached to the dotCMS-built result at exactly one seam per
 method, so the escaped set can be stated exactly: the whole provider subtree plus three named
 fields (`query`, `originalPrompt`, `dotCMSResults[].matches[].extractedText`). Nothing else.
@@ -288,19 +292,19 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
 - **AC-001**: The reproduction steps above no longer produce the actual behavior; they produce
   the expected behavior. For `summarize(String)`, `summarize(String,String)`, `raw(String)`,
   `raw(JSONObject)`, `raw(Map)`, `generateText(String)`, `generateText(Map)`,
-  `generateImage(String)`, `generateImage(Map)`: when the provider reply's model-text field
-  is exactly `<script>alert(1)</script><img src=x onerror=alert(1)>`, the default accessor's
-  model-text field is exactly
-  `&lt;script&gt;alert(1)&lt;/script&gt;&lt;img src=x onerror=alert(1)&gt;` (the OWASP
-  `Encode.forHtml` output of the stub string), and no string value anywhere in the
-  provider-output part contains a literal `<`, `>`, `"` or `'`.
+  when the provider reply's model-text field is exactly
+  `<script>alert(1)</script><img src=x onerror=alert(1)>`, the default accessor's model-text
+  field is exactly `&lt;script&gt;alert(1)&lt;/script&gt;&lt;img src=x onerror=alert(1)&gt;`
+  (the OWASP `Encode.forHtml` output of the stub string), and no string value anywhere in the
+  provider-output part contains a literal `<`, `>`, `"` or `'`. For `generateImage(String)`,
+  `generateImage(Map)`: when the prompt carries the same markup, `originalPrompt` is returned as
+  its `Encode.forHtml` output, `url` is unchanged, and no string value contains raw markup.
 - **AC-002**: For `search.query(String)`, `search.query(String,String)`, `search.query(Map)`,
   `search.related(Contentlet,String)`, `search.related(ContentMap,String)` and for
   `summarize`: when the indexed `extractedText` and the contentlet `title` both contain the
   same markup, the default accessor returns `extractedText` escaped, returns `title` and
   every other `dotCMSResults` value identical to today's payload (markup intact), and returns
-  the `query` value escaped. The same holds when the query targets the `cache` index. For
-  `generateImage`, `originalPrompt` is escaped.
+  the `query` value escaped. The same holds when the query targets the `cache` index.
 - **AC-003**: For every accessor in AC-001 and AC-002, the same call through `$ai.unsafe`
   returns a payload byte-for-byte identical to what the API method returns, including the
   literal `<script>alert(1)</script>` and `<img src=x onerror=alert(1)>`.
@@ -331,8 +335,9 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
     `-Dit.test=AIViewToolTest#<new escape methods>`. Markup is injected through new WireMock
     mappings under `dotcms-integration/src/test/resources/mappings/` that match a dedicated
     prompt string and return `<script>alert(1)</script><img src=x onerror=alert(1)>` in
-    `choices[0].message.content` (chat) and in `data[0].revised_prompt` (image), following the
-    existing `light-speed-stub.json` / `ganymede-moon-image-stub.json` pattern, plus one
+    `choices[0].message.content` (chat), following the existing `light-speed-stub.json` pattern;
+    the image stub answers a prompt that itself carries the markup (the payload's only text is the
+    echoed `originalPrompt`), following `ganymede-moon-image-stub.json`; plus one
     mapping answering HTTP 500 for AC-006. For search and summarize, the markup is seeded as
     `extractedText` through `EmbeddingsDTODataGen.persistEmbeddings` against a contentlet
     whose `title` also contains it; one case seeds and queries the `cache` index. Each test

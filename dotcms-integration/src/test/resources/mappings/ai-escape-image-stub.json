@@ -1,0 +1,28 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/images/generations",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matchesJsonPath": "$[?(@.prompt == 'Escaping probe image <img src=x onerror=alert(1)>')]"
+      }
+    ]
+  },
+  "response": {
+    "status": 200,
+    "jsonBody": {
+      "created": 1757950000,
+      "data": [
+        {
+          "url": "http://localhost:50505/s/ganymede"
+        }
+      ]
+    }
+  }
+}

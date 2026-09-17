@@ -18,14 +18,18 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.awaitility.Awaitility;
+import org.owasp.encoder.Encode;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -150,6 +154,74 @@ public class AIViewToolTest extends IntegrationTestBase {
     }
 
 
+
+    // ------------------------------------------------------------------------------------------
+    // #37153: escaped by default, raw only through $ai.unsafe
+    // ------------------------------------------------------------------------------------------
+
+    /**
+     * Scenario: generateText output is escaped by default and raw through $ai.unsafe (AC-001, AC-003)
+     * Given the provider answers the probe prompt with a script and an onerror image tag
+     * When generateText is called on $ai (String and Map prompt) and on $ai.unsafe
+     * Then $ai returns the HTML-encoded markup with no raw markup anywhere, $ai.unsafe returns the literal
+     * markup, and getUnsafe() is idempotent
+     */
+    @Test
+    public void test_generateText_escapedByDefault_rawThroughUnsafe() {
+        for (final JSONObject escaped : List.of(
+                aiViewTool.generateText(AiTest.PROBE_CHAT_PROMPT),
+                aiViewTool.generateText(Map.of("prompt", AiTest.PROBE_CHAT_PROMPT)))) {
+            assertEquals(AiTest.PROBE_MARKUP_ESCAPED, AiTest.chatContent(escaped));
+            AiTest.assertNoRawMarkup(escaped);
+        }
+
+        final AIViewTool unsafe = aiViewTool.getUnsafe();
+        assertNotSame(aiViewTool, unsafe);
+        assertSame(unsafe, unsafe.getUnsafe());
+        assertEquals(AiTest.PROBE_MARKUP, AiTest.chatContent(unsafe.generateText(AiTest.PROBE_CHAT_PROMPT)));
+    }
+
+    /**
+     * Scenario: generateImage output is escaped by default and raw through $ai.unsafe (AC-001, AC-002, AC-003)
+     * Given a prompt that carries markup (the image payload's only text is the echoed prompt: the client
+     * rebuilds the provider response as data[].url, so no revised_prompt reaches dotCMS)
+     * When generateImage is called on $ai and on $ai.unsafe
+     * Then $ai returns originalPrompt HTML-encoded, the url intact and no raw markup anywhere;
+     * $ai.unsafe returns originalPrompt literally. Same retry as the existing image tests (async temp file).
+     */
+    @Test
+    public void test_generateImage_escapedByDefault_rawThroughUnsafe() {
+        Awaitility.await()
+                .atMost(30, TimeUnit.SECONDS)
+                .pollInterval(2, TimeUnit.SECONDS)
+                .pollDelay(1, TimeUnit.SECONDS)
+                .ignoreExceptions()
+                .until(() -> {
+                    final JSONObject escaped = aiViewTool.generateImage(AiTest.PROBE_IMAGE_PROMPT);
+                    assertEquals(Encode.forHtml(AiTest.PROBE_IMAGE_PROMPT), escaped.getString("originalPrompt"));
+                    assertEquals("http://localhost:50505/s/ganymede", escaped.getString("url"));
+                    AiTest.assertNoRawMarkup(escaped);
+
+                    final JSONObject raw = aiViewTool.getUnsafe().generateImage(AiTest.PROBE_IMAGE_PROMPT);
+                    assertEquals(AiTest.PROBE_IMAGE_PROMPT, raw.getString("originalPrompt"));
+                    return true;
+                });
+    }
+
+    /**
+     * Scenario: a handled generateImage failure returns an escaped error payload (AC-006)
+     * Given a prompt no image stub answers
+     * When generateImage is called on $ai
+     * Then it returns a payload with an error entry and no raw markup, without throwing
+     */
+    @Test
+    public void test_generateImage_errorPayloadIsEscaped() {
+        final JSONObject failed = aiViewTool.generateImage("Escaping probe <b>no such image stub</b> " + System.nanoTime());
+
+        assertNotNull(failed);
+        assertTrue("expected an error entry in " + failed, failed.containsKey("error"));
+        AiTest.assertNoRawMarkup(failed);
+    }
 
     private void assertTextResponse(final JSONObject response, final String containedText) {
         assertNotNull(response);
