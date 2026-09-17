@@ -437,9 +437,12 @@ describe('DotContentDriveStore', () => {
                 // assertions should fail if that mapping drifts, not follow it.
 
                 it('should ask for all site content when the URL carries no location', () => {
+                    // An empty path rather than DEFAULT_PATH: the resolver branches on
+                    // `!path?.length`, so both are the same "no location" to it, and this is the
+                    // form the declared `path: string` actually allows.
                     store.initContentDrive({
                         currentSite: SYSTEM_HOST,
-                        path: DEFAULT_PATH,
+                        path: '',
                         filters: {},
                         isTreeExpanded: false
                     });
@@ -537,7 +540,7 @@ describe('DotContentDriveStore', () => {
                 it('should not ask for folders in all site content', () => {
                     store.initContentDrive({
                         currentSite: SYSTEM_HOST,
-                        path: DEFAULT_PATH,
+                        path: '',
                         filters: {},
                         isTreeExpanded: false
                     });

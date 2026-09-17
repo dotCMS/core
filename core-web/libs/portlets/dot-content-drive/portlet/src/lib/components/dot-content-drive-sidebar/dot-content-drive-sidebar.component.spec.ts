@@ -356,9 +356,11 @@ describe('DotContentDriveSidebarComponent', () => {
             // Below the tree, not above it: System Host belongs to no site, so it reads as the
             // other place you can be rather than as part of this site's structure.
             const hierarchy = spectator.query(byTestId('hierarchy-scroll'));
+            expect(hierarchy).toBeTruthy();
 
             expect(
-                hierarchy?.compareDocumentPosition(row() as Node) & Node.DOCUMENT_POSITION_FOLLOWING
+                (hierarchy as Node).compareDocumentPosition(row() as Node) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
             ).toBeTruthy();
         });
 

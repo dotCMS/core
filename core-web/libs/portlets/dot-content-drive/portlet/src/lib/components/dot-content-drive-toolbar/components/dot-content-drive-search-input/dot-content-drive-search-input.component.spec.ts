@@ -28,7 +28,6 @@ describe('DotContentDriveSearchInputComponent', () => {
             mockProvider(DotContentDriveStore, {
                 getFilterValue: vi.fn().mockReturnValue(undefined),
                 setGlobalSearch: vi.fn(),
-                selectRootNode: vi.fn(),
                 selectAllSiteContent: vi.fn()
             }),
             {

@@ -13,6 +13,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { computed, signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
+import { Tooltip } from 'primeng/tooltip';
 
 import {
     DotCategoriesService,
@@ -57,6 +58,13 @@ const settleToolbarAnimation = async (spectator: Spectator<DotContentDriveToolba
     await new Promise((resolve) => setTimeout(resolve, 200));
     spectator.detectChanges();
 };
+
+/**
+ * The New button itself, not its PrimeNG host: `[disabled]` lands on the inner `<button>`, which is
+ * also the element a user would actually be unable to press.
+ */
+const addNewButton = (spectator: Spectator<DotContentDriveToolbarComponent>) =>
+    spectator.query(byTestId('add-new-button'))?.querySelector('button');
 
 /** The bar clears through the facade, so this is what the Clear all test asserts against. */
 const clearFiltersSpy = vi.fn();
@@ -711,10 +719,8 @@ describe('DotContentDriveToolbarComponent', () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
             activeRunCountSignal.set(1);
             actionExecutionSignal.set({
-                actionName: 'Upload',
                 total: 3,
-                labelKey: 'content-drive.upload.indicator',
-                targetLabel: 'demo.dotcms.com'
+                labelKey: 'content-drive.upload.indicator'
             });
             await settleToolbarAnimation(spectator);
 
@@ -760,10 +766,8 @@ describe('DotContentDriveToolbarComponent', () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
             activeRunCountSignal.set(1);
             actionExecutionSignal.set({
-                actionName: 'Upload',
                 total: 3,
-                labelKey: 'content-drive.upload.indicator',
-                targetLabel: 'demo.dotcms.com'
+                labelKey: 'content-drive.upload.indicator'
             });
             await settleToolbarAnimation(spectator);
 
@@ -783,10 +787,8 @@ describe('DotContentDriveToolbarComponent', () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
             activeRunCountSignal.set(1);
             actionExecutionSignal.set({
-                actionName: 'Upload',
                 total: 3,
-                labelKey: 'content-drive.upload.indicator',
-                targetLabel: 'demo.dotcms.com'
+                labelKey: 'content-drive.upload.indicator'
             });
             await settleToolbarAnimation(spectator);
 
@@ -800,10 +802,8 @@ describe('DotContentDriveToolbarComponent', () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
             activeRunCountSignal.set(1);
             actionExecutionSignal.set({
-                actionName: 'Upload',
                 total: 3,
-                labelKey: 'content-drive.upload.indicator',
-                targetLabel: 'demo.dotcms.com'
+                labelKey: 'content-drive.upload.indicator'
             });
             await settleToolbarAnimation(spectator);
 
@@ -873,7 +873,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 allSiteContentSelectedSignal.set(true);
                 await settleToolbarAnimation(spectator);
 
-                expect(spectator.component.$canAddChildren()).toBe(true);
+                expect(addNewButton(spectator)?.disabled).toBe(false);
             });
 
             it('should refuse creation where the site refuses children', async () => {
@@ -883,7 +883,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 allSiteContentSelectedSignal.set(true);
                 await settleToolbarAnimation(spectator);
 
-                expect(spectator.component.$canAddChildren()).toBe(false);
+                expect(addNewButton(spectator)?.disabled).toBe(true);
             });
 
             it('should blame permissions, since the scope is no longer a reason', async () => {
@@ -891,9 +891,13 @@ describe('DotContentDriveToolbarComponent', () => {
                 allSiteContentSelectedSignal.set(true);
                 await settleToolbarAnimation(spectator);
 
-                expect(spectator.component.$addChildrenTooltip()).toBe(
-                    'content-drive.add-new.no-add-children'
-                );
+                // Read off the Tooltip directive rather than the component: the `read` overload
+                // takes a plain selector, not byTestId's DOMSelector.
+                const tooltip = spectator.query('[data-testid="add-new-tooltip"]', {
+                    read: Tooltip
+                });
+
+                expect(tooltip?.content).toBe('content-drive.add-new.no-add-children');
             });
         });
 
@@ -958,7 +962,9 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should carry no tooltip when creation is allowed', async () => {
             await withPermissions(['CAN_ADD_CHILDREN']);
 
-            expect(spectator.component.$addChildrenTooltip()).toBe('');
+            const tooltip = spectator.query('[data-testid="add-new-tooltip"]', { read: Tooltip });
+
+            expect(tooltip?.content).toBe('');
         });
     });
 
