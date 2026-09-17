@@ -293,7 +293,11 @@ test.describe('Content Drive Browse Scopes', () => {
         await expect(drive.scopeBarToggle).toBeVisible();
 
         await drive.selectSystemHost();
-        expect(await drive.scopeBarIsOpen()).toBe(false);
+        // Retried rather than sampled once: the bar closes over 300ms and `selectSystemHost`
+        // resolves on the listing response, which lands while it is still shrinking. A one-shot
+        // read of its height sees it mid-animation and calls it open — which is what this test
+        // did, and it is the exact thing the repo's own conventions warn against.
+        await expect(drive.scopeBarSlot).toBeHidden();
     });
 
     test('flips the sentence with the System Host toggle @critical', async ({ adminPage }) => {

@@ -34,6 +34,7 @@ export class ContentDrivePage {
     readonly statusToast: Locator;
     readonly statusToastSummary: Locator;
     readonly scopeBar: Locator;
+    readonly scopeBarSlot: Locator;
     readonly scopeBarSummary: Locator;
     readonly scopeBarToggle: Locator;
     readonly toasts: Locator;
@@ -63,6 +64,10 @@ export class ContentDrivePage {
         // Its slot is always in the DOM and opens by height, so visibility is the question to ask
         // rather than presence.
         this.scopeBar = page.getByTestId('scope-bar');
+        // The wrapper that opens and closes by height. Assert against this rather than the bar
+        // inside it: Playwright's visibility ignores clipping by an ancestor, so the bar itself
+        // still measures as visible while this has squeezed it to nothing.
+        this.scopeBarSlot = page.getByTestId('scope-bar-slot');
         this.scopeBarSummary = page.getByTestId('scope-bar-summary');
         this.scopeBarToggle = page.getByTestId('scope-bar-toggle');
         this.toasts = page.locator('.p-toast-message');
@@ -358,14 +363,6 @@ export class ContentDrivePage {
                 !!document.elementFromPoint(x, y)?.closest('[data-testid="dot-status-toast"]'),
             [box.x + box.width / 2, box.y + box.height / 2]
         );
-    }
-
-    /** Whether the scope bar is open, which is a question about height rather than presence. */
-    async scopeBarIsOpen(): Promise<boolean> {
-        const slot = this.page.getByTestId('scope-bar-slot');
-        const box = await slot.boundingBox();
-
-        return (box?.height ?? 0) > 0;
     }
 
     /** Flips the System Host toggle and waits for the listing it re-requests. */
