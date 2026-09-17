@@ -336,6 +336,20 @@ export class ContentDrivePage {
         await expect(this.statusToastSummary).toHaveCount(0, { timeout: OUTCOME_TIMEOUT });
     }
 
+    /**
+     * Clicks the listing's rows-per-page control.
+     *
+     * Used to prove the status toast is not sitting on top of it. This control is at the bottom
+     * centre of the viewport, which is exactly where the toast renders, and it is always present
+     * and enabled -- unlike the next-page button, which depends on how much the folder holds.
+     *
+     * Playwright fails a click that an overlay intercepts, naming the element in the way, so the
+     * assertion is the click itself.
+     */
+    async openRowsPerPage() {
+        await this.page.getByRole('combobox', { name: 'Rows per page' }).click({ timeout: 5000 });
+    }
+
     /** Whether the scope bar is open, which is a question about height rather than presence. */
     async scopeBarIsOpen(): Promise<boolean> {
         const slot = this.page.getByTestId('scope-bar-slot');

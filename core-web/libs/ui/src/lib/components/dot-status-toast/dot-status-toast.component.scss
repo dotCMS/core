@@ -6,6 +6,22 @@
     // variables, so a fallback never applies and the rule silently has no effect. That is why the
     // summary kept rendering at the theme's 14px while this file asked for something smaller.
     ::ng-deep {
+        // Nothing here is clickable, so nothing here may take a click.
+        //
+        // The outlet is a fixed-position box at the bottom centre of the viewport, which is exactly
+        // where the listing's paginator is. Without this it sits over the page controls and
+        // swallows the click: the page never changes, and the listing is left showing one page
+        // while the paginator believes it is on another.
+        //
+        // Safe to blank the whole subtree rather than re-enabling it on the message, because this
+        // outlet has no controls at all -- the close button was removed, and a status is not
+        // something the reader acts on. It also means no hover-to-pause, which this toast does not
+        // want either: it is sticky and ends when the run it reports ends.
+        .p-toast,
+        .p-toast-message {
+            pointer-events: none;
+        }
+
         // Sized to its content, not to a fixed 350px — a two-word outcome should not sit in a slab.
         // It grows with the label instead of clipping it, up to a ceiling where it wraps, because
         // what a run has to say is not the same length every time.

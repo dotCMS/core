@@ -247,6 +247,37 @@ test.describe('Content Drive Browse Scopes', () => {
         }
     });
 
+    test('leaves the page controls clickable while a run is reported @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        // The status toast is a fixed box at the bottom centre of the viewport, which is where the
+        // paginator lives. It reported an upload from directly on top of the page controls and
+        // swallowed the click, so the page never changed and the listing sat on one page while the
+        // paginator read as another.
+        //
+        // Nothing in the toast is clickable, so nothing in it should take a click. Playwright fails
+        // a click an overlay intercepts and names the element in the way, which makes the click
+        // itself the assertion.
+        const site = await apiHelpers.getDefaultSite();
+        const folderName = `cd-click-${testSuffix}`;
+        await apiHelpers.createFolders(site.hostname, [`/${folderName}`]);
+
+        const drive = new ContentDrivePage(adminPage);
+
+        try {
+            await drive.goTo();
+            await drive.openFolder(folderName);
+            await drive.chooseFilesForUpload([`click-${testSuffix}.png`]);
+            await drive.expectStatusToastContaining('Uploading');
+
+            await drive.openRowsPerPage();
+        } finally {
+            await apiHelpers.deleteFolders(site.hostname, [`/${folderName}`]);
+        }
+    });
+
     test('says what all site content is showing, and only there @critical', async ({
         adminPage
     }) => {
