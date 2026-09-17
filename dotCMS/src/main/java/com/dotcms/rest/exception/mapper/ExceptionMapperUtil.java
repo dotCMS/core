@@ -162,7 +162,18 @@ public final class ExceptionMapperUtil {
 
         if (exception instanceof WebApplicationException) {
 
-            return WebApplicationException.class.cast(exception).getResponse();
+            final Response own = WebApplicationException.class.cast(exception).getResponse();
+            if (own.hasEntity()) {
+                return own;
+            }
+            // e.g. new BadRequestException("why"): the status is right but the body is
+            // empty, so the container would send its HTML error page and the client
+            // never sees "why". Keep the status, carry the message as JSON.
+            return Response.status(own.getStatus())
+                    .entity(Map.of("message", getI18NMessage(exception.getMessage())))
+                    .header("error-key", key)
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
         }
 
         final String message = getI18NMessage(exception.getMessage()); // todo: this must be switchable by osgi plugin, also the  error must be returned as ResponseEntityView

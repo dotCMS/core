@@ -400,6 +400,34 @@ public class DotAuthResourceTest {
         }
     }
 
+    @Test
+    public void saveConfig_returns_json_message_when_handler_rejects_the_payload() throws Exception {
+        // A javax.ws.rs.BadRequestException has no entity, so without mapping the browser
+        // received Tomcat's HTML 400 page and the UI lost the reason for the rejection.
+        final DotAuthConfigForm form = new DotAuthConfigForm(
+                DotAuthProtocol.SAML,
+                Map.of("idpName", "Okta", "publicCert", "a-CERT", "privateKey", ""));
+
+        when(appsAPI.getSecrets(eq(SAML_KEY), anyBoolean(), eq(site), eq(user)))
+                .thenReturn(Optional.empty());
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+            when(hostAPI.find(SITE_ID, user, false)).thenReturn(site);
+
+            final Response rsp = resource.saveConfig(request, response, SITE_ID, form);
+
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), rsp.getStatus());
+            assertEquals(javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE, rsp.getMediaType());
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> body = (Map<String, Object>) rsp.getEntity();
+            assertTrue(String.valueOf(body.get("message")).contains("public certificate"),
+                    "Expected the handler's message in the JSON body, got " + body);
+            verify(appsAPI, never()).saveSecrets(any(AppSecrets.class), any(Host.class), any(User.class));
+        }
+    }
+
     // --- clearConfig --------------------------------------------------------
 
     @Test
