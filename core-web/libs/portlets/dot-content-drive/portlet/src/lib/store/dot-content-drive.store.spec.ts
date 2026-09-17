@@ -436,13 +436,18 @@ describe('DotContentDriveStore', () => {
                 // client's idea of a location turns into what the endpoint is asked for, so the
                 // assertions should fail if that mapping drifts, not follow it.
 
+                // What the store really receives when the URL carries no location. DEFAULT_PATH is
+                // `undefined`, while DotContentDriveInit declares `path: string` — the declaration
+                // is the half that is wrong, since the store seeds its own initial state with it,
+                // but widening it makes the signal optional and every store.path() call site stops
+                // compiling. Cast here so these tests keep exercising the real value instead of an
+                // empty string that merely happens to reach the same branch today.
+                const NO_LOCATION = DEFAULT_PATH as unknown as string;
+
                 it('should ask for all site content when the URL carries no location', () => {
-                    // An empty path rather than DEFAULT_PATH: the resolver branches on
-                    // `!path?.length`, so both are the same "no location" to it, and this is the
-                    // form the declared `path: string` actually allows.
                     store.initContentDrive({
                         currentSite: SYSTEM_HOST,
-                        path: '',
+                        path: NO_LOCATION,
                         filters: {},
                         isTreeExpanded: false
                     });
@@ -451,6 +456,32 @@ describe('DotContentDriveStore', () => {
 
                     expect(request.browseScope).toBe('ALL');
                     expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                // An empty path reaches the same branch as an absent one today, because
+                // toRequestLocation asks `!path?.length`. Both forms occur — the URL yields
+                // undefined, a cleared location yields '' — so the equivalence is pinned rather
+                // than assumed. Narrowing that check to one of the two would fail here.
+                it('should treat an empty location the same as an absent one', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: NO_LOCATION,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    const absent = store.$request();
+
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    const empty = store.$request();
+
+                    expect(empty.browseScope).toBe(absent.browseScope);
+                    expect(empty.assetPath).toBe(absent.assetPath);
+                    expect(empty.showFolders).toBe(absent.showFolders);
                 });
 
                 it('should ask for the site root when the location is the root itself', () => {
@@ -540,7 +571,7 @@ describe('DotContentDriveStore', () => {
                 it('should not ask for folders in all site content', () => {
                     store.initContentDrive({
                         currentSite: SYSTEM_HOST,
-                        path: '',
+                        path: NO_LOCATION,
                         filters: {},
                         isTreeExpanded: false
                     });
