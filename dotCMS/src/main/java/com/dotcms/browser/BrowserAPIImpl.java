@@ -744,6 +744,23 @@ public class BrowserAPIImpl implements BrowserAPI {
             query.append("+conhost:").append(hostId).append(" ");
         }
 
+        // Confine the contentlets to the folder being browsed, mirroring the SQL builder's
+        // `id.parent_path = ?`. Without it this builder emitted no folder criterion at all, so a
+        // request for the site root returned the whole site: `ROOT` and `ALL` produced byte-for-byte
+        // the same query, and the scope existed only on the database path.
+        //
+        // `skipFolder` is the same switch the SQL side reads, so the two agree by construction:
+        // all site content (and a request carrying no scope at the root) deliberately spans every
+        // depth and sets it, while the site root, a folder and System Host each name a place and
+        // do not.
+        //
+        // Only contentlets are at stake. Folders are never indexed and never come from here --
+        // both paths list them from the database through `findSubFoldersByParent` -- so this
+        // changes what content is returned and nothing about the folder rows beside it.
+        if (!browserQuery.skipFolder) {
+            query.append("+conFolder:").append(browserQuery.folder.getInode()).append(" ");
+        }
+
         // Content type filters - include specific types if provided
         if (UtilMethods.isSet(browserQuery.contentTypeIds) && !browserQuery.contentTypeIds.isEmpty()) {
             query.append("+contentType:(")
@@ -3289,6 +3306,16 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return a list of folders that match the filtering criteria specified in the browser query
      */
     private List<Folder> getFolders(BrowserQuery browserQuery) {
+        // System Host holds no folders, so a request scoped to it has none to report -- whatever
+        // it asked for. Without this the parent is still the browsed SITE, and asking for folders
+        // in the System Host scope returned that site's folders beside System Host's content: rows
+        // belonging to a host the caller did not ask about. Content Drive never asks, so nothing
+        // showed, but the listing's own contract (FR-010) said one thing and the server did
+        // another, and only the client's good manners hid it.
+        if (SystemHostMode.ONLY == browserQuery.systemHostMode) {
+            return Collections.emptyList();
+        }
+
         List<Folder> folders = Collections.emptyList();
         try {
 

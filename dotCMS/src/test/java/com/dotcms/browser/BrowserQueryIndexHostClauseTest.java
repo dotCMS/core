@@ -35,6 +35,8 @@ import org.junit.Test;
  */
 public class BrowserQueryIndexHostClauseTest {
 
+    private static final String FOLDER_INODE = "folder-inode-for-the-test";
+
     private static final String SITE_ID = "48190c8c-42c4-46af-8d1a-0cd5db894797";
 
     /**
@@ -116,10 +118,63 @@ public class BrowserQueryIndexHostClauseTest {
         }
     }
 
+    /**
+     * A scope that names a place confines the content to it, on the index path as on the SQL one.
+     *
+     * <p>The index builder emitted no folder criterion at all, so the site-root scope and all site
+     * content produced the same query and root browsing returned everything on the site. Folders
+     * themselves are never at stake here — they come from the database on both paths — only the
+     * contentlets, which the index does know the folder of.</p>
+     */
+    @Test
+    public void testAPlaceScopedRequestConfinesContentToThatFolder() throws Exception {
+        final String atRoot = buildIndexQuery(SystemHostMode.EXCLUDE, true, false);
+        assertTrue("content must be confined to the root's own folder: " + atRoot,
+                atRoot.contains("+conFolder:" + FOLDER_INODE));
+
+        final String inFolder = buildIndexQuery(SystemHostMode.EXCLUDE, false, false);
+        assertTrue("content must be confined to the browsed folder: " + inFolder,
+                inFolder.contains("+conFolder:" + FOLDER_INODE));
+    }
+
+    /**
+     * All site content spans every depth, so it must NOT be confined — the one case where the
+     * absence of the criterion is the requirement rather than the defect.
+     */
+    @Test
+    public void testAllSiteContentIsNotConfinedToAFolder() throws Exception {
+        final String query = buildIndexQuery(SystemHostMode.EXCLUDE, true, true);
+
+        assertFalse("all site content spans folders, so it must not be confined: " + query,
+                query.contains("+conFolder:"));
+    }
+
+    /**
+     * Both builders agree about the folder for the same request, which is the parity this exists
+     * to protect (FR-012 / SC-004).
+     */
+    @Test
+    public void testBothBuildersAgreeAboutConfiningContentToAFolder() throws Exception {
+        for (final boolean skipFolder : List.of(true, false)) {
+            final boolean indexConfines =
+                    buildIndexQuery(SystemHostMode.EXCLUDE, true, skipFolder).contains("+conFolder:");
+            final boolean sqlConfines =
+                    buildSelect(SystemHostMode.EXCLUDE, skipFolder).contains("id.parent_path=?");
+
+            assertEquals("skipFolder=" + skipFolder + ": the two builders must agree",
+                    sqlConfines, indexConfines);
+        }
+    }
+
     private static String buildIndexQuery(final SystemHostMode mode, final boolean atSiteRoot)
             throws Exception {
+        return buildIndexQuery(mode, atSiteRoot, false);
+    }
+
+    private static String buildIndexQuery(final SystemHostMode mode, final boolean atSiteRoot,
+            final boolean skipFolder) throws Exception {
         final BrowserAPIImpl api = mock(BrowserAPIImpl.class, CALLS_REAL_METHODS);
-        final BrowserQuery query = baseQuery(mode, atSiteRoot);
+        final BrowserQuery query = baseQuery(mode, atSiteRoot, skipFolder);
 
         final Method method =
                 BrowserAPIImpl.class.getDeclaredMethod("buildPureESQuery", BrowserQuery.class);
@@ -129,8 +184,13 @@ public class BrowserQueryIndexHostClauseTest {
     }
 
     private static String buildSelect(final SystemHostMode mode) throws Exception {
+        return buildSelect(mode, false);
+    }
+
+    private static String buildSelect(final SystemHostMode mode, final boolean skipFolder)
+            throws Exception {
         final BrowserAPIImpl api = mock(BrowserAPIImpl.class, CALLS_REAL_METHODS);
-        final BrowserQuery query = baseQuery(mode, true);
+        final BrowserQuery query = baseQuery(mode, true, skipFolder);
 
         final Method method =
                 BrowserAPIImpl.class.getDeclaredMethod("selectQuery", BrowserQuery.class);
@@ -143,6 +203,11 @@ public class BrowserQueryIndexHostClauseTest {
 
     private static BrowserQuery baseQuery(final SystemHostMode mode, final boolean atSiteRoot)
             throws Exception {
+        return baseQuery(mode, atSiteRoot, false);
+    }
+
+    private static BrowserQuery baseQuery(final SystemHostMode mode, final boolean atSiteRoot,
+            final boolean skipFolder) throws Exception {
         final BrowserQuery query = mock(BrowserQuery.class, CALLS_REAL_METHODS);
 
         for (final String emptyCollection : List.of("languageIds", "contentTypeIds",
@@ -154,6 +219,7 @@ public class BrowserQueryIndexHostClauseTest {
         setField(query, "fieldCriteria", List.of());
         setField(query, "mimeTypes", List.of());
         setField(query, "systemHostMode", mode);
+        setField(query, "skipFolder", skipFolder);
 
         // Mocked rather than constructed: `new Host()` resolves its content type through the
         // legacy cache, which calls APILocator.systemUser() and reaches for a database connection.
@@ -162,6 +228,7 @@ public class BrowserQueryIndexHostClauseTest {
         setField(query, "site", site);
 
         final Folder folder = mock(Folder.class);
+        when(folder.getInode()).thenReturn(FOLDER_INODE);
         when(folder.isSystemFolder()).thenReturn(atSiteRoot);
         when(folder.getPath()).thenReturn(atSiteRoot ? "/" : "/application/");
         when(folder.getHostId()).thenReturn(SITE_ID);

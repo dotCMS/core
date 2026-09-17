@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -284,11 +285,18 @@ public class ContentDriveBrowseScopeTest extends IntegrationTestBase {
 
         assertTrue("The site's top-level folders must be listed at the site root",
                 results.folderCount > 0);
-        // `title` rather than a folder-shaped guess: DotFolderTransformerImpl sets both "name" and
-        // "title" to the folder's name, and "title" is the key content rows carry too.
+        // `folderMap.folderName`, which is what a folder row in THIS listing actually carries.
+        // An earlier version of this asserted on "title" because `DotFolderTransformerImpl` sets
+        // it -- but that is `buildSiteBrowserView`. Content Drive goes through the same class's
+        // CONTENT_DRIVE view, whose `contentDriveView()` returns `{folder, folderMap}` and no
+        // "title" at all, so the assertion could never match however correct the listing was.
         assertTrue("The test's own folder must be among them",
                 results.list.stream()
-                        .anyMatch(item -> childFolder.getName().equals(item.get("title"))));
+                        .map(item -> item.get("folderMap"))
+                        .filter(Map.class::isInstance)
+                        .map(Map.class::cast)
+                        .anyMatch(folderMap ->
+                                childFolder.getName().equals(folderMap.get("folderName"))));
     }
 
     /**
