@@ -465,7 +465,12 @@ export function createSlashAiBlockItems(
             description: msg('dot.block.editor.slash-menu.ai-content.description'),
             icon: 'auto_awesome',
             keywords: ['ai', 'generate', 'gpt', 'prompt', 'llm', 'chat'],
-            blockName: 'aiContent',
+            // `aiContentPrompt`, not `aiContent`: this must be the identifier the Settings tab
+            // writes into `allowedBlocks` (`getEditorBlockOptions()` -> `suggestion.utils.ts`),
+            // not the TipTap node name. Consulting the node name meant ticking "AI Content" was
+            // exactly what hid it — the field became restricted and the key never matched
+            // (#37601, defect C). Enforced by `capability-keys.i1/i2.spec.ts`.
+            blockName: 'aiContentPrompt',
             onSelect: (editor) => editorModal.openAiContent(editor)
         },
         {
@@ -473,7 +478,8 @@ export function createSlashAiBlockItems(
             description: msg('dot.block.editor.slash-menu.ai-image.description'),
             icon: 'imagesmode',
             keywords: ['ai', 'image', 'photo', 'picture', 'generate', 'dall-e', 'art'],
-            blockName: 'aiImage',
+            // `aiImagePrompt`, not `aiImage` — same reasoning as AI Content above.
+            blockName: 'aiImagePrompt',
             onSelect: (editor) => editorModal.openAiImage(editor)
         }
     ];

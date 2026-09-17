@@ -214,16 +214,20 @@ export class ToolbarComponent implements OnDestroy {
     );
 
     /**
-     * The "Add asset by URL" popover inserts an image, plain video, or YouTube embed —
-     * show the trigger only when at least one of those node types is permitted by
-     * the field's allowedBlocks configuration.
+     * The "Add asset by URL" popover inserts an image, plain video, or YouTube embed.
+     *
+     * Always shown, because YouTube always is. `youtube` is NOT selectable in Allowed Blocks —
+     * that list comes from `getEditorBlockOptions()`, which offers block nodes only — so
+     * `isAllowed('youtube')` was true ONLY on a field with no restriction at all. Including it
+     * here therefore added nothing on an unrestricted field and, on a restricted one, made the
+     * trigger's visibility depend on a key nobody can configure (#37601, defect B). Same reasoning
+     * as `link` (#36351) and `emoji` (#37340).
+     *
+     * `image` and `video` ARE producible, so the popover still disables those two tabs
+     * individually — see `asset-by-url-popover.component.ts`. Enforced by
+     * `capability-keys.i1.spec.ts`.
      */
-    protected readonly showAssetByUrl = computed(
-        () =>
-            this.store.isAllowed('image') ||
-            this.store.isAllowed('video') ||
-            this.store.isAllowed('youtube')
-    );
+    protected readonly showAssetByUrl = computed(() => true);
 
     // When an image is selected, the alignment buttons reflect the image's textAlign
     // (defaulting to 'left' when unset, matching paragraph behavior). Otherwise they

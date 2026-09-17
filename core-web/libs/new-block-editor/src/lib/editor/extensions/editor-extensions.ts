@@ -64,7 +64,9 @@ export function createEditorExtensions(
      * whole document, `emoji`/`youtube` resurfaced as `Unsupported block (…)` (#37175).
      *
      * The same reasoning applies to their AUTHORING paths, which #37175 left gated: a key the
-     * settings UI cannot produce is never a configuration, only a misfire. `emoji` was ungated
+     * settings UI cannot produce is never a configuration, only a misfire. Enforced since #37601 by
+     * `capability-keys.i1.spec.ts` / `capability-keys.i2.spec.ts` — this rule is a failing build
+     * now, not a comment. `emoji` was ungated
      * in #37340 and `link` in #36351; both are now unconditional. `youtube` is the last of the
      * three still gated (its "Add asset by URL" tab) — a known defect, tracked separately.
      */
