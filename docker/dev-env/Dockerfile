@@ -25,6 +25,14 @@ COPY --from=dotcms  /java /java
 # shipped in the dotcms image; runtime deps (libapr1, libssl3) are in the apt
 # packages below.
 COPY --from=dotcms /usr/local/tomcat-native /usr/local/tomcat-native
+# libvips, inherited from java-base through the dotcms image, where it is built from
+# source with the ImageMagick and OpenEXR delegates removed
+# (docker/java-base/build-libvips.sh). dev-env previously shipped no libvips at all,
+# so the image engine silently ran on the legacy JVM path here; copying the prefix
+# means dev-env now uses the same default engine as production. The loader config
+# travels with the prefix.
+COPY --from=dotcms /usr/local/libvips /usr/local/libvips
+COPY --from=dotcms /etc/ld.so.conf.d/libvips.conf /etc/ld.so.conf.d/libvips.conf
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG UBUNTU_RELEASE=jammy
@@ -52,6 +60,19 @@ RUN apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Install the libvips runtime dependency closure recorded by build-libvips.sh in
+# java-base. Ubuntu's libvips42 is deliberately not installed (it hard-depends on the
+# CVE'd libmagickcore/libopenexr packages), so the closure comes from the generated
+# manifest instead. This is the last apt operation in this stage, so the acceptance
+# gate runs here and verifies the native engine the image will actually ship rather
+# than assuming the copy worked.
+RUN apt-get update && \
+    xargs -r apt-get install -y --no-install-recommends \
+        < /usr/local/libvips/share/runtime-packages.txt && \
+    ldconfig && \
+    rm -rf /var/lib/apt/lists/* && \
+    /usr/local/libvips/share/verify-libvips.sh
+
 
 COPY --from=opensearchproject/opensearch:1 --chown=$USER_NAME:$USER_GROUP /usr/share/opensearch /usr/share/opensearch
 
@@ -72,7 +93,10 @@ COPY --from=dev-env-builder  / /
 
 # ENVs from dev-env-builder do not survive the flatten to scratch, so (re)declare
 # what this change needs. LD_LIBRARY_PATH makes tcnative visible to the JVM
-# (JAVA_HOME is exported by /entrypoint.sh).
-ENV LD_LIBRARY_PATH="/usr/local/tomcat-native/lib"
+# (JAVA_HOME is exported by /entrypoint.sh) and libvips visible to the vips-ffm FFM
+# binding; ldconfig already registers the libvips prefix via
+# /etc/ld.so.conf.d/libvips.conf.
+ENV LD_LIBRARY_PATH="/usr/local/tomcat-native/lib:/usr/local/libvips/lib"
+ENV PATH=$PATH:/usr/local/libvips/bin
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
