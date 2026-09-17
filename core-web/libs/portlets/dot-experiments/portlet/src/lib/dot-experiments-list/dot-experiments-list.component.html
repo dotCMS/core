@@ -218,10 +218,13 @@
                                 (keydown)="$event.stopPropagation()">
                                 <div
                                     class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+                                    <!-- Square, so `[rounded]` reads as a circle rather than a
+                                         pill — see the configuration header's kebab. -->
                                     <p-button
                                         [text]="true"
                                         [rounded]="true"
                                         size="small"
+                                        styleClass="w-9 h-9 min-w-9 p-0"
                                         (onClick)="
                                             onRowMenuToggle(row.experiment); rowMenu.toggle($event)
                                         "

@@ -57,10 +57,17 @@
     }
 
     @if ($hasMenuItems()) {
+        <!--
+            Sized square, like the back arrow above it. `[rounded]` only rounds the corners; a
+            button is made *circular* by being as wide as it is tall, and PrimeNG can only do that
+            when it knows the content is an icon — which it infers from its own `icon` input, not
+            from a projected `<span>`. Left alone the horizontal padding wins and the pill shows.
+        -->
         <p-button
             [text]="true"
             [rounded]="true"
             severity="secondary"
+            styleClass="w-9 h-9 min-w-9 p-0"
             (onClick)="actionsMenu.toggle($event)"
             [attr.aria-label]="'experiments.list.actions.menu' | dm"
             data-testid="experiments-configure-actions-btn">
