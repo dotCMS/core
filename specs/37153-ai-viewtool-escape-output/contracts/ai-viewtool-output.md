@@ -86,3 +86,8 @@ Model reply: `Use <b>bold</b> & "quotes"`
   for inline code; use `$ai.unsafe` for that pattern.
 - Provider URLs with query strings gain `&amp;`, correct inside `src="..."`, wrong if fetched
   server-side.
+- `$ai` output placed into `$dotJSON` (VTL scripting endpoints) or otherwise returned as JSON
+  carries HTML entities into the JSON body. Use `$ai.unsafe` there; the intended headless surface
+  is the REST API under `/api/v1/ai/*`.
+- Model replies requested in JSON mode are unparseable after encoding (`"` becomes `&#34;`).
+  Parse the `$ai.unsafe` value, then encode each printed field with `$owasp.forHtml`.

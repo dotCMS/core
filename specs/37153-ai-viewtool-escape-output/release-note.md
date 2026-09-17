@@ -58,7 +58,7 @@ The same prefix works everywhere: `$ai.unsafe.completions.raw(...)`, `$ai.unsafe
 `$ai.unsafe.generateImage(...)`, `$ai.unsafe.search.query(...)`, `$ai.unsafe.search.related(...)`.
 There is no configuration setting to restore the old behaviour globally.
 
-## Check your templates for these three cases
+## Check your templates for these cases
 
 - **You already escape the output yourself** (`$owasp.forHtml($r...)`, `$esc.html($r...)`). It will
   now be encoded twice and show text like `&amp;lt;`. Remove your own encoder, or switch to
@@ -69,6 +69,25 @@ There is no configuration setting to restore the old behaviour globally.
   server-side, or a string comparison. Use `$ai.unsafe` and encode for that context with the
   `$owasp` tool (`forJavaScript`, `forUriComponent`, ...). Provider URLs with query strings now
   contain `&amp;`, which is correct inside `src="..."` and wrong if fetched server-side.
+
+- **Your template returns `$ai` output as JSON** (a VTL scripting endpoint under `/application/apis/`
+  filling `$dotJSON`, or any headless consumer). The client now receives HTML entities inside the
+  JSON. Use `$ai.unsafe` there; the JSON layer does its own quoting. For headless clients the
+  intended surface is the REST API under `/api/v1/ai/*`, which is unchanged.
+
+  ```velocity
+  #set($r = $ai.unsafe.completions.raw($prompt))
+  $dotJSON.put("answer", $r.choices.get(0).message.content)
+  ```
+
+- **You ask the model for JSON and parse it in the template.** Quotes in the reply are now `&#34;`,
+  so parsing fails. Parse the unsafe value, then encode each field you print:
+
+  ```velocity
+  #set($r = $ai.unsafe.completions.raw($jsonModePrompt))
+  #set($data = $json.generate($r.choices.get(0).message.content))
+  <p>$owasp.forHtml($data.summary)</p>
+  ```
 
 Search-result templates that print `$result.title`, `$m.extractedText` or content fields see no
 visible change: the excerpt is plain text already and content fields are not escaped.
