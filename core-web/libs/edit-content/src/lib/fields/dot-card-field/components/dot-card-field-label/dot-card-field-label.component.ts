@@ -61,7 +61,12 @@ export class DotCardFieldLabelComponent {
     $variableName = input.required<string>({ alias: 'variableName' });
 
     /**
-     * Kept as `label-<variable>`: specs across the library select on that exact format.
+     * Serves as both the label's `data-testid` and its `id`.
+     *
+     * The testid format is fixed at `label-<variable>` because specs across the library select on
+     * it. The same value doubles as the element id, which composite widgets point `aria-labelledby`
+     * at: `<label for>` only associates with labelable elements, so a radio group, a chips list or
+     * a dropzone — all `<div>`s — can only be named by referring back to this id.
      */
     protected $testId = computed(() => `label-${this.$variableName()}`);
 }
