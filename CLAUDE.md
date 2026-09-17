@@ -69,6 +69,7 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 - **Security**: No hardcoded secrets, validate all input, never log sensitive data
 - **REST @Schema**: Must match actual return type — see [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)
 - **Integration test registration**: A new integration test class not added to a `MainSuite*`/`Junit5Suite*` `@SuiteClasses` list compiles fine but is **silently never run in CI** (green build, zero coverage) — it only runs locally via `-Dit.test=`. See [Integration Tests → Registering Tests in a MainSuite](docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate).
+- **Integration tests can silently run zero tests**: the Maven build cache may short-circuit failsafe (`Skipping plugin execution (cached): failsafe:integration-test`) — BUILD SUCCESS, `<completed>0</completed>`, exit 0. Pass `-Dmaven.build.cache.enabled=false`, prefer class-level over `-Dit.test=Class#method` selection, and confirm `Tests run: N` in `target/failsafe-reports/*.txt` rather than trusting the exit code. See [Integration Tests → The build cache can skip the tests entirely](docs/testing/INTEGRATION_TESTS.md#the-build-cache-can-skip-the-tests-entirely).
 - **Frontend**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular/TypeScript standards
 
 ### OpenAPI / Swagger
@@ -86,6 +87,7 @@ When editing ANY code, improve incrementally:
 - Replace legacy: `Logger.info()` not `System.out.println()`
 - Modern Angular: `@if` not `*ngIf`, `input()` not `@Input()`
 - Add missing annotations: `@Override`, `@Nullable`
+- Add missing Javadoc on any Java method you edit, human-readable not AI-oriented — see [Java Standards → Javadoc Requirements](docs/backend/JAVA_STANDARDS.md#javadoc-requirements-required)
 
 ## Spec-Driven Development (Spec-Kit)
 
@@ -133,6 +135,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
   - [Migration Test Plan](docs/backend/OPENSEARCH_MIGRATION_TEST_PLAN.md) — QA test plan for the migration phases
   - [Client Configuration](docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md) — `OS_*`/`ES_*` config property reference and fallback chain
   - [Migration Tester Guide](docs/backend/OPENSEARCH_MIGRATION_TESTER_GUIDE.md) — Getting-started guide for QA testers validating the migration
+- [System Events](docs/backend/SYSTEM_EVENTS.md) — Cross-node event queue: at-least-once delivery, consumer idempotency rules, payload deserialization
 
 ### Frontend Development (Angular/TypeScript)
 - **[docs/frontend/README.md](docs/frontend/README.md) — index of all frontend docs and when to load each. Start here if unsure.**
@@ -147,7 +150,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 
 ### Testing
 - [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — JUnit, integration patterns
-- [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — API testing, database setup
+- [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — Running/debugging tests, MainSuite registration, API testing, database setup
 - [E2E Tests](docs/testing/E2E_TESTS.md) — Playwright, user workflows
 
 ### Infrastructure
