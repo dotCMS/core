@@ -3,6 +3,7 @@ import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/si
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { filter, pipe, switchMap, tap } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 
 import { DotPermissionsService } from '@dotcms/data-access';
@@ -34,6 +35,19 @@ interface WithSitePermissionsState {
      * the affordances for a destination nobody navigated away from.
      */
     systemHostCanAddChildren: boolean | undefined;
+
+    /**
+     * Whether the user may see System Host at all.
+     *
+     * Read from the same lookup rather than a second call: the permissions resource checks READ
+     * before it answers anything and refuses outright without it, so a refusal IS the read answer.
+     *
+     * `true` until told otherwise, including when the lookup fails for any other reason. The
+     * listing enforces read permissions server-side regardless, so the worst a wrong `true` does
+     * is offer an entry that lists nothing — where a wrong `false` would lock someone out of a
+     * scope they are entitled to because the network hiccuped.
+     */
+    systemHostCanRead: boolean;
 }
 
 /**
@@ -48,7 +62,8 @@ export function withSitePermissions() {
     return signalStoreFeature(
         withState<WithSitePermissionsState>({
             siteCanAddChildren: undefined,
-            systemHostCanAddChildren: undefined
+            systemHostCanAddChildren: undefined,
+            systemHostCanRead: true
         }),
         withMethods((store, dotPermissionsService = inject(DotPermissionsService)) => ({
             /**
@@ -78,9 +93,18 @@ export function withSitePermissions() {
                             tapResponse({
                                 next: (canAddChildren) =>
                                     patchState(store, {
-                                        systemHostCanAddChildren: canAddChildren
+                                        systemHostCanAddChildren: canAddChildren,
+                                        // An answer at all means the resource's own READ check
+                                        // passed upstream of it.
+                                        systemHostCanRead: true
                                     }),
-                                error: () => patchState(store, { systemHostCanAddChildren: true })
+                                // A refusal is the read answer; anything else says nothing about
+                                // permissions and must not lock the user out of the scope.
+                                error: (error: HttpErrorResponse) =>
+                                    patchState(store, {
+                                        systemHostCanAddChildren: true,
+                                        systemHostCanRead: error?.status !== 403
+                                    })
                             })
                         )
                     )

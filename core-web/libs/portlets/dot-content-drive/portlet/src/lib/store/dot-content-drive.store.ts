@@ -794,14 +794,47 @@ export const DotContentDriveStore = signalStore(
             })
         })
     ),
-    withHooks((store) => ({
-        onInit() {
-            // Fed the signal rather than called on each site change: `rxMethod` re-runs on every
-            // emission and `switchMap` drops the previous site's in-flight answer, so switching
-            // sites quickly can never settle the gate with the wrong site's result.
-            store.loadSitePermissions(store.currentSite);
-            // Once, not per site: System Host belongs to none of them.
-            store.loadSystemHostPermissions();
-        }
-    }))
+    withHooks((store) => {
+        let systemHostGate: EffectRef | undefined;
+
+        return {
+            onInit() {
+                // Fed the signal rather than called on each site change: `rxMethod` re-runs on every
+                // emission and `switchMap` drops the previous site's in-flight answer, so switching
+                // sites quickly can never settle the gate with the wrong site's result.
+                store.loadSitePermissions(store.currentSite);
+                // Once, not per site: System Host belongs to none of them.
+                store.loadSystemHostPermissions();
+
+                /**
+                 * Sends a user who cannot read System Host back to all site content.
+                 *
+                 * The sidebar hides the entry, but hiding a button is not a gate: the location is
+                 * carried in the URL, so a link, a reload or a typed address reaches the scope
+                 * without ever touching the sidebar.
+                 *
+                 * Silently, and to all site content rather than an error: the user did nothing
+                 * wrong — usually they followed a colleague's link — and the drive has somewhere
+                 * sensible to put them. This is an affordance, not a defence; the listing enforces
+                 * read permissions on its own, so nothing here is what stops content leaking.
+                 *
+                 * Lives in the store's own hooks rather than in `withSidebar`, which composes
+                 * earlier and cannot see this answer.
+                 */
+                systemHostGate = effect(() => {
+                    const onSystemHost = store.$systemHostSelected();
+                    const canRead = store.systemHostCanRead();
+
+                    untracked(() => {
+                        if (onSystemHost && !canRead) {
+                            store.selectAllSiteContent();
+                        }
+                    });
+                });
+            },
+            onDestroy() {
+                systemHostGate?.destroy();
+            }
+        };
+    })
 );

@@ -41,22 +41,28 @@
         (moveItems)="moveItems.emit($event)" />
 </div>
 
-<!--
-    Below the hierarchy, not inside it: System Host belongs to no site, so it reads as the other
-    place you can be rather than as part of this site's structure. It stays reachable however many
-    folders are expanded, because the hierarchy above it is what scrolls.
--->
-<button
-    type="button"
-    class="p-tree-node-content mb-3 w-full shrink-0 cursor-pointer items-center gap-3! px-4! py-3! text-left"
-    data-testid="system-host"
-    [class.p-tree-node-selected]="$systemHostSelected()"
-    [attr.aria-current]="$systemHostSelected() ? 'true' : null"
-    (dragenter)="onSystemHostDragOver($event)"
-    (dragover)="onSystemHostDragOver($event)"
-    (drop)="onSystemHostDrop($event)"
-    (click)="onSelectSystemHost()">
-    <i
-        class="pi pi-cloud flex! size-[16px] shrink-0 items-center justify-center text-[16px]! leading-none!"></i>
-    <span>{{ 'content-drive.sidebar.system-host' | dm }}</span>
-</button>
+<!-- Hidden outright for a user who cannot read System Host, rather than shown disabled: a
+     control with nothing to decide should not be sitting there, which is the call this
+     feature already made about the toggle. The URL is gated separately in the store, because
+     hiding a button stops nobody who already has a link. -->
+@if ($systemHostVisible()) {
+    <!--
+        Below the hierarchy, not inside it: System Host belongs to no site, so it reads as the other
+        place you can be rather than as part of this site's structure. It stays reachable however many
+        folders are expanded, because the hierarchy above it is what scrolls.
+    -->
+    <button
+        type="button"
+        class="p-tree-node-content mb-3 w-full shrink-0 cursor-pointer items-center gap-3! px-4! py-3! text-left"
+        data-testid="system-host"
+        [class.p-tree-node-selected]="$systemHostSelected()"
+        [attr.aria-current]="$systemHostSelected() ? 'true' : null"
+        (dragenter)="onSystemHostDragOver($event)"
+        (dragover)="onSystemHostDragOver($event)"
+        (drop)="onSystemHostDrop($event)"
+        (click)="onSelectSystemHost()">
+        <i
+            class="pi pi-cloud flex! size-[16px] shrink-0 items-center justify-center text-[16px]! leading-none!"></i>
+        <span>{{ 'content-drive.sidebar.system-host' | dm }}</span>
+    </button>
+}

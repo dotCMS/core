@@ -88,6 +88,15 @@ export class DotContentDriveSidebarComponent {
     readonly $systemHostCanAddChildren = this.#store.systemHostCanAddChildren;
 
     /**
+     * Whether to offer the System Host entry at all.
+     *
+     * A user who cannot read it gets no entry rather than a disabled one. The scope is still
+     * gated in the store for anyone arriving by URL — this only stops the drive advertising a
+     * door that opens onto nothing.
+     */
+    readonly $systemHostVisible = this.#store.systemHostCanRead;
+
+    /**
      * Whether a drag is currently over the all-site-content entry.
      *
      * Held so the row can look refused rather than inert. A gesture that simply does nothing

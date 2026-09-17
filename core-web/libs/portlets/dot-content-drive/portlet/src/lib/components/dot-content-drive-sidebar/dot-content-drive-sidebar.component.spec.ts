@@ -112,6 +112,8 @@ describe('DotContentDriveSidebarComponent', () => {
     const systemHostSelected = signal(false);
     // Drives the System Host row's drop gate the way the store's own lookup would.
     const systemHostCanAddChildren = signal<boolean | undefined>(true);
+    // And whether the row is offered at all. True unless the server refused the lookup outright.
+    const systemHostCanRead = signal(true);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveSidebarComponent,
@@ -123,6 +125,7 @@ describe('DotContentDriveSidebarComponent', () => {
             mockProvider(DotContentDriveStore, {
                 initContentDrive: vi.fn(),
                 systemHostCanAddChildren: systemHostCanAddChildren,
+                systemHostCanRead: systemHostCanRead,
                 currentSite: vi.fn().mockReturnValue(mockSiteDetails),
                 isTreeExpanded: vi.fn().mockReturnValue(true),
                 removeFilter: vi.fn(),
@@ -206,6 +209,24 @@ describe('DotContentDriveSidebarComponent', () => {
             spectator.detectChanges();
 
             expect(row()?.getAttribute('aria-current')).toBe('true');
+        });
+    });
+
+    describe('reading System Host', () => {
+        afterEach(() => systemHostCanRead.set(true));
+
+        it('should offer the entry to a user who may read System Host', () => {
+            expect(spectator.query(byTestId('system-host'))).toBeTruthy();
+        });
+
+        it('should offer no entry at all to a user who may not', () => {
+            // Hidden rather than disabled: a control with nothing to decide should not be sitting
+            // there, which is the call this feature already made about the toggle. The URL is
+            // gated in the store, because hiding a button stops nobody who has a link.
+            systemHostCanRead.set(false);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('system-host'))).toBeNull();
         });
     });
 

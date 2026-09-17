@@ -108,6 +108,7 @@ const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
 // The site-level answer the drop guard falls back to at the root. Module scope for the same reason
 // as the one above: two store mocks in this file read it from describes with no shared `beforeEach`.
 const siteCanAddChildrenSignal: WritableSignal<boolean | undefined> = signal(undefined);
+const systemHostCanReadSignal = signal(true);
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -226,6 +227,7 @@ describe('DotContentDriveShellComponent', () => {
     beforeEach(() => {
         canAddChildrenSignal.set(true);
         siteCanAddChildrenSignal.set(undefined);
+        systemHostCanReadSignal.set(true);
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
@@ -252,6 +254,9 @@ describe('DotContentDriveShellComponent', () => {
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
                     siteCanAddChildren: siteCanAddChildrenSignal,
+                    // The sidebar this shell renders reads it to decide whether to offer the
+                    // System Host entry at all.
+                    systemHostCanRead: systemHostCanReadSignal,
                     currentSite: currentSiteMock,
                     // Tree collapsed at start to render the toggle button on toolbar
                     isTreeExpanded: vi.fn().mockReturnValue(false),
@@ -4879,6 +4884,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
                     siteCanAddChildren: siteCanAddChildrenSignal,
+                    // The sidebar this shell renders reads it to decide whether to offer the
+                    // System Host entry at all.
+                    systemHostCanRead: systemHostCanReadSignal,
                     currentSite: vi.fn().mockReturnValue(MOCK_SITES[0]),
                     isTreeExpanded: vi.fn().mockReturnValue(false),
                     items: vi.fn().mockReturnValue(MOCK_ITEMS),
