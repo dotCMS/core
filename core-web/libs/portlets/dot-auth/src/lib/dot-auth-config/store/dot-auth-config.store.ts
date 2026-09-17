@@ -100,7 +100,12 @@ export const DotAuthConfigStore = signalStore(
                 });
         }
 
-        function saveSso(): boolean {
+        /**
+         * @param options.regenerateKeypair set only after the admin confirmed replacing a
+         * stored SAML SP keypair; the server rejects an empty keypair on an existing config
+         * without it.
+         */
+        function saveSso(options?: { regenerateKeypair?: boolean }): boolean {
             const draft = store.draft();
             if (draft.protocol === 'none') {
                 return false;
@@ -111,8 +116,12 @@ export const DotAuthConfigStore = signalStore(
                 return false;
             }
             patchState(store, { status: 'saving', errors: {} });
+            const payload = toPayload(draft, store.siteId());
+            if (options?.regenerateKeypair && payload.protocol === 'SAML') {
+                payload.values.regenerateKeypair = true;
+            }
             service
-                .saveConfig(store.siteId(), toPayload(draft, store.siteId()))
+                .saveConfig(store.siteId(), payload)
                 .pipe(
                     take(1),
                     catchError((error) => {

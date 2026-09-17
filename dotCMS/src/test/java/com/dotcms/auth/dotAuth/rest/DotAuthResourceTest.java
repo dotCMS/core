@@ -428,6 +428,34 @@ public class DotAuthResourceTest {
         }
     }
 
+    @Test
+    public void saveConfig_rejects_clearing_both_saml_key_fields_without_regenerate_flag() throws Exception {
+        final DotAuthConfigForm form = new DotAuthConfigForm(
+                DotAuthProtocol.SAML, Map.of("idpName", "Okta"));
+        final AppSecrets stored = AppSecrets.builder()
+                .withKey(SAML_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        when(appsAPI.getSecrets(eq(SAML_KEY), anyBoolean(), eq(site), eq(user)))
+                .thenReturn(Optional.of(stored));
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+            when(hostAPI.find(SITE_ID, user, false)).thenReturn(site);
+
+            final Response rsp = resource.saveConfig(request, response, SITE_ID, form);
+
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), rsp.getStatus());
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> body = (Map<String, Object>) rsp.getEntity();
+            assertTrue(String.valueOf(body.get("message")).contains("keypair is already stored"));
+            verify(appsAPI, never()).saveSecrets(any(AppSecrets.class), any(Host.class), any(User.class));
+        }
+    }
+
     // --- clearConfig --------------------------------------------------------
 
     @Test
