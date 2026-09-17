@@ -156,7 +156,7 @@ public interface ExperimentGoalResultsQuery {
                         "Analytics response row is missing required field 'Events.totalSessions'; "
                         + "cannot invert MINIMIZE goal results. Row keys: " + original.keySet());
             }
-            final long totalSessions = Long.parseLong(totalSessionsRaw.toString());
+            final long totalSessions = ((Number) totalSessionsRaw).longValue();
 
             // Assumption: each row carries exactly one *Successes field and one *ConversionRate
             // field. All current goal types (BOUNCE_RATE, EXIT_RATE, REACH_PAGE, URL_PARAMETER)
@@ -166,7 +166,7 @@ public interface ExperimentGoalResultsQuery {
                     .filter(k -> k.endsWith("Successes"))
                     .findFirst()
                     .ifPresent(successKey -> {
-                        final long successes = Long.parseLong(original.get(successKey).toString());
+                        final long successes = ((Number) original.get(successKey)).longValue();
                         row.put(successKey, totalSessions - successes);
                     });
 
@@ -174,7 +174,7 @@ public interface ExperimentGoalResultsQuery {
                     .filter(k -> k.endsWith("ConversionRate"))
                     .findFirst()
                     .ifPresent(rateKey -> {
-                        final double rate = Double.parseDouble(original.get(rateKey).toString());
+                        final double rate = ((Number) original.get(rateKey)).doubleValue();
                         // CAEM returns rates as percentages (0–100); invert on the same scale
                         row.put(rateKey, 100.0 - rate);
                     });
