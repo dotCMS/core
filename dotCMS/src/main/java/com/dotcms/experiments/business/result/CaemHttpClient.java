@@ -21,6 +21,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -199,7 +200,7 @@ public class CaemHttpClient {
                 : baseUrl;
         final StringBuilder sb = new StringBuilder(clean).append(relativePath);
 
-        final Map<String, String> allParams = new HashMap<>(queryParams);
+        final Map<String, String> allParams = new LinkedHashMap<>(queryParams);
         if (!allParams.containsKey("project")) {
             allParams.put("project", project);
         }

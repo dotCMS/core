@@ -126,7 +126,7 @@ public interface ExperimentGoalResultsQuery {
     }
 
     private static AnalyticsResultSet adjustForGoalType(final AnalyticsResultSet raw,
-                                                         final Experiment experiment) {
+                                                         final Experiment experiment) throws DotDataException {
         return isMinimize(experiment) ? invert(raw) : raw;
     }
 
@@ -144,13 +144,19 @@ public interface ExperimentGoalResultsQuery {
      *   <li>{@code conversionRate = 1.0 - rawConversionRate}</li>
      * </ul>
      */
-    private static AnalyticsResultSet invert(final AnalyticsResultSet raw) {
+    private static AnalyticsResultSet invert(final AnalyticsResultSet raw) throws DotDataException {
         final List<Map<String, Object>> rows = new ArrayList<>();
         for (final ResultSetItem item : raw) {
             final Map<String, Object> original = item.getAll();
             final Map<String, Object> row = new HashMap<>(original);
 
-            final long totalSessions = Long.parseLong(original.get("Events.totalSessions").toString());
+            final Object totalSessionsRaw = original.get("Events.totalSessions");
+            if (totalSessionsRaw == null) {
+                throw new DotDataException(
+                        "Analytics response row is missing required field 'Events.totalSessions'; "
+                        + "cannot invert MINIMIZE goal results. Row keys: " + original.keySet());
+            }
+            final long totalSessions = Long.parseLong(totalSessionsRaw.toString());
 
             original.keySet().stream()
                     .filter(k -> k.endsWith("Successes"))

@@ -154,12 +154,4 @@ public class ExperimentResultsQueryFactoryIntegrationTest {
                 .build();
     }
 
-    private static Condition getRefererCondition(final String referer) {
-        return Condition.builder()
-                .parameter("referer")
-                .value(referer)
-                .operator(Operator.EQUALS)
-                .build();
-    }
-
 }

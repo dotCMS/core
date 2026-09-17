@@ -135,13 +135,14 @@ public enum ExperimentResultsQueryFactory {
     }
 
     private static MetricExperimentResultsQuery legacyCubeJSMetricQuery(final Experiment experiment) {
-        return switch (primaryMetricType(experiment)) {
+        final MetricType metricType = primaryMetricType(experiment);
+        return switch (metricType) {
             case BOUNCE_RATE            -> new BounceRateResultQuery();
             case EXIT_RATE              -> new ExitRateResultQuery();
             case REACH_PAGE,
                  URL_PARAMETER         -> new ReachTargetAfterExperimentPageResultQuery();
             default -> throw new IllegalArgumentException(
-                    "Unsupported metric type: " + primaryMetricType(experiment));
+                    "Unsupported metric type: " + metricType);
         };
     }
 
