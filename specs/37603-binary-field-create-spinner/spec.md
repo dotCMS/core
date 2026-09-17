@@ -120,10 +120,16 @@ but it is an unexplained behavior worth confirming separately.]
 
 ## Fix Scope & Non-Goals *(mandatory)*
 
-**In scope** — three changes, all in `edit_field.jsp`:
+**In scope** — three code changes in `edit_field.jsp`, plus an LTS backport:
 
 - Skip the fetch entirely when `inode` is empty, resolving with an empty contentlet instead.
   This removes the 404 at the source, so the shape of the error body stops mattering.
+  Passing `{}` is safe: the fetched contentlet feeds only `binaryField.contentlet`
+  (`edit_field.jsp:842`). The FileAsset base-type branch reads the **server-side** JSP
+  `contentlet` object instead (`edit_field.jsp:845` —
+  `<%= contentlet.getContentType().baseType().getType() %>`), which is evaluated at render time
+  and does not depend on the fetch. So the `valueUpdated` / FileAsset logic behind AC-005 is
+  unaffected.
 - Check `response.ok` and throw before calling `response.json()`, so a non-2xx response never
   reaches the JSON parser.
 - Correct `innerHTMl` → `innerHTML`, so a genuine failure surfaces an error message instead of
@@ -177,21 +183,71 @@ but it is an unexplained behavior worth confirming separately.]
 
 **Verification method**:
 
-The local reproduction environment already exists and should be reused:
-`docker-compose.ticket-binary.yml` (in the `dotcms-notes` working tree) runs
-`dotcms/dotcms:25.07.10_lts_v16` on port 8080 and bind-mounts the patched JSP over the
-container's copy; commenting out that volume line restores the buggy behavior, giving a
+Self-contained, reproducible from this repo alone.
+
+**1. Run the affected image.** Any dotCMS stack on `dotcms/dotcms:25.07.10_lts_v16` (or `main`),
+with Postgres and OpenSearch. Log in as an admin.
+
+**2. Force a non-parseable 404 body.** This is the step that makes verification meaningful — a
+default environment returns the bare string `404`, which parses as valid JSON and masks the
+defect (see Root-Cause Hypothesis). Two verified ways:
+
+- **Whole environment, persistent** — set `SIMPLE_ERROR_PAGES_FOR_BACKEND` to `false`. Applies
+  hot, no restart, via `POST /api/v1/system-table` with
+  `{"key":"SIMPLE_ERROR_PAGES_FOR_BACKEND","value":"false"}`, or from the admin UI under
+  **System → Maintenance → System Info → Config Overrides**. This is the setting to use for
+  the UI reproduction, because it affects every request.
+- **Single request, no config change** — send an `X-Requested-With` header. It is the first
+  condition checked by `PageMode.get()`, which returns `LIVE` (so `isAdmin` is `false`) and the
+  error page takes the empty-body branch. Useful for confirming the mechanism, not for the UI
+  repro.
+
+Confirm the environment is in the failing state before proceeding:
+
+```js
+// in the admin browser console — expect "404" (3 chars) before step 2, "" (0 chars) after
+await (await fetch('/api/v1/content/')).text()
+```
+
+**3. Apply the patched JSP** by bind-mounting it over the container's copy — no rebuild needed,
+since Jasper compiles JSPs at runtime (there is no `jspc` precompilation step in the build):
+
+```yaml
+volumes:
+  - ./edit_field.patched.jsp:/srv/dotserver/tomcat/webapps/ROOT/html/portlet/ext/contentlet/field/edit_field.jsp
+```
+
+Commenting that line out and recreating the container restores the buggy behavior, giving a
 before/after on the same instance.
+
+**4. Measure.** With the create form open, in the browser console:
+
+```js
+const d = document.querySelector('iframe#detailFrame').contentDocument;
+({ spinners:  d.querySelectorAll('.loader-spinner').length,
+   binaryEls: d.querySelectorAll('dotcms-binary-field').length })
+```
+
+Before the fix: `{ spinners: 1, binaryEls: 0 }`. After: `{ spinners: 0, binaryEls: 1 }`.
+Repeat against an existing contentlet for AC-003.
+
+**5. For AC-004** (the `.catch` has an observable effect), the error path must be induced
+deliberately: after the fix, the only way to reach `.catch` is a genuine non-2xx on the **edit**
+path — e.g. open the editor against a valid-looking but non-existent inode. Expected: the
+spinner is replaced by the `callOutBox` error message rather than spinning forever.
 
 ⚠ **TDD gate needs an explicit developer decision (Constitution Principle V).** This is inline
 JavaScript inside a JSP: there is no existing unit-test harness that covers it, and no Jest or
 Spectator spec can reach it. The plan MUST record which of these is chosen, and if no automated
 test is written, the developer must say so explicitly and explain why — silence is not consent:
 
-1. A Playwright E2E spec covering create-content-with-binary-field, which would need a way to
-   force the non-parseable 404 body so the test is meaningful rather than vacuous.
-2. A documented manual verification procedure against the repro environment above, capturing
-   the `spinners` / `binaryEls` measurements for both create and edit.
+1. A Playwright E2E spec covering create-content-with-binary-field. This is the only option
+   that leaves a durable regression guard. It needs the environment forced into the failing
+   state first, otherwise the test passes against the masked behavior and proves nothing — the
+   setup in step 2 of the verification method above (`SIMPLE_ERROR_PAGES_FOR_BACKEND=false`)
+   makes this workable.
+2. A documented manual verification procedure following steps 1–5 above, capturing the
+   `spinners` / `binaryEls` measurements for both create and edit. No regression guard.
 3. Extracting the inline script to a testable unit — likely out of proportion for a
    three-line fix on a legacy surface, and in tension with the non-goals above.
 
