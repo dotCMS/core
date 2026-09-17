@@ -25,7 +25,7 @@ import java.util.Map;
  *
  * <p>Two dispatch methods ({@link #executeByDay} / {@link #executeAggregate}) replace the old
  * {@link #create(Experiment)} / {@link #createWithDayGranularity(Experiment)} pair,
- * which are now deprecated but retained for use by {@link CubeJSGoalResultsAdapter}.</p>
+ * which are now deprecated but retained for potential external callers; will be removed with CubeJS.</p>
  *
  * @see ExperimentGoalResultsQuery
  * @see CubeJSGoalResultsAdapter
