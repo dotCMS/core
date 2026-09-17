@@ -11,6 +11,7 @@
     <dot-card-field-content>
         <dot-file-field
             [field]="field"
+            [labelledBy]="'label-' + field.variable"
             [contentlet]="$contentlet()"
             [formControlName]="field.variable"
             (valueUpdated)="onInnerValueUpdated($event)"

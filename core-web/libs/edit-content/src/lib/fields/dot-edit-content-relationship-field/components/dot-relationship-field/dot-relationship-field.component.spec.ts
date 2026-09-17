@@ -237,6 +237,17 @@ describe('DotRelationshipFieldComponent', () => {
     describe('Locales column', () => {
         beforeEach(() => setup());
 
+        /**
+         * AC-209 — a relationship's value is the list of related contentlets, so no single control
+         * can carry `<label for>`. The widget names itself from the field label instead.
+         */
+        it('should expose itself as a group named by the field label', () => {
+            expect(spectator.element.getAttribute('role')).toBe('group');
+            expect(spectator.element.getAttribute('aria-labelledby')).toBe(
+                'label-' + FIELD_MOCK.variable
+            );
+        });
+
         it('should render the Locales header using the table language key', () => {
             const localeHeader = spectator.query(byTestId('relationship-locale-header'));
             expect(localeHeader).toBeTruthy();

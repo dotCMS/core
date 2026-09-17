@@ -89,6 +89,15 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * It is used to display the required state of the field.
      */
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
+
+    /**
+     * The id the field's label points at, so the two are associated.
+     *
+     * This field has no native form control — the affordance is a button that opens a tree picker
+     * — so without an explicit id there is nothing for `<label for>` to reach, and a screen reader
+     * announces the control with no name.
+     */
+    $controlId = input<string>('', { alias: 'controlId' });
     /**
      * Reference to the overlay panel, used to close it programmatically after
      * committing a selection.

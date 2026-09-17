@@ -223,7 +223,7 @@ function normalizeEditorContent(
                             class="prose max-w-none"
                             role="textbox"
                             aria-multiline="true"
-                            [attr.aria-label]="'dot.block.editor.editor.aria-label' | dm"
+                            [attr.aria-label]="$accessibleName()"
                             aria-haspopup="listbox"
                             aria-controls="slash-command-menu"
                             [attr.aria-expanded]="menuService.isOpen()"
@@ -306,6 +306,18 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
      * character limit, custom styles, count bar visibility, and custom remote extensions.
      */
     readonly field = input<DotCMSContentTypeField | undefined>(undefined);
+
+    /**
+     * The name announced for the editable surface.
+     *
+     * The field's own name when there is one: on a content type with several rich-text fields the
+     * generic string is identical for all of them, so a screen reader cannot tell which one is
+     * focused. Falls back to the translated generic label where the editor runs standalone, with
+     * no field behind it.
+     */
+    protected readonly $accessibleName = computed(
+        () => this.field()?.name || this.dotMessageService.get('dot.block.editor.editor.aria-label')
+    );
 
     /**
      * The DotCMS contentlet currently being edited.

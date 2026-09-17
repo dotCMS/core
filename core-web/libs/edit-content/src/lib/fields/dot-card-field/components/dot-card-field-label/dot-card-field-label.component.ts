@@ -43,6 +43,10 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
     ],
     host: {
         '[attr.for]': '$variableName()',
+        // A composite widget — a radio or checkbox group — is a <div>, which `<label for>` cannot
+        // associate with, since `for` only reaches labelable elements. Those groups name themselves
+        // with aria-labelledby pointing here, so the label needs a stable id of its own.
+        '[attr.id]': '$testId()',
         '[attr.data-testid]': '$testId()'
     },
     changeDetection: ChangeDetectionStrategy.OnPush

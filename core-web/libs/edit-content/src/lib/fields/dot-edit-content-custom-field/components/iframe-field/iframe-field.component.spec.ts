@@ -77,6 +77,24 @@ describe('IframeFieldComponent', () => {
             spectator.detectChanges();
         });
 
+        /**
+         * AC-209 — a Custom Field renders its Velocity inside an iframe, and ARIA cannot cross a
+         * document boundary: nothing inside can be named from out here. The region itself becomes
+         * the named thing.
+         */
+        it('should expose itself as a group named by the field label', () => {
+            spectator.detectChanges();
+
+            const widget = spectator.fixture.nativeElement.querySelector('dot-iframe-field');
+
+            expect(widget.getAttribute('role')).toBe('group');
+            // Read the variable off the component rather than the module-level mock: the mock is
+            // faker-generated, so a fresh value is produced per instance.
+            expect(widget.getAttribute('aria-labelledby')).toBe(
+                'label-' + spectator.component.$field().variable
+            );
+        });
+
         it('should create', () => {
             expect(spectator.component).toBeTruthy();
         });

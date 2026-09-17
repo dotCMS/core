@@ -481,3 +481,64 @@ describe('DotEditContentCheckboxFieldComponent — option rows', () => {
         expect(row.querySelector('label')).toBeTruthy();
     });
 });
+
+/**
+ * AC-209 — naming and requiredness for an option group.
+ *
+ * A set of options has no single control to carry `for` / `aria-required`: the field's value is the
+ * selection, not any one input. The group itself becomes the named widget, and because a `<div>` is
+ * not a labelable element, it is named with `aria-labelledby` rather than the label's `for`.
+ */
+describe('DotEditContentCheckboxFieldComponent — option group semantics (AC-209)', () => {
+    let spectator: SpectatorHost<DotEditContentCheckboxFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentCheckboxFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false
+    });
+
+    const render = (required: boolean) => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [CHECKBOX_FIELD_MOCK.variable]: new FormControl(null)
+                    }),
+                    field: { ...CHECKBOX_FIELD_MOCK, required },
+                    contentlet: createFakeContentlet({ [CHECKBOX_FIELD_MOCK.variable]: null })
+                }
+            }
+        );
+        spectator.detectChanges();
+    };
+
+    it('should expose the options as a group', () => {
+        render(true);
+
+        expect(spectator.query('[role="group"]')).toBeTruthy();
+    });
+
+    it('should name the group from the field label', () => {
+        render(true);
+
+        const group = spectator.query('[role="group"]');
+
+        expect(group.getAttribute('aria-labelledby')).toBe('label-' + CHECKBOX_FIELD_MOCK.variable);
+        expect(spectator.query('label[dotCardFieldLabel]')?.id).toBe(
+            'label-' + CHECKBOX_FIELD_MOCK.variable
+        );
+    });
+
+    // Deliberately no aria-required assertion: ARIA defines that attribute on radiogroup but NOT
+    // on the plain `group` role a checkbox set uses, so asserting it would enshrine invalid ARIA.
+    it('should not put aria-required on a plain group, which ARIA does not define it on', () => {
+        render(true);
+
+        expect(spectator.query('[role="group"]').getAttribute('aria-required')).toBeNull();
+    });
+});

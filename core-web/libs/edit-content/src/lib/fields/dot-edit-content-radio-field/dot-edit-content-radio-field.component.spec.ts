@@ -435,3 +435,70 @@ describe('DotEditContentRadioFieldComponent — option rows', () => {
         expect(row.querySelector('label')).toBeTruthy();
     });
 });
+
+/**
+ * AC-209 — naming and requiredness for an option group.
+ *
+ * A set of options has no single control to carry `for` / `aria-required`: the field's value is the
+ * selection, not any one input. The group itself becomes the named widget, and because a `<div>` is
+ * not a labelable element, it is named with `aria-labelledby` rather than the label's `for`.
+ */
+describe('DotEditContentRadioFieldComponent — option group semantics (AC-209)', () => {
+    let spectator: SpectatorHost<DotEditContentRadioFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentRadioFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false
+    });
+
+    const render = (required: boolean) => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-radio-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [RADIO_FIELD_TEXT_MOCK.variable]: new FormControl(null)
+                    }),
+                    field: { ...RADIO_FIELD_TEXT_MOCK, required },
+                    contentlet: createFakeContentlet({ [RADIO_FIELD_TEXT_MOCK.variable]: null })
+                }
+            }
+        );
+        spectator.detectChanges();
+    };
+
+    it('should expose the options as a radiogroup', () => {
+        render(true);
+
+        expect(spectator.query('[role="radiogroup"]')).toBeTruthy();
+    });
+
+    it('should name the group from the field label', () => {
+        render(true);
+
+        const group = spectator.query('[role="radiogroup"]');
+
+        expect(group.getAttribute('aria-labelledby')).toBe(
+            'label-' + RADIO_FIELD_TEXT_MOCK.variable
+        );
+        expect(spectator.query('label[dotCardFieldLabel]')?.id).toBe(
+            'label-' + RADIO_FIELD_TEXT_MOCK.variable
+        );
+    });
+
+    it('should mark the group required, a role ARIA defines aria-required on', () => {
+        render(true);
+
+        expect(spectator.query('[role="radiogroup"]').getAttribute('aria-required')).toBe('true');
+    });
+
+    it('should not mark the group when the field is not required', () => {
+        render(false);
+
+        expect(spectator.query('[role="radiogroup"]').getAttribute('aria-required')).toBeNull();
+    });
+});

@@ -10,7 +10,11 @@
         </label>
     }
     <dot-card-field-content>
-        <div class="space-y-2">
+        <div
+            class="space-y-2"
+            role="radiogroup"
+            [attr.aria-labelledby]="'label-' + field.variable"
+            [attr.aria-required]="isRequired ? 'true' : null">
             @for (option of options; track $index) {
                 <div class="form-radio">
                     <p-radioButton

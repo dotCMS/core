@@ -9,7 +9,10 @@
         </label>
     }
     <dot-card-field-content>
-        <dot-key-value-field [hasError]="fieldHasError" [formControlName]="field.variable" />
+        <dot-key-value-field
+            [hasError]="fieldHasError"
+            [labelledBy]="'label-' + field.variable"
+            [formControlName]="field.variable" />
     </dot-card-field-content>
     @if ((fieldHasError && isRequired) || field.hint) {
         <dot-card-field-footer>

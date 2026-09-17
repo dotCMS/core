@@ -53,6 +53,14 @@ describe('DotCardFieldLabelComponent', () => {
             expect(spectator.element.getAttribute('for')).toBe('title');
         });
 
+        it('should expose a stable id so composite widgets can name themselves by it', () => {
+            render(false);
+
+            // `<label for>` only associates with labelable elements. A radio group or a checkbox
+            // group is a div, so it has to be named with aria-labelledby pointing back here.
+            expect(spectator.element.getAttribute('id')).toBe('label-title');
+        });
+
         it('should keep the data-testid format specs across the library select on', () => {
             render(false);
 

@@ -9,7 +9,13 @@
         </label>
     }
     <dot-card-field-content>
-        <div class="space-y-2">
+        <!--
+            `group`, and deliberately without aria-required: ARIA defines that attribute on
+            radiogroup but not on a plain group, and there is no "checkboxgroup" role. The set is
+            named here; its requiredness reaches the author through the asterisk and the required
+            message, not through an attribute ARIA does not sanction on this role.
+        -->
+        <div class="space-y-2" role="group" [attr.aria-labelledby]="'label-' + field.variable">
             @for (option of $options(); track $index) {
                 <div class="form-checkbox">
                     <p-checkbox
