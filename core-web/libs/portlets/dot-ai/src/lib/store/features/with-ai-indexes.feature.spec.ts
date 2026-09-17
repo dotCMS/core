@@ -125,6 +125,185 @@ describe('withAiIndexes', () => {
         });
     });
 
+    it('should not call an index Building because its name is on Object.prototype', () => {
+        // The seed map comes from Object.fromEntries, so `in` walked its prototype: an index
+        // named constructor / toString / valueOf / hasOwnProperty read as seeded when it was
+        // not, and then rendered Building forever — nothing clears a seed that never existed.
+        // The create form's name pattern accepts all four.
+        stubIndexes([
+            index({ name: 'constructor' }),
+            index({ name: 'toString' }),
+            index({ name: 'valueOf' }),
+            index({ name: 'hasOwnProperty' })
+        ]);
+
+        store.loadIndexes();
+
+        expect(store.indexBuildSeeds()).toEqual({});
+        expect(Object.values(store.indexStatuses())).toEqual([
+            DOT_AI_INDEX_STATUS.READY,
+            DOT_AI_INDEX_STATUS.READY,
+            DOT_AI_INDEX_STATUS.READY,
+            DOT_AI_INDEX_STATUS.READY
+        ]);
+    });
+
+    describe('an index the server has not caught up with', () => {
+        // Embedding is asynchronous, so a freshly built index has nothing in dot_embeddings and
+        // indexCount does not return it. Every assertion here is about the window in between,
+        // which is what used to leave the user reloading the page to see their new index.
+        it('should put the new index in the table straight away', () => {
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+
+            store.markIndexBuilding('blogs');
+
+            expect(store.indexes().map((row) => row.name)).toContain('blogs');
+            expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+        });
+
+        it('should keep it on a poll that still does not list it', () => {
+            // The regression: applyIndexes rebuilt the status map from the server's list alone,
+            // so this very refresh erased the BUILDING flag it was meant to act on.
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            store.loadIndexes();
+
+            expect(store.indexes().map((row) => row.name)).toContain('blogs');
+            expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+        });
+
+        it('should not settle it to READY off a placeholder that never moves', () => {
+            // The placeholder stands at zero fragments. Snapshotting that would make the next
+            // poll read "unchanged" and call the build finished before it started.
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            store.loadIndexes();
+            store.loadIndexes();
+
+            expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+        });
+
+        it('should hand over to the real row once the server lists it', () => {
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            stubIndexes([index({ name: 'existing' }), index({ name: 'blogs', fragments: 4 })]);
+            store.loadIndexes();
+
+            const blogs = store.indexes().find((row) => row.name === 'blogs');
+
+            expect(store.indexes().filter((row) => row.name === 'blogs')).toHaveLength(1);
+            expect(blogs?.fragments).toBe(4);
+            expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+        });
+
+        it('should not cut off a long build the server is still reporting progress on', () => {
+            // The TTL covers only the window before the index is listed at all. Measured from
+            // the start of the build instead, a large one would flip to Ready mid-flight and
+            // stop the poll — the exact failure this feature exists to prevent.
+            vi.useFakeTimers();
+
+            try {
+                stubIndexes([index({ name: 'existing' })]);
+                store.loadIndexes();
+                store.markIndexBuilding('blogs');
+
+                stubIndexes([index({ name: 'existing' }), index({ name: 'blogs', fragments: 4 })]);
+                store.loadIndexes();
+
+                vi.advanceTimersByTime(5 * 60 * 1000);
+
+                stubIndexes([index({ name: 'existing' }), index({ name: 'blogs', fragments: 90 })]);
+                store.loadIndexes();
+
+                expect(store.indexStatuses()['blogs']).toBe(DOT_AI_INDEX_STATUS.BUILDING);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('should forget a seed when its index is deleted, so no ghost row returns', () => {
+            // The seed outlived the index: `withPendingIndexes` put the deleted index straight
+            // back in the table as a zeroed BUILDING row, offered in the retrieval picker and
+            // eligible to become settingsIndexName, for the rest of the grace period.
+            stubIndexes([index({ name: 'blogs', fragments: 10 })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            store.forgetIndexBuildSeeds('blogs');
+            stubIndexes([]);
+            store.loadIndexes();
+
+            expect(store.indexes()).toEqual([]);
+            expect(store.indexStatuses()).toEqual({});
+            expect(store.indexBuildSeeds()).toEqual({});
+        });
+
+        it('should take the row with the seed, so a failed refresh leaves nothing behind', () => {
+            // loadIndexes' error branch leaves `indexes` untouched, so a row cleared only by
+            // the next successful refresh outlived the index it stood for.
+            stubIndexes([index({ name: 'blogs', fragments: 10 })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            store.forgetIndexBuildSeeds('blogs');
+
+            expect(store.indexes().map((row) => row.name)).not.toContain('blogs');
+        });
+
+        it('should treat an empty name as a name, not as "all of them"', () => {
+            // '' is what a store-wide rebuild reports as its index name, so a falsy check here
+            // would quietly clear every seed.
+            stubIndexes([index({ name: 'blogs' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+
+            store.forgetIndexBuildSeeds('');
+
+            expect(store.indexBuildSeeds()).toHaveProperty('blogs');
+        });
+
+        it('should forget every seed when the whole store is rebuilt', () => {
+            stubIndexes([index({ name: 'blogs' }), index({ name: 'other' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+            store.markIndexBuilding('other');
+
+            store.forgetIndexBuildSeeds();
+            stubIndexes([]);
+            store.loadIndexes();
+
+            expect(store.indexes()).toEqual([]);
+            expect(store.indexBuildSeeds()).toEqual({});
+        });
+
+        it('should stop waiting on a build that never materialises', () => {
+            // Without an expiry the seed would keep the badge up and the poll running for the
+            // life of the page.
+            vi.useFakeTimers();
+
+            try {
+                stubIndexes([index({ name: 'existing' })]);
+                store.loadIndexes();
+                store.markIndexBuilding('blogs');
+
+                vi.advanceTimersByTime(3 * 60 * 1000);
+                store.loadIndexes();
+
+                expect(store.indexes().map((row) => row.name)).not.toContain('blogs');
+                expect(store.indexStatuses()['blogs']).toBeUndefined();
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+    });
+
     describe('index seeding (FR-018)', () => {
         it('should keep a restored index that is still offered', () => {
             // The old "seed once" flag was never persisted, so every visit arrived unseeded and
@@ -160,6 +339,52 @@ describe('withAiIndexes', () => {
 
             // Only the explicit load — an idle screen must stay quiet.
             expect(spectator.inject(DotAiEmbeddingsService).getIndexes).toHaveBeenCalledTimes(1);
+        });
+
+        it('should give up on a build when the refresh itself keeps failing', () => {
+            // The expiry used to live only in applyIndexes, which a failing request never
+            // reaches — so a build started just before the server went away polled every five
+            // seconds for the life of the page, raising an error dialog on each tick.
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+            spectator.flushEffects();
+
+            spectator.inject(DotAiEmbeddingsService).getIndexes = vi
+                .fn()
+                .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+            vi.advanceTimersByTime(3 * 60 * 1000);
+            spectator.flushEffects();
+
+            expect(store.indexBuildSeeds()).toEqual({});
+
+            const calls = (spectator.inject(DotAiEmbeddingsService).getIndexes as Mock).mock.calls
+                .length;
+            vi.advanceTimersByTime(20000);
+
+            expect(
+                (spectator.inject(DotAiEmbeddingsService).getIndexes as Mock).mock.calls.length
+            ).toBe(calls);
+        });
+
+        it('should stop polling a forbidden endpoint once the build expires', () => {
+            // A 403 mid-build (the admin role revoked in session) took the same path: nothing
+            // pruned the seed, so the poll retried an endpoint it would never be allowed on.
+            stubIndexes([index({ name: 'existing' })]);
+            store.loadIndexes();
+            store.markIndexBuilding('blogs');
+            spectator.flushEffects();
+
+            spectator.inject(DotAiEmbeddingsService).getIndexes = vi
+                .fn()
+                .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
+
+            vi.advanceTimersByTime(3 * 60 * 1000);
+            spectator.flushEffects();
+
+            expect(store.indexesForbidden()).toBe(true);
+            expect(store.indexBuildSeeds()).toEqual({});
         });
 
         it('should re-fetch until the build settles, then stop', () => {
