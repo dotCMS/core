@@ -1,6 +1,7 @@
 {
     "name": "@dotcms/analytics",
     "version": "0.0.1-beta.2",
+    "type": "module",
     "description": "Official JavaScript library for Content Analytics with DotCMS.",
     "repository": {
         "type": "git",

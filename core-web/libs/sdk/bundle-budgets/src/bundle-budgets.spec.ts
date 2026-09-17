@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 
@@ -77,7 +77,10 @@ describe('SDK bundle budgets', () => {
     });
 });
 
-describe('SDK export conditions', () => {
+// Packaging correctness — exports resolution, emitted files, module type — is publint's job;
+// see publint.spec.ts. `sideEffects` is the one packaging fact it does not check, and it is
+// what makes the probes above able to drop anything, so it is asserted here.
+describe('SDK packaging', () => {
     const readPackageJson = (pkg: string) =>
         JSON.parse(readFileSync(join(SDK_DIST, pkg, 'package.json'), 'utf-8'));
 
@@ -87,25 +90,6 @@ describe('SDK export conditions', () => {
         // dual ESM/CJS build it deliberately points `import` at a CommonJS interop bridge
         // for Node singleton safety and reserves `module` — declared first — for bundlers.
         // Asserting on the shape here would just re-litigate that upstream decision.
-
-        test('should point every export condition at a file that exists', () => {
-            const { exports } = readPackageJson(pkg);
-
-            for (const [subpath, conditions] of Object.entries(exports)) {
-                const targets =
-                    typeof conditions === 'string'
-                        ? [conditions]
-                        : Object.values(conditions as Record<string, string>);
-
-                for (const target of targets) {
-                    expect(
-                        existsSync(join(SDK_DIST, pkg, target)),
-                        `${pkg} ${subpath} points at ${target}, which was not emitted. A consumer ` +
-                            'resolving that condition gets a module-not-found at install time.'
-                    ).toBe(true);
-                }
-            }
-        });
 
         test('should declare sideEffects', () => {
             const pkgJson = readPackageJson(pkg);
