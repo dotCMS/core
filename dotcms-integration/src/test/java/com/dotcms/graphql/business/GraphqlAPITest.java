@@ -961,13 +961,23 @@ public class GraphqlAPITest extends IntegrationTestBase {
         ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(fieldGeneratorFactory);
     }
 
+    /**
+     * Asserts that every FileAsset field is present on the given type — which is what this
+     * method is named for, and what the calling test's javadoc describes.
+     *
+     * <p>It previously used {@code allMatch}, which asserted the opposite: that the type exposed
+     * <b>no field other than</b> those six. That made it a lock against ever adding a field to
+     * {@code DotFileasset}, so any such addition failed here rather than where the change was
+     * made. Presence is the contract; the type is free to expose more.
+     */
     private boolean areFileassetFieldsPresent(final GraphQLObjectType objectType) {
         final List<String> fileAssetFields = list(FILEASSET_FILE_NAME_FIELD_VAR,
                 FILEASSET_DESCRIPTION_FIELD_VAR, FILEASSET_FILEASSET_FIELD_VAR,
                 FILEASSET_METADATA_FIELD_VAR, FILEASSET_SHOW_ON_MENU_FIELD_VAR,
                 FILEASSET_SORT_ORDER_FIELD_VAR);
-        return objectType.getFieldDefinitions().stream().allMatch(fieldDefinition ->
-                fileAssetFields.contains(fieldDefinition.getName()));
+        final Set<String> actualFields = objectType.getFieldDefinitions().stream()
+                .map(GraphQLFieldDefinition::getName).collect(Collectors.toSet());
+        return actualFields.containsAll(fileAssetFields);
     }
 
     private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {

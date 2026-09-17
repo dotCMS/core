@@ -69,6 +69,15 @@ public enum InterfaceType {
     public static final String FORM_INTERFACE_NAME = "FormBaseType";
     public static final String DOTASSET_INTERFACE_NAME = "DotAssetBaseType";
 
+    /**
+     * Describes the content an Image or File field points at, by whatever content type it actually
+     * is. Unlike the interfaces above it is not tied to a single base type: an asset-pointing field
+     * can hold either DOTASSET- or FILEASSET-based content — an Image field resolves a FileAsset
+     * perfectly well today — so neither {@link #DOTASSET_INTERFACE_NAME} nor
+     * {@link #FILE_INTERFACE_NAME} alone can describe what such a field may return. See #34540.
+     */
+    public static final String ASSET_CONTENT_INTERFACE_NAME = "DotAssetContent";
+
     public static final String DOT_CONTENTLET = "DotContentlet";
 
     static {
@@ -125,6 +134,31 @@ public enum InterfaceType {
         addBaseTypeFields(dotAssetFields, ImmutableDotAssetContentType.builder().name("dummy")
                 .build().requiredFields());
         interfaceTypes.put("DOTASSET", createInterfaceType(DOTASSET_INTERFACE_NAME, dotAssetFields, new ContentResolver()));
+
+        // Carries the common content fields only. The two base types name their binary
+        // differently -- `asset` for DOTASSET, `fileAsset` for FILEASSET -- so there is no shared
+        // binary property to put here; a client reaches it through a narrowing clause.
+        assetContentInterface = createInterfaceType(ASSET_CONTENT_INTERFACE_NAME,
+                new HashMap<>(contentFields), new ContentResolver());
+    }
+
+    private static GraphQLInterfaceType assetContentInterface;
+
+    /**
+     * @return the interface describing what an asset-pointing field returns, implemented by every
+     * content type derived from either asset base type.
+     */
+    public static GraphQLInterfaceType getAssetContentInterface() {
+        return assetContentInterface;
+    }
+
+    /**
+     * @return whether content of this base type can sit behind an Image or File field, and must
+     * therefore implement {@link #getAssetContentInterface()}.
+     */
+    public static boolean isAssetBaseType(final BaseContentType baseContentType) {
+        return BaseContentType.DOTASSET == baseContentType
+                || BaseContentType.FILEASSET == baseContentType;
     }
 
     /**

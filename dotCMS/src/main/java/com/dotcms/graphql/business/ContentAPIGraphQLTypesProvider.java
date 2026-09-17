@@ -152,6 +152,11 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         Logger.debug(this, ()-> "Getting all Content Types for GraphQL Schema");
         final Set<GraphQLType> contentAPITypes = new HashSet<>(InterfaceType.valuesAsSet());
 
+        // Not part of InterfaceType.values(): that enum is keyed by base type, and this interface
+        // deliberately spans two of them. It still has to be registered or introspection cannot
+        // see it and no fragment can narrow through it. See #34540.
+        contentAPITypes.add(InterfaceType.getAssetContentInterface());
+
         contentAPITypes.addAll(CustomFieldType.getCustomFieldTypes());
 
         List<ContentType> allTypes = APILocator.getContentTypeAPI(APILocator.systemUser())
@@ -189,6 +194,14 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
 
         if (InterfaceType.getInterfaceForBaseType(contentType.baseType()) != null) {
             builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
+        }
+
+        // Anything derived from an asset base type can sit behind an Image or File field, so it
+        // must be reachable through that field's interface. Declaring it here is what puts the
+        // type in the interface's possible-type set -- which is why a content type the customer
+        // creates later is reachable with no registration step of its own.
+        if (InterfaceType.isAssetBaseType(contentType.baseType())) {
+            builder.withInterface(InterfaceType.getAssetContentInterface());
         }
 
         builder.fields(createFieldsForType(contentType));
