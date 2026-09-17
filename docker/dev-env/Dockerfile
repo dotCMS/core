@@ -97,6 +97,11 @@ COPY --from=dev-env-builder  / /
 # binding; ldconfig already registers the libvips prefix via
 # /etc/ld.so.conf.d/libvips.conf.
 ENV LD_LIBRARY_PATH="/usr/local/tomcat-native/lib:/usr/local/libvips/lib"
-ENV PATH=$PATH:/usr/local/libvips/bin
+# PATH is written out in full rather than appended to $PATH: this stage is
+# scratch-based, so $PATH resolves to the builder's implicit default. That default
+# is correct today, but relying on it is not obvious to a reader (two separate
+# reviewers read it as expanding to an empty string and dropping /usr/bin). The
+# value below is byte-identical to what the expansion produces.
+ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/libvips/bin"
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/entrypoint.sh"]
