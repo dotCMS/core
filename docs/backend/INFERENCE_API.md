@@ -15,7 +15,7 @@ Source: `dotCMS/src/main/java/com/dotcms/inference/`. Design intent lives in `sp
 | Operation | Path | Notes |
 |---|---|---|
 | Chat completion | `POST /api/inference/v1/chat/completions` | Multi-turn messages, tool calling, optional SSE streaming |
-| Model listing | `GET /api/inference/v1/models` | The models the resolved site configured for chat |
+| Model listing | `GET /api/inference/v1/models` | Every model the resolved site configured — chat, embeddings and images — chat first |
 | Embeddings | `POST /api/inference/v1/embeddings` | One string or an array of strings |
 | Image generation | `POST /api/inference/v1/images/generations` | Always base64, never a URL |
 
@@ -47,7 +47,7 @@ The value is validated against what the resolved site has configured **for that 
 
 A model the site has not configured for that capability is refused with a `404`, so a chat model sent to the images endpoint is refused even though the same site configured it perfectly well for chat. Nothing is passed through to the provider.
 
-`GET /api/inference/v1/models` is the discovery mechanism: it lists exactly the names `chat/completions` accepts, in configured order, the first being the site's primary model. No provider is contacted and nothing synthetic is added. A caller that wants "whatever this site runs" reads the list and takes the first entry.
+`GET /api/inference/v1/models` is the discovery mechanism: it lists every model the resolved site has configured, in configured order, chat section first — so a caller who wants "whatever this site runs" reads the list and takes the first entry. Embeddings and image models are listed alongside chat models because every operation here requires an exact model name and this is the only place to learn one; listing chat alone would leave two of the four operations undiscoverable. The format has nowhere to record what a model is for — its model object carries no type, mode or modality field, which is why OpenAI's own listing mixes chat, embedding and image models the same way — so picking an entry the operation does not serve is refused by that operation with a `404` naming `model`. Nothing is added to the entries to signal capability: adding a field the format does not define is what the no-adapter promise of this family exists to avoid.
 
 Because the model is required and validated, swapping a site's provider is **not** invisible to callers: a caller pinning the old vendor's model gets an explicit `404` and has to re-read the model list. That is deliberate.
 
