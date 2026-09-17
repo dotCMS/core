@@ -359,7 +359,7 @@ export const DotContentDriveStore = signalStore(
             setTreeForceCollapsed(isTreeForceCollapsed: boolean) {
                 patchState(store, { isTreeForceCollapsed });
             },
-            getFilterValue(filter: string) {
+            getFilterValue(filter: string): string | string[] | undefined {
                 return store.filters()[filter];
             },
             /**
