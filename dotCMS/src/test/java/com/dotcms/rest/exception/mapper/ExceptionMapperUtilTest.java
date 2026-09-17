@@ -36,6 +36,16 @@ public class ExceptionMapperUtilTest {
     }
 
     @Test
+    public void null_message_falls_back_to_the_reason_phrase_instead_of_a_500() {
+        final Response rsp = ExceptionMapperUtil.createResponse(
+                new javax.ws.rs.WebApplicationException((String) null, Response.status(400).build()),
+                null, Response.Status.BAD_REQUEST);
+
+        assertEquals(400, rsp.getStatus());
+        assertEquals("Bad Request", ((Map<?, ?>) rsp.getEntity()).get("message"));
+    }
+
+    @Test
     public void WebApplicationException_with_an_entity_is_returned_untouched() {
         final Response own = Response.status(409).entity("already there").build();
         final Response rsp = ExceptionMapperUtil.createResponse(

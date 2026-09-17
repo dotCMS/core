@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
@@ -170,8 +171,10 @@ public final class ExceptionMapperUtil {
             // empty, so the container would send its HTML error page and the client
             // never sees "why". Keep status and headers (WWW-Authenticate, Location),
             // carry the message as JSON.
+            final String message = Objects.requireNonNullElse(
+                    getI18NMessage(exception.getMessage()), own.getStatusInfo().getReasonPhrase());
             return Response.fromResponse(own)
-                    .entity(Map.of("message", getI18NMessage(exception.getMessage())))
+                    .entity(Map.of("message", message))
                     .header("error-key", key)
                     .type(MediaType.APPLICATION_JSON)
                     .build();
