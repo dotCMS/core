@@ -320,10 +320,12 @@ path in the first; confirm the second is refused with a readable reason and no j
   that would remove it from the search index**, and without the durable record that #37276 added to
   the ordinary content-destroy path — that fix is scoped to the ordinary path and this one does not
   go through it. Every folder delete that reaches the sweep therefore leaves search documents with
-  nothing behind them, permanently, until someone reindexes by hand. This is pre-existing and out of
-  scope to fix here, but it is **in scope to decide about**, because this feature multiplies how
-  often the sweep runs and because it is the single thing that makes re-running an interrupted
-  delete lossy.
+  nothing behind them, permanently, until someone reindexes by hand. Pre-existing, and **fixed
+  separately in [#37599](https://github.com/dotCMS/core/issues/37599)** rather than here: unlike the
+  permission behaviour it sits beside (D-014), this one is a contained bug — the correction reuses
+  the durable record #37276 already built, in a transaction the sweep already holds open. It is
+  called out in this specification because this feature multiplies how often the sweep runs, and
+  because it is the single thing that makes re-running an interrupted delete lossy.
 - **FR-010**: A path that does not resolve to a folder — it is gone, it is a file, or it is
   malformed — MUST be recorded as that path's failure, with a reason distinguishable from a
   permission refusal.
@@ -692,6 +694,12 @@ built a second time**.
   the two problems), and splitting the transaction (which would reopen FR-023 and is the larger,
   riskier half). The two are separable and the first is worth pricing on its own — see §Planning
   Obligations.
+- **Correcting how folder deletion decides what it may touch** (D-014, FR-009b). Content the author
+  cannot see is destroyed without the checks that protect content they can see. This feature does
+  **not** change that: it deletes exactly as the shipped single-folder delete does. Correcting it
+  means changing a path site deletion, the context menu and customer plugins all share, which is a
+  different piece of work — taking it on here would change what this feature is. Recorded rather
+  than deferred silently.
 - **Resumability of an interrupted run.** Under FR-020 an interrupted folder rolls back, so there is
   no partial state to resume from. The question the sibling features face does not arise here.
 
@@ -781,15 +789,24 @@ built a second time**.
   (§Planning Obligations). That is a different act from reopening this decision, and it is not a
   reason to.
   *(Questionnaire B5 = B.)*
-- **D-014 — Today's permission behaviour is documented, not corrected** (FR-009b). The delete
-  destroys content the author cannot see, bypassing the checks that protect content they can, and
-  leaves the search index holding documents with nothing behind them (FR-009d). Both are reachable
-  through the shipped single-folder delete today and neither is introduced here. Correcting them is
-  a behaviour change to a legacy path with its own blast radius; carrying it inside a multi-select
-  feature would be the wrong vehicle. **Recorded here, and raised separately.**
+- **D-014 — This feature deletes exactly as the shipped single-folder delete does** (FR-009b,
+  FR-021). That includes the part of today's behaviour nobody would design on purpose: content the
+  author cannot see is destroyed without the checks that protect content they can see. **We know it
+  is there. We are not resolving it here**, because doing so is a behaviour change to a path that
+  site deletion, the context menu and customer plugins all share, and that is a different piece of
+  work with a different blast radius — taking it on would change what this feature is.
+
+  So the position is a scope one rather than a judgement about the risk: **this feature matches the
+  shipped delete rather than improving on it.** Nothing an author can do through bulk delete is
+  something they could not already do one folder at a time. What this feature does add is frequency,
+  and that is recorded here rather than left to be noticed.
+
   The honest consequence, stated in FR-009b: a folder reported as succeeded is true of the data and
-  not of the process. *(Questionnaire B2 = C, which by construction closes B3 — no stricter rule is
-  adopted, so there is nowhere to put it.)*
+  not of the process. The index half of the same sweep **is** being fixed separately —
+  [#37599](https://github.com/dotCMS/core/issues/37599) — because that one is a bug with a contained
+  fix rather than a change to how deletion decides what it may touch.
+  *(Questionnaire B2 = C, which by construction closes B3 — no stricter rule is adopted, so there is
+  nowhere to put it.)*
 - **D-015 — Folder paths recorded with a run stay readable by any back-end user** (FR-005a). Not an
   independent judgement: the client half had already answered it twice without either side noticing
   it was the same question. Restoring in-flight marking after a reload needs those paths; showing a
