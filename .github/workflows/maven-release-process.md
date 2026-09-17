@@ -40,7 +40,7 @@ This field is used to define the LAST commit hash that you want to include in th
 
 ### Deploy Artifacts (default enabled):
 
-This checkbox is enabled by default and the function is to deploy all the dependencies in artifact with the release version to our artifact repo (repo.dotcms.com). We always need to have this enabled in order to have a success release.
+This checkbox is enabled by default and the function is to deploy all the dependencies with the release version to our artifact repo (the BunnyCDN S3 repository, `dotcms-repo.b-cdn.net`). We always need to have this enabled in order to have a success release.
 
   
 
