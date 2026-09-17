@@ -229,6 +229,15 @@ describe('DotUsersRolesTabComponent', () => {
             // front-end). In the fixture Root B's key is `ROOT_B`, so
             // excluding it here mirrors the same shape: the leaf drops
             // out of Available and its checkbox drops out of the pool.
+            //
+            // Capture the internal RoleOption BEFORE the exclusion —
+            // once the tree drops the leaf, `findAvailable('6')` would
+            // return null and there'd be nothing to hand
+            // `canSelectRole`. The RoleOption we capture is unchanged;
+            // only the surrounding pool shrinks.
+            const rootB = findAvailable('6');
+            expect(rootB).not.toBeNull();
+
             spectator.setInput('excludedRoleKeys', ['ROOT_B']);
             const flat = flatten(spectator.component['$availableTree']() as AvailableNode[]).map(
                 (node) => node.role.id
@@ -237,9 +246,7 @@ describe('DotUsersRolesTabComponent', () => {
             expect(flat).not.toContain('6');
             // isGrantableLeaf also honors the exclusion — the row can't
             // be checked from a parent's bulk-select either.
-            expect(
-                spectator.component['canSelectRole'](fakeRole({ id: '6', roleKey: 'ROOT_B' }))
-            ).toBe(false);
+            expect(spectator.component['canSelectRole'](rootB!)).toBe(false);
         });
     });
 
