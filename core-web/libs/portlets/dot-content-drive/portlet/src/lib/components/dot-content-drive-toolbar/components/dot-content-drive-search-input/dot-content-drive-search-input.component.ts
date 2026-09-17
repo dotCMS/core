@@ -261,7 +261,7 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
      * nothing filtered, and the bad value can then never be reselected away because
      * `$searchScope()` already reads back as a real scope.
      */
-    protected onScopeChange(scope: DotContentDriveSearchScope): void {
+    protected onScopeChange(scope: DotContentDriveSearchScope | null): void {
         if (scope == null || scope === this.$searchScope()) {
             return;
         }
