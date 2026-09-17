@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -6,7 +6,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DOT_AUTH_HIDDEN_SECRET_MASK, DotAuthOidcConfig } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
+
+const OAUTH_CALLBACK_PATH = '/api/v1/oauth/callback';
 
 export interface OidcConnectionChange {
     path: string;
@@ -15,8 +17,14 @@ export interface OidcConnectionChange {
 
 @Component({
     selector: 'dot-auth-oidc-connection',
-    standalone: true,
-    imports: [FormsModule, ButtonModule, InputTextModule, TooltipModule, DotMessagePipe],
+    imports: [
+        FormsModule,
+        ButtonModule,
+        InputTextModule,
+        TooltipModule,
+        DotMessagePipe,
+        DotCopyButtonComponent
+    ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     templateUrl: './dot-auth-oidc-connection.component.html',
     styleUrl: '../_dot-auth-shared.scss',
@@ -31,6 +39,16 @@ export class DotAuthOidcConnectionComponent {
     readonly discover = output<void>();
 
     readonly showAdvanced = signal(false);
+
+    /**
+     * Mirrors OAuthWebInterceptor#computeCallbackUrl: the override when set, else this
+     * origin, with the callback path appended unless it is already there.
+     */
+    readonly redirectUri = computed(() => {
+        const base = (this.callbackUrl().trim() || window.location.origin).replace(/\/+$/, '');
+
+        return base.endsWith(OAUTH_CALLBACK_PATH) ? base : `${base}${OAUTH_CALLBACK_PATH}`;
+    });
 
     isSecretStored(): boolean {
         const secret = this.oidc().clientSecret;

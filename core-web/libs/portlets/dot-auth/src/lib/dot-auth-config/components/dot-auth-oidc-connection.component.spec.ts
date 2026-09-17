@@ -1,4 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -67,6 +68,50 @@ describe('DotAuthOidcConnectionComponent', () => {
                 path: 'oidc.groupsResponsePath',
                 value: 'memberships[].groupKey.id'
             });
+        });
+    });
+
+    describe('effective redirect URI', () => {
+        const CALLBACK = '/api/v1/oauth/callback';
+
+        beforeEach(() => {
+            spectator.component.showAdvanced.set(true);
+            spectator.detectChanges();
+        });
+
+        const shown = () => spectator.query(byTestId('redirect-uri'))?.textContent?.trim();
+
+        it('falls back to the current origin when the override is empty', () => {
+            expect(shown()).toBe(`${window.location.origin}${CALLBACK}`);
+        });
+
+        it('uses the override when set', () => {
+            spectator.setInput('callbackUrl', 'https://cms.example.com');
+            expect(shown()).toBe(`https://cms.example.com${CALLBACK}`);
+        });
+
+        it('strips trailing slashes from the override', () => {
+            spectator.setInput('callbackUrl', 'https://cms.example.com//');
+            expect(shown()).toBe(`https://cms.example.com${CALLBACK}`);
+        });
+
+        it('does not append the callback path twice', () => {
+            spectator.setInput('callbackUrl', `https://cms.example.com${CALLBACK}`);
+            expect(shown()).toBe(`https://cms.example.com${CALLBACK}`);
+        });
+
+        it('copies the shown value to the clipboard', async () => {
+            const writeText = vi.fn().mockResolvedValue(undefined);
+            Object.defineProperty(navigator, 'clipboard', {
+                value: { writeText },
+                configurable: true
+            });
+            spectator.setInput('callbackUrl', 'https://cms.example.com');
+
+            spectator.click(byTestId('copy-to-clipboard'));
+            await Promise.resolve();
+
+            expect(writeText).toHaveBeenCalledWith(`https://cms.example.com${CALLBACK}`);
         });
     });
 
