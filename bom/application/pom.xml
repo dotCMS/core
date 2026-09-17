@@ -100,8 +100,9 @@
                 <version>3.4.41</version>
             </dependency>
 
-            <!-- Netty: pin to 4.1.118.Final to resolve conflict between pgjdbc-ng (4.1.63)
-                 and langchain4j-azure-open-ai (4.1.118). Required for DefaultHeaders$ValueValidator. -->
+            <!-- Netty: pin to 4.1.118.Final so the Azure (langchain4j-azure-open-ai) and
+                 reactor-netty trees agree on one version. Required for
+                 DefaultHeaders$ValueValidator. -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-common</artifactId>
@@ -846,12 +847,6 @@
                 <version>7.4.1.jre8</version>
             </dependency>
 
-
-            <dependency>
-                <groupId>com.impossibl.pgjdbc-ng</groupId>
-                <artifactId>pgjdbc-ng</artifactId>
-                <version>0.8.9</version>
-            </dependency>
 
             <!--
              *****************************
