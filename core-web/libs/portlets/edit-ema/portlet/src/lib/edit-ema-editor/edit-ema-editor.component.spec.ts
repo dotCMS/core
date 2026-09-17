@@ -58,6 +58,7 @@ import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dot
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -108,7 +109,7 @@ import {
 } from '../shared/mocks';
 import { ActionPayload, VTLFile } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
-import { IframeAccessMode } from '../store/models';
+import { IframeAccessMode, PageType } from '../store/models';
 
 global.URL.createObjectURL = jest.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -994,6 +995,109 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(spectator.component.$showLockOverlay()).toBe(false);
                 });
+            });
+        });
+
+        describe('$handleReloadContentEffect — headless provenance gate (#37097)', () => {
+            // Precondition for reaching the headless-specific branch under test at all: the
+            // effect's first gate returns immediately (no message, not even UVE_RELOAD_PAGE)
+            // when `pageType === TRADITIONAL || !isClientReady` — that gate is unrelated to
+            // this bug (it predates #36410) and stays untouched, so every case below sets
+            // isClientReady true to exercise the branch the fix actually changes.
+            let postMessageSpy: jest.SpyInstance;
+
+            beforeEach(() => {
+                // `this.iframe` (used by sendMessageToIframe/reloadIframeContent) is a getter
+                // that unwraps to DotUveIframeComponent's own inner <iframe> ElementRef — NOT
+                // the `[data-testId="iframe"]` host element the outer beforeEach mocks (that's
+                // the <dot-uve-iframe> wrapper). Spy on the REAL jsdom-provided contentWindow
+                // in place — replacing it wholesale (as the outer mock does for the wrapper)
+                // breaks jsdom's own async iframe `load` event plumbing for later tests.
+                const realContentWindow = spectator.component.iframe?.nativeElement.contentWindow;
+                postMessageSpy = jest
+                    .spyOn(realContentWindow, 'postMessage')
+                    .mockImplementation(() => undefined);
+                patchState(store, { isClientReady: true });
+                postMessageSpy.mockClear();
+            });
+
+            it('should send UVE_RELOAD_PAGE (never UVE_SET_PAGE_DATA) when no GraphQL request was ever registered', () => {
+                // requestMetadata null, pageAssetResponse.source rest (the initial REST load
+                // from the outer beforeEach's store.pageLoad)
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+            });
+
+            it('should send UVE_RELOAD_PAGE (never UVE_SET_PAGE_DATA) when the GraphQL request is registered but not yet resolved', () => {
+                store.setCustomClient({ query: 'query', variables: {} });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+            });
+
+            it('should send UVE_RELOAD_PAGE (never UVE_SET_PAGE_DATA) when the GraphQL request was registered then aborted/failed, leaving a stale REST asset', () => {
+                // This is the row #36410's gate could not distinguish from the row above —
+                // requestMetadata is non-null in both, so the old `hasClientQuery` check let
+                // this one through. `source` distinguishes it correctly.
+                store.setCustomClient({ query: 'query', variables: {} });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+            });
+
+            it('should send UVE_SET_PAGE_DATA (never UVE_RELOAD_PAGE) once the stored asset is GraphQL-sourced', () => {
+                store.setCustomClient({ query: 'query', variables: {} });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'graphql' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    expect.anything()
+                );
+            });
+
+            it('should never touch the iframe for a TRADITIONAL page regardless of source (regression)', () => {
+                patchState(store, { pageType: PageType.TRADITIONAL });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    expect.anything()
+                );
             });
         });
 
