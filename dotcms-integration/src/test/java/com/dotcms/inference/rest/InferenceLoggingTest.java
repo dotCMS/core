@@ -238,6 +238,44 @@ public class InferenceLoggingTest {
     }
 
     /**
+     * Given a streamed completion the provider refuses
+     * When the failure is reported
+     * Then the provider's own explanation reaches the log
+     *
+     * <p>The mirror of every other assertion in this file, and it exists because the opposite
+     * mistake is just as damaging. The caller gets a safe sentence saying the detail is in the
+     * server log; if the log holds only an exception class name, that sentence is a lie and an
+     * operator has no way to tell an exhausted account from a rejected key from a malformed
+     * request. That is exactly what happened: the streaming path logged
+     * {@code "Inference stream failed: InvalidRequestException"} and nothing else, and a live
+     * failure took three rounds of guessing to diagnose because the evidence was being discarded
+     * at the moment it was produced.</p>
+     *
+     * <p>Note this does not contradict the sentinel assertions above. What must never be logged is
+     * the <em>caller's</em> content; what must always be logged is the <em>provider's</em>
+     * explanation of why it refused.</p>
+     */
+    @Test
+    public void test_failedStream_logsTheProvidersExplanation() throws Exception {
+        final String providerReason = "zqx-provider-said-no-9f3c";
+        stubProvider(COMPLETIONS_PATH, 400,
+                "{\"error\":{\"message\":\"" + providerReason + "\",\"code\":\"bad_request\"}}");
+
+        final Response response = chatResource.completions(
+                mockRequest(), mockResponse(), host.getIdentifier(), chatRequest(true));
+        if (response.getEntity() instanceof StreamingOutput streaming) {
+            streaming.write(new ByteArrayOutputStream());
+        }
+
+        final boolean logged = appender.messages().stream()
+                .anyMatch(message -> message != null && message.contains(providerReason));
+
+        assertTrue("The caller is told the detail is in the server log, so it has to be there: a "
+                        + "bare exception type leaves an operator with nothing to act on",
+                logged);
+    }
+
+    /**
      * Fails when the caller's content reached a log, naming what was being exercised.
      *
      * @param what a description of the exchange, so a failure says which path leaked

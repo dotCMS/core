@@ -78,6 +78,7 @@ import com.dotcms.inference.rest.InferenceLoggingTest;
 import com.dotcms.inference.rest.InferenceModelsTest;
 import com.dotcms.inference.rest.InferenceModelValidationTest;
 import com.dotcms.inference.rest.InferenceSiteIsolationTest;
+import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
@@ -467,6 +468,7 @@ import org.junit.runners.Suite.SuiteClasses;
         InferenceModelsTest.class,
         InferenceModelValidationTest.class,
         InferenceSiteIsolationTest.class,
+        InferenceTestsAreRegisteredTest.class,
         InferenceSiteResolutionTest.class,
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,
