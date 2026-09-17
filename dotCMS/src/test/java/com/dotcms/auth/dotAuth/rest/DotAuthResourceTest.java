@@ -309,6 +309,46 @@ public class DotAuthResourceTest {
         }
     }
 
+    @Test
+    public void getConfig_carries_the_site_hostname() throws Exception {
+        when(appsAPI.getSecrets(any(), anyBoolean(), any(Host.class), eq(user)))
+                .thenReturn(Optional.empty());
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+            when(hostAPI.find(SITE_ID, user, false)).thenReturn(site);
+
+            final DotAuthConfigView entity = (DotAuthConfigView) ((ResponseEntityView<?>)
+                    resource.getConfig(request, response, SITE_ID).getEntity()).getEntity();
+
+            assertEquals(SITE_NAME, entity.getHostName());
+        }
+    }
+
+    @Test
+    public void getConfig_for_system_host_has_no_hostname() throws Exception {
+        // The redirect host for a SYSTEM_HOST config depends on where the user logs in
+        // (each inheriting site's own host, or the admin origin), so no single value is right.
+        when(appsAPI.getSecrets(any(), anyBoolean(), any(Host.class), eq(user)))
+                .thenReturn(Optional.empty());
+
+        final Host defaultHost = mock(Host.class);
+        when(defaultHost.getHostname()).thenReturn("www.default.example");
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+            when(hostAPI.findDefaultHost(user, false)).thenReturn(defaultHost);
+
+            final DotAuthConfigView entity = (DotAuthConfigView) ((ResponseEntityView<?>)
+                    resource.getConfig(request, response, Host.SYSTEM_HOST).getEntity()).getEntity();
+
+            // Even with a resolvable default site, SYSTEM_HOST must not claim one host.
+            assertNull(entity.getHostName());
+        }
+    }
+
     // --- saveConfig (mutual exclusion) -------------------------------------
 
     @Test

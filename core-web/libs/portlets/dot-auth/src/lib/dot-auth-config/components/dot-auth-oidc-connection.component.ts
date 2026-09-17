@@ -33,6 +33,10 @@ export interface OidcConnectionChange {
 export class DotAuthOidcConnectionComponent {
     readonly oidc = input.required<DotAuthOidcConfig>();
     readonly callbackUrl = input<string>('');
+    /** Hostname of the site being configured; empty on SYSTEM_HOST. */
+    readonly siteHostname = input<string>('');
+    /** SYSTEM_HOST page: the real redirect host varies per inheriting site, so say so. */
+    readonly isSystem = input<boolean>(false);
     readonly errors = input<Record<string, string>>({});
 
     readonly fieldChange = output<OidcConnectionChange>();
@@ -41,11 +45,17 @@ export class DotAuthOidcConnectionComponent {
     readonly showAdvanced = signal(false);
 
     /**
-     * Mirrors OAuthWebInterceptor#computeCallbackUrl: the override when set, else this
-     * origin, with the callback path appended unless it is already there.
+     * Predicts what OAuthWebInterceptor#computeCallbackUrl will send: the override when set,
+     * else the configured site over https, else the origin the admin is using right now
+     * (SYSTEM_HOST, localhost, the starter's "default" site), with the callback path appended
+     * unless present. On SYSTEM_HOST the interceptor uses each login request's own host, so
+     * the template adds a note whenever no override pins it.
      */
     readonly redirectUri = computed(() => {
-        const base = (this.callbackUrl().trim() || window.location.origin).replace(/\/+$/, '');
+        // ponytail: "has a URL" == hostname contains a dot; good enough to skip "default"/"localhost".
+        const site = this.siteHostname().trim();
+        const siteOrigin = site.includes('.') ? `https://${site}` : window.location.origin;
+        const base = (this.callbackUrl().trim() || siteOrigin).replace(/\/+$/, '');
 
         return base.endsWith(OAUTH_CALLBACK_PATH) ? base : `${base}${OAUTH_CALLBACK_PATH}`;
     });

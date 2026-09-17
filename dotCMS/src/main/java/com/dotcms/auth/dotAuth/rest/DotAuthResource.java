@@ -265,8 +265,8 @@ public class DotAuthResource {
                     .map(headlessHelper::values).orElse(Map.of());
 
             return Response.ok(new ResponseEntityDotAuthConfigView(
-                    new DotAuthConfigView(hostId, ssoProtocol, ssoConfigured, ssoInherited,
-                            ssoValues, headlessValues))).build();
+                    new DotAuthConfigView(hostId, redirectHostName(host), ssoProtocol,
+                            ssoConfigured, ssoInherited, ssoValues, headlessValues))).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     String.format("Error loading dotAuth config for hostId `%s`", hostId), e);
@@ -1018,6 +1018,15 @@ public class DotAuthResource {
         if (rejection != null) {
             throw new BadRequestException(rejection);
         }
+    }
+
+    /**
+     * Hostname the portlet shows in the predicted OAuth redirect URI. Only a real site has one:
+     * OAuthWebInterceptor derives the redirect host from the login request, so for SYSTEM_HOST
+     * the value depends on which inheriting site (or admin origin) the user logs in from.
+     */
+    private static String redirectHostName(final Host host) {
+        return host.isSystemHost() ? null : host.getHostname();
     }
 
     private Host resolveHost(final String hostId, final User user)

@@ -120,6 +120,7 @@ describe('DotAuthConfigComponent', () => {
                 addTrustedIdp: vi.fn(),
                 removeTrustedIdp: vi.fn(),
                 siteId: vi.fn().mockReturnValue(DOT_AUTH_SYSTEM_HOST),
+                hostName: vi.fn().mockReturnValue(''),
                 draft: signal<DotAuthConfig>(DRAFT),
                 original: signal<DotAuthConfig>(DRAFT),
                 configured: vi.fn().mockReturnValue(true),

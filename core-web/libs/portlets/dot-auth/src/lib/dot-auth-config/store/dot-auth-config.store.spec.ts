@@ -11,6 +11,7 @@ import { DotAuthConfigStore } from './dot-auth-config.store';
 
 const SAML_VIEW: DotAuthConfigView = {
     hostId: DOT_AUTH_SYSTEM_HOST,
+    hostName: 'intranet.example.com',
     protocol: 'SAML',
     configured: true,
     inherited: false,
@@ -57,6 +58,12 @@ describe('DotAuthConfigStore', () => {
     });
 
     const sentValues = () => service.saveConfig.mock.calls[0][1].values as Record<string, unknown>;
+
+    describe('load', () => {
+        it('keeps the hostname the server resolved for the site', () => {
+            expect(store.hostName()).toBe('intranet.example.com');
+        });
+    });
 
     describe('saveSso', () => {
         it('does not send the regenerate flag on an ordinary save', () => {

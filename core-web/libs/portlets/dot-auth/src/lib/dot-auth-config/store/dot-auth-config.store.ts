@@ -29,6 +29,8 @@ type DotAuthConfigStatus = 'init' | 'loading' | 'loaded' | 'saving' | 'error';
 
 interface DotAuthConfigState {
     siteId: string;
+    // Hostname the server resolved for siteId (default site's for SYSTEM_HOST); '' until loaded.
+    hostName: string;
     original: DotAuthConfig;
     draft: DotAuthConfig;
     configured: boolean;
@@ -46,6 +48,7 @@ interface DotAuthConfigState {
 
 const initialState: DotAuthConfigState = {
     siteId: DOT_AUTH_SYSTEM_HOST,
+    hostName: '',
     original: clone(DEFAULT_CONFIG),
     draft: clone(DEFAULT_CONFIG),
     configured: false,
@@ -92,6 +95,7 @@ export const DotAuthConfigStore = signalStore(
                     patchState(store, {
                         original: config,
                         draft: clone(config),
+                        hostName: view.hostName ?? '',
                         configured: view.configured,
                         inherited: view.inherited,
                         status: 'loaded',

@@ -85,6 +85,34 @@ describe('DotAuthOidcConnectionComponent', () => {
             expect(shown()).toBe(`${window.location.origin}${CALLBACK}`);
         });
 
+        it('uses the configured site hostname over https when it looks like a real host', () => {
+            spectator.setInput('siteHostname', 'intranet.example.com');
+            expect(shown()).toBe(`https://intranet.example.com${CALLBACK}`);
+        });
+
+        it('falls back to the current origin when the site hostname is not a URL', () => {
+            spectator.setInput('siteHostname', 'default');
+            expect(shown()).toBe(`${window.location.origin}${CALLBACK}`);
+        });
+
+        it('prefers the override over the site hostname', () => {
+            spectator.setInput('siteHostname', 'intranet.example.com');
+            spectator.setInput('callbackUrl', 'https://cms.example.com');
+            expect(shown()).toBe(`https://cms.example.com${CALLBACK}`);
+        });
+
+        it('explains on SYSTEM_HOST that inheriting sites use their own host when no override is set', () => {
+            spectator.setInput('isSystem', true);
+            expect(spectator.query(byTestId('redirect-uri-system-note'))).toBeTruthy();
+            spectator.setInput('callbackUrl', 'https://cms.example.com');
+            expect(spectator.query(byTestId('redirect-uri-system-note'))).toBeNull();
+        });
+
+        it('shows no inheriting-sites note on a site page', () => {
+            spectator.setInput('siteHostname', 'intranet.example.com');
+            expect(spectator.query(byTestId('redirect-uri-system-note'))).toBeNull();
+        });
+
         it('uses the override when set', () => {
             spectator.setInput('callbackUrl', 'https://cms.example.com');
             expect(shown()).toBe(`https://cms.example.com${CALLBACK}`);

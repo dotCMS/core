@@ -148,6 +148,11 @@
             </div>
             <small class="text-(--text-color-secondary)">
                 {{ 'dotauth.help.redirectUri' | dm }}
+                @if (isSystem() && !callbackUrl().trim()) {
+                    <span data-testid="redirect-uri-system-note">
+                        {{ 'dotauth.help.redirectUri.system' | dm }}
+                    </span>
+                }
             </small>
         </div>
 
