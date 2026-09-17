@@ -15,6 +15,39 @@
         "mcp"
       ],
       "env": {}
+    },
+    "postgres": {
+      "command": "/Applications/Docker.app/Contents/Resources/bin/docker",
+      "args": [
+        "run", "-i", "--rm", "-e", "DATABASE_URI",
+        "crystaldba/postgres-mcp",
+        "--access-mode=unrestricted"
+      ],
+      "env": {
+        "DATABASE_URI": "postgresql://postgres:postgres@localhost:5432/Vanguard"
+      }
+    },
+    "virtuoso_sender": {
+      "command": "/Applications/Docker.app/Contents/Resources/bin/docker",
+      "args": [
+        "run", "-i", "--rm", "-e", "DATABASE_URI",
+        "crystaldba/postgres-mcp",
+        "--access-mode=unrestricted"
+      ],
+      "env": {
+        "DATABASE_URI": "postgresql://postgres:postgres@127.0.0.1:5432/virtuoso_sender"
+      }
+    },
+    "virtuoso_receiver": {
+      "command": "/Applications/Docker.app/Contents/Resources/bin/docker",
+      "args": [
+        "run", "-i", "--rm", "-e", "DATABASE_URI",
+        "crystaldba/postgres-mcp",
+        "--access-mode=unrestricted"
+      ],
+      "env": {
+        "DATABASE_URI": "postgresql://postgres:postgres@127.0.0.1:5432/virtuoso_receiver"
+      }
     }
   }
 }

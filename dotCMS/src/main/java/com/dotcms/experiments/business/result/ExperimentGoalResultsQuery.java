@@ -141,7 +141,7 @@ public interface ExperimentGoalResultsQuery {
      * a raw "failure count" from the backend becomes a meaningful success count:
      * <ul>
      *   <li>{@code successes = totalSessions - rawSuccesses}</li>
-     *   <li>{@code conversionRate = 1.0 - rawConversionRate}</li>
+     *   <li>{@code conversionRate = 100.0 - rawConversionRate}</li>
      * </ul>
      */
     private static AnalyticsResultSet invert(final AnalyticsResultSet raw) throws DotDataException {

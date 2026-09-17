@@ -14,6 +14,7 @@ import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.http.CircuitBreakerUrl;
+import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyHelper;
 import com.dotcms.jitsu.EventLogRunnable;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
@@ -575,7 +576,10 @@ public class ExperimentsResource {
         final Secret bearerToken = secrets.get(ContentAnalyticsUtil.BEARER_TOKEN_KEY);
         final boolean configured = siteAuth != null && UtilMethods.isSet(siteAuth.getString())
                 && bearerToken != null && UtilMethods.isSet(bearerToken.getString());
-        return configured ? Health.OK : Health.CONFIGURATION_ERROR;
+        if (!configured) {
+            return Health.CONFIGURATION_ERROR;
+        }
+        return EventAnalyticsProxyHelper.healthCheck() ? Health.OK : Health.CONFIGURATION_ERROR;
     }
 
     private Health legacyHealthCheck(final Host host) {
