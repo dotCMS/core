@@ -202,7 +202,6 @@
                         [oidc]="store.draft().oidc"
                         [callbackUrl]="store.draft().callbackUrl"
                         [siteHostname]="store.hostName()"
-                        [isSystem]="store.isSystem()"
                         [errors]="store.errors()"
                         (fieldChange)="onOidcChange($event)"
                         (discover)="onDiscoverOidc()" />

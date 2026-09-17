@@ -144,7 +144,7 @@ export interface DotAuthHeadlessValues {
 export type DotAuthConfigView =
     | {
           hostId: string;
-          /** Site hostname (default site's for SYSTEM_HOST); drives the predicted redirect URI. */
+          /** Site hostname; absent for SYSTEM_HOST. Drives the predicted OAuth redirect URI. */
           hostName?: string;
           protocol: 'OAUTH';
           configured: boolean;

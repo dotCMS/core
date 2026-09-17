@@ -29,7 +29,7 @@ type DotAuthConfigStatus = 'init' | 'loading' | 'loaded' | 'saving' | 'error';
 
 interface DotAuthConfigState {
     siteId: string;
-    // Hostname the server resolved for siteId (default site's for SYSTEM_HOST); '' until loaded.
+    // Hostname the server resolved for siteId; '' for SYSTEM_HOST and until loaded.
     hostName: string;
     original: DotAuthConfig;
     draft: DotAuthConfig;

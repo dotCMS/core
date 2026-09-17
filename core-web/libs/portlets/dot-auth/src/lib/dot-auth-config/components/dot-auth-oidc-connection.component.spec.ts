@@ -101,8 +101,7 @@ describe('DotAuthOidcConnectionComponent', () => {
             expect(shown()).toBe(`https://cms.example.com${CALLBACK}`);
         });
 
-        it('explains on SYSTEM_HOST that inheriting sites use their own host when no override is set', () => {
-            spectator.setInput('isSystem', true);
+        it('explains on SYSTEM_HOST (no site hostname) that inheriting sites use their own host when no override is set', () => {
             expect(spectator.query(byTestId('redirect-uri-system-note'))).toBeTruthy();
             spectator.setInput('callbackUrl', 'https://cms.example.com');
             expect(spectator.query(byTestId('redirect-uri-system-note'))).toBeNull();

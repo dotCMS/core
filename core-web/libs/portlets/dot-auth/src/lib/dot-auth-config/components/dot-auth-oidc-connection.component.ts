@@ -33,10 +33,10 @@ export interface OidcConnectionChange {
 export class DotAuthOidcConnectionComponent {
     readonly oidc = input.required<DotAuthOidcConfig>();
     readonly callbackUrl = input<string>('');
-    /** Hostname of the site being configured; empty on SYSTEM_HOST. */
+    /** Hostname of the site being configured; the server sends none for SYSTEM_HOST. */
     readonly siteHostname = input<string>('');
     /** SYSTEM_HOST page: the real redirect host varies per inheriting site, so say so. */
-    readonly isSystem = input<boolean>(false);
+    readonly isSystem = computed(() => !this.siteHostname().trim());
     readonly errors = input<Record<string, string>>({});
 
     readonly fieldChange = output<OidcConnectionChange>();
