@@ -115,6 +115,16 @@ describe('DotAuthOidcConnectionComponent', () => {
         });
     });
 
+    it('has no header test-connection button; discovery is the only trigger', () => {
+        expect(spectator.query(byTestId('test-connection'))).toBeNull();
+        expect(
+            spectator
+                .queryAll('p-button')
+                .filter((el) => el.textContent?.includes('dotauth.action.test-connection'))
+        ).toHaveLength(0);
+        expect(spectator.query(byTestId('discover'))).toBeTruthy();
+    });
+
     it('hides the groups fields while the advanced section is collapsed', () => {
         expect(spectator.query(byTestId('groups-url'))).toBeNull();
         expect(spectator.query(byTestId('groups-response-path'))).toBeNull();
