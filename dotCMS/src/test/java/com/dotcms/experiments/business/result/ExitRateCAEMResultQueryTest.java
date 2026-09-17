@@ -5,13 +5,20 @@ import com.dotcms.cube.AnalyticsResultSetImpl;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.RunningIds;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.liferay.portal.model.User;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.dotcms.analytics.model.ResultSetItem;
@@ -25,6 +32,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,9 +42,10 @@ import static org.mockito.Mockito.when;
  * <p>Covers the following behaviours (see FR-004, FR-006a, FR-006b, FR-014, FR-017):</p>
  * <ul>
  *   <li><strong>executeByDay param construction</strong> — verifies that the CAEM request includes
- *       {@code metrics=totalSessions,exitSessions,exitRate}, {@code dimensions=variant,day}, and the
- *       correct {@code experimentId} / {@code runningId}.</li>
- *   <li><strong>executeAggregate param construction</strong> — same metrics but {@code dimensions=variant}
+ *       {@code metrics=totalSessions,exitSessions,exitRate}, {@code dimensions=variant,day},
+ *       {@code referencePage} resolved from the experiment page, and the correct
+ *       {@code experimentId} / {@code runningId}.</li>
+ *   <li><strong>executeAggregate param construction</strong> — same params but {@code dimensions=variant}
  *       only (no day granularity).</li>
  *   <li><strong>Empty result (FR-014)</strong> — a zero-row CAEM response (e.g. no sessions exited on
  *       the configured reference page) produces an empty {@link com.dotcms.cube.AnalyticsResultSet}
@@ -45,32 +54,55 @@ import static org.mockito.Mockito.when;
  *       thrown by {@link CaemHttpClient} is propagated to the caller without being swallowed.</li>
  * </ul>
  *
- * <p>{@link CaemHttpClient} is mocked — no real CAEM service or dotCMS container is required.</p>
+ * <p>{@link CaemHttpClient} is mocked — no real CAEM service or dotCMS container is required.
+ * {@link APILocator} is stubbed via {@code mockStatic} so {@link GoalConditionUtil#resolvePageUri}
+ * returns {@link #REFERENCE_PAGE} without a live database lookup.</p>
  */
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class ExitRateCAEMResultQueryTest {
 
     private static final String EXPERIMENT_ID  = "exp-exit-123";
     private static final String RUNNING_ID     = "run-exit-456";
+    private static final String PAGE_ID        = "page-exit-789";
+    private static final String REFERENCE_PAGE = "/checkout";
 
-    @Mock private CaemHttpClient caemHttpClient;
-    @Mock private Experiment     experiment;
-    @Mock private User           user;
+    @Mock private CaemHttpClient   caemHttpClient;
+    @Mock private Experiment       experiment;
+    @Mock private User             user;
+    @Mock private ContentletAPI    contentletAPI;
+    @Mock private HTMLPageAssetAPI htmlPageAssetAPI;
+    @Mock private HTMLPageAsset    experimentPage;
+    @Mock private Contentlet       pageContentlet;
 
-    private ExitRateCAEMResultQuery query;
+    private ExitRateCAEMResultQuery  query;
+    private MockedStatic<APILocator> mockedApiLocator;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         query = new ExitRateCAEMResultQuery(caemHttpClient);
 
         when(experiment.getIdentifier()).thenReturn(EXPERIMENT_ID);
         when(experiment.status()).thenReturn(Status.RUNNING);
+        when(experiment.pageId()).thenReturn(PAGE_ID);
 
         final RunningIds.RunningId runningId = mock(RunningIds.RunningId.class);
         when(runningId.id()).thenReturn(RUNNING_ID);
         final RunningIds runningIds = mock(RunningIds.class);
         when(runningIds.getCurrent()).thenReturn(Optional.of(runningId));
         when(experiment.runningIds()).thenReturn(runningIds);
+
+        // Stub APILocator so resolvePageUri works without a live dotCMS container.
+        mockedApiLocator = mockStatic(APILocator.class);
+        mockedApiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
+        mockedApiLocator.when(APILocator::getHTMLPageAssetAPI).thenReturn(htmlPageAssetAPI);
+        when(contentletAPI.findContentletByIdentifierAnyLanguage(PAGE_ID, false)).thenReturn(pageContentlet);
+        when(htmlPageAssetAPI.fromContentlet(pageContentlet)).thenReturn(experimentPage);
+        when(experimentPage.getURI()).thenReturn(REFERENCE_PAGE);
+    }
+
+    @After
+    public void tearDown() {
+        mockedApiLocator.close();
     }
 
     // -------------------------------------------------------------------------
@@ -80,8 +112,9 @@ public class ExitRateCAEMResultQueryTest {
     /**
      * Method to test: {@link ExitRateCAEMResultQuery#executeByDay(Experiment, User)}
      * When: called with a running experiment
-     * Should: call {@code GET /v1/sessions} with exit metrics,
-     *         {@code dimensions=variant,day}, and the correct {@code experimentId} / {@code runningId}
+     * Should: call {@code GET /v1/sessions} with exit metrics, {@code referencePage} from the
+     *         experiment page, {@code dimensions=variant,day}, and the correct
+     *         {@code experimentId} / {@code runningId}
      */
     @Test
     public void executeByDay_includesReferencePageAndDayDimension()
@@ -94,6 +127,7 @@ public class ExitRateCAEMResultQueryTest {
                 eq("/v1/sessions"),
                 argThat(params ->
                         "variant,day".equals(params.get("dimensions"))
+                        && REFERENCE_PAGE.equals(params.get("referencePage"))
                         && EXPERIMENT_ID.equals(params.get("experimentId"))
                         && RUNNING_ID.equals(params.get("runningId"))
                         && params.get("metrics").contains("exitSessions")
@@ -118,6 +152,7 @@ public class ExitRateCAEMResultQueryTest {
                 eq("/v1/sessions"),
                 argThat(params ->
                         "variant".equals(params.get("dimensions"))
+                        && REFERENCE_PAGE.equals(params.get("referencePage"))
                         && EXPERIMENT_ID.equals(params.get("experimentId"))
                         && RUNNING_ID.equals(params.get("runningId"))
                         && params.get("metrics").contains("exitSessions")
