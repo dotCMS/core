@@ -51,10 +51,19 @@ test('Experiments leads to the legacy per-page screens @critical', async ({ page
     await expect(editor.experimentsNavItem).toBeVisible();
     await editor.experimentsNavItem.click();
 
-    // The address the item carried before this feature existed, and the one it must still carry:
-    // `experiments/{pageId}`, relative to `edit-page`. The panel writes nothing to the address,
-    // so a URL assertion is what tells the two behaviours apart.
-    await expect(page).toHaveURL(new RegExp(`/edit-page/experiments/${pageContentlet.identifier}`));
+    /**
+     * The route the item carried before this feature existed, and must still carry. The panel
+     * writes nothing to the address, so a URL assertion is what tells the two behaviours apart:
+     * a destination navigates, an action does not.
+     *
+     * The segment after `experiments/` is deliberately not pinned. It is `{pageId}` on an instance
+     * with Analytics configured, and `analytic-app-misconfiguration` on one without — this harness
+     * is the second kind, as the note at the foot of this file already records. Either way the
+     * editor has left `/edit-page/content` for the legacy screen, which is the whole claim. Pinning
+     * the page id made this assert the instance's Analytics setup instead.
+     */
+    await expect(page).toHaveURL(/\/edit-page\/experiments\//);
+    await expect(page).not.toHaveURL(/\/edit-page\/content/);
 });
 
 test('no Experiments panel exists @critical', async ({ page }) => {
