@@ -337,17 +337,27 @@ export class ContentDrivePage {
     }
 
     /**
-     * Clicks the listing's rows-per-page control.
+     * Whether the status toast is what a click would land on at its own centre.
      *
-     * Used to prove the status toast is not sitting on top of it. This control is at the bottom
-     * centre of the viewport, which is exactly where the toast renders, and it is always present
-     * and enabled -- unlike the next-page button, which depends on how much the folder holds.
+     * Asked of the browser's hit-testing rather than by clicking a control underneath. The first
+     * version of this clicked the listing's rows-per-page box on the claim that it is "always
+     * enabled"; it is not -- an empty folder disables it, and a test that seeds its own folder
+     * always starts empty, so the check failed on the control rather than on the toast.
      *
-     * Playwright fails a click that an overlay intercepts, naming the element in the way, so the
-     * assertion is the click itself.
+     * `elementFromPoint` asks the question directly and needs nothing beneath the toast at all.
      */
-    async openRowsPerPage() {
-        await this.page.getByRole('combobox', { name: 'Rows per page' }).click({ timeout: 5000 });
+    async statusToastTakesClicksAtItsCentre(): Promise<boolean> {
+        const box = await this.statusToast.boundingBox();
+
+        if (!box) {
+            throw new Error('no status toast on screen to test');
+        }
+
+        return this.page.evaluate(
+            ([x, y]) =>
+                !!document.elementFromPoint(x, y)?.closest('[data-testid="dot-status-toast"]'),
+            [box.x + box.width / 2, box.y + box.height / 2]
+        );
     }
 
     /** Whether the scope bar is open, which is a question about height rather than presence. */
@@ -485,6 +495,14 @@ export class ContentDrivePage {
      * afterwards never resolves.
      */
     private async selectSidebarEntry(row: Locator) {
+        // Clicking the entry you are already on changes no location, so the store re-requests
+        // nothing and a wait for the listing never resolves -- the test then dies on its own
+        // timeout with "Page closed", which says nothing about the entry. The drive lands on all
+        // site content, so this is the ordinary case for a test that starts there.
+        if ((await row.getAttribute('aria-current')) === 'true') {
+            return;
+        }
+
         const listing = this.page.waitForResponse(
             (response) => response.url().includes('/v1/drive/search') && response.ok()
         );

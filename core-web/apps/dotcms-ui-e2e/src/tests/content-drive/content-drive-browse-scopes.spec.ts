@@ -257,9 +257,9 @@ test.describe('Content Drive Browse Scopes', () => {
         // swallowed the click, so the page never changed and the listing sat on one page while the
         // paginator read as another.
         //
-        // Nothing in the toast is clickable, so nothing in it should take a click. Playwright fails
-        // a click an overlay intercepts and names the element in the way, which makes the click
-        // itself the assertion.
+        // Nothing in the toast is clickable, so nothing in it should take a click. Asked of the
+        // browser's own hit-testing at the toast's centre, which needs nothing enabled underneath
+        // -- a freshly seeded folder is empty, and an empty listing disables its page controls.
         const site = await apiHelpers.getDefaultSite();
         const folderName = `cd-click-${testSuffix}`;
         await apiHelpers.createFolders(site.hostname, [`/${folderName}`]);
@@ -272,7 +272,7 @@ test.describe('Content Drive Browse Scopes', () => {
             await drive.chooseFilesForUpload([`click-${testSuffix}.png`]);
             await drive.expectStatusToastContaining('Uploading');
 
-            await drive.openRowsPerPage();
+            expect(await drive.statusToastTakesClicksAtItsCentre()).toBe(false);
         } finally {
             await apiHelpers.deleteFolders(site.hostname, [`/${folderName}`]);
         }
