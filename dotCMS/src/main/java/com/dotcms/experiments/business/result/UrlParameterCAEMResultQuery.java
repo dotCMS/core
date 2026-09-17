@@ -24,6 +24,9 @@ import java.util.Map;
  *       {@link QueryParameter#getName()} on the goal condition</li>
  *   <li>{@code paramValue} — the query parameter value, sourced from
  *       {@link QueryParameter#getValue()} on the goal condition</li>
+ *   <li>{@code paramMatchType} — the URL parameter match operator ({@code "equals"} or
+ *       {@code "contains"}), derived from the {@code operator()} on the {@code "queryParameter"}
+ *       condition</li>
  *   <li>{@code dimensions=variant} for {@link #executeAggregate} (aggregate per-variant totals)</li>
  *   <li>{@code dimensions=variant,day} for {@link #executeByDay} (per-day per-variant breakdown)</li>
  * </ul>
@@ -80,6 +83,8 @@ public class UrlParameterCAEMResultQuery implements ExperimentGoalResultsQuery {
             params.put("paramName", qp.getName());
             params.put("paramValue", qp.getValue());
         });
+        GoalConditionUtil.findConditionOperator(experiment, "queryParameter")
+                .ifPresent(op -> params.put("paramMatchType", op.name().toLowerCase()));
         return params;
     }
 
