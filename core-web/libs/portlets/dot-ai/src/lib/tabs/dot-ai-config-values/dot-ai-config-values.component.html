@@ -9,35 +9,31 @@
             (search)="$filter.set($event)"
             data-testid="dotai-config-filter" />
 
-        <!-- flex-1 takes the slack, which is what keeps the filter left and the action right;
-             truncate because a long host string would otherwise do the squeezing itself. -->
+        <!-- flex-1 takes the slack, which is what keeps the filter left; truncate because a
+             long host string would otherwise do the squeezing itself. -->
         <span class="flex-1 truncate text-sm text-muted-color" data-testid="dotai-config-host">
-            {{ store.resolvedConfig().configHost }}
+            {{ $hostLabel() }}
         </span>
-
-        <!-- redactionFailed leaves providerConfig null while isConfigured stays true, so
-             without that second clause the button opens a dialog containing `{}` — which reads
-             as "the provider has no configuration" rather than "we would not show it". -->
-        <!-- shrink-0 + whitespace-nowrap: PrimeNG sets no white-space on the button or its
-             label, so a squeezed button broke "View provider config" across two lines. -->
-        <p-button
-            class="shrink-0 whitespace-nowrap"
-            variant="text"
-            [label]="'dotai.config.view-provider' | dm"
-            [disabled]="!store.isConfigured() || store.redactionFailed()"
-            (onClick)="$providerDialogOpen.set(true)"
-            data-testid="dotai-config-view-provider" />
     </div>
 
     <div class="min-h-0 flex-1 overflow-hidden">
         @if (store.redactionFailed()) {
             <!-- The server could not safely redact the config, so it sent a sentinel rather
                  than JSON. Say so instead of rendering the sentinel as a value (FR-046). -->
-            <dot-ai-empty-state
-                [title]="'dotai.config.redaction-failed.title' | dm"
-                [subtitle]="'dotai.config.redaction-failed.sub' | dm"
+            <dot-empty-container
+                [configuration]="redactionFailedConfig"
+                [hideContactUsLink]="true"
                 data-testid="dotai-config-redaction-failed" />
-        } @else {
+        } @else if ($emptyConfig(); as empty) {
+            <!-- Same reason as the Embeddings table: a `<td>` is sized by its content, so an
+                 empty state nested in one cannot centre in the pane. Which state this is --
+                 no match, or no config to show -- is decided in the component; an empty table
+                 is not one fact. -->
+            <dot-empty-container
+                [configuration]="empty"
+                [hideContactUsLink]="true"
+                data-testid="dotai-config-empty" />
+        } @else if ($filteredRows().length) {
             <p-table
                 [value]="$filteredRows()"
                 [rowHover]="true"
@@ -76,34 +72,7 @@
                         </td>
                     </tr>
                 </ng-template>
-
-                <ng-template pTemplate="emptymessage">
-                    <tr>
-                        <td colspan="3">
-                            <div class="p-8 text-center" data-testid="dotai-config-empty">
-                                <p class="text-muted-color">{{ 'dotai.config.empty' | dm }}</p>
-                            </div>
-                        </td>
-                    </tr>
-                </ng-template>
             </p-table>
         }
     </div>
 </section>
-
-<p-dialog
-    [visible]="$providerDialogOpen()"
-    (visibleChange)="$providerDialogOpen.set($event)"
-    [header]="'dotai.config.provider.header' | dm"
-    [modal]="true"
-    [draggable]="false"
-    [closable]="true"
-    [closeAriaLabel]="'close' | dm"
-    [closeOnEscape]="true"
-    [style]="{ width: '700px' }">
-    <pre
-        class="max-h-[60vh] overflow-auto rounded-md bg-surface-100 p-3 font-mono text-sm"
-        data-testid="dotai-config-provider-json"
-        >{{ $providerJson() }}</pre
-    >
-</p-dialog>
