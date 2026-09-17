@@ -280,16 +280,28 @@ describe('DotUsersListComponent', () => {
 
     describe('row kebab menu', () => {
         it('should expose only Push Publish and Add to Bundle when enterprise', () => {
-            const items = spectator.component['getRowMenuItems'](MOCK_USERS[0]);
+            const items = spectator.component['menuItemsFor'](MOCK_USERS[0]);
             const labels = items.filter((i) => i.label).map((i) => i.label);
 
             expect(labels).toEqual(['Push Publish', 'Add to Bundle']);
         });
 
         it('should not carry icons on the menu items', () => {
-            const items = spectator.component['getRowMenuItems'](MOCK_USERS[0]);
+            const items = spectator.component['menuItemsFor'](MOCK_USERS[0]);
 
             expect(items.every((i) => i.icon === undefined)).toBe(true);
+        });
+
+        it('should hand PrimeNG the same MenuItem[] reference for the same user across CD ticks', () => {
+            // Per Adrian's review on #37457: `[model]` reads on every
+            // change-detection cycle, so returning a fresh array each
+            // call allocates one per row per tick. The component now
+            // caches per userId and invalidates only when the underlying
+            // list refreshes.
+            const first = spectator.component['menuItemsFor'](MOCK_USERS[0]);
+            const second = spectator.component['menuItemsFor'](MOCK_USERS[0]);
+
+            expect(second).toBe(first);
         });
 
         it('openRowPushPublish should send the user_<id> asset identifier', () => {
@@ -494,11 +506,15 @@ describe('DotUsersListComponent — non-enterprise instance', () => {
         spectator.detectChanges();
     });
 
-    it('should return no menu items — kebab drops off the row entirely', () => {
-        const items = spectator.component['getRowMenuItems'](MOCK_USERS[0]);
+    it('should still render the row kebab (Add to Bundle works without EE)', () => {
+        // Non-EE rows keep the kebab because Add to Bundle is not
+        // license-gated; only the Push Publish entry drops off inside
+        // the menu. Same rule the bulk toolbar has followed since PR #37457.
+        const items = spectator.component['menuItemsFor'](MOCK_USERS[0]);
+        const labels = items.map((i) => i.label);
 
-        expect(items).toEqual([]);
-        expect(spectator.query(byTestId('users-row-more-btn'))).toBeNull();
+        expect(labels).toEqual(['Add to Bundle']);
+        expect(spectator.query(byTestId('users-row-more-btn'))).not.toBeNull();
     });
 
     it('should hide the Push Publish bulk action but keep Add to Bundle promoted', () => {

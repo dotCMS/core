@@ -1,7 +1,7 @@
 import { Subject } from 'rxjs';
 
 import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -168,34 +168,66 @@ export class DotUsersListComponent {
     );
 
     /**
-     * Menu items for the trailing kebab on a single row. Scope is
-     * intentionally narrow: Edit is already the row's own click target,
-     * Delete is the selection-toolbar action, so the kebab only holds
-     * the two publish-adjacent commands. Empty on non-enterprise
-     * instances — the template skips rendering the kebab entirely in
-     * that case so users don't see a dead trigger.
+     * Per-user cache of the row-kebab `MenuItem[]`. `<p-menu [model]>`
+     * reads its input on every change-detection cycle, so returning a
+     * freshly-built array from a plain method (as an earlier revision
+     * did) allocated one array per row per CD tick — enough noise on
+     * a full page that Adrian's #37457 review flagged it. The cache
+     * hands PrimeNG the same reference for the same user; it's cleared
+     * on every list reload via the effect below so stale user objects
+     * cannot leak commands captured in the closure.
      */
-    protected getRowMenuItems(user: DotUserListItem): MenuItem[] {
-        if (!this.$isPushPublishEnabled()) {
-            return [];
-        }
-
-        return [
-            {
-                label: this.#dotMessageService.get('users.actions.push-publish'),
-                command: () => this.openRowPushPublish(user)
-            },
-            {
-                label: this.#dotMessageService.get('users.actions.add-to-bundle'),
-                command: () => this.openRowAddToBundle(user)
-            }
-        ];
-    }
+    readonly #rowMenuItemsCache = new Map<string, MenuItem[]>();
 
     constructor() {
         this.#searchSubject
             .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => this.store.setFilter(value));
+
+        // Invalidate the kebab cache whenever the underlying users list
+        // changes. Reading `store.users()` establishes the dependency;
+        // the cleared cache repopulates lazily on the next
+        // `menuItemsFor(user)` call.
+        effect(() => {
+            this.store.users();
+            this.#rowMenuItemsCache.clear();
+        });
+    }
+
+    /**
+     * Menu items for the trailing kebab on a single row. Scope is
+     * intentionally narrow: Edit is already the row's own click target,
+     * Delete is the selection-toolbar action, so the kebab only holds
+     * the two publish-adjacent commands. `Add to Bundle` is available
+     * on every instance (bundles are archives and don't require an
+     * enterprise license — mirrors `dot-plugins-list.component.ts:135`
+     * and the bulk toolbar in this file); `Push Publish` is added only
+     * when the enterprise license + at least one PP environment are
+     * present. The kebab is therefore never empty and the template
+     * always renders the trigger.
+     */
+    protected menuItemsFor(user: DotUserListItem): MenuItem[] {
+        const cached = this.#rowMenuItemsCache.get(user.userId);
+        if (cached) {
+            return cached;
+        }
+
+        const items: MenuItem[] = [
+            {
+                label: this.#dotMessageService.get('users.actions.add-to-bundle'),
+                command: () => this.openRowAddToBundle(user)
+            }
+        ];
+        if (this.$isPushPublishEnabled()) {
+            items.unshift({
+                label: this.#dotMessageService.get('users.actions.push-publish'),
+                command: () => this.openRowPushPublish(user)
+            });
+        }
+
+        this.#rowMenuItemsCache.set(user.userId, items);
+
+        return items;
     }
 
     onSearch(value: string): void {

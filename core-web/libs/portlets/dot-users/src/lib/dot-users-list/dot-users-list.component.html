@@ -264,30 +264,42 @@
                         }
                     </td>
                     <td (click)="$event.stopPropagation()" data-testid="users-cell-actions">
-                        @if ($isPushPublishEnabled()) {
-                            <p-menu
-                                #rowMenu
-                                [model]="getRowMenuItems(user)"
-                                [popup]="true"
-                                appendTo="body" />
-                            <!--
-                                Hover-reveal on the row (see `group` on the tr).
-                                Kept focusable via `focus-within` fallbacks so a
-                                keyboard user tabbing across the table can still
-                                reach the trigger; without that the button would
-                                only be interactable when the pointer hovers.
-                            -->
-                            <button
-                                type="button"
-                                pButton
-                                [rounded]="true"
-                                [text]="true"
-                                icon="pi pi-ellipsis-v"
-                                class="opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 focus:opacity-100"
-                                [attr.aria-label]="'users.actions.more.aria' | dm"
-                                (click)="openRowMenu($event, rowMenu)"
-                                data-testid="users-row-more-btn"></button>
-                        }
+                        <!--
+                            Kebab is always rendered because `Add to Bundle`
+                            works without an enterprise license (bundles are
+                            plain archives — same story in `dot-plugins`).
+                            The `Push Publish` entry lives inside the menu
+                            and is added by `menuItemsFor()` only when EE +
+                            at least one PP environment are present, so the
+                            row gating matches the bulk toolbar above.
+
+                            `[model]="menuItemsFor(user)"` reads a cached
+                            per-user array (see `#rowMenuItemsCache` in the
+                            TS); the cache is invalidated by the effect on
+                            `store.users()` so a page reload never hands
+                            PrimeNG a stale command closure.
+
+                            Hover-reveal on the row (see `group` on the tr).
+                            Kept focusable via `focus-within` fallbacks so a
+                            keyboard user tabbing across the table can still
+                            reach the trigger; without that the button would
+                            only be interactable when the pointer hovers.
+                        -->
+                        <p-menu
+                            #rowMenu
+                            [model]="menuItemsFor(user)"
+                            [popup]="true"
+                            appendTo="body" />
+                        <button
+                            type="button"
+                            pButton
+                            [rounded]="true"
+                            [text]="true"
+                            icon="pi pi-ellipsis-v"
+                            class="opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 focus:opacity-100"
+                            [attr.aria-label]="'users.actions.more.aria' | dm"
+                            (click)="openRowMenu($event, rowMenu)"
+                            data-testid="users-row-more-btn"></button>
                     </td>
                 </tr>
             }
