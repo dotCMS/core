@@ -42,7 +42,7 @@ Rendering rules:
 - The hint is **always** plain text below the control. Never a tooltip, never an icon (AC-204).
 - The error message is text only — no icon — from the `dot.edit.content.form.field.required` key (AC-206).
 - Nothing renders when a field has neither, so no empty element and no phantom spacing (AC-205). `dot-card-field`'s `dot-card-field-footer:empty { display: none }` backstops this; a footer containing whitespace or a comment node is no longer `:empty`, so the consolidated template must emit genuinely nothing.
-- The asterisk is decorative `::after` content, absent from the accessible name; the control carries `required` / `aria-required` (AC-209).
+- The asterisk is decorative `::after` content, absent from the accessible name, so the control has to convey "required" itself (AC-209). *Which* element that is, and whether it can carry `aria-required` at all, depends on the widget — see the accessible naming model below.
 
 Reference implementation for states 3 and 4: `dot-edit-content-calendar-field.component.html:22-56`, built by #37465.
 
@@ -73,6 +73,39 @@ What `.form .field > label` requires, and what makes each global rule apply.
 | `.form .form-checkbox label` | descendant | matches option labels at their current depth, no restructuring needed |
 | `.form .p-field-hint` / `.p-field-error` | descendant | `.form` on the root form |
 | `.p-label-input-required::after` | unscoped, in `_misc.scss` | loaded by **both** bundles — which is what keeps the legacy editor safe |
+
+## Accessible naming model
+
+The presentation model above says the control conveys "required". There is no single element
+that does that, and no single attribute: it resolves three different ways depending on what the
+widget actually renders. This is the part that cannot be inferred from the DOM sketch.
+
+| Widget shape | Named by | `aria-required`? | Examples |
+|---|---|---|---|
+| A labelable control (`input`, `textarea`, `select`) | `<label for>` → the control's `id` | yes | text, text area, numeric, tag |
+| A composite widget — a `<div>` or a `<span>` | `role` + `aria-labelledby="label-<variable>"` → the label's `id` | only where ARIA defines it for that role | radio (`radiogroup`), checkbox (`group`), key-value, category, relationship, file, host-folder (`combobox`) |
+| A third-party editor that owns its DOM | its own option | n/a — the editor controls its internals | Monaco `ariaLabel`, TinyMCE `iframe_aria_text` + `iframe_attrs.title`, new-block-editor `$accessibleName`, PrimeNG `p-select` `ariaLabelledBy` |
+
+Two constraints drive the split, and both are external — neither is a choice this work made:
+
+- **`<label for>` only associates with labelable elements.** A `<div role="group">`, or PrimeNG's
+  `<span role="combobox">`, cannot be named that way at all. That is why the label carries
+  `id="label-<variable>"`: it is the target those widgets point `aria-labelledby` at.
+- **`aria-required` is defined on `combobox`, `listbox`, `radiogroup`, `spinbutton`, `textbox`
+  and `tree` — not on plain `group`,** and there is no `checkboxgroup` role. So a required
+  checkbox group announces its name and its asterisk is visible, but ARIA has no vocabulary for
+  it to announce "required". Setting the attribute anyway would be invalid ARIA, which is worse
+  than omitting it.
+
+**Result: accessible name on 22/22 field types; `aria-required` on 11/22** — the second number is
+an ARIA ceiling, not unfinished work. `dot-card-field` sets `aria-required` on the element the
+label's `for` names, and on nothing else: inferring the control from "first focusable descendant"
+marked the editor-mode dropdown on Text Area and WYSIWYG, which is the wrong element on exactly
+the fields where it matters most.
+
+Verification is `label.control` — the browser's own association resolution — not "an element with
+that id exists". The two disagree, and the weaker check is what made 13 field types look correct
+while their `for` pointed at an id that was never rendered.
 
 ## Transitions
 
