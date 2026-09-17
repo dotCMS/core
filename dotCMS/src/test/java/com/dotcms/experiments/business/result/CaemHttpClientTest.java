@@ -34,7 +34,7 @@ public class CaemHttpClientTest {
                 "]}";
 
         final CaemHttpClient client = new CaemHttpClient() {
-            @Override protected Map<String, String> buildHeaders(final Host h) { return Map.of(); }
+            @Override protected Map<String, String> buildHeaders(final Host h) throws DotDataException { return Map.of(); }
             @Override
             protected CaemResponse doGet(final String relativePath, final Map<String, String> queryParams, final Map<String, String> headers) throws DotDataException {
                 return new CaemResponse(200, json);
@@ -51,7 +51,7 @@ public class CaemHttpClientTest {
     @Test(expected = DotDataException.class)
     public void get_non2xxResponse_throwsDotDataException() throws DotDataException {
         final CaemHttpClient client = new CaemHttpClient() {
-            @Override protected Map<String, String> buildHeaders(final Host h) { return Map.of(); }
+            @Override protected Map<String, String> buildHeaders(final Host h) throws DotDataException { return Map.of(); }
             @Override
             protected CaemResponse doGet(final String relativePath, final Map<String, String> queryParams, final Map<String, String> headers) throws DotDataException {
                 return new CaemResponse(503, "Service Unavailable");
@@ -64,7 +64,7 @@ public class CaemHttpClientTest {
     @Test(expected = DotDataException.class)
     public void get_malformedJsonBody_throwsDotDataException() throws DotDataException {
         final CaemHttpClient client = new CaemHttpClient() {
-            @Override protected Map<String, String> buildHeaders(final Host h) { return Map.of(); }
+            @Override protected Map<String, String> buildHeaders(final Host h) throws DotDataException { return Map.of(); }
             @Override
             protected CaemResponse doGet(final String relativePath, final Map<String, String> queryParams, final Map<String, String> headers) throws DotDataException {
                 return new CaemResponse(200, "not-valid-json{{{{");
@@ -77,7 +77,7 @@ public class CaemHttpClientTest {
     @Test
     public void get_emptyDataArray_returnsEmptyResultSet() throws DotDataException {
         final CaemHttpClient client = new CaemHttpClient() {
-            @Override protected Map<String, String> buildHeaders(final Host h) { return Map.of(); }
+            @Override protected Map<String, String> buildHeaders(final Host h) throws DotDataException { return Map.of(); }
             @Override
             protected CaemResponse doGet(final String relativePath, final Map<String, String> queryParams, final Map<String, String> headers) throws DotDataException {
                 return new CaemResponse(200, "{\"rows\":[]}");
@@ -94,7 +94,7 @@ public class CaemHttpClientTest {
     public void get_authorizationHeaderIncluded() throws DotDataException {
         final String[] capturedAuthHeader = {null};
         final CaemHttpClient client = new CaemHttpClient() {
-            @Override protected Map<String, String> buildHeaders(final Host h) { return Map.of(); }
+            @Override protected Map<String, String> buildHeaders(final Host h) throws DotDataException { return Map.of(); }
             @Override
             protected CaemResponse doGet(final String relativePath, final Map<String, String> queryParams, final Map<String, String> headers) throws DotDataException {
                 capturedAuthHeader[0] = headers.get("Authorization");

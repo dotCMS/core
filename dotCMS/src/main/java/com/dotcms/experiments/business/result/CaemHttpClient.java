@@ -51,7 +51,8 @@ public class CaemHttpClient {
      * @param host          site context for per-site HMAC token lookup; {@code null} when the
      *                      current host is resolved from the request context by the caller
      * @return {@link AnalyticsResultSet} populated from the CAEM response
-     * @throws DotDataException if the response is non-2xx or the body cannot be parsed
+     * @throws DotDataException if no bearer token is found for the resolved host, the response is
+     *                          non-2xx, or the body cannot be parsed
      */
     public AnalyticsResultSet get(final String relativePath,
                                   final Map<String, String> queryParams,
@@ -171,11 +172,15 @@ public class CaemHttpClient {
         }
     }
 
-    protected Map<String, String> buildHeaders(@Nullable final Host host) {
-        final Map<String, String> headers = new HashMap<>();
+    protected Map<String, String> buildHeaders(@Nullable final Host host) throws DotDataException {
         final Host resolvedHost = host != null ? host : resolveCurrentHost();
-        ContentAnalyticsUtil.getBearerTokenFromAppSecrets(resolvedHost)
-                .ifPresent(token -> headers.put(HttpHeaders.AUTHORIZATION, "Bearer " + token));
+        final String token = ContentAnalyticsUtil.getBearerTokenFromAppSecrets(resolvedHost)
+                .orElseThrow(() -> new DotDataException(
+                        "CAEM authentication failed: no bearer token found for host '"
+                        + (resolvedHost != null ? resolvedHost.getHostname() : "unresolved")
+                        + "'. Ensure the Analytics app is configured for this site."));
+        final Map<String, String> headers = new HashMap<>();
+        headers.put(HttpHeaders.AUTHORIZATION, "Bearer " + token);
         return headers;
     }
 
