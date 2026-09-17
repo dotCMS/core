@@ -457,6 +457,23 @@ public class BrowserQuery {
         }
 
         /**
+         * When set, search includes items that belong to system-host.
+         *
+         * @param forceSystemHost whether System Host content joins the results
+         * @return this builder
+         * @deprecated since 26.09, use {@link #systemHostMode(SystemHostMode)}. The boolean can
+         * only name two of the three shapes the host predicate has, and not the one Content Drive
+         * needs ({@link SystemHostMode#ONLY}). It is kept because it is public API that has
+         * shipped for years and may be held by a static plugin, a jar on the container classpath,
+         * or customer code compiled against an older core; it delegates, so it cannot drift.
+         */
+        @Deprecated
+        public Builder forceSystemHost(final boolean forceSystemHost) {
+            return systemHostMode(
+                    forceSystemHost ? SystemHostMode.INCLUDE : SystemHostMode.EXCLUDE);
+        }
+
+        /**
          * Introduced to allow skipping the inclusion of a calculated folder path in the base query
          * This property ensures we don't break prior functionality.
          * This is useful if we want to retrieve everything under a site root. No folder should be included
