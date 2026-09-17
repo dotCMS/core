@@ -20,7 +20,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -285,18 +284,24 @@ public class ContentDriveBrowseScopeTest extends IntegrationTestBase {
 
         assertTrue("The site's top-level folders must be listed at the site root",
                 results.folderCount > 0);
-        // `folderMap.folderName`, which is what a folder row in THIS listing actually carries.
-        // An earlier version of this asserted on "title" because `DotFolderTransformerImpl` sets
-        // it -- but that is `buildSiteBrowserView`. Content Drive goes through the same class's
-        // CONTENT_DRIVE view, whose `contentDriveView()` returns `{folder, folderMap}` and no
-        // "title" at all, so the assertion could never match however correct the listing was.
-        assertTrue("The test's own folder must be among them",
-                results.list.stream()
-                        .map(item -> item.get("folderMap"))
-                        .filter(Map.class::isInstance)
-                        .map(Map.class::cast)
-                        .anyMatch(folderMap ->
-                                childFolder.getName().equals(folderMap.get("folderName"))));
+
+        // A folder row here is a FLAT map, so the name is a top-level "name" key.
+        // `foldersDefaultView` builds it with `withDefaultView`, which is
+        // `DotFolderTransformerImpl.defaultInstance` -> TargetView.CONTENT_DRIVE ->
+        // `contentDriveView`, and that returns `folder.getMap()` plus "permissions", minus
+        // "inode". Two earlier versions of this assertion guessed at other shapes: "title" (that
+        // is `buildSiteBrowserView`, the BROWSE_VIEW branch) and "folderMap.folderName" (that is
+        // `buildFolderToMapTransformerView`, the GraphQL branch, which sits directly below
+        // `contentDriveView` and is easy to read as part of it). The observed names are put in
+        // the message so a future failure here says what it got instead of only what it wanted.
+        final Set<String> folderNames = results.list.stream()
+                .map(item -> item.get("name"))
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .collect(Collectors.toSet());
+
+        assertTrue("The test's own folder must be among them, got: " + folderNames,
+                folderNames.contains(childFolder.getName()));
     }
 
     /**
