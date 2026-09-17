@@ -303,6 +303,58 @@ describe('DotUsersCreateComponent', () => {
             expect(call.payload.roles).not.toContain('user-42');
         });
 
+        it('should hand the three access-role keys to the shuttle as `excludedRoleKeys`', () => {
+            // The bug Adrian flagged (#37457) is only preventable when
+            // the shuttle cannot emit access-role IDs in the first
+            // place — the shell has no full role catalog to resolve
+            // arbitrary IDs back to keys, so a defensive shell-only
+            // strip cannot cover the case. The template exposes
+            // `ACCESS_ROLE_KEYS_LIST` for the tab's `excludedRoleKeys`
+            // input; verifying that alias is present is the smallest
+            // check that pins the guarantee in place.
+            const list = spectator.component['ACCESS_ROLE_KEYS_LIST'];
+            expect(list).toEqual([
+                'CMS Administrator',
+                'DOTCMS_BACK_END_USER',
+                'DOTCMS_FRONT_END_USER'
+            ]);
+        });
+
+        it('should drop initial-fetch access-role IDs from the shuttle seed', () => {
+            // Belt-and-suspenders: if a user was already a Back-end
+            // User (the mock has `DOTCMS_BACK_END_USER` on them), the
+            // shuttle seed excludes that id so the Granted panel does
+            // not show a role that the tab would then filter out of
+            // Available — which would read as a stuck row the user
+            // can't move.
+            expect(spectator.component['initialGrantedRoleIds']()).not.toContain('role-back');
+            expect(spectator.component['initialGrantedRoleIds']()).toContain('role-personal');
+        });
+
+        it('should send exactly one identifier per access role even if the shuttle also carries the id', () => {
+            // The pair (id from the shuttle + key added by the toggle)
+            // would otherwise land as two entries for the same role.
+            // The shell's strip catches the initial-fetch id; the tab's
+            // `excludedRoleKeys` handling catches the rest. Either way
+            // the payload contains the key exactly once.
+            spectator.component['onGrantedRolesChange'](['role-back']);
+            spectator.component.form.controls.access.patchValue({
+                cmsAdmin: false,
+                backend: true, // key `DOTCMS_BACK_END_USER` added by toggle
+                frontend: false
+            });
+            spectator.detectChanges();
+            spectator.click(saveButton(spectator));
+
+            const call = (dialogRef.close as Mock).mock.calls[0][0] as {
+                payload: { roles: string[] };
+            };
+            const backendEntries = call.payload.roles.filter(
+                (id) => id === 'role-back' || id === 'DOTCMS_BACK_END_USER'
+            );
+            expect(backendEntries).toEqual(['DOTCMS_BACK_END_USER']);
+        });
+
         it('should send an empty `roles: []` when the Roles tab clears every grant and access toggles are off', () => {
             // Simulate the Roles tab clearing everything.
             spectator.component['onGrantedRolesChange']([]);

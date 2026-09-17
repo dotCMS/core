@@ -39,12 +39,9 @@ import { DotUserListItem } from '../services/dot-users.service';
 
 /**
  * Legacy backend contract: Push Publish and Add to Bundle identify a
- * user asset by the prefix `user_` on the raw userId. `users_` (empty
- * suffix) means "the current selection", which the pushHandler backend
- * resolves against the session — matching what the legacy Dojo portlet
- * did in `view_users_js_inc.jsp`. Bulk selections stringify with the
- * `user_` prefix on each id, comma-joined, mirroring how content-drive
- * hands multiple identifiers to the same dialog.
+ * user asset by the prefix `user_` on the raw userId. Bulk selections
+ * stringify with the `user_` prefix on each id, comma-joined, mirroring
+ * how content-drive hands multiple identifiers to the same dialog.
  */
 const USER_ASSET_PREFIX = 'user_';
 

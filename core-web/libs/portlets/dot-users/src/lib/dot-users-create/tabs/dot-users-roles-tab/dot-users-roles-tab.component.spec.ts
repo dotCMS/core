@@ -222,6 +222,25 @@ describe('DotUsersRolesTabComponent', () => {
             );
             expect(rootIds).toContain('1');
         });
+
+        it('excludedRoleKeys drops matching leaves from the tree entirely', () => {
+            // Simulates the shell handing the shuttle the three
+            // Access-toggle keys (`CMS Administrator`, back-end,
+            // front-end). In the fixture Root B's key is `ROOT_B`, so
+            // excluding it here mirrors the same shape: the leaf drops
+            // out of Available and its checkbox drops out of the pool.
+            spectator.setInput('excludedRoleKeys', ['ROOT_B']);
+            const flat = flatten(spectator.component['$availableTree']() as AvailableNode[]).map(
+                (node) => node.role.id
+            );
+
+            expect(flat).not.toContain('6');
+            // isGrantableLeaf also honors the exclusion — the row can't
+            // be checked from a parent's bulk-select either.
+            expect(
+                spectator.component['canSelectRole'](fakeRole({ id: '6', roleKey: 'ROOT_B' }))
+            ).toBe(false);
+        });
     });
 
     describe('p-tree selection sync', () => {

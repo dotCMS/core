@@ -73,6 +73,17 @@ const ACCESS_ROLE_KEYS = {
     frontend: 'DOTCMS_FRONT_END_USER'
 } as const;
 
+/**
+ * Bare list of the three access-role keys, handed to
+ * `<dot-users-roles-tab>` so the shuttle hides them entirely. The
+ * Access toggles are the sole UI for those three; without this the
+ * shuttle could grant `CMS Administrator` to a non-admin whose
+ * initial fetch didn't include that id, and the shell's merge
+ * (`accessRoleIds` derived from the initial fetch) would never
+ * strip it — see Adrian's #37457 review.
+ */
+const ACCESS_ROLE_KEYS_LIST: readonly string[] = Object.values(ACCESS_ROLE_KEYS);
+
 /** `p-tab` value of the Permissions tab. */
 const PERMISSIONS_TAB = 2;
 
@@ -121,6 +132,12 @@ export class DotUsersCreateComponent {
 
     readonly user = this.#config.data?.user ?? null;
     readonly isEdit = !!this.user;
+
+    /**
+     * Template-visible alias so `<dot-users-roles-tab [excludedRoleKeys]>`
+     * can bind the module-level constant without a per-component wrapper.
+     */
+    protected readonly ACCESS_ROLE_KEYS_LIST = ACCESS_ROLE_KEYS_LIST;
 
     readonly form: DotUsersFormGroup = this.#fb.nonNullable.group({
         account: this.#fb.nonNullable.group(
@@ -481,9 +498,19 @@ export class DotUsersCreateComponent {
         // the same list if the user never touches the tab. IDs since
         // #37218 (the backend accepts both, but IDs are the stable
         // identifier — keyless roles round-trip cleanly).
-        const roleIds = roles.map((role) => role.id);
-        this.initialGrantedRoleIds.set(roleIds);
-        this.currentRoleIds.set(roleIds);
+        //
+        // The three access-role IDs are stripped here so the shuttle
+        // never sees them — Access toggles are the sole UI for those.
+        // Without the strip the tab's Granted panel would show the
+        // three roles as pre-checked while the shuttle can no longer
+        // revoke them (they're filtered out of Available by the tab's
+        // `excludedRoleKeys` handler), which reads as a stuck state.
+        const accessKeys = new Set<string>(ACCESS_ROLE_KEYS_LIST);
+        const shuttleRoleIds = roles
+            .filter((role) => !accessKeys.has(role.roleKey))
+            .map((role) => role.id);
+        this.initialGrantedRoleIds.set(shuttleRoleIds);
+        this.currentRoleIds.set(shuttleRoleIds);
     }
 
     protected onGrantedRolesChange(roleIds: string[]): void {
@@ -605,12 +632,16 @@ export class DotUsersCreateComponent {
      * Merges the "base" role IDs with the current Access toggles.
      * The base is the Roles tab's Granted snapshot (`currentRoleIds`)
      * when the user touched it — otherwise the store's fetched IDs.
-     * We strip the three access-role IDs from the base list and add
-     * back whichever toggles are ON — as `roleKey`s, since those are
-     * constants and the backend resolves either since #37218. The
-     * resulting payload is a mixed-identifier list (IDs for custom
-     * roles, keys for the three access roles), which is exactly what
-     * the endpoint now accepts.
+     *
+     * `currentRoleIds` is seeded without the three access-role IDs
+     * (see `applyLoadedDetail`), so if the shuttle has been touched
+     * the strip below is a no-op. The strip still matters when the
+     * shuttle was never touched: in that case `base` comes from the
+     * initial fetch and *does* include access roles for admins /
+     * back-end / front-end users, and we need to drop them so the
+     * toggles remain the single source of truth for those keys.
+     * Belt-and-suspenders — Adrian's #37457 review flagged that
+     * relying on either half alone leaves a gap.
      */
     private mergeRoleIdsForSave(access: {
         cmsAdmin: boolean;
@@ -618,7 +649,7 @@ export class DotUsersCreateComponent {
         frontend: boolean;
     }): string[] {
         const base = this.currentRoleIds() ?? this.#store.roles().map((role) => role.id);
-        const accessKeys = new Set<string>(Object.values(ACCESS_ROLE_KEYS));
+        const accessKeys = new Set<string>(ACCESS_ROLE_KEYS_LIST);
         const accessRoleIds = new Set(
             this.#store
                 .roles()

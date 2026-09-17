@@ -115,6 +115,19 @@ export class DotUsersRolesTabComponent {
     readonly initialGrantedIds = input<string[]>([]);
 
     /**
+     * Role keys the shell manages through a dedicated UI (typically
+     * the Access-toggles on the profile tab). Roles matching these
+     * keys are excluded from the shuttle entirely — from Available
+     * and, defensively, from any granted seed too — so the shuttle
+     * and the toggles never disagree on the same role. Per Adrian's
+     * review on #37457: without this, granting `CMS Administrator`
+     * from the shuttle for a user who wasn't previously an admin
+     * would slip the id past the shell's initial-fetch-based strip
+     * and land in the save payload while the toggle still reads OFF.
+     */
+    readonly excludedRoleKeys = input<readonly string[]>([]);
+
+    /**
      * Emits the full set of currently granted role IDs every time
      * the user grants or revokes anything. The shell listens and
      * plugs the value into the save payload.
@@ -122,6 +135,19 @@ export class DotUsersRolesTabComponent {
     readonly grantedChange = output<string[]>();
 
     readonly #$allRoles = signal<RoleOption[]>([]);
+
+    readonly #$excludedRoleIds = computed(() => {
+        const keys = new Set(this.excludedRoleKeys());
+        if (keys.size === 0) {
+            return new Set<string>();
+        }
+
+        return new Set(
+            this.#$allRoles()
+                .filter((role) => keys.has(role.roleKey))
+                .map((role) => role.id)
+        );
+    });
     readonly #$rolesById = computed(() => {
         const map = new Map<string, RoleOption>();
         for (const role of this.#$allRoles()) {
@@ -149,15 +175,22 @@ export class DotUsersRolesTabComponent {
 
     /**
      * A role is individually grantable when it's a leaf AND its
-     * backend `editUsers` flag isn't `false`. Parents (nodes with
+     * backend `editUsers` flag isn't `false` AND its key is not in
+     * the caller's `excludedRoleKeys` set. Parents (nodes with
      * children) are excluded because checking a parent is a shortcut
      * for granting every grantable leaf beneath it, not for granting
      * the parent's own role. `editUsers=false` roles are excluded
      * because `addRoleToUser` throws on them and rolls the whole
-     * transactional PUT back.
+     * transactional PUT back. Shell-managed roles are excluded so
+     * the parent bulk-select checkboxes don't try to grant them
+     * either — the tree filter drops the leaves themselves; this
+     * keeps the count logic aligned.
      */
     private isGrantableLeaf(role: RoleOption): boolean {
         if (this.#$rolesWithChildren().has(role.id)) {
+            return false;
+        }
+        if (this.#$excludedRoleIds().has(role.id)) {
             return false;
         }
 
@@ -279,6 +312,7 @@ export class DotUsersRolesTabComponent {
         const query = this.$availableFilter().toLowerCase().trim();
         const grantedIds = new Set(this.$granted());
         const grantableLeaves = this.#$grantableLeavesByRole();
+        const excludedIds = this.#$excludedRoleIds();
 
         // A parent stays in the tree if either:
         //   - it never had any grantable descendants (workflow-only
@@ -299,6 +333,15 @@ export class DotUsersRolesTabComponent {
         };
 
         const pool = this.#$allRoles().filter((role) => {
+            // Excluded (shell-managed) roles never appear in the
+            // shuttle. Leaves drop immediately; parents drop only when
+            // their exclusion doesn't hide a sibling branch — the
+            // outer `hasRemainingGrantable` check below handles that
+            // because leaves matching an excluded key are no longer
+            // in the grantable-leaves map.
+            if (excludedIds.has(role.id)) {
+                return false;
+            }
             if (this.#$rolesWithChildren().has(role.id)) {
                 return hasRemainingGrantable(role.id);
             }

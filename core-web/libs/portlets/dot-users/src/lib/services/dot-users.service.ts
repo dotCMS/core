@@ -46,11 +46,12 @@ export interface DotUserListItem {
     failedLoginAttempts: number | null;
     /**
      * Populated only when the request carried `includeRoles=true` and
-     * the backend supports the flag (#37236). Consumers must treat
-     * `undefined` as "server didn't send them" (fall back to a
-     * separate `getUserRoles` call), and `[]` as "the backend
-     * returned an empty list" (skip the fallback and render no
-     * roles).
+     * the backend supports the flag (#37236). `undefined` means the
+     * server did not return them for this row (typically because the
+     * viewer lacks the gate #37236 requires; the list store's 403
+     * handler retries once without the flag and leaves cells empty
+     * rather than fanning out N per-row fetches). `[]` means the row
+     * has no directly-assigned roles.
      */
     roles?: DotUserListRole[];
 }
@@ -210,8 +211,9 @@ export interface DotUsersPaginatedParams {
      *
      * `includeRoles=true` requires CMS Administrator or Roles + Users
      * portlet access. Callers without that gate get a 403 on the whole
-     * request; the list store handles that by retrying without the
-     * flag and falling back to the per-row `getUserRoles` fetch.
+     * request; the list store handles that by retrying once without
+     * the flag and leaving the Roles cells empty for that viewer (no
+     * per-row `getUserRoles` fan-out).
      */
     includeRoles?: boolean;
 }
