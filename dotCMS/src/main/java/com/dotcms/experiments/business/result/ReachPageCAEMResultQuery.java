@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * CAEM-backed implementation of {@link ExperimentGoalResultsQuery} for {@code REACH_PAGE} goals.
  *
- * <p>Calls {@code GET /v1/analytics/sessions/behavior} with the following parameters:</p>
+ * <p>Calls {@code GET /v1/sessions/behavior} with the following parameters:</p>
  * <ul>
  *   <li>{@code behavior=reachTarget} — instructs CAEM to count only sessions where the
  *       target page was visited strictly <em>after</em> the reference page; ordering is

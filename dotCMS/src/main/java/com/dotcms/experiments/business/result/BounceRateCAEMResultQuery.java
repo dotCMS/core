@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * CAEM-backed implementation of {@link ExperimentGoalResultsQuery} for {@code BOUNCE_RATE} goals.
  *
- * <p>Calls {@code GET /v1/analytics/sessions} with the following parameters:</p>
+ * <p>Calls {@code GET /v1/sessions} with the following parameters:</p>
  * <ul>
  *   <li>{@code metrics=totalSessions,bounceSessions,bounceRate}</li>
  *   <li>{@code experimentId} — the experiment's identifier</li>

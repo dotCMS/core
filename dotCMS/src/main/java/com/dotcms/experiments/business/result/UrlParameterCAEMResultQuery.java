@@ -13,7 +13,7 @@ import java.util.Map;
 /**
  * CAEM-backed implementation of {@link ExperimentGoalResultsQuery} for {@code URL_PARAMETER} goals.
  *
- * <p>Calls {@code GET /v1/analytics/sessions/behavior} with the following parameters:</p>
+ * <p>Calls {@code GET /v1/sessions/behavior} with the following parameters:</p>
  * <ul>
  *   <li>{@code behavior=urlParam} — instructs CAEM to count sessions where at least one
  *       page event contained the target URL query parameter; "any event matches" semantics
