@@ -94,6 +94,23 @@ export class DotSearchInputComponent {
     /** Emits the trimmed term once the debounce window closes. */
     readonly search = output<string>();
 
+    /**
+     * Keeps both icons above the field they annotate, even when that field raises itself on focus.
+     *
+     * Inside a `p-inputgroup` (Content Drive's search bar), PrimeNG's own stylesheet gives the
+     * focused field `z-index: 1` — a rule that lands, because the group turns the icon field into
+     * a flex container and flex items honor `z-index` without positioning. The icons already sit
+     * at that same `z-index: 1` (the iconfield stylesheet's own value, not a design token), but the
+     * field comes later in the DOM, so once focused its opaque background painted over them and the
+     * magnifier vanished the moment the user clicked in. One step above wins the tie; outside an
+     * input group nothing competes with the icons, so the value is inert there.
+     *
+     * PT `root.style`, not a class: the style slot is applied through the host's `[style]` binding
+     * (see `Bind`), a real inline style that beats the dynamically injected PrimeNG stylesheets
+     * unconditionally. Hoisted so the object is not recreated on every change detection cycle.
+     */
+    protected readonly ICON_PT = { root: { style: { zIndex: 2 } } };
+
     /** The text field itself, so a host can hand it focus. */
     // NOTE: `private`, not `#`, despite TYPESCRIPT_STANDARDS.md:87. Angular's compiler rejects a
     // signal query on an ES-private field: "Cannot use 'viewChild' on a class member that is

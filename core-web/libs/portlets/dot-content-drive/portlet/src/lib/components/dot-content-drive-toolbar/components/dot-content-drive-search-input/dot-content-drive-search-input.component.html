@@ -26,6 +26,10 @@
          is plain Tailwind because width is layout, not a PrimeNG token — nothing in the button's own
          stylesheet sets a width to compete with.
 
+         The same `TRIGGER_PT` pins the label to the left edge and the chevron to the right edge
+         (Lara centers a button's content, which recentered both as the label changed) — the
+         rationale lives on that constant.
+
          The button's own border is removed via `[pButtonPT]`'s `root.style`, not a `!important`
          class: PT's `style` slot is applied through the directive's own `[style]` host binding (see
          `TRIGGER_PT`), which is a real inline style and wins the cascade unconditionally, the same

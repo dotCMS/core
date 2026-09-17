@@ -189,6 +189,18 @@ describe('DotContentDriveSearchInputComponent', () => {
             ).toBeTruthy();
         });
 
+        // Lara centers a button's content, so label and chevron recentered as one group every time
+        // the active scope changed — "Title" and "All Fields" rendered at different offsets.
+        // `TRIGGER_PT` pins them to the button's edges instead; asserted through the rendered
+        // inline style, so a lost PT slot fails here rather than in QA.
+        it('should keep the trigger label and chevron in place when the scope changes', () => {
+            spectator.detectChanges();
+
+            const trigger = spectator.query(byTestId('search-scope-trigger')) as HTMLElement;
+
+            expect(trigger.style.justifyContent).toBe('space-between');
+        });
+
         it('should offer a distinct explanation for each option in the panel', () => {
             spectator.detectChanges();
 

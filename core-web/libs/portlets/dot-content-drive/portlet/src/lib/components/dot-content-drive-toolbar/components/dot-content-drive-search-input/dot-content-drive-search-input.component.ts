@@ -126,16 +126,25 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     );
 
     /**
-     * The trigger's own border, removed via PT rather than a Tailwind `!important` class.
+     * The trigger's own border, removed via PT rather than a Tailwind `!important` class, and its
+     * content pinned to the edges so the active scope reads from the same place no matter which
+     * scope is active.
      *
      * `pButtonPT`'s `root.style` is consumed through `[style]`/`[class]` HOST BINDINGS on the
      * directive's own host element (see `Bind`, the directive backing this), which Angular applies
      * the same way any `[style]` binding is — as a real inline style. That wins the cascade over
      * PrimeNG's own injected `.p-button-secondary` rule unconditionally, the same guarantee
      * `!important` gives, without reaching for it.
+     *
+     * The second entry exists because Lara centers a button's content (`justify-content: center`,
+     * hardcoded in the injected stylesheet — no design token exposes it). Centered, the label and
+     * the chevron are one group that recenters itself as its width changes, so "Title" and
+     * "All Fields" rendered with both at different offsets. `space-between` — the layout PrimeNG's
+     * own `p-select` trigger uses — parks the label on the left edge and the chevron on the right
+     * edge of the fixed-width button, so switching scopes moves neither.
      */
     protected readonly TRIGGER_PT = {
-        root: { style: { border: 'none' } }
+        root: { style: { border: 'none', justifyContent: 'space-between' } }
     };
 
     /**
