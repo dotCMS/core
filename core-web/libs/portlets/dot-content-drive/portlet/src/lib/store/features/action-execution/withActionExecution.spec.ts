@@ -7,6 +7,7 @@ import {
     AddToBundleService,
     DotBulkRefreshService,
     DotEventsSocket,
+    DotFolderBulkDeleteService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService,
@@ -89,6 +90,8 @@ describe('withActionExecution', () => {
     const addToBundle = vi.fn();
     const pushPublishAssets = vi.fn();
     const refresh = vi.fn();
+    /** Left pending by default: the guard tests need the run still in flight. */
+    const submitFolderBulkDelete = vi.fn(() => new Subject());
     const handle = vi.fn();
 
     /** Lets a test push a completion event onto the socket the feature subscribes to on init. */
@@ -101,6 +104,7 @@ describe('withActionExecution', () => {
             mockProvider(AddToBundleService, { addToBundle }),
             mockProvider(PushPublishService, { pushPublishAssets }),
             mockProvider(DotBulkRefreshService, { refresh }),
+            mockProvider(DotFolderBulkDeleteService, { submit: submitFolderBulkDelete }),
             mockProvider(DotHttpErrorManagerService, { handle }),
             mockProvider(DotMessageService, { get: (key: string) => key }),
             mockProvider(DotEventsSocket, { on: () => socketEvents.asObservable() })
@@ -119,6 +123,8 @@ describe('withActionExecution', () => {
         addToBundle.mockReset();
         pushPublishAssets.mockReset();
         refresh.mockReset();
+        submitFolderBulkDelete.mockReset();
+        submitFolderBulkDelete.mockImplementation(() => new Subject());
         handle.mockReset();
     });
 

@@ -192,6 +192,17 @@ interface DotActionCenterQuickActionDef {
      * rather than by omission.
      */
     supportsFolders?: boolean;
+    /**
+     * Acts on folders and **only** folders.
+     *
+     * Narrower than {@link supportsFolders}, which widens an action's scope to the whole selection
+     * because it acts on contentlets *and* folders. This scopes it to the folders alone, so a
+     * selection holding no folder drops the action entirely rather than rendering it with a count
+     * of `0` — the same reasoning that drops the contentlet-only actions from a folder-only
+     * selection. A disabled Delete row over a selection of files is noise, and mildly alarming
+     * noise at that.
+     */
+    foldersOnly?: boolean;
 }
 
 /**
@@ -269,6 +280,22 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         supportsFolders: true
     },
     {
+        id: DELETE_FOLDER_ACTION_ID,
+        nameKey: 'content-drive.context-menu.delete-folder',
+        icon: 'delete',
+        // Folders only, and the eligibility filter is what enforces it: `supportsFolders` widens the
+        // scope to the whole selection, and this narrows it back to the folders in it. A stray file
+        // in the selection therefore does not withhold the action — the row reports how many
+        // folders it will act on, and acts on exactly those (FR-003).
+        //
+        // No folder state disqualifies a delete. Whether the author may actually delete a given
+        // folder is a permission question, answered by `eligibleForDelete` at the selection level
+        // and by the server per folder — not by row state here.
+        eligibleWhen: (item) => isFolder(item),
+        supportsFolders: true,
+        foldersOnly: true
+    },
+    {
         id: REFRESH_ACTION_ID,
         nameKey: 'Refresh',
         icon: 'refresh',
@@ -330,8 +357,14 @@ export const getQuickActions = (
     const contentlets = excludeFolders(items);
 
     return QUICK_ACTIONS.flatMap((quickAction) => {
-        // Folder-capable actions see the whole selection; everything else sees contentlets only.
-        const scoped = quickAction.supportsFolders ? items : contentlets;
+        // Folder-only actions see just the folders; folder-capable ones see the whole selection;
+        // everything else sees contentlets only. The first case is what lets an action whose
+        // selection holds nothing it can act on fall out below rather than render at zero.
+        const scoped = quickAction.foldersOnly
+            ? items.filter(isFolder)
+            : quickAction.supportsFolders
+              ? items
+              : contentlets;
 
         // Dropped rather than shown with a count of `0`: a folder-only selection is not "no eligible
         // rows", it is an action that does not apply to what is selected, and a disabled Lock row

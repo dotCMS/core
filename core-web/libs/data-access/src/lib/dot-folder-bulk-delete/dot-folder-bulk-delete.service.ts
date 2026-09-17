@@ -1,16 +1,18 @@
-import { Observable } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+
+import { catchError, map } from 'rxjs/operators';
 
 import { DotFolderBulkDeleteSubmitResponse } from '@dotcms/dotcms-models';
 
 /**
  * Why a submission was refused before any run was created.
  *
- * The four kinds must stay distinguishable because each needs its own copy — the overlap one is
- * the only refusal an ordinary author can actually provoke, and "someone is already deleting one
- * of these folders" is actionable where a generic failure is not (contract CR-02).
+ * The kinds must stay distinguishable because each needs its own copy — the overlap one is the only
+ * refusal an ordinary author can actually provoke, and "someone is already deleting one of these
+ * folders" is actionable where a generic failure is not (contract CR-02).
  */
 export interface DotFolderBulkDeleteRefusal {
     kind:
@@ -27,21 +29,91 @@ export interface DotFolderBulkDeleteRefusal {
     response?: HttpErrorResponse;
 }
 
+/** Shape of the error body the endpoint is expected to answer refusals with. See the note below. */
+interface RefusalBody {
+    error?: string;
+    path?: string;
+    maxPaths?: number;
+}
+
+const SUBMIT_URL = '/api/v1/assets/folders/_bulkdelete';
+
 /**
- * Submission and in-flight reads for Content Drive bulk folder delete (#37063).
+ * Submission for Content Drive bulk folder delete (#37063).
  *
- * NOT YET IMPLEMENTED — this is the stub the test set was written against, so the specs compile and
- * fail on behaviour rather than on missing symbols. Implemented in T015 (submit) and T042 (the
- * in-flight read) once the Red gate is confirmed.
+ * **Written against a contract, not against a running server.** The server half is specified and
+ * merged but not yet implemented, so the shapes here come from
+ * `specs/37063-bulk-folder-delete-frontend/contracts/client-requirements.md`. That feature's
+ * `quickstart.md` carries the first-contact checklist for the day the real endpoint answers.
  */
 @Injectable({ providedIn: 'root' })
 export class DotFolderBulkDeleteService {
+    readonly #http = inject(HttpClient);
+
     /**
      * Submit a selection of folder paths for deletion.
      *
-     * Answers immediately with a run handle; the deletion itself happens in the background.
+     * Answers immediately with a run handle; the deletion happens in the background. The paths go
+     * exactly as given — this service never filters a selection, because a selection the author may
+     * only partly delete is submitted whole and the refusals come back per path (FR-004a).
+     *
+     * Errors with a {@link DotFolderBulkDeleteRefusal} rather than the raw response, so callers
+     * switch on a kind instead of re-deriving one from a status code.
      */
-    submit(_assetPaths: string[]): Observable<DotFolderBulkDeleteSubmitResponse> {
-        throw new Error('DotFolderBulkDeleteService.submit is not implemented yet (T015)');
+    submit(assetPaths: string[]): Observable<DotFolderBulkDeleteSubmitResponse> {
+        return this.#http
+            .post<{
+                entity: DotFolderBulkDeleteSubmitResponse;
+            }>(SUBMIT_URL, { assetPaths })
+            .pipe(
+                map((response) => response.entity),
+                catchError((response: HttpErrorResponse) =>
+                    throwError(() => this.#toRefusal(response))
+                )
+            );
+    }
+
+    /**
+     * Maps a refused submission onto a kind the client has copy for.
+     *
+     * **The two `400`s are the awkward part**, and the contract does not yet settle them: an empty
+     * selection and an over-maximum selection both answer `400`, and they need different messages —
+     * one is "you selected nothing", the other has to name the limit. This reads an `error` code out
+     * of the body to tell them apart, which is the client's *assumption*, raised with the server
+     * half at dotCMS/core#37063 (comment 5720585127).
+     *
+     * If the server settles on a different shape, this method is the only thing that changes: the
+     * kinds the rest of the client switches on are stable either way.
+     */
+    #toRefusal(response: HttpErrorResponse): DotFolderBulkDeleteRefusal {
+        const body = (response.error ?? {}) as RefusalBody;
+
+        switch (response.status) {
+            case 400:
+                // Falls through to UNCLASSIFIED when the body names neither, rather than guessing
+                // one: telling an author they selected nothing when they hit a ceiling would send
+                // them looking for the wrong fix.
+                if (body.error === 'OVER_MAX_PATHS') {
+                    return { kind: 'OVER_MAX_PATHS', maxPaths: body.maxPaths, response };
+                }
+
+                if (body.error === 'EMPTY_SELECTION') {
+                    return { kind: 'EMPTY_SELECTION', response };
+                }
+
+                return { kind: 'UNCLASSIFIED', response };
+
+            case 403:
+                // Status alone is enough — nothing else here answers 403.
+                return { kind: 'NOT_ENTITLED', response };
+
+            case 409:
+                // The folder, never the other submitter: the refused author cannot see that run at
+                // all, so naming who started it would leak it (FR-040, backend FR-029a).
+                return { kind: 'OVERLAPPING_RUN', path: body.path, response };
+
+            default:
+                return { kind: 'UNCLASSIFIED', response };
+        }
     }
 }

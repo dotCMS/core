@@ -19,6 +19,8 @@ import {
     AddToBundleService,
     DotBulkRefreshService,
     DotEventsSocket,
+    DotFolderBulkDeleteRefusal,
+    DotFolderBulkDeleteService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotSystemEventType,
@@ -42,6 +44,17 @@ import {
     DotContentDriveState
 } from '../../../shared/models';
 import { normalizeFolderRef, toFolderRef } from '../../../utils/functions';
+
+/**
+ * The operation key a bulk folder delete run is registered under.
+ *
+ * Paired with the run's targets it forms the repeat guard — *this operation over these folders* —
+ * so a delete running for minutes never blocks an unrelated action, nor a delete of different
+ * folders (FR-018). Kept here rather than imported from the quick-action registry: the store's
+ * guard key is its own concern, and tying it to a UI constant would make a rename of one silently
+ * change the other.
+ */
+const DELETE_FOLDER_OPERATION = 'DELETE_FOLDER';
 
 interface WithActionExecutionState {
     /**
@@ -181,6 +194,7 @@ export function withActionExecution() {
                 addToBundleService = inject(AddToBundleService),
                 pushPublishService = inject(PushPublishService),
                 bulkRefreshService = inject(DotBulkRefreshService),
+                folderBulkDeleteService = inject(DotFolderBulkDeleteService),
                 destroyRef = inject(DestroyRef)
             ) => {
                 /**
@@ -800,11 +814,53 @@ export function withActionExecution() {
                      * NOT YET IMPLEMENTED — stub so the specs compile and fail on behaviour (T019).
                      */
                     executeFolderBulkDelete: (
-                        _actionName: string,
-                        _assetPaths: string[],
-                        _targets: string[]
+                        actionName: string,
+                        assetPaths: string[],
+                        targets: string[]
                     ): void => {
-                        throw new Error('executeFolderBulkDelete is not implemented yet (T019)');
+                        if (!assetPaths.length || isRunning(DELETE_FOLDER_OPERATION, targets)) {
+                            return;
+                        }
+
+                        const runId = startRun({
+                            operation: DELETE_FOLDER_OPERATION,
+                            actionName,
+                            total: assetPaths.length,
+                            targets
+                        });
+
+                        folderBulkDeleteService
+                            .submit(assetPaths)
+                            .pipe(
+                                take(1),
+                                catchError((refusal: DotFolderBulkDeleteRefusal) => {
+                                    // A refusal means no run exists server-side, so nothing will
+                                    // ever arrive to settle this one.
+                                    endRun(runId);
+                                    httpErrorManagerService.handle(
+                                        refusal?.response ??
+                                            new HttpErrorResponse({ error: refusal })
+                                    );
+
+                                    return EMPTY;
+                                })
+                            )
+                            .subscribe((handle) => {
+                                // The server's count, not the caller's. The two disagree whenever a
+                                // duplicate or a nested path is dropped, and the first screen has to
+                                // agree with the last (CR-03). Left as submitted when the instance
+                                // is older than the field, which is the honest fallback.
+                                const run = store.runs()[runId];
+
+                                if (run && handle.submitted !== undefined) {
+                                    patchState(store, {
+                                        runs: {
+                                            ...store.runs(),
+                                            [runId]: { ...run, total: handle.submitted }
+                                        }
+                                    });
+                                }
+                            });
                     },
 
                     trackUploadJob: (

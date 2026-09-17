@@ -7,8 +7,6 @@ import { DotFolderBulkDeleteCeilings } from '@dotcms/dotcms-models';
  * Mirrors `upload-ceilings.ts` on purpose — an author who meets both features should meet one
  * behaviour — including its refusal to assume a default when the instance advertises none.
  *
- * NOT YET IMPLEMENTED — stub written so the test set compiles and fails on behaviour. Implemented
- * once the Red gate is confirmed.
  */
 
 /** Too many folders, naming the selection's count and the ceiling. */
@@ -31,8 +29,21 @@ export interface DotFolderDeleteCeilingRefusal {
  * @returns the refusal, or `undefined` when the selection may be submitted
  */
 export function refuseOverPathCeiling(
-    _paths: string[],
-    _ceilings: Partial<DotFolderBulkDeleteCeilings> | null | undefined
+    paths: string[],
+    ceilings: Partial<DotFolderBulkDeleteCeilings> | null | undefined
 ): DotFolderDeleteCeilingRefusal | undefined {
-    throw new Error('refuseOverPathCeiling is not implemented yet');
+    if (!paths.length) {
+        return undefined;
+    }
+
+    const maxPaths = ceilings?.maxPaths ?? 0;
+
+    if (maxPaths > 0 && paths.length > maxPaths) {
+        return {
+            key: TOO_MANY_FOLDERS_NAMED_KEY,
+            args: [String(paths.length), String(maxPaths)]
+        };
+    }
+
+    return undefined;
 }

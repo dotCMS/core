@@ -2647,9 +2647,14 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should say how many folders it is about', () => {
+            // Asserted through the message service rather than the rendered text: `get` is mocked to
+            // echo the key and drop its arguments, so the count never reaches the DOM in a spec.
             openQuickActionPreview('DELETE_FOLDER');
 
-            expect(spectator.query('[data-testid="delete-warning"]')?.textContent).toContain('2');
+            expect(spectator.inject(DotMessageService).get).toHaveBeenCalledWith(
+                'content-drive.action-center.delete.warning',
+                '2'
+            );
         });
 
         it('should submit the selected folders when confirmed', () => {
@@ -2660,7 +2665,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
         it('should submit nothing when the confirmation is dismissed', () => {
             openQuickActionPreview('DELETE_FOLDER');
-            spectator.click('[data-testid="action-center-back"]');
+            spectator.click('[data-testid="action-preview-back"]');
             spectator.detectChanges();
 
             expect(store.executeFolderBulkDelete).not.toHaveBeenCalled();
