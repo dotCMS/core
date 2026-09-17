@@ -1,6 +1,7 @@
 package com.dotcms.graphql.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -250,6 +251,111 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         assertNotNull("the flat view must still resolve", assetField);
         assertEquals("non-asset content must resolve to nothing, not an error",
                 null, assetField.get(ASSET_CONTENT_FIELD));
+    }
+
+    /**
+     * Given: two fields, one pointing at image-style content and one at file-style content.
+     * When: the type of each is requested in a single query.
+     * Then: each names its own concrete content type, and the two differ.
+     *
+     * <p>Today both come back as {@code DotFileasset}, so a client rendering a mixed feed has no
+     * way to branch other than guessing from which properties happen to be populated.
+     */
+    @Test
+    public void test_typename_distinguishesTwoDifferentAssetTypes() throws Exception {
+        final ContentType imageStyle = newDotAssetSubtype();
+        final ContentType fileStyle = newFileAssetSubtype();
+        final Contentlet imageAsset = newAssetOf(imageStyle, "Image side");
+        final Contentlet fileAsset = newFileAssetOf(fileStyle, "File side");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = new ContentletDataGen(holder.id())
+                .host(site)
+                .setProperty(IMAGE_FIELD_VAR, imageAsset.getIdentifier())
+                .setProperty(FILE_FIELD_VAR, fileAsset.getIdentifier())
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        ContentletDataGen.publish(content);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { "
+                        + "%s { %s { __typename } } %s { %s { __typename } } } }",
+                holder.variable(), content.getIdentifier(),
+                IMAGE_FIELD_VAR, ASSET_CONTENT_FIELD, FILE_FIELD_VAR, ASSET_CONTENT_FIELD);
+
+        final Map<String, Object> data =
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser);
+        final Map<String, Object> row =
+                ((List<Map<String, Object>>) data.get(holder.variable() + "Collection")).get(0);
+
+        final String imageTypeName = (String) ((Map<String, Object>)
+                ((Map<String, Object>) row.get(IMAGE_FIELD_VAR)).get(ASSET_CONTENT_FIELD))
+                .get("__typename");
+        final String fileTypeName = (String) ((Map<String, Object>)
+                ((Map<String, Object>) row.get(FILE_FIELD_VAR)).get(ASSET_CONTENT_FIELD))
+                .get("__typename");
+
+        assertEquals("the image-style asset must name its own type",
+                imageStyle.variable(), imageTypeName);
+        assertEquals("the file-style asset must name its own type",
+                fileStyle.variable(), fileTypeName);
+        assertNotEquals("two different asset types must be distinguishable",
+                imageTypeName, fileTypeName);
+    }
+
+    /**
+     * Given: an Image field pointing at file-style content, and a File field pointing at
+     * image-style content — which dotCMS permits and resolves today.
+     * When: each is narrowed to the type it actually is.
+     * Then: that type is offered and its properties come back.
+     *
+     * <p>This is the case that rules out typing each field by its own kind. It came out of the
+     * spec review, after an Image field on a live instance was confirmed to resolve a plain-text
+     * FileAsset; a per-field-kind design would have compiled, passed every other test here, and
+     * silently dropped content those fields already hold.
+     */
+    @Test
+    public void test_fieldsResolveContentOfTheOtherBaseType() throws Exception {
+        final ContentType imageStyle = newDotAssetSubtype();
+        final ContentType fileStyle = newFileAssetSubtype();
+        // Deliberately crossed: image field -> file-style content, file field -> image-style.
+        final Contentlet fileAsset = newFileAssetOf(fileStyle, "Behind the image field");
+        final Contentlet imageAsset = newAssetOf(imageStyle, "Behind the file field");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = new ContentletDataGen(holder.id())
+                .host(site)
+                .setProperty(IMAGE_FIELD_VAR, fileAsset.getIdentifier())
+                .setProperty(FILE_FIELD_VAR, imageAsset.getIdentifier())
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        ContentletDataGen.publish(content);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { "
+                        + "%s { %s { __typename ... on %s { %s } } } "
+                        + "%s { %s { __typename ... on %s { %s } } } } }",
+                holder.variable(), content.getIdentifier(),
+                IMAGE_FIELD_VAR, ASSET_CONTENT_FIELD, fileStyle.variable(), CUSTOM_PROPERTY_VAR,
+                FILE_FIELD_VAR, ASSET_CONTENT_FIELD, imageStyle.variable(), CUSTOM_PROPERTY_VAR);
+
+        final Map<String, Object> data =
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser);
+        final Map<String, Object> row =
+                ((List<Map<String, Object>>) data.get(holder.variable() + "Collection")).get(0);
+
+        final Map<String, Object> behindImageField = (Map<String, Object>)
+                ((Map<String, Object>) row.get(IMAGE_FIELD_VAR)).get(ASSET_CONTENT_FIELD);
+        final Map<String, Object> behindFileField = (Map<String, Object>)
+                ((Map<String, Object>) row.get(FILE_FIELD_VAR)).get(ASSET_CONTENT_FIELD);
+
+        assertEquals("an Image field must offer the file-style type it actually holds",
+                fileStyle.variable(), behindImageField.get("__typename"));
+        assertEquals("and its properties must come back",
+                "Behind the image field", behindImageField.get(CUSTOM_PROPERTY_VAR));
+
+        assertEquals("a File field must offer the image-style type it actually holds",
+                imageStyle.variable(), behindFileField.get("__typename"));
+        assertEquals("and its properties must come back",
+                "Behind the file field", behindFileField.get(CUSTOM_PROPERTY_VAR));
     }
 
     // ---------------------------------------------------------------- helpers
