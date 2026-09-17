@@ -399,4 +399,38 @@ describe('SiteFieldComponent', () => {
             expect(onChangeSpy).not.toHaveBeenCalled();
         });
     });
+
+    /**
+     * T-04 — the label must stop pointing at the Language field (AC-110).
+     *
+     * It read `for="language-field"`: a copy-paste from the sibling language-field component, so
+     * clicking the Site label reached for a control in a different component. The fix follows the
+     * pattern language-field already establishes — `<label for="x">` paired with `inputId="x"` on
+     * its own control.
+     *
+     * The third assertion checks the pairing rather than the rendered id. PrimeNG's TreeSelect
+     * accepts `inputId` but does not surface it on its inner combobox input in this version
+     * (p-select does), so asserting a live `#site-field` element would be asserting a third-party
+     * behaviour we do not control. What is ours, and what was broken, is that the label and the
+     * control name the same target.
+     */
+    describe('label association (AC-110)', () => {
+        it('should not point `for` at the language field', () => {
+            expect(spectator.query('label').getAttribute('for')).not.toBe('language-field');
+        });
+
+        it('should pair the label with this component own control', () => {
+            const target = spectator.query('label').getAttribute('for');
+
+            expect(target).toBe('site-field');
+            expect(spectator.query('p-treeselect').getAttribute('inputid')).toBe(target);
+        });
+
+        it('should carry no typography or spacing utilities on the label (AC-106)', () => {
+            const cls = spectator.query('label').getAttribute('class') ?? '';
+
+            expect(cls).not.toContain('mb-2');
+            expect(cls).not.toContain('inline-block');
+        });
+    });
 });

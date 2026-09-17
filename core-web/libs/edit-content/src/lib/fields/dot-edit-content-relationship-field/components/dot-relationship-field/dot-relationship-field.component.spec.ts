@@ -199,6 +199,8 @@ describe('DotRelationshipFieldComponent', () => {
             provideHttpClientTesting(),
             mockProvider(DotMessageService, messageServiceMock),
             mockProvider(DotEditContentStore, {
+                // BaseWrapperField gates required errors on this.
+                hasAttemptedSubmit: vi.fn().mockReturnValue(false),
                 contentType: vi.fn().mockReturnValue(null),
                 currentLocale: vi.fn().mockReturnValue(null),
                 isCopyingLocale: vi.fn().mockReturnValue(false),

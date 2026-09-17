@@ -376,3 +376,62 @@ describe('DotEditContentRadioFieldComponent', () => {
         });
     });
 });
+
+/**
+ * T-03 — option rows use the global `.form-radio` (AC-109).
+ *
+ * `.form .form-radio { @apply flex flex-row items-center gap-2 }` computes identically to the
+ * hand-rolled `flex items-center gap-2` it replaces — `flex-row` is the default for
+ * `display: flex` — so this is a zero-delta swap on the ROW.
+ *
+ * It is not zero-delta on the option LABELS, and that is the point: `.form .form-radio label`
+ * additionally applies `text-sm font-normal`, which is a DESCENDANT selector and so reaches them
+ * where they already sit, with no restructuring. Option labels go 14px/400 -> 12.25px/400, which
+ * is the one accepted delta that #37460's measured-impact table does not list (research R3).
+ */
+describe('DotEditContentRadioFieldComponent — option rows', () => {
+    let spectator: SpectatorHost<DotEditContentRadioFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentRadioFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false
+    });
+
+    beforeEach(() => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-radio-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [RADIO_FIELD_TEXT_MOCK.variable]: new FormControl(null)
+                    }),
+                    field: RADIO_FIELD_TEXT_MOCK,
+                    contentlet: createFakeContentlet({ [RADIO_FIELD_TEXT_MOCK.variable]: null })
+                }
+            }
+        );
+        spectator.detectChanges();
+    });
+
+    it('should wrap each option in a .form-radio row', () => {
+        expect(spectator.queryAll('.form-radio').length).toBeGreaterThan(0);
+    });
+
+    it('should not hand-roll the layout the global class already provides', () => {
+        expect(spectator.query('.flex.items-center.gap-2')).toBeNull();
+    });
+
+    it('should not use the .form-checkbox variant', () => {
+        expect(spectator.query('.form-checkbox')).toBeNull();
+    });
+
+    it('should keep each option label inside its row so the descendant rule reaches it', () => {
+        const row = spectator.query('.form-radio');
+
+        expect(row.querySelector('label')).toBeTruthy();
+    });
+});

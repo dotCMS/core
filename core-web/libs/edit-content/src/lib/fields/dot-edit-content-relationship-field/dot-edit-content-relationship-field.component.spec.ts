@@ -4,7 +4,7 @@ import { MockInstance, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -98,7 +98,12 @@ export class MockFormComponent {
     contentlet: DotCMSContentlet;
 }
 
+/** Flipped by tests that need the required error to surface (#37464 gates it on save). */
+const submitAttempted = signal(false);
+
 describe('DotEditContentRelationshipFieldComponent', () => {
+    beforeEach(() => submitAttempted.set(false));
+
     let spectator: SpectatorHost<DotEditContentRelationshipFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof RelationshipFieldStore>;
     let dialogService: DialogService;
@@ -139,6 +144,8 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                     )
             }),
             mockProvider(DotEditContentStore, {
+                // BaseWrapperField gates required errors on this.
+                hasAttemptedSubmit: submitAttempted,
                 contentType: vi.fn().mockReturnValue(null),
                 currentLocale: vi.fn().mockReturnValue(null),
                 isCopyingLocale: vi.fn().mockReturnValue(false),
@@ -643,6 +650,8 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 )
         }),
         mockProvider(DotEditContentStore, {
+            // BaseWrapperField gates required errors on this.
+            hasAttemptedSubmit: submitAttempted,
             contentType: vi.fn().mockReturnValue(null),
             currentLocale: vi.fn().mockReturnValue(null),
             isCopyingLocale: vi.fn().mockReturnValue(false),
@@ -741,7 +750,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             providers: FOOTER_PROVIDERS
         });
 
-        it('should render the required error and hide the hint when invalid and touched', () => {
+        it('should render the required error AND keep the hint once a save is attempted (#37464)', () => {
             const control = new FormControl(null, Validators.required);
             const errorSpectator = createErrorHost(
                 `<form [formGroup]="formGroup">
@@ -760,16 +769,17 @@ describe('DotEditContentRelationshipFieldComponent', () => {
 
             control.markAsTouched();
             control.updateValueAndValidity();
+            submitAttempted.set(true);
             errorSpectator.detectChanges();
             errorSpectator.flushEffects();
             errorSpectator.detectChanges();
 
-            // Error branch is rendered...
-            expect(errorSpectator.query(byTestId('relationship-field-error'))).toBeTruthy();
-            // ...and the mutually-exclusive hint branch is not.
+            // Error and hint are no longer mutually exclusive: the hint explains how to satisfy
+            // the requirement, which is exactly what the author needs while the field is in error.
+            expect(errorSpectator.query('.p-field-error')).toBeTruthy();
             expect(
                 errorSpectator.query(byTestId(`hint-${REQUIRED_HINTED_FIELD_MOCK.variable}`))
-            ).toBeNull();
+            ).toBeTruthy();
         });
     });
 

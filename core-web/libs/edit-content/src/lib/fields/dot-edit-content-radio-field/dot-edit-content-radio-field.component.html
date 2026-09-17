@@ -3,16 +3,16 @@
 @let showLabel = $showLabel();
 @let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="fieldHasError">
+<dot-card-field [hasError]="fieldHasError" [isRequired]="isRequired">
     @if (showLabel) {
-        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+        <label dotCardFieldLabel [variableName]="field.variable" [isRequired]="isRequired">
             {{ field.name }}
-        </dot-card-field-label>
+        </label>
     }
     <dot-card-field-content>
         <div class="space-y-2">
             @for (option of options; track $index) {
-                <div class="flex items-center gap-2">
+                <div class="form-radio">
                     <p-radioButton
                         [inputId]="field.variable + '_' + option.value"
                         [name]="field.variable"
@@ -29,17 +29,19 @@
             }
         </div>
     </dot-card-field-content>
-    <dot-card-field-footer>
-        @if (fieldHasError && isRequired) {
-            <small class="p-field-error">
-                {{ 'dot.edit.content.form.field.required' | dm }}
-            </small>
-        }
+    @if ((fieldHasError && isRequired) || field.hint) {
+        <dot-card-field-footer>
+            @if (fieldHasError && isRequired) {
+                <small class="p-field-error">
+                    {{ 'dot.edit.content.form.field.required' | dm }}
+                </small>
+            }
 
-        @if (!fieldHasError && field.hint) {
-            <small class="p-field-hint" [attr.data-testId]="'hint-' + field.variable">
-                {{ field.hint }}
-            </small>
-        }
-    </dot-card-field-footer>
+            @if (field.hint) {
+                <small class="p-field-hint" [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            }
+        </dot-card-field-footer>
+    }
 </dot-card-field>

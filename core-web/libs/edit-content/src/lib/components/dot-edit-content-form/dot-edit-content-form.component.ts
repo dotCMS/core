@@ -528,6 +528,9 @@ export class DotEditContentFormComponent implements OnInit {
         identifier
     }: DotWorkflowActionParams): void {
         if (this.form.invalid) {
+            // Gates the required errors: until a save is attempted no field shows one, however
+            // much the author has tabbed around. See BaseWrapperField.$hasError.
+            this.$store.markSubmitAttempted();
             this.form.markAllAsTouched();
             this.changeDetectorRef.detectChanges();
             this.$store.setFormStatus('invalid');
