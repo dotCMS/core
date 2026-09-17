@@ -2493,6 +2493,192 @@ public class BrowserAPITest extends IntegrationTestBase {
     /**
      * <ul>
      *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> {@code BROWSER_DB_MAX_SCAN_TIME_MILLIS} is set to an
+     *     effectively-zero budget (1 ms) so the ES-narrowed scan's <em>time</em> cutoff -- not
+     *     DB exhaustion, not the row-count guard rail -- fires after the very first chunk, with
+     *     a matching item still unscanned several chunks later. This exercises the mechanism
+     *     itself (found in review: the earlier scan-limit tests only ever exhaust the DB
+     *     naturally, so none of them actually drive {@code scanBudgetExhausted} to
+     *     {@code true} via elapsed time).</li>
+     *     <li><b>Expected Result:</b> Page 1 stops after one chunk with {@code hasMoreContent}
+     *     true and a partial-progress cursor; the match is not yet in that page. Resuming from
+     *     that cursor with a normal time budget reaches the match -- proving the time-cutoff
+     *     path produces a valid, resumable cursor rather than silently losing coverage.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_timeBudgetExhausted_resumesFromCursor() throws Exception {
+        final int chunkSize = 5;
+        final int fillerCount = 15;
+        final long tinyTimeBudgetMillis = 1L;
+
+        Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", chunkSize);
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY, tinyTimeBudgetMillis);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+            final var contentType = new ContentTypeDataGen()
+                    .host(host)
+                    .folder(folder)
+                    .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                    .nextPersisted();
+
+            for (int i = 0; i < fillerCount; i++) {
+                new ContentletDataGen(contentType)
+                        .setProperty("title", "Filler " + i)
+                        .host(host)
+                        .folder(folder)
+                        .setPolicy(IndexPolicy.WAIT_FOR)
+                        .nextPersisted();
+            }
+            final Contentlet match = new ContentletDataGen(contentType)
+                    .setProperty("title", "Wombat Image")
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+
+            final BrowserQuery firstQuery = BrowserQuery.builder()
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .withFilter("Wombat")
+                    .useElasticsearchFiltering(true)
+                    .showContent(true)
+                    .showFiles(false)
+                    .showFolders(false)
+                    .showLinks(false)
+                    .showDotAssets(false)
+                    .showWorking(true)
+                    .showArchived(false)
+                    .maxResults(100)
+                    .contentCursor(0)
+                    .build();
+
+            final PaginatedContents firstPage = browserAPI.getPaginatedContents(firstQuery);
+
+            assertNotNull("First page must not be null", firstPage);
+            assertTrue("The 1ms time budget must cut the scan short before the match's chunk "
+                    + "is reached", firstPage.hasMoreContent);
+            assertTrue("nextContentCursor must reflect partial progress (> 0 and <= filler count, "
+                            + "not the full dataset) -- was: " + firstPage.nextContentCursor,
+                    firstPage.nextContentCursor > 0 && firstPage.nextContentCursor <= fillerCount);
+            final Set<String> firstPageInodes = firstPage.list.stream()
+                    .map(item -> (String) item.get("inode"))
+                    .collect(Collectors.toSet());
+            assertFalse("The match must not appear in the time-cutoff page",
+                    firstPageInodes.contains(match.getInode()));
+
+            // Resume from the returned cursor with a normal time budget so the scan can finish.
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT);
+            final BrowserQuery secondQuery = BrowserQuery.builder()
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .withFilter("Wombat")
+                    .useElasticsearchFiltering(true)
+                    .showContent(true)
+                    .showFiles(false)
+                    .showFolders(false)
+                    .showLinks(false)
+                    .showDotAssets(false)
+                    .showWorking(true)
+                    .showArchived(false)
+                    .maxResults(100)
+                    .contentCursor(firstPage.nextContentCursor)
+                    .build();
+
+            final PaginatedContents secondPage = browserAPI.getPaginatedContents(secondQuery);
+            final Set<String> secondPageInodes = secondPage.list.stream()
+                    .map(item -> (String) item.get("inode"))
+                    .collect(Collectors.toSet());
+
+            assertTrue("Resuming from the time-cutoff cursor must reach the match in a later "
+                    + "chunk", secondPageInodes.contains(match.getInode()));
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT);
+            Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Every item in the fixture matches the free-text filter, and
+     *     {@code BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP} is lowered well below the fixture's row
+     *     count while {@code BROWSER_DB_MAX_SCAN_TIME_MILLIS} is left generous, so only the row
+     *     hard cap -- not the time budget, not running out of matches -- can terminate the
+     *     ES-narrowed scan (found in review: the co-bound added alongside the time budget had no
+     *     test of its own).</li>
+     *     <li><b>Expected Result:</b> The scan stops at the hard cap with {@code hasMoreContent}
+     *     true, proving the ES path is not left with an effectively unbounded row ceiling once
+     *     the row-count-based cutoff was replaced by a time budget.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_esRowHardCap_stopsRunawayScanUnderGenerousTimeBudget()
+            throws Exception {
+        final int chunkSize = 5;
+        final int hardCap = 15;
+        final int fillerCount = 20;
+
+        Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", chunkSize);
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_KEY, hardCap);
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY,
+                BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+            final var contentType = new ContentTypeDataGen()
+                    .host(host)
+                    .folder(folder)
+                    .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                    .nextPersisted();
+
+            for (int i = 0; i < fillerCount; i++) {
+                new ContentletDataGen(contentType)
+                        .setProperty("title", "AllMatchTerm " + i)
+                        .host(host)
+                        .folder(folder)
+                        .setPolicy(IndexPolicy.WAIT_FOR)
+                        .nextPersisted();
+            }
+
+            final BrowserQuery query = BrowserQuery.builder()
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .withFilter("AllMatchTerm")
+                    .withContentTypes(Set.of(contentType.id()))
+                    .useElasticsearchFiltering(true)
+                    .showContent(true)
+                    .showFiles(false)
+                    .showFolders(false)
+                    .showLinks(false)
+                    .showDotAssets(false)
+                    .showWorking(true)
+                    .showArchived(false)
+                    .maxResults(100)
+                    .contentCursor(0)
+                    .build();
+
+            final PaginatedContents result = browserAPI.getPaginatedContents(query);
+
+            assertNotNull("Result must not be null", result);
+            assertTrue("The row hard cap must stop the scan before it reaches the end of the "
+                            + "fixture (20 items) -- hasMoreContent should be true",
+                    result.hasMoreContent);
+            assertTrue("nextContentCursor must reflect the hard cap having fired (>= hard cap, "
+                            + "< full fixture size) -- was: " + result.nextContentCursor,
+                    result.nextContentCursor >= hardCap && result.nextContentCursor < fillerCount);
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_DEFAULT);
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT);
+            Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
      *     <li><b>Given Scenario:</b> A folder holds 10 items. {@code BROWSER_CONTENT_CHUNK_SIZE} and
      *     {@code BROWSER_DB_MAX_SCAN_ROWS} are both set to 10, so the single DB chunk this request
      *     scans lands its {@code dbOffset} exactly on the scan limit -- while the page itself is
