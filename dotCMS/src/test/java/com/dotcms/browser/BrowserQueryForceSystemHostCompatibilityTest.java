@@ -24,7 +24,7 @@ import org.junit.Test;
  * the delegate, or re-pointing it at a different mode, turns them red.</p>
  *
  * <p>Asserted on the builder rather than on a built {@link BrowserQuery}, because {@code build()}
- * resolves the site and folder and loads the user's roles through {@code APILocator} — a database
+ * resolves the site and folder and loads the user's roles through {@code APILocator}: a database
  * bootstrap this unit test has no business requiring to answer a question about one setter.</p>
  */
 public class BrowserQueryForceSystemHostCompatibilityTest {
@@ -69,7 +69,7 @@ public class BrowserQueryForceSystemHostCompatibilityTest {
 
     /**
      * The boolean defaulted to {@code false}, so a builder that never mentions System Host must
-     * still exclude it. Several callers rely on this without knowing they do — the assets API, the
+     * still exclude it. Several callers rely on this without knowing they do: the assets API, the
      * older file browser, the legacy admin browser and a Velocity viewtool among them.
      */
     @Test
@@ -100,7 +100,8 @@ public class BrowserQueryForceSystemHostCompatibilityTest {
         final Method method =
                 BrowserQuery.Builder.class.getMethod("forceSystemHost", boolean.class);
 
-        return modeOf((BrowserQuery.Builder) method.invoke(BrowserQuery.builder(), forceSystemHost));
+        return modeOf(
+                (BrowserQuery.Builder) method.invoke(BrowserQuery.builder(), forceSystemHost));
     }
 
     private static SystemHostMode modeOf(final BrowserQuery.Builder builder) throws Exception {
