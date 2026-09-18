@@ -1,11 +1,15 @@
-import { Observable, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
-import { DotFolderBulkDeleteSubmitResponse } from '@dotcms/dotcms-models';
+import {
+    DotFolderBulkDeleteSubmitResponse,
+    DotFolderDeleteActiveRun,
+    isJobInProgress
+} from '@dotcms/dotcms-models';
 
 /**
  * Why a submission was refused before any run was created.
@@ -37,6 +41,11 @@ interface RefusalBody {
 }
 
 const SUBMIT_URL = '/api/v1/assets/folders/_bulkdelete';
+
+/** The queue this feature's runs live in. */
+const QUEUE_NAME = 'folderBulkDelete';
+
+const ACTIVE_URL = `/api/v1/jobs/${QUEUE_NAME}/active`;
 
 /**
  * Submission for Content Drive bulk folder delete (#37063).
@@ -71,6 +80,26 @@ export class DotFolderBulkDeleteService {
                     throwError(() => this.#toRefusal(response))
                 )
             );
+    }
+
+    /**
+     * The folders every genuinely in-flight delete is working on.
+     *
+     * Answers with an empty list rather than erroring: see the `catchError` below.
+     */
+    readActiveRuns(): Observable<DotFolderDeleteActiveRun[]> {
+        return this.#http.get<{ entity?: { jobs?: DotFolderDeleteActiveRun[] } }>(ACTIVE_URL).pipe(
+            map((response) => response?.entity?.jobs ?? []),
+            // THE filter. The endpoint is called "active" but answers with every run in a
+            // NON-TERMINAL state, failed and abandoned ones included. Without this, folders
+            // whose delete already failed are reported as still being deleted, and they stay
+            // that way until the framework moves the run on (contract CR-10).
+            map((jobs) => jobs.filter((job) => isJobInProgress(job?.state))),
+            // Never surfaced to the author: they did not ask for this read, and a listing that
+            // renders unmarked is exactly the behaviour Content Drive has today. Marking
+            // degrades; the portlet does not (FR-022, SC-010).
+            catchError(() => of([] as DotFolderDeleteActiveRun[]))
+        );
     }
 
     /**

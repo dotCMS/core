@@ -2,7 +2,7 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/
 
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { DotFolderBulkDeleteSubmitResponse } from '@dotcms/dotcms-models';
+import { DotFolderBulkDeleteSubmitResponse, DotFolderDeleteActiveRun } from '@dotcms/dotcms-models';
 
 import {
     DotFolderBulkDeleteRefusal,
@@ -141,6 +141,76 @@ describe('DotFolderBulkDeleteService', () => {
             // Diagnostics belong in the console, never on screen — the same rule that keeps the
             // server's per-path `message` out of the UI (CR-04).
             expect(refusal?.response).toBeInstanceOf(HttpErrorResponse);
+        });
+    });
+
+    describe('readActiveRuns', () => {
+        const ACTIVE_URL = '/api/v1/jobs/folderBulkDelete/active';
+
+        const flushJobs = (jobs: unknown[]): void => {
+            spectator.expectOne(ACTIVE_URL, HttpMethod.GET).flush({ entity: { jobs } });
+        };
+
+        it("should read the queue's active runs", () => {
+            spectator.service.readActiveRuns().subscribe();
+
+            spectator.expectOne(ACTIVE_URL, HttpMethod.GET);
+        });
+
+        it('should keep only runs that are genuinely in progress', () => {
+            // THE trap in this feature (CR-10). The listing returns every NON-TERMINAL run — failed
+            // and abandoned included — so reading it unfiltered marks folders whose delete already
+            // failed, and they stay marked until the framework moves them on. The symptom reads in
+            // QA as "sometimes folders stay marked forever", which looks like a client defect.
+            let runs: DotFolderDeleteActiveRun[] | undefined;
+            spectator.service.readActiveRuns().subscribe((result) => (runs = result));
+
+            flushJobs([
+                { id: 'running', state: 'RUNNING', parameters: { assetPaths: [PATH_A] } },
+                { id: 'pending', state: 'PENDING', parameters: { assetPaths: [PATH_B] } },
+                { id: 'failed', state: 'FAILED', parameters: { assetPaths: ['//x/failed/'] } },
+                { id: 'abandoned', state: 'ABANDONED', parameters: { assetPaths: ['//x/gone/'] } },
+                { id: 'done', state: 'SUCCESS', parameters: { assetPaths: ['//x/done/'] } }
+            ]);
+
+            expect(runs?.map((run) => run.id)).toEqual(['running', 'pending']);
+        });
+
+        it('should treat a cancelling run as still in progress', () => {
+            // The folders are still being deleted while the cancellation takes effect between them.
+            let runs: DotFolderDeleteActiveRun[] | undefined;
+            spectator.service.readActiveRuns().subscribe((result) => (runs = result));
+
+            flushJobs([{ id: 'c', state: 'CANCELLING', parameters: { assetPaths: [PATH_A] } }]);
+
+            expect(runs?.length).toBe(1);
+        });
+
+        it('should answer with nothing rather than failing when the listing is empty', () => {
+            let runs: DotFolderDeleteActiveRun[] | undefined;
+            spectator.service.readActiveRuns().subscribe((result) => (runs = result));
+
+            spectator.expectOne(ACTIVE_URL, HttpMethod.GET).flush({ entity: { jobs: [] } });
+
+            expect(runs).toEqual([]);
+        });
+
+        it('should degrade to nothing in flight when the read fails', () => {
+            // Never an error the author sees: they did not ask for this, and a listing that renders
+            // unmarked is the behaviour Content Drive has today (FR-022, SC-010).
+            let runs: DotFolderDeleteActiveRun[] | undefined;
+            let errored = false;
+            spectator.service.readActiveRuns().subscribe({
+                next: (result) => (runs = result),
+                error: () => (errored = true)
+            });
+
+            spectator
+                .expectOne(ACTIVE_URL, HttpMethod.GET)
+                .flush({}, { status: 500, statusText: 'boom' });
+
+            expect(errored).toBe(false);
+            expect(runs).toEqual([]);
         });
     });
 });

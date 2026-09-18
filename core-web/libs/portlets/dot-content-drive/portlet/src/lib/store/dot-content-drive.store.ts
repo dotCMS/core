@@ -32,6 +32,7 @@ import { withActionExecution } from './features/action-execution/withActionExecu
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
 import { withDragging } from './features/dragging/withDragging';
+import { withFolderDeleteRuns } from './features/folder-delete-runs/with-folder-delete-runs';
 import { withPushPublishEnvironments } from './features/push-publish-environments/withPushPublishEnvironments';
 import { withSidebar } from './features/sidebar/withSidebar';
 import { withSitePermissions } from './features/site-permissions/withSitePermissions';
@@ -722,6 +723,7 @@ export const DotContentDriveStore = signalStore(
     withSidebar(),
     withDragging(),
     withActionExecution(),
+    withFolderDeleteRuns(),
     withPushPublishEnvironments(),
     withSitePermissions(),
     withComputed(() => {
@@ -740,6 +742,21 @@ export const DotContentDriveStore = signalStore(
             uploadCeilings: computed(() => globalStore.systemBulkUpload())
         };
     }),
+    withComputed(({ busyRows, inFlightFolderKeys }) => ({
+        /**
+         * Every row key that should render as busy, from **both** sources.
+         *
+         * `busyRows` covers runs this client fired, of any kind. `inFlightFolderKeys` covers folder
+         * deletes the server knows about — this client's and other authors' alike, established on
+         * load and kept current by announcements.
+         *
+         * Merged here, once, so the listing and the sidebar tree read the same answer. Two
+         * derivations would drift, and the drift reads as a folder inert in one surface and usable
+         * in the other — worse than marking neither, because it teaches the author that the marking
+         * cannot be trusted (FR-014, US2 T024).
+         */
+        allBusyRows: computed(() => [...new Set([...busyRows(), ...inFlightFolderKeys()])])
+    })),
     withComputed(({ selectedNode, siteCanAddChildren }) => ({
         /**
          * Whether the browsed folder accepts new children.
@@ -776,6 +793,10 @@ export const DotContentDriveStore = signalStore(
             // emission and `switchMap` drops the previous site's in-flight answer, so switching
             // sites quickly can never settle the gate with the wrong site's result.
             store.loadSitePermissions(store.currentSite);
+            // Fire-and-forget on purpose: the listing renders unmarked and marks appear when this
+            // answers. Nothing here is awaited, and a failure leaves the portlet exactly as it is
+            // today (FR-022, FR-023).
+            store.establishInFlightFolders();
         }
     }))
 );

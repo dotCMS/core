@@ -242,3 +242,20 @@ export interface DotFolderBulkDeleteCompletedEvent extends Partial<
     state: DotJobState;
     jobId?: string;
 }
+
+/**
+ * One in-flight run as the queue's *active* listing returns it.
+ *
+ * Shaped after what the framework actually serialises — `entity.jobs[]`, each carrying `id`,
+ * `state` and the `parameters` the run was submitted with (`JobContract`). The folder paths are in
+ * those parameters, which is the whole reason the backend half left that listing readable
+ * (backend FR-005a / D-015).
+ *
+ * **`state` is not optional to read.** The listing returns every run in a NON-TERMINAL state, which
+ * includes failed and abandoned ones — see {@link isJobInProgress}.
+ */
+export interface DotFolderDeleteActiveRun {
+    id: string;
+    state: DotJobState;
+    parameters?: { assetPaths?: string[] };
+}

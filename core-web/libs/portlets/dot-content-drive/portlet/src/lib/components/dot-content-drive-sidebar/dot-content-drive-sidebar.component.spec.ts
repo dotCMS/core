@@ -108,7 +108,7 @@ describe('DotContentDriveSidebarComponent', () => {
             }),
             mockProvider(DotContentDriveStore, {
                 initContentDrive: vi.fn(),
-                busyRows: vi.fn().mockReturnValue(['inode-a', 'id-a']),
+                allBusyRows: vi.fn().mockReturnValue(['inode-a', 'id-a']),
                 currentSite: vi.fn().mockReturnValue(mockSiteDetails),
                 isTreeExpanded: vi.fn().mockReturnValue(true),
                 removeFilter: vi.fn(),
@@ -1380,7 +1380,7 @@ describe('DotContentDriveSidebarComponent', () => {
      * marking cannot be trusted.
      */
     describe('in-flight folders (#37063)', () => {
-        it('should hand the store’s busy rows to the tree', () => {
+        it('should hand the store’s merged busy rows to the tree', () => {
             spectator.detectChanges();
 
             const tree = spectator.query(DotTreeFolderComponent);

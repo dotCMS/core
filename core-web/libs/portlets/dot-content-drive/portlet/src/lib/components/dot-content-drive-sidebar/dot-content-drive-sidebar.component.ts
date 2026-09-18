@@ -61,7 +61,7 @@ export class DotContentDriveSidebarComponent {
      * The same signal the grid marks its rows from — read here rather than re-derived, so the tree
      * and the listing cannot disagree about which folders are busy (#37063 FR-014).
      */
-    readonly $busyRows = this.#store.busyRows;
+    readonly $busyRows = this.#store.allBusyRows;
     readonly $currentSite = this.#store.currentSite;
 
     readonly uploadFiles = output<DotContentDriveUploadFiles>();

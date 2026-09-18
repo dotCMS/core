@@ -269,7 +269,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /** Inodes any in-flight run is acting on, so the grid can mark those rows. */
-    readonly $busyRows = this.#store.busyRows;
+    readonly $busyRows = this.#store.allBusyRows;
 
     /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
