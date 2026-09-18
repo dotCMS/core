@@ -53,11 +53,14 @@ done < <(grep -oE 'test_class:[[:space:]]*"[^"#]+' "$MATRIX" | sed 's/.*"//')
 
 # Classes inside the @SuiteClasses({ ... }) block only — not every X.class token
 # in the file, which would also pick up @RunWith(MainBaseSuite.class) and friends.
-# Note both spellings occur in this repo: @SuiteClasses and @Suite.SuiteClasses.
+# Three annotation forms occur in this repo: @SuiteClasses (JUnit 4),
+# @Suite.SuiteClasses (MainSuite3a) and @SelectClasses (Junit5Suite1, JUnit 5).
+# Lines starting with * are skipped so a javadoc mention of an annotation name
+# does not open the block early — Junit5Suite1 has exactly that.
 : > "$TMP/registered.txt"
 while IFS= read -r sf; do
     n_before=$(wc -l < "$TMP/registered.txt")
-    awk '/@(Suite\.)?SuiteClasses/{inblock=1} inblock{print} inblock && /\}\)/{inblock=0}' "$sf" \
+    awk '/^[[:space:]]*\*/{next} /@((Suite\.)?SuiteClasses|SelectClasses)[[:space:]]*\(/{inblock=1} inblock{print} inblock && /\}\)/{inblock=0}' "$sf" \
       | grep -oE '[A-Za-z0-9_]+\.class' | sed 's/\.class//' >> "$TMP/registered.txt"
     n_after=$(wc -l < "$TMP/registered.txt")
     # A CI suite that contributes nothing means the extraction missed its

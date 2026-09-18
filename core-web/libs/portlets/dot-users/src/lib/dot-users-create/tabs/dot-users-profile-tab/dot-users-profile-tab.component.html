@@ -3,7 +3,7 @@
         class="grid grid-cols-3 gap-4 rounded-lg border border-surface-200 bg-surface-50 p-4"
         data-testid="users-profile-metadata">
         <div class="flex flex-col gap-1">
-            <span class="text-color-secondary text-xs tracking-wide uppercase">
+            <span class="text-xs tracking-wide text-slate-500 uppercase">
                 {{ 'users.dialog.metadata.user-id' | dm }}
             </span>
             <span class="font-mono text-sm" data-testid="users-profile-metadata-id">
@@ -11,14 +11,14 @@
             </span>
         </div>
         <div class="flex flex-col gap-1">
-            <span class="text-color-secondary text-xs tracking-wide uppercase">
+            <span class="text-xs tracking-wide text-slate-500 uppercase">
                 {{ 'users.dialog.metadata.last-login' | dm }}
             </span>
             <span class="text-sm" data-testid="users-profile-metadata-last-login">
                 @if (u.lastLoginDate) {
                     {{ u.lastLoginDate | date: 'MM/dd/yyyy HH:mm' }}
                     @if (u.lastLoginIP) {
-                        <span class="text-color-secondary">&middot; {{ u.lastLoginIP }}</span>
+                        <span class="text-slate-500">&middot; {{ u.lastLoginIP }}</span>
                     }
                 } @else {
                     {{ 'users.dialog.metadata.never' | dm }}
@@ -26,7 +26,7 @@
             </span>
         </div>
         <div class="flex flex-col gap-1">
-            <span class="text-color-secondary text-xs tracking-wide uppercase">
+            <span class="text-xs tracking-wide text-slate-500 uppercase">
                 {{ 'users.dialog.metadata.failed-logins' | dm }}
             </span>
             <span class="text-sm" data-testid="users-profile-metadata-failed-logins">
@@ -45,7 +45,7 @@
             <h3 class="m-0 text-base font-semibold">
                 {{ 'users.dialog.section.account' | dm }}
             </h3>
-            <p class="text-color-secondary m-0 text-sm">
+            <p class="m-0 text-sm text-slate-500">
                 {{ 'users.dialog.section.account.description' | dm }}
             </p>
         </header>
@@ -144,10 +144,16 @@
 
         <div class="grid grid-cols-2 gap-4">
             <div class="field flex flex-col gap-2">
+                <!--
+                    Nested-path lookup: password lives under `account`,
+                    so `checkIsRequiredControl` has to be the dotted
+                    path or FormGroup.get resolves to null and the
+                    directive strips the asterisk unconditionally.
+                -->
                 <label
                     for="users-profile-password"
                     dotFieldRequired
-                    [checkIsRequiredControl]="'password'">
+                    [checkIsRequiredControl]="'account.password'">
                     {{ 'users.dialog.field.password' | dm }}
                 </label>
                 <p-password
@@ -175,7 +181,7 @@
                         {{ 'users.dialog.error.password-min' | dm }}
                     </small>
                 } @else if (isEdit()) {
-                    <small class="text-color-secondary">
+                    <small class="text-slate-500">
                         {{ 'users.dialog.field.password.help' | dm }}
                     </small>
                 }
@@ -184,7 +190,7 @@
                 <label
                     for="users-profile-confirm-password"
                     dotFieldRequired
-                    [checkIsRequiredControl]="'confirmPassword'">
+                    [checkIsRequiredControl]="'account.confirmPassword'">
                     {{ 'users.dialog.field.confirm-password' | dm }}
                 </label>
                 <p-password
@@ -234,7 +240,7 @@
                 <span class="font-medium">
                     {{ 'users.dialog.toggle.active.title' | dm }}
                 </span>
-                <span class="text-color-secondary text-sm">
+                <span class="text-sm text-slate-500">
                     {{ 'users.dialog.toggle.active.description' | dm }}
                 </span>
             </div>
@@ -250,7 +256,7 @@
             <h3 class="m-0 text-base font-semibold">
                 {{ 'users.dialog.section.additional-info' | dm }}
             </h3>
-            <p class="text-color-secondary m-0 text-sm">
+            <p class="m-0 text-sm text-slate-500">
                 {{ 'users.dialog.section.additional-info.description' | dm }}
             </p>
         </header>
@@ -332,7 +338,7 @@
             <h3 class="m-0 text-base font-semibold">
                 {{ 'users.dialog.section.access' | dm }}
             </h3>
-            <p class="text-color-secondary m-0 text-sm">
+            <p class="m-0 text-sm text-slate-500">
                 {{ 'users.dialog.section.access.description' | dm }}
             </p>
         </header>
@@ -343,7 +349,7 @@
                 [attr.data-testid]="'users-profile-access-row-' + row.key">
                 <div class="flex flex-col gap-1">
                     <span class="font-medium">{{ row.titleKey | dm }}</span>
-                    <span class="text-color-secondary text-sm">
+                    <span class="text-sm text-slate-500">
                         {{ row.descriptionKey | dm }}
                     </span>
                 </div>
@@ -362,13 +368,12 @@
                 <span class="font-medium">
                     {{ 'users.dialog.delete.title' | dm }}
                 </span>
-                <span class="text-color-secondary text-sm">
+                <span class="text-sm text-slate-500">
                     {{ 'users.dialog.delete.description' | dm }}
                 </span>
             </div>
             <p-button
                 [label]="'users.dialog.delete.button' | dm"
-                severity="danger"
                 [outlined]="true"
                 size="small"
                 (onClick)="onDeleteClick()"
