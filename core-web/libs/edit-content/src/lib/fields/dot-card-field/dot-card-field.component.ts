@@ -62,8 +62,23 @@ export class DotCardFieldComponent {
 
     constructor() {
         // afterRenderEffect rather than a template binding: the control is projected content this
-        // component never declares, and composite widgets render theirs asynchronously. Re-runs
-        // whenever `isRequired` changes, so a conditionally-required field stays honest.
+        // component never declares. Re-runs whenever `isRequired` changes, so a conditionally-
+        // required field stays honest.
+        //
+        // It is REACTIVE, not per-render: it fires when a tracked signal changes, so a control
+        // that mounts in a later change-detection pass without one changing is never visited.
+        // That is currently unreachable, and the reason is worth stating because it is a
+        // coincidence of two facts, not a guarantee of this code:
+        //
+        //   - every field that mounts its control late (@defer: category, file, custom/iframe)
+        //     exposes it as `role="group"`, and ARIA does not define aria-required on `group`;
+        //   - every field that CAN carry aria-required either renders its control synchronously
+        //     in its own template, or sets the attribute itself (radio's `radiogroup`,
+        //     host-folder's `combobox`) rather than relying on this effect.
+        //
+        // Give a deferred composite widget an eligible role — listbox, combobox, tree — and this
+        // silently stops marking it. Set the attribute in that widget's own template, as radio
+        // and host-folder do, rather than widening this effect.
         afterRenderEffect(() => {
             const required = this.$isRequired();
             const host = this.#el.nativeElement as HTMLElement;

@@ -112,13 +112,21 @@ export abstract class BaseWrapperField {
         return control.disabled;
     }
 
-    get formControl(): FormControl {
-        const { variable } = this.$field();
-        return this.controlContainer.control.get(variable) as FormControl;
+    get formControl(): FormControl | null {
+        // `$field` is `input.required` on most subclasses but NOT all: custom-field and json-field
+        // both declare it with a `null` default, so destructuring it unguarded throws a TypeError
+        // rather than yielding "no control". Every caller here and in the subclasses already
+        // handles a null control; the getter is what did not.
+        const field = this.$field();
+        if (!field) {
+            return null;
+        }
+
+        return this.controlContainer.control.get(field.variable) as FormControl;
     }
 
     get statusChanges$() {
-        return this.formControl.events.pipe(
+        return this.formControl?.events.pipe(
             takeUntilDestroyed(this.destroyRef),
             filter((event) => event instanceof TouchedChangeEvent)
         );
