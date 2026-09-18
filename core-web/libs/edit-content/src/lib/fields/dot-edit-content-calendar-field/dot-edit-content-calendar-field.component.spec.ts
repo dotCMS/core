@@ -29,12 +29,12 @@ import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../utils/mocks';
     template: ''
 })
 export class MockFormComponent {
-    // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
-    utcTimezone: DotSystemTimezone;
-    contentType: DotCMSContentType;
+    // Host Props — assigned by Spectator through hostProps, never in a constructor.
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
+    utcTimezone: DotSystemTimezone | null = null;
+    contentType!: DotCMSContentType;
 }
 
 describe('DotEditContentCalendarFieldComponent', () => {
@@ -66,149 +66,43 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     const CONTENT_TYPE_WITHOUT_EXPIRE = {
         ...CONTENT_TYPE_MOCK,
-        expireDateVar: null
+        expireDateVar: undefined
     };
 
-    describe('Calendar field timezone information', () => {
-        it('should show timezone info for DATE_AND_TIME fields when timezone is provided', () => {
-            spectator = createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [DATE_FIELD_MOCK.variable]: new FormControl()
-                        }),
-                        field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
-                        utcTimezone: MOCK_TIMEZONE,
-                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [DATE_FIELD_MOCK.variable]: null
-                        })
+    // The 'Calendar field timezone information' suite that lived here tested the timezone line
+    // under the input. FR-009 removes that line entirely — the timezone now renders inside the
+    // picker footer, so its coverage moved to calendar-field.component.spec.ts ('Picker footer —
+    // timezone'). What remains here is the guarantee that nothing renders under the input.
+    describe('Calendar field timezone placement', () => {
+        it.each([FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME, FIELD_TYPES.DATE])(
+            'should NOT render a timezone line under the input for a %s field',
+            (fieldType) => {
+                const field = { ...DATE_FIELD_MOCK, fieldType };
+
+                spectator = createHost(
+                    `<form [formGroup]="formGroup">
+                        <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                    </form>`,
+                    {
+                        hostProps: {
+                            formGroup: new FormGroup({
+                                [field.variable]: new FormControl()
+                            }),
+                            field,
+                            utcTimezone: MOCK_TIMEZONE,
+                            contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                            contentlet: createFakeContentlet({ [field.variable]: null })
+                        }
                     }
-                }
-            );
-            spectator.detectChanges();
+                );
+                spectator.detectChanges();
 
-            const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
-            expect(timezoneElement).toExist();
-            expect(timezoneElement).toContainText(MOCK_TIMEZONE.label);
-        });
-
-        it('should show timezone info for TIME fields when timezone is provided', () => {
-            spectator = createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [DATE_FIELD_MOCK.variable]: new FormControl()
-                        }),
-                        field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME },
-                        utcTimezone: MOCK_TIMEZONE,
-                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [DATE_FIELD_MOCK.variable]: null
-                        })
-                    }
-                }
-            );
-            spectator.detectChanges();
-
-            const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
-            expect(timezoneElement).toExist();
-            expect(timezoneElement).toContainText(MOCK_TIMEZONE.label);
-        });
-
-        it('should NOT show timezone info for DATE fields', () => {
-            spectator = createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [DATE_FIELD_MOCK.variable]: new FormControl()
-                        }),
-                        field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE },
-                        utcTimezone: MOCK_TIMEZONE,
-                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [DATE_FIELD_MOCK.variable]: null
-                        })
-                    }
-                }
-            );
-            spectator.detectChanges();
-
-            const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
-            expect(timezoneElement).not.toExist();
-        });
-
-        it('should NOT show timezone info when no timezone is provided', () => {
-            spectator = createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [DATE_FIELD_MOCK.variable]: new FormControl()
-                        }),
-                        field: { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME },
-                        utcTimezone: null,
-                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [DATE_FIELD_MOCK.variable]: null
-                        })
-                    }
-                }
-            );
-            spectator.detectChanges();
-
-            // El elemento timezone existe pero no debe mostrar contenido
-            const timezoneElement = spectator.query(byTestId('calendar-field-timezone'));
-            expect(timezoneElement).toBeNull();
-        });
+                expect(spectator.query(byTestId('calendar-field-timezone'))).not.toExist();
+            }
+        );
     });
 
     describe('Calendar field hint', () => {
-        it('should show hint when field has hint property', () => {
-            const fieldWithHint = {
-                ...DATE_FIELD_MOCK,
-                fieldType: FIELD_TYPES.DATE_AND_TIME,
-                hint: 'Test hint message'
-            };
-
-            // Usar DATE_AND_TIME field para que showTimezoneInfo sea true y aparezca el contenedor
-            spectator = createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [fieldWithHint.variable]: new FormControl()
-                        }),
-                        field: fieldWithHint,
-                        utcTimezone: MOCK_TIMEZONE,
-                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [fieldWithHint.variable]: null
-                        })
-                    }
-                }
-            );
-            spectator.detectChanges();
-
-            expect(fieldWithHint.hint).toBe('Test hint message');
-
-            const hintElement = spectator.query(Tooltip);
-            expect(hintElement).toExist();
-        });
-
         it('should NOT show hint when field has no hint property', () => {
             const fieldWithoutHint = { ...DATE_FIELD_MOCK, hint: undefined };
 
@@ -232,8 +126,123 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const hintElement = spectator.query(byTestId('calendar-field-hint'));
+            const hintElement = spectator.query(byTestId(`hint-${fieldWithoutHint.variable}`));
             expect(hintElement).not.toExist();
+        });
+
+        // T022 — FR-009. The timezone moves into the picker, so the field footer goes back to
+        // carrying the hint like every other field type does.
+        it('should render the hint under the input, and no timezone line, when a timezone is present', () => {
+            const fieldWithHint = {
+                ...DATE_FIELD_MOCK,
+                fieldType: FIELD_TYPES.DATE_AND_TIME,
+                hint: 'Pick the go-live date'
+            };
+
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [fieldWithHint.variable]: new FormControl()
+                        }),
+                        field: fieldWithHint,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [fieldWithHint.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
+
+            const hintElement = spectator.query(byTestId(`hint-${fieldWithHint.variable}`));
+            expect(hintElement).toExist();
+            expect(hintElement).toContainText(fieldWithHint.hint);
+
+            expect(spectator.query(byTestId('calendar-field-timezone'))).not.toExist();
+        });
+
+        // The required error must not evict the hint: the hint explains what to enter, which is
+        // exactly what the author needs while the field is in error. Error first, hint below it.
+        it('should show the required error AND keep the hint, error first', () => {
+            const fieldWithHint = {
+                ...DATE_FIELD_MOCK,
+                fieldType: FIELD_TYPES.DATE_AND_TIME,
+                required: true,
+                hint: 'Pick the go-live date'
+            };
+
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [fieldWithHint.variable]: new FormControl()
+                        }),
+                        field: fieldWithHint,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [fieldWithHint.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
+
+            spectator.component.$hasError.set(true);
+            spectator.detectChanges();
+
+            const error = spectator.query('.p-field-error');
+            const hint = spectator.query(byTestId(`hint-${fieldWithHint.variable}`));
+
+            expect(error).toExist();
+            expect(hint).toExist();
+            expect(hint).toContainText(fieldWithHint.hint);
+
+            // Order matters: the error is the new information, the hint is the standing guidance.
+            expect(
+                (error as Node).compareDocumentPosition(hint as Node) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        // T023 — FR-009. The label tooltip existed only to make room for the timezone line in
+        // the footer. With the timezone gone, so is the reason.
+        it('should NOT route the hint into the label tooltip when a timezone is present', () => {
+            const fieldWithHint = {
+                ...DATE_FIELD_MOCK,
+                fieldType: FIELD_TYPES.DATE_AND_TIME,
+                hint: 'Pick the go-live date'
+            };
+
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [fieldWithHint.variable]: new FormControl()
+                        }),
+                        field: fieldWithHint,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [fieldWithHint.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
+
+            expect(spectator.query(Tooltip)).not.toExist();
         });
     });
 
@@ -260,12 +269,12 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const calendar = spectator.query(DatePicker);
-            expect(calendar.showClear).toBe(true);
+            expect(calendar?.showClear).toBe(true);
 
-            expect(calendar.placeholder).toBe('Never expires');
+            expect(calendar?.placeholder).toBe('Never expires');
         });
 
-        it('should NOT show placeholder and showClear when field is NOT expire date field', () => {
+        it('should NOT show the placeholder, but still allow clearing, when field is NOT expire date field', () => {
             spectator = createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
@@ -287,8 +296,41 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const calendar = spectator.query(DatePicker);
-            expect(calendar.showClear).toBe(false);
-            expect(calendar.placeholder).toBe('');
+            // showClear is now unconditional (FR-005): every field type can be emptied, not
+            // just the expire-date one. The placeholder stays exclusive to the expire date.
+            expect(calendar?.showClear).toBe(true);
+            expect(calendar?.placeholder).toBe('');
+        });
+
+        // T011 — FR-007b. The expire-date field is the one field that could already be cleared,
+        // so making the clear control unconditional must not leave it with two of them.
+        it('should render exactly ONE clear control on the expire date field holding a value', async () => {
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [DATE_FIELD_MOCK.variable]: new FormControl(
+                                new Date(2026, 3, 9, 9, 33).getTime()
+                            )
+                        }),
+                        field: DATE_FIELD_MOCK,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITH_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [DATE_FIELD_MOCK.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
+            await Promise.resolve();
+            spectator.detectChanges();
+
+            expect(spectator.queryAll('[data-testid="calendar-clear-button"]')).toHaveLength(1);
+            expect(spectator.query(DatePicker)?.placeholder).toBe('Never expires');
         });
     });
 
@@ -380,9 +422,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const calendar = spectator.query(DatePicker);
-            expect(calendar.showTime).toBe(true);
-            expect(calendar.timeOnly).toBe(false);
-            expect(calendar.icon).toBe('pi pi-calendar');
+            expect(calendar?.showTime).toBe(true);
+            expect(calendar?.timeOnly).toBe(false);
+            expect(calendar?.icon).toBe('pi pi-calendar');
         });
 
         it('should configure DATE field correctly', () => {
@@ -408,9 +450,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const calendar = spectator.query(DatePicker);
-            expect(calendar.showTime).toBe(false);
-            expect(calendar.timeOnly).toBe(false);
-            expect(calendar.icon).toBe('pi pi-calendar');
+            expect(calendar?.showTime).toBe(false);
+            expect(calendar?.timeOnly).toBe(false);
+            expect(calendar?.icon).toBe('pi pi-calendar');
         });
 
         it('should configure TIME field correctly', () => {
@@ -436,9 +478,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const calendar = spectator.query(DatePicker);
-            expect(calendar.showTime).toBe(true);
-            expect(calendar.timeOnly).toBe(true);
-            expect(calendar.icon).toBe('pi pi-clock');
+            expect(calendar?.showTime).toBe(true);
+            expect(calendar?.timeOnly).toBe(true);
+            expect(calendar?.icon).toBe('pi pi-clock');
         });
     });
 
@@ -478,18 +520,19 @@ describe('DotEditContentCalendarFieldComponent', () => {
                 buildHost(fieldType);
 
                 const calendar = spectator.query(DatePicker);
-                expect(calendar.hideOnDateTimeSelect).toBe(false);
+                expect(calendar?.hideOnDateTimeSelect).toBe(false);
             }
         );
 
         it.each(FIELD_TYPES_UNDER_TEST)(
-            'should render the %s picker at PrimeNG default width, not full width',
+            'should size the %s control from its stylesheet, not from utility classes',
             (_label, fieldType) => {
                 buildHost(fieldType);
 
-                // No full-width override is applied; PrimeNG default sizing is used.
+                // The control fills its column (#37465 FR-001) through the component's own
+                // stylesheet, so no width utility class or inputStyleClass should appear here.
                 const calendar = spectator.query(DatePicker);
-                expect(calendar.inputStyleClass).toBeFalsy();
+                expect(calendar?.inputStyleClass).toBeFalsy();
 
                 const datepickerEl = spectator.query('p-datepicker');
                 expect(datepickerEl?.classList.contains('w-full')).toBe(false);
@@ -533,9 +576,10 @@ describe('DotEditContentCalendarFieldComponent', () => {
                         field: fieldWithDefault,
                         utcTimezone: MOCK_TIMEZONE,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [fieldWithDefault.variable]: null
-                        })
+                        // No inode: content being created, which is the only state where a
+                        // default applies (FR-017). On a saved contentlet an empty field is a
+                        // value the author chose, and the default must not overwrite it.
+                        contentlet: { [fieldWithDefault.variable]: null } as DotCMSContentlet
                     }
                 }
             );
@@ -566,9 +610,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                         field: fieldWithoutDefault,
                         utcTimezone: MOCK_TIMEZONE,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [fieldWithoutDefault.variable]: null
-                        })
+                        contentlet: { [fieldWithoutDefault.variable]: null } as DotCMSContentlet
                     }
                 }
             );
@@ -753,46 +795,13 @@ describe('DotEditContentCalendarFieldComponent', () => {
         // through handleChangeValue when the control transitions to null.
         const fieldWithoutDefault = { ...DATE_FIELD_MOCK, defaultValue: undefined };
 
-        const buildSeededHost = (field: DotCMSContentTypeField) =>
-            createHost(
-                `<form [formGroup]="formGroup">
-                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
-                </form>`,
-                {
-                    hostProps: {
-                        formGroup: new FormGroup({
-                            [field.variable]: new FormControl(EXISTING_TIMESTAMP)
-                        }),
-                        field,
-                        utcTimezone: MOCK_TIMEZONE,
-                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [field.variable]: EXISTING_TIMESTAMP
-                        })
-                    }
-                }
-            );
-
-        it.each([
-            ['DATE', FIELD_TYPES.DATE],
-            ['DATE_AND_TIME', FIELD_TYPES.DATE_AND_TIME],
-            ['TIME', FIELD_TYPES.TIME]
-        ])(
-            'should clear the parent form value via onClearClick for %s field',
-            (_label, fieldType) => {
-                const field = { ...fieldWithoutDefault, fieldType };
-                spectator = buildSeededHost(field);
-                spectator.detectChanges();
-
-                const formGroup = spectator.hostComponent.formGroup;
-                expect(formGroup.get(field.variable)?.value).toBe(EXISTING_TIMESTAMP);
-
-                spectator.triggerEventHandler(DatePicker, 'onClearClick', {});
-                spectator.detectChanges();
-
-                expect(formGroup.get(field.variable)?.value).toBeNull();
-            }
-        );
+        // The `(onClearClick)` tests that lived here drove the event synthetically with
+        // triggerEventHandler. PrimeNG emits onClearClick from exactly one place —
+        // onClearButtonClick (primeng-datepicker.mjs:3129) — reachable only from the stock footer
+        // Clear button this feature removes, or from the buttonbar template's clearCallback, which
+        // we deliberately do not use. The on-field X goes through clear(), which emits onClear
+        // only (:1746). So they asserted a path production can no longer take; the onClear test
+        // below covers the real one.
 
         it('should clear the parent form value via onClear (X icon path) for an expire date field', () => {
             const field = { ...fieldWithoutDefault, fieldType: FIELD_TYPES.DATE_AND_TIME };
@@ -850,10 +859,16 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendarInput = spectator.query(
-                byTestId(`calendar-input-${fieldWithName.variable}`)
-            );
-            expect(calendarInput).toHaveAttribute('aria-label', 'Event Date');
+            // The host's aria-label is not what a screen reader reads — the <input> is the
+            // focusable element, and PrimeNG does not forward aria-label to it. The name now
+            // reaches the input through the ariaLabelledBy id list.
+            const input = spectator.query(`#${fieldWithName.variable}`);
+            const ids = (input?.getAttribute('aria-labelledby') ?? '').split(' ').filter(Boolean);
+            const name = ids
+                .map((id) => document.getElementById(id)?.textContent?.trim() ?? '')
+                .join(' ');
+
+            expect(name).toContain('Event Date');
         });
 
         it('should NOT set aria-describedby when field has no hint', () => {
