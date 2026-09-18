@@ -75,7 +75,8 @@ export class DotAuthConfigComponent implements OnInit {
     readonly clearConfirmText = signal('');
     readonly clearConfirmPhrase = this.#dotMessageService.get('dotauth.confirm.clear.phrase');
 
-    readonly #pendingSaveToast = signal(false);
+    /** i18n key of the toast to show once the in-flight save lands, or null when none is pending. */
+    readonly #pendingSaveToast = signal<string | null>(null);
     readonly #pendingClearToast = signal(false);
 
     constructor() {
@@ -92,19 +93,20 @@ export class DotAuthConfigComponent implements OnInit {
         });
 
         effect(() => {
-            if (this.store.status() === 'error' && this.#pendingSaveToast()) {
-                this.#pendingSaveToast.set(false);
+            const toastKey = this.#pendingSaveToast();
+            if (this.store.status() === 'error' && toastKey) {
+                this.#pendingSaveToast.set(null);
                 return;
             }
-            if (this.store.status() === 'loaded' && this.#pendingSaveToast()) {
-                this.#pendingSaveToast.set(false);
+            if (this.store.status() === 'loaded' && toastKey) {
+                this.#pendingSaveToast.set(null);
                 // The save PUT succeeded, but if the follow-up reload failed (which still
                 // lands on 'loaded') the user already saw an error dialog — don't pair it
                 // with a contradictory success toast.
                 if (!this.store.reloadFailed()) {
                     this.#messages.add({
                         severity: 'success',
-                        summary: this.#dotMessageService.get('dotauth.toast.saved')
+                        summary: this.#dotMessageService.get(toastKey)
                     });
                 }
             }
@@ -169,9 +171,40 @@ export class DotAuthConfigComponent implements OnInit {
             });
             return;
         }
-        const started = this.store.saveSso();
-        if (started) {
-            this.#pendingSaveToast.set(true);
+        if (this.#wouldReplaceStoredKeypair()) {
+            this.#confirm.confirm({
+                header: this.#dotMessageService.get('dotauth.confirm.regenerate-keypair.header'),
+                message: this.#dotMessageService.get('dotauth.confirm.regenerate-keypair.message'),
+                acceptLabel: this.#dotMessageService.get('Continue'),
+                rejectLabel: this.#dotMessageService.get('Cancel'),
+                accept: () =>
+                    this.#startSave(
+                        { regenerateKeypair: true },
+                        'dotauth.toast.saved.keypair-regenerated'
+                    )
+            });
+            return;
+        }
+        this.#startSave(undefined, 'dotauth.toast.saved');
+    }
+
+    /**
+     * Both SP key fields cleared while a certificate is stored: saving would mint a new
+     * keypair and silently break login until the IdP gets the new certificate.
+     */
+    #wouldReplaceStoredKeypair(): boolean {
+        const { protocol, saml } = this.store.draft();
+        return (
+            protocol === 'saml' &&
+            !saml.x509cert &&
+            !saml.privateKey &&
+            !!this.store.original().saml.x509cert
+        );
+    }
+
+    #startSave(options: { regenerateKeypair?: boolean } | undefined, toastKey: string): void {
+        if (this.store.saveSso(options)) {
+            this.#pendingSaveToast.set(toastKey);
         }
     }
 
