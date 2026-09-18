@@ -29,12 +29,12 @@ import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../utils/mocks';
     template: ''
 })
 export class MockFormComponent {
-    // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
-    utcTimezone: DotSystemTimezone;
-    contentType: DotCMSContentType;
+    // Host Props — assigned by Spectator through hostProps, never in a constructor.
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
+    utcTimezone: DotSystemTimezone | null = null;
+    contentType!: DotCMSContentType;
 }
 
 describe('DotEditContentCalendarFieldComponent', () => {
@@ -66,7 +66,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     const CONTENT_TYPE_WITHOUT_EXPIRE = {
         ...CONTENT_TYPE_MOCK,
-        expireDateVar: null
+        expireDateVar: undefined
     };
 
     // The 'Calendar field timezone information' suite that lived here tested the timezone line
@@ -208,7 +208,8 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
             // Order matters: the error is the new information, the hint is the standing guidance.
             expect(
-                error?.compareDocumentPosition(hint as Node) & Node.DOCUMENT_POSITION_FOLLOWING
+                (error as Node).compareDocumentPosition(hint as Node) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
             ).toBeTruthy();
         });
 
@@ -268,9 +269,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const calendar = spectator.query(DatePicker);
-            expect(calendar.showClear).toBe(true);
+            expect(calendar?.showClear).toBe(true);
 
-            expect(calendar.placeholder).toBe('Never expires');
+            expect(calendar?.placeholder).toBe('Never expires');
         });
 
         it('should NOT show the placeholder, but still allow clearing, when field is NOT expire date field', () => {
@@ -297,8 +298,8 @@ describe('DotEditContentCalendarFieldComponent', () => {
             const calendar = spectator.query(DatePicker);
             // showClear is now unconditional (FR-005): every field type can be emptied, not
             // just the expire-date one. The placeholder stays exclusive to the expire date.
-            expect(calendar.showClear).toBe(true);
-            expect(calendar.placeholder).toBe('');
+            expect(calendar?.showClear).toBe(true);
+            expect(calendar?.placeholder).toBe('');
         });
 
         // T011 — FR-007b. The expire-date field is the one field that could already be cleared,
@@ -329,7 +330,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.queryAll('[data-testid="calendar-clear-button"]')).toHaveLength(1);
-            expect(spectator.query(DatePicker).placeholder).toBe('Never expires');
+            expect(spectator.query(DatePicker)?.placeholder).toBe('Never expires');
         });
     });
 
@@ -421,9 +422,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const calendar = spectator.query(DatePicker);
-            expect(calendar.showTime).toBe(true);
-            expect(calendar.timeOnly).toBe(false);
-            expect(calendar.icon).toBe('pi pi-calendar');
+            expect(calendar?.showTime).toBe(true);
+            expect(calendar?.timeOnly).toBe(false);
+            expect(calendar?.icon).toBe('pi pi-calendar');
         });
 
         it('should configure DATE field correctly', () => {
@@ -449,9 +450,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const calendar = spectator.query(DatePicker);
-            expect(calendar.showTime).toBe(false);
-            expect(calendar.timeOnly).toBe(false);
-            expect(calendar.icon).toBe('pi pi-calendar');
+            expect(calendar?.showTime).toBe(false);
+            expect(calendar?.timeOnly).toBe(false);
+            expect(calendar?.icon).toBe('pi pi-calendar');
         });
 
         it('should configure TIME field correctly', () => {
@@ -477,9 +478,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const calendar = spectator.query(DatePicker);
-            expect(calendar.showTime).toBe(true);
-            expect(calendar.timeOnly).toBe(true);
-            expect(calendar.icon).toBe('pi pi-clock');
+            expect(calendar?.showTime).toBe(true);
+            expect(calendar?.timeOnly).toBe(true);
+            expect(calendar?.icon).toBe('pi pi-clock');
         });
     });
 
@@ -519,7 +520,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                 buildHost(fieldType);
 
                 const calendar = spectator.query(DatePicker);
-                expect(calendar.hideOnDateTimeSelect).toBe(false);
+                expect(calendar?.hideOnDateTimeSelect).toBe(false);
             }
         );
 
@@ -531,7 +532,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                 // The control fills its column (#37465 FR-001) through the component's own
                 // stylesheet, so no width utility class or inputStyleClass should appear here.
                 const calendar = spectator.query(DatePicker);
-                expect(calendar.inputStyleClass).toBeFalsy();
+                expect(calendar?.inputStyleClass).toBeFalsy();
 
                 const datepickerEl = spectator.query('p-datepicker');
                 expect(datepickerEl?.classList.contains('w-full')).toBe(false);

@@ -8,6 +8,7 @@ import { DatePicker } from 'primeng/datepicker';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotSystemTimezone
@@ -28,10 +29,11 @@ import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../../../utils/mocks';
     template: ''
 })
 export class MockFormComponent {
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    utcTimezone: DotSystemTimezone | null;
-    contentType: DotCMSContentType | null;
+    // Assigned by Spectator through hostProps, never in a constructor.
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    utcTimezone: DotSystemTimezone | null = null;
+    contentType: DotCMSContentType | null = null;
     contentlet: DotCMSContentlet | null = null;
     hasError = false;
 }
@@ -60,7 +62,7 @@ describe('DotCalendarFieldComponent', () => {
 
     const CONTENT_TYPE_WITHOUT_EXPIRE = {
         ...CONTENT_TYPE_MOCK,
-        expireDateVar: null
+        expireDateVar: undefined
     };
 
     const TEMPLATE = `<form [formGroup]="formGroup">
@@ -142,9 +144,9 @@ describe('DotCalendarFieldComponent', () => {
      */
     const openPicker = (): void => {
         const picker = spectator.query(DatePicker);
-        picker.showOverlay();
+        picker?.showOverlay();
         spectator.detectChanges();
-        picker.cd.detectChanges();
+        picker?.cd.detectChanges();
     };
 
     /** Queries inside the open overlay panel, which Spectator's own queries cannot reach. */
@@ -545,7 +547,7 @@ describe('DotCalendarFieldComponent', () => {
             openPicker();
 
             const picker = spectator.query(DatePicker);
-            expect(picker.overlayVisible).toBe(true);
+            expect(picker?.overlayVisible).toBe(true);
 
             const btn = queryActionButton() as HTMLButtonElement;
             btn.focus();
@@ -554,7 +556,7 @@ describe('DotCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            expect(picker.overlayVisible).toBe(false);
+            expect(picker?.overlayVisible).toBe(false);
             expect(document.activeElement).toBe(document.getElementById(DATE_FIELD_MOCK.variable));
         });
 
@@ -618,7 +620,7 @@ describe('DotCalendarFieldComponent', () => {
                 spectator.click(queryActionButton() as HTMLElement);
                 await settle();
 
-                expect(spectator.query(DatePicker).overlayVisible).toBe(true);
+                expect(spectator.query(DatePicker)?.overlayVisible).toBe(true);
             }
         );
     });
