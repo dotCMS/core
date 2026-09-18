@@ -28,6 +28,8 @@ interface SeededWorld {
     term: string;
     /** A folder whose NAME contains the term, so folder rows match it (FR-011). */
     folderName: string;
+    /** The default site's hostname, captured once so the teardown does not re-resolve it. */
+    siteHostname: string;
     /** A contentlet the term reaches through its TITLE — it is the title's first token. */
     titleRowTitle: string;
     /** A contentlet the term reaches ONLY through its body field — its title never contains it. */
@@ -86,6 +88,7 @@ async function seedSearchWorld(
     return {
         term,
         folderName,
+        siteHostname: site.hostname,
         titleRowTitle: `${term} hero asset`,
         fieldRowTitle: `Herd notes ${testSuffix}`,
         contentletIds: [titleRow.identifier, fieldRow.identifier],
@@ -94,6 +97,15 @@ async function seedSearchWorld(
 }
 
 test.describe('Content Drive Search Scope', () => {
+    // These tests watch real round trips — each capture waits out the search debounce plus the
+    // backend, and the teardown closes a recorded context and fires the API deletes — all inside
+    // the default 60s budget. On a loaded CI runner (8 workers over a shared Docker backend, per
+    // the pom's own notes) five of them finished their bodies right at the edge and ran out of
+    // budget at teardown, three retries in a row. The doubled budget is not covering a broken
+    // assertion — none fired — it sizes the budget to what watching the wire honestly costs; a
+    // genuinely hung test still fails here, just with room to show which step hung.
+    test.setTimeout(120_000);
+
     // Set by every test through `seed`, read by the teardown. Deliberately a describe-level
     // `let` used only for cleanup — each test seeds its own world before asserting on it, so
     // nothing is shared and `fullyParallel` stays honest.
@@ -113,8 +125,10 @@ test.describe('Content Drive Search Scope', () => {
         if (world) {
             await deleteContentlets(request, world.contentletIds);
 
-            const site = await apiHelpers.getDefaultSite();
-            await apiHelpers.deleteFolders(site.hostname, [`/${world.folderName}`]);
+            // The site is already known — the seeding fetched it — so the teardown does not spend
+            // a round trip re-resolving it. Every call here rides on the test's own timeout
+            // budget; the leaner this stays, the more of that budget the browser teardown keeps.
+            await apiHelpers.deleteFolders(world.siteHostname, [`/${world.folderName}`]);
 
             await deleteContentType(request, world.contentTypeId);
             world = undefined;
@@ -236,18 +250,9 @@ test.describe('Content Drive Search Scope', () => {
 
         await drive.goTo();
 
-        // Type the term the guard protects, then force one full round trip each way so the
-        // portlet's own startup searches have drained before what the guard must prove — a stray
-        // settling search would read as a re-search the click never caused. The predicates skip
-        // everything that does not carry the expected `text`.
-        await drive.captureSearchPayload(
-            () => drive.searchField.fill(seeded.term),
-            (payload) => payload.filters.text === seeded.term
-        );
-        await drive.captureSearchPayload(
-            () => drive.searchField.fill(''),
-            (payload) => payload.filters.text === ''
-        );
+        // Type the term the guard protects. The capture waits for THIS search's response — a
+        // predicate that only a term-carrying request satisfies — so the portlet's own startup
+        // searches drain behind it without spending round trips flushing them by hand.
         await drive.captureSearchPayload(
             () => drive.searchField.fill(seeded.term),
             (payload) => payload.filters.text === seeded.term
@@ -255,15 +260,21 @@ test.describe('Content Drive Search Scope', () => {
 
         // p-listbox is single-select with toggle semantics: re-clicking the active option emits
         // `null`, which the component must ignore. A re-run would reset the user to page 1 for
-        // nothing, and only watching the wire can prove it did not happen.
-        await drive.expectNoSearchWhile(async () => {
-            await search.open();
-            await search.option('ALL_FIELDS').click();
-            // A re-search would be a state change → store effect → request, all synchronous
-            // with the click itself — unlike the typing path, which carries the debounce. The
-            // panel closing is the deterministic signal that the click's consequences ran.
-            await expect(search.panel).toBeHidden();
-        });
+        // nothing, and only watching the wire can prove it did not happen. The guard reads
+        // payloads, not URLs: a re-search the click caused would carry this same term, while a
+        // leftover startup search (empty `text`) is not a violation — the predicate keeps the two
+        // apart, so the proof stays exact without any settling choreography.
+        await drive.expectNoSearchWhile(
+            async () => {
+                await search.open();
+                await search.option('ALL_FIELDS').click();
+                // A re-search would be a state change → store effect → request, all synchronous
+                // with the click itself — unlike the typing path, which carries the debounce. The
+                // panel closing is the deterministic signal that the click's consequences ran.
+                await expect(search.panel).toBeHidden();
+            },
+            (payload) => payload.filters.text === seeded.term
+        );
     });
 
     test('searches drive-wide and leaves the selected folder behind', async ({
@@ -371,7 +382,11 @@ test.describe('Content Drive Search Scope', () => {
         await search.choose('TITLE');
 
         // The scope is filter state in the address, not a per-user preference (FR-016): a clean
-        // entry — no query string — starts over on the default.
+        // entry — no query string — starts over on the default. A second goto alone would only
+        // change the hash inside the same Angular document: no reload, no startup requests, and
+        // goTo's own waits would stall on responses that never fire. Leaving the app first makes
+        // the return a real page load — a genuinely clean visit, which is the thing under test.
+        await adminPage.goto('about:blank');
         await drive.goTo();
 
         await search.expectActive('ALL_FIELDS');

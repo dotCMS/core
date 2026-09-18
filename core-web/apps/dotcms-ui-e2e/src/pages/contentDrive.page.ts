@@ -189,17 +189,31 @@ export class ContentDrivePage {
     }
 
     /**
-     * Runs `body` and fails if any drive search was submitted while it did.
+     * Runs `body` and fails if a drive search that matches `matches` was submitted while it did.
      *
      * The evidence a negative needs: "re-selecting the active scope must not re-search" (FR-006)
      * cannot be asserted on copy or on rows that did not appear — only watching the wire can. The
      * same pattern `expectNothingUploadedWhile` uses for uploads.
+     *
+     * The payloads are inspected rather than the URLs: without `matches` any drive search in the
+     * window is a violation, but with it a caller can name precisely what a violation would look
+     * like. That is what lets the scope test watch a term-carrying window and ignore a leftover
+     * startup search (an empty `text`) instead of draining it with extra round trips first — a
+     * re-search the click caused would carry the same term, so the predicate catches it all the
+     * same while the window stays open. The same evidence pattern, one request fewer to prove it.
      */
-    async expectNoSearchWhile(body: () => Promise<void>) {
-        const searches: string[] = [];
+    async expectNoSearchWhile(
+        body: () => Promise<void>,
+        matches?: (payload: DriveSearchPayload) => boolean
+    ) {
+        const offenders: DriveSearchPayload[] = [];
         const record = (request: Request) => {
             if (request.url().includes('/api/v1/drive/search') && request.method() === 'POST') {
-                searches.push(request.url());
+                const payload = request.postDataJSON() as DriveSearchPayload;
+
+                if (!matches || matches(payload)) {
+                    offenders.push(payload);
+                }
             }
         };
 
@@ -211,9 +225,10 @@ export class ContentDrivePage {
             this.page.off('request', record);
         }
 
-        expect(searches, 'a drive search fired, so the scope re-selection was not ignored').toEqual(
-            []
-        );
+        expect(
+            offenders,
+            'a drive search fired, so the scope re-selection was not ignored'
+        ).toEqual([]);
     }
 
     /** Navigates into a folder by clicking its row in the tree. */
