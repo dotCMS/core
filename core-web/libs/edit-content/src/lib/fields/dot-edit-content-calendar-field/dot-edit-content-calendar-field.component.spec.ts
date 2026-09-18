@@ -575,9 +575,10 @@ describe('DotEditContentCalendarFieldComponent', () => {
                         field: fieldWithDefault,
                         utcTimezone: MOCK_TIMEZONE,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [fieldWithDefault.variable]: null
-                        })
+                        // No inode: content being created, which is the only state where a
+                        // default applies (FR-017). On a saved contentlet an empty field is a
+                        // value the author chose, and the default must not overwrite it.
+                        contentlet: { [fieldWithDefault.variable]: null } as DotCMSContentlet
                     }
                 }
             );
@@ -608,9 +609,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
                         field: fieldWithoutDefault,
                         utcTimezone: MOCK_TIMEZONE,
                         contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
-                        contentlet: createFakeContentlet({
-                            [fieldWithoutDefault.variable]: null
-                        })
+                        contentlet: { [fieldWithoutDefault.variable]: null } as DotCMSContentlet
                     }
                 }
             );

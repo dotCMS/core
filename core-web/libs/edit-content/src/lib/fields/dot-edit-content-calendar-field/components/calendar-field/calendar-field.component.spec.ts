@@ -32,6 +32,7 @@ export class MockFormComponent {
     field: DotCMSContentTypeField;
     utcTimezone: DotSystemTimezone | null;
     contentType: DotCMSContentType | null;
+    contentlet: DotCMSContentlet | null = null;
     hasError = false;
 }
 
@@ -68,7 +69,8 @@ describe('DotCalendarFieldComponent', () => {
             [hasError]="hasError"
             [formControlName]="field.variable"
             [utcTimezone]="utcTimezone"
-            [contentType]="contentType" />
+            [contentType]="contentType"
+            [contentlet]="contentlet" />
     </form>`;
 
     /**
@@ -93,6 +95,7 @@ describe('DotCalendarFieldComponent', () => {
                 field,
                 utcTimezone: MOCK_TIMEZONE,
                 contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                contentlet: null,
                 hasError: false,
                 ...overrides
             }
@@ -161,6 +164,80 @@ describe('DotCalendarFieldComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.component).toBeTruthy();
+    });
+
+    describe('Default value versus an explicit clear (FR-017)', () => {
+        const NOW_DEFAULT = { ...DATE_FIELD_MOCK, defaultValue: 'now' } as DotCMSContentTypeField;
+
+        // A contentlet that exists has an inode — the same signal the store uses to decide
+        // between initializeExistingContent and initializeNewContent.
+        const SAVED = { inode: 'abc-123', identifier: 'def-456' } as DotCMSContentlet;
+
+        it('should apply the default on NEW content, which is what a default is for', async () => {
+            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, {
+                field: NOW_DEFAULT,
+                contentlet: null
+            });
+            await settle();
+
+            expect(
+                spectator.hostComponent.formGroup.get(DATE_FIELD_MOCK.variable)?.value
+            ).not.toBeNull();
+        });
+
+        // The load path the author actually hits: cleared, saved empty, reopened. Both arrive at
+        // the component as `null`, so without the contentlet the two are indistinguishable and
+        // the default silently overwrites a value the author deliberately removed.
+        it('should NOT re-apply the default to an existing contentlet stored empty', async () => {
+            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, {
+                field: NOW_DEFAULT,
+                contentlet: SAVED
+            });
+            await settle();
+
+            expect(
+                spectator.hostComponent.formGroup.get(DATE_FIELD_MOCK.variable)?.value
+            ).toBeNull();
+            expect(spectator.component.internalFormControl.value).toBeNull();
+        });
+    });
+
+    describe('Timezone reaches assistive technology (FR-008b)', () => {
+        /**
+         * What a screen reader would read out for the input. PrimeNG exposes no
+         * `ariaDescribedBy`, so the timezone is wired through `ariaLabelledBy`, which it forwards
+         * to the real <input> — the element that takes focus, and the only one assistive
+         * technology consults here.
+         */
+        const describedText = (): string | null => {
+            const input = spectator.query(`#${DATE_FIELD_MOCK.variable}`);
+            const id = input?.getAttribute('aria-labelledby');
+            return id ? (document.getElementById(id)?.textContent?.trim() ?? null) : null;
+        };
+
+        it.each([FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME])(
+            'should describe the %s input with the timezone, without opening the picker',
+            (fieldType) => {
+                spectator = buildHost(fieldType);
+                spectator.detectChanges();
+
+                expect(describedText()).toContain(MOCK_TIMEZONE.label);
+            }
+        );
+
+        it('should not describe a Date-only input with a timezone', () => {
+            spectator = buildHost(FIELD_TYPES.DATE);
+            spectator.detectChanges();
+
+            expect(describedText()).toBeNull();
+        });
+
+        it('should not describe the input when the timezone has not resolved', () => {
+            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, { utcTimezone: null });
+            spectator.detectChanges();
+
+            expect(describedText()).toBeNull();
+        });
     });
 
     describe('Clear control on the field (US1)', () => {

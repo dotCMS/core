@@ -15,6 +15,7 @@ import { ButtonModule } from 'primeng/button';
 import { DatePicker, DatePickerModule } from 'primeng/datepicker';
 
 import {
+    DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotSystemTimezone
@@ -94,6 +95,36 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      * Alias: contentType
      */
     $contentType = input<DotCMSContentType | null>(null, { alias: 'contentType' });
+
+    /**
+     * The contentlet being edited, or null while creating one.
+     * Alias: contentlet
+     */
+    $contentlet = input<DotCMSContentlet | null>(null, { alias: 'contentlet' });
+
+    /**
+     * Whether the contentlet already exists, which is what separates "no value yet" from
+     * "the author emptied this".
+     *
+     * Both reach the field as `null`, so without this the default re-populates a field the
+     * author deliberately cleared the moment the content is reopened — the clear does not
+     * survive a reload. `inode` is the same signal the store uses to choose between
+     * `initializeExistingContent` and `initializeNewContent`.
+     */
+    $isExistingContent = computed(() => !!this.$contentlet()?.inode);
+
+    /**
+     * Id of the node naming the timezone for assistive technology, or null when there is nothing
+     * to announce. Derived from the field variable so it stays unique within the form.
+     *
+     * Wired through PrimeNG's `ariaLabelledBy`, which it forwards to the real `<input>`
+     * (primeng-datepicker.mjs:3298). There is no `ariaDescribedBy` input to use instead, and
+     * setting `aria-describedby` on `<p-datepicker>` only lands on the host element, where no
+     * screen reader looks — the input is what takes focus.
+     */
+    $timezoneDescriptionId = computed(() =>
+        this.$showFooterTimezone() ? `calendar-tz-${this.$field().variable}` : null
+    );
 
     // Store last value to reprocess when timezone becomes available
     private lastUtcValue: number | null = null;
@@ -324,8 +355,12 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
 
             this.internalFormControl.setValue(displayValue);
         } else {
-            // Process default value for new/empty field (this is NOT a UTC value, it's literal)
-            const defaultResult = processFieldDefaultValue(this.$field(), this.$systemTimezone());
+            // A default belongs to content being created. On a contentlet that already exists,
+            // an empty field is a value the author chose — re-applying the default here is what
+            // made clearing fail to survive a save and reopen (FR-017).
+            const defaultResult = this.$isExistingContent()
+                ? null
+                : processFieldDefaultValue(this.$field(), this.$systemTimezone());
 
             if (defaultResult) {
                 // Use displayValue directly - no conversion needed for default values
