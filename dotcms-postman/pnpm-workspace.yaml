@@ -1,0 +1,23 @@
+# pnpm configuration for dotcms-postman.
+#
+# This module has its own package.json and lockfile, so pnpm reads this file — not
+# core-web/pnpm-workspace.yaml. Without it the module would silently run on pnpm 12
+# defaults while core-web runs on a reviewed posture. See core-web/pnpm-workspace.yaml
+# for the reference posture and the reasoning behind each key.
+#
+# Nothing here mirrors core-web's `overrides`, `peerDependencyRules` or `allowBuilds`:
+# this is a three-dependency Newman runner (newman, xml2js, yargs) with no peer
+# conflicts and no dependency that builds.
+
+# The important one. pnpm 11 changed the default to `install`, and pom.xml runs
+# `pnpm run start` in the integration-test phase behind a separate, skippable
+# `pnpm install` (`<skip>${skip.npm.install}</skip>`). On the default, a run with the
+# install skipped would install *during* integration-test — reaching the network in the
+# middle of a live-server Postman suite. `warn` reports the drift instead.
+verifyDepsBeforeRun: warn
+
+# Security posture, matching core-web. Declared rather than inherited so the two modules
+# cannot drift apart silently.
+trustPolicy: no-downgrade
+blockExoticSubdeps: true
+strictDepBuilds: true

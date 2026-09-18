@@ -1,7 +1,7 @@
 import { signalMethod } from '@ngrx/signals';
 
 import {
-    ChangeDetectionStrategy,
+    afterNextRender,
     Component,
     computed,
     effect,
@@ -15,6 +15,7 @@ import { ButtonModule } from 'primeng/button';
 import { DatePicker, DatePickerModule } from 'primeng/datepicker';
 
 import {
+    DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotSystemTimezone
@@ -23,6 +24,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     CALENDAR_OPTIONS_PER_TYPE,
+    CalendarTypes,
     convertServerTimeToUtc,
     createUtcDateAtMidnight,
     extractDateComponents,
@@ -61,7 +63,6 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
     imports: [ButtonModule, DatePickerModule, ReactiveFormsModule, DotMessagePipe],
     templateUrl: 'calendar-field.component.html',
     styleUrls: ['./calendar-field.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,
@@ -96,6 +97,49 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      */
     $contentType = input<DotCMSContentType | null>(null, { alias: 'contentType' });
 
+    /**
+     * The contentlet being edited, or null while creating one.
+     * Alias: contentlet
+     */
+    $contentlet = input<DotCMSContentlet | null>(null, { alias: 'contentlet' });
+
+    /**
+     * Whether the contentlet already exists, which is what separates "no value yet" from
+     * "the author emptied this".
+     *
+     * Both reach the field as `null`, so without this the default re-populates a field the
+     * author deliberately cleared the moment the content is reopened — the clear does not
+     * survive a reload. `inode` is the same signal the store uses to choose between
+     * `initializeExistingContent` and `initializeNewContent`.
+     */
+    $isExistingContent = computed(() => !!this.$contentlet()?.inode);
+
+    /** Id of the hidden node carrying the field's name, for the accessible-name list. */
+    $nameId = computed(() => `calendar-name-${this.$field().variable}`);
+
+    /** Id of the hidden node naming the timezone, or null when there is nothing to announce. */
+    $timezoneDescriptionId = computed(() =>
+        this.$showFooterTimezone() ? `calendar-tz-${this.$field().variable}` : null
+    );
+
+    /**
+     * The input's accessible name: the field's name, then the timezone when there is one.
+     *
+     * `aria-labelledby` REPLACES the accessible name rather than adding to it, so pointing it at
+     * the timezone alone would announce the input as "Eastern Time (GMT-5)" with no field name —
+     * on exactly the fields this feature targets. The name has to be part of the list.
+     *
+     * It has to be an id list, not `aria-label` plus something: PrimeNG forwards `ariaLabelledBy`
+     * to the real `<input>` (primeng-datepicker.mjs:3298) but exposes no `ariaDescribedBy`, and
+     * an `aria-label` set on `<p-datepicker>` lands on the host, which is not the element that
+     * takes focus — verified, the input's own `aria-label` is null.
+     */
+    $inputLabelledBy = computed(() => {
+        const timezoneId = this.$timezoneDescriptionId();
+
+        return timezoneId ? `${this.$nameId()} ${timezoneId}` : this.$nameId();
+    });
+
     // Store last value to reprocess when timezone becomes available
     private lastUtcValue: number | null = null;
 
@@ -122,16 +166,30 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
             }
         });
 
-        // PrimeNG decides whether to render the clear control by reading the input element's DOM
-        // value, and `updateInputfield()` writes that value without marking the component dirty.
-        // The DatePicker is OnPush, so on the load path — a value arriving from a saved
-        // contentlet — the condition is evaluated before the value lands and nothing ever
-        // re-evaluates it: the field shows a value the author has no way to clear until they
-        // happen to focus it. The microtask lets PrimeNG's writeValue finish first.
-        effect(() => {
-            this.$value();
-            queueMicrotask(() => this.$picker()?.cd.detectChanges());
-        });
+        // Forces one extra change-detection pass over the picker after the first render.
+        //
+        // PrimeNG gates the clear control on a DOM read — `showClear && !$disabled() &&
+        // inputfieldViewChild?.nativeElement?.value` (primeng 21.1.3,
+        // primeng-datepicker.mjs:3322) — and `inputfieldViewChild` is a NON-static view query
+        // (`viewQueries: [{ propertyName: "inputfieldViewChild", first: true, ... }]`, no
+        // `static: true`), so it is still unresolved while that condition is first evaluated.
+        // The condition therefore reads `undefined` on the first pass.
+        //
+        // `writeControlValue` does call `cd.markForCheck()` (:3262) — this is NOT a missing-
+        // markForCheck bug, so do not go looking for one on the next PrimeNG bump. Marking a
+        // view that has already been refreshed in the current cycle only takes effect on the
+        // next cycle, and on the load path no next cycle comes: a saved contentlet renders its
+        // value with no way to clear it until the author happens to focus the field.
+        //
+        // `afterNextRender` is the hook that matches a first-render race: it runs once and is
+        // torn down with the component, so there is no deferred callback left to fire against a
+        // destroyed view. If a later write ever turns out to need this too, replace it with an
+        // effect AND say so here — the claim and the mechanism must stay in step.
+        //
+        // Caveat: `$picker().cd` reaches into the `ChangeDetectorRef` that PrimeNG's
+        // `BaseComponent` injects. It is public, so this compiles, but it is not part of the
+        // documented DatePicker API — nothing will warn us if it moves.
+        afterNextRender(() => this.$picker()?.cd.detectChanges());
 
         this.handleDisabledChange(this.$isDisabled);
         this.handleChangeValue(this.$value);
@@ -142,7 +200,10 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      * Computed based on the field type.
      */
     $fieldTypeConfig = computed(() => {
-        const fieldType = this.$field().fieldType;
+        // `fieldType` is typed as a plain string on DotCMSContentTypeField, but only the three
+        // calendar types ever reach this component — it is what the field registry routes here.
+        const fieldType = this.$field().fieldType as CalendarTypes;
+
         return CALENDAR_OPTIONS_PER_TYPE[fieldType];
     });
 
@@ -168,6 +229,19 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      * exists.
      */
     $picker = viewChild(DatePicker);
+
+    /**
+     * Whether the footer action can be trusted to resolve against the server's clock.
+     *
+     * `getCurrentServerTime` branches on `!systemTimezone?.id` and falls back to reading the
+     * browser's UTC components as local time. That was harmless while its only caller was
+     * `$defaultDate`, which merely positions the calendar on open — but the footer action
+     * *persists* what it returns, so on a non-UTC server that fallback commits an instant off by
+     * the browser's offset, with nothing on screen to hint at it (the timezone label is hidden in
+     * exactly this state). A server explicitly on UTC is a different case and stays enabled: there
+     * the branch is correct, not a fallback.
+     */
+    $canResolveServerTime = computed(() => !!this.$systemTimezone()?.id);
 
     /**
      * Message key for the footer action: a time-only field jumps to "now", the two that carry
@@ -247,6 +321,24 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
     }
 
     /**
+     * Forwards the footer button's keydown to the picker, restoring the overlay's own keyboard
+     * behaviour.
+     *
+     * Every control PrimeNG renders inside the panel is wired with
+     * `(keydown)="onContainerButtonKeydown($event)"`, including the two stock footer buttons this
+     * template replaces. The panel root binds only `(click)`, so that per-control binding is the
+     * only place the overlay's keyboard handling lives: Escape (focus back to the input, close the
+     * overlay) and Tab (`trapFocus`, since `focusTrap` defaults to true). Replacing the footer
+     * without forwarding the event leaves focus able to walk straight out of the body-appended
+     * overlay, and Escape doing nothing.
+     *
+     * @param event the keyboard event from the footer action
+     */
+    onFooterButtonKeydown(event: KeyboardEvent): void {
+        this.$picker()?.onContainerButtonKeydown(event);
+    }
+
+    /**
      * Fills the field with the current moment, as the SERVER sees it.
      *
      * Deliberately does not use the `todayCallback` PrimeNG hands to the button-bar template:
@@ -280,8 +372,12 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
 
             this.internalFormControl.setValue(displayValue);
         } else {
-            // Process default value for new/empty field (this is NOT a UTC value, it's literal)
-            const defaultResult = processFieldDefaultValue(this.$field(), this.$systemTimezone());
+            // A default belongs to content being created. On a contentlet that already exists,
+            // an empty field is a value the author chose — re-applying the default here is what
+            // made clearing fail to survive a save and reopen (FR-017).
+            const defaultResult = this.$isExistingContent()
+                ? null
+                : processFieldDefaultValue(this.$field(), this.$systemTimezone());
 
             if (defaultResult) {
                 // Use displayValue directly - no conversion needed for default values

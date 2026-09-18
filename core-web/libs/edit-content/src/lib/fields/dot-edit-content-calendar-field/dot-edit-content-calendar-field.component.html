@@ -15,7 +15,8 @@
             [hasError]="fieldHasError"
             [formControlName]="field.variable"
             [utcTimezone]="$systemTimezone()"
-            [contentType]="$contentType()" />
+            [contentType]="$contentType()"
+            [contentlet]="$contentlet()" />
     </dot-card-field-content>
     @if ((fieldHasError && isRequired) || hasHint) {
         <dot-card-field-footer>

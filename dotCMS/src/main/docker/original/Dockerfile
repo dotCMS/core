@@ -39,6 +39,19 @@ LABEL com.dotcms.contact="support@dotcms.com" \
       com.dotcms.vendor="dotCMS LLC" \
       com.dotcms.description="dotCMS Content Management System"
 
+# libvips is copied from the java-base image, which builds it from source with the
+# ImageMagick and OpenEXR delegates compiled out (docker/java-base/build-libvips.sh).
+# Ubuntu's libvips42t64 is deliberately NOT installed: it hard-depends on
+# libmagickcore-6.q16-7t64 and libopenexr-3-1-30, which carry every ImageMagick and
+# OpenEXR CVE in the security report and have no fixed version in noble, so no apt
+# upgrade could clear them. Nothing in dotCMS calls ImageMagick - that dependency
+# existed only because libvips' magick delegate linked it.
+#
+# Copied before the apt steps below so the delegate packages can be installed and
+# ldconfig can resolve libvips.so.42. The loader config travels with the prefix.
+COPY --from=container-base /usr/local/libvips /usr/local/libvips
+COPY --from=container-base /etc/ld.so.conf.d/libvips.conf /etc/ld.so.conf.d/libvips.conf
+
 # Install basic packages and tini
 RUN apt update && \
     apt upgrade -y && \
@@ -57,17 +70,27 @@ RUN apt update && \
         libapr1 \
         libarchive-tools \
         libpq-dev \
-        libvips42 \
-        libheif-plugin-aomenc \
         apt-transport-https && \
     rm -rf /var/lib/apt/lists/*
 
-# libvips42 (Ubuntu 24.04 = libvips 8.15.1) backs the optional libvips image engine
-# (IMAGE_API_USE_LIBVIPS=true). The stock package bundles the PDF (poppler), HEIC/AVIF
-# decode (libheif), SVG (rsvg), WebP and JPEG-XL delegates. AVIF *encode* additionally
-# needs an AV1 encoder, supplied by libheif-plugin-aomenc (a Recommends that
-# --no-install-recommends would otherwise drop). The engine is off by default; when off
-# these libraries are simply unused.
+# Install the libvips runtime dependency closure from the manifest generated at
+# build time by build-libvips.sh. It is derived from the resolved ELF dependencies
+# of the library, the CLI and every dynamic module - plus the dlopened libheif
+# codec plugins, which ELF inspection cannot see - so it carries exactly what
+# libvips needs and deliberately excludes libmagickcore-6.q16-7t64,
+# libopenexr-3-1-30 and imagemagick-6-common.
+#
+# This libvips backs the image engine selected by IMAGE_API_USE_LIBVIPS, and that
+# engine is ON by default whenever the native library is loadable, which it now is.
+# It provides AVIF/HEIC encode+decode (libheif with its AV1 codec plugin), PDF
+# (poppler), SVG (librsvg), animated GIF (nsgif/cgif), WebP, JXL, JPEG2000, TIFF,
+# PNG and JPEG, plus smartcrop. Formats only ImageMagick could read (ICO, DDS, DPX,
+# XCF) are no longer available, and EXR is gone entirely.
+RUN apt update && \
+    xargs -r apt install -y --no-install-recommends \
+        < /usr/local/libvips/share/runtime-packages.txt && \
+    ldconfig && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install PostgreSQL client, pg_dump and MS jaz (java launcher).
 # postgresql-common is installed and purged in the same layer so it does not
@@ -104,11 +127,22 @@ COPY --from=container-base /data /data
 # libssl3) come from the apt packages above.
 COPY --from=container-base /usr/local/tomcat-native /usr/local/tomcat-native
 
+# Assert the native image engine actually works in this image rather than assuming
+# it: confirm the vulnerable packages are absent, that nothing links MagickCore or
+# OpenEXR, that every module dependency resolves, and that representative
+# encode/decode round trips (including AVIF) succeed. Runs after all apt operations
+# on purpose. A wrong module path raises no error - libvips silently falls back to
+# the pure-JVM engine and VipsParityTest self-skips - so this must be explicit.
+RUN /usr/local/libvips/share/verify-libvips.sh
+
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
-ENV PATH=$PATH:/java/bin
+ENV PATH=$PATH:/java/bin:/usr/local/libvips/bin
 # Makes the tcnative library visible to the JVM (System.loadLibrary("tcnative-1"))
-ENV LD_LIBRARY_PATH="/usr/local/tomcat-native/lib"
+# and libvips visible to the vips-ffm FFM binding. ldconfig already registers the
+# libvips prefix through /etc/ld.so.conf.d/libvips.conf; this is belt-and-braces
+# for anything that dlopens without consulting the cache.
+ENV LD_LIBRARY_PATH="/usr/local/tomcat-native/lib:/usr/local/libvips/lib"
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]

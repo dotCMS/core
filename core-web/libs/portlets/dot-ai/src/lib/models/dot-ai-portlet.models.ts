@@ -9,7 +9,6 @@ import {
     DotAIImageOrientation,
     DOT_AI_VECTOR_OPERATOR,
     DotAiIndex,
-    DotAiIndexStatus,
     DotAiSearchResponse,
     DotAiVectorOperator
 } from '@dotcms/dotcms-models';
@@ -47,17 +46,32 @@ export const DOT_AI_TABS = [
 export type DotAiTab = (typeof DOT_AI_TABS)[number];
 export type DotAiTabId = DotAiTab['id'];
 
+export const DOT_AI_INDEX_OPERATION = {
+    BUILD: 'build',
+    REMOVE_CONTENT: 'removeContent',
+    DELETE_INDEX: 'deleteIndex',
+    REBUILD_DB: 'rebuildDb'
+} as const;
+
+export type DotAiIndexOperation =
+    (typeof DOT_AI_INDEX_OPERATION)[keyof typeof DOT_AI_INDEX_OPERATION];
+
 /**
- * The outcome of the last index build, surfaced in the tab.
+ * What the last index operation did.
  *
- * `empty` is its own case on purpose: the server answers 200 with `totalToEmbed: 0` when the
- * query matches nothing, and an index with no rows does not come back from `indexCount` at
- * all — so without this the build looks like it silently did nothing.
+ * One channel for all four, because where an outcome belongs is decided by the outcome rather
+ * than the operation: anything the user has to act on goes in the dialog still holding the
+ * field that caused it, everything else is a toast.
+ *
+ * `empty` is its own outcome on purpose. A build whose query matches nothing answers 200 with
+ * `totalToEmbed: 0`, and the index it makes never comes back from `indexCount`; a removal whose
+ * query matches nothing answers 200 with `deleted: 0`. Both are a query to fix, not a success.
  */
-export interface DotAiIndexBuildNotice {
-    kind: 'built' | 'empty' | 'failed';
+export interface DotAiIndexNotice {
+    operation: DotAiIndexOperation;
+    outcome: 'ok' | 'empty' | 'failed';
     indexName: string;
-    /** Rows embedded, for `built`; the server's reason, for `failed`. */
+    /** The count, for `ok`; the server's reason, for `failed`. */
     detail?: string;
 }
 
@@ -112,6 +126,8 @@ export interface DotAiPortletState {
      */
     configLoadFailed: boolean;
     configHost: string;
+    /** The site has no dotAI configuration of its own; these settings came from System Host. */
+    configHostInherited: boolean;
     settings: Record<string, string>;
     chatModels: string[];
     redactionFailed: boolean;
@@ -119,9 +135,17 @@ export interface DotAiPortletState {
 
     // indexes
     indexes: DotAiIndex[];
-    indexStatuses: Record<string, DotAiIndexStatus>;
     indexFragmentSnapshot: Record<string, number>;
-    indexBuildSeeds: string[];
+    /**
+     * Builds that have been requested but may not be in `indexes` yet — name to the epoch ms
+     * the build was requested. Embedding is asynchronous, so a freshly built index has no rows
+     * in `dot_embeddings` and does not come back from `indexCount` for a second or two; this is
+     * what lets the row show as Building in the meantime instead of not showing at all.
+     *
+     * The timestamp is the stop condition: a build that never materialises would otherwise poll
+     * for the lifetime of the page. See `PENDING_SEED_TTL_MS`.
+     */
+    indexBuildSeeds: Record<string, number>;
     indexesForbidden: boolean;
 
     // shared retrieval settings
@@ -148,7 +172,13 @@ export interface DotAiPortletState {
 
     // embeddings screen (client-side filters — the whole dataset arrives in one response)
     indexFilter: string;
-    indexBuildNotice: DotAiIndexBuildNotice | null;
+    indexNotice: DotAiIndexNotice | null;
+    /**
+     * The operation and index whose outcome an open dialog will render itself.
+     *
+     * Declared at submit, not at render, so nothing depends on which effect runs first.
+     */
+    indexNoticeOwner: { operation: DotAiIndexOperation; indexName: string } | null;
 
     // image
     image: DotAiGeneratedImage | null;
@@ -192,15 +222,15 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     configLoaded: false,
     configLoadFailed: false,
     configHost: '',
+    configHostInherited: false,
     settings: {},
     chatModels: [],
     redactionFailed: false,
     providerConfig: null,
 
     indexes: [],
-    indexStatuses: {},
     indexFragmentSnapshot: {},
-    indexBuildSeeds: [],
+    indexBuildSeeds: {},
     indexesForbidden: false,
 
     settingsIndexName: 'default',
@@ -222,7 +252,8 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     chatStreaming: false,
 
     indexFilter: '',
-    indexBuildNotice: null,
+    indexNotice: null,
+    indexNoticeOwner: null,
 
     image: null,
     imageGenerating: false,

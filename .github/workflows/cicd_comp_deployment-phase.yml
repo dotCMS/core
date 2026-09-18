@@ -7,7 +7,7 @@
 # - Configurable deployment environment
 # - Use of Docker environments to enable per-deployment environment secrets
 # - Docker image building and pushing (including dev images)
-# - Artifact deployment to JFrog Artifactory
+# - Artifact deployment to the S3-compatible Maven repository
 # - CLI publishing to NPM
 # - Slack notifications for Docker image and CLI deployments
 #
@@ -116,12 +116,12 @@ on:
       DOCKER_TOKEN:
         required: false
         description: 'Docker.io token'
-      EE_REPO_USERNAME:
+      MAVEN_BUNNY_RW_USERNAME:
         required: false
-        description: 'Artifactory username'
-      EE_REPO_PASSWORD:
+        description: 'BunnyCDN storage-zone name (S3 access key id)'
+      MAVEN_BUNNY_RW_PASSWORD:
         required: false
-        description: 'Artifactory password'
+        description: 'BunnyCDN storage-zone password (S3 secret key)'
       SLACK_BOT_TOKEN:
         required: false
         description: 'Slack webhook for developers'
@@ -315,17 +315,30 @@ jobs:
           identifier-tag: ${{ steps.docker-tags.outputs.identifier_tag }}
           extra-tags: ${{ steps.get-sdkman-version.outputs.raw_suffix != '' && format('type=raw,value={0},enable=true', steps.get-sdkman-version.outputs.raw_suffix) || '' }}
 
-      # Deploy CLI artifacts to JFrog Artifactory
+      # Deploy CLI Maven artifacts to the S3-compatible repository
       # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
       # Skipped when deploy-cli is false (e.g., manual builds should not publish CLI artifacts)
+      # Not continue-on-error: a missing CLI artifact should be visible. Trunk/nightly
+      # publish snapshots, which publish-to-s3 rejects before requiring credentials,
+      # so this only fails when a real (release) publish is misconfigured.
       - name: CLI Deploy
-        continue-on-error: true
         id: cli_deploy
         if: inputs.deploy-cli && steps.get-sdkman-version.outputs.java_suffix == ''
-        uses: ./.github/actions/core-cicd/deployment/deploy-jfrog
+        uses: ./.github/actions/core-cicd/deployment/deploy-bunny-maven-s3
         with:
-          artifactory-username: ${{ secrets.EE_REPO_USERNAME }}
-          artifactory-password: ${{ secrets.EE_REPO_PASSWORD }}
+          # Release builds carry the real version from the release build; other
+          # environments publish the project version (e.g. 1.0.0-SNAPSHOT).
+          version: ${{ inputs.omit-environment-prefix && inputs.tag-identifier || '' }}
+          # This step exists to publish the CLI Maven artifact. The full release
+          # repository is published by the release phase; restricting here avoids
+          # uploading every module twice.
+          modules: 'dotcms-cli'
+          access-key-id: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+          secret-access-key: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
+          bucket: ${{ vars.MAVEN_S3_BUCKET }}
+          prefix: ${{ vars.MAVEN_S3_PREFIX }}
+          endpoint: ${{ vars.MAVEN_S3_ENDPOINT }}
+          region: ${{ vars.MAVEN_S3_REGION }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifact-run-id: ${{ inputs.artifact-run-id }}
 
