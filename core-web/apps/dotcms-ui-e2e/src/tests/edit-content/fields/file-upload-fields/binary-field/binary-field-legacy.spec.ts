@@ -1,5 +1,6 @@
 import { LegacyEditContentFormPage } from '@pages';
 import { expect, test } from '@playwright/test';
+import { Contentlet, createContentlet, deleteContentlets } from '@requests/contentlets';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
 import {
     createFakePayloadBinaryField,
@@ -20,7 +21,7 @@ const INODELESS_CONTENT_REQUEST = /\/api\/v1\/content\/(\?.*)?$/;
 
 async function createBinaryFieldContentType(request: Parameters<typeof createFakeContentType>[0]) {
     return createFakeContentType(request, {
-        name: `E2EBinaryLegacyCreate${uniqueSuffix()}`,
+        name: `E2EBinaryLegacy${uniqueSuffix()}`,
         // false -> the legacy Dojo/JSP editor, which is where the defect lives.
         metadata: { CONTENT_EDITOR2_ENABLED: false },
         fields: [
@@ -38,9 +39,10 @@ async function createBinaryFieldContentType(request: Parameters<typeof createFak
     });
 }
 
-test.describe('Binary field on create — legacy editor', () => {
+test.describe('Binary field — legacy editor', () => {
     let contentType: ContentType | null = null;
     let contentTypeVariable: string;
+    let contentlet: Contentlet | null = null;
 
     test.beforeEach(async ({ request }) => {
         contentType = await createBinaryFieldContentType(request);
@@ -48,6 +50,11 @@ test.describe('Binary field on create — legacy editor', () => {
     });
 
     test.afterEach(async ({ request }) => {
+        if (contentlet) {
+            await deleteContentlets(request, [contentlet.identifier]);
+            contentlet = null;
+        }
+
         if (contentType) {
             await deleteContentType(request, contentType.id);
             contentType = null;
@@ -88,5 +95,35 @@ test.describe('Binary field on create — legacy editor', () => {
             inodelessRequests,
             'the legacy editor must not look up a contentlet that does not exist yet'
         ).toHaveLength(0);
+    });
+
+    /**
+     * Counterpart to the guard above: the edit path must keep hydrating from the API.
+     *
+     * The create fix skips the lookup entirely, and the same change added a `response.ok` check
+     * that now throws on any non-2xx. Both narrow the path that edit still depends on, and no
+     * other spec covers the legacy editor in edit mode — the binary-field specs that open
+     * existing content run against the new Angular editor, which never loads edit_field.jsp.
+     *
+     * Asserts the field renders AND that the `.catch` fallback did not fire, since that fallback
+     * only became visible once the `innerHTMl` typo was fixed.
+     */
+    test('hydrates the binary field when editing existing content @critical', async ({
+        page,
+        request
+    }) => {
+        contentlet = await createContentlet(request, {
+            contentType: contentTypeVariable,
+            title: `E2E Binary Legacy Edit ${uniqueSuffix()}`
+        });
+
+        const formPage = new LegacyEditContentFormPage(page);
+        await formPage.goToLegacyEdit(contentTypeVariable);
+
+        const legacyFrame = await formPage.getLegacyContentFrame();
+        const field = new LegacyBinaryField(legacyFrame, page, BINARY_FIELD_VARIABLE);
+
+        await field.expectVisible();
+        await field.expectNoLoadError();
     });
 });
