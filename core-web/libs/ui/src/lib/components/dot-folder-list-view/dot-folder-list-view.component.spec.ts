@@ -745,7 +745,9 @@ describe('DotFolderListViewComponent', () => {
 
             // `loading` is still `false` here -- the caller's store has not round-tripped yet.
             expect(spectator.component.$loading()).toBe(false);
-            expect(spectator.component.$ptConfig().paginator.class).toContain('pointer-events-none');
+            expect(spectator.component.$ptConfig().paginator.class).toContain(
+                'pointer-events-none'
+            );
         });
 
         it('should not fetch languages when the locale column is hidden', () => {
