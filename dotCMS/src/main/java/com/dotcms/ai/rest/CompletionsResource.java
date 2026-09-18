@@ -111,11 +111,7 @@ public class CompletionsResource {
      * @param response the HTTP response
      * @param formIn the form data containing the prompt
      * @return a Response object containing the generated completions
-     * @deprecated Superseded by {@code POST /api/inference/v1/chat/completions}, which answers in the
-     *             OpenAI-compatible shape any standard client and agent framework already
-     *             speaks. Not marked {@code forRemoval}: no removal date is committed.
      */
-    @Deprecated(since = "Sep 14th, 26")
     @Path("/rawPrompt")
     @POST
     @JSONP

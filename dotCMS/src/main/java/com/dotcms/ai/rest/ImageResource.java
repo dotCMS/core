@@ -61,11 +61,7 @@ public class ImageResource {
      * @param prompt the prompt to generate images from
      * @return a Response object containing the generated images
      * @throws IOException if an I/O error occurs
-     * @deprecated Superseded by {@code POST /api/inference/v1/images/generations}, which answers in the
-     *             OpenAI-compatible shape any standard client and agent framework already
-     *             speaks. Not marked {@code forRemoval}: no removal date is committed.
      */
-    @Deprecated(since = "Sep 14th, 26")
     @GET
     @JSONP
     @Path("/generate")
@@ -86,11 +82,7 @@ public class ImageResource {
      * @param aiImageRequestDTO the AIImageRequestDTO containing the prompt and other parameters
      * @return a Response object containing the generated images
      * @throws IOException if an I/O error occurs
-     * @deprecated Superseded by {@code POST /api/inference/v1/images/generations}, which answers in the
-     *             OpenAI-compatible shape any standard client and agent framework already
-     *             speaks. Not marked {@code forRemoval}: no removal date is committed.
      */
-    @Deprecated(since = "Sep 14th, 26")
     @POST
     @Path("/generate")
     @Produces(MediaType.APPLICATION_JSON)

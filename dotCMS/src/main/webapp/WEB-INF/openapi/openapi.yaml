@@ -3053,7 +3053,6 @@ paths:
       - AI
   /v1/ai/completions/rawPrompt:
     post:
-      deprecated: true
       description: Processes raw prompts directly through the AI service without content
         preprocessing. Supports both streaming and non-streaming responses.
       operationId: rawPrompt
@@ -3216,7 +3215,6 @@ paths:
       - AI
   /v1/ai/image/generate:
     get:
-      deprecated: true
       operationId: indexByInode_1
       parameters:
       - in: query
@@ -3231,7 +3229,6 @@ paths:
       tags:
       - AI
     post:
-      deprecated: true
       operationId: handleImageRequest
       requestBody:
         content:
@@ -3471,7 +3468,6 @@ paths:
       - AI
   /v1/ai/text/generate:
     get:
-      deprecated: true
       operationId: doGet
       parameters:
       - in: query
@@ -3486,7 +3482,6 @@ paths:
       tags:
       - AI
     post:
-      deprecated: true
       operationId: doPost
       requestBody:
         content:
