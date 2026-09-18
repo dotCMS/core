@@ -22,6 +22,7 @@ import {
     HealthStatusTypes,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 
 import { dotExperimentsListPageEvents } from './dot-experiments-list-page.events';
@@ -139,6 +140,17 @@ const VIEW_STATE_DEFAULTS: DotExperimentsListViewState = {
     languageId: null
 };
 
+/** The page the editor is standing on when the panel is open. */
+const PANEL_PAGE_ID = 'page-1';
+
+/**
+ * What `getAll(pageId)` returns: the server has already narrowed to the page, so the client has
+ * nothing left to narrow by. Deliberately includes the experiment whose page the bulk lookup never
+ * resolves — in panel mode there is no bulk lookup, so `pageInfoByPageId` stays empty and a list
+ * that still narrowed by site would render this as "no experiments on this page".
+ */
+const PAGE_EXPERIMENTS: DotExperiment[] = [EXPERIMENT_DRAFT, EXPERIMENT_ARCHIVED];
+
 const PAGE_SEARCH_RESULT = {
     jsonObjectView: {
         contentlets: [
@@ -172,6 +184,7 @@ describe('DotExperimentsListStore', () => {
 
     const healthCheck = vi.fn();
     const getAllUnfiltered = vi.fn();
+    const getAll = vi.fn();
     const archive = vi.fn();
     const remove = vi.fn();
     const stop = vi.fn();
@@ -193,6 +206,7 @@ describe('DotExperimentsListStore', () => {
             mockProvider(DotExperimentsService, {
                 healthCheck,
                 getAllUnfiltered,
+                getAll,
                 archive,
                 delete: remove,
                 stop,
@@ -248,6 +262,7 @@ describe('DotExperimentsListStore', () => {
 
         healthCheck.mockReturnValue(of(HealthStatusTypes.OK));
         getAllUnfiltered.mockReturnValue(of(EXPERIMENTS));
+        getAll.mockReturnValue(of(PAGE_EXPERIMENTS));
         contentSearchGet.mockReturnValue(of(PAGE_SEARCH_RESULT));
         archive.mockReturnValue(of({}));
         remove.mockReturnValue(of({}));
@@ -1308,6 +1323,227 @@ describe('DotExperimentsListStore', () => {
             dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('page-9'));
 
             expect(store.searchedExperiments().map(({ id }) => id)).toEqual(['exp-x']);
+        });
+    });
+    /**
+     * T021/T022 — the list store inside the UVE panel (#37478).
+     *
+     * Panel mode is the presence of `DotExperimentsPanelStore`, nothing else: the portlet never
+     * provides it, the UVE shell always does. The tests below are written as the **absence** of
+     * behaviour on purpose. Every one of these four concerns already works, so a happy-path
+     * assertion passes whether or not the branch exists; what has to be proved is that the
+     * address-bound half of this store goes quiet when it is rendered beside a page it does not
+     * own.
+     */
+    describe('panel mode (#37478)', () => {
+        let panelPageId: WritableSignal<string | null>;
+        let panelLanguageId: WritableSignal<number | null>;
+
+        beforeEach(() => {
+            panelPageId = signal<string | null>(PANEL_PAGE_ID);
+            panelLanguageId = signal<number | null>(1);
+            // The editor's address is never empty: it carries the page's url, its language and
+            // whatever view settings UVE persists. If the store still hydrates from the route in
+            // panel mode, it reads the editor's params as its own view state — so the fixture
+            // has to look like a real editor address, not a bare one.
+            queryParams = {
+                url: '/blog/post',
+                language_id: '2',
+                filter: 'from-the-editor-address',
+                page: '3'
+            };
+        });
+
+        const initPanelStore = () => {
+            spectator = createService({
+                providers: [
+                    {
+                        provide: DotExperimentsPanelStore,
+                        useValue: {
+                            pageId: panelPageId,
+                            languageId: panelLanguageId
+                        }
+                    }
+                ]
+            });
+            store = spectator.service;
+            dispatcher = spectator.inject(Dispatcher);
+            spectator.flushEffects();
+        };
+
+        describe('the address is not its own', () => {
+            it('should not hydrate its view state from the route', () => {
+                initPanelStore();
+
+                expect(store.filter()).toBe('');
+                expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+            });
+
+            it('should not subscribe to Location for popstate', () => {
+                initPanelStore();
+
+                expect(locationSubscribe).not.toHaveBeenCalled();
+            });
+
+            /**
+             * The one that would be invisible in the editor until someone pressed Back. Every
+             * view-state change is dispatched here, because a mirror that writes on *any* of them
+             * is a mirror that writes.
+             */
+            it('should write nothing to the address on any view-state change', () => {
+                initPanelStore();
+                locationGo.mockClear();
+
+                dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('alpha'));
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 20 })
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.sortChanged({
+                        orderBy: 'name',
+                        direction: 'ASC'
+                    })
+                );
+                spectator.flushEffects();
+
+                expect(locationGo).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('what it asks the server for', () => {
+            it('should request only this page and never the unfiltered list', () => {
+                initPanelStore();
+
+                expect(getAll).toHaveBeenCalledWith(PANEL_PAGE_ID);
+                expect(getAllUnfiltered).not.toHaveBeenCalled();
+            });
+
+            /**
+             * The bulk lookup exists to give the Page column its url and the site filter its host.
+             * The panel drops the column (FR-009) and cannot use the filter (below), so the
+             * request has no consumer left — and it is the most expensive thing this store does.
+             */
+            it('should skip the bulk page lookup', () => {
+                initPanelStore();
+
+                expect(contentSearchGet).not.toHaveBeenCalled();
+            });
+
+            it('should still wait for the analytics health gate before fetching', () => {
+                healthCheck.mockReturnValue(NEVER);
+
+                initPanelStore();
+
+                expect(getAll).not.toHaveBeenCalled();
+            });
+        });
+
+        /**
+         * T022 — the trap in research §1.4, and the reason this is its own test.
+         *
+         * `siteScopedExperiments` fails closed: an experiment whose `pageId` is absent from
+         * `pageInfoByPageId` is dropped. In panel mode nothing ever fills that map, so leaving the
+         * narrowing in place would empty the list — and an empty list reads as "this page has no
+         * experiments", which is exactly the misreport FR-029 and SC-008 exist to prevent. The
+         * narrowing must be **bypassed**, not merely left unfed.
+         */
+        it('should list the page experiments even though nothing resolves their site', () => {
+            initPanelStore();
+
+            expect(store.pageInfoByPageId()).toEqual({});
+            expect(store.siteScopedExperiments().map(({ id }) => id)).toEqual([
+                EXPERIMENT_DRAFT.id,
+                EXPERIMENT_ARCHIVED.id
+            ]);
+        });
+
+        describe('following the editor', () => {
+            /**
+             * FR-034b. The editor navigated to another page, so every answer on screen describes a
+             * page that is no longer there. Narrowing kept across that change silently describes
+             * the new page's experiments with the old page's question.
+             */
+            it('should reset the whole view state and refetch when the editor changes page', () => {
+                initPanelStore();
+                dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('alpha'));
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.pageChanged({ page: 4, perPage: 20 })
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.sortChanged({ orderBy: 'name', direction: 'ASC' })
+                );
+                getAll.mockClear();
+
+                panelPageId.set('page-2');
+                spectator.flushEffects();
+
+                expect(store.filter()).toBe('');
+                expect(store.selectedStatuses()).toEqual(DEFAULT_EXPERIMENTS_LIST_STATUSES);
+                expect(store.selectedGoals()).toEqual(DEFAULT_EXPERIMENTS_LIST_GOALS);
+                expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+                expect(store.perPage()).toBe(DEFAULT_EXPERIMENTS_LIST_PER_PAGE);
+                expect(store.orderBy()).toBe(DEFAULT_EXPERIMENTS_LIST_ORDER_BY);
+                expect(store.direction()).toBe(DEFAULT_EXPERIMENTS_LIST_DIRECTION);
+                expect(getAll).toHaveBeenCalledWith('page-2');
+            });
+
+            /**
+             * FR-034a / D10. An experiment belongs to a page, not to a language version of one, so
+             * the same request would come back with the same answer. The language is return
+             * context for the variant round trip and nothing else — refetching on it would be
+             * wasted, and resetting on it would throw away the editor's place for no change.
+             */
+            it('should ignore a language change entirely', () => {
+                initPanelStore();
+                dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('alpha'));
+                getAll.mockClear();
+
+                panelLanguageId.set(2);
+                spectator.flushEffects();
+
+                expect(getAll).not.toHaveBeenCalled();
+                expect(store.filter()).toBe('alpha');
+            });
+        });
+    });
+
+    /**
+     * FR-042. The portlet is not a second consumer of a shared branch — it is the behaviour that
+     * already shipped, and every one of the four concerns the panel switches off must still fire
+     * here. Without this the panel branch could be made to pass by removing the behaviour outright.
+     */
+    describe('portlet mode keeps every address-bound concern (FR-042)', () => {
+        it('should hydrate, subscribe, write and narrow by site exactly as before', () => {
+            queryParams = { filter: 'from-url', page: '2' };
+
+            initStore();
+
+            expect(store.filter()).toBe('from-url');
+            expect(locationSubscribe).toHaveBeenCalled();
+            expect(getAllUnfiltered).toHaveBeenCalledTimes(1);
+            expect(contentSearchGet).toHaveBeenCalled();
+
+            locationGo.mockClear();
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('beta'));
+            spectator.flushEffects();
+
+            expect(locationGo).toHaveBeenCalled();
+            // Site narrowing still drops the experiment living on another site's page.
+            expect(store.siteScopedExperiments().map(({ id }) => id)).not.toContain(
+                EXPERIMENT_OTHER_SITE.id
+            );
         });
     });
 });
