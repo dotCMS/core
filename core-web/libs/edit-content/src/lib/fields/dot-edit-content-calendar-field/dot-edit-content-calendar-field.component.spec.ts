@@ -859,10 +859,16 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendarInput = spectator.query(
-                byTestId(`calendar-input-${fieldWithName.variable}`)
-            );
-            expect(calendarInput).toHaveAttribute('aria-label', 'Event Date');
+            // The host's aria-label is not what a screen reader reads — the <input> is the
+            // focusable element, and PrimeNG does not forward aria-label to it. The name now
+            // reaches the input through the ariaLabelledBy id list.
+            const input = spectator.query(`#${fieldWithName.variable}`);
+            const ids = (input?.getAttribute('aria-labelledby') ?? '').split(' ').filter(Boolean);
+            const name = ids
+                .map((id) => document.getElementById(id)?.textContent?.trim() ?? '')
+                .join(' ');
+
+            expect(name).toContain('Event Date');
         });
 
         it('should NOT set aria-describedby when field has no hint', () => {

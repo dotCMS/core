@@ -24,6 +24,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     CALENDAR_OPTIONS_PER_TYPE,
+    CalendarTypes,
     convertServerTimeToUtc,
     createUtcDateAtMidnight,
     extractDateComponents,
@@ -113,18 +114,31 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      */
     $isExistingContent = computed(() => !!this.$contentlet()?.inode);
 
-    /**
-     * Id of the node naming the timezone for assistive technology, or null when there is nothing
-     * to announce. Derived from the field variable so it stays unique within the form.
-     *
-     * Wired through PrimeNG's `ariaLabelledBy`, which it forwards to the real `<input>`
-     * (primeng-datepicker.mjs:3298). There is no `ariaDescribedBy` input to use instead, and
-     * setting `aria-describedby` on `<p-datepicker>` only lands on the host element, where no
-     * screen reader looks — the input is what takes focus.
-     */
+    /** Id of the hidden node carrying the field's name, for the accessible-name list. */
+    $nameId = computed(() => `calendar-name-${this.$field().variable}`);
+
+    /** Id of the hidden node naming the timezone, or null when there is nothing to announce. */
     $timezoneDescriptionId = computed(() =>
         this.$showFooterTimezone() ? `calendar-tz-${this.$field().variable}` : null
     );
+
+    /**
+     * The input's accessible name: the field's name, then the timezone when there is one.
+     *
+     * `aria-labelledby` REPLACES the accessible name rather than adding to it, so pointing it at
+     * the timezone alone would announce the input as "Eastern Time (GMT-5)" with no field name —
+     * on exactly the fields this feature targets. The name has to be part of the list.
+     *
+     * It has to be an id list, not `aria-label` plus something: PrimeNG forwards `ariaLabelledBy`
+     * to the real `<input>` (primeng-datepicker.mjs:3298) but exposes no `ariaDescribedBy`, and
+     * an `aria-label` set on `<p-datepicker>` lands on the host, which is not the element that
+     * takes focus — verified, the input's own `aria-label` is null.
+     */
+    $inputLabelledBy = computed(() => {
+        const timezoneId = this.$timezoneDescriptionId();
+
+        return timezoneId ? `${this.$nameId()} ${timezoneId}` : this.$nameId();
+    });
 
     // Store last value to reprocess when timezone becomes available
     private lastUtcValue: number | null = null;
@@ -186,7 +200,10 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      * Computed based on the field type.
      */
     $fieldTypeConfig = computed(() => {
-        const fieldType = this.$field().fieldType;
+        // `fieldType` is typed as a plain string on DotCMSContentTypeField, but only the three
+        // calendar types ever reach this component — it is what the field registry routes here.
+        const fieldType = this.$field().fieldType as CalendarTypes;
+
         return CALENDAR_OPTIONS_PER_TYPE[fieldType];
     });
 

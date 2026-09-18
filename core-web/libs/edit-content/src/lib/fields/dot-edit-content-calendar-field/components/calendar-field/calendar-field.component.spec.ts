@@ -211,10 +211,24 @@ describe('DotCalendarFieldComponent', () => {
          * to the real <input> — the element that takes focus, and the only one assistive
          * technology consults here.
          */
-        const describedText = (): string | null => {
+        /**
+         * The input's accessible name as a screen reader would compute it: every id in
+         * `aria-labelledby`, resolved and joined. PrimeNG exposes no `ariaDescribedBy`, and
+         * `aria-labelledby` REPLACES the name rather than adding to it, so the field's own name
+         * has to be in the list — which the last tests here guard.
+         */
+        const accessibleName = (): string | null => {
             const input = spectator.query(`#${DATE_FIELD_MOCK.variable}`);
-            const id = input?.getAttribute('aria-labelledby');
-            return id ? (document.getElementById(id)?.textContent?.trim() ?? null) : null;
+            const ids = (input?.getAttribute('aria-labelledby') ?? '').split(' ').filter(Boolean);
+
+            if (!ids.length) {
+                return null;
+            }
+
+            return ids
+                .map((id) => document.getElementById(id)?.textContent?.trim() ?? '')
+                .join(' ')
+                .trim();
         };
 
         it.each([FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME])(
@@ -223,22 +237,42 @@ describe('DotCalendarFieldComponent', () => {
                 spectator = buildHost(fieldType);
                 spectator.detectChanges();
 
-                expect(describedText()).toContain(MOCK_TIMEZONE.label);
+                expect(accessibleName()).toContain(MOCK_TIMEZONE.label);
             }
         );
 
-        it('should not describe a Date-only input with a timezone', () => {
+        it('should not announce a timezone on a Date-only input', () => {
             spectator = buildHost(FIELD_TYPES.DATE);
             spectator.detectChanges();
 
-            expect(describedText()).toBeNull();
+            expect(accessibleName()).not.toContain(MOCK_TIMEZONE.label);
         });
 
-        it('should not describe the input when the timezone has not resolved', () => {
+        it('should not announce a timezone when it has not resolved', () => {
             spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, { utcTimezone: null });
             spectator.detectChanges();
 
-            expect(describedText()).toBeNull();
+            expect(accessibleName()).not.toContain(MOCK_TIMEZONE.label);
+        });
+
+        // aria-labelledby replaces the accessible name, so adding the timezone to it can silently
+        // take the field's name away — on exactly the fields this feature targets. The name must
+        // survive on every type, with and without a timezone.
+        it.each([...ALL_TYPES])(
+            'should keep the field name in the accessible name of a %s field',
+            (fieldType) => {
+                spectator = buildHost(fieldType);
+                spectator.detectChanges();
+
+                expect(accessibleName()).toContain(DATE_FIELD_MOCK.name);
+            }
+        );
+
+        it('should keep the field name when no timezone has resolved', () => {
+            spectator = buildHost(FIELD_TYPES.DATE_AND_TIME, null, { utcTimezone: null });
+            spectator.detectChanges();
+
+            expect(accessibleName()).toContain(DATE_FIELD_MOCK.name);
         });
     });
 

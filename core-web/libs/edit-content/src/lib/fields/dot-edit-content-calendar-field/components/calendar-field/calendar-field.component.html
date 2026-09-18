@@ -24,8 +24,7 @@
     [placeholder]="
         $isExpireDateField() ? ('edit.content.form.field.calendar.never.expires' | dm) : ''
     "
-    [attr.aria-label]="field.name"
-    [ariaLabelledBy]="$timezoneDescriptionId()">
+    [ariaLabelledBy]="$inputLabelledBy()">
     <!--
         Replaces PrimeNG's stock footer (Today on the left, Clear on the right). Clear leaves
         entirely — emptying the field is the on-field X above. The layout is our own flex row
@@ -76,12 +75,12 @@
 </p-datepicker>
 
 <!--
-    The input's accessible description. The footer label cannot serve as one: it lives in the
-    overlay, so it only exists while the picker is open and aria-describedby would dangle the rest
-    of the time. This node is always present, so a screen-reader user is told which zone the value
-    is read in the moment they reach the field, rather than only if they navigate to the footer
-    (FR-008b). Visually hidden — the visible statement is the footer label (FR-008).
+    The input's accessible name, as an id list on ariaLabelledBy: the field's name first, then the
+    timezone when there is one. Both nodes are always in the DOM, unlike the footer label, which
+    exists only while the overlay is open and would dangle the rest of the time. Visually hidden —
+    the visible statements are the field label and the footer label (FR-008, FR-008b).
 -->
-@if ($timezoneDescriptionId(); as describedById) {
-    <span class="sr-only" [id]="describedById">{{ $systemTimezone()?.label }}</span>
+<span class="sr-only" [id]="$nameId()">{{ field.name }}</span>
+@if ($timezoneDescriptionId(); as timezoneId) {
+    <span class="sr-only" [id]="timezoneId">{{ $systemTimezone()?.label }}</span>
 }
