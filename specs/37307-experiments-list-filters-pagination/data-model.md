@@ -11,17 +11,18 @@ served by an existing endpoint. Validation rules are stated where a requirement 
 
 `core-web/libs/dotcms-models/src/lib/dot-experiments.model.ts`
 
-Two fields are added to the existing `DotExperiment` interface. Both are already served or will be
-by #37304; neither exists on the client type today, which is the gap "State of the code as found"
-row 5 records.
+Two fields are added to the existing `DotExperiment` interface. Both are already served by the API
+— `createdBy` always, `createdByUserName` since #37304 shipped — and neither exists on the client
+type today, which is the gap "State of the code as found" row 5 records.
 
 | Field | Type | Source | Used by |
 |---|---|---|---|
 | `createdBy` | `string` | Already serialized by `AbstractExperiment` | Creator narrowing (FR-005) |
-| `createdByUserName` | `string` | Added by #37304; never null or empty, falls back to the raw id for an unresolvable creator | Created By column (FR-029) |
+| `createdByUserName` | `string` | Added by #37304 (shipped). Never null, absent or blank: the creator's trimmed full name, `System` for the system user, or `unknown` for a deleted user, an orphaned reference, a blank name, or a failed lookup. **Not** the raw id — that was the issue's stated fallback but not what shipped | Created By column (FR-029, FR-029a) |
 
-`createdByUserName` is typed optional until #37304 has shipped everywhere the portlet runs against,
-because the column must tolerate an older backend (FR-031).
+`createdByUserName` is typed **optional** even though #37304 has shipped, because the portlet and
+the backend are not released as one unit and the column must tolerate a backend that predates it
+(FR-031). Against a current backend the field is always populated.
 
 Existing fields this feature reads: `scheduling: RangeOfDateAndTime | null`, whose
 `startDate: number | null` is an epoch. **Both** shapes mean "unscheduled" for the window filter —
