@@ -932,11 +932,27 @@ export function toRequestLocation(
 /**
  * Whether the listing should ask for folders at all.
  *
- * Folders are not results in a listing that spans the whole site, and System Host has none, so
- * both of those scopes ask for none. The tree is still there to navigate them.
+ * Browsing all site content is a flat listing over every folder on the site, so folder rows there
+ * are noise -- the tree beside it is how folders are navigated. Searching is the other case: a
+ * name is being matched rather than a place browsed, and a match should be found wherever it
+ * lives. That is #37479's FR-011, that folder matching behaves the same in either search scope,
+ * and suppressing folders for the whole of all site content broke it at the default view.
+ *
+ * System Host is unconditional: it has no folders to list either way. `getFolders` returns an
+ * empty list for that scope, so asking spends a query to be told nothing.
+ *
+ * @param browseScope which scope the listing is showing
+ * @param isSearching whether a text filter is narrowing it
  */
-export function listsFolders(browseScope: DotContentDriveBrowseScope | undefined): boolean {
-    return browseScope !== 'ALL' && browseScope !== 'SYSTEM_HOST';
+export function listsFolders(
+    browseScope: DotContentDriveBrowseScope | undefined,
+    isSearching: boolean
+): boolean {
+    if (browseScope === 'SYSTEM_HOST') {
+        return false;
+    }
+
+    return browseScope !== 'ALL' || isSearching;
 }
 
 /**

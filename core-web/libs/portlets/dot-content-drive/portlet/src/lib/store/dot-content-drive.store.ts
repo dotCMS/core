@@ -187,8 +187,10 @@ export const DotContentDriveStore = signalStore(
                             status: filters()?.status?.length ? filters()?.status : undefined,
                             showFolders:
                                 // Folders are not results in a listing that spans the whole site,
-                                // and System Host has none.
-                                listsFolders(location.browseScope) &&
+                                // and System Host has none -- but a search matches names rather
+                                // than browsing a place, so all site content admits them again
+                                // once there is a term to match (#37479 FR-011).
+                                listsFolders(location.browseScope, !!filters()?.title?.length) &&
                                 page.hasMoreFolders &&
                                 !filters()?.baseType?.length &&
                                 !filters()?.contentType?.length &&

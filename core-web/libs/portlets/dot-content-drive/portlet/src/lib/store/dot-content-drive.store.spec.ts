@@ -573,6 +573,33 @@ describe('DotContentDriveStore', () => {
                     expect(store.$request().showFolders).toBe(false);
                 });
 
+                // Searching all site content asks for them again: a term matches names rather
+                // than browsing a place, and a folder should be found wherever it lives
+                // (#37479 FR-011). Suppressing them for the whole scope broke that feature's
+                // e2e at the default view, which is the only place the two rules meet.
+                it('should ask for folders when all site content is searched', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { title: 'report' },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(true);
+                });
+
+                // System Host has none either way, so a term changes nothing there.
+                it('should still ask for no folders when System Host is searched', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: { title: 'report' },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
                 it('should not ask for folders in System Host, which has none', () => {
                     store.initContentDrive({
                         currentSite: SYSTEM_HOST,
