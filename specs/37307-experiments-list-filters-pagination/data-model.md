@@ -61,8 +61,8 @@ option list, so a person selected on page 1 stays labelled after a search resets
 
 | Existing | `filter`, `selectedStatuses`, `selectedGoals`, `page`, `perPage`, `orderBy`, `direction`, `selectedPageId`, `selectedPageUrl`, `languageId` |
 |---|---|
-| **Added** | `selectedCreators: string[]` — user ids, empty means no constraint |
-| **Added** | `selectedScheduleWindow` — one of the five values, default = none |
+| **Added** | `selectedCreators: string[]` — user ids, empty means no constraint. Carried in the address as `created_by` (FR-049) |
+| **Added** | `selectedScheduleWindow` — one of the five values, default = none. Carried in the address as the window token itself, never as an absolute date (FR-049a) |
 
 Every field in this bag is a query parameter (FR-045). Transient interface state is deliberately
 **not** here: the search text inside the Created By popover narrows the option list rather than the
