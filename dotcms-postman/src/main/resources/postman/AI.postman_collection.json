@@ -4044,7 +4044,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"model\": \"gpt-4o-mini\",\n    \"messages\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"Reply with the single word: ok\"\n        }\n    ]\n}",
+              "raw": "{\n    \"model\": \"gpt-4o-mini\",\n    \"messages\": [\n        {\n            \"role\": \"user\",\n            \"content\": \"What recent breakthroughs in medical research have the potential to significantly impact public health?\"\n        }\n    ]\n}",
               "options": {
                 "raw": {
                   "language": "json"
