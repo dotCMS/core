@@ -15,6 +15,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import { DotCalendarFieldComponent } from './calendar-field.component';
+import { convertServerTimeToUtc } from './calendar-field.util';
 
 import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../../../utils/mocks';
@@ -541,17 +542,23 @@ describe('DotCalendarFieldComponent', () => {
 
             expect(spectator.component.internalFormControl.value?.getHours()).toBe(SERVER_HOUR);
 
-            // Not just "a value": the TIME branch keeps the server's time against TODAY's date in
-            // the runner's zone, so a regression storing the right hour on the wrong date base
-            // would slip past a null check. Derived the same way production derives it.
+            // Not just "a value": the TIME branch keeps the server's time against TODAY's date, so
+            // a regression storing the right hour on the wrong date base would slip past a null
+            // check. Derived through the same conversion production uses — building the expected
+            // instant with a bare `new Date(...)` would read it in the RUNNER's zone, which passes
+            // wherever that zone happens to match MOCK_TIMEZONE and fails everywhere else (CI runs
+            // on UTC).
             const today = new Date();
-            const expected = new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                today.getDate(),
-                SERVER_HOUR,
-                FAKE_NOW_UTC.getUTCMinutes(),
-                FAKE_NOW_UTC.getUTCSeconds()
+            const expected = convertServerTimeToUtc(
+                new Date(
+                    today.getFullYear(),
+                    today.getMonth(),
+                    today.getDate(),
+                    SERVER_HOUR,
+                    FAKE_NOW_UTC.getUTCMinutes(),
+                    FAKE_NOW_UTC.getUTCSeconds()
+                ),
+                MOCK_TIMEZONE
             );
             expect(controlValue()).toBe(expected.getTime());
         });
