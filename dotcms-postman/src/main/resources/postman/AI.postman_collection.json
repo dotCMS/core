@@ -3866,6 +3866,12 @@
                 "exec": [
                   "// FR-030: server-side only. The credential is a long-lived dotCMS token with its",
                   "// owner's full authority, so CORS would invite putting it in browser JavaScript.",
+                  "// The request has to actually authenticate for this to mean anything: a 401",
+                  "// carries no Access-Control-Allow-Origin either, so asserting the header's",
+                  "// absence against a refused request passes whatever CORS does.",
+                  "pm.test('Request authenticated', function () {",
+                  "    pm.expect(pm.response.code, 'expected an authenticated response').to.not.equal(401);",
+                  "});",
                   "pm.test('No Access-Control-Allow-Origin header', function () {",
                   "    pm.expect(pm.response.headers.has('Access-Control-Allow-Origin')).to.be.false;",
                   "});"
@@ -3877,16 +3883,11 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
+              "type": "bearer",
+              "bearer": [
                 {
-                  "key": "password",
-                  "value": "admin",
-                  "type": "string"
-                },
-                {
-                  "key": "username",
-                  "value": "admin@dotcms.com",
+                  "key": "token",
+                  "value": "{{jwt}}",
                   "type": "string"
                 }
               ]
@@ -3951,16 +3952,11 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
+              "type": "bearer",
+              "bearer": [
                 {
-                  "key": "password",
-                  "value": "admin",
-                  "type": "string"
-                },
-                {
-                  "key": "username",
-                  "value": "admin@dotcms.com",
+                  "key": "token",
+                  "value": "{{jwt}}",
                   "type": "string"
                 }
               ]
@@ -4030,16 +4026,11 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
+              "type": "bearer",
+              "bearer": [
                 {
-                  "key": "password",
-                  "value": "admin",
-                  "type": "string"
-                },
-                {
-                  "key": "username",
-                  "value": "admin@dotcms.com",
+                  "key": "token",
+                  "value": "{{jwt}}",
                   "type": "string"
                 }
               ]
@@ -4085,7 +4076,49 @@
       "script": {
         "type": "text/javascript",
         "packages": {},
-        "exec": []
+        "exec": [
+          "if (!pm.environment.get('jwt')) {",
+          "    console.log(\"generating....\")",
+          "    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+          "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+          "",
+          "    if (!pm.environment.get('jwt')) {",
+          "        const username = pm.environment.get(\"user\");",
+          "        const password = pm.environment.get(\"password\");",
+          "        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+          "",
+          "        const requestOptions = {",
+          "            url: apiUrl,",
+          "            method: \"POST\",",
+          "            header: {",
+          "                \"accept\": \"*/*\",",
+          "                \"content-type\": \"application/json\",",
+          "                \"Authorization\": `Basic ${basicAuth}`",
+          "            },",
+          "            body: {",
+          "                mode: \"raw\",",
+          "                raw: JSON.stringify({",
+          "                    \"expirationSeconds\": 7200,",
+          "                    \"userId\": \"dotcms.org.1\",",
+          "                    \"network\": \"0.0.0.0/0\",",
+          "                    \"claims\": {\"label\": \"postman-tests\"}",
+          "                })",
+          "            }",
+          "        };",
+          "",
+          "        pm.sendRequest(requestOptions, function (err, response) {",
+          "            if (err) {",
+          "                console.log(err);",
+          "            } else {",
+          "                const jwt = response.json().entity.jwt;",
+          "                pm.environment.set('jwt', jwt);",
+          "                console.log(jwt);",
+          "            }",
+          "        });",
+          "    }",
+          "}",
+          ""
+        ]
       }
     },
     {
