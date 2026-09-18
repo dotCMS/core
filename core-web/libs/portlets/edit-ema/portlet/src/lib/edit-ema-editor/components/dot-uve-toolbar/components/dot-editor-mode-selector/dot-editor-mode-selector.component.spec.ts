@@ -232,4 +232,19 @@ describe('DotEditorModeSelectorComponent', () => {
             expect(store.pageLoad).not.toHaveBeenCalled();
         });
     });
+
+    /**
+     * The mode can change without this component being rebuilt — the way back from a variant does
+     * exactly that, through `pageLoad` on a toolbar that stays mounted. Seeded once in `ngOnInit`,
+     * the select went on naming the mode the editor had left while the address and the store had
+     * already moved on.
+     */
+    it('should follow a mode change that does not rebuild it', () => {
+        expect(spectator.component.selectedModeModel()?.id).toBe(UVE_MODE.EDIT);
+
+        store.pageParams.set({ mode: UVE_MODE.PREVIEW });
+        spectator.detectChanges();
+
+        expect(spectator.component.selectedModeModel()?.id).toBe(UVE_MODE.PREVIEW);
+    });
 });

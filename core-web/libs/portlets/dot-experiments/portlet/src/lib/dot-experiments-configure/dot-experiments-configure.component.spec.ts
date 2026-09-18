@@ -29,6 +29,7 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -41,6 +42,7 @@ import { DotExperimentsConfigureSchedulingComponent } from './components/dot-exp
 import { DotExperimentsConfigureVariantsComponent } from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
 import { DotExperimentsConfigureComponent } from './dot-experiments-configure.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     LOCKED_BANNER_KEY_READ_ONLY,
     LOCKED_BANNER_KEY_RUNNING,
@@ -228,6 +230,16 @@ const createGlobalStoreMock = () => {
 describe('DotExperimentsConfigureComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
+    /**
+     * Panel mode is the presence of this store, so it is provided either way and holds `null` for
+     * the portlet — the `#panel === null` the contract tests.
+     */
+    let panelStore: {
+        backToList: Mock;
+        configProps: Mock;
+        section: Mock;
+        showConfigure?: Mock;
+    } | null;
     let scrollIntoView: Mock;
     let dispatch: MockInstance;
     let globalStore: ReturnType<typeof createGlobalStoreMock>;
@@ -255,6 +267,8 @@ describe('DotExperimentsConfigureComponent', () => {
             // `ConfirmationService` has to be re-declared here (`p-confirmDialog` needs it).
             componentProviders: [
                 { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
+                // Real: these tests assert where the screen goes, and this is what decides.
+                DotExperimentsRouter,
                 ConfirmationService
             ],
             providers: [
@@ -263,6 +277,7 @@ describe('DotExperimentsConfigureComponent', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 mockProvider(DotMessageDisplayService),
                 { provide: GlobalStore, useFactory: () => globalStore },
+                { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
                 {
                     provide: ActivatedRoute,
                     useValue: {
@@ -382,6 +397,7 @@ describe('DotExperimentsConfigureComponent', () => {
     beforeEach(() => {
         storeMock = createStoreMock();
         globalStore = createGlobalStoreMock();
+        panelStore = null;
         // jsdom does not implement scrollIntoView, so there is nothing to spy on.
         scrollIntoView = vi.fn();
         Element.prototype.scrollIntoView = scrollIntoView;
@@ -1454,6 +1470,8 @@ describe('DotExperimentsConfigureComponent', () => {
             component: DotExperimentsConfigureComponent,
             componentProviders: [
                 { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
+                // Real: these tests assert where the screen goes, and this is what decides.
+                DotExperimentsRouter,
                 ConfirmationService
             ],
             providers: [
@@ -1462,6 +1480,7 @@ describe('DotExperimentsConfigureComponent', () => {
                 { provide: DotMessageService, useValue: messageServiceMock },
                 mockProvider(DotMessageDisplayService),
                 { provide: GlobalStore, useFactory: () => globalStore },
+                { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
                 {
                     provide: ActivatedRoute,
                     useValue: {
@@ -1565,6 +1584,88 @@ describe('DotExperimentsConfigureComponent', () => {
             expect(formTree.scheduling.startDate().disabled()).toBe(true);
             expect(formTree.scheduling.endDate().disabled()).toBe(true);
             expect(formTree.variantWeights[0].weight().disabled()).toBe(true);
+        });
+    });
+    /**
+     * The configuration inside the UVE panel (#37478). Only the way out differs: in the portlet
+     * this screen is a route and Back is a navigation; in the panel it is a view, and navigating
+     * would take the editor off the page the panel exists to keep on screen (FR-008, FR-013).
+     */
+    describe('panel mode (#37478)', () => {
+        const createComponent = createComponentOn({ experimentId: 'exp-1' });
+
+        beforeEach(() => {
+            panelStore = {
+                backToList: vi.fn(),
+                configProps: vi.fn().mockReturnValue(null),
+                section: vi.fn().mockReturnValue(null)
+            };
+        });
+
+        it('should return to the panel list instead of navigating away', () => {
+            spectator = createComponent();
+            storeMock.status.set(ComponentStatus.ERROR);
+            spectator.detectChanges();
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+
+            spectator.click(
+                spectator
+                    .query(byTestId('experiments-configure-error'))
+                    ?.querySelector('[data-testid="message-button"]') as HTMLElement
+            );
+
+            expect(panelStore?.backToList).toHaveBeenCalledTimes(1);
+            expect(navigate).not.toHaveBeenCalled();
+        });
+    });
+    /**
+     * FR-016. The moment an experiment exists, the screen has to follow it — and where it follows
+     * to is the one thing that differs between the two worlds.
+     *
+     * Lives here rather than in the store, which is where it used to: the store injecting the
+     * navigation makes a cycle through the panel store, and it leaves the rule the rest of this
+     * portlet follows — stores hold state, components move between screens — true without an
+     * exception.
+     */
+    describe('following the experiment it just created', () => {
+        const createComponent = createComponentOn({});
+        const created = { id: 'exp-created' } as DotExperiment;
+
+        const announceCreated = () => {
+            spectator.detectChanges();
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+
+            spectator
+                .inject(Dispatcher)
+                .dispatch(dotExperimentsConfigureApiEvents.createSucceeded(created));
+
+            return navigate;
+        };
+
+        it('should swap /new for its own URL in the portlet, keeping it out of history', () => {
+            spectator = createComponent();
+
+            const navigate = announceCreated();
+
+            expect(navigate).toHaveBeenCalledWith(
+                ['..', 'exp-created', 'configuration'],
+                expect.objectContaining({ replaceUrl: true, queryParamsHandling: 'preserve' })
+            );
+        });
+
+        it('should show it in the panel instead, where there is no URL to swap', () => {
+            panelStore = {
+                backToList: vi.fn(),
+                configProps: vi.fn().mockReturnValue(null),
+                section: vi.fn().mockReturnValue(null),
+                showConfigure: vi.fn()
+            };
+            spectator = createComponent();
+
+            const navigate = announceCreated();
+
+            expect(panelStore?.showConfigure).toHaveBeenCalledWith('exp-created');
+            expect(navigate).not.toHaveBeenCalled();
         });
     });
 });

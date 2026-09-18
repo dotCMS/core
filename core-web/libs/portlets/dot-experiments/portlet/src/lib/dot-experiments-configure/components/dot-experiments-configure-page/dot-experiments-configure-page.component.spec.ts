@@ -20,6 +20,7 @@ import {
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     Variant
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { AngularAssetPickerLauncher, DotAssetPickerComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -119,6 +120,8 @@ const createStoreMock = () => ({
 describe('DotExperimentsConfigurePageComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurePageComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
+    /** Panel mode is the presence of this store; `null` is the portlet. */
+    let panelStore: Record<string, never> | null;
     let dispatch: MockInstance;
     /** What the AssetPicker closes with. */
     let dialogClosed: Subject<DotCMSContentlet | undefined>;
@@ -159,6 +162,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
         // launcher, which is what turns the press into an open picker.
         componentProviders: [
             { provide: DialogService, useFactory: () => dialogService },
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
             AngularAssetPickerLauncher
         ],
         detectChanges: false
@@ -214,6 +218,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        panelStore = null;
         dialogClosed = new Subject<DotCMSContentlet | undefined>();
         changePageClosed = new Subject<true | undefined>();
         siteDetails = signal<DotSite | null>(SITE_MOCK);
@@ -694,6 +699,55 @@ describe('DotExperimentsConfigurePageComponent', () => {
             spectator.detectChanges();
 
             expect(trafficInput().disabled).toBe(true);
+        });
+    });
+    /**
+     * The Page card inside the UVE panel (#37478).
+     *
+     * FR-014, FR-014a, D12. The page is not a choice here — it is the page open in the editor, and
+     * the panel is scoped to it. Offering to change it would let the editor point the experiment at
+     * a page they are not looking at, and leave the panel listing a different page's experiments
+     * than the one being configured.
+     */
+    describe('panel mode (#37478)', () => {
+        const inPanel = () => {
+            panelStore = {};
+            spectator = createComponent();
+            // The panel always arrives with a page: it is the one open in the editor.
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            mountWith();
+        };
+
+        it('should not offer to change the page', () => {
+            inPanel();
+
+            expect(spectator.query(byTestId('experiments-configure-page-select-btn'))).toBeNull();
+        });
+
+        /** FR-014a. A control that is simply missing reads as broken; this says why it is not there. */
+        it('should say why the page is fixed', () => {
+            inPanel();
+
+            expect(
+                spectator.query(byTestId('experiments-configure-page-fixed-hint'))
+            ).not.toBeNull();
+        });
+
+        /** The allocation control shared the button's row, so it must survive losing it. */
+        it('should keep the traffic allocation control', () => {
+            inPanel();
+
+            expect(spectator.query(byTestId('experiments-configure-traffic-input'))).not.toBeNull();
+        });
+
+        it('should still offer the button in portlet mode (FR-042)', () => {
+            spectator = createComponent();
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            mountWith();
+
+            expect(
+                spectator.query(byTestId('experiments-configure-page-select-btn'))
+            ).not.toBeNull();
         });
     });
 });

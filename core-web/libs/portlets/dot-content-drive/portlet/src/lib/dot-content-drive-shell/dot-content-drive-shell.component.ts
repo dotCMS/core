@@ -18,6 +18,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
@@ -133,6 +134,7 @@ import { describeUploadFailures } from '../utils/upload-failures';
         DotToastComponent,
         DotEditContentSidePanelComponent,
         ProgressSpinnerModule,
+        ButtonModule,
         DotContentDriveActionCenterComponent
     ],
     providers: [
@@ -495,6 +497,23 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
+
+    /**
+     * Whether the last search failed to run, as opposed to running and matching nothing.
+     *
+     * The two used to be indistinguishable: a query that could not execute was logged and reported
+     * as an empty result, so a user searching for content they were looking at was told it did not
+     * exist (issue #37532). The store now records the failure; this is what puts it on screen.
+     */
+    readonly $searchFailed = computed(() => this.#store.status() === DotContentDriveStatus.ERROR);
+
+    /**
+     * Re-runs the current search after a failure. `loadItems` re-reads the live filter state and
+     * resets the status itself, so the retry needs nothing beyond the call.
+     */
+    protected onRetrySearch(): void {
+        this.#store.loadItems();
+    }
 
     /**
      * Extra table columns for the current selection: the selected single content type's "Show In
