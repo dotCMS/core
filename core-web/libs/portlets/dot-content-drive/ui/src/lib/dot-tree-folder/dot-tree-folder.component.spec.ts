@@ -486,7 +486,10 @@ describe('DotTreeFolderComponent', () => {
                 childElement.setAttribute('data-json-node', JSON.stringify(mockNodeData));
                 childElement.setAttribute('data-testid', 'tree-node-label');
 
+                // The row element, not a bare div: the search walks up to the row the pointer is
+                // actually over and then down into it, so the wrapper has to be a real row.
                 const parentElement = document.createElement('div');
+                parentElement.className = 'p-tree-node-content';
                 parentElement.appendChild(childElement);
 
                 const dragEvent = createDragOverEvent(parentElement);
@@ -494,6 +497,56 @@ describe('DotTreeFolderComponent', () => {
                 component.onDragOver(dragEvent);
 
                 expect(component.$activeDropNode()).toEqual(mockNodeData);
+            });
+
+            // The tree box is taller than its rows, so there is blank space under the last folder.
+            // Resolving the target by searching DOWN from whatever the pointer is over meant that
+            // blank space resolved to the FIRST label in the tree -- the site row -- and a drop
+            // there landed on the site root without the author ever aiming at it.
+            it('should not target the first row when the drag is over empty tree space', () => {
+                const label = document.createElement('span');
+                label.setAttribute(
+                    'data-json-node',
+                    JSON.stringify({
+                        id: 'site-row',
+                        hostname: 'demo.dotcms.com',
+                        path: '',
+                        type: 'folder' as const
+                    })
+                );
+                label.setAttribute('data-testid', 'tree-node-label');
+
+                const row = document.createElement('div');
+                row.className = 'p-tree-node-content';
+                row.appendChild(label);
+
+                const treeBox = document.createElement('div');
+                treeBox.className = 'p-tree';
+                treeBox.appendChild(row);
+
+                component.$activeDropNode.set(null);
+                component.onDragOver(createDragOverEvent(treeBox));
+
+                expect(component.$activeDropNode()).toBeNull();
+            });
+
+            // Leaving the rows for the blank space has to release the previous target too, or the
+            // row the author last passed over stays marked while the pointer is nowhere near it.
+            it('should release the previous target when the drag reaches empty tree space', () => {
+                const previous = {
+                    id: 'folder-456',
+                    hostname: 'demo.dotcms.com',
+                    path: '/images/',
+                    type: 'folder' as const
+                };
+                component.$activeDropNode.set(previous);
+
+                const treeBox = document.createElement('div');
+                treeBox.className = 'p-tree';
+
+                component.onDragOver(createDragOverEvent(treeBox));
+
+                expect(component.$activeDropNode()).toBeNull();
             });
 
             it('should not set activeDropNode when target has no data-json-node attribute', () => {

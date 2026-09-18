@@ -71,8 +71,14 @@ import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions'
 
            Hover itself needs nothing here: the rule is
            .p-tree-node-content.p-tree-node-selectable:not(.p-tree-node-selected):hover, so the two
-           standalone rows only ever needed the selectable class the markup was missing. */
-        :host button.p-tree-node-dragover {
+           standalone rows only ever needed the selectable class the markup was missing.
+
+           That same rule is why this one names every class it does. A row being dragged onto is
+           usually also under the pointer, and PrimeNG's hover selector scores four classes; a
+           shorter selector here loses to it and the drop colour never appears, which is what the
+           first attempt did. Measured in the browser, not reasoned about. */
+        :host
+            button.p-tree-node-content.p-tree-node-selectable.p-tree-node-dragover {
             background-color: var(--color-palette-primary-200);
         }
     `

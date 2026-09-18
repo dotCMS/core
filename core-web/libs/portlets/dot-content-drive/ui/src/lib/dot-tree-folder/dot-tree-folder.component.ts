@@ -162,16 +162,19 @@ export class DotTreeFolderComponent {
 
         const target = event.target as HTMLElement;
 
-        let activeNodeSpan: HTMLElement | null = null;
-
-        if (target.hasAttribute('data-json-node')) {
-            activeNodeSpan = target;
-        } else {
-            activeNodeSpan = target.querySelector('[data-testid="tree-node-label"]');
-        }
+        // Resolve UP to the row the pointer is actually over, then down inside it. Searching down
+        // from the target alone reaches the first label in whatever it is given, and the tree box
+        // is taller than its rows -- so the blank space under the last folder resolved to the
+        // site row, and dropping there landed on the site root with nothing to show it would.
+        const row = target.closest('.p-tree-node-content');
+        const activeNodeSpan: HTMLElement | null = target.hasAttribute('data-json-node')
+            ? target
+            : (row?.querySelector<HTMLElement>('[data-testid="tree-node-label"]') ?? null);
 
         if (!activeNodeSpan) {
-            console.warn('Content drive tree folder: No active node span found');
+            // Cleared rather than left alone: the pointer is over the tree but not over a row, so
+            // whichever row it was last on must stop claiming the drop.
+            this.$activeDropNode.set(null);
             return;
         }
 
