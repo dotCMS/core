@@ -73,7 +73,7 @@ on:
         type: string
         default: ''
       artifact-suffix:
-        description: 'Override artifact suffix (e.g., -java25, -java25.0.1-ms). If not set, derived from java-version major.'
+        description: 'Override artifact suffix (e.g., -java-25, -java-25.0.1-ms). If not set, derived from java-version major.'
         required: false
         type: string
         default: ''
