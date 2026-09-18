@@ -478,7 +478,8 @@ describe('DotEditContentCheckboxFieldComponent — option rows', () => {
     it('should keep each option label inside its row so the descendant rule reaches it', () => {
         const row = spectator.query('.form-checkbox');
 
-        expect(row.querySelector('label')).toBeTruthy();
+        expect(row).toBeTruthy();
+        expect(row?.querySelector('label')).toBeTruthy();
     });
 });
 
@@ -528,7 +529,10 @@ describe('DotEditContentCheckboxFieldComponent — option group semantics (AC-20
 
         const group = spectator.query('[role="group"]');
 
-        expect(group.getAttribute('aria-labelledby')).toBe('label-' + CHECKBOX_FIELD_MOCK.variable);
+        expect(group).toBeTruthy();
+        expect(group?.getAttribute('aria-labelledby')).toBe(
+            'label-' + CHECKBOX_FIELD_MOCK.variable
+        );
         expect(spectator.query('label[dotCardFieldLabel]')?.id).toBe(
             'label-' + CHECKBOX_FIELD_MOCK.variable
         );
@@ -539,6 +543,10 @@ describe('DotEditContentCheckboxFieldComponent — option group semantics (AC-20
     it('should not put aria-required on a plain group, which ARIA does not define it on', () => {
         render(true);
 
-        expect(spectator.query('[role="group"]').getAttribute('aria-required')).toBeNull();
+        // toBeTruthy first: with `?.` alone a missing group would satisfy toBeNull vacuously.
+        const group = spectator.query('[role="group"]');
+
+        expect(group).toBeTruthy();
+        expect(group?.getAttribute('aria-required')).toBeNull();
     });
 });

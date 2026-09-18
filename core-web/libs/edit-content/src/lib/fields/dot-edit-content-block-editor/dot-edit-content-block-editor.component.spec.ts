@@ -249,13 +249,16 @@ describe('DotEditContentBlockEditorComponent — required indicator', () => {
         const label = spectator.query('label');
 
         expect(label).toBeTruthy();
-        expect(label.classList.contains('p-label-input-required')).toBe(true);
+        expect(label?.classList.contains('p-label-input-required')).toBe(true);
     });
 
     it('should NOT render the asterisk when the field is not required', () => {
         renderWith({ ...BLOCK_EDITOR_FIELD_MOCK, required: false });
 
-        expect(spectator.query('label').classList.contains('p-label-input-required')).toBe(false);
+        const label = spectator.query('label');
+
+        expect(label).toBeTruthy();
+        expect(label?.classList.contains('p-label-input-required')).toBe(false);
     });
 
     /**

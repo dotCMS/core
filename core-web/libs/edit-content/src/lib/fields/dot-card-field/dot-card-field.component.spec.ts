@@ -28,6 +28,20 @@ describe('DotCardFieldComponent', () => {
         detectChanges: false
     });
 
+    /**
+     * `spectator.query` returns `T | null`. An optional chain would make every `toBeNull`
+     * assertion below pass just as happily when the element is absent, which is the opposite of
+     * what those tests are for — so this fails loudly instead.
+     */
+    const must = (selector: string): Element => {
+        const el = spectator.query(selector);
+        if (!el) {
+            throw new Error(`expected ${selector} to render`);
+        }
+
+        return el;
+    };
+
     const render = (hasError = false) => {
         spectator = createHost(
             `<dot-card-field [hasError]="${hasError}">
@@ -78,15 +92,13 @@ describe('DotCardFieldComponent', () => {
             const label = spectator.query('label');
 
             expect(label).toBeTruthy();
-            expect(label.parentElement.classList.contains('field')).toBe(true);
+            expect(label?.parentElement?.classList.contains('field')).toBe(true);
         });
 
         it('should not interpose any element between .field and the label', () => {
             render();
 
-            const field = spectator.query('.field');
-
-            expect(field.querySelector(':scope > label')).toBeTruthy();
+            expect(must('.field').querySelector(':scope > label')).toBeTruthy();
         });
     });
 
@@ -129,32 +141,32 @@ describe('DotCardFieldComponent', () => {
         it('should mark a required field control as required', () => {
             renderWith(true);
 
-            expect(spectator.query('input').getAttribute('aria-required')).toBe('true');
+            expect(must('input').getAttribute('aria-required')).toBe('true');
         });
 
         it('should not mark a control that is not required', () => {
             renderWith(false);
 
-            expect(spectator.query('input').getAttribute('aria-required')).toBeNull();
+            expect(must('input').getAttribute('aria-required')).toBeNull();
         });
 
         it('should keep the asterisk out of the accessible name', () => {
             renderWith(true);
 
-            expect(spectator.query('label').textContent).not.toContain('*');
+            expect(must('label').textContent).not.toContain('*');
         });
 
         it('should reach a composite widget whose focusable element is not a native input', () => {
             renderWith(true, '<div id="title" role="combobox" tabindex="0"></div>');
 
-            expect(spectator.query('[role="combobox"]').getAttribute('aria-required')).toBe('true');
+            expect(must('[role="combobox"]').getAttribute('aria-required')).toBe('true');
         });
 
         it('should mark nothing rather than guess when the label points at no element', () => {
             renderWith(true, '<span role="combobox" tabindex="0"></span><textarea></textarea>');
 
-            expect(spectator.query('[role="combobox"]').getAttribute('aria-required')).toBeNull();
-            expect(spectator.query('textarea').getAttribute('aria-required')).toBeNull();
+            expect(must('[role="combobox"]').getAttribute('aria-required')).toBeNull();
+            expect(must('textarea').getAttribute('aria-required')).toBeNull();
         });
 
         // Text Area and WYSIWYG both render an editor-mode dropdown ABOVE their textarea, so
@@ -166,8 +178,8 @@ describe('DotCardFieldComponent', () => {
                 '<span role="combobox" tabindex="0"></span><textarea id="title"></textarea>'
             );
 
-            expect(spectator.query('textarea').getAttribute('aria-required')).toBe('true');
-            expect(spectator.query('[role="combobox"]').getAttribute('aria-required')).toBeNull();
+            expect(must('textarea').getAttribute('aria-required')).toBe('true');
+            expect(must('[role="combobox"]').getAttribute('aria-required')).toBeNull();
         });
     });
 });

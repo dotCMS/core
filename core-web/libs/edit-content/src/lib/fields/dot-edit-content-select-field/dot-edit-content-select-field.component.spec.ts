@@ -252,7 +252,8 @@ describe('DotEditContentSelectFieldComponent — accessible name (AC-209)', () =
 
         const combobox = spectator.query('[role="combobox"]');
 
-        expect(combobox.getAttribute('aria-labelledby')).toBe(
+        expect(combobox).toBeTruthy();
+        expect(combobox?.getAttribute('aria-labelledby')).toBe(
             'label-' + SELECT_FIELD_TEXT_MOCK.variable
         );
     });

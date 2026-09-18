@@ -1,5 +1,6 @@
 import { createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
 import { BehaviorSubject, of } from 'rxjs';
+import { Editor } from 'tinymce';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -113,7 +114,7 @@ describe('DotWysiwygTinymceComponent', () => {
             ...mockSystemWideConfig,
             iframe_aria_text: WYSIWYG_MOCK.name,
             iframe_attrs: { title: WYSIWYG_MOCK.name },
-            setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+            setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
         };
 
         spectator.detectChanges();
@@ -159,11 +160,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 // TinyMCE renders into an iframe; this is its own option for that iframe's name.
                 iframe_aria_text: WYSIWYG_MOCK.name,
                 iframe_attrs: { title: WYSIWYG_MOCK.name },
-                iframe_attrs: { title: WYSIWYG_MOCK.name },
-                iframe_aria_text: WYSIWYG_MOCK.name,
-                iframe_attrs: { title: WYSIWYG_MOCK.name },
-                iframe_attrs: { title: WYSIWYG_MOCK.name },
-                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+                setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
 
@@ -178,11 +175,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 // TinyMCE renders into an iframe; this is its own option for that iframe's name.
                 iframe_aria_text: WYSIWYG_MOCK.name,
                 iframe_attrs: { title: WYSIWYG_MOCK.name },
-                iframe_attrs: { title: WYSIWYG_MOCK.name },
-                iframe_aria_text: WYSIWYG_MOCK.name,
-                iframe_attrs: { title: WYSIWYG_MOCK.name },
-                iframe_attrs: { title: WYSIWYG_MOCK.name },
-                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+                setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
     }));
@@ -228,11 +221,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 // TinyMCE renders into an iframe; this is its own option for that iframe's name.
                 iframe_aria_text: WYSIWYG_MOCK.name,
                 iframe_attrs: { title: WYSIWYG_MOCK.name },
-                iframe_attrs: { title: WYSIWYG_MOCK.name },
-                iframe_aria_text: WYSIWYG_MOCK.name,
-                iframe_attrs: { title: WYSIWYG_MOCK.name },
-                iframe_attrs: { title: WYSIWYG_MOCK.name },
-                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+                setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
     });

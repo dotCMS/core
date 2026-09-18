@@ -343,7 +343,15 @@ describe('DotEditContentKeyValueComponent — group semantics (AC-209)', () => {
         );
         spectator.detectChanges();
 
-        return spectator.query('dot-key-value-field');
+        // Throwing rather than returning `T | null` keeps every caller's assertion honest: with
+        // an optional chain, the `aria-required` assertion below would pass just as happily if the
+        // widget never rendered at all.
+        const widget = spectator.query('dot-key-value-field');
+        if (!widget) {
+            throw new Error('the key-value widget did not render');
+        }
+
+        return widget;
     };
 
     it('should expose the widget as a group', () => {

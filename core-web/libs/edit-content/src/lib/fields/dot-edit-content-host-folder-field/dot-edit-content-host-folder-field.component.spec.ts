@@ -316,14 +316,22 @@ describe('DotEditContentHostFolderFieldComponent — required state for assistiv
         );
         spectator.detectChanges();
 
-        return spectator.query(byTestId('host-folder-trigger'));
+        // Throwing rather than returning `T | null` keeps every caller's assertion honest: with
+        // an optional chain, `expect(render(false)?.getAttribute('aria-required')).toBeNull()`
+        // would pass just as happily if the trigger never rendered at all.
+        const trigger = spectator.query(byTestId('host-folder-trigger'));
+        if (!trigger) {
+            throw new Error('the default host-folder trigger did not render');
+        }
+
+        return trigger;
     };
 
     it('should give the trigger the id the label points at', () => {
         const trigger = render(true);
 
         expect(trigger.getAttribute('id')).toBe(HOST_FOLDER_TEXT_MOCK.variable);
-        expect(spectator.query('label').getAttribute('for')).toBe(HOST_FOLDER_TEXT_MOCK.variable);
+        expect(spectator.query('label')?.getAttribute('for')).toBe(HOST_FOLDER_TEXT_MOCK.variable);
     });
 
     it('should expose the trigger as a combobox, the role it already behaves as', () => {

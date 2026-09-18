@@ -266,7 +266,7 @@ describe('DotEditContentTextFieldComponent — hint and required error', () => {
             render(createFakeTextField({ variable: 'text_field', hint: 'Use the legal name' }));
 
             expect(error()).toBeNull();
-            expect(hint().textContent.trim()).toBe('Use the legal name');
+            expect(hint()?.textContent?.trim()).toBe('Use the legal name');
         });
 
         it('state 3 — error, no hint: renders the required message only, with no icon', () => {
@@ -287,7 +287,8 @@ describe('DotEditContentTextFieldComponent — hint and required error', () => {
             expect(error()).toBeTruthy();
             expect(hint()).toBeTruthy();
 
-            const order = spectator.element.querySelector('dot-card-field-footer').textContent;
+            const order =
+                spectator.element.querySelector('dot-card-field-footer')?.textContent ?? '';
             const iError = order.indexOf('dot.edit.content.form.field.required');
             const iHint = order.indexOf('Use the customer legal name');
 
@@ -343,7 +344,7 @@ describe('DotEditContentTextFieldComponent — hint and required error', () => {
             control.setValue('Acme Corporation');
             spectator.detectChanges();
 
-            expect(hint().textContent.trim()).toBe('Use the customer legal name');
+            expect(hint()?.textContent?.trim()).toBe('Use the customer legal name');
         });
     });
 });

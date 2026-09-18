@@ -432,7 +432,8 @@ describe('DotEditContentRadioFieldComponent — option rows', () => {
     it('should keep each option label inside its row so the descendant rule reaches it', () => {
         const row = spectator.query('.form-radio');
 
-        expect(row.querySelector('label')).toBeTruthy();
+        expect(row).toBeTruthy();
+        expect(row?.querySelector('label')).toBeTruthy();
     });
 });
 
@@ -482,7 +483,8 @@ describe('DotEditContentRadioFieldComponent — option group semantics (AC-209)'
 
         const group = spectator.query('[role="radiogroup"]');
 
-        expect(group.getAttribute('aria-labelledby')).toBe(
+        expect(group).toBeTruthy();
+        expect(group?.getAttribute('aria-labelledby')).toBe(
             'label-' + RADIO_FIELD_TEXT_MOCK.variable
         );
         expect(spectator.query('label[dotCardFieldLabel]')?.id).toBe(
@@ -493,12 +495,19 @@ describe('DotEditContentRadioFieldComponent — option group semantics (AC-209)'
     it('should mark the group required, a role ARIA defines aria-required on', () => {
         render(true);
 
-        expect(spectator.query('[role="radiogroup"]').getAttribute('aria-required')).toBe('true');
+        const group = spectator.query('[role="radiogroup"]');
+
+        expect(group).toBeTruthy();
+        expect(group?.getAttribute('aria-required')).toBe('true');
     });
 
     it('should not mark the group when the field is not required', () => {
         render(false);
 
-        expect(spectator.query('[role="radiogroup"]').getAttribute('aria-required')).toBeNull();
+        // toBeTruthy first: with `?.` alone a missing group would satisfy toBeNull vacuously.
+        const group = spectator.query('[role="radiogroup"]');
+
+        expect(group).toBeTruthy();
+        expect(group?.getAttribute('aria-required')).toBeNull();
     });
 });

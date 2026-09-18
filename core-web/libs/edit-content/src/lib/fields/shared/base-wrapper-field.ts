@@ -122,7 +122,9 @@ export abstract class BaseWrapperField {
             return null;
         }
 
-        return this.controlContainer.control.get(field.variable) as FormControl;
+        // `controlContainer.control` is itself nullable — a subclass rendered outside a form
+        // directive has no container control to ask.
+        return (this.controlContainer.control?.get(field.variable) as FormControl) ?? null;
     }
 
     get statusChanges$() {
