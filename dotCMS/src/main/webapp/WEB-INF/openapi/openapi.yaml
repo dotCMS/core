@@ -31832,7 +31832,7 @@ components:
       description: "The conversation, oldest first"
       properties:
         content:
-          type: string
+          $ref: "#/components/schemas/JsonNode"
         name:
           type: string
         role:

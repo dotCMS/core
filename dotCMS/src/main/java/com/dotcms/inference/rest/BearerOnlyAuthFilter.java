@@ -20,8 +20,8 @@ import java.util.Optional;
  * session cookie — or basic auth — authenticates a caller who sent no {@code Authorization} header
  * at all.</p>
  *
- * <p>That matters more here than it would elsewhere, because it is load-bearing for a decision
- * made on the assumption that it was already true. This family emits no cross-origin headers, and
+ * <p>That matters more here than it would elsewhere, because another decision was made on the
+ * assumption that it was already true. This family emits no cross-origin headers, and
  * the stated reason is that its credential is a long-lived token someone deliberately issued and
  * placed on a server — not an ambient credential a browser attaches on its own. If a session
  * cookie authenticates, that reasoning collapses: any page the user has open is one fetch away

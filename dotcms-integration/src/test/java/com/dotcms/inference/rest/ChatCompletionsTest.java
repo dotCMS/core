@@ -392,7 +392,7 @@ public class ChatCompletionsTest {
     private static MessageView assistantToolCallMessage(final String toolCallId) {
         return new MessageView(
                 "assistant",
-                null,
+                (String) null,
                 List.of(new ToolCallView(
                         toolCallId,
                         "function",

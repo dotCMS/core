@@ -3,6 +3,7 @@ package com.dotcms.inference.rest.view;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
@@ -11,9 +12,22 @@ import java.util.List;
  * The inbound chat-completion request, in the wire shape clients send.
  *
  * <p>Unknown properties are ignored so a client's default payload does not fail on a field this
- * family has no opinion about. That tolerance stops at fields which change what the caller gets
- * or pays for — those are rejected by the mapper rather than silently dropped, because a request
- * that quietly did something other than what was asked is worse than one that failed.</p>
+ * family has no opinion about. That tolerance is deliberate, not laxness: the format gains fields
+ * steadily and clients send {@code user}, {@code store} and {@code service_tier} unprompted, so
+ * binding strictly would break a working caller on its next upgrade.</p>
+ *
+ * <p>The cost is that a dropped field is indistinguishable from one never sent, and three of
+ * them do change what a provider returns: {@code frequency_penalty}, {@code presence_penalty}
+ * and {@code seed}. None is modelled here, so a request carrying them succeeds while they do
+ * nothing — a caller setting {@code seed} for reproducible output gets varying output back with
+ * no indication why. They are accepted anyway, because refusing a field a client may send by
+ * default breaks that client for no gain, and because only the four sampling parameters below
+ * reach a provider at all; honouring the others would mean carrying them through the request
+ * model and every provider strategy, which is a larger decision than this record. Should that
+ * change, {@code seed} is the one worth carrying first.</p>
+ *
+ * <p>{@code n} is the exception that is refused rather than ignored: silently returning one
+ * choice to a caller who asked for four is a wrong answer, not a missing refinement.</p>
  *
  * @param model            the model to use; required, no implicit default
  * @param messages         the conversation, oldest first
@@ -44,14 +58,47 @@ public record ChatCompletionRequestView(
         @JsonProperty("stop") @Schema(description = "Stop sequences") List<String> stop,
         @JsonProperty("n") @Schema(description = "Number of choices; not supported") Integer n) {
 
-    /** One turn in the conversation. */
+    /**
+     * One turn in the conversation.
+     *
+     * <p>{@code content} is a {@link JsonNode} rather than a String because the format allows two
+     * shapes for it: a plain string, and an array of typed parts. Clients built on the OpenAI
+     * libraries send the string form for an ordinary text turn and switch to the array form as
+     * soon as a turn carries anything else — an image, a file — or more than one part. Binding
+     * the field to String accepted the first and failed the second inside Jackson, which produces
+     * a deserialization error naming a Java type instead of a refusal the caller can act on. The
+     * array is flattened, or refused by name, in the mapper.</p>
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record MessageView(
             @JsonProperty("role") String role,
-            @JsonProperty("content") String content,
+            @JsonProperty("content") @Schema(description =
+                    "The turn's content: a string, or an array of text parts") JsonNode content,
             @JsonProperty("tool_calls") List<ToolCallView> toolCalls,
             @JsonProperty("tool_call_id") String toolCallId,
             @JsonProperty("name") String name) {
+
+        /**
+         * Convenience for the string form, which is what most turns carry.
+         *
+         * <p>Calling this with a null content is ambiguous against the canonical constructor and
+         * will not compile; cast the null to pick one. That is deliberate — an assistant turn
+         * that is only tool calls has null content and should say so explicitly.</p>
+         *
+         * @param role       the turn's role
+         * @param content    the turn's text
+         * @param toolCalls  tool calls replayed by the client, or null
+         * @param toolCallId the call a tool turn answers, or null
+         * @param name       the tool's name, or null
+         */
+        public MessageView(final String role,
+                           final String content,
+                           final List<ToolCallView> toolCalls,
+                           final String toolCallId,
+                           final String name) {
+            this(role, content == null ? null : TextNode.valueOf(content), toolCalls, toolCallId,
+                    name);
+        }
     }
 
     /** A tool call the model previously asked for, replayed by the client. */

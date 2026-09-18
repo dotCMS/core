@@ -56,8 +56,8 @@ import java.util.Optional;
  *
  * <p><strong>{@code input} is a string or an array of strings.</strong> Batching is how content is
  * ordinarily embedded — anyone indexing a site sends an array — and the array form is what makes
- * the response a list of more than one entry, and therefore what makes {@code index} load-bearing:
- * it is the caller's only means of correlating a vector back to the text they sent. That is also
+ * the response a list of more than one entry, and therefore what {@code index} is for: it is the
+ * caller's only means of correlating a vector back to the text they sent. That is also
  * why a batch with one bad element is refused whole rather than cleaned: dropping an element would
  * shift the index of every entry after it, and the caller would correlate against the wrong
  * text.</p>

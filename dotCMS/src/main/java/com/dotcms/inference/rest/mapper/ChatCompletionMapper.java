@@ -1,5 +1,6 @@
 package com.dotcms.inference.rest.mapper;
 
+import com.dotcms.ai.rest.AiHostResolver;
 import com.dotcms.inference.model.FinishReason;
 import com.dotcms.inference.model.InferenceMessage;
 import com.dotcms.inference.model.InferenceRequest;
@@ -39,6 +40,12 @@ import java.util.Locale;
  * <p>Stateless and thread-safe; it holds nothing.</p>
  */
 public final class ChatCompletionMapper {
+
+    /** The one content part type this endpoint reads; every other type is refused by name. */
+    private static final String TEXT_PART = "text";
+
+    /** Bounds a part type echoed back in a refusal, so a caller cannot dictate the message. */
+    private static final int MAX_ECHOED_PART_TYPE_LENGTH = 40;
 
     private static final String FUNCTION_TYPE = "function";
 
@@ -151,13 +158,76 @@ public final class ChatCompletionMapper {
         for (final ChatCompletionRequestView.MessageView messageView : messageViews) {
             messages.add(new InferenceMessage(
                     toRole(messageView.role()),
-                    messageView.content(),
+                    toMessageContent(messageView.content()),
                     toToolCalls(messageView.toolCalls()),
                     messageView.toolCallId(),
                     messageView.name()));
         }
 
         return messages;
+    }
+
+    /**
+     * Reduces a turn's content to the text this endpoint sends upstream.
+     *
+     * <p>The format allows content to be a plain string or an array of typed parts, and clients
+     * switch between the two on their own: the OpenAI libraries send a string for a single text
+     * part and an array as soon as there is an image, a file, or more than one part. Both shapes
+     * have to be read, because a client picks the shape, not the caller.</p>
+     *
+     * <p>Only text parts are accepted. A part of any other type is refused by name rather than
+     * dropped, because dropping it would answer a question about an image the model never saw —
+     * a plausible answer to the wrong request is worse than a refusal that says what happened.
+     * Several text parts are joined with a newline rather than concatenated, so that two parts
+     * do not run together into a word that was in neither.</p>
+     *
+     * @param content the content node, possibly null
+     * @return the turn's text, or null when the turn carries none
+     * @throws IllegalArgumentException when a part is not text, or the node is neither shape
+     */
+    private static String toMessageContent(final JsonNode content) {
+
+        if (content == null || content.isNull()) {
+            return null;
+        }
+
+        if (content.isTextual()) {
+            return content.asText();
+        }
+
+        if (content.isArray()) {
+            final StringBuilder text = new StringBuilder();
+            for (final JsonNode part : content) {
+                final String type = part.path("type").asText("");
+                if (!TEXT_PART.equals(type)) {
+                    throw new IllegalArgumentException(
+                            "Message content of type '" + echoablePartType(type)
+                                    + "' is not supported; this endpoint accepts text content");
+                }
+                if (text.length() > 0) {
+                    text.append('\n');
+                }
+                text.append(part.path("text").asText(""));
+            }
+            return text.toString();
+        }
+
+        throw new IllegalArgumentException(
+                "Message content must be a string or an array of text parts");
+    }
+
+    /**
+     * @param type the part type the caller sent
+     * @return a bounded, single-line version safe to repeat back in a refusal
+     */
+    private static String echoablePartType(final String type) {
+        if (type == null || type.isBlank()) {
+            return "unknown";
+        }
+        final String sanitized = AiHostResolver.sanitize(type);
+        return sanitized.length() > MAX_ECHOED_PART_TYPE_LENGTH
+                ? sanitized.substring(0, MAX_ECHOED_PART_TYPE_LENGTH)
+                : sanitized;
     }
 
     /**

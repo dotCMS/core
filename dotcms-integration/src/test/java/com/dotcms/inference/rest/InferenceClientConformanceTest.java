@@ -83,7 +83,7 @@ import static org.mockito.Mockito.when;
  * these endpoints. Assertions are made on the library's own result types — {@link ChatResponse},
  * {@link Embedding}, {@link Image}, {@link ModelsListResponse} — never on ours.</p>
  *
- * <p>"No adapter" is the load-bearing phrase, and it is what the absence of code here demonstrates:
+ * <p>"No adapter" is the phrase that matters, and the absence of code here is what shows it:
  * the payload goes from the endpoint to the client untouched except by {@code writeValueAsString}.
  * If a field had to be renamed, re-typed, or removed to make the client accept it, that work would
  * be visible in this file, and the no-adapter promise would be false.</p>

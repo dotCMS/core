@@ -69,8 +69,8 @@ import static org.mockito.Mockito.when;
  * <em>either</em> a string <em>or</em> an array of strings, because batching is how content is
  * ordinarily embedded — anyone indexing a site sends an array — and a scalar-only endpoint
  * would fail that common case while still looking correct against a one-off example. The array
- * form is what makes the response a list of more than one entry, and therefore what makes
- * {@code index} load-bearing: it is the only thing that lets a caller correlate a vector back to
+ * form is what makes the response a list of more than one entry, and therefore what
+ * {@code index} is for: it is the only thing that lets a caller correlate a vector back to
  * the text it sent. The tests below assert that index explicitly, looking each entry up by it
  * rather than by its position in
  * {@code data}, and they pin every refusal the array form introduces — nothing to embed, and
@@ -491,7 +491,7 @@ public class InferenceEmbeddingsTest {
      * element at fault, and the provider is never contacted
      *
      * <p><strong>Every</strong> element of the array is required to be a string, and this is
-     * the test that makes that word load-bearing. The all-numeric array above is refused by an
+     * the test that holds that word to its meaning. The all-numeric array above is refused by an
      * implementation that looks only at {@code input.get(0)}; a mixed array is not, and a mixed
      * array is the one a caller actually sends — a list assembled from two sources where one
      * yielded identifiers instead of text. The refusal has to happen here, naming the field, for

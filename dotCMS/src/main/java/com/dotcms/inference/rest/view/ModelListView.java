@@ -12,8 +12,9 @@ import java.util.List;
  * else in this family is: a client library has to deserialize this into its own model-list type
  * with no adapter.</p>
  *
- * <p>This listing is load-bearing rather than decorative. There is no implicit default model and
- * no reserved alias, so the set of names here is exactly the set of {@code model} values the chat
+ * <p>Callers depend on this listing to work, it is not informational. There is no implicit
+ * default model and no reserved alias, so the set of names here is exactly the set of
+ * {@code model} values the chat
  * endpoint accepts — which makes it the only way a caller can learn what to ask for. Adding
  * anything synthetic would advertise a name that endpoint refuses.</p>
  *

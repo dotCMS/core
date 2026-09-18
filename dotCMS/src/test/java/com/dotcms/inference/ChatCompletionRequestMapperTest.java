@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -404,5 +405,171 @@ public class ChatCompletionRequestMapperTest {
         assertEquals(Role.USER, request.messages().get(0).role());
         assertEquals("Hi", request.messages().get(0).content());
         assertEquals(Integer.valueOf(256), request.maxOutputTokens());
+    }
+
+    /**
+     * Given a turn whose content is a plain string,
+     * When mapped,
+     * Then the text is carried through unchanged.
+     *
+     * <p>The string form is what a client sends for an ordinary text turn, and it stayed working
+     * through the change that taught the mapper the array form. Asserted on its own so a
+     * regression in the common shape cannot hide behind the new one.</p>
+     */
+    @Test
+    public void test_toInferenceRequest_stringContent_isCarriedThrough() throws Exception {
+
+        final String json = "{\"model\":\"gpt-4o\",\"messages\":["
+                + "{\"role\":\"user\",\"content\":\"Hello\"}]}";
+
+        final InferenceRequest request = ChatCompletionMapper.toInferenceRequest(parse(json));
+
+        assertEquals("Hello", request.messages().get(0).content());
+    }
+
+    /**
+     * Given a turn whose content is an array holding one text part,
+     * When mapped,
+     * Then the part's text becomes the turn's content.
+     *
+     * <p>This is the shape an OpenAI-compatible client emits as soon as a turn is built from
+     * parts rather than a bare string. Binding content to a String rejected it inside Jackson,
+     * which surfaced as a deserialization failure naming a Java type rather than a refusal.</p>
+     */
+    @Test
+    public void test_toInferenceRequest_singleTextPart_isFlattened() throws Exception {
+
+        final String json = "{\"model\":\"gpt-4o\",\"messages\":[{\"role\":\"user\","
+                + "\"content\":[{\"type\":\"text\",\"text\":\"Hello\"}]}]}";
+
+        final InferenceRequest request = ChatCompletionMapper.toInferenceRequest(parse(json));
+
+        assertEquals("Hello", request.messages().get(0).content());
+    }
+
+    /**
+     * Given a turn holding several text parts,
+     * When mapped,
+     * Then they are joined with a newline rather than concatenated.
+     *
+     * <p>Concatenating would let the tail of one part and the head of the next run together into
+     * a word that appeared in neither, which reaches the provider as a prompt the caller never
+     * wrote.</p>
+     */
+    @Test
+    public void test_toInferenceRequest_severalTextParts_areJoinedWithNewline() throws Exception {
+
+        final String json = "{\"model\":\"gpt-4o\",\"messages\":[{\"role\":\"user\","
+                + "\"content\":[{\"type\":\"text\",\"text\":\"one\"},"
+                + "{\"type\":\"text\",\"text\":\"two\"}]}]}";
+
+        final InferenceRequest request = ChatCompletionMapper.toInferenceRequest(parse(json));
+
+        assertEquals("one\ntwo", request.messages().get(0).content());
+    }
+
+    /**
+     * Given a turn carrying an image part,
+     * When mapped,
+     * Then it is refused, and the refusal names the part type.
+     *
+     * <p>Refused rather than dropped: dropping the image would send the surrounding text alone
+     * and return a confident answer about a picture the model never received. The type is named
+     * so the caller knows which part to remove.</p>
+     */
+    @Test
+    public void test_toInferenceRequest_imagePart_isRefusedByName() {
+
+        final String json = "{\"model\":\"gpt-4o\",\"messages\":[{\"role\":\"user\","
+                + "\"content\":[{\"type\":\"text\",\"text\":\"What is this?\"},"
+                + "{\"type\":\"image_url\",\"image_url\":{\"url\":\"https://x.test/a.png\"}}]}]}";
+
+        final IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class,
+                () -> ChatCompletionMapper.toInferenceRequest(parse(json)));
+
+        assertTrue("The refusal should name the part type the caller sent, but said: "
+                        + refusal.getMessage(),
+                refusal.getMessage().contains("image_url"));
+    }
+
+    /**
+     * Given a content part with no type,
+     * When mapped,
+     * Then it is refused without inventing a type name.
+     */
+    @Test
+    public void test_toInferenceRequest_untypedPart_isRefused() {
+
+        final String json = "{\"model\":\"gpt-4o\",\"messages\":[{\"role\":\"user\","
+                + "\"content\":[{\"text\":\"Hello\"}]}]}";
+
+        final IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class,
+                () -> ChatCompletionMapper.toInferenceRequest(parse(json)));
+
+        assertTrue("A part with no type should be refused as unknown, but said: "
+                        + refusal.getMessage(),
+                refusal.getMessage().contains("unknown"));
+    }
+
+    /**
+     * Given a part type long enough to dominate the response,
+     * When it is refused,
+     * Then the echoed type is bounded.
+     *
+     * <p>The refusal repeats a caller-supplied value, so the caller must not be able to choose
+     * how long the message is.</p>
+     */
+    @Test
+    public void test_toInferenceRequest_overlongPartType_isBoundedInTheRefusal() {
+
+        final String json = "{\"model\":\"gpt-4o\",\"messages\":[{\"role\":\"user\","
+                + "\"content\":[{\"type\":\"" + "x".repeat(500) + "\"}]}]}";
+
+        final IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class,
+                () -> ChatCompletionMapper.toInferenceRequest(parse(json)));
+
+        assertTrue("The echoed part type should be bounded, but the refusal was "
+                        + refusal.getMessage().length() + " characters",
+                refusal.getMessage().length() < 200);
+    }
+
+    /**
+     * Given content that is neither a string nor an array,
+     * When mapped,
+     * Then it is refused with a message naming both shapes the format allows.
+     */
+    @Test
+    public void test_toInferenceRequest_contentOfWrongType_isRefused() {
+
+        final String json = "{\"model\":\"gpt-4o\",\"messages\":["
+                + "{\"role\":\"user\",\"content\":42}]}";
+
+        final IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class,
+                () -> ChatCompletionMapper.toInferenceRequest(parse(json)));
+
+        assertTrue("The refusal should name the shapes allowed, but said: " + refusal.getMessage(),
+                refusal.getMessage().contains("string")
+                        && refusal.getMessage().contains("array"));
+    }
+
+    /**
+     * Given an assistant turn that is only a tool call, carrying null content,
+     * When mapped,
+     * Then the null content survives.
+     *
+     * <p>A client replays this turn verbatim when continuing a tool loop. Turning the null into
+     * an empty string would put a blank assistant message into the conversation.</p>
+     */
+    @Test
+    public void test_toInferenceRequest_nullContentOnToolCallTurn_staysNull() throws Exception {
+
+        final String json = "{\"model\":\"gpt-4o\",\"messages\":[{\"role\":\"assistant\","
+                + "\"content\":null,\"tool_calls\":[{\"id\":\"call_1\",\"type\":\"function\","
+                + "\"function\":{\"name\":\"lookup\",\"arguments\":\"{}\"}}]}]}";
+
+        final InferenceRequest request = ChatCompletionMapper.toInferenceRequest(parse(json));
+
+        assertNull(request.messages().get(0).content());
+        assertEquals(1, request.messages().get(0).toolCalls().size());
     }
 }

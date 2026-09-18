@@ -81,8 +81,9 @@ public class ModelsResource {
     /**
      * The sections this listing draws from, chat first.
      *
-     * <p>Order is load-bearing rather than cosmetic. There is no implicit default model, and the
-     * documented way to ask for "whatever this site runs" is to read this list and take the first
+     * <p>Order decides behaviour here, it is not presentation. There is no implicit default
+     * model, and the documented way to ask for "whatever this site runs" is to read this list
+     * and take the first
      * entry — so the first entry has to remain the site's primary chat model, as it was when this
      * listed nothing else.</p>
      */

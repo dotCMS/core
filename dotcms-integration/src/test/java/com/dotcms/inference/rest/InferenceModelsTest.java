@@ -42,8 +42,9 @@ import static org.mockito.Mockito.when;
  * {@link ModelsResource#models(HttpServletRequest, HttpServletResponse, String)}.
  *
  * <p>Every reserved alias and every implicit default was removed from this family, which makes
- * this endpoint load-bearing rather than decorative: the list it returns is the <em>only</em> way
- * a caller can learn which {@code model} values the chat endpoint will accept. That is what the
+ * this endpoint something callers depend on rather than read: the list it returns is the
+ * <em>only</em> way a caller can learn which {@code model} values the chat endpoint will
+ * accept. That is what the
  * tests here pin down — that the list is complete, that it is exactly the configured set with
  * nothing invented, that it is drawn from the site the request resolved to, and that an
  * unconfigured instance says so with an empty list rather than with somebody else's models.</p>
