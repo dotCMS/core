@@ -391,7 +391,7 @@ public class ChatCompletionsResource {
         if (!configuredModels.contains(requestedModel.trim())) {
             Logger.warn(this, "Site " + AiHostResolver.sanitize(context.servingSiteId())
                     + " has no chat model matching the requested one");
-            return errorResponse(InferenceError.noSuchModel(echoable(requestedModel)));
+            return errorResponse(InferenceError.noSuchModel(echoable(requestedModel), "chat"));
         }
 
         return null;

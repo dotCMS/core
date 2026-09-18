@@ -32,7 +32,7 @@ public record InferenceErrorView(@JsonProperty("error") @Schema(description = "T
     @Schema(description = "Error detail")
     public record Body(
             @JsonProperty("message") @Schema(description = "Human-readable description of the failure",
-                    example = "The model 'gpt-4o' is not configured for this site") String message,
+                    example = "The model 'gpt-4o' is not configured for chat on this site") String message,
             @JsonProperty("type") @Schema(description = "Error family",
                     example = "invalid_request_error") String type,
             @JsonProperty("param") @Schema(description = "Offending request field, when applicable",

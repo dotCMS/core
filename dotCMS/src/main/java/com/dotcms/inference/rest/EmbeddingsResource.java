@@ -303,7 +303,7 @@ public class EmbeddingsResource {
         if (!configuredModels.contains(requestedModel.trim())) {
             Logger.warn(this, "Site " + AiHostResolver.sanitize(context.servingSiteId())
                     + " has no embeddings model matching the requested one");
-            return errorResponse(InferenceError.noSuchModel(echoable(requestedModel)));
+            return errorResponse(InferenceError.noSuchModel(echoable(requestedModel), "embeddings"));
         }
 
         return null;

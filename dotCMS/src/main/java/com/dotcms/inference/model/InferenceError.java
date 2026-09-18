@@ -41,9 +41,17 @@ public record InferenceError(String type, String message, String param, int http
      * @param model the model the caller asked for
      * @return a 404 error in the shape clients recognise as an unknown model
      */
-    public static InferenceError noSuchModel(final String model) {
+    public static InferenceError noSuchModel(final String model, final String capability) {
+        // Naming the capability rather than saying "not configured for this site", which is true
+        // of the site's chat models only in the sense that matters and false in the sense a caller
+        // reads. The model listing returns every model the site has configured across all three
+        // capabilities, because the adopted format has nowhere to record what a model is for — so
+        // a caller can see an id in the list and then be told it is not configured, with no way to
+        // resolve the contradiction from the API alone. This refusal is the only place that
+        // information can live.
         return new InferenceError("invalid_request_error",
-                "The model '" + model + "' is not configured for this site", "model", 404);
+                "The model '" + model + "' is not configured for " + capability + " on this site",
+                "model", 404);
     }
 
     /**
