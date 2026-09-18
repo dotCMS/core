@@ -827,6 +827,28 @@ describe('DotContentDriveStore', () => {
                 );
             });
 
+            it('should drop the search scope when the term is cleared', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('TITLE');
+                expect(store.filters()['searchScope']).toBe('TITLE');
+
+                store.setGlobalSearch('');
+
+                // The scope qualifies the term; with the term gone it is nonsense in the state —
+                // and a leftover scope would keep "Clear all" lit with nothing filtered (FR-020).
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+
+            it('should keep the scope when the term is replaced, not cleared', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('TITLE');
+
+                store.setGlobalSearch('contracts');
+
+                expect(store.filters()['searchScope']).toBe('TITLE');
+                expect(store.filters()['title']).toBe('contracts');
+            });
+
             it('should reset pagination offset when setting global search', () => {
                 store.setPagination({ limit: 20, page: 2, offset: 20 });
                 expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });
@@ -841,6 +863,75 @@ describe('DotContentDriveStore', () => {
 
                 store.setGlobalSearch('test');
                 expect(store.path()).toBe(DEFAULT_PATH);
+            });
+        });
+
+        describe('setSearchScope', () => {
+            it('should record a non-default scope as filter state', () => {
+                store.setSearchScope('TITLE');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], searchScope: 'TITLE' })
+                );
+            });
+
+            it('should remove the key when the scope returns to the default', () => {
+                store.setSearchScope('TITLE');
+
+                store.setSearchScope('ALL_FIELDS');
+
+                // Removed, not set to 'ALL_FIELDS'. A present key counts as a non-default filter,
+                // so storing the default would offer "Clear all" on an unfiltered drive.
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            });
+
+            it('should never store the default, even when set first', () => {
+                store.setSearchScope('ALL_FIELDS');
+
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+
+            it('should preserve the search term and other filters', () => {
+                store.setGlobalSearch('pricing');
+                store.patchFilters({ contentType: ['Blog'] });
+
+                store.setSearchScope('TITLE');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'pricing',
+                        searchScope: 'TITLE'
+                    })
+                );
+            });
+
+            it('should keep the scope and the term under separate keys', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('TITLE');
+
+                // `title` holds the TERM; `searchScope` holds the mode. A scope whose value is
+                // 'TITLE' beside a filter key named `title` is a collision waiting to happen.
+                expect(store.filters()['title']).toBe('pricing');
+                expect(store.filters()['searchScope']).toBe('TITLE');
+            });
+
+            it('should reset pagination so the narrowed results start at page 1', () => {
+                store.setPagination({ offset: 40, limit: 20, page: 3 });
+
+                store.setSearchScope('TITLE');
+
+                expect(store.pagination().page).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+            });
+
+            it('should drop the scope when all filters are cleared', () => {
+                store.setSearchScope('TITLE');
+
+                store.clearFilters();
+
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
             });
         });
 

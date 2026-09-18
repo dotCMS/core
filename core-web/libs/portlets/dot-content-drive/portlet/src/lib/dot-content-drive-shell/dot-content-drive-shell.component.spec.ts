@@ -1184,6 +1184,33 @@ describe('DotContentDriveShellComponent', () => {
             expect(location.go).not.toHaveBeenCalled();
         });
 
+        // The search scope rides the generic filter machinery rather than a mechanism of its own,
+        // which is what makes it survive reload, Back/Forward and a shared link for free. These pin
+        // that it actually reaches the address, and that the default never does.
+        it('should carry a non-default search scope into the address', () => {
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/');
+            filtersSignal.set({ title: 'pricing', searchScope: 'TITLE' });
+            spectator.detectChanges();
+
+            expect(location.replaceState).toHaveBeenCalledWith(
+                expect.stringContaining('searchScope%3ATITLE')
+            );
+        });
+
+        it('should keep the default search scope out of the address', () => {
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/');
+            // The store removes the key rather than storing the default, so the address stays as
+            // clean as it would have been had the control never been touched.
+            filtersSignal.set({ title: 'pricing' });
+            spectator.detectChanges();
+
+            expect(location.replaceState).not.toHaveBeenCalledWith(
+                expect.stringContaining('searchScope')
+            );
+        });
+
         it('pushes a history entry when the user navigates to a different folder', () => {
             // Folder navigation is a real user action, so Back must step back up the tree. Only the
             // automatic filter seed is denied an entry.
@@ -1582,6 +1609,57 @@ describe('DotContentDriveShellComponent', () => {
 
             // hasMoreFolders = true → one page beyond current: 20 * (1 + 1) = 40
             expect(spectator.component.$totalItems()).toBe(40);
+        });
+    });
+
+    // A search that failed to run must not be presented as a search that found nothing. The two
+    // were the same empty grid before issue #37532, which is how a customer came to believe content
+    // they were looking at had vanished.
+    //
+    // The status is set per test and restored afterwards: it is shared across this file, and
+    // leaving it on ERROR hides the listing from every test that follows.
+    describe('when a search fails to run', () => {
+        afterEach(() => {
+            statusSignal.set(DotContentDriveStatus.LOADING);
+            spectator.detectChanges();
+        });
+
+        const failSearch = () => {
+            statusSignal.set(DotContentDriveStatus.ERROR);
+            spectator.detectChanges();
+        };
+
+        it('should show an error state instead of the listing', () => {
+            failSearch();
+
+            expect(spectator.query(byTestId('search-error-state'))).toBeTruthy();
+        });
+
+        it('should keep the error visible alongside the listing it explains', () => {
+            failSearch();
+
+            // The banner sits above the grid rather than replacing it, so the user sees WHY the
+            // results are incomplete instead of an unexplained empty table.
+            expect(spectator.query(byTestId('search-error-state'))).toBeTruthy();
+            expect(spectator.query('dot-folder-list-view')).toBeTruthy();
+        });
+
+        it('should announce the failure to assistive technology', () => {
+            failSearch();
+
+            expect(spectator.query(byTestId('search-error-state'))?.getAttribute('role')).toBe(
+                'alert'
+            );
+        });
+
+        it('should re-run the search when the user retries', () => {
+            failSearch();
+
+            // The testid lands on the <p-button> host; the clickable element is the <button> it
+            // renders inside.
+            spectator.click('[data-testid="search-error-retry"] button');
+
+            expect(store.loadItems).toHaveBeenCalled();
         });
     });
 
