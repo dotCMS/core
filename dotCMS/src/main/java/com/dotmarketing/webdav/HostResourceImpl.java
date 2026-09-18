@@ -117,6 +117,14 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 			return null;
 		}
 	    final User user = (User)HttpManager.request().getAuthorization().getTag();
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled() && dotDavHelper.isTempResource(childName)) {
+			try {
+				return dotDavHelper.temporaryChildren(path, isAutoPub).stream()
+						.filter(resource -> resource.getName().equals(childName)).findFirst().orElse(null);
+			} catch (IOException failure) {
+				throw new DotRuntimeException("Unable to find WebDAV staging child", failure);
+			}
+		}
 		final String uri="/"+childName;
 		
 		try {
@@ -201,7 +209,13 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
         	prePath += "/";
         }
 		java.io.File tempDir = new java.io.File(dotDavHelper.getTempDir().getPath() + java.io.File.separator + host.getHostname());
-		if(tempDir.exists() && tempDir.isDirectory()){
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			try {
+				frs.addAll(dotDavHelper.temporaryChildren(prePath + host.getHostname(), isAutoPub));
+			} catch (IOException failure) {
+				throw new DotRuntimeException("Unable to list WebDAV staging resources", failure);
+			}
+		} else if(tempDir.exists() && tempDir.isDirectory()){
 			java.io.File[] files = tempDir.listFiles();
 			for (java.io.File file : files) {
 				String tp = prePath + host.getHostname() + "/" + file.getName();

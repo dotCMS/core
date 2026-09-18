@@ -54,6 +54,7 @@ abstract class DotCSSCompiler {
   protected final String inputURI;
   protected final Host inputHost;
   protected final boolean inputLive;
+  protected final Map<String, String> sourceDigests = new java.util.TreeMap<>();
 
   public Set<String> getAllImportedURI() {
     return allImportedURI;
@@ -165,6 +166,18 @@ abstract class DotCSSCompiler {
   protected File createCompileDir(Host currentHost, String uri, boolean live)
       throws IOException, DotStateException, DotDataException, DotSecurityException {
 
+    if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+      try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+        sourceDigests.clear();
+        return createCompileDirInternal(currentHost, uri, live);
+      }
+    }
+    return createCompileDirInternal(currentHost, uri, live);
+  }
+
+  private File createCompileDirInternal(Host currentHost, String uri, boolean live)
+      throws IOException, DotStateException, DotDataException, DotSecurityException {
+
     File compDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + File.separator + "css_compile_space" + File.separator
         + UUIDGenerator.generateUuid());
     compDir.mkdirs();
@@ -195,6 +208,7 @@ abstract class DotCSSCompiler {
         if (file != null && InodeUtils.isSet(file.getInode())) {
           File ff = file.getBinary(FileAssetAPI.BINARY_FIELD);
           if (ff != null && ff.isFile()) {
+            recordSource(host.getHostname() + fileuri, ff);
 
             // destfile: /../../../tmpdir/host/path/to/asset.extension
 
@@ -288,11 +302,20 @@ abstract class DotCSSCompiler {
         getAllImportedURI().add(assetUri);
         f.getParentFile().mkdirs();
         FileUtil.copyFile(asset.getFileAsset(), f);
+        recordSource(inputHost.getHostname() + assetUri, f);
       }
 
     }
 
     return compDir;
+  }
+
+  private void recordSource(final String path, final File file) throws IOException {
+    if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+      try (var input = java.nio.file.Files.newInputStream(file.toPath())) {
+        sourceDigests.put(path, org.apache.commons.codec.digest.DigestUtils.sha256Hex(input));
+      }
+    }
   }
 
   private String addImportUnderscore(String url) {

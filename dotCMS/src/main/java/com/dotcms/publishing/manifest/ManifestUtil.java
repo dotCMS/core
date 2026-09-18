@@ -32,7 +32,16 @@ public class ManifestUtil {
     public static Optional<Reader> getManifestInputStream(@NotNull File bundleTarGzipFile)
             throws IOException {
 
-        if(bundleTarGzipFile.getCanonicalPath().startsWith(ConfigUtils.getBundlePath())) {
+        final boolean s3 = com.dotcms.storage.AssetStorageFeature.isEnabled();
+        final boolean allowed = s3
+                ? bundleTarGzipFile.getCanonicalFile().toPath().startsWith(new File(ConfigUtils.getBundlePath()).getCanonicalFile().toPath())
+                : bundleTarGzipFile.getCanonicalPath().startsWith(ConfigUtils.getBundlePath());
+        if(allowed) {
+            if (s3 && !bundleTarGzipFile.exists() && bundleTarGzipFile.getName().endsWith(".tar.gz")
+                    && bundleTarGzipFile.getCanonicalFile().getParentFile().equals(new File(ConfigUtils.getBundlePath()).getCanonicalFile())) {
+                final String name = bundleTarGzipFile.getName();
+                bundleTarGzipFile = TarGzipBundleOutput.getBundleTarGzipFile(name.substring(0, name.length() - ".tar.gz".length()));
+            }
             try (final FileInputStream fileInputStream = new FileInputStream(bundleTarGzipFile);
                     BufferedInputStream in = new BufferedInputStream(fileInputStream);
                     GzipCompressorInputStream gzIn = new GzipCompressorInputStream(in);
@@ -42,6 +51,10 @@ public class ManifestUtil {
 
                 while ((entry = (TarArchiveEntry) tarInputStream.getNextEntry()) != null) {
                     if (entry.isFile() && entry.getName().equals(ManifestBuilder.MANIFEST_NAME)) {
+                        if (s3) {
+                            return Optional.of(new java.io.StringReader(IOUtils.toString(tarInputStream,
+                                    java.nio.charset.Charset.defaultCharset())));
+                        }
                         final File tempManifestFile = FileUtil.createTemporaryFile("Manifest_");
                         try (final FileOutputStream fileOutputStream = new FileOutputStream(tempManifestFile)) {
                             IOUtils.copy(tarInputStream, fileOutputStream);

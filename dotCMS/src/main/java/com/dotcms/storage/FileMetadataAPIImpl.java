@@ -11,7 +11,13 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
+import com.dotcms.storage.binary.BinaryAssetReference;
 import com.dotcms.storage.model.BasicMetadataFields;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.dotcms.storage.model.ContentletMetadata;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.business.APILocator;
@@ -106,6 +112,10 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                                                           final SortedSet<String> fullBinaryFieldNameSet,
                                                           final boolean overrideMetadata)
             throws IOException, DotDataException {
+        if (AssetStorageFeature.isEnabled()) {
+            return generateImmutableMetadata(contentlet, basicBinaryFieldNameSet,
+                    fullBinaryFieldNameSet, overrideMetadata);
+        }
         final  Map<String, Field> fieldMap = contentlet.getContentType().fieldMap();
 
         Logger.debug(this, ()-> "Generating the metadata for contentlet, id = " + contentlet.getIdentifier());
@@ -118,6 +128,63 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                 basicBinaryFieldNameSet, fullMetadata, fieldMap, overrideMetadata);
 
         return new ContentletMetadata(fullMetadata, basicMetadata);
+    }
+
+    private ContentletMetadata generateImmutableMetadata(final Contentlet contentlet,
+            final Set<String> basicFields, final Set<String> fullFields,
+            final boolean override) throws DotDataException {
+        final Contentlet requested = new Contentlet(contentlet);
+        final Map<String, Metadata> full = new HashMap<>();
+        final Map<String, Metadata> basic = new HashMap<>();
+        final Set<String> fields = new TreeSet<>(basicFields);
+        fields.addAll(fullFields);
+        for (final String field : fields) {
+            if (requested.get(field) == null) {
+                continue;
+            }
+            final StorageKey storageKey = new StorageKey.Builder()
+                    .group(Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA))
+                    .path(getFileName(requested, field))
+                    .storage(StoragePersistenceProvider.getStorageType()).build();
+            final Map<String, Serializable> previous = fileStorageAPI.retrieveRawMetaData(storageKey);
+            Map<String, Serializable> metadata = previous == null ? Map.of() : previous;
+            final boolean generate = override || metadata.isEmpty()
+                    || metadata.keySet().stream().allMatch(key -> key.startsWith(Metadata.CUSTOM_PROP_PREFIX)
+                            || key.equals(BasicMetadataFields.EDITABLE_AS_TEXT.key()));
+            if (generate) {
+                final Set<String> indexedKeys = getMetadataFields(contentlet.getContentType().fieldMap().get(field).id());
+                try {
+                    metadata = new HashMap<>(fileStorageAPI.generateMetaData(
+                            () -> Try.of(() -> requested.getBinary(field)).get(),
+                            new GenerateMetadataConfig.Builder().full(fullFields.contains(field))
+                                    .override(true).store(false).cache(false)
+                                    .metaDataKeyFilter(key -> indexedKeys.isEmpty() || indexedKeys.contains(key))
+                                    .storageKey(storageKey)
+                                    .build()));
+                } catch (final IllegalArgumentException missingBinary) {
+                    Logger.debug(this, () -> "Cannot generate metadata for missing binary: " + field);
+                    continue;
+                }
+                if (previous != null) {
+                    metadata.putAll(filterNonCustomMetadataFields(previous));
+                }
+                final Map<String, Serializable> generated = metadata;
+                // Publish only against the snapshot we read. Reindexing a historical snapshot
+                // must not replace newer metadata, even when the binary bytes are unchanged.
+                publishMetadata(contentlet, Set.of(field), (snapshot, name) -> generated, requested);
+            } else {
+                metadataCache.addMetadataMap(getMetadataCacheKey(requested, field),
+                        filterNonBasicMetadataFields(metadata));
+            }
+            if (fullFields.contains(field)) {
+                full.put(field, new Metadata(field, metadata));
+            }
+            if (basicFields.contains(field)) {
+                basic.put(field, new Metadata(field, fullFields.contains(field)
+                        ? filterNonBasicMetadataFields(metadata) : metadata));
+            }
+        }
+        return new ContentletMetadata(full, basic);
     }
 
     /**
@@ -164,13 +231,13 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
 
                 // if it is included on the full keys, we only have to store the meta in the cache.
                 metadataMap = filterNonBasicMetadataFields(metadata.getMap());
-                metadataCache.addMetadataMap(contentlet.getInode() + StringPool.COLON + binaryFieldName, metadataMap);
+                metadataCache.addMetadataMap(getMetadataCacheKey(contentlet, binaryFieldName), metadataMap);
 
             } else {
 
                 //get Old metadata from cache so we don't loose any custom attributes
                 final Metadata mergeWithMetadata = internalGetGenerateMetadata(contentlet, binaryFieldName,false, false);
-                final String cacheKey = contentlet.getInode() + StringPool.COLON + binaryFieldName;
+                final String cacheKey = getMetadataCacheKey(contentlet, binaryFieldName);
 
                 try {
                     metadataMap = this.fileStorageAPI.generateMetaData(
@@ -365,8 +432,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             final Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
                     new FetchMetadataParams.Builder()
                             .projectionMapForCache(this::filterNonBasicMetadataFields)
-                            .cache(() -> contentlet.getInode() + StringPool.COLON
-                                    + fieldVariableName)
+                            .cache(() -> getMetadataCacheKey(contentlet, fieldVariableName))
                             .storageKey(new StorageKey.Builder().group(metadataBucketName)
                                     .path(metadataPath).storage(storageType).build())
                             .build()
@@ -597,11 +663,58 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         return Optional.empty();
     }
 
-    /**
-     * Given a contentlet this will iterate over all the binary fields it has and remove the associated metadata
-     * @param contentlet
-     * @return
-     */
+    /** Removes legacy and revision metadata while source keys are still available for retries. */
+    @Override
+    public void removeMetadataForInode(final String inode, final List<String> binaryPaths) throws DotDataException {
+        if (!AssetStorageFeature.isEnabled()) {
+            return;
+        }
+        if (inode == null || !inode.matches("[A-Za-z0-9_-]{2,}")) {
+            throw new IllegalArgumentException("Invalid metadata inode");
+        }
+        final String prefix = inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/";
+        final String group = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+        final StoragePersistenceAPI storage = StoragePersistenceProvider.INSTANCE.get()
+                .getStorage(StoragePersistenceProvider.getStorageType());
+        final Set<String> paths = new HashSet<>();
+        // Legacy metadata can exist even when its field/source no longer exists.
+        for (final String path : storage.listObjectPaths(group, "/" + prefix)) {
+            if (path.endsWith(METADATA_JSON)) {
+                paths.add(path.startsWith("/") ? path : "/" + path);
+            }
+        }
+        for (final String path : binaryPaths) {
+            if (!path.startsWith(prefix) || !Path.of(path).normalize().toString().equals(path)) {
+                throw new DotDataException("Binary path escapes metadata cleanup inode: " + path);
+            }
+            final String relative = path.substring(prefix.length());
+            final int slash = relative.indexOf('/');
+            if (slash >= 0) {
+                paths.add("/" + prefix + relative.substring(0, slash) + METADATA_JSON);
+                if (relative.contains("/.revisions/")) {
+                    paths.add("/" + path + METADATA_JSON);
+                    final String metadataParent = "/" + path.substring(0, path.lastIndexOf('/') + 1);
+                    for (final String metadataPath : storage.listObjectPaths(group, metadataParent)) {
+                        if (metadataPath.endsWith(METADATA_JSON)) {
+                            paths.add(metadataPath.startsWith("/") ? metadataPath : "/" + metadataPath);
+                        }
+                    }
+                }
+            }
+        }
+        for (final String path : paths) {
+            if (!path.startsWith("/" + prefix) || !Path.of(path).normalize().toString().equals(path)) {
+                throw new DotDataException("Metadata path escapes cleanup inode: " + path);
+            }
+            storage.deleteObjectAndReferences(group, path);
+            if (storage.existsObject(group, path)) {
+                throw new DotDataException("Metadata remains after deletion: " + path);
+            }
+            metadataCache.removeMetadata(path);
+        }
+    }
+
+    /** Removes metadata associated with a contentlet's binary fields and local metadata paths. */
     public Map<String, Set<String>> removeMetadata(final Contentlet contentlet) {
         final Map<String,Set<String>> removedMetaPaths = new HashMap<>();
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
@@ -739,15 +852,39 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public void putCustomMetadataAttributes(final Contentlet contentlet,
             final Map<String, Map<String,Serializable>> customAttributesByField) throws DotDataException {
 
+        if (AssetStorageFeature.isEnabled()) {
+            publishMetadata(contentlet, customAttributesByField.keySet(), (snapshot, field) -> {
+                final Metadata previous = getFullMetadataNoCache(snapshot, field);
+                final Map<String, Serializable> metadata = previous == null ? new HashMap<>()
+                        : new HashMap<>(previous.getMap());
+                final Map<String, Serializable> attributes = customAttributesByField.get(field);
+                if (attributes.isEmpty()) {
+                    metadata.keySet().removeIf(key -> key.startsWith(Metadata.CUSTOM_PROP_PREFIX));
+                } else {
+                    attributes.forEach((key, value) -> metadata.put(Metadata.CUSTOM_PROP_PREFIX + key, value));
+                }
+                return metadata;
+            });
+            return;
+        }
+        putCustomMetadataAttributesForCheckin(contentlet, customAttributesByField);
+    }
+
+    @Override
+    public void putCustomMetadataAttributesForCheckin(final Contentlet contentlet,
+            final Map<String, Map<String, Serializable>> customAttributesByField) throws DotDataException {
+
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final String metadataBucketName = Config
                 .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
-       customAttributesByField.forEach((fieldName, customAttributes) -> {
+       for (final var entry : customAttributesByField.entrySet()) {
+           final String fieldName = entry.getKey();
+           final Map<String, Serializable> customAttributes = entry.getValue();
 
            final String metadataPath = getFileName(contentlet, fieldName);
            try {
                 fileStorageAPI.putCustomMetadataAttributes((new FetchMetadataParams.Builder()
-                        .cache(() -> contentlet.getInode() + StringPool.COLON + fieldName)
+                        .cache(() -> getMetadataCacheKey(contentlet, fieldName))
                         .projectionMapForCache(this::filterNonBasicMetadataFields)
                         .forceInsert(true)
                         .storageKey(
@@ -757,10 +894,111 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                         .build()), customAttributes);
 
            }catch (Exception e){
+               if (AssetStorageFeature.isEnabled()) {
+                   throw new DotDataException("Unable to save binary metadata for " + fieldName, e);
+               }
                Logger.error(FileMetadataAPIImpl.class, "Error saving custom attributes", e);
            }
-       });
+       }
 
+    }
+
+    /**
+     * Only the database reference is mutable. Upload failures and rollbacks leave committed
+     * metadata intact; the row lock makes concurrent custom-attribute merges read the latest edit.
+     */
+    @CloseDBIfOpened
+    private void publishMetadata(final Contentlet contentlet,
+            final Set<String> updatedFields,
+            final io.vavr.CheckedFunction2<Contentlet, String, Map<String, Serializable>> update) throws DotDataException {
+        publishMetadata(contentlet, updatedFields, update, null);
+    }
+
+    private void publishMetadata(final Contentlet contentlet,
+            final Set<String> updatedFields,
+            final io.vavr.CheckedFunction2<Contentlet, String, Map<String, Serializable>> update,
+            final Contentlet expectedSnapshot) throws DotDataException {
+        final boolean skipChangedSnapshot = expectedSnapshot != null;
+        if (updatedFields.isEmpty()) {
+            return;
+        }
+        final boolean localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+        try {
+            final String inode = contentlet.getInode();
+            final String previousJson = new DotConnect()
+                    .setSQL("select contentlet_as_json from contentlet where inode = ? for update")
+                    .addParam(inode).getString("contentlet_as_json");
+            final boolean missingJson = previousJson == null || previousJson.isBlank();
+            if (missingJson && !skipChangedSnapshot) {
+                throw new DotDataException("Cannot edit metadata for missing content: " + inode);
+            }
+            final ObjectMapper mapper = new ObjectMapper();
+            final ObjectNode json = (ObjectNode) mapper.readTree(missingJson ? "{\"fields\":{}}" : previousJson);
+            final ObjectNode fields = (ObjectNode) json.path("fields");
+            final Contentlet snapshot = new Contentlet(contentlet);
+            final Map<String, File> references = new HashMap<>();
+            final Set<String> binaryFields = contentlet.getContentType().fields(BinaryField.class).stream()
+                    .map(Field::variable).collect(Collectors.toSet());
+            for (final String field : updatedFields) {
+                if (!binaryFields.contains(field)
+                        || !((skipChangedSnapshot ? expectedSnapshot : contentlet).get(field) instanceof File)) {
+                    throw new DotDataException("Cannot edit metadata for an absent binary field: " + field);
+                }
+                final BinaryAssetReference.StoredBinary stored = BinaryAssetReference.fromJson(fields.path(field), inode, field);
+                final File current = stored == null ? null : stored.localFile(inode, field);
+                final File requested = (File) (skipChangedSnapshot ? expectedSnapshot : contentlet).get(field);
+                if (current == null || !current.toPath().toAbsolutePath().normalize()
+                        .equals(requested.toPath().toAbsolutePath().normalize())) {
+                    if (skipChangedSnapshot) {
+                        continue;
+                    }
+                    throw new DotDataException("Binary changed before metadata edit: " + field);
+                }
+                snapshot.getMap().put(field, current);
+                if (skipChangedSnapshot && !getFileName(snapshot, field).equals(getFileName(expectedSnapshot, field))) {
+                    continue;
+                }
+                final Map<String, Serializable> metadata = Try.of(() -> update.apply(snapshot, field))
+                        .getOrElseThrow(DotDataException::new);
+                if (metadata == null) {
+                    continue;
+                }
+                final String key = BinaryAssetReference.newMetadataKey(current, inode, field);
+                final boolean storedMetadata = fileStorageAPI.setMetadata(new FetchMetadataParams.Builder()
+                        .cache(() -> key)
+                        .projectionMapForCache(this::filterNonBasicMetadataFields)
+                        .storageKey(new StorageKey.Builder()
+                                .group(Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA))
+                                .path(key).storage(StoragePersistenceProvider.getStorageType()).build())
+                        .build(), metadata);
+                if (!storedMetadata) {
+                    throw new DotDataException("Metadata was not stored: " + field);
+                }
+                ((ObjectNode) fields.path(field)).put("metadataStorageKey", key);
+                references.put(field, BinaryAssetReference.withMetadata(current, inode, field, key));
+            }
+            if (!references.isEmpty()) {
+                final String updatedJson = mapper.writeValueAsString(json);
+                new DotConnect().setSQL("update contentlet set contentlet_as_json = "
+                                + (DbConnectionFactory.isPostgres() ? "?::jsonb" : "?") + " where inode = ?")
+                        .addParam(updatedJson).addParam(inode).loadResult();
+                // ContentletCache may share the supplied object with other requests. Do not mutate
+                // it before commit. A writer can find the content again to read its pending reference.
+                HibernateUtil.addSyncCommitListener(() -> {
+                    CacheLocator.getContentletCache().remove(inode);
+                    references.forEach((field, file) -> contentlet.getMap().put(field, file));
+                    contentlet.getMap().put(Contentlet.CONTENTLET_AS_JSON, updatedJson);
+                });
+            }
+            if (localTransaction) {
+                HibernateUtil.commitTransaction();
+            }
+        } catch (Exception e) {
+            if (localTransaction) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw new DotDataException("Unable to publish binary metadata", e);
+        }
     }
 
    /**
@@ -768,6 +1006,22 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     */
     private String tempResourcePath(final String tempResourceId){
         return ConfigUtils.getAssetTempPath() + File.separator + tempResourceId + File.separator +  tempResourceId + META_TMP;
+    }
+
+    private StorageKey temporaryMetadataKey(final String id, final boolean legacy) {
+        if (!TemporaryAssetStorage.validId(id)) {
+            throw new IllegalArgumentException("Invalid temporary resource id");
+        }
+        return new StorageKey.Builder().group(Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA))
+                .path(legacy ? tempResourcePath(id) : TemporaryAssetStorage.metadataPath(id))
+                .storage(legacy ? StorageType.FILE_SYSTEM : StorageType.S3).build();
+    }
+
+    private Map<String, Serializable> temporaryMetadata(final String id) throws DotDataException {
+        // Temporary metadata is mutable: read S3 directly so another node's edits are visible.
+        // Only a genuine absence falls back to pre-feature local metadata, never a storage failure.
+        final Map<String, Serializable> shared = fileStorageAPI.retrieveRawMetaData(temporaryMetadataKey(id, false));
+        return shared != null ? shared : fileStorageAPI.retrieveRawMetaData(temporaryMetadataKey(id, true));
     }
 
     /**
@@ -779,10 +1033,34 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public void putCustomMetadataAttributes(final String tempResourceId,
             final Map<String, Map<String,Serializable>> customAttributesByField) throws DotDataException {
 
+        if (AssetStorageFeature.isEnabled()) {
+            if (customAttributesByField.isEmpty()) {
+                return;
+            }
+            final Map<String, Serializable> previous = temporaryMetadata(tempResourceId);
+            final Map<String, Serializable> updated = new HashMap<>(previous == null ? Map.of() : previous);
+            for (final Map<String, Serializable> attributes : customAttributesByField.values()) {
+                if (attributes.isEmpty()) {
+                    updated.keySet().removeIf(key -> key.startsWith(Metadata.CUSTOM_PROP_PREFIX));
+                } else {
+                    attributes.forEach((key, value) -> updated.put(Metadata.CUSTOM_PROP_PREFIX + key, value));
+                }
+            }
+            // Retain a nonempty record after clearing custom attributes, so a legacy local copy
+            // cannot resurrect an earlier focal point on the next read.
+            updated.put("tempResourceId", tempResourceId);
+            if (!fileStorageAPI.setMetadata(new FetchMetadataParams.Builder().cache(false)
+                    .storageKey(temporaryMetadataKey(tempResourceId, false)).build(), updated)) {
+                throw new DotDataException("Unable to save temporary binary metadata for " + tempResourceId);
+            }
+            return;
+        }
+
         final String metadataBucketName = Config
                 .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
 
-        customAttributesByField.forEach((fieldName, customAttributes) -> {
+        for (final var entry : customAttributesByField.entrySet()) {
+            final Map<String, Serializable> customAttributes = entry.getValue();
 
             try {
                 final String tempResourcePath = tempResourcePath(tempResourceId);
@@ -797,9 +1075,12 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                         .build()), customAttributes);
 
             }catch (Exception e){
+                if (AssetStorageFeature.isEnabled()) {
+                    throw new DotDataException("Unable to save temporary binary metadata for " + tempResourceId, e);
+                }
                 Logger.error(FileMetadataAPIImpl.class, "Error saving custom attributes", e);
             }
-        });
+        }
     }
 
     /**
@@ -810,6 +1091,11 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      */
     public Optional<Metadata> getMetadata(final String tempResourceId)
             throws DotDataException {
+
+            if (AssetStorageFeature.isEnabled()) {
+                return Optional.ofNullable(temporaryMetadata(tempResourceId))
+                        .map(values -> new Metadata(tempResourceId, values));
+            }
 
             final StorageType storageType = StoragePersistenceProvider.getStorageType();
             final String metadataBucketName = Config
@@ -841,6 +1127,39 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      */
     public void copyCustomMetadata(final Contentlet source, final Contentlet destination)
             throws DotDataException {
+        if (!AssetStorageFeature.isEnabled()) {
+            copyCustomMetadataForCheckin(source, destination);
+            return;
+        }
+        if (!source.getContentType().baseType().equals(destination.getContentType().baseType())) {
+            throw new DotDataException("Source and destination contentlet are not the same type.");
+        }
+        final Map<String, Map<String, Serializable>> copiedAttributes = new HashMap<>();
+        for (final Field field : source.getContentType().fields(BinaryField.class)) {
+            final String name = field.variable();
+            if (source.get(name) == null || destination.get(name) == null
+                    || getFileName(source, name).equals(getFileName(destination, name))) {
+                continue;
+            }
+            final Metadata metadata = getFullMetadataNoCache(source, name);
+            if (metadata != null) {
+                copiedAttributes.put(name, metadata.getCustomMetaWithPrefix());
+            }
+        }
+        publishMetadata(destination, copiedAttributes.keySet(), (snapshot, field) -> {
+            final Metadata previous = getFullMetadataNoCache(snapshot, field);
+            final Map<String, Serializable> metadata = previous == null ? new HashMap<>()
+                    : new HashMap<>(previous.getMap());
+            metadata.keySet().removeIf(key -> key.startsWith(Metadata.CUSTOM_PROP_PREFIX));
+            metadata.putAll(copiedAttributes.get(field));
+            return previous == null && metadata.isEmpty()
+                    || previous != null && metadata.equals(previous.getMap()) ? null : metadata;
+        });
+    }
+
+    @Override
+    public void copyCustomMetadataForCheckin(final Contentlet source, final Contentlet destination)
+            throws DotDataException {
         if (!source.getContentType().baseType().equals(destination.getContentType().baseType())) {
             throw new DotDataException("Source and destination contentlet are not the same type.");
         }
@@ -858,6 +1177,10 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         for (final String binaryFieldName : binaryFieldNames) {
 
             final String sourceMetadataPath = getFileName(source, binaryFieldName);
+            if (AssetStorageFeature.isEnabled() && (destination.get(binaryFieldName) == null
+                    || sourceMetadataPath.equals(getFileName(destination, binaryFieldName)))) {
+                continue;
+            }
             final Map<String, Serializable> metadataMap = fileStorageAPI.retrieveMetaData(
                     new FetchMetadataParams.Builder()
                             .cache(false)
@@ -880,8 +1203,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                     );
                 } else {
                     fileStorageAPI.setMetadata(new FetchMetadataParams.Builder()
-                            .cache(() -> destination.getInode() + StringPool.COLON
-                                    + binaryFieldName)
+                            .cache(() -> getMetadataCacheKey(destination, binaryFieldName))
                             .projectionMapForCache(this::filterNonBasicMetadataFields)
                             .storageKey(
                                     new StorageKey.Builder().group(metadataBucketName)
@@ -902,6 +1224,17 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      */
     @Override
     public void setMetadata(final Contentlet contentlet, final Map<String, Metadata> binariesMetadata) throws DotDataException {
+          if (AssetStorageFeature.isEnabled()) {
+              final Map<String, Map<String, Serializable>> updates = new HashMap<>();
+              for (final Field field : contentlet.getContentType().fields(BinaryField.class)) {
+                  final Metadata metadata = binariesMetadata.get(field.variable());
+                  if (contentlet.get(field.variable()) != null && metadata != null) {
+                      updates.put(field.variable(), metadata.getMap());
+                  }
+              }
+              publishMetadata(contentlet, updates.keySet(), (snapshot, field) -> updates.get(field));
+              return;
+          }
           removeMetadata(contentlet);
           final Set<Field> validFields = contentlet.getContentType().fields(BinaryField.class).stream()
                 .filter(field -> contentlet.get(field.variable()) != null)
@@ -914,7 +1247,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             if(null != metadata){
                 final String destMetadataPath = getFileName(contentlet, validField.variable());
                 fileStorageAPI.setMetadata(new FetchMetadataParams.Builder()
-                        .cache(() -> contentlet.getInode() + StringPool.COLON + validField.variable())
+                        .cache(() -> getMetadataCacheKey(contentlet, validField.variable()))
                         .projectionMapForCache(this::filterNonBasicMetadataFields)
                         .storageKey(
                                 new StorageKey.Builder().group(metadataBucketName)

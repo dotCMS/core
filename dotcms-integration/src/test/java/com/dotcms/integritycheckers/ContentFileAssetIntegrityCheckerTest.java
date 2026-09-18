@@ -36,12 +36,19 @@ import java.sql.Connection;
  * Simple test to validate the ContentFileAssetIntegrityChecker
  */
 public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase implements IntegrityCheckerTest {
-
+    private String repairEndpoint;
 
     @Before
     public void setup() throws Exception {
         //Setting web app environment
         setUpEnvironment();
+        repairEndpoint = UUID.randomUUID().toString();
+    }
+
+    @org.junit.After
+    public void removeRepairResults() throws DotDataException {
+        new DotConnect().setSQL("delete from fileassets_ir where endpoint_id = ?")
+                .addParam(repairEndpoint).loadResult();
     }
 
     /**
@@ -108,7 +115,7 @@ public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase im
 
         final ContentFileAssetIntegrityChecker integrityChecker = new ContentFileAssetIntegrityChecker();
         final Tuple2<String, String> remoteIdentifierAndInode = introduceConflict(fileAsset,
-                endpointId.get());
+                repairEndpoint);
 
         final String remoteIdentifier = remoteIdentifierAndInode._1();
         final String remoteWorkingInode = remoteIdentifierAndInode._2();
@@ -116,7 +123,7 @@ public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase im
         Logger.debug(this, "remoteIdentifier: " + remoteIdentifier + " remoteWorkingInode: "
                 + remoteWorkingInode);
 
-        integrityChecker.executeFix(endpointId.get());
+        integrityChecker.executeFix(repairEndpoint);
         Assert.assertTrue(validateFix(remoteIdentifier));
     }
 
@@ -144,9 +151,9 @@ public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase im
 
         final ContentFileAssetIntegrityChecker integrityChecker = new ContentFileAssetIntegrityChecker();
         final Tuple2<String, String> remoteIdentifierAndInode = introduceConflict(fileAsset,
-                endpointId.get());
+                repairEndpoint);
 
-        integrityChecker.executeFix(endpointId.get());
+        integrityChecker.executeFix(repairEndpoint);
         Assert.assertTrue(validateFix(remoteIdentifierAndInode._1()));
     }
 
@@ -163,11 +170,11 @@ public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase im
         final Contentlet contentlet = FileAssetDataGen.createFileAsset(folder, "text1FileAsset"+UUID.randomUUID().toString(), ".txt");
         final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
         final ContentFileAssetIntegrityChecker integrityChecker = new ContentFileAssetIntegrityChecker();
-        final Tuple2<String, String> remoteIdentifierAndInode = introduceConflict(fileAsset ,endpointId.get());
+        final Tuple2<String, String> remoteIdentifierAndInode = introduceConflict(fileAsset, repairEndpoint);
         final String remoteIdentifier = remoteIdentifierAndInode._1();
         final String remoteWorkingInode = remoteIdentifierAndInode._2();
 
-        integrityChecker.executeFix(endpointId.get());
+        integrityChecker.executeFix(repairEndpoint);
 
         try {
             final DotConnect dotConnect = new DotConnect();
@@ -195,6 +202,72 @@ public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase im
             Logger.error(this, e);
         } finally {
             DbConnectionFactory.closeSilently();
+        }
+    }
+
+    @Test
+    public void s3RepairPreservesColdBinaryAndMetadataThroughRollbackAndCleanup() throws Exception {
+        org.junit.Assume.assumeTrue(Boolean.getBoolean("s3.cms.enabled"));
+        Assert.assertTrue(com.dotcms.storage.AssetStorageFeature.isEnabled());
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final java.nio.file.Path temporary = java.nio.file.Files.createTempDirectory("s3-integrity-");
+        final String field = com.dotmarketing.portlets.fileassets.business.FileAssetAPI.BINARY_FIELD;
+        final var binaries = APILocator.getBinaryAssetStorageAPI();
+        final var metadata = APILocator.getFileMetadataAPI();
+        final String endpoint = UUID.randomUUID().toString();
+        try {
+            final File upload = java.nio.file.Files.writeString(temporary.resolve("Repair-MixedCase.Txt"),
+                    "repair original bytes").toFile();
+            final Contentlet source = new FileAssetDataGen(folder, upload).nextPersisted();
+            metadata.putCustomMetadataAttributes(source, Map.of(field, Map.of("credit", "Repair author")));
+            final File original = source.getBinary(field);
+            final var target = introduceConflict(APILocator.getFileAssetAPI().fromContentlet(source), endpoint);
+            final String sourceInode = source.getInode();
+            final String targetInode = target._2();
+            final String originalKey = com.dotcms.storage.binary.BinaryAssetReference.keyOf(original);
+            Assert.assertTrue(binaries.evictLocalFile(original));
+            java.nio.file.Files.delete(java.nio.file.Path.of(com.dotmarketing.util.ConfigUtils.getAssetPath())
+                    .resolve(metadata.getFileName(source, field).substring(1).toLowerCase(java.util.Locale.ROOT)));
+            com.dotmarketing.business.CacheLocator.getMetadataCache().removeMetadata(metadata.getMetadataCacheKey(source, field));
+            final var checker = new ContentFileAssetIntegrityChecker();
+
+            com.dotmarketing.db.HibernateUtil.startTransaction();
+            try {
+                checker.executeFix(endpoint);
+                final var repaired = APILocator.getContentletAPI().find(targetInode, APILocator.systemUser(), false);
+                Assert.assertNotEquals(originalKey, com.dotcms.storage.binary.BinaryAssetReference.keyOf(repaired.getBinary(field)));
+                Assert.assertEquals("Repair author", metadata.getMetadata(repaired, field).getCustomMeta().get("credit"));
+            } finally {
+                com.dotmarketing.db.HibernateUtil.rollbackTransaction();
+                com.dotmarketing.business.CacheLocator.getContentletCache().remove(targetInode);
+                com.dotmarketing.business.CacheLocator.getContentletCache().remove(sourceInode);
+            }
+            Assert.assertEquals(originalKey, com.dotcms.storage.binary.BinaryAssetReference.find(sourceInode, field));
+            Assert.assertEquals(0, new DotConnect().setSQL("select count(*) as total from job where queue_name = ? and parameters ->> 'inode' = ?")
+                    .addParam(com.dotcms.storage.binary.BinaryAssetCleanupProcessor.QUEUE).addParam(sourceInode).getInt("total"));
+            Assert.assertTrue(binaries.evictLocalFile(original));
+            Assert.assertEquals("repair original bytes", java.nio.file.Files.readString(source.getBinary(field).toPath()));
+
+            checker.executeFix(endpoint);
+            final var repaired = APILocator.getContentletAPI().find(targetInode, APILocator.systemUser(), false);
+            Assert.assertEquals(target._1(), repaired.getIdentifier());
+            final var jobRows = new DotConnect().setSQL("select id from job where queue_name = ? and parameters ->> 'inode' = ?")
+                    .addParam(com.dotcms.storage.binary.BinaryAssetCleanupProcessor.QUEUE).addParam(sourceInode).loadObjectResults();
+            Assert.assertEquals(1, jobRows.size());
+            new com.dotcms.storage.binary.BinaryAssetCleanupProcessor().process(APILocator.getJobQueueManagerAPI()
+                    .getJob(jobRows.getFirst().get("id").toString()));
+            Assert.assertTrue(binaries.listBinaryPaths(sourceInode).isEmpty());
+            Assert.assertTrue(binaries.evictLocalFile(repaired.getBinary(field)));
+            java.nio.file.Files.delete(java.nio.file.Path.of(com.dotmarketing.util.ConfigUtils.getAssetPath())
+                    .resolve(metadata.getFileName(repaired, field).substring(1).toLowerCase(java.util.Locale.ROOT)));
+            com.dotmarketing.business.CacheLocator.getMetadataCache().removeMetadata(metadata.getMetadataCacheKey(repaired, field));
+            Assert.assertEquals("Repair-MixedCase.Txt", repaired.getBinary(field).getName());
+            Assert.assertEquals("repair original bytes", java.nio.file.Files.readString(repaired.getBinary(field).toPath()));
+            Assert.assertEquals("Repair author", metadata.getMetadata(repaired, field).getCustomMeta().get("credit"));
+        } finally {
+            new DotConnect().setSQL("delete from fileassets_ir where endpoint_id = ?").addParam(endpoint).loadResult();
+            FolderDataGen.remove(folder);
+            org.apache.commons.io.FileUtils.deleteDirectory(temporary.toFile());
         }
     }
 }

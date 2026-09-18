@@ -779,8 +779,7 @@ public class BundleResource {
             if (!UtilMethods.isSet(bundle)) {
                 throw new DoesNotExistException("Bundle with ID: " + bundleId + " not found");
             }
-            final File bundleFile = new File(
-                    ConfigUtils.getBundlePath() + File.separator + bundle.getId() + ".tar.gz");
+            final File bundleFile = TarGzipBundleOutput.getBundleTarGzipFile(bundle.getId());
             if (!bundleFile.exists()) {
                 throw new DoesNotExistException(
                         "The bundle has not been generated for the provided bundle ID: "
@@ -788,7 +787,8 @@ public class BundleResource {
             }
             final String bundleName = bundle.getName().replaceAll("[^\\w.-]", "_");
             response.setHeader( "Content-Disposition", "attachment; filename=" +bundleName  +"-"+ bundle.getId() + ".tar.gz" );
-            return Response.ok(bundleFile, "application/x-tgz").build();
+            return Response.ok(com.dotcms.storage.AssetStorageFeature.isEnabled()
+                    ? java.nio.file.Files.newInputStream(bundleFile.toPath()) : bundleFile, "application/x-tgz").build();
         }catch (DoesNotExistException e){
             Logger.error(this,e.getMessage());
             return ExceptionMapperUtil.createResponse("",e.getMessage(),Response.Status.NOT_FOUND);
@@ -928,7 +928,11 @@ public class BundleResource {
                 final String bundleName = BundlerUtil.sanitizeBundleName(fileName);
                 final String bundlePath = ConfigUtils.getBundlePath() + File.separator;
 
-                FileUtil.writeToFile(inputStream, bundlePath + bundleName);
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    com.dotcms.publishing.output.BundleArchiveStorage.getInstance().receive(bundleName, inputStream);
+                } else {
+                    FileUtil.writeToFile(inputStream, bundlePath + bundleName);
+                }
 
                 final String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
                 final String endpointId   = initData.getUser().getUserId();
@@ -986,7 +990,11 @@ public class BundleResource {
                 final String bundleName = BundlerUtil.sanitizeBundleName(fileName);
                 final String bundlePath = ConfigUtils.getBundlePath() + File.separator;
 
-                FileUtil.writeToFile(inputStream, bundlePath + bundleName);
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    com.dotcms.publishing.output.BundleArchiveStorage.getInstance().receive(bundleName, inputStream);
+                } else {
+                    FileUtil.writeToFile(inputStream, bundlePath + bundleName);
+                }
 
                 final String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
                 final String endpointId = initData.getUser().getUserId();

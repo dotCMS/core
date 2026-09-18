@@ -23,6 +23,9 @@ public abstract class BundleOutput implements Closeable {
 
     public abstract void create() throws IOException;
 
+    /** Called only after every bundler and the manifest have completed successfully. */
+    public void complete() throws IOException { }
+
     /**
      * Add a new file into the output
      *
@@ -51,6 +54,19 @@ public abstract class BundleOutput implements Closeable {
      * @throws IOException
      */
     public void copyFile(File source, String destinationPath) throws IOException {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            final var binaries = com.dotmarketing.business.APILocator.getBinaryAssetStorageAPI();
+            try (var lease = binaries.acquireCacheLease(); var input = binaries.openLocalFile(source)) {
+                copyFileInternal(source, destinationPath);
+            } catch (com.dotmarketing.exception.DotDataException e) {
+                throw new IOException("Unable to read bundle source " + source, e);
+            }
+            return;
+        }
+        copyFileInternal(source, destinationPath);
+    }
+
+    private void copyFileInternal(File source, String destinationPath) throws IOException {
         final boolean userHardLink =
                 Config.getBooleanProperty("CONTENT_VERSION_HARD_LINK", true)
                         && this.useHardLinkByDefault();
