@@ -16,11 +16,21 @@ Names, meanings and defaults are untouched, so every URL that works today produc
 
 | Parameter | Shape | Default (omitted when) |
 |---|---|---|
-| creator selection | repeatable, one user id per entry | empty selection |
+| `created_by` | repeatable, one user id per entry | empty selection |
 | schedule window | single value from the closed set of four named windows | no constraint |
 
-Final parameter names are settled during implementation under FR-049, which requires them to be
-chosen so they survive #37007 moving this listing to server-side filtering without a rename.
+`created_by` takes the name #36823 defines and #37007 will consume, so the eventual move to
+server-side filtering changes where the value is applied and not what it is called (FR-049).
+
+The schedule parameter deliberately does **not** adopt `running_from`/`running_to` (FR-049a).
+Those carry absolute ISO dates; this filter offers five relative windows and no custom range, so an
+absolute date in the address could not say which window was chosen — a link shared one week and
+opened the next would match no option. The address therefore carries the window itself, and the
+conversion to an absolute lower bound happens when the request is built. That conversion is
+#37007's to make; the address does not change when it lands.
+
+Note that the server-side contract does not exist yet: the endpoint still accepts only `pageId`,
+`name` and `status`. These names are adopted from a specification, not from a built API.
 
 ## Rules
 

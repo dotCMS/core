@@ -402,13 +402,23 @@ fewer rows than one page.
   the header order: Name, Page, Goal, Variants, Created By, Schedule, Status, Modified, actions —
   nine columns. It is an **addition**: the Modified column stays, even though the prototype does
   not draw one.
-- **FR-033**: The table's skeleton row MUST draw one placeholder cell per column after the column
-  is added — nine rather than eight.
-- **FR-034**: The table's documented minimum width MUST be recomputed to include the new column, so
-  the elastic Name column keeps the floor its source comment specifies. The comment carries the
-  arithmetic, not just the total, so the sum itself MUST be rewritten rather than the number
-  silently bumped. The new column's own width is an implementation choice, bounded by the two
-  columns it sits between.
+- **FR-032a**: The column MUST render on **both** surfaces the listing component serves — the
+  portlet table and the Universal Visual Editor panel. One component draws both, switching on its
+  panel flag, and the panel already hides the Page column that way; Created By is **not** hidden,
+  so the panel gains a column. Any behaviour this section specifies applies to both unless it says
+  otherwise.
+- **FR-033**: Each surface's skeleton row MUST draw one placeholder cell per column that surface
+  actually renders — nine for the portlet table, eight for the panel, which still drops Page. The
+  panel's count is currently derived from the portlet's by dropping one; that derivation stays
+  correct only because exactly one column differs between them, and it MUST be re-checked rather
+  than assumed.
+- **FR-034**: **Both** tables' documented minimum widths MUST be recomputed to include the new
+  column, so the elastic Name column keeps the floor each comment specifies. Each comment carries
+  its own arithmetic — the portlet's sums seven fixed columns plus a Name floor, the panel's sums
+  the same set minus Page with a smaller floor — so both sums MUST be rewritten rather than the
+  numbers silently bumped. The panel is the narrower of the two and therefore the binding
+  constraint on how wide the new column can be; its width is an implementation choice bounded by
+  the two columns it sits between.
 - **FR-034a**: The Created By column MUST be display-only. It MUST NOT be sortable, MUST NOT add a
   sort field, a sort URL value or a comparator. Every column beside it is sortable, so this has to
   be said: the screen's sort fields are a closed set whose values double as the table's sort key,
@@ -468,9 +478,17 @@ fewer rows than one page.
   an unknown window value, and a malformed creator entry — matching the rule the Status and Goal
   parameters already follow. An unrecognised creator id is not necessarily invalid, so it MUST be
   retained and simply match no experiment.
-- **FR-049**: The two new parameter names MUST be chosen so they can survive the move to
-  server-side filtering (#37007) without a rename, and MUST be recorded in the plan alongside the
-  existing ten.
+- **FR-049**: The creator parameter MUST be named `created_by`, matching the name #36823 defines
+  and #37007 will consume, so the move to server-side filtering is a change of where the value is
+  applied and not a rename.
+- **FR-049a**: The schedule parameter MUST **not** adopt `running_from`/`running_to`, and this is
+  deliberate rather than an oversight. Those carry absolute ISO dates; this filter offers five
+  **relative** windows and no custom range. An absolute date in the address cannot say which window
+  was chosen — a link shared one week and opened the next would match no option — so the address
+  MUST carry the chosen window itself, and the conversion to an absolute lower bound MUST happen
+  when the request is built. #37007 performs that conversion; nothing about the address changes
+  when it lands.
+- **FR-049b**: Both parameters MUST be recorded in the plan alongside the existing ten.
 - **FR-050**: Neither new filter may change the Status or Goal option counts. Those counts are
   computed from the set narrowed by site, search and page-scope only — deliberately before the
   status and goal selections — so both new filters MUST narrow on the same side of that computation
@@ -478,10 +496,18 @@ fewer rows than one page.
 - **FR-051**: The screen's "are any filters active" condition and its clear-filters action MUST both
   account for the two new filters, so the "nothing matched" empty state appears when one of them is
   the reason nothing matched, and its action actually widens the list.
-- **FR-052**: Filtering MUST remain client-side over the already-loaded set. When #37007 moves the
-  listing to server-side paging and filtering, it MUST preserve the observable behaviour specified
-  here — the option sets, the conjunction, the lower-bound-only windows, the exclusion of
-  unscheduled experiments, and the address contract.
+- **FR-052**: Filtering MUST remain client-side over the already-loaded set. The server-side
+  contract this would otherwise use does not exist: the endpoint still accepts only `pageId`,
+  `name` and `status`, there is no experiments paginator, and #36823's own security finding — the
+  list API taking a `User` it never applies — is still open. When #37007 does move the listing
+  server-side it MUST preserve the address contract and the option sets exactly, and it MUST carry
+  over the conjunction and the exclusion of unscheduled experiments.
+- **FR-052a**: One divergence from #36823 is known and MUST be settled by #37007 rather than
+  silently resolved. This filter compares the experiment's **scheduled start**; #36823's
+  `running_from`/`running_to` compare the **running window** — actual runs, or the scheduled window
+  when the experiment never ran — with both bounds inclusive. For an experiment that has already
+  run the two answer different questions. Whichever wins, the change MUST be a deliberate decision
+  recorded there, because it is visible to anyone who had the filter applied before the swap.
 - **FR-053**: Every new user-facing string — chip titles, the five window labels, the column header,
   the option list's empty and failure copy — MUST come from the message catalogue. No literal
   English in templates or components.
