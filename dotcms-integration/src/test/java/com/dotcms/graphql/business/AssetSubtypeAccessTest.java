@@ -2,6 +2,7 @@ package com.dotcms.graphql.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -33,6 +34,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
+import graphql.ExecutionResult;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
@@ -465,6 +467,124 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                             + "without read on the asset received it anyway",
                     null, seenByOther);
         }
+    }
+
+    /**
+     * Given: a query narrowing to a type that no returned asset is.
+     * When: it runs.
+     * Then: the data is delivered, and the response names the clause that matched nothing.
+     *
+     * <p>US4. Without this a client cannot tell {@code ... on BannerImages} over content that
+     * happened to be another type from {@code ... on BannreImages} — a typo. Both are legal, both
+     * contribute nothing, and the response looks identical.
+     */
+    @Test
+    public void test_clauseThatMatchedNothing_isReportedInExtensions() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final ContentType unrelatedType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Warned");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { fileName "
+                        + "... on %s { %s } } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
+                unrelatedType.variable(), CUSTOM_PROPERTY_VAR);
+
+        final ExecutionResult result = GraphqlQueryRunner.executeWithWarnings(query, systemUser);
+
+        assertTrue("the request must still succeed", result.getErrors().isEmpty());
+        assertNotNull("the data must still be delivered", result.getData());
+
+        final List<Map<String, Object>> warnings = GraphqlQueryRunner.warningsOf(result);
+        assertEquals("exactly one clause matched nothing", 1, warnings.size());
+        assertEquals("the warning must name the clause the client wrote",
+                unrelatedType.variable(), warnings.get(0).get("typeCondition"));
+        assertNotNull("and the path it was written under", warnings.get(0).get("path"));
+    }
+
+    /**
+     * Given: a query whose every narrowing clause matches.
+     * When: it runs.
+     * Then: no warning is produced.
+     */
+    @Test
+    public void test_clauseThatMatched_producesNoWarning() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Matched");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { "
+                        + "... on %s { %s } } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
+                assetType.variable(), CUSTOM_PROPERTY_VAR);
+
+        final ExecutionResult result = GraphqlQueryRunner.executeWithWarnings(query, systemUser);
+
+        assertTrue("a matching clause must not be reported — a warning that fires even when the "
+                        + "clause matched is worse than none, since it trains clients to ignore it. "
+                        + "Warnings were: " + GraphqlQueryRunner.warningsOf(result),
+                GraphqlQueryRunner.warningsOf(result).isEmpty());
+    }
+
+    /**
+     * Given: a query with no narrowing clauses at all.
+     * When: it runs.
+     * Then: the response carries no warnings — the mechanism costs nothing.
+     */
+    @Test
+    public void test_queryWithoutClauses_carriesNoWarnings() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Plain");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { fileName } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
+
+        final ExecutionResult result = GraphqlQueryRunner.executeWithWarnings(query, systemUser);
+
+        assertTrue("a query with no clauses must produce no warnings",
+                GraphqlQueryRunner.warningsOf(result).isEmpty());
+    }
+
+    /**
+     * Given: a warning.
+     * When: its text is read.
+     * Then: it contains only the type name the client wrote and the path it chose.
+     *
+     * <p>A warning must never become a channel for content the caller could not otherwise read.
+     */
+    @Test
+    public void test_warningCarriesNoAssetContent() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final ContentType unrelatedType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "SecretValue");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { "
+                        + "... on %s { %s } } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
+                unrelatedType.variable(), CUSTOM_PROPERTY_VAR);
+
+        final String rendered =
+                GraphqlQueryRunner.warningsOf(
+                        GraphqlQueryRunner.executeWithWarnings(query, systemUser)).toString();
+
+        assertFalse("a warning must not leak a property value",
+                rendered.contains("SecretValue"));
+        assertFalse("nor the asset's identifier",
+                rendered.contains(asset.getIdentifier()));
     }
 
     // ---------------------------------------------------------------- helpers

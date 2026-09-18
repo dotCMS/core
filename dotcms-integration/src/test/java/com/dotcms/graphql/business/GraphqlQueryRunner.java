@@ -1,6 +1,7 @@
 package com.dotcms.graphql.business;
 
 import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.graphql.UnmatchedTypeConditionInstrumentation;
 import com.dotmarketing.business.APILocator;
 import com.liferay.portal.model.User;
 import graphql.ExecutionInput;
@@ -69,6 +70,34 @@ public class GraphqlQueryRunner {
             throw new AssertionError("GraphQL query failed: " + errors + "\nQuery was:\n" + query);
         }
         return result.getData();
+    }
+
+    /**
+     * Executes {@code query} with the warning instrumentation attached, exactly as the HTTP path
+     * does, and returns the whole result so a caller can read {@code extensions}.
+     */
+    public static ExecutionResult executeWithWarnings(final String query, final User user)
+            throws Exception {
+        final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
+        final DotGraphQLContext context = DotGraphQLContext.createServletContext()
+                .with(user).build();
+
+        return GraphQL.newGraphQL(schema)
+                .instrumentation(new UnmatchedTypeConditionInstrumentation())
+                .build()
+                .execute(ExecutionInput.newExecutionInput().query(query).context(context).build());
+    }
+
+    /**
+     * @return the warnings a query produced, empty when it produced none
+     */
+    @SuppressWarnings("unchecked")
+    public static List<Map<String, Object>> warningsOf(final ExecutionResult result) {
+        if (null == result.getExtensions()) {
+            return List.of();
+        }
+        final Object warnings = result.getExtensions().get("warnings");
+        return null == warnings ? List.of() : (List<Map<String, Object>>) warnings;
     }
 
     /**
