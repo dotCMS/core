@@ -722,7 +722,7 @@ mv "$WORKDIR/mvnrun/.mvn/maven.config" "$WORKDIR/mvnrun/.mvn/maven.config.bak"
 err="$(mvn_args_stderr true "-java-${SDKMAN_MAJOR}")"; rc=$?
 if [[ $rc -eq 0 ]]; then
   bad "release-build fails closed when .mvn/maven.config is absent" "exited 0"
-elif ! grep -q 'requires -Drevision=' <<<"$err"; then
+elif ! grep -q 'requires a non-empty -Drevision=' <<<"$err"; then
   bad "release-build fails closed when .mvn/maven.config is absent" \
       "exited $rc but not via the guardrail: $(tr '\n' ' ' <<<"$err" | head -c 200)"
 else
@@ -732,11 +732,33 @@ fi
 # Present but without -Drevision= must trip the same guardrail.
 printf -- '-Dprod=true\n-Dchangelist=\n' > "$WORKDIR/mvnrun/.mvn/maven.config"
 err="$(mvn_args_stderr true "-java-${SDKMAN_MAJOR}")"; rc=$?
-if [[ $rc -ne 0 ]] && grep -q 'requires -Drevision=' <<<"$err"; then
+if [[ $rc -ne 0 ]] && grep -q 'requires a non-empty -Drevision=' <<<"$err"; then
   ok "release-build fails closed when .mvn/maven.config lacks -Drevision"
 else
   bad "release-build fails closed when .mvn/maven.config lacks -Drevision" \
       "rc=$rc err=$(tr '\n' ' ' <<<"$err" | head -c 200)"
+fi
+
+# A BARE '-Drevision=' sets the CI-friendly revision to the empty string, which
+# collapses the version just as surely as omitting it. Matching only the prefix
+# would pass this guard on exactly the case it exists for.
+printf -- '-Dprod=true\n-Drevision=\n-Dchangelist=\n' > "$WORKDIR/mvnrun/.mvn/maven.config"
+err="$(mvn_args_stderr true "-java-${SDKMAN_MAJOR}")"; rc=$?
+if [[ $rc -ne 0 ]] && grep -q 'requires a non-empty -Drevision=' <<<"$err"; then
+  ok "release-build fails closed when -Drevision= is empty"
+else
+  bad "release-build fails closed when -Drevision= is empty" \
+      "rc=$rc err=$(tr '\n' ' ' <<<"$err" | head -c 200)"
+fi
+
+# ...and the positive case still works, so the tighter match is not simply
+# rejecting everything.
+printf -- '-Dprod=true\n-Drevision=25.02.16-01\n-Dchangelist=\n' > "$WORKDIR/mvnrun/.mvn/maven.config"
+if mvn_args_run true "-java-${SDKMAN_MAJOR}" | grep -qxF -- "-Dchangelist=-java-${SDKMAN_MAJOR}"; then
+  ok "a non-empty -Drevision= still passes the guard and sets the changelist"
+else
+  bad "a non-empty -Drevision= still passes the guard and sets the changelist" \
+      "guard rejected a valid maven.config"
 fi
 
 mv "$WORKDIR/mvnrun/.mvn/maven.config.bak" "$WORKDIR/mvnrun/.mvn/maven.config"
