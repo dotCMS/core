@@ -35,6 +35,8 @@ tags:
   name: Announcements
 - description: Third-party application integration and configuration
   name: Apps
+- description: Creating several assets in one background run
+  name: Bulk Upload
 - externalDocs:
     description: Additional Authentication API information
     url: https://www.dotcms.com/docs/latest/rest-api-authentication
@@ -4375,6 +4377,38 @@ paths:
       summary: Archive asset
       tags:
       - Web Assets
+  /v1/assets/_bulkupload:
+    post:
+      description: |-
+        Accepts several files plus a JSON `form` part naming the target and the base type, and answers `202` with a job handle **before the assets are created**. The work runs in the background: follow it with `GET /api/v1/jobs/{jobId}/status`, watch it with `GET /api/v1/jobs/{jobId}/monitor`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and read the per-file outcome from the job's result. The submitting author is notified on any terminal state, so the outcome survives them navigating away.
+
+        One file failing does not abort the batch: every remaining file is still attempted, and each failure is reported by name with a machine-readable reason.
+      operationId: bulkUploadAssets
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/FormDataMultiPart"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBulkUploadSubmitView"
+          description: Batch queued
+        "400":
+          description: No files; malformed or missing `form`; unsupported base type;
+            neither or both of folderId/siteId; more files than the configured maximum;
+            request not same-origin; staging disabled
+        "403":
+          description: The author may not add children to the target
+        "404":
+          description: The target folder or site does not exist
+        "413":
+          description: The batch is over the configured total size
+      summary: "Create several assets from one upload, asynchronously"
+      tags:
+      - Bulk Upload
   /v1/assets/_delete:
     post:
       description: Permanently delete an asset (file) from the system using its path
@@ -15146,7 +15180,8 @@ paths:
           \ FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,\
           \ FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, LICENSE_REQUIRED.\
           \ SCHEDULED = bundles pushed with a future publishDate not yet picked up\
-          \ by the publisher cron."
+          \ by the publisher cron. BUNDLE_REQUESTED also includes queued bundles whose\
+          \ publishDate is already due but that the publisher has not picked up yet."
         example: "SUCCESS,FAILED_TO_PUBLISH"
         in: query
         name: status
@@ -19215,7 +19250,10 @@ paths:
           type: integer
           format: int32
           default: 40
-      - description: Column name for sorting results
+      - description: "Field to sort by. Supported: `firstName` (ties broken by last\
+          \ name), `emailAddress`, `lastLoginDate` (users without a recorded login\
+          \ sort last). Unsupported values fall back to the default order (full name\
+          \ ascending)"
         in: query
         name: orderby
         schema:
@@ -25907,6 +25945,16 @@ components:
         successCount:
           type: integer
           format: int64
+    BulkUploadSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statusUrl:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     BulkWorkflowSchemeView:
       type: object
       properties:
@@ -28712,6 +28760,59 @@ components:
       properties:
         description:
           type: string
+    ExperimentView:
+      type: object
+      properties:
+        createdBy:
+          type: string
+        createdByUserName:
+          type: string
+          description: "Display name of the user who created the experiment. Reports\
+            \ \"System\" for the system user and \"unknown\" when the user cannot\
+            \ be resolved or has no name set, so the value is never empty."
+          example: Admin User
+        creationDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        goals:
+          $ref: "#/components/schemas/Goals"
+        id:
+          type: string
+        lastModifiedBy:
+          type: string
+        lookBackWindowExpireTime:
+          type: integer
+          format: int64
+        modDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+        pageId:
+          type: string
+        runningIds:
+          $ref: "#/components/schemas/RunningIds"
+        scheduling:
+          $ref: "#/components/schemas/Scheduling"
+        status:
+          type: string
+          enum:
+          - RUNNING
+          - SCHEDULED
+          - ENDED
+          - DRAFT
+          - ARCHIVED
+        targetingConditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TargetingCondition"
+        trafficAllocation:
+          type: number
+          format: float
+        trafficProportion:
+          $ref: "#/components/schemas/TrafficProportion"
     ExportSecretForm:
       type: object
       properties:
@@ -33622,6 +33723,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityBulkUploadSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BulkUploadSubmitResponse"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityBundleListView:
       type: object
       properties:
@@ -34327,7 +34451,7 @@ components:
         entity:
           type: array
           items:
-            $ref: "#/components/schemas/Experiment"
+            $ref: "#/components/schemas/ExperimentView"
         errors:
           type: array
           items:
@@ -35927,7 +36051,7 @@ components:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/Experiment"
+          $ref: "#/components/schemas/ExperimentView"
         errors:
           type: array
           items:

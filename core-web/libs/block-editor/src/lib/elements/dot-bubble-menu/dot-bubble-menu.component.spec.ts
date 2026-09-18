@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -20,30 +21,30 @@ import { DotBubbleMenuComponent } from './dot-bubble-menu.component';
  */
 function makeOrderedEditorChainSpy(editor: Editor) {
     const callOrder: string[] = [];
-    const runSpy = jest.fn();
+    const runSpy = vi.fn();
 
-    const chain: Record<string, jest.Mock> = {
-        focus: jest.fn(() => {
+    const chain: Record<string, Mock> = {
+        focus: vi.fn(() => {
             callOrder.push('focus');
 
             return chain;
         }),
-        unsetSubscript: jest.fn(() => {
+        unsetSubscript: vi.fn(() => {
             callOrder.push('unsetSubscript');
 
             return chain;
         }),
-        unsetSuperscript: jest.fn(() => {
+        unsetSuperscript: vi.fn(() => {
             callOrder.push('unsetSuperscript');
 
             return chain;
         }),
-        toggleSuperscript: jest.fn(() => {
+        toggleSuperscript: vi.fn(() => {
             callOrder.push('toggleSuperscript');
 
             return chain;
         }),
-        toggleSubscript: jest.fn(() => {
+        toggleSubscript: vi.fn(() => {
             callOrder.push('toggleSubscript');
 
             return chain;
@@ -51,7 +52,7 @@ function makeOrderedEditorChainSpy(editor: Editor) {
         run: runSpy
     };
 
-    jest.spyOn(editor, 'chain').mockReturnValue(chain as never);
+    vi.spyOn(editor, 'chain').mockReturnValue(chain as never);
 
     return { chain, callOrder, runSpy };
 }

@@ -5,6 +5,7 @@ import { DotExperiment, DotExperimentStatus, GOAL_TYPES } from '@dotcms/dotcms-m
 
 import {
     DotExperimentsListPageChange,
+    DotExperimentsListPanelScope,
     DotExperimentsListSortChange,
     DotExperimentsListViewState
 } from '../shared/models';
@@ -40,6 +41,33 @@ export const dotExperimentsListPageEvents = eventGroup({
         pageChanged: type<DotExperimentsListPageChange>(),
         sortChanged: type<DotExperimentsListSortChange>(),
         hydratedFromUrl: type<DotExperimentsListViewState>(),
+
+        /**
+         * Drops the page narrowing, whichever way it arrived — by identifier or by path.
+         *
+         * The narrowing otherwise has exactly one writer, the address (`hydratedFromUrl`), and no
+         * control on the screen widens a page filter that is *working*: the page-scoped empty state
+         * offers to create an experiment for the page instead, which is the help that case wants.
+         * This exists for the other case — a narrowing that matched nothing, where the list is a
+         * dead end and clearing it is the only way out. The empty state's own button is the only
+         * caller.
+         */
+        pageNarrowingCleared: type<void>(),
+
+        /**
+         * The panel is now about this page (#37478).
+         *
+         * Dispatched on open and again whenever the editor navigates to another page. It carries
+         * the language only as the return context the variant round trip needs — the language
+         * never narrows the list, because an experiment belongs to a page and not to a language
+         * version of one (FR-034, FR-034a, D10).
+         *
+         * Distinct from `hydratedFromUrl` on purpose even though both replace the whole view
+         * state: that one means "the address said so" and is the portlet's only writer, and
+         * collapsing them would put the panel's re-scope on the address-backed path this work
+         * exists to keep it off (FR-031).
+         */
+        scopedToPage: type<DotExperimentsListPanelScope>(),
 
         // Site
         siteChanged: type<string | null>(),

@@ -15,6 +15,7 @@ import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { AngularAssetPickerLauncher, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
@@ -28,6 +29,7 @@ import { DotExperimentConfigurePage } from '../../../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../../../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
+import { toConfigurePage } from '../../../util/dot-experiments-configure.util';
 import {
     DotExperimentsChangePageDialogComponent,
     DotExperimentsChangePageDialogInputs,
@@ -98,6 +100,16 @@ export class DotExperimentsConfigurePageComponent {
     readonly store = inject(DotExperimentsConfigureStore);
 
     /** The page the experiment runs on, whether it was picked here or resolved from the URL. */
+    /**
+     * Whether the card is rendering inside the UVE panel (#37478).
+     *
+     * There the page is not a choice: it is the page open in the editor, and the panel is scoped
+     * to it. Letting it be changed here would point the experiment at a page the editor is not
+     * looking at, and leave the panel listing one page's experiments while configuring another's
+     * (FR-014, D12).
+     */
+    protected readonly $inPanel = !!inject(DotExperimentsPanelStore, { optional: true });
+
     protected readonly $selectedPage = computed<DotExperimentConfigurePage | null>(() =>
         this.store.selectedPage()
     );
@@ -198,6 +210,16 @@ export class DotExperimentsConfigurePageComponent {
      * interacting with.
      */
     #awaitingPageChange = false;
+
+    /**
+     * Why the experiment's page could not be resolved, or `null` when there is nothing to report.
+     *
+     * The store has always recorded this; nothing rendered it, so a page that had been deleted
+     * fell through to the card's empty state and read as "no page was ever chosen" (#37005).
+     */
+    protected readonly $pageUnresolved = computed<string | null>(() =>
+        this.store.selectedPage() ? null : this.store.pagePrefillError()
+    );
 
     constructor() {
         this.#closeConfirmationWhenVariantsAreGone();
@@ -362,11 +384,10 @@ export class DotExperimentsConfigurePageComponent {
                     return;
                 }
 
-                this.#dispatch.pageSelected({
-                    pageId: page.identifier,
-                    title: page.title,
-                    path: page.url
-                });
+                // Via `toConfigurePage` rather than an inline literal so the picker's page and a
+                // prefilled/loaded one are narrowed the same way — including `languageId`, which
+                // the variant deep link needs and which is easy to forget in a second mapping.
+                this.#dispatch.pageSelected(toConfigurePage(page));
             });
     }
 }

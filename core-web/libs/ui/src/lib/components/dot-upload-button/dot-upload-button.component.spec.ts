@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
@@ -79,7 +80,7 @@ describe('DotUploadButtonComponent', () => {
 
     describe('output', () => {
         it('should emit the originating click', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('upload').subscribe(handler);
 
             spectator.click(getButton());

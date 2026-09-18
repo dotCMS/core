@@ -119,6 +119,18 @@ export const dotExperimentsConfigureApiEvents = eventGroup({
         // The lookup itself was rejected, so whether the page exists is unknown. Kept apart from
         // `pagePrefillFailed` because the two need different copy, and only this one is an error
         // to report.
-        pagePrefillLookupFailed: type<unknown>()
+        pagePrefillLookupFailed: type<unknown>(),
+
+        /**
+         * A page change, persisted on its own the moment it is confirmed rather than waiting for
+         * Save Draft.
+         *
+         * It cannot wait: the server accepts `pageId` only while the experiment's variants are the
+         * control alone, so the precondition expires the instant a variant is added. Deferring the
+         * write left the card showing one page and the experiment sitting on another, with no PATCH
+         * able to reconcile them (#37005).
+         */
+        pageChangeSucceeded: type<DotExperiment>(),
+        pageChangeFailed: type<unknown>()
     }
 });

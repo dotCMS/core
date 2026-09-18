@@ -26,6 +26,15 @@
                         {{ page.path }}
                     </span>
                 </div>
+            } @else if ($pageUnresolved(); as reasonKey) {
+                <!-- A page WAS chosen and cannot be resolved — the store recorded why. Saying
+                     "Select a Page to test" here would claim nobody ever picked one, which is the
+                     opposite of the truth and leaves a refused Preview unexplained (#37005). -->
+                <span
+                    class="text-sm text-orange-700"
+                    data-testid="experiments-configure-page-unresolved">
+                    {{ reasonKey | dm }}
+                </span>
             } @else {
                 <span
                     class="text-sm text-surface-500"
@@ -33,25 +42,33 @@
                     {{ 'experiments.configure.page.empty' | dm }}
                 </span>
             }
-            <!-- One button either way, and the label is the whole difference: with a page in
+            @if ($inPanel) {
+                <small
+                    class="p-field-hint ml-auto flex-none"
+                    data-testid="experiments-configure-page-fixed-hint">
+                    {{ 'experiments.configure.page.fixed-in-panel' | dm }}
+                </small>
+            } @else {
+                <!-- One button either way, and the label is the whole difference: with a page in
                      place the gesture is to change it, not to empty the card and pick again. -->
-            <p-button
-                type="button"
-                class="ml-auto flex-none"
-                size="small"
-                severity="secondary"
-                [outlined]="true"
-                [label]="
-                    ($selectedPage()
-                        ? 'experiments.configure.page.action.change'
-                        : 'experiments.configure.page.action.select'
-                    ) | dm
-                "
-                [disabled]="$isPageActionDisabled()"
-                [pTooltip]="$pageActionTooltipKey() ? ($pageActionTooltipKey()! | dm) : ''"
-                tooltipPosition="top"
-                (onClick)="onChangePage()"
-                data-testid="experiments-configure-page-select-btn" />
+                <p-button
+                    type="button"
+                    class="ml-auto flex-none"
+                    size="small"
+                    severity="secondary"
+                    [outlined]="true"
+                    [label]="
+                        ($selectedPage()
+                            ? 'experiments.configure.page.action.change'
+                            : 'experiments.configure.page.action.select'
+                        ) | dm
+                    "
+                    [disabled]="$isPageActionDisabled()"
+                    [pTooltip]="$pageActionTooltipKey() ? ($pageActionTooltipKey()! | dm) : ''"
+                    tooltipPosition="top"
+                    (onClick)="onChangePage()"
+                    data-testid="experiments-configure-page-select-btn" />
+            }
         </div>
 
         <!-- Allocation only means something once there is a page to take traffic from, so it

@@ -20,7 +20,10 @@
             (buttonAction)="onRetry()" />
     </div>
 } @else {
-    <p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
+    <p-toolbar
+        class="justify-start gap-1 border-x-0! border-t-0!"
+        [class.px-3]="!$inPanel"
+        [class.px-5!]="$inPanel">
         <div class="flex w-full items-center gap-2 py-3">
             <p-iconField iconPosition="left">
                 <p-inputIcon>
@@ -81,11 +84,9 @@
             <div class="flex min-h-0 flex-1 items-center justify-center p-6">
                 <dot-empty-container
                     [configuration]="$emptyConfiguration()"
-                    [buttonLabel]="
-                        $hasActiveFilters() ? ('experiments.list.no-results.clear' | dm) : ''
-                    "
+                    [buttonLabel]="$emptyActionLabel()"
                     [secondaryButton]="true"
-                    (buttonAction)="onClearFilters()"
+                    (buttonAction)="onEmptyAction()"
                     [hideContactUsLink]="true"
                     data-testid="experiments-empty-state" />
             </div>
@@ -117,10 +118,12 @@
                             {{ 'experiments.list.header.name' | dm }}
                             <p-sortIcon field="name" />
                         </th>
-                        <th class="w-56" pSortableColumn="page">
-                            {{ 'experiments.list.header.page' | dm }}
-                            <p-sortIcon field="page" />
-                        </th>
+                        @if (!$inPanel) {
+                            <th class="w-56" pSortableColumn="page">
+                                {{ 'experiments.list.header.page' | dm }}
+                                <p-sortIcon field="page" />
+                            </th>
+                        }
                         <th class="w-44 whitespace-nowrap" pSortableColumn="goal">
                             {{ 'experiments.list.header.goal' | dm }}
                             <p-sortIcon field="goal" />
@@ -182,12 +185,14 @@
                                     }
                                 </div>
                             </td>
-                            <td
-                                class="max-w-56 truncate font-mono text-sm"
-                                [title]="row.pagePath"
-                                data-testid="experiment-page">
-                                {{ row.pagePath }}
-                            </td>
+                            @if (!$inPanel) {
+                                <td
+                                    class="max-w-56 truncate font-mono text-sm"
+                                    [title]="row.pagePath"
+                                    data-testid="experiment-page">
+                                    {{ row.pagePath }}
+                                </td>
+                            }
                             <td class="whitespace-nowrap" data-testid="experiment-goal">
                                 {{
                                     row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER
@@ -213,10 +218,13 @@
                                 (keydown)="$event.stopPropagation()">
                                 <div
                                     class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+                                    <!-- Square, so `[rounded]` reads as a circle rather than a
+                                         pill — see the configuration header's kebab. -->
                                     <p-button
                                         [text]="true"
                                         [rounded]="true"
                                         size="small"
+                                        styleClass="w-9 h-9 min-w-9 p-0"
                                         (onClick)="
                                             onRowMenuToggle(row.experiment); rowMenu.toggle($event)
                                         "

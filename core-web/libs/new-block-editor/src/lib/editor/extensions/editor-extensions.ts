@@ -4,7 +4,7 @@ import type { Injector } from '@angular/core';
 
 import { flattenExtensions, type AnyExtension, type Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
-import Emoji, { emojis } from '@tiptap/extension-emoji';
+import { emojis } from '@tiptap/extension-emoji';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
@@ -16,6 +16,7 @@ import StarterKit from '@tiptap/starter-kit';
 import type { DotMessageService } from '@dotcms/data-access';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
+import { createDotEmoji } from './dot-emoji.extension';
 import { IndentExtension } from './indent.extension';
 import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
@@ -56,13 +57,16 @@ export function createEditorExtensions(
             )
     };
     /**
-     * Only gate a REGISTRATION with this if the key is selectable in Allowed Blocks — that
-     * list comes from `getEditorBlockOptions()`, which offers block nodes only. `link`,
-     * `emoji` and `youtube` are not in it, so gating them dropped the extension on every
-     * restricted field instead of restricting anything: `link` (a mark) aborted
-     * `Node.fromJSON` for the whole document, `emoji`/`youtube` resurfaced as
-     * `Unsupported block (…)`. Those three are registered unconditionally and gate their
-     * authoring paths instead (#37175).
+     * Only gate with this if the key is selectable in Allowed Blocks — that list comes from
+     * `getEditorBlockOptions()`, which offers block nodes only. `link`, `emoji` and `youtube`
+     * are not in it, so gating their REGISTRATION dropped the extension on every restricted
+     * field instead of restricting anything: `link` (a mark) aborted `Node.fromJSON` for the
+     * whole document, `emoji`/`youtube` resurfaced as `Unsupported block (…)` (#37175).
+     *
+     * The same reasoning applies to their AUTHORING paths, which #37175 left gated: a key the
+     * settings UI cannot produce is never a configuration, only a misfire. `emoji` was ungated
+     * in #37340 and `link` in #36351; both are now unconditional. `youtube` is the last of the
+     * three still gated (its "Add asset by URL" tab) — a known defect, tracked separately.
      */
     const has = (name: string): boolean => !allowedBlocks || allowedBlocks.includes(name);
 
@@ -126,12 +130,17 @@ export function createEditorExtensions(
               ]
             : []),
         ...(has('image') ? [DotImage] : []),
-        // Always registered — see `has()`. Authoring gate: toolbar button + the two flags below.
+        // Always registered — see `has()` — and never gated at all (#36351). `link` is not
+        // selectable in Allowed Blocks, so the old `has('link')` gate on the two flags below was
+        // true ONLY on an unrestricted field: restricting any block silently killed auto-linking
+        // and link-on-paste, and hid the toolbar button, with no admin having chosen it.
+        // Passed explicitly rather than left to the upstream defaults so a TipTap bump cannot
+        // reintroduce the reported defect.
         DotLink.configure({
             openOnClick: false,
             enableClickSelection: true,
-            autolink: has('link'),
-            linkOnPaste: has('link'),
+            autolink: true,
+            linkOnPaste: true,
             HTMLAttributes: {
                 rel: 'noopener noreferrer',
                 target: '_self'
@@ -166,21 +175,19 @@ export function createEditorExtensions(
         // `aiContent` block — still parses and renders. Removing it would silently drop
         // those blocks on load. See `ai-content.extension.ts` for details.
         AIContent,
-        // Always registered — see `has()`. Authoring gate: toolbar button + `enableEmoticons`.
-        // The `:` suggestion trigger is inert by design; insertion goes through the popover.
-        Emoji.configure({
+        // Always registered, and NOTHING creates an `emoji` node any more — the registration
+        // exists so stored nodes still parse, and so `:shortcode:`/`:)` can resolve a character.
+        // See `dot-emoji.extension.ts` for the full reasoning (#37340).
+        //
+        // `enableEmoticons` is no longer gated on `has('emoji')`: `emoji` is not selectable in
+        // Allowed Blocks at all (`getEditorBlockOptions()` offers block nodes only, #37175), so
+        // that gate was true ONLY on fields with no restriction — silently removing `:)` from
+        // every field that restricted anything else. Nobody configured that.
+        //
+        // The inert `suggestion` block is gone with the Suggestion plugin it configured.
+        createDotEmoji(menuService).configure({
             emojis,
-            enableEmoticons: has('emoji'),
-            suggestion: {
-                char: ':',
-                items: () => [],
-                render: () => ({
-                    onStart: () => undefined,
-                    onUpdate: () => undefined,
-                    onKeyDown: () => false,
-                    onExit: () => undefined
-                })
-            }
+            enableEmoticons: true
         }),
         SelectionPreserveExtension,
         createSlashCommandExtension(menuService)

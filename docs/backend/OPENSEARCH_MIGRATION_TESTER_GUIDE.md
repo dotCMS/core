@@ -208,11 +208,12 @@ The default phase in this stack is **Phase 1** (`DOT_FEATURE_FLAG_OPEN_SEARCH_PH
 different phase, edit that value in `docker-compose.yml` and restart dotCMS
 (`docker compose up -d dotcms`).
 
-> **Elasticsearch variant.** If you specifically need the source engine to be **real Elasticsearch
-> 7.10** instead of OpenSearch 1.x, there is a second stack at
-> `docker/docker-compose-examples/os-migration/`. It brings up ES 7.10 + Kibana and OpenSearch 3.x +
-> Dashboards on one network, but it does **not** include dotCMS or the database — you run dotCMS yourself
-> and point it at that stack. Use the self-contained stack above for everything else.
+> **If you need the source engine to be real Elasticsearch.** There is no second stack for that — the
+> lab has always been OpenSearch 1.x → 3.x. It exercises the same code path: dotCMS reaches both
+> Elasticsearch 7.x and OpenSearch 1.x through the same legacy client, and it is the *target* engine
+> that gets the new one. So the source being OpenSearch 1.3 is a faithful stand-in for either. If a
+> test genuinely depends on an Elasticsearch-only behaviour, point a dotCMS you run yourself at an
+> Elasticsearch instance of your own and use the lab's `opensearch3` service as the target.
 
 ---
 

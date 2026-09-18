@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
@@ -45,29 +51,29 @@ describe('DotAiSearchComponent', () => {
     let spectator: Spectator<DotAiSearchComponent>;
 
     const storeMock = {
-        searchPrompt: jest.fn().mockReturnValue(''),
-        searchResponse: jest.fn().mockReturnValue(null),
-        searchResults: jest.fn().mockReturnValue([]),
-        searchMissingIndex: jest.fn().mockReturnValue(null),
-        isSearching: jest.fn().mockReturnValue(false),
-        hasSearched: jest.fn().mockReturnValue(false),
-        isConfigured: jest.fn().mockReturnValue(true),
-        showNotConfigured: jest.fn().mockReturnValue(false),
-        setSearchPrompt: jest.fn(),
-        runSearch: jest.fn(),
+        searchPrompt: vi.fn().mockReturnValue(''),
+        searchResponse: vi.fn().mockReturnValue(null),
+        searchResults: vi.fn().mockReturnValue([]),
+        searchMissingIndex: vi.fn().mockReturnValue(null),
+        isSearching: vi.fn().mockReturnValue(false),
+        hasSearched: vi.fn().mockReturnValue(false),
+        isConfigured: vi.fn().mockReturnValue(true),
+        showNotConfigured: vi.fn().mockReturnValue(false),
+        setSearchPrompt: vi.fn(),
+        runSearch: vi.fn(),
         // Read by the settings panel, which is a real child of this component.
-        indexesForbidden: jest.fn().mockReturnValue(false),
-        indexOptions: jest.fn().mockReturnValue([]),
-        chatModels: jest.fn().mockReturnValue([]),
-        settingsIndexName: jest.fn().mockReturnValue('default'),
-        settingsThreshold: jest.fn().mockReturnValue(0.75),
-        settingsOperator: jest.fn().mockReturnValue('cosine'),
-        settingsModel: jest.fn().mockReturnValue(''),
-        settingsTemperature: jest.fn().mockReturnValue(0),
-        settingsResponseLength: jest.fn().mockReturnValue(1024),
-        settingsContentTypes: jest.fn().mockReturnValue(''),
-        settingsSite: jest.fn().mockReturnValue(null),
-        setSettings: jest.fn()
+        indexesForbidden: vi.fn().mockReturnValue(false),
+        indexOptions: vi.fn().mockReturnValue([]),
+        chatModels: vi.fn().mockReturnValue([]),
+        settingsIndexName: vi.fn().mockReturnValue('default'),
+        settingsThreshold: vi.fn().mockReturnValue(0.75),
+        settingsOperator: vi.fn().mockReturnValue('cosine'),
+        settingsModel: vi.fn().mockReturnValue(''),
+        settingsTemperature: vi.fn().mockReturnValue(0),
+        settingsResponseLength: vi.fn().mockReturnValue(1024),
+        settingsContentTypes: vi.fn().mockReturnValue(''),
+        settingsSite: vi.fn().mockReturnValue(null),
+        setSettings: vi.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -86,7 +92,7 @@ describe('DotAiSearchComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         storeMock.searchPrompt.mockReturnValue('');
         storeMock.searchResponse.mockReturnValue(null);
         storeMock.searchResults.mockReturnValue([]);
@@ -257,7 +263,12 @@ describe('DotAiSearchComponent', () => {
         it('should share one set of edges between the field and the results', () => {
             // Chat and Image both centre their content in a `container mx-auto` column;
             // without it Search spanned the full pane and its field did not line up with
-            // the results underneath.
+            // the results underneath. Asserted with results on screen, since the empty states
+            // deliberately sit outside that column — see the next test.
+            storeMock.hasSearched.mockReturnValue(true);
+            storeMock.searchResults.mockReturnValue([result()]);
+            spectator = createComponent();
+
             const field = spectator.query(byTestId('dotai-search-input'))?.closest('.container');
             const results = spectator
                 .query(byTestId('dotai-search-scroll'))
@@ -265,6 +276,20 @@ describe('DotAiSearchComponent', () => {
 
             expect(field?.className).toContain('mx-auto');
             expect(results?.className).toContain('mx-auto');
+        });
+
+        it('should keep the empty states out of that column so they can centre', () => {
+            // dot-empty-container centres itself with `h-full`, and a percentage height needs
+            // a parent that has one. `container mx-auto` is auto-height, so nested there the
+            // state pinned itself to the top of an otherwise blank pane.
+            spectator = createComponent();
+
+            const scroll = spectator.query(byTestId('dotai-search-scroll'));
+            const empty = spectator.query(byTestId('dotai-search-empty-first-run'));
+
+            expect(empty).toBeTruthy();
+            expect(empty?.closest('.container')).toBeNull();
+            expect(empty?.parentElement).toBe(scroll);
         });
 
         it('should keep the meta line in the same column as the field', () => {

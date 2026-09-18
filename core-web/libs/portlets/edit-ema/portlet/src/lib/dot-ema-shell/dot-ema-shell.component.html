@@ -49,6 +49,10 @@
         (action)="handleItemAction($event)"
         data-testId="ema-nav-bar" />
 </div>
+@if (experimentsPanel.isOpen() && $experimentsPanelComponent(); as panel) {
+    <ng-container *ngComponentOutlet="panel" />
+}
+
 <p-toast position="top-center" data-testId="ema-toast" />
 <dot-page-tools-seo
     [currentPageUrlParams]="$seoParams()"

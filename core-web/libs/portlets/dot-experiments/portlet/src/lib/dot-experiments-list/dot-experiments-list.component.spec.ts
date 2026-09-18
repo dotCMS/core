@@ -1,5 +1,11 @@
 import { Dispatcher, EventCreator } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter, Router } from '@angular/router';
@@ -17,10 +23,13 @@ import {
     GOAL_TYPES,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -28,7 +37,10 @@ import {
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    LIST_TABLE_STYLE,
+    PANEL_LIST_TABLE_STYLE,
     ROWS_PER_PAGE_OPTIONS,
+    SKELETON_COLUMNS,
     SEARCH_DEBOUNCE_MS
 } from '../shared/constants';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
@@ -38,6 +50,12 @@ import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 const PAGE_ID = 'page-1';
 
 const PAGE_INFO = { [PAGE_ID]: { url: '/blog/index', host: 'host-1' } };
+
+/** Shown on the chip when the filtered page can no longer be resolved. */
+const PAGE_UNAVAILABLE_COPY = 'This page is no longer available';
+
+/** The page-scoped empty state's one affordance. */
+const CREATE_FOR_PAGE_COPY = 'Create an Experiment for this Page';
 
 const EMPTY_GOAL_COUNTS: Record<GOAL_TYPES, number> = {
     [GOAL_TYPES.REACH_PAGE]: 0,
@@ -66,6 +84,7 @@ const experimentWith = (status: DotExperimentStatus): DotExperiment => ({
 /** Kebab item ids, as declared by the component. */
 const MENU_ITEM = {
     configure: 'experiments-configure',
+    results: 'experiments-view-results',
     archive: 'experiments-archive',
     restore: 'experiments-restore',
     cancelSchedule: 'experiments-cancel-schedule',
@@ -98,7 +117,14 @@ const ERROR_COPY = {
     subtitle: 'Failed to retrieve experiments data'
 };
 
+const LIST_TITLE_COPY = 'Experiments List';
+
 const messageServiceMock = new MockDotMessageService({
+    'experiment.container.list.title': LIST_TITLE_COPY,
+    'experiments.list.page-filter.unavailable': PAGE_UNAVAILABLE_COPY,
+    'experiments.list.empty.page.title': 'No Experiments on this Page',
+    'experiments.list.empty.page.description': 'Nothing is running on {0} yet.',
+    'experiments.list.empty.page.action': CREATE_FOR_PAGE_COPY,
     'experiments.analytics-app-no-configured.title': NOT_CONFIGURED_COPY.title,
     'experiments.analytics-app-no-configured.subtitle': NOT_CONFIGURED_COPY.subtitle,
     'experiments.analytics-app-misconfiguration.title': MISCONFIGURATION_COPY.title,
@@ -118,33 +144,54 @@ const messageServiceMock = new MockDotMessageService({
 
 /**
  * The store is provided by the component itself, so it is replaced through
- * `componentProviders`. Signals are plain `jest.fn()` return values: the component only
+ * `componentProviders`. Signals are plain `vi.fn()` return values: the component only
  * reads them, and every test decides the values before the component is created.
  */
 const createStoreMock = () => ({
-    healthStatus: jest.fn().mockReturnValue(HealthStatusTypes.OK),
-    isMisconfigured: jest.fn().mockReturnValue(false),
-    pagedExperiments: jest.fn().mockReturnValue([] as DotExperiment[]),
-    pageInfoByPageId: jest.fn().mockReturnValue(PAGE_INFO),
-    statusCounts: jest.fn().mockReturnValue(EMPTY_STATUS_COUNTS),
-    selectedStatuses: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_STATUSES),
-    goalCounts: jest.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
-    selectedGoals: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
-    filter: jest.fn().mockReturnValue(''),
-    status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
-    page: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
-    perPage: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
-    orderBy: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
-    direction: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_DIRECTION),
-    totalRecords: jest.fn().mockReturnValue(0)
+    healthStatus: vi.fn().mockReturnValue(HealthStatusTypes.OK),
+    isMisconfigured: vi.fn().mockReturnValue(false),
+    pagedExperiments: vi.fn().mockReturnValue([] as DotExperiment[]),
+    pageInfoByPageId: vi.fn().mockReturnValue(PAGE_INFO),
+    statusCounts: vi.fn().mockReturnValue(EMPTY_STATUS_COUNTS),
+    selectedStatuses: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_STATUSES),
+    goalCounts: vi.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
+    selectedGoals: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
+    filter: vi.fn().mockReturnValue(''),
+    selectedPageId: vi.fn().mockReturnValue(null),
+    selectedPageUrl: vi.fn().mockReturnValue(null),
+    languageId: vi.fn().mockReturnValue(null),
+    status: vi.fn().mockReturnValue(ComponentStatus.LOADED),
+    page: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
+    perPage: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
+    orderBy: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
+    direction: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_DIRECTION),
+    totalRecords: vi.fn().mockReturnValue(0)
 });
 
 describe('DotExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
+    /** Where the trail is written; the component only ever appends its own crumb. */
+    let globalStore: {
+        addNewBreadcrumb: Mock;
+        setLastBreadcrumb: Mock;
+        lastBreadcrumb: Mock;
+    };
     let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
-    let confirm: jest.SpyInstance;
-    let navigate: jest.SpyInstance;
+    /**
+     * Panel mode is the *presence* of this store, so it is provided either way and holds `null`
+     * for the portlet — exactly the `#panel === null` the contract tests. A per-test provider
+     * override cannot be used: TestBed is already instantiated by the time a test runs.
+     */
+    let panelStore: {
+        pageId: Mock;
+        languageId: Mock;
+        showConfigure: Mock;
+        showResults: Mock;
+        showCreate: Mock;
+    } | null;
+    let dispatch: MockInstance;
+    let confirm: MockInstance;
+    let navigate: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsListComponent,
@@ -152,6 +199,11 @@ describe('DotExperimentsListComponent', () => {
         // `ConfirmationService` has to be re-declared here (`p-confirmDialog` needs it).
         componentProviders: [
             { provide: DotExperimentsListStore, useFactory: () => storeMock },
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
+            // The real one, not a mock: these tests assert where a door leads, and the service is
+            // the thing that decides. Mocking it would leave them asserting that a method was
+            // called.
+            DotExperimentsRouter,
             ConfirmationService
         ],
         providers: [
@@ -159,7 +211,10 @@ describe('DotExperimentsListComponent', () => {
             provideLocationMocks(),
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotMessageDisplayService),
-            mockProvider(DotPushPublishDialogService)
+            mockProvider(DotPushPublishDialogService),
+            // Not `mockProvider`: `GlobalStore` is a signal store, so its methods live on the
+            // instance rather than the prototype and Spectator's auto-mock finds none of them.
+            { provide: GlobalStore, useFactory: () => globalStore }
         ],
         detectChanges: false
     });
@@ -226,26 +281,33 @@ describe('DotExperimentsListComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        panelStore = null;
+        globalStore = {
+            addNewBreadcrumb: vi.fn(),
+            setLastBreadcrumb: vi.fn(),
+            lastBreadcrumb: vi.fn().mockReturnValue(null)
+        };
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
+
         // `p-confirmDialog` needs the real service (it subscribes to its streams), so the
         // confirmation is intercepted instead of mocked away.
         const confirmationService = spectator.inject(ConfirmationService, true);
-        confirm = jest
+        confirm = vi
             .spyOn(confirmationService, 'confirm')
-            .mockReturnValue(confirmationService) as jest.SpyInstance;
+            .mockReturnValue(confirmationService) as MockInstance;
         // The Configure screen is a real route of the portlet, so navigation is intercepted
         // rather than let through to a component this spec does not render.
-        navigate = jest.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+        navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('search', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         const type = (text: string) =>
             spectator.typeInElement(
@@ -268,7 +330,7 @@ describe('DotExperimentsListComponent', () => {
             // It settles a Resource, so the timer alone is not enough — microtasks have to
             // drain too, hence the async variant. The dispatch then lands in an effect on the
             // next pass, rather than inside the timer callback as the rxjs version did.
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             expect(dispatchedEvents()).toContainEqual(
@@ -284,7 +346,7 @@ describe('DotExperimentsListComponent', () => {
 
             type('summer');
             spectator.detectChanges();
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             expect(dispatchedEvents()).not.toContainEqual(
@@ -384,7 +446,7 @@ describe('DotExperimentsListComponent', () => {
             }
         );
 
-        // One status per test: the store mock's signals are plain `jest.fn()`s, so a second
+        // One status per test: the store mock's signals are plain `vi.fn()`s, so a second
         // `renderRowWith` in the same test would not recompute the row.
         it('should offer archive in the kebab once the experiment has ended', () => {
             renderRowWith(DotExperimentStatus.ENDED);
@@ -471,7 +533,9 @@ describe('DotExperimentsListComponent', () => {
 
                 clickRow();
 
-                expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results']);
+                expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results'], {
+                    queryParams: {}
+                });
             }
         );
 
@@ -484,7 +548,10 @@ describe('DotExperimentsListComponent', () => {
 
             clickRow();
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'configuration']);
+            expect(navigate).toHaveBeenCalledWith(
+                ['/experiments', experiment.id, 'configuration'],
+                { queryParams: {} }
+            );
         });
 
         it('should open the row from the keyboard', () => {
@@ -494,7 +561,9 @@ describe('DotExperimentsListComponent', () => {
             spectator.dispatchKeyboardEvent(row, 'keydown', 'Enter');
             spectator.detectChanges();
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results']);
+            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results'], {
+                queryParams: {}
+            });
         });
 
         it('should not navigate when the kebab is opened', () => {
@@ -518,12 +587,56 @@ describe('DotExperimentsListComponent', () => {
             expect(visibleMenuItemIds()[0]).toBe(MENU_ITEM.configure);
         });
 
+        /**
+         * Every door out of a narrowed list carries the narrowing (#37005, FR-021c).
+         *
+         * Whatever the editor opens from here has to be able to come back to the list they were
+         * looking at. Without the filter travelling, the screen they open has no way to know it
+         * was reached from one page's list, and its back arrow drops them on every experiment on
+         * the site.
+         */
+        it.each([
+            [
+                'the row itself',
+                () => spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement)
+            ],
+            ['the kebab Configure entry', () => runMenuItem(MENU_ITEM.configure)]
+        ])('should carry the page filter when opening Configure from %s', (_label, open) => {
+            const experiment = renderRowWith(DotExperimentStatus.DRAFT);
+            storeMock.selectedPageId.mockReturnValue('page-1');
+            storeMock.languageId.mockReturnValue(2);
+            spectator.detectChanges();
+
+            open();
+
+            expect(navigate).toHaveBeenCalledWith(
+                ['/experiments', experiment.id, 'configuration'],
+                { queryParams: { pageId: 'page-1', language_id: 2 } }
+            );
+        });
+
+        it('should carry the page filter when opening Results', () => {
+            const experiment = renderRowWith(DotExperimentStatus.RUNNING);
+            storeMock.selectedPageId.mockReturnValue('page-1');
+            storeMock.languageId.mockReturnValue(2);
+            spectator.detectChanges();
+
+            runMenuItem(MENU_ITEM.results);
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'results'], {
+                queryParams: { pageId: 'page-1', language_id: 2 }
+            });
+        });
+
         it('should open the Configure screen of the row', () => {
             const experiment = renderRowWith(DotExperimentStatus.RUNNING);
 
             runMenuItem(MENU_ITEM.configure);
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments', experiment.id, 'configuration']);
+            expect(navigate).toHaveBeenCalledWith(
+                ['/experiments', experiment.id, 'configuration'],
+                { queryParams: {} }
+            );
         });
     });
 
@@ -543,7 +656,23 @@ describe('DotExperimentsListComponent', () => {
 
             clickButton('experiments-new');
 
-            expect(navigate).toHaveBeenCalledWith(['/experiments', 'new']);
+            expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], { queryParams: {} });
+        });
+
+        // #37005, FR-024. Arriving from UVE the list is already narrowed to the page the editor
+        // came from, and the toolbar's New is the button they reach for. Sending it to an empty
+        // picker asks them to find, by hand, the page they were standing on a click ago.
+        it('should carry the filtered page and its language into the creation screen', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+            storeMock.selectedPageId.mockReturnValue('page-1');
+            storeMock.languageId.mockReturnValue(2);
+            spectator.detectChanges();
+
+            clickButton('experiments-new');
+
+            expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
+                queryParams: { pageId: 'page-1', language_id: 2 }
+            });
         });
     });
 
@@ -640,6 +769,112 @@ describe('DotExperimentsListComponent', () => {
                     message: `Experiment ${experiment.name} ${expectedVerb}`
                 })
             );
+        });
+    });
+
+    /**
+     * The page filter's UI (#37005, US3, FR-021b).
+     *
+     * With the entry-point switch on, an editor arrives here from a page and the list is already
+     * narrowed to it. The narrowing shows in the breadcrumb trail and in the empty state, which
+     * has to name the page and offer to create an experiment for it rather than offer to clear a
+     * filter the editor never set.
+     */
+    describe('page filter', () => {
+        const PAGE_ID = 'page-1';
+
+        const withPageFilter = (pageId: string | null = PAGE_ID) => {
+            storeMock.selectedPageId.mockReturnValue(pageId);
+            spectator.detectChanges();
+        };
+
+        // #37005. Arriving from UVE the trail already ends with the page's own crumb (pushed by
+        // the UVE shell, carrying the editor address). The list has to put its own crumb on top of
+        // it, or the screen keeps rendering the page's name as its title — which is what it did.
+        describe('breadcrumbs', () => {
+            it('should add its own crumb, keeping the page filter in the address', () => {
+                withPageFilter();
+
+                expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        id: 'experiments-list',
+                        label: LIST_TITLE_COPY,
+                        url: `/dotAdmin/#/experiments?pageId=${PAGE_ID}`
+                    })
+                );
+            });
+
+            it('should add a site-wide crumb when the list is not narrowed to a page', () => {
+                withPageFilter(null);
+
+                expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({ url: '/dotAdmin/#/experiments' })
+                );
+            });
+        });
+
+        // FR-021b, zero. The generic "your filters are hiding them" state is wrong here: the
+        // editor did not apply this filter, they arrived with it, and the useful offer is to
+        // create an experiment for the page rather than to clear a filter they did not set.
+        describe('when the filtered page has no experiments', () => {
+            beforeEach(() => {
+                storeMock.pagedExperiments.mockReturnValue([]);
+                storeMock.totalRecords.mockReturnValue(0);
+                withPageFilter();
+            });
+
+            it('should scope the empty state to the page', () => {
+                const empty = spectator.query(byTestId('experiments-empty-state'));
+
+                expect(empty).not.toBeNull();
+                expect(empty?.textContent).toContain(PAGE_INFO[PAGE_ID].url);
+            });
+
+            it('should offer to create an experiment for that page', () => {
+                // The empty container's own action button, so the offer is the one affordance on
+                // the state rather than a second control beside it.
+                const create = spectator.query(byTestId('message-button'));
+
+                expect(create).not.toBeNull();
+                expect(create?.textContent).toContain(CREATE_FOR_PAGE_COPY);
+            });
+
+            it('should carry the page into the creation screen so it arrives prefilled', () => {
+                spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
+
+                expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
+                    queryParams: { pageId: PAGE_ID }
+                });
+            });
+
+            // The language is omitted above because the address the list was opened with carried
+            // none; when it did, it has to travel too, or Configure prefills whichever version of
+            // the page sorts first instead of the one the editor was looking at.
+            it('should carry the editor language when the address brought one', () => {
+                storeMock.languageId.mockReturnValue(2);
+                spectator.detectChanges();
+
+                spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
+
+                expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
+                    queryParams: { pageId: PAGE_ID, language_id: 2 }
+                });
+            });
+        });
+
+        // The spec's last edge case: an editor arrives from a page that has since been deleted.
+        // `pageInfoByPageId` cannot resolve it, so there is no path to name — the empty state has
+        // to say the page is gone rather than read as a page that merely has no experiments.
+        it('should report a filtered page that no longer resolves', () => {
+            storeMock.selectedPageId.mockReturnValue('page-deleted');
+            storeMock.pagedExperiments.mockReturnValue([]);
+            storeMock.totalRecords.mockReturnValue(0);
+            spectator.detectChanges();
+
+            const empty = spectator.query(byTestId('experiments-empty-state'));
+
+            expect(empty).not.toBeNull();
+            expect(empty?.textContent).toContain(PAGE_UNAVAILABLE_COPY);
         });
     });
 
@@ -832,12 +1067,12 @@ describe('DotExperimentsListComponent', () => {
 
     describe('search clear', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             // The component is created without an initial render, so the toolbar has to be
             // rendered before anything can be typed into it.
             spectator.detectChanges();
         });
-        afterEach(() => jest.useRealTimers());
+        afterEach(() => vi.useRealTimers());
 
         const searchInput = () =>
             spectator.query(byTestId('experiments-search-input')) as HTMLInputElement;
@@ -862,7 +1097,7 @@ describe('DotExperimentsListComponent', () => {
 
             // `NgModel` pushes the model back to the input on a microtask, so the DOM value is
             // one tick behind the signal.
-            await jest.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
             spectator.detectChanges();
 
             expect(searchInput().value).toBe('');
@@ -876,7 +1111,7 @@ describe('DotExperimentsListComponent', () => {
             spectator.typeInElement('alpha', searchInput());
             spectator.detectChanges();
             storeMock.filter.mockReturnValue('alpha');
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             spectator.click(spectator.query(byTestId('experiments-search-clear')) as HTMLElement);
@@ -884,7 +1119,7 @@ describe('DotExperimentsListComponent', () => {
 
             // Clearing writes the same signal typing does, so it settles through the debounce
             // rather than dispatching straight away.
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             expect(dispatchedEvents()).toContainEqual(
@@ -1087,6 +1322,32 @@ describe('DotExperimentsListComponent', () => {
             expect(emptyTitle()).toContain('experiments.list.no-results.title');
         });
 
+        /**
+         * `?url=` is the shape of every Universal Visual Editor address, and one pasted into the
+         * list used to be ignored — a request for one page answered with every experiment on the
+         * site. Narrowing to nothing is the honest answer; this is the state that says so.
+         */
+        it('should say nothing matched when the address narrows to a path with no page', () => {
+            storeMock.selectedPageUrl.mockReturnValue('/asdasd');
+            renderEmpty();
+
+            expect(emptyTitle()).toContain('experiments.list.no-results.title');
+            expect(emptyTitle()).toContain('experiments.list.no-results.clear');
+        });
+
+        // Otherwise the button on that state is dead: the search and the chips are already empty,
+        // and the narrowing that is actually hiding everything would survive the press.
+        it('should clear a path narrowing from the empty state', () => {
+            storeMock.selectedPageUrl.mockReturnValue('/asdasd');
+            renderEmpty();
+
+            spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
+
+            expect(dispatchedEvents().map(({ type }) => type)).toContain(
+                dotExperimentsListPageEvents.pageNarrowingCleared.type
+            );
+        });
+
         it('should say nothing matched when only a search term is set', () => {
             storeMock.filter.mockReturnValue('nothing-matches-this');
             renderEmpty();
@@ -1122,6 +1383,310 @@ describe('DotExperimentsListComponent', () => {
 
             // Skeletons, not "no experiments" — the answer is not in yet.
             expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+        });
+    });
+    /**
+     * T023/T023a — the list rendered inside the UVE panel (#37478).
+     *
+     * Panel mode is the presence of `DotExperimentsPanelStore` and nothing else. The screen is the
+     * same one the portlet renders (FR-040): what changes is the layout and the two things the
+     * panel has no business doing — narrowing by a page it already is, and writing a breadcrumb
+     * for a screen the editor never navigated to.
+     */
+    describe('panel mode (#37478)', () => {
+        /** Re-creates the component with the panel store present; the branch is chosen at
+         * injection time, not from an input, so it cannot be flipped on a live component. */
+        const createInPanel = () => {
+            panelStore = {
+                pageId: vi.fn().mockReturnValue(PAGE_ID),
+                languageId: vi.fn().mockReturnValue(1),
+                showConfigure: vi.fn(),
+                showResults: vi.fn(),
+                showCreate: vi.fn()
+            };
+
+            return createComponent({ detectChanges: false });
+        };
+
+        /** Renders one row in the panel. */
+        const renderPanelRow = (status = DotExperimentStatus.DRAFT): DotExperiment => {
+            const experiment = experimentWith(status);
+            storeMock.pagedExperiments.mockReturnValue([experiment]);
+            storeMock.totalRecords.mockReturnValue(1);
+            spectator = createInPanel();
+            spectator.detectChanges();
+
+            return experiment;
+        };
+
+        describe('layout', () => {
+            /**
+             * FR-040, D7, SC-015. The panel renders the portlet's table, not a second list built
+             * beside it: same `p-table`, same rows, same paginator, sorting and lazy load. What
+             * differs is the column set and the width floor that follows from it — a presentation,
+             * which is all D7 allows to vary.
+             */
+            it('should render the same table the portlet does', () => {
+                renderPanelRow();
+
+                expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
+                expect(spectator.queryAll(byTestId('experiment-row'))).toHaveLength(1);
+            });
+
+            /** FR-009. The panel *is* the page, so a column repeating it on every row is noise. */
+            it('should not render the page column', () => {
+                renderPanelRow();
+
+                expect(spectator.query(byTestId('experiment-page'))).toBeNull();
+                expect(spectator.query(byTestId('experiment-name'))).not.toBeNull();
+            });
+
+            /**
+             * The floor has to follow the column set. `81rem` is what the portlet's seven data
+             * columns need; leaving it here would scroll the panel horizontally for a column it no
+             * longer renders.
+             */
+            it('should drop the portlet width floor with the column', () => {
+                renderPanelRow();
+
+                expect(spectator.component.TABLE_STYLE).toEqual(PANEL_LIST_TABLE_STYLE);
+                expect(spectator.component.TABLE_STYLE['min-width']).not.toBe(
+                    LIST_TABLE_STYLE['min-width']
+                );
+            });
+
+            /** A skeleton wider than its header puts a cell outside the table while it loads. */
+            it('should match the skeleton row to the column set', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.component.SKELETON_COLUMNS).toHaveLength(
+                    SKELETON_COLUMNS.length - 1
+                );
+            });
+
+            /**
+             * T023a / FR-041 — the assertion that makes the column set a decision rather than a
+             * coincidence.
+             *
+             * `PANEL_WIDTH` is a proportion of the viewport, so the panel is wider on a large
+             * monitor than on a laptop. Nothing about what it renders may follow from that: the
+             * same build has to drop the same column at 1024px and at 2560px. Asserted from both
+             * sides of the portlet's own 81rem boundary, so a width query cannot pass.
+             */
+            it.each([
+                { label: 'far below the 81rem floor', innerWidth: 1024 },
+                { label: 'far above the 81rem floor', innerWidth: 2560 }
+            ])('should render the same columns at a viewport $label', ({ innerWidth }) => {
+                const original = window.innerWidth;
+                Object.defineProperty(window, 'innerWidth', {
+                    value: innerWidth,
+                    configurable: true
+                });
+
+                try {
+                    renderPanelRow();
+
+                    expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
+                    expect(spectator.query(byTestId('experiment-page'))).toBeNull();
+                    expect(spectator.component.TABLE_STYLE).toEqual(PANEL_LIST_TABLE_STYLE);
+                } finally {
+                    Object.defineProperty(window, 'innerWidth', {
+                        value: original,
+                        configurable: true
+                    });
+                }
+            });
+
+            it('should keep the page column and the portlet floor in portlet mode (FR-042)', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(spectator.query(byTestId('experiment-page'))).not.toBeNull();
+                expect(spectator.component.TABLE_STYLE).toEqual(LIST_TABLE_STYLE);
+            });
+        });
+
+        /**
+         * FR-026–FR-029 and SC-008. Four different answers, and the one that matters is that none
+         * of them is allowed to look like "this page has no experiments" — the misreport that would
+         * quietly tell an editor their work is not there.
+         */
+        describe('the four states stay distinguishable', () => {
+            it('should show skeletons, not the empty state, while loading', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-loading-row'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+            });
+
+            it('should report a failed load with a retry, not as an empty page', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.ERROR);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-error'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+            });
+
+            it('should report a misconfigured analytics app on its own', () => {
+                storeMock.isMisconfigured.mockReturnValue(true);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-misconfiguration'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+            });
+
+            it('should show the empty state only when the page really has none', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADED);
+                storeMock.pagedExperiments.mockReturnValue([]);
+                storeMock.totalRecords.mockReturnValue(0);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-empty-state'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-error'))).toBeNull();
+            });
+        });
+
+        /**
+         * FR-033, D8, SC-012. A breadcrumb is a record of where the editor navigated, and opening
+         * the panel is not navigation — the editor never left the page. Pushing one here would put
+         * "Experiments" on the trail of a page the editor is still standing on.
+         */
+        describe('breadcrumbs', () => {
+            it('should push no crumb in panel mode', () => {
+                renderPanelRow();
+
+                expect(globalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+            });
+
+            it('should still push one in portlet mode', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(globalStore.addNewBreadcrumb).toHaveBeenCalled();
+            });
+        });
+
+        /**
+         * FR-008, FR-013, D7. The point of the panel: reaching a configuration must not cost the
+         * editor the page. In the portlet these are routes; in the panel they are view changes on
+         * a store, and nothing navigates.
+         */
+        describe('opening a configuration without leaving the page', () => {
+            it('should show the configuration in the panel when a row is clicked', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.DRAFT);
+
+                spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+
+                expect(panelStore?.showConfigure).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            it('should show the configuration from the kebab', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.DRAFT);
+
+                runMenuItem(MENU_ITEM.configure);
+
+                expect(panelStore?.showConfigure).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            it('should show results in the panel from the kebab', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.RUNNING);
+
+                runMenuItem(MENU_ITEM.results);
+
+                expect(panelStore?.showResults).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            /**
+             * A RUNNING experiment's row leads to its results rather than its configuration, in
+             * both modes. The difference is only whether that costs the editor the page.
+             */
+            it('should show results in the panel when a running row is clicked', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.RUNNING);
+
+                spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+
+                expect(panelStore?.showResults).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            /**
+             * FR-006a, FR-007, D11. The empty state's offer and the toolbar button are the same
+             * door, and in the panel it opens a view — a page with no experiments is a starting
+             * point, not a reason to leave the editor.
+             */
+            it('should start a new experiment in the panel', () => {
+                renderPanelRow();
+
+                spectator.component.onNewExperiment();
+
+                expect(panelStore?.showCreate).toHaveBeenCalledTimes(1);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            /**
+             * The whole contract in one assertion: no door out of the panel's list is a
+             * navigation. Written as a sweep rather than per door so a door added later fails
+             * here instead of shipping as the one that still ejects the editor.
+             */
+            it('should never navigate, whichever door is taken', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.DRAFT);
+
+                spectator.component.onConfigure(experiment);
+                spectator.component.onViewResults(experiment);
+                spectator.component.onNewExperiment();
+                spectator.component.onEmptyAction();
+
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            it('should still navigate in portlet mode (FR-042)', () => {
+                const experiment = renderRowWith(DotExperimentStatus.DRAFT);
+
+                spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+
+                expect(navigate).toHaveBeenCalledWith(
+                    ['/experiments', experiment.id, 'configuration'],
+                    expect.anything()
+                );
+            });
+        });
+
+        /**
+         * FR-011, D9. Both dialogs are opened by the row, not by the route, so they work in the
+         * panel — where no resolver has run and no route data exists. Worth asserting because the
+         * cheap way to reach an experiment's identifier is through the route, and that way would
+         * pass in the portlet and fail silently here.
+         */
+        describe('row actions that do not need a route', () => {
+            it('should open push publish from a panel row', () => {
+                const experiment = renderPanelRow();
+                const pushPublishDialogService = spectator.inject(
+                    DotPushPublishDialogService,
+                    true
+                );
+
+                runMenuItem(MENU_ITEM.pushPublish);
+
+                expect(pushPublishDialogService.open).toHaveBeenCalledWith(
+                    expect.objectContaining({ assetIdentifier: experiment.id })
+                );
+            });
+
+            it('should open add to bundle from a panel row', () => {
+                const experiment = renderPanelRow();
+
+                runMenuItem(MENU_ITEM.addToBundle);
+
+                expect(spectator.component.$addToBundleAssetId()).toBe(experiment.id);
+            });
         });
     });
 });

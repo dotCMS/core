@@ -1,8 +1,9 @@
 import { Events, injectDispatch } from '@ngrx/signals/events';
+import { of } from 'rxjs';
 
 import { Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -10,7 +11,11 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { map } from 'rxjs/operators';
 
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotExperiment,
@@ -20,6 +25,8 @@ import {
     HealthStatusTypes,
     MINIMUM_SESSIONS_TO_SHOW_CHART
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotExperimentsResultsChartsComponent } from './components/dot-experiments-results-charts/dot-experiments-results-charts.component';
@@ -28,20 +35,27 @@ import { DotExperimentsResultsHeaderComponent } from './components/dot-experimen
 import { DotExperimentsResultsStatStripComponent } from './components/dot-experiments-results-stat-strip/dot-experiments-results-stat-strip.component';
 import { DotExperimentsResultsSummaryTableComponent } from './components/dot-experiments-results-summary-table/dot-experiments-results-summary-table.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
-    EXPERIMENTS_URL,
+    EXPERIMENT_ID_ROUTE_PARAM,
+    LIST_TITLE_KEY,
     RESULTS_CONFIRM_DIALOG_KEY,
+    RESULTS_TITLE_KEY,
     SUCCESS_MESSAGE_LIFE
 } from '../shared/constants';
 import { dotExperimentsResultsApiEvents } from '../store/dot-experiments-results-api.events';
 import { dotExperimentsResultsPageEvents } from '../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../store/dot-experiments-results.store';
+import {
+    EXPERIMENTS_LIST_CRUMB_ID,
+    experimentResultsCrumb,
+    experimentsListCrumb,
+    putCrumbOnTrail
+} from '../util/dot-experiments-breadcrumb.util';
+import { listReturnParams } from '../util/dot-experiments-list.util';
 
 /** Route `data` key `dotAnalyticsHealthCheckResolver` publishes the analytics health under. */
 const HEALTH_STATUS_ROUTE_DATA_KEY = 'healthStatus';
-
-/** Route parameter naming the experiment being reported on. */
-const EXPERIMENT_ID_ROUTE_PARAM = 'experimentId';
 
 /**
  * Shell of the Results screen, routed on `/experiments/:experimentId/results`.
@@ -75,7 +89,7 @@ const EXPERIMENT_ID_ROUTE_PARAM = 'experimentId';
         DotExperimentsResultsSummaryTableComponent
     ],
     templateUrl: './dot-experiments-results.component.html',
-    providers: [DotExperimentsResultsStore, ConfirmationService],
+    providers: [DotExperimentsRouter, DotExperimentsResultsStore, ConfirmationService],
     host: {
         class: 'flex flex-col h-full min-h-0 overflow-hidden animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
     }
@@ -86,11 +100,14 @@ export class DotExperimentsResultsComponent {
     readonly CONFIRM_KEY = RESULTS_CONFIRM_DIALOG_KEY;
 
     readonly #route = inject(ActivatedRoute);
-    readonly #router = inject(Router);
+    /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #events = inject(Events);
     readonly #dispatch = injectDispatch(dotExperimentsResultsPageEvents);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #globalStore = inject(GlobalStore);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
     readonly #confirmationService = inject(ConfirmationService);
 
@@ -101,10 +118,34 @@ export class DotExperimentsResultsComponent {
      * `paramMap`: the component is reused across experiments, and the resolver runs again on each
      * of them.
      */
-    readonly #healthStatus = toSignal(
+    readonly #routeHealthStatus = toSignal(
         this.#route.data.pipe(
             map((data) => data[HEALTH_STATUS_ROUTE_DATA_KEY] as HealthStatusTypes | undefined)
         )
+    );
+
+    /**
+     * Analytics health inside the panel, asked for rather than resolved.
+     *
+     * There is no route here to carry a resolver, so the screen asks the same question the
+     * portlet's `dotAnalyticsHealthCheckResolver` asks — one call to the same service, once per
+     * time results is opened, which is exactly what the resolver does per screen. Routing it
+     * through the panel instead would put a second copy of an install-level answer in a store
+     * that holds a destination.
+     */
+    readonly #panelHealthStatus = toSignal(
+        this.#panel ? inject(DotExperimentsService).healthCheck() : of(undefined)
+    );
+
+    /**
+     * Analytics health, from whichever of the two sources this screen has.
+     *
+     * The portlet's comes from a route resolver that re-runs per experiment; the panel's from the
+     * call above. Only one of them is ever set, so the order between them is a formality rather
+     * than a precedence.
+     */
+    readonly #healthStatus = computed<HealthStatusTypes | undefined>(
+        () => this.#panelHealthStatus() ?? this.#routeHealthStatus()
     );
 
     /** Anything but `OK` means the report cannot be trusted, so none of it is shown (AC22). */
@@ -196,11 +237,57 @@ export class DotExperimentsResultsComponent {
 
     constructor() {
         this.#listenForActionSuccess();
+        this.#syncBreadcrumbOnInit();
     }
 
-    /** Leaves the Results screen for the list. */
+    /**
+     * Leaves the Results screen for the list it was opened from, narrowing included (FR-021c).
+     *
+     * Read off the address rather than derived from the experiment's page: a Results screen
+     * reached from the site-wide list must go back to the site-wide list, not to the list of the
+     * one page this experiment happens to run on.
+     */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL]);
+        this.#experimentsRouter.toList();
+    }
+
+    /**
+     * Puts this screen on the breadcrumb trail (#37005).
+     *
+     * The same reasoning as the Configure screen's crumb: without one the trail ended at the
+     * list's, so the shell titled this screen "Experiments List" and left the level above it out
+     * of the path. Named after the screen, not the experiment — the header right below already
+     * names the experiment, next to its status and its page.
+     *
+     * A one-shot rather than an effect: unlike Configure, this screen is only ever reached on an
+     * experiment that exists, so neither half of its crumb can change while it is open.
+     */
+    #syncBreadcrumbOnInit(): void {
+        const experimentId = this.#route.snapshot.paramMap.get(EXPERIMENT_ID_ROUTE_PARAM);
+
+        if (!experimentId) {
+            return;
+        }
+
+        this.#syncBreadcrumb(this.#dotMessageService.get(RESULTS_TITLE_KEY), experimentId);
+    }
+
+    /**
+     * Appends this screen's crumb, and the list's above it when the trail does not already carry
+     * one — see the Configure shell's copy of this for why the guard reads the trail's contents
+     * rather than matching an id.
+     */
+    #syncBreadcrumb(label: string, experimentId: string): void {
+        const pageFilter = listReturnParams(this.#route.snapshot.queryParams);
+
+        if (!this.#globalStore.breadcrumbs().some(({ id }) => id === EXPERIMENTS_LIST_CRUMB_ID)) {
+            putCrumbOnTrail(
+                this.#globalStore,
+                experimentsListCrumb(this.#dotMessageService.get(LIST_TITLE_KEY), pageFilter)
+            );
+        }
+
+        putCrumbOnTrail(this.#globalStore, experimentResultsCrumb(label, experimentId, pageFilter));
     }
 
     /** Runs the whole load again, experiment included: a failed load left nothing behind. */

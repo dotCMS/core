@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -23,15 +29,15 @@ describe('DotAiConfigDetailComponent', () => {
     // Held here rather than inline in `mockProvider`, because a factory's stub object is
     // built once: the failure suite's `getConfig` override would otherwise leak into every
     // suite that ran after it.
-    const getProviders = jest.fn();
-    const getConfig = jest.fn();
+    const getProviders = vi.fn();
+    const getConfig = vi.fn();
 
     const createComponent = createComponentFactory({
         component: DotAiConfigDetailComponent,
         providers: [
             // Happy-path stubs live on the factory; only the failure suite overrides
             // getConfig, which is the reason the two suites exist.
-            mockProvider(DotAiConfigService, { getProviders, getConfig, saveConfig: jest.fn() }),
+            mockProvider(DotAiConfigService, { getProviders, getConfig, saveConfig: vi.fn() }),
             mockProvider(DotRouterService),
             mockProvider(DotMessageDisplayService),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) },
@@ -48,7 +54,7 @@ describe('DotAiConfigDetailComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         // Happy path by default; only the failure suite overrides getConfig, which is the
         // reason the two suites exist.
         getProviders.mockReturnValue(of(providers));

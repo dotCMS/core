@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -25,7 +31,7 @@ describe('DotExperimentsAddVariantDialogComponent', () => {
     const createComponent = createComponentFactory({
         component: DotExperimentsAddVariantDialogComponent,
         providers: [
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             { provide: DotMessageService, useValue: messageServiceMock }
         ],
         detectChanges: false
@@ -64,7 +70,7 @@ describe('DotExperimentsAddVariantDialogComponent', () => {
     };
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('form', () => {

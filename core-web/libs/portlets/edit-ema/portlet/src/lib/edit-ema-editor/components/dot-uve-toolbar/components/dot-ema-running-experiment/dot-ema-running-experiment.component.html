@@ -1,16 +1,24 @@
+<!-- An action has no `routerLink`: the directive would navigate on the same click that opens the
+     panel, so the destination is dropped rather than suppressed — the same shape the Experiments
+     nav item uses when the switch is on (#37478, FR-025c, D14). -->
 <p-tag
-    [routerLink]="[
-        '/edit-page/experiments/',
-        runningExperiment.pageId,
-        runningExperiment.id,
-        'reports'
-    ]"
+    [routerLink]="
+        $asAction()
+            ? null
+            : [
+                  '/edit-page/experiments/',
+                  $runningExperiment().pageId,
+                  $runningExperiment().id,
+                  'reports'
+              ]
+    "
+    (click)="onTagClick()"
     [value]="
         ('running' | dm | titlecase) +
         ' ' +
         ('dot.common.until' | dm) +
         ' ' +
-        (runningExperiment.scheduling.endDate | date: runningUntilDateFormat)
+        ($runningExperiment().scheduling.endDate | date: runningUntilDateFormat)
     "
     class="p-tag-success sm cursor-pointer"
     data-testId="runningExperimentTag"

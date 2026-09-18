@@ -1,7 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -12,8 +11,8 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
 import {
-    EXPERIMENTS_URL,
     RESULTS_CONFIRM_DIALOG_KEY,
     STATUS_LABEL_KEYS,
     STATUS_SEVERITIES
@@ -21,7 +20,7 @@ import {
 import { TagSeverity } from '../../../shared/models';
 import { dotExperimentsResultsPageEvents } from '../../../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../../../store/dot-experiments-results.store';
-import { configureCommandsOf, variantsCount } from '../../../util/dot-experiments-list.util';
+import { variantsCount } from '../../../util/dot-experiments-list.util';
 
 /**
  * Separator of the three parts of the subline: middle dot U+00B7 with a space either side, as the
@@ -71,7 +70,7 @@ export class DotExperimentsResultsHeaderComponent {
     );
 
     readonly #dispatch = injectDispatch(dotExperimentsResultsPageEvents);
-    readonly #router = inject(Router);
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
 
@@ -89,9 +88,15 @@ export class DotExperimentsResultsHeaderComponent {
             .join(SUBLINE_SEPARATOR);
     });
 
-    /** Leaves the Results screen for the list. */
+    /**
+     * Leaves the Results screen for the list it was opened from, narrowing included (FR-021c).
+     *
+     * Read off the address rather than derived from the experiment's page: a Results screen
+     * reached from the site-wide list must go back to the site-wide list, not to the list of the
+     * one page this experiment happens to run on.
+     */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL]);
+        this.#experimentsRouter.toList();
     }
 
     /** Opens the Configure screen of the experiment being reported on (AC2). */
@@ -99,7 +104,7 @@ export class DotExperimentsResultsHeaderComponent {
         const experimentId = this.store.experiment()?.id;
 
         if (experimentId) {
-            this.#router.navigate(configureCommandsOf(experimentId));
+            this.#experimentsRouter.toConfiguration(experimentId);
         }
     }
 

@@ -1,5 +1,6 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 import { firstValueFrom, toArray } from 'rxjs';
+import { vi } from 'vitest';
 
 import { AgentStreamEvent } from '@dotcms/dotcms-models';
 
@@ -78,7 +79,7 @@ interface DemoResult {
 describe('DotAgentRunService', () => {
     let spectator: SpectatorHttp<DotAgentRunService>;
     let service: DotAgentRunService;
-    const fetchMock = jest.fn();
+    const fetchMock = vi.fn();
     const originalFetch = global.fetch;
 
     const createHttp = createHttpFactory(DotAgentRunService);
@@ -340,7 +341,7 @@ describe('DotAgentRunService', () => {
         });
 
         it('drops an unparseable frame but logs it, and keeps the stream alive', async () => {
-            const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
             fetchMock.mockResolvedValue(
                 mockSseResponse([
                     'event: step\ndata: {not json}\n\n',
@@ -428,7 +429,7 @@ describe('DotAgentRunService', () => {
             // surface as a stream error to a consumer that has already walked away.
             fetchMock.mockResolvedValue(neverEndingSseResponse());
 
-            const onError = jest.fn();
+            const onError = vi.fn();
             const subscription = service.run<DemoResult>('/url', {}).subscribe({ error: onError });
             await Promise.resolve();
 

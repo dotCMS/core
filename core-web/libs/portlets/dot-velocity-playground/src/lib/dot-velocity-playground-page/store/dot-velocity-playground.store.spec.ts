@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -27,16 +28,16 @@ const MOCK_RESPONSE: DotVelocityPlaygroundResponse = {
 
 describe('DotVelocityPlaygroundStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotVelocityPlaygroundStore>>;
-    let runScriptSpy: jest.Mock;
-    let errorHandler: { handle: jest.Mock };
+    let runScriptSpy: Mock;
+    let errorHandler: { handle: Mock };
 
     const createService = createServiceFactory({
         service: DotVelocityPlaygroundStore,
         providers: [
             mockProvider(DotVelocityPlaygroundService, {
-                runScript: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
+                runScript: vi.fn().mockReturnValue(of(MOCK_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 
@@ -44,11 +45,11 @@ describe('DotVelocityPlaygroundStore', () => {
         window.localStorage.clear();
         spectator = createService();
         spectator.flushEffects();
-        runScriptSpy = spectator.inject(DotVelocityPlaygroundService).runScript as jest.Mock;
+        runScriptSpy = spectator.inject(DotVelocityPlaygroundService).runScript as Mock;
         runScriptSpy.mockClear();
         runScriptSpy.mockReturnValue(of(MOCK_RESPONSE));
         errorHandler = spectator.inject(DotHttpErrorManagerService) as unknown as {
-            handle: jest.Mock;
+            handle: Mock;
         };
         errorHandler.handle.mockClear();
     });
@@ -295,9 +296,9 @@ describe('DotVelocityPlaygroundStore onInit', () => {
         service: DotVelocityPlaygroundStore,
         providers: [
             mockProvider(DotVelocityPlaygroundService, {
-                runScript: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
+                runScript: vi.fn().mockReturnValue(of(MOCK_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 

@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { MarkdownModule } from 'ngx-markdown';
+import { vi } from 'vitest';
 
 import { DotAiPromptInputComponent } from '@dotcms/ai-ui';
 import { DotMessageService } from '@dotcms/data-access';
@@ -19,25 +25,25 @@ describe('DotAiChatComponent', () => {
     let spectator: Spectator<DotAiChatComponent>;
 
     const storeMock = {
-        chatAnswer: jest.fn().mockReturnValue(null),
-        isStreaming: jest.fn().mockReturnValue(false),
-        isConfigured: jest.fn().mockReturnValue(true),
-        showNotConfigured: jest.fn().mockReturnValue(false),
-        sendChat: jest.fn(),
-        stopChat: jest.fn(),
+        chatAnswer: vi.fn().mockReturnValue(null),
+        isStreaming: vi.fn().mockReturnValue(false),
+        isConfigured: vi.fn().mockReturnValue(true),
+        showNotConfigured: vi.fn().mockReturnValue(false),
+        sendChat: vi.fn(),
+        stopChat: vi.fn(),
         // Read by the settings panel, a real child of this component.
-        indexesForbidden: jest.fn().mockReturnValue(false),
-        indexOptions: jest.fn().mockReturnValue([]),
-        chatModels: jest.fn().mockReturnValue([]),
-        settingsIndexName: jest.fn().mockReturnValue('default'),
-        settingsThreshold: jest.fn().mockReturnValue(0.75),
-        settingsOperator: jest.fn().mockReturnValue('cosine'),
-        settingsModel: jest.fn().mockReturnValue(''),
-        settingsTemperature: jest.fn().mockReturnValue(0),
-        settingsResponseLength: jest.fn().mockReturnValue(1024),
-        settingsContentTypes: jest.fn().mockReturnValue(''),
-        settingsSite: jest.fn().mockReturnValue(null),
-        setSettings: jest.fn()
+        indexesForbidden: vi.fn().mockReturnValue(false),
+        indexOptions: vi.fn().mockReturnValue([]),
+        chatModels: vi.fn().mockReturnValue([]),
+        settingsIndexName: vi.fn().mockReturnValue('default'),
+        settingsThreshold: vi.fn().mockReturnValue(0.75),
+        settingsOperator: vi.fn().mockReturnValue('cosine'),
+        settingsModel: vi.fn().mockReturnValue(''),
+        settingsTemperature: vi.fn().mockReturnValue(0),
+        settingsResponseLength: vi.fn().mockReturnValue(1024),
+        settingsContentTypes: vi.fn().mockReturnValue(''),
+        settingsSite: vi.fn().mockReturnValue(null),
+        setSettings: vi.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -54,7 +60,7 @@ describe('DotAiChatComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         storeMock.chatAnswer.mockReturnValue(null);
         storeMock.isStreaming.mockReturnValue(false);
         storeMock.isConfigured.mockReturnValue(true);

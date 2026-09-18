@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -102,7 +108,7 @@ describe('DotExperimentsCreateComponent', () => {
 
     it('submit should call handleSubmit()', () => {
         const submitButton = spectator.query<HTMLButtonElement>(byTestId('add-experiment-button'));
-        jest.spyOn(spectator.component, 'handleSubmit');
+        vi.spyOn(spectator.component, 'handleSubmit');
 
         spectator.component.handleSubmit('1111-1111-1111-111');
 
@@ -143,7 +149,7 @@ describe('DotExperimentsCreateComponent', () => {
             expect(submitButtonHost).toContainText('Add');
             expect(spectator.component.form.valid).toEqual(true);
 
-            const handleSubmitSpy = jest.spyOn(spectator.component, 'handleSubmit');
+            const handleSubmitSpy = vi.spyOn(spectator.component, 'handleSubmit');
             spectator.click(submitButtonHost);
             spectator.detectComponentChanges();
 

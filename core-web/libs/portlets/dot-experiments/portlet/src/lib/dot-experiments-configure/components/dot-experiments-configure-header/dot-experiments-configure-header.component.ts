@@ -1,7 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -12,16 +11,19 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { EXPERIMENTS_URL, STATUS_LABEL_KEYS, STATUS_SEVERITIES } from '../../../shared/constants';
+import { confirmLeavingUnsavedChanges } from '../../../guards/unsaved-changes.guard';
+import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
+import {
+    NEW_EXPERIMENT_TITLE_KEY,
+    STATUS_LABEL_KEYS,
+    STATUS_SEVERITIES
+} from '../../../shared/constants';
 import { TagSeverity } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
-import { resultsCommandsOf } from '../../../util/dot-experiments-list.util';
-
-/** Title shown while the draft has no name yet. */
-const NEW_EXPERIMENT_TITLE_KEY = 'experiments.configure.header.new-experiment';
 
 /** Subline shown while no page is selected. */
 const NO_PAGE_SELECTED_KEY = 'experiments.configure.header.no-page';
@@ -54,11 +56,22 @@ const SUBLINE_SEPARATOR = ' · ';
     ],
     templateUrl: './dot-experiments-configure-header.component.html',
     host: {
-        class: 'flex flex-none items-center justify-between gap-6 border-b border-surface-200 bg-white px-8 py-4'
+        class: 'flex flex-none items-center justify-between gap-6 border-b border-surface-200 bg-white py-4',
+        /**
+         * The fourth surface in the panel's column, and it was the odd one out: `px-8` is 28px
+         * against the 17.5px the drawer header, the list toolbar and the table's outer cells now
+         * share, so the experiment's title sat a centimetre right of the panel's own. The portlet
+         * keeps `px-8` — it is a full page there, with room to breathe that the panel does not have.
+         */
+        '[class.px-8]': '!$inPanel',
+        '[class.px-5!]': '$inPanel'
     }
 })
 export class DotExperimentsConfigureHeaderComponent {
     readonly store = inject(DotExperimentsConfigureStore);
+
+    /** Panel mode, for the host's inset. Fixed for this component's life, like the mode it reflects. */
+    protected readonly $inPanel = !!inject(DotExperimentsPanelStore, { optional: true });
 
     /** Name as typed, so the title follows the Details card without waiting for the autosave. */
     readonly $title = computed<string>(() => {
@@ -168,7 +181,7 @@ export class DotExperimentsConfigureHeaderComponent {
     readonly $addToBundleAssetId = signal<string | null>(null);
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
-    readonly #router = inject(Router);
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #pushPublishDialogService = inject(DotPushPublishDialogService);
@@ -178,18 +191,47 @@ export class DotExperimentsConfigureHeaderComponent {
      *
      * Only reachable once the experiment exists — `$showResults()` already gates on the allowed
      * actions, which never include results for a draft that has not been created yet.
+     *
+     * Carries the page narrowing across, for the same reason `onBackToList` reads it off the
+     * address: Results has its own back button, and arriving there without `pageId` would send it
+     * to the site-wide list instead of the one the editor came from.
      */
     onViewResults(): void {
         const experimentId = this.store.experiment()?.id;
 
         if (experimentId) {
-            this.#router.navigate(resultsCommandsOf(experimentId));
+            this.#experimentsRouter.toResults(experimentId);
         }
     }
 
-    /** Leaves the Configure screen for the list. */
-    onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL]);
+    /**
+     * Leaves the Configure screen for the list it was opened from, narrowing included (FR-021c).
+     *
+     * The narrowing is read off the address rather than held from entry: creating the draft swaps
+     * `/experiments/new` for the experiment's own URL, and this button has to answer the same way
+     * on either side of that swap.
+     */
+    async onBackToList(): Promise<void> {
+        /**
+         * The panel has no `canDeactivate`, so the same Back that is guarded in the portlet is
+         * unguarded here — this button changes a store field rather than a URL, and
+         * `experimentsUnsavedChangesGuard` never runs (FR-019).
+         *
+         * Only in panel mode: in the portlet the router navigation raises the guard, and asking
+         * here as well would put the same dialog in front of the editor twice.
+         */
+        if (this.#experimentsRouter.inPanel) {
+            const mayLeave = await confirmLeavingUnsavedChanges(
+                { store: this.store, confirmationService: this.#confirmationService },
+                this.#dotMessageService
+            );
+
+            if (!mayLeave) {
+                return;
+            }
+        }
+
+        this.#experimentsRouter.toList();
     }
 
     /**

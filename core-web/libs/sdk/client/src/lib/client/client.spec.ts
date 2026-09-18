@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import {
     DotCMSClientConfig,
     DotRequestOptions,
@@ -13,14 +15,14 @@ import { NavigationClient } from './navigation/navigation-api';
 import { PageClient } from './page/page-api';
 
 // Mock the dependencies
-jest.mock('./content/content-api');
-jest.mock('./navigation/navigation-api');
-jest.mock('./page/page-api');
-jest.mock('./ai/ai-api');
+vi.mock('./content/content-api');
+vi.mock('./navigation/navigation-api');
+vi.mock('./page/page-api');
+vi.mock('./ai/ai-api');
 
 describe('DotCMSClient', () => {
     const originalTypeError = global.TypeError;
-    const mockTypeError = jest.fn().mockImplementation((...args) => new originalTypeError(...args));
+    const mockTypeError = vi.fn().mockImplementation((...args) => new originalTypeError(...args));
     const validConfig: DotCMSClientConfig = {
         dotcmsUrl: 'https://demo.dotcms.com',
         authToken: 'test-token',
@@ -33,7 +35,7 @@ describe('DotCMSClient', () => {
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         global.TypeError = mockTypeError as unknown as ErrorConstructor;
     });
 
@@ -123,7 +125,7 @@ describe('DotCMSClient', () => {
 
             try {
                 createDotCMSClient(invalidConfig);
-                fail('Expected TypeError to be thrown');
+                expect.fail('Expected TypeError to be thrown');
             } catch {
                 // This is expected, verify the error
             }
@@ -141,7 +143,7 @@ describe('DotCMSClient', () => {
 
             try {
                 createDotCMSClient(invalidConfig);
-                fail('Expected TypeError to be thrown');
+                expect.fail('Expected TypeError to be thrown');
             } catch {
                 // This is expected, verify the error
             }
@@ -171,11 +173,11 @@ describe('DotCMSClient', () => {
 describe('DotCMSClient with custom HTTP client', () => {
     it('should use custom HTTP client when provided', async () => {
         const mockHttpClient: DotHttpClient = {
-            request: jest.fn().mockResolvedValue({ entity: [{ name: 'test' }] })
+            request: vi.fn().mockResolvedValue({ entity: [{ name: 'test' }] })
         };
 
         // Create a spy on the NavigationClient prototype to intercept the get method
-        const getSpy = jest
+        const getSpy = vi
             .spyOn(NavigationClient.prototype, 'get')
             .mockImplementation(async (path: string) => {
                 // Call the real HTTP client to verify it's being used
