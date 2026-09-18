@@ -319,7 +319,7 @@ public class PubSubCacheTransportTest {
 
     /**
      * Mimics a synchronous provider whose connection has dropped: publish() returns false and
-     * never throws, exactly as JDBCPubSubImpl/PostgresPubSubImpl/RedisPubSubImpl do.
+     * never throws, exactly as JDBCPubSubImpl/RedisPubSubImpl do.
      */
     private static class FailingProvider extends NullDotPubSubProvider {
         @Override
