@@ -1,4 +1,5 @@
 import { EventCreator, Events, injectDispatch } from '@ngrx/signals/events';
+import { of } from 'rxjs';
 
 import { formatDate } from '@angular/common';
 import {
@@ -15,7 +16,7 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
     applyEach,
     disabled,
@@ -28,7 +29,7 @@ import {
     minDate,
     validate
 } from '@angular/forms/signals';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -39,12 +40,14 @@ import { take } from 'rxjs/operators';
 
 import {
     DotExperimentsService,
+    DotPropertiesService,
     DotMessageDisplayService,
     DotMessageService,
     DotPagesBrowserService
 } from '@dotcms/data-access';
 import {
     CONFIGURE_SECTION_PARAM,
+    ExperimentsConfigProperties,
     CONFIGURE_SECTION_VARIANTS,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
@@ -55,6 +58,7 @@ import {
     MAX_INPUT_DESCRIPTIVE_LENGTH,
     MAX_INPUT_TITLE_LENGTH
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
@@ -66,10 +70,10 @@ import { DotExperimentsConfigurePageComponent } from './components/dot-experimen
 import { DotExperimentsConfigureSchedulingComponent } from './components/dot-experiments-configure-scheduling/dot-experiments-configure-scheduling.component';
 import { DotExperimentsConfigureVariantsComponent } from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     CONFIGURE_TITLE_KEY,
     EXPERIMENT_ID_ROUTE_PARAM,
-    EXPERIMENTS_URL,
     LIST_TITLE_KEY,
     MAX_TRAFFIC_ALLOCATION,
     MIN_PROGRESS_BAR_VISIBLE_MS,
@@ -165,6 +169,8 @@ function formKeyOf(experiment: DotExperiment | null | undefined): string | null 
     templateUrl: './dot-experiments-configure.component.html',
     styleUrl: './dot-experiments-configure.component.scss',
     providers: [
+        // Before the store: the store injects it for the post-create swap.
+        DotExperimentsRouter,
         DotExperimentsConfigureStore,
         ConfirmationService,
         DotExperimentsService,
@@ -294,7 +300,9 @@ export class DotExperimentsConfigureComponent {
     });
 
     readonly #route = inject(ActivatedRoute);
-    readonly #router = inject(Router);
+    /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #events = inject(Events);
     /** Only the weights are reported from here; everything else goes through `bindFormDiff`. */
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
@@ -308,9 +316,26 @@ export class DotExperimentsConfigureComponent {
     readonly #formatDate = (value: Date) => formatDate(value, 'medium', this.#locale);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
 
-    /** How long an experiment may run. Read once: a modal-free screen outlives no resolve. */
-    readonly #durationBounds = resolveDurationBounds(
-        this.#route.snapshot.data[CONFIG_ROUTE_DATA_KEY]
+    /**
+     * How long an experiment may run.
+     *
+     * The portlet's route resolves these properties before the screen exists, so it reads them
+     * once off the route data. The panel has no route to resolve them, so the screen asks for them
+     * itself — the same two keys, the same service the resolver uses. Without that it silently
+     * fell back to the 7-and-90-day defaults and offered a window the install never configured
+     * (#37478).
+     *
+     * A signal because the panel's answer arrives after construction; the portlet's is there from
+     * the first read and never changes.
+     */
+    readonly #durationBounds = toSignal(
+        this.#panel
+            ? inject(DotPropertiesService).getKeys([
+                  ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION,
+                  ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION
+              ])
+            : of(this.#route.snapshot.data[CONFIG_ROUTE_DATA_KEY]),
+        { initialValue: undefined }
     );
 
     /** "Now" for the whole session. The pickers offer nothing before it. */
@@ -328,11 +353,12 @@ export class DotExperimentsConfigureComponent {
      */
     protected readonly $schedulingBounds = computed<SchedulingDateBounds>(() => {
         const from = this.$model().scheduling.startDate?.getTime() ?? this.#now.getTime();
+        const bounds = resolveDurationBounds(this.#durationBounds());
 
         return {
             initialStartDate: this.#initialStartDate,
-            minEndDate: new Date(from + this.#durationBounds.minDuration),
-            maxEndDate: new Date(from + this.#durationBounds.maxDuration)
+            minEndDate: new Date(from + bounds.minDuration),
+            maxEndDate: new Date(from + bounds.maxDuration)
         };
     });
 
@@ -575,7 +601,21 @@ export class DotExperimentsConfigureComponent {
         this.#events
             .on(dotExperimentsConfigureApiEvents.createSucceeded)
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(({ payload }) => this.#hydratedFormKey.set(formKeyOf(payload)));
+            .subscribe(({ payload }) => {
+                this.#hydratedFormKey.set(formKeyOf(payload));
+
+                /**
+                 * And the screen follows the experiment it just made — a URL swap in the portlet,
+                 * a view change in the panel, decided in one place (#37478, FR-016).
+                 *
+                 * Here rather than in the store, which is where it used to live: the store would
+                 * have to inject the navigation, the navigation reaches the panel store, and
+                 * Angular reports that as a circular dependency. It also leaves the rule the rest
+                 * of this portlet already follows — stores hold state, components move between
+                 * screens — true without an exception.
+                 */
+                this.#experimentsRouter.afterCreated(payload.id);
+            });
 
         // A save that settled as the screen was left would otherwise fire into a dead component.
         this.#destroyRef.onDestroy(() => this.#cancelProgressBarHide());
@@ -593,7 +633,12 @@ export class DotExperimentsConfigureComponent {
      * same reason, as {@link #scrollToFirstErrorOnFailedStart}.
      */
     #scrollToRequestedSection(): void {
-        const requested = this.#route.snapshot.queryParamMap.get(CONFIGURE_SECTION_PARAM);
+        // Two sources, one question. The portlet is asked through `?section=`; the panel has no
+        // address to be asked in, so the round trip's return says it on the panel store instead
+        // (#37478, FR-023).
+        const requested =
+            this.#panel?.section() ??
+            this.#route.snapshot.queryParamMap.get(CONFIGURE_SECTION_PARAM);
 
         if (requested !== CONFIGURE_SECTION_VARIANTS) {
             return;
@@ -729,9 +774,7 @@ export class DotExperimentsConfigureComponent {
      * answers with the same address. See {@link listReturnParams}.
      */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL], {
-            queryParams: listReturnParams(this.#route.snapshot.queryParams)
-        });
+        this.#experimentsRouter.toList();
     }
 
     /** What the form is filled from, and diffed against. */

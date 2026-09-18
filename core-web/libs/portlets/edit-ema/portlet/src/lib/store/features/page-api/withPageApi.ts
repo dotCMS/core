@@ -14,7 +14,7 @@ import {
     DotPageLayoutService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, EXPERIMENT_RETURN_PARAM } from '@dotcms/dotcms-models';
 import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 
@@ -145,14 +145,42 @@ export function withPageApi(deps: WithPageApiDeps) {
                 pageLoad: rxMethod<Partial<DotPageAssetParams>>(
                     pipe(
                         map((params) => {
-                            if (!store.pageParams()) {
+                            const current = store.pageParams();
+
+                            if (!current) {
                                 return params as DotPageAssetParams;
                             }
 
-                            return {
-                                ...store.pageParams(),
-                                ...params
-                            };
+                            const merged = { ...current, ...params };
+
+                            /**
+                             * A different page drops the params that only meant something on the
+                             * last one.
+                             *
+                             * The merge is what makes this editor feel like one screen — language,
+                             * persona and mode follow the editor from page to page. But the
+                             * experiment ones are not the editor's, they are the page's: a variant
+                             * belongs to one page, and carrying `variantName` into another asks the
+                             * Page API for a variant that page does not have. The visible half was
+                             * the banner announcing a variant over a page the editor had navigated
+                             * away from, with a way back to an experiment that was never about it.
+                             *
+                             * Dropped here rather than at the navigation call sites — there are
+                             * four of them and the merge is the one place they all pass through.
+                             */
+                            if (params.url && params.url !== current.url) {
+                                delete merged.experimentId;
+                                delete merged[EXPERIMENT_RETURN_PARAM];
+
+                                // Only a real one. `DEFAULT` is not a variant, it is the absence
+                                // of one, and dropping it would rewrite the address on every
+                                // ordinary navigation for nothing.
+                                if (merged.variantName !== DEFAULT_VARIANT_ID) {
+                                    delete merged.variantName;
+                                }
+                            }
+
+                            return merged;
                         }),
                         tap((pageParams) => {
                             // The stored client GraphQL request (sent by the headless
