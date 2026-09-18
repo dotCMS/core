@@ -400,8 +400,13 @@ runs:
           # delete-built-artifacts-from-cache below and be saved into the shared
           # Maven cache as a release-looking coordinate. release-prepare writes
           # -Drevision= onto the release branch; require it.
-          if [[ ! -f .mvn/maven.config ]] || ! grep -q -- "-Drevision=" .mvn/maven.config; then
-            echo "::error::release-build=true requires -Drevision= in .mvn/maven.config (written by the release-prepare phase). Refusing to build release-looking 1.0.0 coordinates." >&2
+          #
+          # Require a non-empty value: a bare '-Drevision=' sets the CI-friendly
+          # revision to the empty string, which collapses the version just as
+          # surely, so matching the bare prefix would pass the guard on exactly
+          # the case it exists for.
+          if [[ ! -f .mvn/maven.config ]] || ! grep -qE -- '-Drevision=[^[:space:]]' .mvn/maven.config; then
+            echo "::error::release-build=true requires a non-empty -Drevision= in .mvn/maven.config (written by the release-prepare phase). Refusing to build release-looking 1.0.0 coordinates." >&2
             exit 1
           fi
           DEFAULT_ARGS="$DEFAULT_ARGS -Dchangelist=${{ steps.artifact-suffix.outputs.suffix }}"
