@@ -27891,6 +27891,8 @@ components:
             type: object
         hostId:
           type: string
+        hostName:
+          type: string
         inherited:
           type: boolean
         protocol:
