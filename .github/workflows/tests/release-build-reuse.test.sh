@@ -407,13 +407,13 @@ else
 fi
 
 # ==================================================== 7. Release workflows opt ==
-echo "== 7. release workflows take the suffix from the build =="
-# The opt-in assertions (generate-test-image: false, release-build: true,
-# reuse-build-artifacts: true, docker-cache-scope-prefix) deliberately live with
-# the commit that flips them on, not here. Asserting a flag is set is only
-# meaningful next to the change that sets it.
+echo "== 7. release workflows: suffix single-source and opt-in =="
 for wf in "$RELEASE_WF" "$VARIANT_WF"; do
   name="$(basename "$wf")"
+  has "$wf" 'generate-test-image: false'    "$name skips the unused test image"
+  has "$wf" 'generate-build-classes: false' "$name skips the unused build classes"
+  has "$wf" 'release-build: true'           "$name builds publication-ready coordinates on the first install"
+  has "$wf" 'docker-cache-scope-prefix:'    "$name isolates its Docker cache scope"
   # The suffix must come from the build in BOTH consumers, not be re-derived
   # independently per job. A single occurrence would still pass a bare `has`
   # check, which is exactly the three-derivations divergence this fixes.
@@ -762,6 +762,36 @@ else
 fi
 
 mv "$WORKDIR/mvnrun/.mvn/maven.config.bak" "$WORKDIR/mvnrun/.mvn/maven.config"
+
+# ================================ 11. release opt-in hardening (Part B) ==
+echo "== 11. the opt-in has an escape hatch and an early tripwire =="
+
+# Hardcoding reuse-build-artifacts: true in cicd_7 left no way back to
+# rebuild-then-publish without editing the workflow — needed when releasing a tag
+# cut before release-build existed, where the tag's own maven-job installs
+# unsuffixed coordinates and validation would block the publish.
+#
+# Asserted on the whole file, not via step_block: `release` here is a JOB, not a
+# step, so there is no step block to match.
+default_reuse_input="$(input_default "$VARIANT_WF" reuse-build-artifacts 6)"
+if [[ "$default_reuse_input" == "true" ]]; then
+  ok "cicd_7 exposes reuse-build-artifacts as a dispatch input defaulting to true"
+else
+  bad "cicd_7 exposes reuse-build-artifacts as a dispatch input defaulting to true" \
+      "got '$default_reuse_input'"
+fi
+has "$VARIANT_WF" 'reuse-build-artifacts: \$\{\{ inputs\.reuse-build-artifacts \}\}' \
+  "cicd_7 release job honours the input rather than hardcoding true"
+has "$RELEASE_WF" 'reuse-build-artifacts: true' \
+  "cicd_6 sets reuse-build-artifacts (it creates its own tag from main, so no escape hatch needed)"
+
+# The tripwire belongs in the build job: validation in the release phase runs
+# AFTER deployment has pushed images, so on its own it cannot prevent a bad
+# release from shipping images.
+block_has_if "$BUILD_PHASE" "Verify release coordinates were installed" 'release-build == true' \
+  "the coordinate tripwire is in the build job, gated on release-build"
+block_has "$BUILD_PHASE" "Verify release coordinates were installed" 'dotcms-core-\$version\.jar' \
+  "the tripwire asserts the exact expected primary artifact"
 
 # ---------------------------------------------------------------------- done --
 echo
