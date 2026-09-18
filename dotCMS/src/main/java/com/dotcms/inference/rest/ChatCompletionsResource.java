@@ -361,6 +361,10 @@ public class ChatCompletionsResource {
         // completion id, so re-deriving any of these per event would break the correlation.
         final String completionId = COMPLETION_ID_PREFIX + UUID.randomUUID();
         final long createdEpochSeconds = Instant.now().getEpochSecond();
+        // The model the caller asked for is the model that runs: this family selects no default
+        // and falls back to nothing, so naming it here cannot disagree with what served the
+        // stream. It could when a fallback chain was still in play, and every chunk then carried
+        // a model name that had not produced a word of the answer.
         final String model = inferenceRequest.model();
 
         final StreamingOutput streamingOutput = output -> {

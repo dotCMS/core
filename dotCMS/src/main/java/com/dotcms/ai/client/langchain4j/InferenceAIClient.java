@@ -146,6 +146,7 @@ public final class InferenceAIClient {
         final ChatRequest chatRequest = toChatRequest(request);
         return LangChain4jAIClient.get().withChatModel(
                 appConfig,
+                request.model(),
                 (model, servingModel) -> toInferenceResponse(model.chat(chatRequest), servingModel));
     }
 
@@ -178,6 +179,7 @@ public final class InferenceAIClient {
         try {
             LangChain4jAIClient.get().withStreamingChatModel(
                     appConfig,
+                    request.model(),
                     (model, servingModel) -> streamWithModel(model, chatRequest, state));
         } catch (final RuntimeException e) {
             // Nothing reached the sink — every model in the chain failed to start — so the sink
@@ -209,13 +211,16 @@ public final class InferenceAIClient {
      * @throws RuntimeException if every model in the site's chain failed; the exception is the last
      *                          failure, left for the REST layer to turn into a status
      */
-    public EmbeddingBatch embed(final AppConfig appConfig, final List<String> inputs) {
+    public EmbeddingBatch embed(final AppConfig appConfig,
+                                final String requestedModel,
+                                final List<String> inputs) {
         final List<TextSegment> segments = new ArrayList<>(inputs.size());
         for (final String input : inputs) {
             segments.add(TextSegment.from(input));
         }
 
-        return LangChain4jAIClient.get().withEmbeddingModel(appConfig, (model, servingModel) -> {
+        return LangChain4jAIClient.get().withEmbeddingModel(appConfig, requestedModel,
+                (model, servingModel) -> {
             final Response<List<Embedding>> response = model.embedAll(segments);
             final List<Embedding> embeddings =
                     response.content() == null ? List.of() : response.content();
@@ -258,10 +263,12 @@ public final class InferenceAIClient {
      *                          could be turned into bytes
      */
     public GeneratedImages generateImages(final AppConfig appConfig,
+                                          final String requestedModel,
                                           final String prompt,
                                           final String size,
                                           final int count) {
-        return LangChain4jAIClient.get().withImageModel(appConfig, size, (model, servingModel) -> {
+        return LangChain4jAIClient.get().withImageModel(appConfig, requestedModel, size,
+                (model, servingModel) -> {
             if (count > 1 && !supportsMultipleImages(model)) {
                 throw new MultipleImagesUnsupportedException(servingModel);
             }

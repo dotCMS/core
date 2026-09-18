@@ -291,19 +291,22 @@ public class InferenceModelValidationTest {
     }
 
     /**
-     * Given a site configured with a fallback chain of two models
-     * When a completion names the second entry of that chain
-     * Then it is accepted, not refused as unconfigured
+     * Given a site configured with two models
+     * When a completion names the second one
+     * Then the second one runs, and the response says so
      *
-     * <p>The set of accepted names is the whole chain, not its head. What actually serves is a
-     * separate question the site's configuration answers, not the caller: the client walks the
-     * chain from the front, so the served model reported back is an entry of the chain and need
-     * not be the one that was asked for.</p>
+     * <p>The model is a selection, not a permission check. It used to be the latter: any name in
+     * the site's list was accepted and the first entry ran regardless, so a caller asking for the
+     * cheap model was served — and billed for — the expensive one, with a response that named the
+     * model which had actually run but no reason for anyone to be reading it. Nothing in the
+     * request or the answer made the substitution visible at the moment it cost money.</p>
+     *
+     * <p>Asserting the exact name rather than membership of the configured set is the whole
+     * point: membership is what the previous behaviour already satisfied.</p>
      */
     @Test
-    public void test_completions_withFallbackChainSecondEntry_isAccepted() throws Exception {
-        final List<String> chain = List.of(CHAT_MODEL, SECONDARY_MODEL);
-        configureChain(host, chain);
+    public void test_completions_namingTheSecondConfiguredModel_runsThatModel() throws Exception {
+        configureChain(host, List.of(CHAT_MODEL, SECONDARY_MODEL));
 
         final Response response = resource.completions(
                 mockRequest(adminToken), mockResponse(), host.getIdentifier(),
@@ -314,7 +317,8 @@ public class InferenceModelValidationTest {
         assertTrue(response.getEntity() instanceof ChatCompletionView);
 
         final ChatCompletionView view = (ChatCompletionView) response.getEntity();
-        assertTrue(chain.contains(view.model()));
+        assertEquals("The model the caller named is the model that must run",
+                SECONDARY_MODEL, view.model());
         wireMockServer.verify(1, postRequestedFor(urlPathEqualTo(COMPLETIONS_PATH)));
     }
 

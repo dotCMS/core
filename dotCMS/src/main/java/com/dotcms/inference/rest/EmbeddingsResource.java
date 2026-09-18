@@ -239,7 +239,7 @@ public class EmbeddingsResource {
                            final List<String> inputs) {
         try {
             final InferenceAIClient.EmbeddingBatch batch =
-                    InferenceAIClient.get().embed(context.config(), inputs);
+                    InferenceAIClient.get().embed(context.config(), requestedModel, inputs);
 
             if (batch.vectors().size() != inputs.size()) {
                 // Without one vector per input there is no honest index to stamp on the entries,

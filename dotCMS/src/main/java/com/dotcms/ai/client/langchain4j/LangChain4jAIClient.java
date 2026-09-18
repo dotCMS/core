@@ -151,10 +151,13 @@ public class LangChain4jAIClient implements AIClient {
      * @param <R>       the result type
      * @return whatever the executor returned for the first model that succeeded
      */
-    public <R> R withChatModel(final AppConfig appConfig, final BiFunction<ChatModel, String, R> executor) {
-        return executeWithFallbackTyped(
+    public <R> R withChatModel(final AppConfig appConfig,
+                               final String requestedModel,
+                               final BiFunction<ChatModel, String, R> executor) {
+        return executeForModels(
                 cacheKeyPrefix(appConfig),
                 CHAT_SECTION,
+                onlyModel(requestedModel),
                 parseSection(appConfig.getProviderConfig(), CHAT_SECTION),
                 chatModelCache,
                 LangChain4jModelFactory::buildChatModel,
@@ -171,10 +174,12 @@ public class LangChain4jAIClient implements AIClient {
      * @param executor  receives a streaming chat model and its name
      */
     public void withStreamingChatModel(final AppConfig appConfig,
+                                       final String requestedModel,
                                        final BiConsumer<StreamingChatModel, String> executor) {
-        executeWithFallbackTyped(
+        executeForModels(
                 cacheKeyPrefix(appConfig),
                 CHAT_SECTION,
+                onlyModel(requestedModel),
                 parseSection(appConfig.getProviderConfig(), CHAT_SECTION),
                 streamingChatModelCache,
                 LangChain4jModelFactory::buildStreamingChatModel,
@@ -198,10 +203,12 @@ public class LangChain4jAIClient implements AIClient {
      * @return whatever the executor returned for the first model that succeeded
      */
     public <R> R withEmbeddingModel(final AppConfig appConfig,
+                                    final String requestedModel,
                                     final BiFunction<EmbeddingModel, String, R> executor) {
-        return executeWithFallbackTyped(
+        return executeForModels(
                 cacheKeyPrefix(appConfig),
                 EMBEDDINGS_SECTION,
+                onlyModel(requestedModel),
                 parseSection(appConfig.getProviderConfig(), EMBEDDINGS_SECTION),
                 embeddingModelCache,
                 LangChain4jModelFactory::buildEmbeddingModel,
@@ -237,6 +244,7 @@ public class LangChain4jAIClient implements AIClient {
      * @return whatever the executor returned for the first model that succeeded
      */
     public <R> R withImageModel(final AppConfig appConfig,
+                                final String requestedModel,
                                 final String size,
                                 final BiFunction<ImageModel, String, R> executor) {
         final ProviderConfig baseConfig = parseSection(appConfig.getProviderConfig(), IMAGE_SECTION);
@@ -244,10 +252,11 @@ public class LangChain4jAIClient implements AIClient {
         final ProviderConfig requestConfig = ImmutableProviderConfig.copyOf(baseConfig)
                 .withSize(sized ? size : baseConfig.size());
 
-        return executeWithFallbackTyped(
+        return executeForModels(
                 cacheKeyPrefix(appConfig) + INFERENCE_KEY_SEGMENT
                         + (requestConfig.size() == null ? "" : ":" + requestConfig.size()),
                 IMAGE_SECTION,
+                onlyModel(requestedModel),
                 requestConfig,
                 imageModelCache,
                 LangChain4jModelFactory::buildImageModel,
@@ -552,6 +561,25 @@ public class LangChain4jAIClient implements AIClient {
      * @param <R>            the result type
      * @return the first successful result
      */
+    /**
+     * The single model an {@code /api/inference/v1} request may run.
+     *
+     * <p>Wrapped as a one-element chain rather than handed to a separate code path, so that model
+     * construction, caching and failure reporting stay identical to the fallback case — the only
+     * difference is that there is nothing to fall back to.</p>
+     *
+     * @param requestedModel the model the caller named, already checked against the site's set
+     * @return that model alone
+     */
+    private static List<String> onlyModel(final String requestedModel) {
+        if (requestedModel == null || requestedModel.isBlank()) {
+            // Reached only if a caller skipped the model gate. Refusing beats quietly running
+            // whatever the site happens to list first, which is the behaviour this replaced.
+            throw new CallerSafeException("A model is required; this endpoint selects no default");
+        }
+        return List.of(requestedModel);
+    }
+
     <M, R> R executeWithFallbackTyped(
             final String cacheKeyPrefix,
             final String section,
@@ -559,7 +587,38 @@ public class LangChain4jAIClient implements AIClient {
             final Cache<String, M> modelCache,
             final Function<ProviderConfig, M> modelBuilder,
             final BiFunction<M, String, R> executor) {
-        final List<String> models = effectiveModels(baseConfig);
+        return executeForModels(cacheKeyPrefix, section, effectiveModels(baseConfig), baseConfig,
+                modelCache, modelBuilder, executor);
+    }
+
+    /**
+     * Runs the executor against a named list of models, in order, stopping at the first success.
+     *
+     * <p>Separated from {@link #executeWithFallbackTyped} so a caller can say which models may run
+     * rather than inheriting the site's chain. The {@code /api/inference/v1} family passes exactly
+     * one — the model the caller asked for — because a fallback there would spend a developer's
+     * money on a model they did not choose and cannot see in the response. The legacy endpoints
+     * keep the chain, where resilience is worth more than that certainty.</p>
+     *
+     * @param cacheKeyPrefix the site- and config-specific key prefix
+     * @param section        the provider config section being drawn from
+     * @param models         the models to try, in order; a single entry means no fallback
+     * @param baseConfig     the section's configuration
+     * @param modelCache     the cache for this model type
+     * @param modelBuilder   builds a model from a configuration
+     * @param executor       receives a model and its name, and produces the result
+     * @param <M>            the model type
+     * @param <R>            the result type
+     * @return whatever the executor returned for the first model that succeeded
+     */
+    <M, R> R executeForModels(
+            final String cacheKeyPrefix,
+            final String section,
+            final List<String> models,
+            final ProviderConfig baseConfig,
+            final Cache<String, M> modelCache,
+            final Function<ProviderConfig, M> modelBuilder,
+            final BiFunction<M, String, R> executor) {
         if (models.isEmpty()) {
             // CallerSafeException, not a bare IllegalArgumentException: this sentence was written
             // here, names the site's own configuration, and is the one thing that tells a caller

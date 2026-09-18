@@ -268,7 +268,8 @@ public class ImagesResource {
                     "The n field must be at most " + limits.maxImagesPerRequest(), COUNT_PARAM));
         }
 
-        return generate(context, requestView.prompt(), requestView.size(), count);
+        return generate(context, requestView.model(), requestView.prompt(),
+                requestView.size(), count);
     }
 
     /**
@@ -281,12 +282,14 @@ public class ImagesResource {
      * @return the images, or a refusal carrying a safe description of what failed
      */
     private Response generate(final ResolvedAiContext context,
+                              final String requestedModel,
                               final String prompt,
                               final String size,
                               final int count) {
         try {
             final InferenceAIClient.GeneratedImages generated =
-                    InferenceAIClient.get().generateImages(context.config(), prompt, size, count);
+                    InferenceAIClient.get().generateImages(context.config(), requestedModel, prompt,
+                            size, count);
 
             final List<ImageGenerationView.ImageView> data =
                     new ArrayList<>(generated.images().size());
