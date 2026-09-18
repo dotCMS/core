@@ -7,9 +7,14 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.GraphQLError;
+import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.GraphQLSchema;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Runs real GraphQL queries against the live schema from an integration test.
@@ -64,6 +69,44 @@ public class GraphqlQueryRunner {
             throw new AssertionError("GraphQL query failed: " + errors + "\nQuery was:\n" + query);
         }
         return result.getData();
+    }
+
+    /**
+     * Executes {@code query} and counts how many times {@code fieldName} was fetched.
+     *
+     * <p>Exists to prove a cost property rather than a behavioural one: reading many properties of
+     * one referenced asset must not resolve that asset many times. graphql-java calls a field's
+     * DataFetcher once per occurrence of the field in the query, and the properties beneath it are
+     * read from the object that fetcher returned — so the count stays at one however many
+     * properties are selected. A design that re-derived the asset per property would show up here
+     * immediately.
+     */
+    public static int countFieldFetches(final String query, final User user,
+            final String fieldName) throws Exception {
+        final GraphQLSchema schema = APILocator.getGraphqlAPI().getSchema(user);
+        final DotGraphQLContext context = DotGraphQLContext.createServletContext()
+                .with(user).build();
+        final AtomicInteger fetches = new AtomicInteger();
+
+        final Instrumentation counter = new SimpleInstrumentation() {
+            @Override
+            public InstrumentationContext<Object> beginFieldFetch(
+                    final InstrumentationFieldFetchParameters parameters) {
+                if (fieldName.equals(parameters.getExecutionStepInfo().getField().getName())) {
+                    fetches.incrementAndGet();
+                }
+                return super.beginFieldFetch(parameters);
+            }
+        };
+
+        final ExecutionResult result = GraphQL.newGraphQL(schema).instrumentation(counter).build()
+                .execute(ExecutionInput.newExecutionInput().query(query).context(context).build());
+
+        if (result.getErrors() != null && !result.getErrors().isEmpty()) {
+            throw new AssertionError("GraphQL query failed: " + result.getErrors()
+                    + "\nQuery was:\n" + query);
+        }
+        return fetches.get();
     }
 
     /**

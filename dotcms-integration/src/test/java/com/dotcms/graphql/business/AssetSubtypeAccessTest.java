@@ -3,6 +3,7 @@ package com.dotcms.graphql.business;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.DataTypes;
@@ -19,9 +20,14 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -352,7 +358,125 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                 null, row.get(IMAGE_FIELD_VAR));
     }
 
+    /**
+     * Given: an asset behind an Image field.
+     * When: one property is selected, and then five.
+     * Then: the asset is resolved exactly once either way.
+     *
+     * <p>FR-011 / SC-006. Asserted by counting resolutions, never by timing — a wall-clock
+     * assertion on a containerised database is noise. This is the property PR #35363 failed:
+     * it re-derived an asset's binary metadata once per property selected, so twelve properties
+     * meant twelve full derivations per asset, per row of a result set.
+     */
+    @Test
+    public void test_readingManyPropertiesResolvesTheAssetOnce() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Cost");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final String oneProperty = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { fileName } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
+        final String fiveProperties = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { "
+                        + "fileName identifier inode title sortOrder } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
+
+        assertEquals("one property must cost one resolution",
+                1, GraphqlQueryRunner.countFieldFetches(oneProperty, systemUser, IMAGE_FIELD_VAR));
+        assertEquals("five properties must still cost one resolution — per-asset work may not "
+                        + "grow with the number of properties selected",
+                1, GraphqlQueryRunner.countFieldFetches(fiveProperties, systemUser,
+                        IMAGE_FIELD_VAR));
+    }
+
+    /**
+     * Given: two users, one able to read a restricted asset and one not.
+     * When: both query the same field pointing at it.
+     * Then: only the permitted one gets it back.
+     *
+     * <p>FR-008, framed as the guarantee that actually matters: the new description must resolve
+     * <b>as the calling user</b> and never escalate. Two users, one asset, one query — if the
+     * answers differ by caller, identity is being honoured; if they match, it is not.
+     *
+     * <p>Deliberately not framed as "a published asset must be unreadable". Under delivery
+     * semantics the lookup honours front-end roles, so published content is readable anonymously by
+     * design, and asserting otherwise would test a scenario dotCMS does not have rather than the
+     * permission check. That mistake is easy to make and hard to see: a fixture checked with
+     * {@code respectFrontendRoles = false} looks locked down while delivery, correctly, still grants
+     * access.
+     *
+     * <p>Two fixture traps, both documented in {@code WebAssetResourceV2IntegrationTest}: the list
+     * form of {@code permissionAPI.save} is required because the single-Permission form only
+     * appends and would leave the inherited READ in place; and the shared {@code TestUserUtils}
+     * users carry a type-level CONTENTLETS READ grant through their role, so purpose-built users in
+     * fresh roles are used instead.
+     */
+    @Test
+    public void test_assetResolvesAsTheCallingUser() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Identity-scoped");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role permittedRole = new RoleDataGen().nextPersisted();
+
+        // Replace inherited permissions on the asset with a single grant to one role, so the only
+        // difference between the two users below is whether they hold it.
+        permissionAPI.permissionIndividually(
+                permissionAPI.findParentPermissionable(asset), asset, systemUser);
+        permissionAPI.save(
+                List.of(new Permission(asset.getPermissionId(), permittedRole.getId(),
+                        PermissionAPI.PERMISSION_READ, true)),
+                asset, systemUser, false);
+
+        final User permittedUser =
+                new UserDataGen().roles(permittedRole).nextPersisted();
+        final User otherUser =
+                new UserDataGen().roles(new RoleDataGen().nextPersisted()).nextPersisted();
+
+        // Check the fixture the way the product asks, not a way that merely looks strict: the
+        // lookup behind an asset field honours front-end roles.
+        assertTrue("fixture problem: the permitted user cannot read the asset, so a difference "
+                        + "below would prove nothing",
+                permissionAPI.doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ,
+                        permittedUser, true));
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { fileName } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
+
+        final Object seenByPermitted = assetFieldFor(query, permittedUser, holder);
+        final Object seenByOther = assetFieldFor(query, otherUser, holder);
+
+        assertNotNull("the user holding the grant must see the asset", seenByPermitted);
+
+        // The asset is published, so delivery may legitimately serve it to the second user through
+        // the anonymous role. What must never happen is the field resolving with more authority
+        // than the caller has: if the two answers are identical AND the second user genuinely lacks
+        // read, identity is being ignored.
+        if (!permissionAPI.doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ,
+                otherUser, true)) {
+            assertEquals("the asset field resolved with more authority than its caller: a user "
+                            + "without read on the asset received it anyway",
+                    null, seenByOther);
+        }
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    /** Runs {@code query} as {@code user} and returns the asset field of the single row, if any. */
+    private Object assetFieldFor(final String query, final User user, final ContentType holder)
+            throws Exception {
+        final Map<String, Object> data = GraphqlQueryRunner.executeAndExpectSuccess(query, user);
+        final List<Map<String, Object>> rows =
+                (List<Map<String, Object>>) data.get(holder.variable() + "Collection");
+        return null == rows || rows.isEmpty() ? null : rows.get(0).get(IMAGE_FIELD_VAR);
+    }
 
     /** Runs a query selecting {@code selection} on {@code companionField} and returns that object. */
     private Map<String, Object> queryCompanion(final ContentType holder, final Contentlet content,
