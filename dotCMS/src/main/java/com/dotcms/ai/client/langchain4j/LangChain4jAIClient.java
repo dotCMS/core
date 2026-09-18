@@ -73,7 +73,21 @@ public class LangChain4jAIClient implements AIClient {
 
     private static final Lazy<LangChain4jAIClient> INSTANCE = Lazy.of(LangChain4jAIClient::new);
     private static final ObjectMapper MAPPER = DotObjectMapperProvider.createDefaultMapper();
-    private static final long MODEL_CACHE_TTL_HOURS = 1;
+    /**
+     * How long a built model may be reused before it is discarded and rebuilt from current
+     * configuration.
+     *
+     * <p>Short because it is the only bound on how long a revoked credential stays usable. Secret
+     * changes evict on the node that handled the save and nowhere else — the event is published
+     * through {@code LocalSystemEventsAPI}, which does not cross the cluster — so on every other
+     * node a rotated key keeps working until its cached model expires. At an hour that window was
+     * long enough to matter when the rotation was a response to a leak.</p>
+     *
+     * <p>Rebuilding is local: the factory constructs a provider client rather than calling one, so
+     * the cost of a shorter life is object and connection-pool churn, not latency on the request
+     * that triggers it.</p>
+     */
+    private static final long MODEL_CACHE_TTL_MINUTES = 5;
     private static final long STREAMING_TIMEOUT_SECONDS = 300;
     private static final String CHAT_SECTION = "chat";
     private static final String EMBEDDINGS_SECTION = "embeddings";
@@ -93,19 +107,19 @@ public class LangChain4jAIClient implements AIClient {
 
     private final Cache<String, ChatModel> chatModelCache = Caffeine.newBuilder()
             .maximumSize(128)
-            .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
+            .expireAfterWrite(MODEL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
             .build();
     private final Cache<String, StreamingChatModel> streamingChatModelCache = Caffeine.newBuilder()
             .maximumSize(128)
-            .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
+            .expireAfterWrite(MODEL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
             .build();
     private final Cache<String, EmbeddingModel> embeddingModelCache = Caffeine.newBuilder()
             .maximumSize(128)
-            .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
+            .expireAfterWrite(MODEL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
             .build();
     private final Cache<String, ImageModel> imageModelCache = Caffeine.newBuilder()
             .maximumSize(128)
-            .expireAfterWrite(MODEL_CACHE_TTL_HOURS, TimeUnit.HOURS)
+            .expireAfterWrite(MODEL_CACHE_TTL_MINUTES, TimeUnit.MINUTES)
             .build();
 
     private LangChain4jAIClient() {}
