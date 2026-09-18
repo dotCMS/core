@@ -51,6 +51,16 @@ on:
         required: false
         type: string
         default: ''
+      reuse-build-artifacts:
+        description: |
+          Publish the Maven outputs the build installed instead of running a
+          second full reactor install. Escape hatch: set false to fall back to
+          the old rebuild-then-publish path — needed when releasing a tag cut
+          before release-build existed, where the tag's own maven-job has no
+          release-build input and so installs unsuffixed coordinates.
+        required: false
+        type: boolean
+        default: true
 
 # Prevent duplicate runs for the same release branch AND Java version
 # Different Java versions can run in parallel, but duplicate builds of the same version are prevented
@@ -115,7 +125,16 @@ jobs:
       ref: ${{ needs.extract-version.outputs.tag }}
       validate: false
       version: ${{ needs.extract-version.outputs.version }}
+      # generate-docker still produces the deployment context the deployment job
+      # downloads. Neither the throwaway test image nor the build-classes bundle
+      # has a consumer here: this workflow runs no test phase (#37607).
       generate-docker: true
+      generate-test-image: false
+      generate-build-classes: false
+      # This is the whole point of the input for a Java variant: the build
+      # installs the -javaNN coordinates itself, so the release job no longer has
+      # to run a second reactor build to create them.
+      release-build: true
       java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
       artifact-suffix: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_suffix || vars.RELEASE_JAVA_VARIANT_SUFFIX }}
     permissions:
@@ -138,6 +157,9 @@ jobs:
       # From the build, not re-derived: this is the derivation that used to
       # produce '-java-25' against the build's '-java25'.
       artifact-suffix: ${{ needs.build.outputs.artifact-suffix }}
+      # BuildKit's implicit scope is shared with every other run on this ref, so
+      # the variant release's layers get evicted between runs. Give it its own.
+      docker-cache-scope-prefix: release
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -160,6 +182,10 @@ jobs:
       upload_javadocs: false      # Skip - already done by primary release
       update_plugins: false        # Skip - already done by primary release
       update_github_labels: false  # Skip - already done by primary release
+      # Publish the build's artifacts instead of compiling the reactor a second
+      # time; #37607. Validated before publishing. Overridable so a release
+      # against a pre-change tag has a way back without editing this file.
+      reuse-build-artifacts: ${{ inputs.reuse-build-artifacts }}
       java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
       artifact-suffix: ${{ needs.build.outputs.artifact-suffix }}
     secrets:
