@@ -741,34 +741,34 @@ export const DotContentDriveStore = signalStore(
              * ceiling, so the refusing is left to the server.
              */
             uploadCeilings: computed(() => globalStore.systemBulkUpload()),
-        /**
-         * Whether the browsed folder accepts new children.
-         *
-         * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
-         * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
-         * the contentlet checkin path never checks it, so that one is gated here for consistency
-         * rather than as a preview of a refusal — otherwise uploading would quietly allow what
-         * creating a folder in the same place forbids.
-         *
-         * Computed here rather than in each consumer because three surfaces gate on it — the New
-         * menu, the Upload button and the drop zone — and three copies of the folder-then-site
-         * fallback would be three chances to disagree.
-         *
-         * A node with no permissions is the site root, whose parent is the host rather than a
-         * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
-         * in flight, and an instance too old to report the field. Starting disabled would flicker
-         * the affordances off and on for the common case, and the server refuses the write anyway.
-         */
-        $canAddChildren: computed(() => {
-            const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
-                ?.permissions;
+            /**
+             * Whether the browsed folder accepts new children.
+             *
+             * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
+             * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
+             * the contentlet checkin path never checks it, so that one is gated here for consistency
+             * rather than as a preview of a refusal — otherwise uploading would quietly allow what
+             * creating a folder in the same place forbids.
+             *
+             * Computed here rather than in each consumer because three surfaces gate on it — the New
+             * menu, the Upload button and the drop zone — and three copies of the folder-then-site
+             * fallback would be three chances to disagree.
+             *
+             * A node with no permissions is the site root, whose parent is the host rather than a
+             * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
+             * in flight, and an instance too old to report the field. Starting disabled would flicker
+             * the affordances off and on for the common case, and the server refuses the write anyway.
+             */
+            $canAddChildren: computed(() => {
+                const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
+                    ?.permissions;
 
-            if (!permissions?.length) {
-                return siteCanAddChildren() !== false;
-            }
+                if (!permissions?.length) {
+                    return siteCanAddChildren() !== false;
+                }
 
-            return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
-        })
+                return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
+            })
         };
     }),
     withHooks((store) => ({
