@@ -488,7 +488,7 @@ describe('DotKeyValueComponent', () => {
 
             expect(renderedKeys()).toHaveLength(40);
             expect(renderedKeys()[0]).toBe('key-000');
-            expect(spectator.query(byTestId('dot-key-value-show-all')).textContent).toContain(
+            expect(spectator.query(byTestId('dot-key-value-show-all'))?.textContent).toContain(
                 'Show all'
             );
         });
@@ -498,7 +498,9 @@ describe('DotKeyValueComponent', () => {
             // matching `dot-relationship-field`.
             create({ variables: manyPairs(95) });
 
-            expect(spectator.query(byTestId('dot-key-value-show-all')).textContent).toContain('95');
+            expect(spectator.query(byTestId('dot-key-value-show-all'))?.textContent).toContain(
+                '95'
+            );
         });
 
         it('should reveal the whole list in a single click', () => {
@@ -520,7 +522,7 @@ describe('DotKeyValueComponent', () => {
             spectator.detectChanges();
 
             expect(renderedKeys()).toHaveLength(40);
-            expect(spectator.query(byTestId('dot-key-value-show-all')).textContent).toContain(
+            expect(spectator.query(byTestId('dot-key-value-show-all'))?.textContent).toContain(
                 'Show all'
             );
         });
@@ -532,10 +534,10 @@ describe('DotKeyValueComponent', () => {
             spectator.detectChanges();
 
             const toggle = spectator.query(byTestId('dot-key-value-show-all'));
-            expect(toggle.textContent).toContain('Show less');
+            expect(toggle?.textContent).toContain('Show less');
             // No count on the way back: collapsing always returns to the same first page.
-            expect(toggle.textContent).not.toContain('95');
-            expect(toggle.getAttribute('aria-expanded')).toBe('true');
+            expect(toggle?.textContent).not.toContain('95');
+            expect(toggle?.getAttribute('aria-expanded')).toBe('true');
         });
 
         it('should keep the whole list bound to the table, not just the rendered part', () => {
