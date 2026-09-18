@@ -19,16 +19,17 @@
 ## Scope Note *(read this first)*
 
 Four separate additions to one screen — the Experiments listing. They share a screen and a state
-owner, and nothing else. Each is independently shippable and independently valuable, and one of
-them is blocked on another team's work.
+owner, and nothing else. Each is independently shippable and independently valuable, and none of
+them is blocked: the one external dependency, #37304, has shipped.
 
 1. **Created By filter** — narrow the list to experiments created by one or more chosen people.
    The people come from the whole user directory, not just from the creators present in the list.
 2. **Schedule time filter** — narrow the list to experiments whose scheduled start falls inside a
    chosen window. Single-select, five fixed options, lower bound only.
-3. **Created By column** — show the creator's name in the table. **Blocked by
-   [#37304](https://github.com/dotCMS/core/issues/37304)**, which adds the name to the API payload.
-   The two filters are not blocked: creator matching uses the user id the payload already carries.
+3. **Created By column** — show the creator's name in the table. Depends on
+   [#37304](https://github.com/dotCMS/core/issues/37304), which adds the name to the API payload and
+   **has shipped**; the column is no longer blocked. The two filters never were: creator matching
+   uses the user id the payload already carries.
 4. **Pagination alignment** — make the listing's paginator behave like Content Drive's, so two
    listing screens in the same admin do not disagree about what a page is.
 
@@ -174,11 +175,12 @@ Reading the listing, an editor can tell what each experiment tests, where it run
 doing, but not whose it is. A Created By column puts the creator's name in the row, so the question
 "who set this up" is answered without opening anything.
 
-**Why this priority**: Valuable but not urgent, and **blocked by #37304** — the name is not in the
-payload yet. Sequenced after the two filters, which is also why the creator *filter* was specified
-to match on the user id rather than on a name.
+**Why this priority**: Valuable but not urgent. It was sequenced after the two filters because
+#37304 had not shipped when this was written — which is also why the creator *filter* matches on
+the user id rather than on a name. #37304 has since shipped, so the ordering is now preference
+rather than dependency.
 
-**Independent Test**: Once #37304 has landed, ship the column alone and read a row.
+**Independent Test**: ship the column alone and read a row.
 
 **Acceptance Scenarios**:
 
@@ -186,9 +188,11 @@ to match on the user id rather than on a name.
    showing it.
 2. **Given** a creator name longer than its column, **Then** it is truncated and the full value is
    available on hover, exactly as the Name and Page columns already do.
-3. **Given** a payload with no creator name — an older backend, before #37304 — **Then** the cell
-   shows the listing's existing placeholder rather than an empty or literal-undefined cell.
-4. **Given** the column is added, **Then** the table's skeleton row still draws one placeholder
+3. **Given** an experiment whose creator cannot be resolved, **Then** the cell reads `unknown`, and
+   one created by the system user reads `System` — both rendered as delivered, neither re-mapped.
+4. **Given** a payload with no creator name at all — a backend older than #37304 — **Then** the
+   cell shows the listing's existing placeholder rather than an empty or literal-undefined cell.
+5. **Given** the column is added, **Then** the table's skeleton row still draws one placeholder
    per column and the Name column still holds its documented minimum width.
 
 ---
@@ -371,20 +375,29 @@ fewer rows than one page.
 - **FR-026**: The five option labels MUST come from the message catalogue.
 - **FR-027**: The filter MUST NOT change the Status or Goal chip counts (see FR-050).
 
-### Created By column *(blocked by #37304)*
+### Created By column
 
 - **FR-028**: The table MUST have a Created By column showing the creator's name as delivered by
   the experiment payload.
 - **FR-029**: The column MUST bind to the creator's display-name field and render whatever it
-  carries — including the raw user id that #37304 deliberately falls back to for an unresolvable
-  creator, which is how that field is guaranteed never to be null or empty. "Not the id" forbids
-  binding the column to the creator-id field instead; it does not ask the screen to detect and
-  suppress #37304's fallback. The client's experiment type MUST be extended to declare the field
-  when #37304 lands.
+  carries, without interpreting it. As shipped by #37304 that field is never null, absent or blank:
+  a resolvable creator gives their trimmed full name, the system user gives `System`, and every
+  unresolvable case — a deleted user, an orphaned reference, a user with no name set, or a lookup
+  that fails — gives `unknown`. The screen MUST NOT detect or re-map any of those values. "Not the
+  id" forbids binding the column to the creator-**id** field instead.
+- **FR-029a**: The two fallback labels are deliberately **not** the raw user id, and the screen
+  MUST NOT try to restore it. #37304 took them from the value Content Drive publishes for the same
+  question, so one orphaned owner reads the same in both listings. The consequence is accepted:
+  two different unresolvable creators render identically as `unknown` and cannot be told apart in
+  the column. That is preferred over two listings in one product labelling the same owner
+  differently.
 - **FR-030**: A name too long for its column MUST be truncated with the full value available on
   hover, consistent with the Name and Page columns.
-- **FR-031**: When the payload carries no creator name — a backend older than #37304 — the cell
-  MUST show the listing's existing placeholder rather than an empty cell or a literal "undefined".
+- **FR-031**: The placeholder path exists only for **version skew**. Against any backend carrying
+  #37304 the field is always populated, so an absent creator name means the portlet is running
+  against an older backend; the cell MUST then show the listing's existing placeholder rather than
+  an empty cell or a literal "undefined". The client's experiment type MUST declare the field as
+  optional for exactly this reason.
 - **FR-032**: The column MUST sit between Variants and Schedule, per the design prototype, giving
   the header order: Name, Page, Goal, Variants, Created By, Schedule, Status, Modified, actions —
   nine columns. It is an **addition**: the Modified column stays, even though the prototype does
@@ -477,8 +490,10 @@ fewer rows than one page.
 
 - **Experiment (client view)**: gains two declared fields it does not have today — the creator's
   **id**, which the API already sends and which the Created By filter matches on, and the creator's
-  **display name**, which #37304 will add and which the Created By column renders. Its **schedule**
-  already carries an optional start instant, which the time filter compares against.
+  **display name**, which #37304 added and which the Created By column renders. That name is never
+  null, absent or blank: a real name, `System` for the system user, or `unknown` for anything that
+  cannot be resolved. Its **schedule** already carries an optional start instant, which the time
+  filter compares against.
 - **Directory person (option)**: an id and a display label, fetched a page at a time and searched
   by the server. Carries no count. Selected people are held as ids, which is what the address
   stores.
@@ -522,8 +537,9 @@ fewer rows than one page.
 - **SC-013**: Paging and resizing pages issue zero network requests.
 - **SC-014**: Every string added by this work is translatable: no literal English survives in a
   template or component.
-- **SC-015**: Once #37304 has shipped, every row shows a creator name; against a backend without
-  #37304, every row shows the placeholder and nothing renders as "undefined".
+- **SC-015**: Every row shows a creator name — a real name, `System`, or `unknown`, never an empty
+  cell and never "undefined". Against a backend older than #37304, every row shows the listing's
+  placeholder instead, and still never "undefined".
 - **SC-016**: Opening a shared link that already carries a creator selection shows people's names
   in the chip, not ids — and does so for an editor who is **not** an administrator and has no
   access to the Roles or Users areas, which is the population most likely to be handed such a link.
@@ -543,8 +559,8 @@ fewer rows than one page.
     listing with page-scope parameters, and users share filtered links. Existing parameters keep
     their names, meanings and defaults; the two new ones are additive and absent when unused, so
     every URL that works today still works and still produces the same rows.
-  - No API is changed by this work. The creator name arrives from #37304, which is itself specified
-    as additive.
+  - No API is changed by this work. The creator name arrives from #37304, which shipped as an
+    additive change.
   - The Created By column must tolerate a backend that predates #37304, because the portlet and the
     backend are not released as one unit.
   - The page-size parameter continues to honour values outside the offered set, so an address
@@ -648,9 +664,14 @@ the prototype alongside this spec is not surprised by the differences.
 
 ## Dependencies
 
-- **Blocking**: [#37304](https://github.com/dotCMS/core/issues/37304) — the creator's display name
-  in the experiment payload. Blocks User Story 3 and FR-028 through FR-034a only. Open at the time
-  of writing.
+- **Satisfied**: [#37304](https://github.com/dotCMS/core/issues/37304) — the creator's display name
+  in the experiment payload. **Shipped** (PR #37510, merged 2026-09-17), so User Story 3 and
+  FR-028 through FR-034a are no longer blocked; all four stories are actionable. The issue itself
+  was left open after the merge. Note that what shipped differs from that issue's own acceptance
+  criteria: the unresolvable-creator fallback is `unknown`, not the raw user id, and the system
+  user reads `System` — both borrowed from Content Drive so one orphaned owner reads the same in
+  both listings. FR-029 and FR-029a are written against what shipped, not against what was
+  promised.
 - **Non-blocking, must stay compatible**: [#37007](https://github.com/dotCMS/core/issues/37007)
   (server-side listing, parked on [#36823](https://github.com/dotCMS/core/issues/36823)) and
   [#37005](https://github.com/dotCMS/core/issues/37005) (page-scope narrowing and the editor
