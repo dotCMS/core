@@ -108,7 +108,16 @@ export interface DotContentDriveSort {
  */
 export interface DotContentDriveInit {
     currentSite: DotSite;
-    path: string;
+    /**
+     * The browsed location, or `undefined` when the URL carries none (`DEFAULT_PATH`).
+     *
+     * Declared as a required property holding `string | undefined` rather than an optional
+     * `path?: string`. The difference matters here: this interface is extended by
+     * {@link DotContentDriveState}, and an optional property makes the *signal* optional, so
+     * every `store.path()` call becomes "cannot invoke possibly undefined". This form keeps the
+     * signal required and puts the uncertainty where it actually lives, in the value.
+     */
+    path: string | undefined;
     filters: DotContentDriveFilters;
     isTreeExpanded: boolean;
 }

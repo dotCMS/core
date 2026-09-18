@@ -436,18 +436,10 @@ describe('DotContentDriveStore', () => {
                 // client's idea of a location turns into what the endpoint is asked for, so the
                 // assertions should fail if that mapping drifts, not follow it.
 
-                // What the store really receives when the URL carries no location. DEFAULT_PATH is
-                // `undefined`, while DotContentDriveInit declares `path: string` — the declaration
-                // is the half that is wrong, since the store seeds its own initial state with it,
-                // but widening it makes the signal optional and every store.path() call site stops
-                // compiling. Cast here so these tests keep exercising the real value instead of an
-                // empty string that merely happens to reach the same branch today.
-                const NO_LOCATION = DEFAULT_PATH as unknown as string;
-
                 it('should ask for all site content when the URL carries no location', () => {
                     store.initContentDrive({
                         currentSite: SYSTEM_HOST,
-                        path: NO_LOCATION,
+                        path: DEFAULT_PATH,
                         filters: {},
                         isTreeExpanded: false
                     });
@@ -465,7 +457,7 @@ describe('DotContentDriveStore', () => {
                 it('should treat an empty location the same as an absent one', () => {
                     store.initContentDrive({
                         currentSite: SYSTEM_HOST,
-                        path: NO_LOCATION,
+                        path: DEFAULT_PATH,
                         filters: {},
                         isTreeExpanded: false
                     });
@@ -571,7 +563,7 @@ describe('DotContentDriveStore', () => {
                 it('should not ask for folders in all site content', () => {
                     store.initContentDrive({
                         currentSite: SYSTEM_HOST,
-                        path: NO_LOCATION,
+                        path: DEFAULT_PATH,
                         filters: {},
                         isTreeExpanded: false
                     });

@@ -707,11 +707,7 @@ export const DotContentDriveStore = signalStore(
 
                     store.initContentDrive({
                         currentSite: globalStore.siteDetails(),
-                        // `path` is `string | undefined` here, because DEFAULT_PATH is undefined.
-                        // DotContentDriveInit declares `path: string`, which was never true of the
-                        // running code. Cast rather than coalesce: it must stay `undefined` rather
-                        // than '', since consumers read it as `path ?? '/'` where the two differ.
-                        path: path as string,
+                        path,
                         filters: restoredFilters,
                         isTreeExpanded
                     });
