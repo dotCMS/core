@@ -725,6 +725,29 @@ describe('DotFolderListViewComponent', () => {
             expect(spectator.component.$ptConfig().paginator.class).toBe('');
         });
 
+        it('should take the paginator out of play as soon as a click is accepted, before loading catches up', () => {
+            // Issue #37212 QA follow-up: `$ptConfig` used to react only to `$loading()`, which still
+            // reads `false` for at least one microtask after a click is accepted (see `onPage`'s
+            // `#pageChangeAccepted` doc comment). A real second mouse click landing in that gap is
+            // not stopped by CSS yet, so it reaches PrimeNG's own paginator button, which mutates its
+            // internal current-page pointer synchronously regardless of what `onPage` does with the
+            // event -- `onPage`'s guard blocks the resulting duplicate request, but the paginator's
+            // Previous/Next disabled state is left desynced from the page actually on screen (this
+            // is the failure Rafael's QA pass reported: only one control looked disabled, and the
+            // other navigated to the wrong page). Gating `$ptConfig` on `#pageChangeAccepted` too
+            // closes the gap at the DOM level instead of trying to correct it after the fact.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            // `loading` is still `false` here -- the caller's store has not round-tripped yet.
+            expect(spectator.component.$loading()).toBe(false);
+            expect(spectator.component.$ptConfig().paginator.class).toContain('pointer-events-none');
+        });
+
         it('should not fetch languages when the locale column is hidden', () => {
             // The preview is a second instance of this grid, built and torn down on every drill-in,
             // and it hides the locale column — so the map that request builds is never read.
