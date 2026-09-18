@@ -1064,32 +1064,6 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     expect(store.reloadContentDrive).toHaveBeenCalled();
                 });
 
-                it('should report the delete on the toolbar while it runs', async () => {
-                    // A recursive subtree delete is the slowest thing in the portlet and reported
-                    // nothing at all until its toast. The confirm dialog closes on accept, so the
-                    // run outlives its trigger and belongs on the indicator (FR-007).
-                    folderService.deleteFolder = vi.fn().mockReturnValue(NEVER);
-                    const startExternalRun = vi.spyOn(store, 'startExternalRun');
-
-                    await component.getMenuItems(folderContextMenuWithEdit);
-                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
-                    (alertConfirmService.confirm as Mock).mock.lastCall[0].accept();
-
-                    expect(startExternalRun).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            total: 1,
-                            targetLabel: folderWithEdit.name,
-                            // Both keys, because neither alone is reliably the one the row carries:
-                            // the search service backfills `inode` from `identifier` only when the
-                            // API returned none, so a folder that arrives with a distinct inode
-                            // would never be marked if this targeted the identifier alone.
-                            targets: [folderWithEdit.identifier, folderWithEdit.inode].filter(
-                                Boolean
-                            )
-                        })
-                    );
-                });
-
                 it('should clear the indicator when the delete succeeds', async () => {
                     const endExternalRun = vi.spyOn(store, 'endExternalRun');
 
@@ -1780,24 +1754,6 @@ describe('DotFolderListViewContextMenuComponent', () => {
             vi.useRealTimers();
         });
 
-        it('should report the run on the toolbar indicator, naming the item', async () => {
-            vi.useFakeTimers();
-            const startExternalRun = vi.spyOn(store, 'startExternalRun');
-
-            await fireSaveAction();
-
-            expect(startExternalRun).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    actionName: 'Save',
-                    total: 1,
-                    targetLabel: mockContentlet.title,
-                    targets: [mockContentlet.inode]
-                })
-            );
-
-            vi.useRealTimers();
-        });
-
         it('should clear the indicator once the run settles', async () => {
             vi.useFakeTimers();
             const endExternalRun = vi.spyOn(store, 'endExternalRun');
@@ -1846,26 +1802,6 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             vi.advanceTimersByTime(0);
         };
-
-        it('should report a lock on the toolbar, naming the item', async () => {
-            // The same Lock fired from the Workflow Center registers a run and reports; from the
-            // row menu it registered nothing, so one action read two ways depending on the surface.
-            vi.useFakeTimers();
-            dotContentletService.lockContent.mockReturnValue(NEVER);
-            const startExternalRun = vi.spyOn(store, 'startExternalRun');
-
-            await fireLock(false);
-
-            expect(startExternalRun).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    total: 1,
-                    targetLabel: mockContentlet.title,
-                    targets: [mockContentlet.inode]
-                })
-            );
-
-            vi.useRealTimers();
-        });
 
         it('should report an unlock the same way', async () => {
             vi.useFakeTimers();

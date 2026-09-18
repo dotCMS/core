@@ -34,11 +34,8 @@ import {
 } from '@dotcms/ui';
 
 import { PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
-import {
-    parseWorkflowToken,
-    workflowEntryToToken,
-    WorkflowFilterEntry
-} from '../../../../utils/functions';
+import { WorkflowFilterEntry } from '../../../../shared/models';
+import { parseWorkflowToken, workflowEntryToToken } from '../../../../utils/functions';
 
 /**
  * One selected scheme, optionally pinned to a single step. `step` omitted means
