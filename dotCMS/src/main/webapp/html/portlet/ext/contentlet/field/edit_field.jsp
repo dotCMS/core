@@ -906,7 +906,10 @@
                             imageEditor.execute();
                         });
                     })
-                    .catch(() => {
+                    .catch((error) => {
+                        // Logged on purpose: this field failing silently is what made the
+                        // original defect so expensive to diagnose on customer environments.
+                        console.error('Error loading the binary field', error);
                         binaryFieldContainer.innerHTML = '<div class="callOutBox">Error loading the binary field</div>';
                     })
                 })();
