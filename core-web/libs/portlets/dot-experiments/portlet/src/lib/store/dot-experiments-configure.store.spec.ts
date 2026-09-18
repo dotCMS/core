@@ -93,6 +93,7 @@ const buildGoals = (goal: Partial<Goal> = {}): Goals => ({
 const buildExperiment = (experiment: Partial<DotExperiment> = {}): DotExperiment => ({
     id: EXPERIMENT_ID,
     pageId: PAGE.pageId,
+    createdBy: 'dotcms.org.1',
     name: 'Alpha campaign',
     description: 'Checkout funnel rework',
     status: DotExperimentStatus.DRAFT,

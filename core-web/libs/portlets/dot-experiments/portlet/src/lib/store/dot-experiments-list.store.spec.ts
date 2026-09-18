@@ -45,6 +45,7 @@ const OTHER_SITE_ID = 'site-2';
 const buildExperiment = (experiment: Partial<DotExperiment>): DotExperiment => ({
     id: 'exp-id',
     pageId: 'page-1',
+    createdBy: 'dotcms.org.1',
     name: 'Experiment',
     description: 'An experiment',
     status: DotExperimentStatus.DRAFT,
@@ -69,6 +70,7 @@ const buildGoals = (type: GOAL_TYPES) =>
 const EXPERIMENT_DRAFT = buildExperiment({
     id: 'exp-draft',
     pageId: 'page-1',
+    createdBy: 'dotcms.org.1',
     name: 'Alpha campaign',
     description: 'Checkout funnel rework',
     status: DotExperimentStatus.DRAFT,
@@ -98,6 +100,7 @@ const EXPERIMENT_OTHER_SITE = buildExperiment({
 const EXPERIMENT_ARCHIVED = buildExperiment({
     id: 'exp-archived',
     pageId: 'page-1',
+    createdBy: 'dotcms.org.1',
     name: 'Delta retired',
     status: DotExperimentStatus.ARCHIVED,
     archived: true,
