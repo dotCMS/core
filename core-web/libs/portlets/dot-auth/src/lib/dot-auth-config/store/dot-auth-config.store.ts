@@ -122,7 +122,7 @@ export const DotAuthConfigStore = signalStore(
             patchState(store, { status: 'saving', errors: {} });
             const payload = toPayload(draft, store.siteId());
             if (options?.regenerateKeypair && payload.protocol === 'SAML') {
-                payload.values.regenerateKeypair = true;
+                payload.values['regenerateKeypair'] = true;
             }
             service
                 .saveConfig(store.siteId(), payload)

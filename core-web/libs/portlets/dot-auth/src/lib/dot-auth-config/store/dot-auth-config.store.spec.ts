@@ -69,7 +69,7 @@ describe('DotAuthConfigStore', () => {
         it('does not send the regenerate flag on an ordinary save', () => {
             store.saveSso();
 
-            expect(sentValues().regenerateKeypair).toBeUndefined();
+            expect(sentValues()['regenerateKeypair']).toBeUndefined();
         });
 
         it('sends regenerateKeypair when the caller confirmed regeneration', () => {
@@ -78,9 +78,9 @@ describe('DotAuthConfigStore', () => {
 
             store.saveSso({ regenerateKeypair: true });
 
-            expect(sentValues().regenerateKeypair).toBe(true);
-            expect(sentValues().publicCert).toBeUndefined();
-            expect(sentValues().privateKey).toBeUndefined();
+            expect(sentValues()['regenerateKeypair']).toBe(true);
+            expect(sentValues()['publicCert']).toBeUndefined();
+            expect(sentValues()['privateKey']).toBeUndefined();
         });
 
         it('hands a rejected save to the HTTP error manager so the server message is shown', () => {

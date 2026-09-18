@@ -5,6 +5,7 @@ import { By } from '@angular/platform-browser';
 import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotAuthProvisioningConfig } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAuthProvisioningComponent } from './dot-auth-provisioning.component';
@@ -13,6 +14,11 @@ import { DEFAULT_CONFIG } from '../store/dot-auth-config.mappers';
 
 const TOOLTIP =
     'Comma-separated list of dotCMS role keys assigned to every provisioned user. Group mappings below add additional roles on top of these.';
+
+// A fresh object literal picks up the index signature the component's input type requires.
+const provisioningConfig = (): DotAuthProvisioningConfig & Record<string, unknown> => ({
+    ...structuredClone(DEFAULT_CONFIG.oidc)
+});
 
 describe('DotAuthProvisioningComponent', () => {
     let spectator: Spectator<DotAuthProvisioningComponent>;
@@ -29,7 +35,7 @@ describe('DotAuthProvisioningComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            props: { config: structuredClone(DEFAULT_CONFIG.oidc), syncLabel: 'Sync on login' }
+            props: { config: provisioningConfig(), syncLabel: 'Sync on login' }
         });
     });
 
