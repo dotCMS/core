@@ -286,7 +286,7 @@ public class ChatCompletionRequestMapperTest {
     /**
      * Given a request carrying temperature, max_tokens, top_p and stop,
      * When mapped to the internal request,
-     * Then every sampling parameter reaches the internal field it belongs to (FR-013) — a dropped
+     * Then every sampling parameter reaches the internal field it belongs to — a dropped
      * {@code max_tokens} is both a cost and a correctness failure, so it is asserted by value.
      */
     @Test
@@ -311,7 +311,7 @@ public class ChatCompletionRequestMapperTest {
      * Given a request that says nothing about streaming,
      * When mapped to the internal request,
      * Then both {@code stream} and {@code includeUsageInStream} default to false, and the optional
-     * sampling parameters stay null rather than being invented (FR-009).
+     * sampling parameters stay null rather than being invented.
      */
     @Test
     public void test_toInferenceRequest_streamAbsent_defaultsToFalse() throws Exception {
@@ -332,7 +332,7 @@ public class ChatCompletionRequestMapperTest {
     /**
      * Given a streaming request asking for usage through the standard streaming option,
      * When mapped to the internal request,
-     * Then {@code stream} is true and {@code includeUsageInStream} is true (FR-009).
+     * Then {@code stream} is true and {@code includeUsageInStream} is true.
      */
     @Test
     public void test_toInferenceRequest_streamOptionsIncludeUsage_mapsToIncludeUsageInStream()
@@ -352,8 +352,8 @@ public class ChatCompletionRequestMapperTest {
     /**
      * Given a streaming request with no stream options at all,
      * When mapped to the internal request,
-     * Then streaming is on but usage is withheld — {@code includeUsageInStream} defaults to false
-     * (FR-009). The view is built through its canonical constructor here, so the default does not
+     * Then streaming is on but usage is withheld — {@code includeUsageInStream} defaults to false.
+     * The view is built through its canonical constructor here, so the default does not
      * depend on Jackson leaving the field null.
      */
     @Test

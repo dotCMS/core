@@ -13,7 +13,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Unit tests for {@link SseSerializer} rendering incremental tool calls (FR-008) on a streamed
+ * Unit tests for {@link SseSerializer} rendering incremental tool calls on a streamed
  * completion served at {@code /api/inference/v1/chat/completions}.
  *
  * <p>A tool call does not arrive whole. Its identity and name come on the first fragment, its
@@ -50,7 +50,7 @@ public class SseToolCallStreamTest {
      * Given the first fragment of a tool call, carrying its id and the tool's name.
      * When it is rendered to a frame.
      * Then {@code choices[0].delta.tool_calls[0]} carries the index, the id, a {@code type} of
-     * {@code function} and the function name. (FR-008)
+     * {@code function} and the function name.
      *
      * @throws Exception if the frame does not carry parseable JSON
      */

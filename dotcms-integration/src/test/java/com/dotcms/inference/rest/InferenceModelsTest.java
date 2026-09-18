@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
  * Specifies model discovery through
  * {@link ModelsResource#models(HttpServletRequest, HttpServletResponse, String)}.
  *
- * <p>FR-024 removed every reserved alias and every implicit default from this family, which makes
+ * <p>Every reserved alias and every implicit default was removed from this family, which makes
  * this endpoint load-bearing rather than decorative: the list it returns is the <em>only</em> way
  * a caller can learn which {@code model} values the chat endpoint will accept. That is what the
  * tests here pin down — that the list is complete, that it is exactly the configured set with
@@ -49,10 +49,10 @@ import static org.mockito.Mockito.when;
  * unconfigured instance says so with an empty list rather than with somebody else's models.</p>
  *
  * <ul>
- *     <li>FR-010 — every entry of a fallback chain is listed, in configured order, because each
+ *     <li>Every entry of a fallback chain is listed, in configured order, because each
  *     one is a real choice a caller may name.</li>
- *     <li>FR-024 — nothing synthetic is added; the count equals the configured count.</li>
- *     <li>FR-022 — no configuration at either the site or the system level yields an empty
+ *     <li>Nothing synthetic is added; the count equals the configured count.</li>
+ *     <li>No configuration at either the site or the system level yields an empty
  *     {@code data} array, never another site's models.</li>
  *     <li>The models come from the <strong>chat</strong> section, not the embeddings or image
  *     ones, matching what the chat endpoint validates against.</li>
@@ -115,8 +115,8 @@ public class InferenceModelsTest {
         wireMockServer = AiTest.prepareWireMock();
 
         // A bare UserDataGen user has no roles at all, so it is neither a backend nor a frontend
-        // user and FR-016 rejects it; it also cannot read the sites these tests pass as an
-        // explicit override, which FR-019 checks. Two roles are needed, not one: the check in
+        // user, and is rejected; it also cannot read the sites these tests pass as an
+        // explicit override, which is also checked. Two roles are needed, not one: the check in
         // WebResource.checkRolePermissions is doesUserHaveRole(user, "DOTCMS_BACK_END_USER") by
         // key and does not walk inheritance, so being an admin does not imply it. Admin is what
         // grants read on the site.
@@ -168,7 +168,10 @@ public class InferenceModelsTest {
         final ModelListView view = (ModelListView) response.getEntity();
         assertEquals(OBJECT_LIST, view.object());
         assertNotNull(view.data());
-        assertEquals(1, view.data().size());
+        // The site also configures an embeddings and an image model, and both are listed — the
+        // chat model is simply first, which is the ordering a caller taking entry zero relies on.
+        assertEquals(List.of(CHAT_MODEL, AiTest.EMBEDDINGS_MODEL, AiTest.IMAGE_MODEL),
+                modelIds(view));
 
         final ModelListView.ModelView model = view.data().get(0);
         assertEquals(CHAT_MODEL, model.id());
@@ -182,7 +185,7 @@ public class InferenceModelsTest {
      * When the models are listed
      * Then every entry of the chain is listed, in configured order, the primary first
      *
-     * <p>FR-010. Each entry of the chain is a name the completions endpoint accepts, so a list
+     * <p>Each entry of the chain is a name the completions endpoint accepts, so a list
      * that showed only the primary would hide choices the caller is entitled to make.</p>
      */
     @Test
@@ -198,7 +201,11 @@ public class InferenceModelsTest {
 
         final ModelListView view = (ModelListView) response.getEntity();
         assertEquals(OBJECT_LIST, view.object());
-        assertEquals(List.of(CHAIN_PRIMARY, CHAIN_FALLBACK), modelIds(view));
+        assertEquals("Every entry of the chat chain is listed, in configured order, ahead of the "
+                        + "other capabilities' models",
+                List.of(CHAIN_PRIMARY, CHAIN_FALLBACK,
+                        AiTest.EMBEDDINGS_MODEL, AiTest.IMAGE_MODEL),
+                modelIds(view));
         assertEquals("The primary model is the first entry",
                 CHAIN_PRIMARY, view.data().get(0).id());
         view.data().forEach(
@@ -210,7 +217,7 @@ public class InferenceModelsTest {
      * When the models are listed
      * Then the list is exactly those three — no alias, no placeholder, no invented entry
      *
-     * <p>FR-024 removed the reserved alias precisely so the list equals the set of acceptable
+     * <p>The reserved alias was removed precisely so the list equals the set of acceptable
      * {@code model} values. An extra entry here would be a name the completions endpoint refuses,
      * which is worse than no list at all.</p>
      */
@@ -227,9 +234,13 @@ public class InferenceModelsTest {
         assertEquals(200, response.getStatus());
 
         final ModelListView view = (ModelListView) response.getEntity();
+        final List<String> expected = new ArrayList<>(configured);
+        expected.add(AiTest.EMBEDDINGS_MODEL);
+        expected.add(AiTest.IMAGE_MODEL);
+
         assertEquals("The list must hold one entry per configured model, and no more",
-                configured.size(), view.data().size());
-        assertEquals(configured, modelIds(view));
+                expected.size(), view.data().size());
+        assertEquals(expected, modelIds(view));
     }
 
     /**
@@ -238,7 +249,7 @@ public class InferenceModelsTest {
      * When the models are listed
      * Then the answer is a successful, empty list
      *
-     * <p>FR-022. The failure this guards against is not an error but a wrong success: falling
+     * <p>The failure this guards against is not an error but a wrong success: falling
      * back to whichever site happens to be configured would hand a caller model names their own
      * site will refuse, and would disclose that some other site has dotAI set up.</p>
      */
@@ -282,7 +293,8 @@ public class InferenceModelsTest {
         assertEquals(200, response.getStatus());
 
         final ModelListView view = (ModelListView) response.getEntity();
-        assertEquals(List.of(OTHER_CHAT_MODEL), modelIds(view));
+        assertEquals(List.of(OTHER_CHAT_MODEL, AiTest.EMBEDDINGS_MODEL, AiTest.IMAGE_MODEL),
+                modelIds(view));
         assertFalse("The other site's model must not appear",
                 modelIds(view).contains(CHAT_MODEL));
     }
@@ -292,7 +304,7 @@ public class InferenceModelsTest {
      * When the models are listed
      * Then the resolved site is published on the request, so every response can report it
      *
-     * <p>FR-020. Asserted on the request attribute rather than on the header because invoking the
+     * <p>Asserted on the request attribute rather than on the header because invoking the
      * resource method directly never runs the JAX-RS response filter that turns the attribute into
      * {@code X-dotCMS-Resolved-Site} — the attribute is the part this endpoint is responsible
      * for.</p>
@@ -315,7 +327,7 @@ public class InferenceModelsTest {
      * When the models are listed
      * Then it is refused as unauthorized, in the standard error shape
      *
-     * <p>FR-015. The model list names the site's configured vendors and models, which is exactly
+     * <p>The model list names the site's configured vendors and models, which is exactly
      * the kind of reconnaissance an anonymous caller should not get for free.</p>
      */
     @Test
@@ -337,14 +349,25 @@ public class InferenceModelsTest {
      * Given a site configured with a chat model, a different embeddings model and a different
      * image model
      * When the models are listed
-     * Then only the chat model is listed
+     * Then all three are listed, with the chat model first
      *
-     * <p>The chat endpoint validates {@code model} against the chat section, so a list drawn from
-     * any other section would advertise names that endpoint refuses. Embeddings and images have
-     * their own operations and their own model sets.</p>
+     * <p>Every operation in this family requires an exact model name and there is no implicit
+     * default, so this listing is the only way a caller can learn one. Listing chat alone — which
+     * is what shipped first — left the embeddings and image operations with no discovery at all:
+     * a caller had to be told their model names out of band, which is precisely what a discovery
+     * endpoint exists to avoid.</p>
+     *
+     * <p>Chat first is asserted rather than incidental. The documented way to ask for "whatever
+     * this site runs" is to read this list and take the first entry, so an ordering that put an
+     * embeddings model at the head would silently break every caller following that advice.</p>
+     *
+     * <p>The format offers nowhere to say which entry serves which operation — its model object
+     * has no type, mode or modality field — so a caller that picks the wrong one is refused by
+     * the operation itself, naming the field. That refusal is the mechanism; this list is
+     * deliberately not the place to duplicate it.</p>
      */
     @Test
-    public void test_models_withDistinctSectionModels_listsOnlyTheChatSection() throws Exception {
+    public void test_models_withDistinctSectionModels_listsEveryCapability() throws Exception {
         final Host site = siteConfiguredWith(CHAT_MODEL, EMBEDDINGS_MODEL, IMAGE_MODEL);
 
         final Response response = resource.models(
@@ -354,11 +377,30 @@ public class InferenceModelsTest {
         assertEquals(200, response.getStatus());
 
         final ModelListView view = (ModelListView) response.getEntity();
-        assertEquals(List.of(CHAT_MODEL), modelIds(view));
-        assertFalse("The embeddings model belongs to the embeddings operation, not here",
-                modelIds(view).contains(EMBEDDINGS_MODEL));
-        assertFalse("The image model belongs to the image operation, not here",
-                modelIds(view).contains(IMAGE_MODEL));
+        assertEquals("Every configured model is discoverable, chat first",
+                List.of(CHAT_MODEL, EMBEDDINGS_MODEL, IMAGE_MODEL), modelIds(view));
+        assertEquals("A caller taking the first entry must still get the site's primary chat "
+                + "model", CHAT_MODEL, modelIds(view).get(0));
+    }
+
+    /**
+     * Given a site whose sections name the same model
+     * When the models are listed
+     * Then it appears once
+     *
+     * <p>A repeat would be harmless to a client but would misrepresent the site as running two
+     * things, and a caller counting entries to decide what is available would be wrong.</p>
+     */
+    @Test
+    public void test_models_withOneModelServingEverySection_listsItOnce() throws Exception {
+        final Host site = siteConfiguredWith(CHAT_MODEL, CHAT_MODEL, CHAT_MODEL);
+
+        final Response response = resource.models(
+                mockRequest(), mockResponse(), site.getIdentifier());
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatus());
+        assertEquals(List.of(CHAT_MODEL), modelIds((ModelListView) response.getEntity()));
     }
 
     /**

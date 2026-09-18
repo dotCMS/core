@@ -69,12 +69,15 @@ import com.dotcms.filters.interceptor.meta.MetaWebInterceptorTest;
 import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
 import com.dotcms.inference.rest.ChatCompletionsTest;
 import com.dotcms.inference.rest.InferenceAuthorizationTest;
+import com.dotcms.inference.rest.InferenceClientConformanceTest;
 import com.dotcms.inference.rest.InferenceEmbeddingsTest;
 import com.dotcms.inference.rest.InferenceFallbackTest;
 import com.dotcms.inference.rest.InferenceImagesTest;
+import com.dotcms.inference.rest.InferenceLoggingTest;
 import com.dotcms.inference.rest.InferenceModelsTest;
 import com.dotcms.inference.rest.InferenceModelValidationTest;
 import com.dotcms.inference.rest.InferenceSiteIsolationTest;
+import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
 import com.dotcms.integritycheckers.ContentPageIntegrityCheckerTest;
@@ -456,12 +459,15 @@ import org.junit.runners.Suite.SuiteClasses;
         ChatCompletionsTest.class,
         ChatCompletionsStreamingTest.class,
         InferenceAuthorizationTest.class,
+        InferenceClientConformanceTest.class,
         InferenceEmbeddingsTest.class,
         InferenceFallbackTest.class,
         InferenceImagesTest.class,
+        InferenceLoggingTest.class,
         InferenceModelsTest.class,
         InferenceModelValidationTest.class,
         InferenceSiteIsolationTest.class,
+        InferenceTestsAreRegisteredTest.class,
         InferenceSiteResolutionTest.class,
         TimeMachineAPITest.class,
         Task240513UpdateContentTypesSystemFieldTest.class,

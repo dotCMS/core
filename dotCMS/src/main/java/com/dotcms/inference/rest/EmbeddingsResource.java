@@ -13,6 +13,7 @@ import com.dotcms.inference.rest.view.EmbeddingsRequestView;
 import com.dotcms.inference.rest.view.InferenceErrorView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.NoCors;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -72,6 +73,7 @@ import java.util.Optional;
  */
 @Path("/inference/v1/embeddings")
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
+@NoCors
 public class EmbeddingsResource {
 
     /** Section of the site's {@code providerConfig} JSON that configures embeddings. */
@@ -232,6 +234,7 @@ public class EmbeddingsResource {
                 Logger.error(this, "The embeddings provider returned " + batch.vectors().size()
                         + " vectors for " + inputs.size() + " inputs on site "
                         + AiHostResolver.sanitize(context.servingSiteId()));
+                // No exception to inspect here: the provider answered, it just answered short.
                 return errorResponse(InferenceError.upstream(UPSTREAM_FAILURE_MESSAGE));
             }
 
@@ -243,7 +246,7 @@ public class EmbeddingsResource {
             // occasionally a fragment of the input, so it is logged and never returned.
             Logger.error(this, "Embeddings failed for site "
                     + AiHostResolver.sanitize(context.servingSiteId()), e);
-            return errorResponse(InferenceError.upstream(UPSTREAM_FAILURE_MESSAGE));
+            return errorResponse(InferenceError.fromProviderFailure(e, UPSTREAM_FAILURE_MESSAGE));
         }
     }
 
@@ -300,7 +303,7 @@ public class EmbeddingsResource {
         if (!configuredModels.contains(requestedModel.trim())) {
             Logger.warn(this, "Site " + AiHostResolver.sanitize(context.servingSiteId())
                     + " has no embeddings model matching the requested one");
-            return errorResponse(InferenceError.noSuchModel(echoable(requestedModel)));
+            return errorResponse(InferenceError.noSuchModel(echoable(requestedModel), "embeddings"));
         }
 
         return null;

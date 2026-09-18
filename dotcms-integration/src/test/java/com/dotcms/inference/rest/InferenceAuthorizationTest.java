@@ -54,15 +54,15 @@ import static org.mockito.Mockito.when;
  * next to the others:</p>
  *
  * <ul>
- *     <li>FR-015 — the credential must be a dotCMS API token presented as a bearer. Anonymous
+ *     <li>The credential must be a dotCMS API token presented as a bearer. Anonymous
  *     callers are refused, and so are the session cookies that surrounding dotCMS filters
  *     otherwise accept: this family is server-side only by design, and admitting ambient browser
  *     credentials would make the absence of cross-origin headers a formality rather than a
  *     control.</li>
- *     <li>FR-016 — <em>any</em> authenticated user is admitted, backend or frontend alike, because
+ *     <li><em>Any</em> authenticated user is admitted, backend or frontend alike, because
  *     a site calling AI on behalf of a visitor is a supported use case. The bar is authentication,
  *     not privilege.</li>
- *     <li>FR-019 — but the moment a caller names a site explicitly, READ on that site is enforced,
+ *     <li>But the moment a caller names a site explicitly, READ on that site is enforced,
  *     and a caller who lacks it is refused. This is the one check that stands between an
  *     authenticated caller and another site's credentials.</li>
  * </ul>
@@ -109,7 +109,7 @@ public class InferenceAuthorizationTest {
     private static User backendUser;
     private static String backendBearerToken;
 
-    /** A frontend-only user: authenticated, unprivileged, and admitted by FR-016 all the same. */
+    /** A frontend-only user: authenticated, unprivileged, and admitted all the same. */
     private static User frontendUser;
     private static String frontendBearerToken;
 
@@ -143,7 +143,7 @@ public class InferenceAuthorizationTest {
         frontendBearerToken = bearerTokenFor(frontendUser);
 
         // Deliberately no administrator role: this user passes authentication and the role gate,
-        // and then fails on site READ, which is exactly the boundary FR-019 draws.
+        // and then fails on site READ, which is exactly where the boundary lies.
         unprivilegedUser = new UserDataGen()
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole())
                 .nextPersisted();
@@ -176,7 +176,7 @@ public class InferenceAuthorizationTest {
      * When a completion is requested
      * Then it is refused as unauthorized
      *
-     * <p>FR-015. The refusal carries the standard error shape, as the contract's status table
+     * <p>The refusal carries the standard error shape, as the contract's status table
      * requires of a 401 — a caller's client library should be able to deserialize a refusal into
      * its own error type exactly as it would a success. Accepts a thrown
      * {@link WebApplicationException} too, since the surrounding authentication handshake may
@@ -205,7 +205,7 @@ public class InferenceAuthorizationTest {
      * When a completion is requested
      * Then it is refused as unauthorized
      *
-     * <p>FR-015 accepts a dotCMS API token presented as a bearer credential and nothing else. The
+     * <p>Only a dotCMS API token presented as a bearer credential is accepted here. The
      * session cookies the surrounding dotCMS filters generally honour must not be honoured here:
      * this family is server-side only by design, and a browser that can be made to carry an
      * ambient session would otherwise be able to spend a site's AI credentials.</p>
@@ -233,7 +233,7 @@ public class InferenceAuthorizationTest {
      * When a completion is requested with that site as the override
      * Then it is refused as forbidden, in the standard error shape, naming the offending field
      *
-     * <p>FR-019. The caller authenticates and clears the role gate; what stops them is READ on the
+     * <p>The caller authenticates and clears the role gate; what stops them is READ on the
      * site whose credentials they asked to spend.</p>
      */
     @Test
@@ -259,7 +259,7 @@ public class InferenceAuthorizationTest {
      * When a completion is requested
      * Then it is served
      *
-     * <p>FR-016, one half. Stated alongside the frontend case because the requirement is that
+     * <p>Stated alongside the frontend case because the rule is that
      * <em>both</em> are admitted; either one alone would be satisfied by a rule that excluded the
      * other.</p>
      */
@@ -280,7 +280,7 @@ public class InferenceAuthorizationTest {
      * When a completion is requested
      * Then it is served
      *
-     * <p>FR-016, the other half. A site calling AI on behalf of a visitor is a supported use case,
+     * <p>A site calling AI on behalf of a visitor is a supported use case,
      * so the bar on this family is authentication, not privilege.</p>
      */
     @Test

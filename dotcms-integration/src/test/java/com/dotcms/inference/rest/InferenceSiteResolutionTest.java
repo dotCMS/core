@@ -56,15 +56,15 @@ import static org.mockito.Mockito.when;
  * 404 for site B's model on the same host name is proof that site B's was not.</p>
  *
  * <ul>
- *     <li>FR-017 — with no override, the site comes from the request's host name.</li>
- *     <li>FR-018 — an explicit override wins, given either as the {@code siteId} query parameter
+ *     <li>With no override, the site comes from the request's host name.</li>
+ *     <li>An explicit override wins, given either as the {@code siteId} query parameter
  *     or as the {@code X-dotCMS-Site} header; the header wins when the two disagree.</li>
- *     <li>FR-025 — the legacy {@code host_id} and {@code Host} request parameters, which elsewhere
+ *     <li>The legacy {@code host_id} and {@code Host} request parameters, which elsewhere
  *     in dotCMS act as a de-facto site override, are ignored here.</li>
- *     <li>FR-020 — every response identifies the site whose configuration served it.</li>
+ *     <li>Every response identifies the site whose configuration served it.</li>
  * </ul>
  *
- * <p><strong>What is asserted for FR-020.</strong> The serving site reaches a real caller as the
+ * <p><strong>What is asserted for the serving site.</strong> It reaches a real caller as the
  * {@code X-dotCMS-Resolved-Site} response header, which {@link ResolvedSiteHeaderFilter} writes
  * from the request attribute {@link InferenceRequestAttributes#RESOLVED_SITE_ID}. These tests call
  * the resource method directly, so no JAX-RS response filter runs and no header exists to read.
@@ -82,8 +82,8 @@ public class InferenceSiteResolutionTest {
     private static final String SITE_HEADER = "X-dotCMS-Site";
 
     /**
-     * Legacy request parameter that elsewhere in dotCMS selects the current site. FR-025 requires
-     * this family to ignore it.
+     * Legacy request parameter that elsewhere in dotCMS selects the current site. This family
+     * is required to ignore it.
      */
     private static final String LEGACY_HOST_ID_PARAM = "host_id";
 
@@ -272,7 +272,7 @@ public class InferenceSiteResolutionTest {
      * Then the legacy parameter is ignored: site A serves the request and is reported as the
      * serving site
      *
-     * <p>FR-025. The parameter is a pre-existing de-facto site override on the rest of the
+     * <p>The parameter is a pre-existing de-facto site override on the rest of the
      * product, and a token-authenticated API must not inherit it silently — a caller who never
      * asked for another site must not be able to spend its credentials by copying a query string.
      * The model is site A's, so honouring the parameter cannot merely look like success: it would
@@ -323,8 +323,8 @@ public class InferenceSiteResolutionTest {
      * Then the legacy parameter is still ignored: the default site serves the request, exactly as
      * it would have without the parameter
      *
-     * <p>FR-025 has no exception for the fallback path, and it is the path that matters most. The
-     * unmatched host name is not an edge case here — FR-020 keeps the default-site fallback
+     * <p>There is no exception for the fallback path, and it is the path that matters most. The
+     * unmatched host name is not an edge case here — the default-site fallback is kept
      * precisely because the server-side callers this family exists for routinely arrive on
      * internal DNS, container service names or {@code localhost}, none of which are site aliases.
      * A legacy override that is ignored only while the host name happens to match is not ignored;
@@ -372,7 +372,7 @@ public class InferenceSiteResolutionTest {
      * When the completion is requested
      * Then the serving site is still reported
      *
-     * <p>FR-020 asks for the serving site on <em>every</em> response, not only the ones that
+     * <p>The serving site is reported on <em>every</em> response, not only the ones that
      * worked. A refusal is precisely the case an operator reconciling spend needs attributed, and
      * a value only the happy path published would not deliver it.</p>
      */

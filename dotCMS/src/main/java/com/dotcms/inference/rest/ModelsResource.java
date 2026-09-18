@@ -10,6 +10,7 @@ import com.dotcms.inference.rest.view.InferenceErrorView;
 import com.dotcms.inference.rest.view.ModelListView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.NoCors;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -34,6 +35,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,7 +44,7 @@ import java.util.Optional;
  *
  * <p>This endpoint is the discovery mechanism the rest of the family depends on. There is no
  * implicit default model and no reserved alias, so the names listed here are exactly the names
- * {@link ChatCompletionsResource} accepts — a caller who wants "whatever this site runs" reads the
+ * this family accepts — a caller who wants "whatever this site runs" reads the
  * list and takes the first entry. Two consequences follow, and both are deliberate.</p>
  *
  * <ul>
@@ -68,10 +70,24 @@ import java.util.Optional;
  */
 @Path("/inference/v1/models")
 @Tag(name = "AI", description = "AI-powered content generation and analysis endpoints")
+@NoCors
 public class ModelsResource {
 
     /** Section of the site's {@code providerConfig} JSON the listed models come from. */
     private static final String CHAT_SECTION = "chat";
+    private static final String EMBEDDINGS_SECTION = "embeddings";
+    private static final String IMAGE_SECTION = "image";
+
+    /**
+     * The sections this listing draws from, chat first.
+     *
+     * <p>Order is load-bearing rather than cosmetic. There is no implicit default model, and the
+     * documented way to ask for "whatever this site runs" is to read this list and take the first
+     * entry — so the first entry has to remain the site's primary chat model, as it was when this
+     * listed nothing else.</p>
+     */
+    private static final List<String> LISTED_SECTIONS =
+            List.of(CHAT_SECTION, EMBEDDINGS_SECTION, IMAGE_SECTION);
 
     /**
      * Header form of the site override. Server-side callers routinely sit behind a proxy that
@@ -82,7 +98,7 @@ public class ModelsResource {
     private static final String SITE_HEADER = "X-dotCMS-Site";
 
     /**
-     * Lists the models the resolved site has configured for chat.
+     * Lists the models the resolved site has configured, across every capability it serves.
      *
      * @param request  the inbound request
      * @param response the outbound response, used only by the authentication handshake
@@ -169,10 +185,41 @@ public class ModelsResource {
         // on refusals as well as on the happy path.
         request.setAttribute(InferenceRequestAttributes.RESOLVED_SITE_ID, context.servingSiteId());
 
-        return Response.ok(toView(
-                        LangChain4jAIClient.get().configuredModels(context.config(), CHAT_SECTION)))
+        return Response.ok(toView(configuredModels(context)))
                 .type(MediaType.APPLICATION_JSON)
                 .build();
+    }
+
+    /**
+     * Collects the model names this site has configured, across every capability it serves.
+     *
+     * <p>All of them, not just chat. The adopted format has one flat model list and its model
+     * object carries no field for what a model is for — no type, no mode, no modality — so the
+     * reference implementation returns chat, embedding and image models together and leaves a
+     * client to know which is which. Listing only chat would be the narrower, tidier answer and
+     * was what shipped first, but it leaves the embeddings and image operations with no discovery
+     * at all: both require an exact model name, and this is the only place a caller could learn
+     * one.</p>
+     *
+     * <p>The alternative — adding a capability field to each entry — was rejected after looking at
+     * what other gateways do. Nobody extends the standard model object that way: implementations
+     * either keep this endpoint's shape and expose capability on a separate, non-standard one, or
+     * publish an entirely different object of their own. Inventing a field inside the standard
+     * shape is the one thing none of them does, and it is exactly what the no-adapter promise of
+     * this family exists to avoid.</p>
+     *
+     * <p>A name configured in more than one section is listed once. Duplicates would be harmless
+     * to a client but would misrepresent the site as running two things.</p>
+     *
+     * @param context the resolved site and its configuration
+     * @return the configured names, chat first, in configured order, without repeats
+     */
+    private static List<String> configuredModels(final ResolvedAiContext context) {
+        final LinkedHashSet<String> names = new LinkedHashSet<>();
+        for (final String section : LISTED_SECTIONS) {
+            names.addAll(LangChain4jAIClient.get().configuredModels(context.config(), section));
+        }
+        return List.copyOf(names);
     }
 
     /**

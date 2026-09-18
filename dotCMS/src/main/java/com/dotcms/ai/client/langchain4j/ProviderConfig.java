@@ -135,7 +135,7 @@ public interface ProviderConfig {
      * made by the caller that builds the model, which is why it is left null by default and the
      * strategies pass it on only when somebody asked for one.
      *
-     * <p>{@code /api/inference/v1/images/generations} sets {@code b64_json} because FR-012 wants
+     * <p>{@code /api/inference/v1/images/generations} sets {@code b64_json} because it returns
      * no hosted artifact minted upstream at all, not merely none returned to the caller. The
      * legacy {@code /api/v1/ai/image} endpoint leaves it unset and keeps the provider's default,
      * because its own response contract is a URL.</p>

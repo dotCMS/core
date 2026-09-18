@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
  * {@link ChatCompletionMapper#toInferenceRequest(ChatCompletionRequestView)}, which translates the
  * wire shape into the internal one and is where wire-level validation belongs. That method is a
  * skeleton at the time of writing, so these tests fail — deliberately. They are the specification
- * the implementation is written against, in particular the FR-013 line: a field this family has no
+ * the implementation is written against, in particular this rule: a field this family has no
  * opinion about is ignored, but a field that changes what the caller gets or pays for — {@code n}
  * being the example — must fail loudly rather than be silently dropped.</p>
  *
@@ -53,7 +53,7 @@ public class InferenceRequestValidationTest {
     /**
      * Given a request built with a blank model,
      * When the record is constructed,
-     * Then it is rejected naming {@code model} — there is no implicit default (FR-024).
+     * Then it is rejected naming {@code model} — there is no implicit default.
      */
     @Test
     public void test_inferenceRequest_blankModel_throwsNamingModel() {
@@ -83,7 +83,7 @@ public class InferenceRequestValidationTest {
     /**
      * Given a request carrying an empty conversation,
      * When the record is constructed,
-     * Then it is rejected naming {@code message} — there is nothing to infer from (FR-002).
+     * Then it is rejected naming {@code message} — there is nothing to infer from.
      */
     @Test
     public void test_inferenceRequest_emptyMessages_throwsNamingMessages() {
@@ -97,7 +97,7 @@ public class InferenceRequestValidationTest {
      * Given a TOOL turn whose {@code toolCallId} answers a call no earlier assistant turn made,
      * When the record is constructed,
      * Then it is rejected and the error names the orphaned identity, so the caller can find it
-     * without diffing the conversation by hand (FR-005).
+     * without diffing the conversation by hand.
      */
     @Test
     public void test_inferenceRequest_uncorrelatedToolResult_throwsNamingOffendingId() {
@@ -116,7 +116,7 @@ public class InferenceRequestValidationTest {
      * Given a TOOL turn whose {@code toolCallId} matches a call a preceding assistant turn made,
      * When the record is constructed,
      * Then it is accepted and the conversation survives intact — correlation is by identity, not
-     * by position (FR-005).
+     * by position.
      */
     @Test
     public void test_inferenceRequest_correlatedToolResult_isAccepted() {
@@ -192,7 +192,7 @@ public class InferenceRequestValidationTest {
      * When it is mapped to the internal representation,
      * Then it is rejected with a validation error naming {@code n}, rather than silently served as
      * a single choice. Unknown fields are tolerated; a field that changes what the caller gets or
-     * pays for is not (FR-013).
+     * pays for is not.
      */
     @Test
     public void test_toInferenceRequest_nGreaterThanOne_throwsNamingN() {
@@ -209,7 +209,7 @@ public class InferenceRequestValidationTest {
      * Given a request view with no model,
      * When it is mapped to the internal representation,
      * Then it is rejected with a validation error naming {@code model}, at the wire layer, before
-     * any provider is chosen (FR-024).
+     * any provider is chosen.
      */
     @Test
     public void test_toInferenceRequest_absentModel_throwsNamingModel() {
@@ -225,7 +225,7 @@ public class InferenceRequestValidationTest {
     /**
      * Given a request view carrying an empty conversation,
      * When it is mapped to the internal representation,
-     * Then it is rejected with a validation error naming {@code messages} (FR-002).
+     * Then it is rejected with a validation error naming {@code messages}.
      */
     @Test
     public void test_toInferenceRequest_emptyMessages_throwsNamingMessages() {

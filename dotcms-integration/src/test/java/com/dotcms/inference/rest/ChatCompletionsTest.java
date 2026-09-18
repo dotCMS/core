@@ -57,13 +57,13 @@ import static org.mockito.Mockito.when;
  * The four tests here cover exactly that arc.</p>
  *
  * <ul>
- *     <li>FR-004 — tools declared in the request produce {@code tool_calls} in the response, with
+ *     <li>Tools declared in the request produce {@code tool_calls} in the response, with
  *     an id, a function name and its arguments.</li>
- *     <li>FR-005 — a follow-up turn replaying the assistant tool call plus a {@code role:"tool"}
+ *     <li>A follow-up turn replaying the assistant tool call plus a {@code role:"tool"}
  *     result carrying that id is accepted and answered.</li>
  *     <li>A {@code role:"tool"} turn whose {@code tool_call_id} correlates with nothing is a
  *     client error, refused before the provider is ever contacted.</li>
- *     <li>FR-024 — {@code model} is required; there is no implicit default.</li>
+ *     <li>{@code model} is required; there is no implicit default.</li>
  * </ul>
  *
  * <p>The provider is a WireMock server standing in for an OpenAI-compatible endpoint, wired in
@@ -158,8 +158,8 @@ public class ChatCompletionsTest {
         stubProvider();
 
         // A bare UserDataGen user has no roles at all, so it is neither a backend nor a
-        // frontend user and FR-016 rejects it; it also cannot read the site these tests pass
-        // as an explicit override, which FR-019 checks. Two roles are needed, not one: the check
+        // frontend user, and is rejected; it also cannot read the site these tests pass
+        // as an explicit override, which is also checked. Two roles are needed, not one: the check
         // in WebResource.checkRolePermissions is doesUserHaveRole(user, "DOTCMS_BACK_END_USER")
         // by key and does not walk inheritance, so being an admin does not imply it. Admin is
         // what grants read on the site. Role-specific behaviour is US3's tests, not these.

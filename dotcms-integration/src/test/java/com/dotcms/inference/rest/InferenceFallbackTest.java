@@ -56,11 +56,11 @@ import static org.mockito.Mockito.when;
  * system level rather than per site.</p>
  *
  * <ul>
- *     <li>FR-020 — a host name matching no site or alias is served by the default site, not
+ *     <li>A host name matching no site or alias is served by the default site, not
  *     refused, and the site that served is the one reported as having resolved.</li>
- *     <li>FR-021 — a site with no dotAI configuration of its own inherits the system-level one,
+ *     <li>A site with no dotAI configuration of its own inherits the system-level one,
  *     exactly as every other dotAI endpoint does, and the request succeeds.</li>
- *     <li>FR-021 — when neither the resolved site nor the system level has any configuration, the
+ *     <li>When neither the resolved site nor the system level has any configuration, the
  *     request is refused rather than served from some unrelated site's credentials.</li>
  * </ul>
  *
@@ -193,7 +193,7 @@ public class InferenceFallbackTest {
      * When the completion is requested with no explicit site override
      * Then the site reported as having served is the default site
      *
-     * <p>FR-020 asks for the fallback to be logged as well. Asserting on the log would mean
+     * <p>The fallback is expected to be logged as well. Asserting on the log would mean
      * attaching an appender to dotCMS's Log4j configuration from an integration test, which is
      * both brittle and outside what this family owns, so what is asserted here is the observable
      * half of the same requirement: the serving site published for the response header. The log

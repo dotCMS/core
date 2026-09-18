@@ -1,6 +1,7 @@
 package com.dotcms.ai.client.langchain4j;
 
 import com.dotcms.ai.app.AppConfig;
+import com.dotcms.inference.model.CallerSafeException;
 import com.dotcms.inference.model.InferenceError;
 import com.dotcms.inference.model.InferenceLimits;
 import com.dotcms.inference.model.MultipleImagesUnsupportedException;
@@ -180,8 +181,12 @@ public final class InferenceAIClient {
         } catch (final RuntimeException e) {
             // Nothing reached the sink — every model in the chain failed to start — so the sink
             // still has to learn that this stream will not finish.
-            Logger.warn(InferenceAIClient.class,
-                    "Inference stream could not be started: " + e.getClass().getSimpleName());
+            // Logged with the exception rather than just its type. What the caller receives is a
+            // safe sentence that says the detail is in the log, so the detail has to actually be
+            // here — a bare class name leaves an operator with "InvalidRequestException" and no
+            // way to tell an exhausted account from a rejected key from a malformed request. The
+            // buffered path has always logged the full exception; this matches it.
+            Logger.warn(InferenceAIClient.class, "Inference stream could not be started", e);
             state.fail(toInferenceError(e));
         }
     }
@@ -343,8 +348,7 @@ public final class InferenceAIClient {
 
                 @Override
                 public void onError(final Throwable throwable) {
-                    Logger.warn(InferenceAIClient.class,
-                            "Inference stream failed: " + throwable.getClass().getSimpleName());
+                    Logger.warn(InferenceAIClient.class, "Inference stream failed", throwable);
                     state.fail(toInferenceError(throwable));
                 }
             });
@@ -695,13 +699,24 @@ public final class InferenceAIClient {
      * @param throwable what went wrong
      * @return the error to report
      */
-    private static InferenceError toInferenceError(final Throwable throwable) {
-        if (throwable instanceof IllegalArgumentException) {
-            return InferenceError.invalidRequest(nullToEmpty(throwable.getMessage()).isBlank()
-                    ? "The request could not be served with this site's configuration"
-                    : throwable.getMessage(), null);
+    static InferenceError toInferenceError(final Throwable throwable) {
+        if (throwable instanceof CallerSafeException
+                && !nullToEmpty(throwable.getMessage()).isBlank()) {
+            // dotCMS wrote this sentence, so it is returned: it names something about the site's
+            // configuration that the caller or an operator can actually act on.
+            return InferenceError.invalidRequest(throwable.getMessage(), null);
         }
-        return InferenceError.upstream(UPSTREAM_FAILURE_MESSAGE);
+        if (throwable instanceof IllegalArgumentException) {
+            // dotCMS did not write this one. The fallback chain reports a failed model
+            // initialisation as an IllegalArgumentException with the provider client's own message
+            // appended, and that message can carry the provider's endpoint, its account
+            // identifiers, or a fragment of the prompt. Logged in full, never returned.
+            return InferenceError.invalidRequest(
+                    "The request could not be served with this site's configuration", null);
+        }
+        // A streamed exchange is rate limited exactly as often as a buffered one, and a client
+        // reading an error event backs off on the same status, so the translation belongs here too.
+        return InferenceError.fromProviderFailure(throwable, UPSTREAM_FAILURE_MESSAGE);
     }
 
     /**
