@@ -79,8 +79,14 @@ export class AssetByUrlPopoverComponent {
             },
             {
                 label: msg('dot.block.editor.dialog.asset-by-url.type.youtube'),
+                // Never gated. `youtube` is not selectable in Allowed Blocks — the option list
+                // comes from `getEditorBlockOptions()`, which offers block nodes only — so
+                // `isAllowed('youtube')` was true only on a field with no restriction at all, and
+                // restricting a field to anything silently removed this tab with no way to get it
+                // back (#37601, defect B). `image` and `video` above ARE producible and stay
+                // gated. Enforced by `capability-keys.i1.spec.ts`.
                 value: 'youtube',
-                disabled: !this.store.isAllowed('youtube')
+                disabled: false
             }
         ];
     });
