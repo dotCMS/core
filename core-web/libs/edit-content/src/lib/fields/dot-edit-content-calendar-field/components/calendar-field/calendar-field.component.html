@@ -69,7 +69,17 @@
             class="inline-flex cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-inherit"
             data-testid="calendar-clear-button"
             [attr.aria-label]="'edit.content.form.field.calendar.clear' | dm">
-            <span class="material-symbols-outlined text-base" aria-hidden="true">close</span>
+            <!--
+                The `!` is load-bearing: `.material-symbols-outlined` sets `font-size: 24px`
+                globally, and a plain `text-base` loses to it on source order. Without these the
+                glyph renders at 24px against the trigger icon's 14px, and PrimeNG's clear slot —
+                absolutely positioned with `margin-top: -7px`, calibrated for a ~14px icon — then
+                leaves it sitting 5px below the input's centre line. `leading-none` keeps the box
+                square so that offset stays at the 1px the stock icon also has.
+            -->
+            <span class="material-symbols-outlined text-base! leading-none!" aria-hidden="true">
+                close
+            </span>
         </button>
     </ng-template>
 </p-datepicker>
