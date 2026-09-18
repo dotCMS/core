@@ -13,12 +13,10 @@
     "noEmit": true
   },
   "include": [
-    "src/**/*",
-    "../shared/**/*"
+    "*.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist",
     "**/*.test.ts"
   ]
 }

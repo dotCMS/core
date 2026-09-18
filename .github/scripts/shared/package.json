@@ -1,11 +1,10 @@
 {
-  "name": "@dotcms/gather-release-data",
+  "name": "@dotcms/release-github",
   "version": "1.0.0",
-  "description": "Gathers structured release data from GitHub for changelog generation",
-  "main": "src/index.ts",
+  "private": true,
+  "description": "GitHub transport shared by gather-release-data and release-qa-status",
+  "main": "github.ts",
   "scripts": {
-    "build": "tsc --noEmit",
-    "start": "ts-node src/index.ts",
     "test": "jest"
   },
   "dependencies": {
@@ -17,7 +16,6 @@
     "@types/node": "^22.15.3",
     "jest": "^29.7.0",
     "ts-jest": "^29.3.4",
-    "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
 }
