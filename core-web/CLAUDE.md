@@ -6,6 +6,26 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 DotCMS Core-Web monorepo — Angular + Nx. Uses **pnpm** as package manager. Nx is not installed globally — always use `pnpm nx`.
 
+### pnpm Configuration
+
+All of it lives in **`pnpm-workspace.yaml`** — `overrides`, `peerDependencyRules`,
+`ignoredOptionalDependencies`, `engineStrict`, `strictPeerDependencies`, `fetchTimeout`,
+`allowBuilds` (replaces the removed `onlyBuiltDependencies`) and the supply-chain settings
+(`trustPolicy`, `trustPolicyExclude`, `trustPolicyExcludePrune`, `blockExoticSubdeps`,
+`strictDepBuilds`, `verifyDepsBeforeRun`). The `pnpm` block in `package.json` is **not read at
+all**, and `.npmrc` is consulted for registry and auth only — don't add settings to either.
+
+Two installs that now fail where they used to warn:
+
+- **`ERR_PNPM_IGNORED_BUILDS`** (`strictDepBuilds`) — a dependency with a build script that is not
+  in `allowBuilds` now aborts the install; pnpm 10 only printed `Ignored build scripts: ...` and
+  carried on. Add the package to `allowBuilds` with `true` to let it build or `false` to deny it
+  explicitly.
+- **`trustPolicy: no-downgrade`** — fails when a version carries weaker publish-trust evidence than
+  earlier releases of the same package. Eight known older versions sit in `trustPolicyExclude`, each
+  with its reason and publish date. A new one is not automatically an attack: check that version's
+  publish date and provenance history before adding a line.
+
 ### MCP Servers
 
 Configured in `/.mcp.json`. Use these instead of guessing:

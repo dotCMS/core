@@ -20,6 +20,8 @@ interface ResponseEntityView<T> {
 
 interface RawCompletionsConfig {
     configHost: string;
+    /** Absent on an older backend, where the hostname carried the fallback note inline. */
+    configHostInherited?: boolean;
     settings?: Record<string, string>;
     /** Omitted entirely by the backend when blank — that absence is the "not configured" signal. */
     providerConfig?: string;
@@ -130,6 +132,7 @@ export class DotAiConfigService {
     #toResolvedConfig(raw: RawCompletionsConfig): DotAiResolvedConfig {
         const base = {
             configHost: raw?.configHost ?? '',
+            configHostInherited: raw?.configHostInherited ?? false,
             settings: raw?.settings ?? {}
         };
 

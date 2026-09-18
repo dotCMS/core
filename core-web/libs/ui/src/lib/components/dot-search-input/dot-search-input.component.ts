@@ -67,8 +67,49 @@ export class DotSearchInputComponent {
      */
     readonly $testId = input('search-input-field', { alias: 'testId' });
 
+    /**
+     * PrimeNG design-token overrides for the actual `<input>`, e.g. to flatten one side's radius
+     * when this component sits inside a `p-inputgroup`.
+     *
+     * Exists for one reason: a host that nests this component inside an input group cannot reach
+     * the `<input>` from outside, because PrimeNG's own inputgroup CSS only rewires direct
+     * structural relationships (`.p-inputgroup > .p-component`,
+     * `.p-inputgroup > .p-iconfield > .p-component`) — and this component's own host element sits
+     * between the group and that input, breaking the chain.
+     *
+     * `dt`, not a class: a design-token override sets the CSS custom property the component's own
+     * stylesheet already reads, so it applies unconditionally rather than fighting PrimeNG's
+     * dynamically-injected styles for specificity. `undefined` by default, not `{}` — PrimeNG's
+     * `BaseComponent` only skips loading a scoped stylesheet and registering a theme-change
+     * listener when `dt()` is falsy, and `{}` is truthy, so every existing consumer (the
+     * AssetPicker included) would otherwise pay that per-instance overhead for a preset that
+     * overrides nothing.
+     *
+     * @alias inputDt
+     */
+    readonly $inputDt = input<Record<string, unknown> | undefined>(undefined, {
+        alias: 'inputDt'
+    });
+
     /** Emits the trimmed term once the debounce window closes. */
     readonly search = output<string>();
+
+    /**
+     * Keeps both icons above the field they annotate, even when that field raises itself on focus.
+     *
+     * Inside a `p-inputgroup` (Content Drive's search bar), PrimeNG's own stylesheet gives the
+     * focused field `z-index: 1` — a rule that lands, because the group turns the icon field into
+     * a flex container and flex items honor `z-index` without positioning. The icons already sit
+     * at that same `z-index: 1` (the iconfield stylesheet's own value, not a design token), but the
+     * field comes later in the DOM, so once focused its opaque background painted over them and the
+     * magnifier vanished the moment the user clicked in. One step above wins the tie; outside an
+     * input group nothing competes with the icons, so the value is inert there.
+     *
+     * PT `root.style`, not a class: the style slot is applied through the host's `[style]` binding
+     * (see `Bind`), a real inline style that beats the dynamically injected PrimeNG stylesheets
+     * unconditionally. Hoisted so the object is not recreated on every change detection cycle.
+     */
+    protected readonly ICON_PT = { root: { style: { zIndex: 2 } } };
 
     /** The text field itself, so a host can hand it focus. */
     // NOTE: `private`, not `#`, despite TYPESCRIPT_STANDARDS.md:87. Angular's compiler rejects a

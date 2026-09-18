@@ -14935,7 +14935,8 @@ paths:
           \ FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,\
           \ FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, LICENSE_REQUIRED.\
           \ SCHEDULED = bundles pushed with a future publishDate not yet picked up\
-          \ by the publisher cron."
+          \ by the publisher cron. BUNDLE_REQUESTED also includes queued bundles whose\
+          \ publishDate is already due but that the publisher has not picked up yet."
         example: "SUCCESS,FAILED_TO_PUBLISH"
         in: query
         name: status
@@ -19004,7 +19005,10 @@ paths:
           type: integer
           format: int32
           default: 40
-      - description: Column name for sorting results
+      - description: "Field to sort by. Supported: `firstName` (ties broken by last\
+          \ name), `emailAddress`, `lastLoginDate` (users without a recorded login\
+          \ sort last). Unsupported values fall back to the default order (full name\
+          \ ascending)"
         in: query
         name: orderby
         schema:
@@ -28376,6 +28380,59 @@ components:
       properties:
         description:
           type: string
+    ExperimentView:
+      type: object
+      properties:
+        createdBy:
+          type: string
+        createdByUserName:
+          type: string
+          description: "Display name of the user who created the experiment. Reports\
+            \ \"System\" for the system user and \"unknown\" when the user cannot\
+            \ be resolved or has no name set, so the value is never empty."
+          example: Admin User
+        creationDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        goals:
+          $ref: "#/components/schemas/Goals"
+        id:
+          type: string
+        lastModifiedBy:
+          type: string
+        lookBackWindowExpireTime:
+          type: integer
+          format: int64
+        modDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+        pageId:
+          type: string
+        runningIds:
+          $ref: "#/components/schemas/RunningIds"
+        scheduling:
+          $ref: "#/components/schemas/Scheduling"
+        status:
+          type: string
+          enum:
+          - RUNNING
+          - SCHEDULED
+          - ENDED
+          - DRAFT
+          - ARCHIVED
+        targetingConditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TargetingCondition"
+        trafficAllocation:
+          type: number
+          format: float
+        trafficProportion:
+          $ref: "#/components/schemas/TrafficProportion"
     ExportSecretForm:
       type: object
       properties:
@@ -33899,7 +33956,7 @@ components:
         entity:
           type: array
           items:
-            $ref: "#/components/schemas/Experiment"
+            $ref: "#/components/schemas/ExperimentView"
         errors:
           type: array
           items:
@@ -35499,7 +35556,7 @@ components:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/Experiment"
+          $ref: "#/components/schemas/ExperimentView"
         errors:
           type: array
           items:
