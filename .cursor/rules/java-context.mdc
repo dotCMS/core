@@ -26,7 +26,9 @@ import com.dotcms.util.CollectionsUtils;
 - Versions only in `bom/application/pom.xml`. Dependencies in `dotCMS/pom.xml` without versions.
 
 ## Java
-- Core: Java 11 syntax. CLI: Java 21 ok. Runtime: Java 21.
+- Runtime: whatever `.sdkmanrc` pins — the build fails on a different version.
+- Core modules compile to `dotcms.core.compiler.release` (`parent/pom.xml`); `tools/dotcms-cli` targets `maven.compiler.release` in its own `pom.xml`, historically lower for portability.
+- Never hardcode a version number in this file. Read the two properties above — that is what CLAUDE.md does, and why this rule drifted out of sync before.
 
 ## Build
 ```bash

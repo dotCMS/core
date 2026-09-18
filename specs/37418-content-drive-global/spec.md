@@ -127,13 +127,16 @@ Two adjacent theories were checked and **refuted**, ruling out alternative root 
   ever reaches ES.
 
 The legacy Search All portlet does not exhibit this bug because it does not go through this
-DB-prescan/chunk mechanism — it queries ES directly. (Architecturally confirmed; the exact
-backing class/line was not pinned down in this pass — candidates are
-`ESSearchAPIImpl`/`ESContentResourcePortlet` under `dotCMS/src/main/java/com/dotcms/**` —
-and should be confirmed during planning.)
-
-[NEEDS CLARIFICATION: Confirm the exact Search All REST resource/service class and line
-reference, to formally document the working comparison path in the plan.]
+DB-prescan/chunk mechanism — it queries ES directly. **Confirmed during planning**: the search
+handler is `com.dotcms.rest.elasticsearch.ESContentResourcePortlet`
+(`dotCMS/src/main/java/com/dotcms/rest/elasticsearch/ESContentResourcePortlet.java`) —
+`search`/`searchPost` build a raw ES/OS Lucene query and execute it via
+`ContentletAPI.search(...)` (`esapi.search(...)`, lines 133-135 and its `searchPost`
+counterpart), with `esapi = APILocator.getContentletAPI()` (line 60); `searchRaw`
+(line 293) does the same via `esapi.searchRaw(...)`. None of these paths build DB-order
+paged candidate chunks first — the query goes straight to ES/OS, which matches and ranks
+over the whole index in one shot, so a match is never dropped by a DB-page cutoff before ES
+gets to see it.
 
 ## Fix Scope & Non-Goals *(mandatory)*
 

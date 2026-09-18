@@ -258,23 +258,35 @@ describe('EditEmaNavigationBarComponent', () => {
             });
         });
 
+        /**
+         * Asserted on the `<button>`, not on the `<p-button>` host it sits inside.
+         *
+         * These tests used to read the host, which is where `[attr.aria-label]` puts the name and
+         * where nothing can use it: the host is not focusable and is not what a screen reader
+         * announces. Every item in this bar was an unnamed icon button, and the tests passed the
+         * whole time — they were checking the attribute existed, not that it named anything.
+         * Reading the focusable element is what makes them able to fail.
+         */
         describe('Accessibility', () => {
-            it('should have aria-label on all interactive elements', () => {
-                const items = spectator.queryAll(byTestId('nav-bar-item'));
-                items.forEach((item) => {
-                    expect(item.getAttribute('aria-label')).toBeTruthy();
+            const nameOf = (index: number) =>
+                spectator
+                    .queryAll(byTestId('nav-bar-item'))
+                    [index].querySelector('button')
+                    ?.getAttribute('aria-label');
+
+            it('should name every interactive element', () => {
+                spectator.queryAll(byTestId('nav-bar-item')).forEach((item) => {
+                    expect(item.querySelector('button')?.getAttribute('aria-label')).toBeTruthy();
                 });
             });
 
-            it('should show translated label as aria-label', () => {
-                const buttons = spectator.queryAll(byTestId('nav-bar-item'));
-                expect(buttons[0].getAttribute('aria-label')).toBe('Content');
-                expect(buttons[2].getAttribute('aria-label')).toBe('Rules');
+            it('should name them with the translated label', () => {
+                expect(nameOf(0)).toBe('Content');
+                expect(nameOf(2)).toBe('Rules');
             });
 
-            it('should show item label as aria-label for disabled items', () => {
-                const layoutButton = spectator.queryAll(byTestId('nav-bar-item'))[1];
-                expect(layoutButton.getAttribute('aria-label')).toBe('Layout');
+            it('should name a disabled item too', () => {
+                expect(nameOf(1)).toBe('Layout');
             });
         });
     });
