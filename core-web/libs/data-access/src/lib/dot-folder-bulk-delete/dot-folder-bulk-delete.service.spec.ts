@@ -100,39 +100,52 @@ describe('DotFolderBulkDeleteService', () => {
             return refusal;
         };
 
-        it('should report an over-maximum submission as its own refusal', () => {
-            const refusal = refusalFor(400, { error: 'OVER_MAX_PATHS', maxPaths: 100 });
-
-            expect(refusal?.kind).toBe('OVER_MAX_PATHS');
+        /** The REST layer's `ErrorEntity` body, as the backend half pinned it. */
+        const errorBody = (errorCode: string, message = 'diagnostic') => ({
+            errors: [{ errorCode, message, fieldName: 'assetPaths' }]
         });
 
-        it('should report an empty submission as its own refusal', () => {
-            const refusal = refusalFor(400, { error: 'EMPTY_SELECTION' });
-
-            expect(refusal?.kind).toBe('EMPTY_SELECTION');
+        it('should separate the two 400s by errorCode, since status cannot', () => {
+            // The gap this client raised and the backend half settled: an empty selection and one
+            // over the maximum both answer 400 and need different copy.
+            expect(refusalFor(400, errorBody('OVER_MAX_PATHS'))?.kind).toBe('OVER_MAX_PATHS');
+            expect(refusalFor(400, errorBody('EMPTY_SELECTION'))?.kind).toBe('EMPTY_SELECTION');
         });
 
         it('should report a caller with no entitlement as its own refusal', () => {
-            const refusal = refusalFor(403, {});
-
-            expect(refusal?.kind).toBe('NOT_ENTITLED');
+            expect(refusalFor(403, errorBody('NOT_ENTITLED'))?.kind).toBe('NOT_ENTITLED');
         });
 
-        it('should report an overlapping run as its own refusal, naming the folder', () => {
-            const refusal = refusalFor(409, { error: 'OVERLAPPING_RUN', path: PATH_A });
+        it('should report an overlapping run as its own refusal', () => {
+            const refusal = refusalFor(409, errorBody('OVERLAPPING_RUN'));
 
             expect(refusal?.kind).toBe('OVERLAPPING_RUN');
-            // Named so the copy can say which folder is already being deleted. It must never carry
-            // who started the other run: the refused author cannot see that run at all, and naming
-            // them would leak it (FR-040, backend FR-029a).
-            expect(refusal?.path).toBe(PATH_A);
-            expect(JSON.stringify(refusal)).not.toContain('user');
+        });
+
+        it('should never carry who started the other run', () => {
+            // The refused author cannot see that run at all, so naming its submitter would leak it.
+            // The backend half answered this by construction: the body has no field a user id could
+            // occupy (FR-040, backend FR-029a).
+            const refusal = refusalFor(
+                409,
+                errorBody('OVERLAPPING_RUN', 'another deletion is already running for //d/a/')
+            );
+
+            expect(JSON.stringify(refusal)).not.toMatch(/userId|user_id|submitter/i);
+        });
+
+        it('should fall back rather than guess between the two 400s', () => {
+            // An older instance, or a failure that never reached the endpoint's error handling.
+            // Guessing would tell an author they selected nothing when they hit a ceiling.
+            expect(refusalFor(400, {})?.kind).toBe('UNCLASSIFIED');
+        });
+
+        it('should still recognise a 403 with no body', () => {
+            expect(refusalFor(403, {})?.kind).toBe('NOT_ENTITLED');
         });
 
         it('should fall back to an unclassified refusal rather than swallowing an unknown status', () => {
-            const refusal = refusalFor(500, {});
-
-            expect(refusal?.kind).toBe('UNCLASSIFIED');
+            expect(refusalFor(500, {})?.kind).toBe('UNCLASSIFIED');
         });
 
         it('should keep the underlying response available for logging', () => {

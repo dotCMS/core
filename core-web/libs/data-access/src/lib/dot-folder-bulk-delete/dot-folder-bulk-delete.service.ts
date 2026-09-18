@@ -25,19 +25,27 @@ export interface DotFolderBulkDeleteRefusal {
         | 'NOT_ENTITLED'
         | 'OVERLAPPING_RUN'
         | 'UNCLASSIFIED';
-    /** On `OVERLAPPING_RUN`, the folder already being deleted. Never who is deleting it. */
-    path?: string;
-    /** On `OVER_MAX_PATHS`, the ceiling the server advertised with the refusal. */
-    maxPaths?: number;
+    /**
+     * The server's own sentence, for logging.
+     *
+     * Deliberately NOT the thing rendered. It is server-generated English, so it is not localised,
+     * and the client has its own copy for each kind. Carried because a refusal with no diagnostic
+     * at all is hard to chase in a log.
+     */
+    message?: string;
     /** Kept for logging. Never rendered. */
     response?: HttpErrorResponse;
 }
 
-/** Shape of the error body the endpoint is expected to answer refusals with. See the note below. */
+/**
+ * The refusal body, as the REST layer's existing `ErrorEntity` serialises it.
+ *
+ * Not a shape invented for this feature: it is what `ValidationException` already builds its body
+ * from, which is why the backend half chose it over an ad-hoc field when it pinned these refusals
+ * (`specs/37063-bulk-folder-delete-backend/contracts/bulk-delete-api.md` §1).
+ */
 interface RefusalBody {
-    error?: string;
-    path?: string;
-    maxPaths?: number;
+    errors?: { errorCode?: string; message?: string; fieldName?: string }[];
 }
 
 const SUBMIT_URL = '/api/v1/assets/folders/_bulkdelete';
@@ -105,44 +113,40 @@ export class DotFolderBulkDeleteService {
     /**
      * Maps a refused submission onto a kind the client has copy for.
      *
-     * **The two `400`s are the awkward part**, and the contract does not yet settle them: an empty
-     * selection and an over-maximum selection both answer `400`, and they need different messages —
-     * one is "you selected nothing", the other has to name the limit. This reads an `error` code out
-     * of the body to tell them apart, which is the client's *assumption*, raised with the server
-     * half at dotCMS/core#37063 (comment 5720585127).
+     * Switches on `errorCode`, not on status: the two `400`s — an empty selection and one over the
+     * maximum — need different copy and status alone cannot separate them. That gap was raised from
+     * this side (dotCMS/core#37063, comment 5720585127) and settled by the backend half on
+     * `ErrorEntity`, the structured-error type the REST layer already uses.
      *
-     * If the server settles on a different shape, this method is the only thing that changes: the
-     * kinds the rest of the client switches on are stable either way.
+     * **What the body does not carry:** a structured field naming the folder an `OVERLAPPING_RUN`
+     * collided on. It appears in `message` as prose, which is server-generated English and so not
+     * rendered. The client therefore reports the collision without naming which folder caused it —
+     * a shortfall against FR-040, recorded rather than papered over by parsing a sentence.
      */
     #toRefusal(response: HttpErrorResponse): DotFolderBulkDeleteRefusal {
         const body = (response.error ?? {}) as RefusalBody;
+        const error = body.errors?.[0];
+        const message = error?.message;
 
-        switch (response.status) {
-            case 400:
-                // Falls through to UNCLASSIFIED when the body names neither, rather than guessing
-                // one: telling an author they selected nothing when they hit a ceiling would send
-                // them looking for the wrong fix.
-                if (body.error === 'OVER_MAX_PATHS') {
-                    return { kind: 'OVER_MAX_PATHS', maxPaths: body.maxPaths, response };
-                }
-
-                if (body.error === 'EMPTY_SELECTION') {
-                    return { kind: 'EMPTY_SELECTION', response };
-                }
-
-                return { kind: 'UNCLASSIFIED', response };
-
-            case 403:
-                // Status alone is enough — nothing else here answers 403.
-                return { kind: 'NOT_ENTITLED', response };
-
-            case 409:
-                // The folder, never the other submitter: the refused author cannot see that run at
-                // all, so naming who started it would leak it (FR-040, backend FR-029a).
-                return { kind: 'OVERLAPPING_RUN', path: body.path, response };
-
+        switch (error?.errorCode) {
+            case 'EMPTY_SELECTION':
+                return { kind: 'EMPTY_SELECTION', message, response };
+            case 'OVER_MAX_PATHS':
+                return { kind: 'OVER_MAX_PATHS', message, response };
+            case 'NOT_ENTITLED':
+                return { kind: 'NOT_ENTITLED', message, response };
+            case 'OVERLAPPING_RUN':
+                return { kind: 'OVERLAPPING_RUN', message, response };
             default:
-                return { kind: 'UNCLASSIFIED', response };
+                // Falls back on the status where the body carries no code — an older instance, or a
+                // failure that never reached the endpoint's own error handling. Guessing between the
+                // two `400`s is what this deliberately does NOT do: telling an author they selected
+                // nothing when they hit a ceiling sends them looking for the wrong fix.
+                return {
+                    kind: 403 === response.status ? 'NOT_ENTITLED' : 'UNCLASSIFIED',
+                    message,
+                    response
+                };
         }
     }
 }

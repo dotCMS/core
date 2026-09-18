@@ -108,45 +108,44 @@ Four refusals must be **distinguishable**, because each has different copy:
 
 ---
 
-## Open gap — CR-02 does not say how the four refusals are told apart
+## CR-02 resolved — refusals are told apart by `errorCode`
 
-**Raised 2026-09-17, during implementation. Needs the backend half to settle it.**
+**Raised 2026-09-17 from this side, settled 2026-09-18 by the backend half** (`9f6d4eb9cb`, and
+dotCMS/core#37063 comment 5720585127).
 
-CR-02 requires four refusals to be **distinguishable**, because each needs its own copy. It does not
-say by what. Status alone cannot carry it: **an empty submission and an over-maximum submission are
-both `400`**, and they need different messages — one is "you selected nothing", the other has to name
-the limit the instance advertises.
+Status alone could not separate the two `400` cases. The answer is `ErrorEntity` — the structured
+error type the REST layer already builds `ValidationException` bodies from — rather than a field
+invented for this feature:
 
-The client tests are written against this assumed shape, so that they could be written at all:
+```json
+{ "errors": [{ "errorCode": "OVER_MAX_PATHS", "message": "...", "fieldName": "assetPaths" }] }
+```
 
-| Refusal | Status | Body |
+| Status | `errorCode` | Client copy |
 |---|---|---|
-| Empty selection | `400` | `{ "error": "EMPTY_SELECTION" }` |
-| Over the maximum | `400` | `{ "error": "OVER_MAX_PATHS", "maxPaths": 100 }` |
-| Not entitled | `403` | *(status alone is enough — nothing else is a 403 here)* |
-| Overlaps an in-flight run | `409` | `{ "error": "OVERLAPPING_RUN", "path": "//demo.dotcms.com/old-a/" }` |
+| `400` | `EMPTY_SELECTION` | Nothing was submitted |
+| `400` | `OVER_MAX_PATHS` | Names the limit, read from configuration |
+| `403` | `NOT_ENTITLED` | Not allowed to bulk delete |
+| `409` | `OVERLAPPING_RUN` | Something in the selection is already being deleted |
 
-Anything unrecognised maps to an `UNCLASSIFIED` refusal rather than being swallowed.
+The client switches on `errorCode`, and falls back to `UNCLASSIFIED` rather than guessing between
+the two `400`s when a body carries no code.
 
-**What the client actually needs, in order of importance:**
+**The ceiling is 50 by default** (`FOLDER_BULK_DELETE_MAX_PATHS`), lower than bulk upload's 100
+because each accepted path is one sequential blocking transaction rather than one bounded file. The
+client's authoritative source stays the configuration endpoint; the number in the refusal `message`
+is prose.
 
-1. **The two `400`s must be separable.** An error code in the body is the assumption above; a distinct
-   status for one of them would work equally well. What does not work is both answering `400` with
-   nothing to tell them apart.
-2. **The overlap refusal should carry the folder** it collided on. The copy names the folder — and per
-   backend FR-029a it must **never** name the author who started the other run, since the refused
-   author cannot see that run at all.
-3. **The over-maximum refusal should carry the ceiling**, or the client has to re-read configuration
-   to say what the limit was. It already reads the ceiling up front for the courtesy check, so this is
-   a convenience rather than a requirement.
+### One shortfall this leaves, recorded rather than worked around
 
-**If the server lands a different shape, only one file changes** —
-`libs/data-access/src/lib/dot-folder-bulk-delete/dot-folder-bulk-delete.service.ts` and its spec. The
-refusal *kinds* the rest of the client switches on are stable either way; only the mapping into them
-moves. This is recorded here rather than absorbed silently so the server half can choose the shape,
-rather than discovering the client already picked one.
+**FR-040 asks the client to name the folder an overlapping run collided on. The body does not carry
+one.** The folder appears inside `message` as server-generated English, which is not localised and
+so is not rendered. So the refusal says *something in this selection is already being deleted*
+without saying which.
 
----
+Parsing the sentence was considered and rejected: it would break the first time the wording changes,
+and it would put server English on screen by the back door. Closing it properly needs a structured
+field — worth raising if authors find the refusal hard to act on.
 
 ## Typing and drift
 
