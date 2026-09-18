@@ -1,4 +1,5 @@
 import {
+    byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
@@ -8,6 +9,7 @@ import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
+import { Tooltip } from 'primeng/tooltip';
 import { ZIndexUtils } from 'primeng/utils';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -28,7 +30,8 @@ describe('DotContentDriveSearchInputComponent', () => {
             mockProvider(DotContentDriveStore, {
                 getFilterValue: vi.fn().mockReturnValue(undefined),
                 setGlobalSearch: vi.fn(),
-                selectAllSiteContent: vi.fn()
+                selectAllSiteContent: vi.fn(),
+                setSearchScope: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -93,6 +96,147 @@ describe('DotContentDriveSearchInputComponent', () => {
 
     // The claim lives here rather than in the shell because this component is the one holding the
     // search box; the shell would have to reach three levels down to find it.
+    describe('search scope', () => {
+        // Absent from the filters means the default. The key is deliberately NOT `title` — that
+        // holds the search TERM, and a scope whose value is 'TITLE' beside it would be a collision.
+        const withScope = (scope?: string) =>
+            store.getFilterValue.mockImplementation((key: string) =>
+                key === 'searchScope' ? scope : undefined
+            );
+
+        it('should render the scope control next to the search input', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('search-scope-trigger'))).toBeTruthy();
+            expect(searchInput()).toBeTruthy();
+        });
+
+        it('should show the active scope on the trigger', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            expect(spectator.component['$activeScopeLabel']()).toBe(
+                'content-drive.search.scope.title'
+            );
+        });
+
+        it('should start on All Fields when nothing is stored', () => {
+            withScope(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.component['$searchScope']()).toBe('ALL_FIELDS');
+        });
+
+        it('should read the stored scope when one is set', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            expect(spectator.component['$searchScope']()).toBe('TITLE');
+        });
+
+        // The placeholder deliberately does NOT describe the active scope — it is always the
+        // shared component's own default ("Search"), so no [placeholder] binding is passed at all.
+        // Regression guard for both directions: scope changes must not reintroduce one.
+        it('should leave the input on its default placeholder in Title scope', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            expect(searchInput().componentInstance.$placeholder()).toBe('search');
+        });
+
+        it('should leave the input on its default placeholder in All Fields scope', () => {
+            withScope(undefined);
+            spectator.detectChanges();
+
+            expect(searchInput().componentInstance.$placeholder()).toBe('search');
+        });
+
+        it('should record a newly chosen scope', () => {
+            withScope(undefined);
+            spectator.detectChanges();
+
+            spectator.component['onScopeChange']('TITLE');
+
+            expect(store.setSearchScope).toHaveBeenCalledWith('TITLE');
+        });
+
+        it('should ignore re-selecting the scope that is already active', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            spectator.component['onScopeChange']('TITLE');
+
+            // Re-running cannot change the results, and it would reset the user to page 1.
+            expect(store.setSearchScope).not.toHaveBeenCalled();
+        });
+
+        // p-listbox is single-select with metaKeySelection=false, so re-clicking the already
+        // active option TOGGLES it and emits `null` via (ngModelChange) instead of the option's
+        // value. Before the null guard, that null slipped past the "already active" check (`null
+        // !== 'TITLE'`) and reached the store as a real scope change — silently dropping the user
+        // back to All Fields and marking a clean drive as filtered (issue #37554 review).
+        it('should ignore a null emission from re-clicking the active scope in the listbox', () => {
+            withScope('TITLE');
+            spectator.detectChanges();
+
+            spectator.component['onScopeChange'](null);
+
+            expect(store.setSearchScope).not.toHaveBeenCalled();
+        });
+
+        it('should name the control for assistive technology', () => {
+            spectator.detectChanges();
+
+            expect(
+                spectator.query(byTestId('search-scope-trigger'))?.getAttribute('aria-label')
+            ).toBeTruthy();
+        });
+
+        // Lara centers a button's content, so label and chevron recentered as one group every time
+        // the active scope changed — "Title" and "All Fields" rendered at different offsets.
+        // `TRIGGER_PT` pins them to the button's edges instead; asserted through the rendered
+        // inline style, so a lost PT slot fails here rather than in QA.
+        it('should keep the trigger label and chevron in place when the scope changes', () => {
+            spectator.detectChanges();
+
+            const trigger = spectator.query(byTestId('search-scope-trigger')) as HTMLElement;
+
+            expect(trigger.style.justifyContent).toBe('space-between');
+        });
+
+        // The gray of `p-button-secondary` must go white through the PT inline style, not a
+        // Tailwind class: PrimeNG's styles are appended to the head after the Tailwind stylesheet,
+        // so `bg-white` loses the cascade war at equal specificity. The value is the input's own
+        // token variable, so both halves of the field stay the same white in any theme.
+        it('should paint the trigger with the field background', () => {
+            spectator.detectChanges();
+
+            const trigger = spectator.query(byTestId('search-scope-trigger')) as HTMLElement;
+
+            expect(trigger.style.background).toBe('var(--p-inputtext-background)');
+        });
+
+        it('should offer a distinct explanation for each option in the panel', () => {
+            spectator.detectChanges();
+
+            // Two labels do not carry the distinction between "the item's name" and "anything
+            // written inside it", and the control is new. The explanation lives on each option
+            // row in the panel, not on the trigger — asserted through the directive instances
+            // rather than an ng-reflect attribute, which Angular only emits in development mode.
+            spectator.click(byTestId('search-scope-trigger'));
+            spectator.detectChanges();
+
+            const tooltips = spectator.queryAll(Tooltip);
+
+            expect(tooltips.length).toBe(2);
+            expect(tooltips.every((tooltip) => !!tooltip.content)).toBe(true);
+
+            const contents = tooltips.map((tooltip) => tooltip.content);
+
+            expect(new Set(contents).size).toBe(2);
+        });
+    });
+
     describe('search shortcut', () => {
         /** Dispatches from `target` (the document unless a field is given), the way a browser would. */
         const press = (init: KeyboardEventInit, target: EventTarget = document): KeyboardEvent => {

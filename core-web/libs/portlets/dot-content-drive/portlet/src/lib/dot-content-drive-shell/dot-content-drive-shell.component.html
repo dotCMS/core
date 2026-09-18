@@ -68,6 +68,29 @@
     (uploadFiles)="onRequestUpload($event)"
     (dragEnter)="onDropzoneDragEnter()"
     class="col-start-2 row-start-4 overflow-auto">
+    <!-- A search that failed to run must not read as a search that found nothing: the second tells
+         the user their content does not exist, and that is what sent a customer looking for a
+         document that was there all along (issue #37532). The message sits above the listing rather
+         than replacing it, so it explains the empty grid instead of hiding it. -->
+    @if ($searchFailed()) {
+        <p-message
+            [pt]="{ text: { class: 'w-full' } }"
+            severity="error"
+            data-testid="search-error-state"
+            role="alert"
+            class="block p-4">
+            <div class="flex w-full flex-wrap items-center justify-between gap-2">
+                <span>{{ 'content-drive.search.error.message' | dm }}</span>
+                <p-button
+                    [label]="'content-drive.search.error.retry' | dm"
+                    data-testid="search-error-retry"
+                    severity="secondary"
+                    size="small"
+                    (onClick)="onRetrySearch()" />
+            </div>
+        </p-message>
+    }
+
     <!-- `dataKey="inode"`: the language filter is multi-select, so one identifier can occupy
          several rows here. On the component's `identifier` default, ticking one language version
          ticked them all. The search service already backfills folder inodes for exactly this. -->

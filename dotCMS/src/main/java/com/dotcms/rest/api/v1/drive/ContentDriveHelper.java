@@ -183,8 +183,17 @@ public class ContentDriveHelper {
         if (null != requestForm.filters() && UtilMethods.isSet(requestForm.filters().text())) {
              builder.useElasticsearchFiltering(true) // Rely on ES for enhanced text filtering
                  .filterFolderNames(requestForm.filters().filterFolders())
+                 .searchScope(requestForm.filters().searchScope())
                  .withFilter(requestForm.filters().text());
+        } else if (null != requestForm.filters()
+                && SearchScope.ALL_FIELDS != requestForm.filters().searchScope()) {
+            // The search scope says which fields the TEXT is read against, so it is meaningless
+            // without text. Rejecting it makes the nonsense visible at the contract boundary
+            // instead of leaving it as a rule someone has to remember.
+            throw new BadRequestException(
+                    "'filters.searchScope' qualifies 'filters.text' and cannot be used without it.");
         }
+
 
         // Per-field value filters (Content Drive). Field types are resolved against a single
         // content type; index-routed criteria also flip on ES filtering, while DB-routed criteria

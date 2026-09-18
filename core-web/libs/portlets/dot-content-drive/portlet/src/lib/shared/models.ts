@@ -48,6 +48,25 @@ export enum DotContentDriveStatus {
 }
 
 /**
+ * Which fields a Content Drive search term is matched against.
+ *
+ * Not to be confused with a *browse* scope, which says where you are browsing. A browse scope says
+ * where you are; a search scope says how a search reads what is there.
+ *
+ * `as const` rather than a TS `enum`, per TYPESCRIPT_STANDARDS.md. The values are the wire contract
+ * and must match the server's `SearchScope`.
+ */
+export const DOT_CONTENT_DRIVE_SEARCH_SCOPE = {
+    /** The term is matched against every indexed field. The default, and today's behaviour. */
+    ALL_FIELDS: 'ALL_FIELDS',
+    /** The term is matched against the contentlet title only. */
+    TITLE: 'TITLE'
+} as const;
+
+export type DotContentDriveSearchScope =
+    (typeof DOT_CONTENT_DRIVE_SEARCH_SCOPE)[keyof typeof DOT_CONTENT_DRIVE_SEARCH_SCOPE];
+
+/**
  * The sort order of the content drive.
  *
  * @export
@@ -426,6 +445,16 @@ export type DotKnownContentDriveFilters = {
     // `withFilterDefaults`), so the value is explicit in the URL rather than implied by the key's
     // absence.
     sharedAssets: string;
+    // Which fields the `title` search term is matched against: 'TITLE' or 'ALL_FIELDS'.
+    //
+    // Note the key is NOT `title` — that one holds the search TERM. A scope whose value is 'TITLE'
+    // sitting beside a filter key named `title` is a collision waiting to happen, so they are kept
+    // apart deliberately.
+    //
+    // Present only when it differs from the default: `hasNonDefaultFilters` counts every key but
+    // two, so writing this one unconditionally would offer "Clear all" on a drive with nothing
+    // filtered at all.
+    searchScope: string;
 };
 
 /**

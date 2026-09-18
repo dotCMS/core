@@ -5,6 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotcms.rest.api.v1.drive.SearchScope;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Theme;
@@ -64,6 +65,7 @@ public class BrowserQuery {
     final boolean showDefaultLangItems;
     final boolean useElasticsearchFiltering;
     final boolean filterFolderNames;
+    final SearchScope searchScope;
     final Set<Long> languageIds;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
@@ -156,6 +158,7 @@ public class BrowserQuery {
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
         this.useElasticsearchFiltering = builder.useElasticsearchFiltering;
+        this.searchScope = builder.searchScope;
         this.skipFolder = builder.skipFolder;
         this.ignoreSiteForFolders = builder.ignoreSiteForFolders;
         this.filterFolderNames = builder.filterFolderNames;
@@ -293,6 +296,10 @@ public class BrowserQuery {
         private User user;
         private boolean useElasticsearchFiltering = false;
         private boolean filterFolderNames = false;
+        // Defaults to ALL_FIELDS so the callers that never set it — the assets REST API, the legacy
+        // admin browser, the Velocity viewtool and the File Asset API — keep producing exactly the
+        // results they produced before this field existed.
+        private SearchScope searchScope = SearchScope.ALL_FIELDS;
         private String filter = null;
         private String fileName = null;
         private String sortBy = "moddate";
@@ -360,6 +367,9 @@ public class BrowserQuery {
                     ? browserQuery.site.getIdentifier()
                     : browserQuery.folder.getInode();
             this.useElasticsearchFiltering = browserQuery.useElasticsearchFiltering;
+            this.searchScope = browserQuery.searchScope;
+            // `forceSystemHost` on the other side of this merge; the boolean field is gone, and
+            // the deprecated setter that replaced it translates into this same enum.
             this.systemHostMode = browserQuery.systemHostMode;
             this.skipFolder = browserQuery.skipFolder;
             this.ignoreSiteForFolders = browserQuery.ignoreSiteForFolders;
@@ -504,6 +514,18 @@ public class BrowserQuery {
          */
         public Builder useElasticsearchFiltering(boolean useElasticsearchFiltering) {
             this.useElasticsearchFiltering = useElasticsearchFiltering;
+            return this;
+        }
+
+        /**
+         * Which fields the text filter is matched against. Only Content Drive sets this; every
+         * other caller leaves it at {@link SearchScope#ALL_FIELDS} and is therefore unaffected.
+         *
+         * @param searchScope the {@link SearchScope}
+         * @return this
+         */
+        public Builder searchScope(final SearchScope searchScope) {
+            this.searchScope = null == searchScope ? SearchScope.ALL_FIELDS : searchScope;
             return this;
         }
 

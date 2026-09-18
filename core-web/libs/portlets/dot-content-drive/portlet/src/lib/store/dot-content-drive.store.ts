@@ -40,9 +40,11 @@ import {
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
+    DEFAULT_SEARCH_SCOPE,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     MAP_NUMBERS_TO_BASE_TYPES,
+    SEARCH_SCOPE_FILTER_KEY,
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST,
@@ -53,6 +55,7 @@ import {
     DotContentDriveFilters,
     DotContentDriveInit,
     DotContentDrivePagination,
+    DotContentDriveSearchScope,
     DotContentDriveSort,
     DotContentDriveState,
     DotContentDriveStatus
@@ -144,7 +147,19 @@ export const DotContentDriveStore = signalStore(
                                 SHARED_ASSETS_DISABLED_VALUE,
                             filters: {
                                 text: filters()?.title || '',
-                                filterFolders: true
+                                filterFolders: true,
+                                // Sent only when a term is present and the scope is not the
+                                // default. The server rejects a scope without text as the contract
+                                // error it is, and an omitted scope is processed exactly as it was
+                                // before this field existed — which is what leaves the AssetPicker,
+                                // the one other caller of this endpoint, untouched.
+                                ...(filters()?.title && filters()?.[SEARCH_SCOPE_FILTER_KEY]
+                                    ? {
+                                          searchScope: filters()?.[
+                                              SEARCH_SCOPE_FILTER_KEY
+                                          ] as DotContentDriveSearchScope
+                                      }
+                                    : {})
                             },
                             language: filters()?.languageId,
                             contentTypes: filters()?.contentType,
@@ -243,6 +258,10 @@ export const DotContentDriveStore = signalStore(
                     filters.title = searchValue;
                 } else {
                     delete filters.title;
+                    // The scope qualifies the term — with no term it is nonsense (FR-025), and a
+                    // leftover scope would keep "Clear all" lit on a drive with nothing filtered
+                    // (FR-020), the exact affordance setSearchScope deletes the key to avoid.
+                    delete filters[SEARCH_SCOPE_FILTER_KEY];
                 }
 
                 patchState(store, {
@@ -254,6 +273,26 @@ export const DotContentDriveStore = signalStore(
                     },
                     path: DEFAULT_PATH
                 });
+            },
+            /**
+             * Records which fields the search term is matched against.
+             *
+             * Written into the filter state only while it differs from the default, and deleted
+             * when it returns to it. That is not cosmetic: `hasNonDefaultFilters` counts every
+             * filter key except two, and that signal is what shows the chip bar's "Clear all". A
+             * scope written on every selection would offer "Clear all" the moment someone picked
+             * the default on a drive with nothing filtered at all.
+             *
+             * Mirrors how `setGlobalSearch` already deletes its own key when the term goes empty.
+             */
+            setSearchScope(scope: DotContentDriveSearchScope) {
+                if (scope === DEFAULT_SEARCH_SCOPE) {
+                    this.removeFilter(SEARCH_SCOPE_FILTER_KEY);
+
+                    return;
+                }
+
+                this.patchFilters({ [SEARCH_SCOPE_FILTER_KEY]: scope });
             },
             clearFilters() {
                 patchState(store, {
@@ -332,7 +371,7 @@ export const DotContentDriveStore = signalStore(
             setTreeForceCollapsed(isTreeForceCollapsed: boolean) {
                 patchState(store, { isTreeForceCollapsed });
             },
-            getFilterValue(filter: string) {
+            getFilterValue(filter: string): string | string[] | undefined {
                 return store.filters()[filter];
             },
             /**
@@ -506,11 +545,16 @@ export const DotContentDriveStore = signalStore(
                     return;
                 }
 
-                // Since we are using scored search for the title we need to sort by score desc
                 dotContentDriveService
                     .search(request)
                     .pipe(
                         take(1),
+                        // Deliberate deviation from the portlet convention of routing every HTTP
+                        // error through DotHttpErrorManagerService: a transient toast over an
+                        // empty grid reads as "found nothing", the exact misread that sent a
+                        // #37532 customer looking for a document that was there all along. The
+                        // ERROR status renders the shell's persistent banner + Retry instead (see
+                        // dot-content-drive-shell.component.html).
                         catchError(() => {
                             patchState(store, { status: DotContentDriveStatus.ERROR });
                             return EMPTY;
@@ -663,7 +707,11 @@ export const DotContentDriveStore = signalStore(
 
                     store.initContentDrive({
                         currentSite: globalStore.siteDetails(),
-                        path,
+                        // `path` is `string | undefined` here, because DEFAULT_PATH is undefined.
+                        // DotContentDriveInit declares `path: string`, which was never true of the
+                        // running code. Cast rather than coalesce: it must stay `undefined` rather
+                        // than '', since consumers read it as `path ?? '/'` where the two differ.
+                        path: path as string,
                         filters: restoredFilters,
                         isTreeExpanded
                     });
