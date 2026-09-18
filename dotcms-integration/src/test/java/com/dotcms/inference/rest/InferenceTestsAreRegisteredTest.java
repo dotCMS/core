@@ -1,6 +1,6 @@
 package com.dotcms.inference.rest;
 
-import com.dotcms.MainSuite2b;
+import com.dotcms.MainSuite2a;
 import org.junit.Test;
 import org.junit.runners.Suite;
 
@@ -40,7 +40,7 @@ public class InferenceTestsAreRegisteredTest {
     @Test
     public void test_everyInferenceTestClassIsRegisteredInTheSuite() throws Exception {
         final Set<String> registered =
-                Arrays.stream(MainSuite2b.class.getAnnotation(Suite.SuiteClasses.class).value())
+                Arrays.stream(MainSuite2a.class.getAnnotation(Suite.SuiteClasses.class).value())
                         .map(Class::getName)
                         .collect(Collectors.toSet());
 
@@ -55,7 +55,7 @@ public class InferenceTestsAreRegisteredTest {
 
         assertTrue("These test classes are never run by CI — they compile, they pass when named "
                         + "explicitly, and the build stays green while they protect nothing. Add "
-                        + "them to MainSuite2b's @SuiteClasses: " + unregistered,
+                        + "them to MainSuite2a's @SuiteClasses: " + unregistered,
                 unregistered.isEmpty());
     }
 
