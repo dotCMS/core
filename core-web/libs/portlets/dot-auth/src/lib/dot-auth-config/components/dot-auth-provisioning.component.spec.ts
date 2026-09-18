@@ -35,9 +35,9 @@ describe('DotAuthProvisioningComponent', () => {
 
     describe('default roles field', () => {
         it('shows a comma-separated example as the placeholder', () => {
-            expect(
-                spectator.query<HTMLInputElement>(byTestId('default-roles'))?.placeholder
-            ).toBe('exampleRole1, exampleRole2');
+            expect(spectator.query<HTMLInputElement>(byTestId('default-roles'))?.placeholder).toBe(
+                'exampleRole1, exampleRole2'
+            );
         });
 
         it('explains the comma-separated format in the tooltip', () => {
