@@ -900,4 +900,120 @@ describe('withActionExecution', () => {
             expect(store.activeRunCount()).toBe(0);
         });
     });
+
+    /**
+     * Reporting a finished bulk folder delete (#37063 US4).
+     *
+     * The counts the author reads come from the SERVER. Every other action in this file already
+     * follows that rule for the same reason: substituting the number submitted turns a refusal into
+     * a reported success.
+     */
+    describe('reportFolderDeleteCompleted (#37063)', () => {
+        const completed = (overrides = {}) =>
+            ({
+                state: 'SUCCESS',
+                jobId: 'job-1',
+                total: 3,
+                processed: 3,
+                successCount: 2,
+                failedCount: 1,
+                skippedCount: 0,
+                results: [
+                    { key: '//d/a/', status: 'SUCCESS' },
+                    { key: '//d/b/', status: 'FAILED', reason: 'PERMISSION_DENIED' }
+                ],
+                ...overrides
+            }) as never;
+
+        const submitAndTrack = () => {
+            submitFolderBulkDelete.mockReturnValue(
+                of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status', submitted: 3 })
+            );
+            store.executeFolderBulkDelete('Delete', ['//d/a/', '//d/b/', '//d/c/'], ['inode-a']);
+        };
+
+        it('should report the SERVER’s counts, not the number submitted', () => {
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            const result = store.actionExecutionResult();
+
+            expect(result?.successCount).toBe(2);
+            expect(result?.failedCount).toBe(1);
+        });
+
+        it('should carry the per-folder records, not just the counts', () => {
+            // Counts alone tell an author one folder failed and nothing they can act on. The names
+            // and reasons are the point of a partial outcome (FR-026).
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            expect(store.actionExecutionResult()?.failures?.length).toBeGreaterThan(0);
+        });
+
+        it('should end the run it belongs to', () => {
+            build();
+            submitAndTrack();
+            expect(store.activeRunCount()).toBe(1);
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            expect(store.activeRunCount()).toBe(0);
+        });
+
+        it('should ignore a completion for a run this store did not submit', () => {
+            // The event is scoped to the submitting USER, so another tab's run reaches this store
+            // too. Reporting it would toast counts for folders this grid never selected.
+            build();
+
+            store.reportFolderDeleteCompleted('Delete', completed({ jobId: 'someone-elses' }));
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report a cancelled run without reading as a fault', () => {
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted(
+                'Delete',
+                completed({ state: 'CANCELED', successCount: 1, failedCount: 0, skippedCount: 2 })
+            );
+
+            const result = store.actionExecutionResult();
+
+            expect(result?.failedCount).toBe(0);
+            expect(result?.skippedCount).toBe(2);
+        });
+
+        it('should refuse to invent counts for a run that recorded no outcome', () => {
+            // A run that finished without recording one carries only `state`. Substituting zeros
+            // would claim a clean run over nothing; substituting the submitted count would claim
+            // every folder succeeded.
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', {
+                state: 'FAILED',
+                jobId: 'job-1'
+            } as never);
+
+            expect(store.actionExecutionResult()?.successCount).not.toBe(3);
+        });
+
+        it('should report an outcome once, not once per surface', () => {
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            // The second is for a job already settled and dropped from tracking.
+            expect(store.actionExecutionResults().length).toBe(1);
+        });
+    });
 });
