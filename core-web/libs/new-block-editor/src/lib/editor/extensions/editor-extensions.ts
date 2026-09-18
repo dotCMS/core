@@ -149,8 +149,8 @@ export function createEditorExtensions(
         }),
         ...(has('video') ? [Video] : []),
         ...(has('audio') ? [Audio] : []),
-        // Always registered — see `has()`. Authoring gate: the "Add asset by URL" popover,
-        // already behind `showAssetByUrl()`.
+        // Always registered — see `has()` — and never gated for authoring either: the "Add asset
+        // by URL" trigger and its YouTube tab are both unconditional since #37601.
         Youtube.configure({
             height: 300,
             width: 400,
