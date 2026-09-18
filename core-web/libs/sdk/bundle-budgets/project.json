@@ -4,7 +4,16 @@
     "sourceRoot": "libs/sdk/bundle-budgets/src",
     "projectType": "library",
     "tags": [],
-    "implicitDependencies": ["sdk-react", "sdk-client", "sdk-uve", "sdk-types", "sdk-analytics"],
+    "implicitDependencies": [
+        "sdk-react",
+        "sdk-client",
+        "sdk-uve",
+        "sdk-types",
+        "sdk-analytics",
+        "sdk-angular",
+        "sdk-vue",
+        "sdk-experiments"
+    ],
     "targets": {
         "test": {
             "dependsOn": ["^build"],

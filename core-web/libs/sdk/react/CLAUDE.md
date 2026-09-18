@@ -126,7 +126,7 @@ The library uses a clean export pattern from `src/index.ts`:
 ### Peer Dependencies
 - React 18+ and React DOM 18+ are required
 - No direct React dependencies to avoid version conflicts
-- Uses latest versions of internal dotCMS packages
+- `@dotcms/uve`, `@dotcms/client` and `@dotcms/types` are peers, each declared with the `"0.0.0"` sentinel — a slot marker the SDK release workflow overwrites with the exact release version at publish, never a version anyone installs. `@dotcms/types` belongs there despite its name: the built `.js` imports runtime enums (`UVE_MODE`, `UVEEventType`, `DotCMSUVEAction`, `DotCMSEntityState`) from it, so leaving it a devDependency ships a package that cannot import in a clean `node_modules`.
 
 ### Build Configuration
 - Targets ESM format only

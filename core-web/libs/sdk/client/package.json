@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
+  "peerDependencies": {
+    "@dotcms/types": "0.0.0"
+  },
   "dependencies": {
     "consola": "^3.4.2"
   },
