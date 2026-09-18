@@ -4,12 +4,14 @@ import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectButtonModule } from 'primeng/selectbutton';
+import { MessageModule } from 'primeng/message';
 import { TextareaModule } from 'primeng/textarea';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
-export type DotAiIndexCreateMode = 'add' | 'delete';
+import { DOT_AI_INDEX_OPERATION } from '../../../models/dot-ai-portlet.models';
+import { DotAiStore } from '../../../store/dot-ai.store';
+import { watchIndexOperation } from '../../../utils/dot-ai-index-dialog.utils';
 
 /**
  * The server stores whatever it is given — `bad name with spaces` is accepted verbatim, and
@@ -18,20 +20,19 @@ export type DotAiIndexCreateMode = 'add' | 'delete';
  */
 const INDEX_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
 
-export interface DotAiIndexCreateResult {
-    mode: DotAiIndexCreateMode;
-    indexName: string;
-    query: string;
-    fields?: string;
-    velocityTemplate?: string;
-}
-
 /**
- * One dialog, two modes.
+ * Builds an index, and only builds one.
  *
- * Add mode embeds the content the query matches; delete mode removes it from the index. The
- * submit label flips with the toggle so the destructive mode never hides behind a neutral
- * word (FR-030) — the legacy screen did the same remap.
+ * Removing content used to be a mode on this same form, which meant a destructive action sat
+ * one click from a create action behind a toggle, sharing its submit button, reshaping the
+ * fields underneath it. It has its own dialog now, opened from the row of the index it acts on.
+ *
+ * The dialog calls the store itself rather than closing with a form value for the list
+ * component to submit. It has to: a build is the one action here whose *failure* is a
+ * correction to the form — a malformed Lucene query — and resolving the dialog first threw
+ * that message onto the tab behind a modal that had already taken the query with it. Owning
+ * the submit is what lets the query survive its own error. See the documented exception under
+ * CRUD Patterns in `libs/portlets/CLAUDE.md`.
  */
 @Component({
     selector: 'dot-ai-index-create',
@@ -40,33 +41,36 @@ export interface DotAiIndexCreateResult {
         ButtonModule,
         InputTextModule,
         TextareaModule,
-        SelectButtonModule,
+        MessageModule,
         DotMessagePipe
     ],
     templateUrl: './dot-ai-index-create.component.html'
 })
 export class DotAiIndexCreateComponent {
     readonly #dialogRef = inject(DynamicDialogRef);
-    readonly #config = inject(DynamicDialogConfig<{ indexes: string[] }>);
+    readonly #dialogConfig = inject(DynamicDialogConfig);
 
-    protected readonly existingIndexes = this.#config.data?.indexes ?? [];
+    protected readonly store = inject(DotAiStore);
 
-    protected readonly $mode = signal<DotAiIndexCreateMode>('add');
+    /**
+     * Settles and closes on this dialog's own build, and nothing else. Shared with the remove
+     * dialog because the two had already drifted apart once.
+     */
+    readonly #operation = watchIndexOperation(DOT_AI_INDEX_OPERATION.BUILD, {
+        notice: this.store.indexNotice,
+        close: () => this.#dialogRef.close(),
+        config: this.#dialogConfig,
+        claim: (operation, indexName) => this.store.claimIndexOutcome(operation, indexName),
+        release: () => this.store.releaseIndexOutcome()
+    });
+
+    protected readonly $submitting = this.#operation.$submitting;
+    protected readonly $notice = this.#operation.$notice;
+
     protected readonly $indexName = signal('');
     protected readonly $query = signal('');
     protected readonly $fields = signal('');
     protected readonly $velocityTemplate = signal('');
-
-    protected readonly modes = [
-        { label: 'dotai.index.create.mode.add', value: 'add' as const },
-        { label: 'dotai.index.create.mode.delete', value: 'delete' as const }
-    ];
-
-    protected readonly $submitLabel = computed(() =>
-        this.$mode() === 'delete'
-            ? 'dotai.index.create.submit.delete'
-            : 'dotai.index.create.submit.add'
-    );
 
     /** Empty until the field has been touched, so the form does not scold you on open. */
     protected readonly $nameError = computed<string | null>(() => {
@@ -80,8 +84,7 @@ export class DotAiIndexCreateComponent {
             return 'dotai.index.create.name.invalid';
         }
 
-        // Only for a build: deleting names an index that must already exist.
-        if (this.$mode() === 'add' && this.existingIndexes.includes(name)) {
+        if (this.store.indexes().some((index) => index.name === name)) {
             return 'dotai.index.create.name.exists';
         }
 
@@ -89,7 +92,11 @@ export class DotAiIndexCreateComponent {
     });
 
     protected readonly $canSubmit = computed(
-        () => !!this.$indexName().trim() && !!this.$query().trim() && !this.$nameError()
+        () =>
+            !!this.$indexName().trim() &&
+            !!this.$query().trim() &&
+            !this.$nameError() &&
+            !this.$submitting()
     );
 
     protected submit(): void {
@@ -97,24 +104,18 @@ export class DotAiIndexCreateComponent {
             return;
         }
 
-        const result: DotAiIndexCreateResult = {
-            mode: this.$mode(),
-            indexName: this.$indexName().trim(),
-            query: this.$query().trim()
-        };
+        const indexName = this.$indexName().trim();
 
-        // Only meaningful when embedding; a delete is driven purely by the query.
-        if (this.$mode() === 'add') {
-            if (this.$fields().trim()) {
-                result.fields = this.$fields().trim();
-            }
-
-            if (this.$velocityTemplate().trim()) {
-                result.velocityTemplate = this.$velocityTemplate().trim();
-            }
-        }
-
-        this.#dialogRef.close(result);
+        this.#operation.submitted(indexName);
+        this.store.buildIndex({
+            indexName,
+            query: this.$query().trim(),
+            // Both only shape what gets embedded, so they are omitted rather than sent blank.
+            ...(this.$fields().trim() ? { fields: this.$fields().trim() } : {}),
+            ...(this.$velocityTemplate().trim()
+                ? { velocityTemplate: this.$velocityTemplate().trim() }
+                : {})
+        });
     }
 
     protected cancel(): void {

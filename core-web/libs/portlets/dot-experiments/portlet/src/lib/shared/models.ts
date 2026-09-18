@@ -28,6 +28,18 @@ export interface DotExperimentPageInfo {
 }
 
 /** The URL-backed slice of the list view: filter, status selection, paging and sort. */
+/**
+ * The page the Experiments panel is scoped to, handed down by the UVE shell (#37478).
+ *
+ * Both fields are read live from the editor rather than captured: the editor may navigate to
+ * another page, or to another language version of the same one, while the panel is open.
+ */
+export interface DotExperimentsListPanelScope {
+    pageId: string | null;
+    /** Return context for the variant round trip only — it never narrows the list (FR-034a). */
+    languageId: number | null;
+}
+
 export interface DotExperimentsListViewState {
     filter: string;
     /**
