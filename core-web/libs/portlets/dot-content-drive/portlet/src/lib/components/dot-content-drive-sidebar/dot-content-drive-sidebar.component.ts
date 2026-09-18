@@ -65,28 +65,14 @@ import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions'
             padding: 0 0.75rem 0.75rem 1px;
         }
 
-        /* The two rows that are not tree nodes still have to feel like them.
+        /* PrimeNG's own drag-over state, aligned with the colour the folder tree marks its active
+           drop row with. Without this it resolves to the hover background, so dragging over the
+           row would look the same as pointing at it, and different from every folder above it.
 
-           PrimeNG paints a node's hover state through a rule scoped under the tree root, so the
-           class alone buys nothing out here: all-site-content and System Host sit outside the
-           tree on purpose, and both were left with no hover at all while every row between them
-           had one. Same tokens as the tree node, read with the underlying content token as a
-           fallback so a rename of the component-level one degrades instead of going blank.
-
-           Selected rows are excluded: PrimeNG already paints those, and a hover on top of the
-           selected background reads as the selection having been lost. */
-        :host button.p-tree-node-content:not(.p-tree-node-selected):hover {
-            background-color: var(
-                --p-tree-node-hover-background,
-                var(--p-content-hover-background)
-            );
-            color: var(--p-tree-node-hover-color, var(--p-text-hover-color));
-        }
-
-        /* Drop target, matching what the tree marks its own active row with rather than a second
-           look for the same meaning. The all-site-content row deliberately does the opposite and
-           dims, because it refuses the drop. */
-        :host button.is-drop-target {
+           Hover itself needs nothing here: the rule is
+           .p-tree-node-content.p-tree-node-selectable:not(.p-tree-node-selected):hover, so the two
+           standalone rows only ever needed the selectable class the markup was missing. */
+        :host button.p-tree-node-dragover {
             background-color: var(--color-palette-primary-200);
         }
     `

@@ -5,7 +5,7 @@
 -->
 <button
     type="button"
-    class="p-tree-node-content mt-[16.7px] w-full shrink-0 cursor-pointer items-center gap-3! px-4! py-3! text-left"
+    class="p-tree-node-content p-tree-node-selectable mt-[16.7px] w-full shrink-0 cursor-pointer items-center gap-3! px-4! py-3! text-left"
     data-testid="all-site-content"
     [class.p-tree-node-selected]="$allSiteContentSelected()"
     [attr.aria-current]="$allSiteContentSelected() ? 'true' : null"
@@ -53,12 +53,12 @@
     -->
     <button
         type="button"
-        class="p-tree-node-content mb-3 w-full shrink-0 cursor-pointer items-center gap-3! px-4! py-3! text-left"
+        class="p-tree-node-content p-tree-node-selectable mb-3 w-full shrink-0 cursor-pointer items-center gap-3! px-4! py-3! text-left"
         data-testid="system-host"
         [class.p-tree-node-selected]="$systemHostSelected()"
         [attr.aria-current]="$systemHostSelected() ? 'true' : null"
         [attr.data-drag-over]="$systemHostDragOver() ? 'true' : null"
-        [class.is-drop-target]="$systemHostDragOver()"
+        [class.p-tree-node-dragover]="$systemHostDragOver()"
         (dragenter)="onSystemHostDragOver($event)"
         (dragover)="onSystemHostDragOver($event)"
         (dragleave)="onSystemHostDragLeave()"
