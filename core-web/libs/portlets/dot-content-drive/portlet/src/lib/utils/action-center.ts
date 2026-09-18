@@ -1,4 +1,5 @@
 import {
+    PERMISSIONS_TYPE,
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
     DotBulkActionView,
@@ -73,6 +74,33 @@ export const REFRESH_ACTION_ID = 'REFRESH';
  * computes in a single pass.
  */
 export const DELETE_FOLDER_ACTION_ID = 'DELETE_FOLDER';
+
+/**
+ * Whether the author may delete this folder, as far as the row can tell.
+ *
+ * **EDIT and EDIT_PERMISSIONS**, which is what the shipped single-folder delete already gates on
+ * and what `FolderAPIImpl.delete` enforces server-side. Keeping all three in agreement is the point:
+ * a fourth opinion here would offer an action the server then refuses.
+ *
+ * Absent `permissions` reads as permitted, not refused. It means the search did not request them —
+ * distinct from an empty array, which means the author holds none — and withholding the action on
+ * missing data would hide Delete wherever a producer did not opt in (FR-005).
+ */
+export const eligibleForDelete = (item: DotContentDriveItem): boolean => {
+    const permissions = (item as { permissions?: string[] }).permissions;
+
+    // `undefined` means the search did not request them, which is NOT the same as `[]` — that means
+    // the author holds none. Treating the first as a refusal would hide Delete wherever a producer
+    // did not opt in, and the server refuses per folder regardless (FR-005).
+    if (!permissions) {
+        return true;
+    }
+
+    return (
+        permissions.includes(PERMISSIONS_TYPE.EDIT) &&
+        permissions.includes(PERMISSIONS_TYPE.EDIT_PERMISSIONS)
+    );
+};
 
 export type DotActionCenterQuickActionId =
     | WORKFLOW_ACTION_ID
@@ -203,6 +231,17 @@ interface DotActionCenterQuickActionDef {
      * noise at that.
      */
     foldersOnly?: boolean;
+    /**
+     * Whether the action is offered for this selection **as a whole**.
+     *
+     * Distinct from {@link eligibleWhen}, which narrows *which items* an action counts and fires on.
+     * Some gates cannot be expressed per item without changing what gets submitted: Delete is
+     * withheld only when the author may delete **none** of the selection, and a selection they may
+     * only partly delete is still submitted whole, with the refusals reported per folder (FR-004a).
+     * Filtering those folders out per item would silently shrink a destructive action the author
+     * explicitly selected — the worse failure of the two.
+     */
+    availableWhen?: (items: DotContentDriveItem[]) => boolean;
 }
 
 /**
@@ -292,6 +331,8 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         // folder is a permission question, answered by `eligibleForDelete` at the selection level
         // and by the server per folder — not by row state here.
         eligibleWhen: (item) => isFolder(item),
+        // Counts and fires on every selected folder, deletable or not — see `availableWhen`.
+        availableWhen: (items) => items.filter(isFolder).some(eligibleForDelete),
         supportsFolders: true,
         foldersOnly: true
     },
@@ -365,6 +406,13 @@ export const getQuickActions = (
             : quickAction.supportsFolders
               ? items
               : contentlets;
+
+        // Withheld for the selection as a whole, before any per-item counting. An action the author
+        // cannot use on anything they picked is not an action with a count of zero — it is one that
+        // does not apply, and the registry already drops those.
+        if (quickAction.availableWhen && !quickAction.availableWhen(items)) {
+            return [];
+        }
 
         // Dropped rather than shown with a count of `0`: a folder-only selection is not "no eligible
         // rows", it is an action that does not apply to what is selected, and a disabled Lock row

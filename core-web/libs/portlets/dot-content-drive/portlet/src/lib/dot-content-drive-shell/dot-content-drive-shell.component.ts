@@ -818,6 +818,16 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
         const isFolderDelete = 'folderDelete' === outcomeKind;
 
+        if (isFolderDelete) {
+            // The listing and the sidebar tree load separately, so refreshing one is not refreshing
+            // the other — and a tree still offering a folder the listing has already dropped is how
+            // an author navigates into nothing (FR-036).
+            //
+            // Only for a delete: an upload changes a folder's *contents*, not the hierarchy, so
+            // reloading the tree for one is a request that can only return the same tree.
+            this.#store.loadFolders();
+        }
+
         // One describer per vocabulary, one rendering path for both. The reason sets barely overlap,
         // so resolving a delete's `IN_USE` through upload's mapping would land on the unclassified
         // fallback — a reason that HAS copy, rendered as though it had none.

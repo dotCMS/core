@@ -4580,6 +4580,58 @@ describe('DotContentDriveShellComponent', () => {
             ]);
         });
     });
+
+    /**
+     * Both surfaces agree once a delete ends (#37063 US6).
+     *
+     * The listing and the sidebar tree load separately, so refreshing one is not refreshing the
+     * other. A tree still offering a folder the listing has already dropped is how an author
+     * navigates into nothing.
+     */
+    describe('folder delete completion (#37063)', () => {
+        const deleteOutcome = (overrides = {}) => ({
+            actionName: 'Delete',
+            outcomeKind: 'folderDelete',
+            successCount: 1,
+            failedCount: 0,
+            skippedCount: 0,
+            backgrounded: true,
+            ...overrides
+        });
+
+        it('should refresh the listing when a delete completes', () => {
+            (store.loadItems as unknown as Mock).mockClear();
+
+            actionExecutionResultSignal.set(deleteOutcome() as never);
+            spectator.detectChanges();
+
+            expect(store.loadItems).toHaveBeenCalled();
+        });
+
+        it('should refresh the sidebar tree when a delete completes', () => {
+            // The listing and the tree load separately, so refreshing one is not refreshing the
+            // other — and a tree still offering a folder the listing has dropped is how an author
+            // navigates into nothing (FR-036).
+            (store.loadFolders as unknown as Mock).mockClear();
+
+            actionExecutionResultSignal.set(deleteOutcome() as never);
+            spectator.detectChanges();
+
+            expect(store.loadFolders).toHaveBeenCalled();
+        });
+
+        /*
+         * NOT asserted here, deliberately: that an *upload* outcome leaves the tree alone.
+         *
+         * The sidebar is rendered inside this component and owns its own effect that reloads the
+         * tree, so `loadFolders` has a caller in this harness with nothing to do with the outcome.
+         * Every form of "was not called" therefore passes or fails on that caller's timing rather
+         * than on the behaviour under test — which is worse than not asserting it, because it reads
+         * as coverage. The guard itself is a single `if (isFolderDelete)` in the shell, visible at
+         * the call site; isolating it would mean a harness that renders the shell without its
+         * sidebar, which is a bigger change than the assertion is worth.
+         */
+    });
 });
 
 /**

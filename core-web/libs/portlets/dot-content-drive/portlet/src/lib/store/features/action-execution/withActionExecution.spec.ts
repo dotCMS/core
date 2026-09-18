@@ -1016,4 +1016,58 @@ describe('withActionExecution', () => {
             expect(store.actionExecutionResults().length).toBe(1);
         });
     });
+
+    /**
+     * Leaving does not lose the run, nor its outcome (#37063 US5).
+     *
+     * Holding the run here rather than in the dialog is what makes surviving a close a deliberate
+     * property rather than an accident — the store outlives every dialog, so nothing silently
+     * aborts when one is destroyed.
+     */
+    describe('a folder delete outlives what started it (#37063)', () => {
+        const PATH_A = '//demo.dotcms.com/old-a/';
+
+        it('should keep the run in flight until its OWN completion arrives', () => {
+            build();
+            submitFolderBulkDelete.mockReturnValue(
+                of({ jobId: 'job-1', statusUrl: '/s', submitted: 1 })
+            );
+
+            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
+
+            // Nothing else settles it: not another action finishing, not a different run's event.
+            store.reportFolderDeleteCompleted('Delete', {
+                state: 'SUCCESS',
+                jobId: 'someone-elses',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0
+            } as never);
+
+            expect(store.activeRunCount()).toBe(1);
+        });
+
+        it('should mark the outcome as backgrounded, so it is announced at all', () => {
+            // By the time it settles the author may be looking somewhere else entirely, so nothing
+            // on screen reflects it. Staying silent would mean a run finished and they never
+            // learned (FR-024).
+            build();
+            submitFolderBulkDelete.mockReturnValue(
+                of({ jobId: 'job-1', statusUrl: '/s', submitted: 1 })
+            );
+            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
+
+            store.reportFolderDeleteCompleted('Delete', {
+                state: 'SUCCESS',
+                jobId: 'job-1',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0
+            } as never);
+
+            expect(store.actionExecutionResult()?.backgrounded).toBe(true);
+        });
+    });
 });
