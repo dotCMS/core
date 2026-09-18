@@ -110,34 +110,32 @@ describe('parseKeyValueBlock', () => {
 
     describe('a pasted JSON object', () => {
         it('should read one pair per property, in the order written', () => {
-            const pairs = parseKeyValueBlock(
-                '{"id": 1, "nombre": "Ana Perez", "activo": true}'
-            );
+            const pairs = parseKeyValueBlock('{"id": 1, "name": "Ann Parker", "active": true}');
 
             expect(pairs).toEqual([
                 { key: 'id', value: '1' },
-                { key: 'nombre', value: 'Ana Perez' },
-                { key: 'activo', value: 'true' }
+                { key: 'name', value: 'Ann Parker' },
+                { key: 'active', value: 'true' }
             ]);
         });
 
         it('should read a selection taken out of the middle of a file', () => {
             // No braces and a trailing comma: what selecting a few lines actually yields.
-            const pairs = parseKeyValueBlock('"id": 1,\n"correo": "ana@example.com",');
+            const pairs = parseKeyValueBlock('"id": 1,\n"email": "ann@example.com",');
 
             expect(pairs).toEqual([
                 { key: 'id', value: '1' },
-                { key: 'correo', value: 'ana@example.com' }
+                { key: 'email', value: 'ann@example.com' }
             ]);
         });
 
         it('should write numbers and booleans the way the JSON wrote them', () => {
-            const pairs = parseKeyValueBlock('{"edad": 28, "ratio": 0.5, "activo": false}');
+            const pairs = parseKeyValueBlock('{"age": 28, "ratio": 0.5, "active": false}');
 
             expect(pairs).toEqual([
-                { key: 'edad', value: '28' },
+                { key: 'age', value: '28' },
                 { key: 'ratio', value: '0.5' },
-                { key: 'activo', value: 'false' }
+                { key: 'active', value: 'false' }
             ]);
         });
 
@@ -184,7 +182,7 @@ describe('parseKeyValueBlock', () => {
 
         it('should return nothing for a selection that cut a string in half', () => {
             // Malformed past repair: the caller lets the browser paste it so the user sees it.
-            expect(parseKeyValueBlock('"correo": "ana.perez@example.com')).toEqual([]);
+            expect(parseKeyValueBlock('"email": "ann.parker@example.com')).toEqual([]);
         });
 
         it('should still read an env block, which is not JSON', () => {
