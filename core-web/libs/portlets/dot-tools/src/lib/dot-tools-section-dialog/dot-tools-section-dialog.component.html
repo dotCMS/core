@@ -1,0 +1,83 @@
+<form class="form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <p class="mb-4 text-xs text-gray-500">{{ 'tools.section-dialog.description' | dm }}</p>
+
+    <div class="field">
+        <label for="tools-section-name">
+            {{ 'tools.form.name' | dm }}
+            <span class="text-red-600">*</span>
+        </label>
+        <input
+            pInputText
+            id="tools-section-name"
+            formControlName="name"
+            [placeholder]="'tools.section-dialog.name.placeholder' | dm"
+            [class.ng-invalid]="$nameShowsError()"
+            [class.ng-dirty]="$nameShowsError()"
+            data-testid="tools-section-name-input"
+            class="w-full" />
+        @if ($nameShowsError()) {
+            <small class="text-red-600" data-testid="tools-section-name-error">
+                {{ 'tools.form.error.name-required' | dm }}
+            </small>
+        }
+    </div>
+
+    <div class="field">
+        <label for="tools-section-icon">{{ 'tools.form.icon' | dm }}</label>
+        <p-select
+            inputId="tools-section-icon"
+            formControlName="icon"
+            [options]="icons"
+            optionLabel="label"
+            optionValue="id"
+            [filter]="true"
+            filterBy="label"
+            appendTo="body"
+            data-testid="tools-section-icon-select"
+            styleClass="w-full">
+            <ng-template let-selected #selectedItem>
+                @if (selected) {
+                    <span class="inline-flex items-center gap-2">
+                        <span class="material-symbols-outlined text-lg leading-none">
+                            {{ selected.id }}
+                        </span>
+                        <span>{{ selected.label }}</span>
+                    </span>
+                }
+            </ng-template>
+            <ng-template let-icon #item>
+                <span class="inline-flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg leading-none">
+                        {{ icon.id }}
+                    </span>
+                    <span>{{ icon.label }}</span>
+                </span>
+            </ng-template>
+        </p-select>
+    </div>
+
+    <div class="mt-4 flex items-center gap-2">
+        @if ($submitted() && form.invalid) {
+            <span
+                class="mr-auto inline-flex items-center gap-2 text-xs text-red-600"
+                data-testid="tools-section-form-error">
+                <span class="material-symbols-outlined text-base leading-none">warning</span>
+                <span>{{ 'tools.form.error.summary' | dm }}</span>
+            </span>
+        } @else {
+            <span class="mr-auto text-xs text-gray-500">
+                {{ 'tools.section-dialog.footer.order-hint' | dm }}
+            </span>
+        }
+        <p-button
+            [label]="'tools.form.cancel' | dm"
+            severity="secondary"
+            [outlined]="true"
+            (onClick)="onCancel()"
+            data-testid="tools-section-cancel-btn" />
+        <p-button
+            [label]="(isEdit ? 'tools.form.save' : 'tools.form.create') | dm"
+            type="submit"
+            data-testid="tools-section-save-btn" />
+    </div>
+</form>

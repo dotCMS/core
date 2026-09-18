@@ -572,6 +572,13 @@
     </portlet>
 
     <portlet>
+        <portlet-name>tools-beta</portlet-name>
+        <display-name>Tools (Beta)</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/tools-beta</portlet-url>
+    </portlet>
+
+    <portlet>
         <portlet-name>dotAuth</portlet-name>
         <display-name>dotAuth</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
