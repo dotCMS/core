@@ -47,22 +47,29 @@ operation sends paths, not content.
 | `statusUrl` | string | Ready-to-use address for status; the caller never assembles it (FR-002). Generic job address — see §2. |
 | `acceptedCount` | number | How many **distinct** paths the server accepted into the run — equals the total the final outcome reports, by construction (FR-003, C-003). After deduplication, so it can be smaller than `assetPaths.length`. |
 
-**Submission refusals — `400`**:
+**Submission refusals — distinguishable by `errorCode`, not by status alone**
 
-| Condition | When it fires |
-|---|---|
-| `assetPaths` missing or empty | FR-004 |
-| `assetPaths` longer than the configured maximum | FR-004 — see §5 for where the maximum is published |
-| Every path fails submission-time validation | Still `400`, not an accepted job that fails immediately — spec edge case |
+Raised on 2026-09-17 during frontend implementation
+([issue comment](https://github.com/dotCMS/core/issues/37063#issuecomment-5720585127)): status code
+alone cannot separate the two `400` cases, and the client needs to render different copy for each.
+Resolved using the REST layer's existing structured-error type,
+[`com.dotcms.rest.ErrorEntity`](../../../dotCMS/src/main/java/com/dotcms/rest/ErrorEntity.java)
+(`errorCode`, `message`, `fieldName`) — the same mechanism `ValidationException` already builds
+its body from — rather than inventing a new ad-hoc shape. `errorCode` is the field to switch on;
+`message` is human-readable but not guaranteed stable wording; `fieldName` names which submitted
+field is at fault, consistently across every refusal below (never repurposed to carry a value).
 
-**Submission refusals — `403`**: caller not entitled to the operation at all (FR-005). Per-path
-permission is not a submission refusal — see §3.
+| Status | `errorCode` | `fieldName` | `message` (example) | When |
+|---|---|---|---|---|
+| `400` | `EMPTY_SELECTION` | `assetPaths` | "no folder paths were submitted" | `assetPaths` missing or empty (FR-004) |
+| `400` | `OVER_MAX_PATHS` | `assetPaths` | "selection exceeds the maximum of 50 paths" | `assetPaths` longer than the configured maximum (FR-004; see §5). The ceiling is stated in `message` text as a convenience only — the client's authoritative source is the configuration endpoint (§5, FR-038), so this is never the only place it can be read from. |
+| `400` | `EMPTY_SELECTION` | `assetPaths` | "no submitted path resolved to anything usable" | Every path fails submission-time validation — still a `400`, not an accepted job that fails immediately (spec edge case) |
+| `403` | `NOT_ENTITLED` | — | "not entitled to bulk-delete folders" | Caller not entitled to the operation at all (FR-005). Per-path permission is not a submission refusal — see §4. |
+| `409` | `OVERLAPPING_RUN` | `assetPaths` | "another deletion is already running for `//default/marketing/2024-campaigns`" | A submitted path is the same as, an ancestor of, or a descendant of a path an in-flight run (in this queue, any submitter) is already covering (FR-029, FR-029a). **Names the conflicting folder, never the other submitter** — there is no field in this body where a user id could appear, by construction, which is the direct answer to whether the payload could leak one. Refused before a job is created (FR-029, FR-029b — see plan.md PO-6 for how the check-then-act race is closed). |
 
-**Submission refusals — `409`**: a submitted path is the same as, an ancestor of, or a descendant of
-a path an in-flight run (in this queue, any submitter) is already covering (FR-029, FR-029a). The
-message names the conflicting folder, not the other submitter: *"another deletion is already running
-for `//default/marketing/2024-campaigns`."* Refused before a job is created (FR-029, FR-029b — see
-plan.md PO-6 for how the check-then-act race is closed).
+```json
+{ "errorCode": "OVER_MAX_PATHS", "message": "selection exceeds the maximum of 50 paths", "fieldName": "assetPaths" }
+```
 
 ---
 
@@ -152,7 +159,7 @@ Exposed through the existing configuration endpoint the client already reads bef
 
 | Property | Default | Purpose |
 |---|---|---|
-| `FOLDER_BULK_DELETE_MAX_PATHS` | TBD at implementation, documented in code | Maximum `assetPaths` length before a `400` (FR-004, FR-007) |
+| `FOLDER_BULK_DELETE_MAX_PATHS` | **50** | Maximum `assetPaths` length before a `400` (FR-004, FR-007). Configurable via `Config`, same pattern as bulk upload's `CONTENT_BULK_UPLOAD_MAX_FILES` (default `100`) — set lower here because each accepted path is one sequential, unbounded-size blocking transaction (FR-020/D-013), not one bounded file, so the realistic per-submission cost is far higher per item. The spec's own worked examples (a "forty folders" cleanup, User Story 4; "twelve obsolete folders", Context) both fit comfortably under this default. |
 
 ---
 
