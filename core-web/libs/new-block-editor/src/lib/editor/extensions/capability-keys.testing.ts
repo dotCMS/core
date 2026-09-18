@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getEditorBlockOptions } from '@dotcms/block-editor';
@@ -30,27 +30,40 @@ import {
  */
 export const EXEMPT_KEYS: readonly string[] = ['paragraph'];
 
-/**
- * Files scanned textually for gate literals, relative to `libs/new-block-editor/src/lib/editor`.
- *
- * `editor-extensions.ts` is the most consequential entry: its gates decide which TipTap
- * extensions are registered at all, so a bad key there does not merely hide a button — it makes
- * the editor unable to parse content that uses the node. It was missed in the first draft of this
- * list and the Red run caught it via I2 (`dotContent` looked like an orphan because its only
- * consumer was unscanned).
- *
- * KNOWN LIMITATION, accepted: only these files are read, so a gate introduced in a *new* file is
- * invisible to I1. Add the file here when that happens. The structural half below covers the
- * slash-menu catalog properly and needs no entry.
- */
-export const SCANNED_FILES: readonly string[] = [
-    'extensions/editor-extensions.ts',
-    'components/toolbar/toolbar.component.html',
-    'components/toolbar/toolbar.component.ts',
-    'components/asset-by-url-popover/asset-by-url-popover.component.ts'
-];
-
 const EDITOR_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+/**
+ * Every file under `editor/` that could hold a gate literal — walked, not listed.
+ *
+ * An earlier draft kept a fixed array of four paths. That made the invariant opt-in: a gate
+ * introduced in a *new* file stayed invisible until someone remembered to extend the list, which
+ * is the same "nothing enforces it" failure this whole contract exists to end. The list also got
+ * it wrong on the first try — `editor-extensions.ts` was missing, and the Red run only caught it
+ * via I2, where `dotContent` looked like an orphan because its only consumer was unscanned.
+ *
+ * `editor-extensions.ts` is the consequential one: its gates decide which TipTap extensions are
+ * registered at all, so a bad key there does not merely hide a button — it makes the editor unable
+ * to parse content that uses the node.
+ *
+ * Specs and test support are excluded: an `isAllowed` stub in a fixture is not a gate. The
+ * structural half below covers the slash-menu catalog and needs no file walking.
+ *
+ * @returns absolute paths, so callers read them directly and report them via `relative()`.
+ */
+export function scannedFiles(dir: string = EDITOR_ROOT): string[] {
+    return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const full = join(dir, entry.name);
+
+        if (entry.isDirectory()) {
+            return scannedFiles(full);
+        }
+
+        const isScannable = /\.(ts|html)$/.test(entry.name);
+        const isTestCode = /\.(spec|testing)\.ts$/.test(entry.name);
+
+        return isScannable && !isTestCode ? [full] : [];
+    });
+}
 
 /**
  * Every capability key the Settings tab can write into a field's `allowedBlocks`.
@@ -102,8 +115,15 @@ export function consumedKeysFromCatalog(): Set<string> {
  * gates and must never be reported: `popovers.isOpen('link')`, `popovers.toggle('emoji')` and
  * `m.type.name === 'link'`. `link` and `emoji` were correctly ungated by #37539 and #37442 — if
  * either appears in the result, this regex is wrong. Fix the regex, never the production code.
+ *
+ * All three quote styles are accepted, with a backreference so the closing quote matches the
+ * opening one. An earlier version took `'…'` only, which would have let `isAllowed("youtube")`
+ * through unseen — a hole of exactly the kind this invariant exists to close. Backticks are not
+ * hypothetical: `editor-extensions.ts` and `toolbar.component.ts` both gate on
+ * `` `heading${level}` ``. Those stay unmatched on purpose — the key class below excludes `$`
+ * and `{`, so an interpolated template literal is not a static key and cannot be checked here.
  */
-const GATE_CALL = /\b(?:isAllowed|has)\(\s*'([A-Za-z][A-Za-z0-9]*)'\s*\)/g;
+const GATE_CALL = /\b(?:isAllowed|has)\(\s*(['"`])([A-Za-z][A-Za-z0-9]*)\1\s*\)/g;
 
 /**
  * Strips comments so prose about a gate is never mistaken for one.
@@ -136,15 +156,15 @@ function stripComments(source: string): string {
  * @returns each key with the files it was found in, so a failure is actionable.
  */
 export function consumedKeysFromSource(
-    files: readonly string[] = SCANNED_FILES
+    files: readonly string[] = scannedFiles()
 ): Map<string, string[]> {
     const found = new Map<string, string[]>();
 
     for (const file of files) {
-        const source = stripComments(readFileSync(join(EDITOR_ROOT, file), 'utf-8'));
+        const source = stripComments(readFileSync(file, 'utf-8'));
 
-        for (const [, key] of source.matchAll(GATE_CALL)) {
-            found.set(key, [...(found.get(key) ?? []), file]);
+        for (const [, , key] of source.matchAll(GATE_CALL)) {
+            found.set(key, [...(found.get(key) ?? []), relative(EDITOR_ROOT, file)]);
         }
     }
 

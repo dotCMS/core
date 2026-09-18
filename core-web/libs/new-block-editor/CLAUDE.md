@@ -380,10 +380,12 @@ Three things about it will bite you if you change it:
 2. **The regex is anchored to `isAllowed(` / `has(`.** `popovers.isOpen('link')`,
    `popovers.toggle('emoji')` and `m.type.name === 'link'` are not gates. A guard test asserts
    `link` and `emoji` are never reported; if it fails, fix the regex, not the production code.
-3. **`SCANNED_FILES` is a fixed list.** A gate in a new file is invisible to I1 — add the file.
-   `extensions/editor-extensions.ts` is the most consequential entry, because its gates decide
-   which extensions are registered at all: a bad key there does not hide a button, it leaves the
-   editor unable to parse content that uses the node.
+3. **The scan walks `editor/`; it is not a list.** `scannedFiles()` recurses the tree for `*.ts`
+   and `*.html`, skipping specs and `*.testing.ts`, so a gate added in a **new** file is caught
+   with no bookkeeping. An earlier draft did keep a fixed list of four paths, and it omitted
+   `extensions/editor-extensions.ts` — the most consequential file of all, because its gates
+   decide which extensions are registered at all: a bad key there does not hide a button, it
+   leaves the editor unable to parse content that uses the node.
 
 ### Resolution pattern
 

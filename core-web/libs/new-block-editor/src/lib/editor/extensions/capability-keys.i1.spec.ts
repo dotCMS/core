@@ -5,7 +5,7 @@ import {
     consumedKeysFromSource,
     EXEMPT_KEYS,
     producibleOptionCodes,
-    SCANNED_FILES
+    scannedFiles
 } from './capability-keys.testing';
 
 /**
@@ -79,11 +79,28 @@ describe('I1 — every consulted capability key is producible by the Settings ta
         expect(consumed).not.toContain('emoji');
     });
 
-    it('scans the files it claims to scan', () => {
-        // The textual half only sees the files it is pointed at; a gate added elsewhere escapes
-        // it. Keeping this list short and asserted makes the limitation visible rather than
-        // forgotten.
-        expect(SCANNED_FILES.length).toBeGreaterThan(0);
+    it('walks the whole editor tree rather than a hand-maintained list', () => {
+        // The textual half only sees the files it reaches. Walking `editor/` means a gate added
+        // in a NEW file is caught without anyone remembering to register it — the first draft of
+        // this invariant used a fixed list and omitted `editor-extensions.ts`, the single most
+        // consequential file in it.
+        const files = scannedFiles();
+
+        // The files that carried gates when this was written. If the walk stops reaching any of
+        // them, it is silently scanning less than it claims.
+        const mustReach = [
+            'extensions/editor-extensions.ts',
+            'components/toolbar/toolbar.component.html',
+            'components/toolbar/toolbar.component.ts',
+            'components/asset-by-url-popover/asset-by-url-popover.component.ts'
+        ];
+
+        for (const file of mustReach) {
+            expect(files.some((found) => found.endsWith(file))).toBe(true);
+        }
+
+        // Test code is excluded on purpose: an `isAllowed` stub in a fixture is not a gate.
+        expect(files.some((found) => /\.(spec|testing)\.ts$/.test(found))).toBe(false);
         expect(consumedKeysFromSource().size).toBeGreaterThan(0);
     });
 });
