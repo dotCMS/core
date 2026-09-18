@@ -11,13 +11,13 @@ export const DotCMSPage = ({
 }: {
   pageResponse: DotCMSCustomPageResponse;
 }) => {
+  // The hook returns undefined while the UVE is still resolving a draft page, so default
+  // before destructuring and treat the page asset as optional until it arrives.
   const { pageAsset, content } =
-    useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse);
+    useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse) ?? {};
 
-  const { layout } = pageAsset;
-
-  const showHeader = layout.header && content;
-  const showFooter = layout.footer && content;
+  const showHeader = pageAsset?.layout.header && content;
+  const showFooter = pageAsset?.layout.footer && content;
 
   return (
     <div className="flex flex-col min-h-screen gap-6 bg-slate-50">

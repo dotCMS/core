@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -8,8 +9,15 @@ import { cn } from "@/lib/utils";
 import { useIsEditMode } from "@/hooks/useIsEditMode";
 import type { NavItem } from "@/types/content";
 import { ReorderMenuButton } from "../editor/ReorderMenuButton";
-import AISearchDialog from "./components/AISearchDialog";
 import SearchButton from "./components/SearchButton";
+
+// The AI search dialog — and the `useAISearch` hook and dotCMS AI client it pulls in — is
+// only needed once the user actually opens search. Loading it with `next/dynamic` keeps it
+// out of the initial route bundle; `ssr: false` because the dialog is a portal into
+// document.body and has nothing to render on the server.
+const AISearchDialog = dynamic(() => import("./components/AISearchDialog"), {
+    ssr: false,
+});
 
 interface HeaderProps {
     navItems?: NavItem[];
@@ -18,6 +26,14 @@ interface HeaderProps {
 function Header({ navItems }: HeaderProps) {
     const isEditMode = useIsEditMode();
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    // Mount the dialog on first open and leave it mounted, so its chunk is fetched only when
+    // search is used while its behaviour after that is unchanged.
+    const [hasOpenedSearch, setHasOpenedSearch] = useState(false);
+
+    const openSearch = () => {
+        setHasOpenedSearch(true);
+        setIsSearchOpen(true);
+    };
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     // Press "/" to open search (ignored while typing in a field).
@@ -28,7 +44,7 @@ function Header({ navItems }: HeaderProps) {
             if (el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
             if (el?.isContentEditable) return;
             e.preventDefault();
-            setIsSearchOpen(true);
+            openSearch();
         };
         document.addEventListener("keydown", onKeyDown);
         return () => document.removeEventListener("keydown", onKeyDown);
@@ -51,7 +67,7 @@ function Header({ navItems }: HeaderProps) {
                     {navItems && (
                         <Navigation navItems={navItems} className="hidden md:flex" />
                     )}
-                    <SearchButton onClick={() => setIsSearchOpen(true)} />
+                    <SearchButton onClick={openSearch} />
                     <button
                         type="button"
                         aria-label={isMenuOpen ? "Close menu" : "Open menu"}
@@ -73,10 +89,12 @@ function Header({ navItems }: HeaderProps) {
                 />
             )}
 
-            <AISearchDialog
-                isOpen={isSearchOpen}
-                onClose={() => setIsSearchOpen(false)}
-            />
+            {hasOpenedSearch && (
+                <AISearchDialog
+                    isOpen={isSearchOpen}
+                    onClose={() => setIsSearchOpen(false)}
+                />
+            )}
         </header>
     );
 }

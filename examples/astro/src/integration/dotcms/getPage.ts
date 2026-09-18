@@ -38,3 +38,19 @@ export const getDotCMSPage = async <
     return { error: new DotErrorPage(e instanceof Error ? e.message : String(e)) };
   }
 };
+
+/**
+ * Narrows a {@link getDotCMSPage} result to the failure case.
+ *
+ * `"error" in response` does not work here: a *successful* page response also carries an
+ * optional `error` field (the deprecated first GraphQL error), so the `in` check is true for
+ * both branches and TypeScript keeps the union. Testing for the thrown `DotErrorPage`
+ * instance is what actually separates "the page could not be fetched" from "the page loaded
+ * and GraphQL reported something".
+ *
+ * @param response what getDotCMSPage returned
+ * @returns true when the page could not be fetched
+ */
+export const isPageFetchError = <T extends DotCMSExtendedPageResponse>(
+  response: DotCMSComposedPageResponse<T> | { error: DotErrorPage },
+): response is { error: DotErrorPage } => response.error instanceof DotErrorPage;

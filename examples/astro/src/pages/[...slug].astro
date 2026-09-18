@@ -2,21 +2,20 @@
 import "@/styles/global.css";
 import Layout from "@/components/common/Layout.astro";
 import Error from "@/components/common/Error.astro";
-import { getDotCMSPage } from "@/dotcms-integration";
+import { getDotCMSPage, isPageFetchError } from "@/dotcms-integration";
 import { DotCMSPage } from "@/views/DotCMSPage";
 
 const params = Astro.params;
 
 const pageResponse = await getDotCMSPage(params?.slug ?? "");
 
-if ("error" in pageResponse) {
-  const { error } = pageResponse;
-  if (error.status === 404) {
-    return Astro.redirect("/404", 404);
-  }
+const fetchFailed = isPageFetchError(pageResponse);
+
+if (fetchFailed && pageResponse.error.status === 404) {
+  return Astro.redirect("/404", 404);
 }
 
-const pageAsset = "pageAsset" in pageResponse ? pageResponse.pageAsset : undefined;
+const pageAsset = fetchFailed ? undefined : pageResponse.pageAsset;
 const { vanityUrl } = pageAsset ?? {};
 
 if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
@@ -29,7 +28,7 @@ const title = pageAsset ? pageAsset.page.title : "Error";
 {
   (
     <Layout title={title}>
-      {"error" in pageResponse ? (
+      {fetchFailed ? (
         <Error error={pageResponse.error} />
       ) : (
         <DotCMSPage client:only="react" pageResponse={pageResponse} />
