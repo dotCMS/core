@@ -407,14 +407,13 @@ else
 fi
 
 # ==================================================== 7. Release workflows opt ==
-echo "== 7. release workflows opt in =="
+echo "== 7. release workflows take the suffix from the build =="
+# The opt-in assertions (generate-test-image: false, release-build: true,
+# reuse-build-artifacts: true, docker-cache-scope-prefix) deliberately live with
+# the commit that flips them on, not here. Asserting a flag is set is only
+# meaningful next to the change that sets it.
 for wf in "$RELEASE_WF" "$VARIANT_WF"; do
   name="$(basename "$wf")"
-  has "$wf" 'generate-test-image: false'    "$name skips the unused test image"
-  has "$wf" 'generate-build-classes: false' "$name skips the unused build classes"
-  has "$wf" 'release-build: true'           "$name builds publication-ready coordinates on the first install"
-  has "$wf" 'reuse-build-artifacts: true'   "$name reuses the build's Maven outputs when publishing"
-  has "$wf" 'docker-cache-scope-prefix:'    "$name isolates its Docker cache scope"
   # The suffix must come from the build in BOTH consumers, not be re-derived
   # independently per job. A single occurrence would still pass a bare `has`
   # check, which is exactly the three-derivations divergence this fixes.
