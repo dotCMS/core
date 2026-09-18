@@ -29,6 +29,11 @@ paths:
   # secrets.docker_username / secrets.docker_token to maven-job, but the
   # workflow_call `secrets:` block does not declare them, so they resolve empty.
   # Worth its own fix.
+  #
+  # SC2024 ("sudo doesn't affect redirects") likewise comes from this file as it
+  # stands on main, and is a genuine if minor nit — the redirect is not run as
+  # root. Both arrived with main, not with this PR.
   .github/workflows/cicd_comp_test-phase.yml:
     ignore:
       - 'property "(docker_username|docker_token)" is not defined'
+      - 'shellcheck reported issue in this script: SC2024'
