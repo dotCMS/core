@@ -587,6 +587,76 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                 rendered.contains(asset.getIdentifier()));
     }
 
+    /**
+     * Given: an asset behind an Image field.
+     * When: the binary's own properties are selected directly on the asset.
+     * Then: they come back, without descending into the binary field.
+     *
+     * <p>Carried over from PR #35363, which identified this ergonomics gap. `title` and `modDate`
+     * are deliberately NOT flattened: on a contentlet those names already mean the contentlet's
+     * own, and giving them the file's meaning here would make the same name answer differently
+     * depending on where it is read.
+     */
+    @Test
+    public void test_binaryPropertiesAreReadableDirectlyOnTheAsset() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Flattened");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { "
+                        + "name size mime versionPath idPath path sha256 isImage width height "
+                        + "fileAsset { size mime } } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
+
+        final Map<String, Object> row = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder);
+        final Map<String, Object> field = (Map<String, Object>) row.get(IMAGE_FIELD_VAR);
+
+        assertNotNull("the binary name must be readable on the asset", field.get("name"));
+        assertNotNull("as must its size", field.get("size"));
+        assertNotNull("and its mime type", field.get("mime"));
+        assertNotNull("and its version path", field.get("versionPath"));
+
+        // The same values, reached the long way, must agree — the flattened properties are a
+        // shortcut to the same binary, not a second source of truth.
+        final Map<String, Object> binary = (Map<String, Object>) field.get("fileAsset");
+        assertEquals("the flattened size must match the binary's own",
+                binary.get("size"), field.get("size"));
+        assertEquals("the flattened mime must match the binary's own",
+                binary.get("mime"), field.get("mime"));
+    }
+
+    /**
+     * Given: the contentlet's own {@code title} and {@code modDate}.
+     * When: they are selected on an asset.
+     * Then: they report the CONTENTLET's values, not the file's.
+     *
+     * <p>The two properties the flattening above deliberately leaves out. If a later change
+     * flattens them too, this fails — which is the point.
+     */
+    @Test
+    public void test_titleAndModDateStillMeanTheContentlet() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Names");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { title } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
+
+        final Map<String, Object> row = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder);
+        final Map<String, Object> field = (Map<String, Object>) row.get(IMAGE_FIELD_VAR);
+
+        assertEquals("`title` on an asset must stay the contentlet's title, not the file's",
+                asset.getTitle(), field.get("title"));
+    }
+
     // ---------------------------------------------------------------- helpers
 
     /** Runs {@code query} as {@code user} and returns the asset field of the single row, if any. */

@@ -1,6 +1,7 @@
 package com.dotcms.graphql;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.graphql.datafetcher.AssetBinaryPropertyDataFetcher;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
@@ -195,6 +196,25 @@ public enum CustomFieldType {
         // a different meaning, or none at all. See InterfaceType#ASSET_INTERFACE_NAME.
         assetFlatFields = new HashMap<>(fileAssetTypeFields);
         assetFlatFields.remove(FILEASSET_DESCRIPTION_FIELD_VAR);
+
+        // The binary's own properties, flattened onto the asset so a client need not descend into
+        // the binary field to reach them. Ten of the twelve DotBinary carries: `title` and
+        // `modDate` are deliberately absent, because on a contentlet those names already mean the
+        // contentlet's title and modification date. Declaring them here would make the same name
+        // answer with the FILE's title on an asset and the CONTENT's title everywhere else — the
+        // class of silent divergence this work exists to avoid. Both remain reachable through the
+        // binary field itself. See issue #34540.
+        final AssetBinaryPropertyDataFetcher binaryProperty = new AssetBinaryPropertyDataFetcher();
+        assetFlatFields.put("name", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("size", new TypeFetcher(GraphQLLong, binaryProperty));
+        assetFlatFields.put("mime", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("versionPath", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("idPath", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("path", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("sha256", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("isImage", new TypeFetcher(GraphQLBoolean, binaryProperty));
+        assetFlatFields.put("width", new TypeFetcher(GraphQLLong, binaryProperty));
+        assetFlatFields.put("height", new TypeFetcher(GraphQLLong, binaryProperty));
 
         final Map<String, TypeFetcher> siteTypeFields = new HashMap<>(ContentFields.getContentFields());
         siteTypeFields.remove(HOST_KEY); // remove myself
