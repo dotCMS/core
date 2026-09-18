@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
  * server-sent events a standard chat-completions client reads from
  * {@code /api/inference/v1/chat/completions} when {@code "stream": true}.
  *
- * <p>This class covers the chunk envelope (FR-007); incremental tool calls (FR-008) are covered by
+ * <p>This class covers the chunk envelope; incremental tool calls are covered by
  * {@code SseToolCallStreamTest}.</p>
  *
  * <p>Coverage:</p>
@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
  *       tells an SSE reader the event is complete. Without the terminator a client blocks holding
  *       a chunk it already has.</li>
  *   <li>Envelope fields on every chunk — {@code id}, {@code object} equal to
- *       {@code chat.completion.chunk}, {@code created} and {@code model} (FR-007).</li>
+ *       {@code chat.completion.chunk}, {@code created} and {@code model}.</li>
  *   <li>The id, model and creation time being the ones passed in, and staying identical across
  *       successive chunks of the same completion — a client correlates chunks by that id.</li>
  *   <li>A content fragment landing at {@code choices[0].delta.content} with {@code index} 0.</li>
@@ -74,7 +74,7 @@ public class SseSerializerTest {
      * Given a content fragment of an answer.
      * When it is rendered to a frame.
      * Then the parsed chunk carries every envelope field, with {@code object} equal to
-     * {@code chat.completion.chunk}. (FR-007)
+     * {@code chat.completion.chunk}.
      *
      * @throws Exception if the frame does not carry parseable JSON
      */

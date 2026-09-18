@@ -57,8 +57,8 @@ import static org.mockito.Mockito.when;
  * Specifies {@code POST /api/inference/v1/images/generations} through
  * {@link ImagesResource#generations(HttpServletRequest, HttpServletResponse, String, ImageGenerationRequestView)}.
  *
- * <p>Two decisions in FR-012 are the reason this file exists rather than a copy of the chat tests
- * with a different noun.</p>
+ * <p>Two decisions about how a generated image is returned are the reason this file exists rather
+ * than a copy of the chat tests with a different noun.</p>
  *
  * <p><strong>The image comes back inline, as base64, and never as a URL.</strong> That is a
  * deliberate choice and not an incidental one: a hosted URL would mean deciding storage,
@@ -70,13 +70,13 @@ import static org.mockito.Mockito.when;
  * why it must not.</p>
  *
  * <p><strong>Deliberately not asserted here: that dotCMS asks the provider for base64 upstream.</strong>
- * FR-012 does require it — a provider-minted URL is a real artifact on someone else's
+ * Requesting base64 is required — a provider-minted URL is a real artifact on someone else's
  * infrastructure, frequently public and long-lived, which is a larger exposure than anything this
- * family's own response shape can create — but it requires it only "where a provider offers the
+ * family's own response shape can create — but only "where a provider offers the
  * choice", and the seven configured vendors do not agree on whether that choice exists or what it
- * is called. Where no such choice exists the requirement says the opposite thing: dotCMS fetches
- * the provider's URL and re-encodes it rather than refusing the provider, and FR-012 now states
- * the residual openly — on those providers an addressable artifact really does exist upstream, and
+ * is called. Where no such choice exists the rule says the opposite thing: dotCMS fetches
+ * the provider's URL and re-encodes it rather than refusing the provider, and the residual is
+ * stated openly — on those providers an addressable artifact really does exist upstream, and
  * this family's guarantee is only that a caller never receives one. An assertion on the outbound
  * request body would therefore pin one vendor's spelling of a field the requirement itself makes
  * conditional, and would fail the moment the provider abstraction changed how it phrases a request
@@ -90,9 +90,9 @@ import static org.mockito.Mockito.when;
  * <p><strong>{@code size}, by contrast, is asserted on the outbound request</strong>, and the
  * difference is not inconsistency. Asking for the inline form is a provider capability — whether
  * the ask exists at all varies by vendor, so a test of it is a test of the vendor. Passing a
- * caller's {@code size} through is dotCMS's own behaviour: the caller named a size, FR-012 says it
+ * caller's {@code size} through is dotCMS's own behaviour: the caller named a size, and it
  * reaches the provider "where the provider accepts it", and the stub here is a provider that
- * accepts it. It is the same logic FR-013 applies to the sampling parameters — {@code size}
+ * accepts it. It is the same logic applied to the sampling parameters — {@code size}
  * changes both what the caller receives and what the site pays for, so dropping it silently is a
  * cost and correctness failure rather than a compatibility courtesy, and a dropped {@code size} is
  * invisible in the response: a 1024x1024 image is a perfectly plausible answer to a request for
@@ -104,19 +104,19 @@ import static org.mockito.Mockito.when;
  * 200/404 in the right shapes.</p>
  *
  * <ul>
- *     <li>FR-012 — a prompt returns the standard image-generation shape: a {@code created}
+ *     <li>A prompt returns the standard image-generation shape: a {@code created}
  *     timestamp and one entry in {@code data}.</li>
- *     <li>FR-012 — that entry carries {@code b64_json} and carries no hosted {@code url}.</li>
- *     <li>FR-012 — {@code n} is honored: a request for two images answers with two distinct
+ *     <li>That entry carries {@code b64_json} and carries no hosted {@code url}.</li>
+ *     <li>{@code n} is honored: a request for two images answers with two distinct
  *     entries in {@code data}, while {@code n} of exactly 1 and {@code n} omitted are each one
  *     image.</li>
- *     <li>FR-012 — an {@code n} below 1 is refused naming the field — zero and negative alike.</li>
- *     <li>FR-012 / FR-013 — {@code size} reaches the provider rather than being dropped.</li>
- *     <li>FR-023 / R7 — {@code model} is validated against the site's <strong>image</strong>
+ *     <li>An {@code n} below 1 is refused naming the field — zero and negative alike.</li>
+ *     <li>{@code size} reaches the provider rather than being dropped.</li>
+ *     <li>{@code model} is validated against the site's <strong>image</strong>
  *     section; the site's chat and embeddings models are both refused here.</li>
- *     <li>FR-024 — {@code model} is required, and so is {@code prompt}; there is nothing to
+ *     <li>{@code model} is required, and so is {@code prompt}; there is nothing to
  *     generate without one.</li>
- *     <li>FR-015 — an anonymous caller is refused.</li>
+ *     <li>An anonymous caller is refused.</li>
  * </ul>
  *
  * <p>The provider is a WireMock server standing in for an OpenAI-compatible endpoint, wired in
@@ -216,7 +216,7 @@ public class InferenceImagesTest {
      * {@code src/test/resources/mappings} — {@code created}, and a {@code data} entry carrying the
      * provider's rewritten prompt — except that the payload is the image itself rather than a
      * hosted link, which is what an OpenAI-compatible provider returns for a base64 request and
-     * what FR-012 requires this family to deal in.
+     * what this family deals in.
      */
     private static final String PROVIDER_RESPONSE = """
             {
@@ -288,8 +288,8 @@ public class InferenceImagesTest {
         stubProvider();
 
         // A bare UserDataGen user has no roles at all, so it is neither a backend nor a frontend
-        // user and FR-016 rejects it; it also cannot read the site these tests pass as an explicit
-        // override, which FR-019 checks. Two roles are needed, not one: the check in
+        // user and is rejected on that ground; it also cannot read the site these tests pass as an
+        // explicit override, which is checked separately. Two roles are needed, not one: the check in
         // WebResource.checkRolePermissions is doesUserHaveRole(user, "DOTCMS_BACK_END_USER") by key
         // and does not walk inheritance, so being an admin does not imply it. Admin is what grants
         // read on the site. Role-specific behaviour is US3's tests, not these.
@@ -360,7 +360,7 @@ public class InferenceImagesTest {
      * Then the entry carries a non-blank, decodable {@code b64_json} payload and no hosted
      * {@code url}
      *
-     * <p>FR-012. The assertion is made against the serialized wire shape rather than against the
+     * <p>The assertion is made against the serialized wire shape rather than against the
      * view's accessors, because that is where the decision can be undone: a {@code url} property
      * added to the payload later — by widening the view, or by letting the provider's own entry
      * through unmapped — would restore exactly the separately-addressable artifact the requirement
@@ -380,7 +380,7 @@ public class InferenceImagesTest {
 
         final ImageGenerationView view = (ImageGenerationView) response.getEntity();
         final String b64Json = view.data().get(0).b64Json();
-        assertNotNull("FR-012 returns the image inline, so b64_json is not optional", b64Json);
+        assertNotNull("The image is returned inline, so b64_json is not optional", b64Json);
         assertFalse(b64Json.isBlank());
 
         try {
@@ -395,7 +395,7 @@ public class InferenceImagesTest {
         assertTrue("The wire payload names the image b64_json, as standard clients read it",
                 entry.hasNonNull("b64_json"));
         assertEquals(b64Json, entry.get("b64_json").asText());
-        assertFalse("FR-012 creates no hosted, separately-addressable artifact, so no url may "
+        assertFalse("No hosted, separately-addressable artifact is created, so no url may "
                 + "reach the caller", entry.hasNonNull("url"));
     }
 
@@ -404,23 +404,23 @@ public class InferenceImagesTest {
      * When each generation is requested
      * Then each is refused as a client error naming {@code n}, and the provider is never contacted
      *
-     * <p>FR-012 draws its line below 1, not around it: zero and a negative are not quantities of
-     * images a caller can mean, and they are the two ways of expressing that. They are also what a
-     * clamp swallows — {@code Math.max(1, n)} answers a request for no images with an image and a
-     * request for minus one with a bill, while every other assertion in this file keeps passing.
-     * Zero is not an empty success either: a caller who sends it has made a mistake, and answering
-     * it with an empty {@code data} list would be the same false success FR-011 refuses for an
-     * empty batch of embeddings.</p>
+     * <p>The rule for {@code n} draws its line below 1, not around it: zero and a negative are not
+     * quantities of images a caller can mean, and they are the two ways of expressing that. They are
+     * also what a clamp swallows — {@code Math.max(1, n)} answers a request for no images with an
+     * image and a request for minus one with a bill, while every other assertion in this file keeps
+     * passing. Zero is not an empty success either: a caller who sends it has made a mistake, and
+     * answering it with an empty {@code data} list would be the same false success that is refused
+     * for an empty batch of embeddings.</p>
      *
      * <p>That is why the provider must not be contacted at all. Clamping is the plausible
      * implementation of this field — the request reaches the provider once, a perfectly valid
      * single-image 200 comes back, and every other assertion in this file still passes. A refusal
      * that never leaves dotCMS is the only observable difference.</p>
      *
-     * <p>An {@code n} of 2 is deliberately not among these values. An earlier draft of FR-012
-     * refused any {@code n} other than 1, on the claim that the provider abstraction returns a
-     * single image per call; the claim was false — {@code ImageModel.generate(prompt, n)} returns a
-     * list, and the adopted format documents several images per request — and the requirement was
+     * <p>An {@code n} of 2 is deliberately not among these values. An earlier version of this
+     * endpoint refused any {@code n} other than 1, on the claim that the provider abstraction returns
+     * a single image per call; the claim was false — {@code ImageModel.generate(prompt, n)} returns a
+     * list, and the adopted format documents several images per request — and the behavior was
      * corrected. Two images are served, by
      * {@link #test_generations_withNOfTwo_returnsTwoDistinctImages()}.</p>
      */
@@ -436,9 +436,9 @@ public class InferenceImagesTest {
      * Then two entries come back in {@code data}, each carrying its own non-blank {@code b64_json},
      * and the two are not the same image
      *
-     * <p>FR-012 as corrected: {@code n} is honored, because the adopted format supports several
-     * images in one request and this site's provider implements the multi-image call. Refusing would be
-     * this family declining something both the standard and this provider support, so the count a
+     * <p>As corrected: {@code n} is honored, because the adopted format supports several
+     * images in one request and this site's provider implements the multi-image call. Refusing would
+     * be this family declining something both the standard and this provider support, so the count a
      * caller asks for is the count they receive. A provider that cannot is a different case, with
      * its own test below.</p>
      *
@@ -476,7 +476,7 @@ public class InferenceImagesTest {
         for (int index = 0; index < TWO_IMAGES; index++) {
             final ImageGenerationView.ImageView entry = view.data().get(index);
             assertNotNull("Entry " + index + " is missing entirely", entry);
-            assertNotNull("FR-012 returns every image inline, so entry " + index
+            assertNotNull("Every image is returned inline, so entry " + index
                     + " carries a b64_json", entry.b64Json());
             assertFalse("A blank payload is not an image, and entry " + index + " carries one",
                     entry.b64Json().isBlank());
@@ -500,14 +500,13 @@ public class InferenceImagesTest {
      * Then the size reaches the provider, and the answer is the one only a provider that was told
      * that size returns
      *
-     * <p>FR-012 requires {@code size} to be passed through where the provider accepts it, on the
-     * same reasoning FR-013 applies to the sampling parameters: it changes both what the caller
-     * receives and what the site pays, so dropping it is a cost and correctness failure rather than
-     * the harmless compatibility courtesy that ignoring an incidental field is. Unlike the base64
-     * ask this file deliberately does not assert, passing a caller's own parameter through is
-     * dotCMS's behaviour rather than a provider capability that varies by vendor — the stub here is
-     * a provider that accepts {@code size}, and that is all FR-012 conditions the requirement
-     * on.</p>
+     * <p>{@code size} is passed through where the provider accepts it, on the same reasoning applied
+     * to the sampling parameters: it changes both what the caller receives and what the site pays, so
+     * dropping it is a cost and correctness failure rather than the harmless compatibility courtesy
+     * that ignoring an incidental field is. Unlike the base64 ask this file deliberately does not
+     * assert, passing a caller's own parameter through is dotCMS's behaviour rather than a provider
+     * capability that varies by vendor — the stub here is a provider that accepts {@code size}, and
+     * that is the only condition on passing it through.</p>
      *
      * <p>It has to be asserted on the outbound request because it is invisible in the response: a
      * provider asked for nothing in particular returns a perfectly well-formed image, and every
@@ -546,7 +545,7 @@ public class InferenceImagesTest {
      * entry
      *
      * <p>The boundary from the other side, and the reason it is a separate test rather than
-     * another assertion inside one: what FR-012 refuses is an {@code n} below 1, not the presence
+     * another assertion inside one: what is refused is an {@code n} below 1, not the presence
      * of the field, and not the absence of it either. An implementation that rejected any request
      * carrying {@code n} would satisfy the refusal test on its own while breaking every standard
      * client that sends the format's own default of 1, and an implementation that rejected a
@@ -667,7 +666,7 @@ public class InferenceImagesTest {
      * When the image is requested
      * Then it is refused as unauthorized and the provider is never contacted
      *
-     * <p>FR-015. Accepts a thrown {@link WebApplicationException} as well as a returned 401, since
+     * <p>Accepts a thrown {@link WebApplicationException} as well as a returned 401, since
      * the surrounding authentication handshake may refuse before the resource body runs and either
      * is a valid refusal.</p>
      */
@@ -696,11 +695,11 @@ public class InferenceImagesTest {
      * When the generation is requested
      * Then it is refused with a 400 naming {@code n}, and nothing reaches the provider
      *
-     * <p>FR-012 and FR-037. Images are priced per image, so without a ceiling one accepted request
-     * multiplies a site's provider spend by whatever number it carried, and FR-032 puts per-site
-     * spend quotas out of scope — there is no second line of defence behind this one. The earlier
-     * draft that refused every {@code n} above 1 capped the spend by accident; correcting it to
-     * honor {@code n} removed that cap, and this is the deliberate replacement.</p>
+     * <p>Images are priced per image, so without a ceiling one accepted request multiplies a site's
+     * provider spend by whatever number it carried, and per-site spend quotas are out of scope here
+     * — there is no second line of defence behind this one. The earlier draft that refused every
+     * {@code n} above 1 capped the spend by accident; correcting it to honor {@code n} removed that
+     * cap, and this is the deliberate replacement.</p>
      *
      * <p>Refused rather than clamped, and asserted as such: an implementation that quietly served
      * {@link InferenceLimits#DEFAULT_MAX_IMAGES_PER_REQUEST} images here would return a 200 and a
@@ -737,9 +736,9 @@ public class InferenceImagesTest {
      * When several images are requested
      * Then it is refused with a 400 naming {@code n} — not a retryable upstream failure
      *
-     * <p>FR-012. The multi-image call is a default method on the provider abstraction that throws
+     * <p>The multi-image call is a default method on the provider abstraction that throws
      * unless the implementation overrides it: the OpenAI-backed models override it, the Gemini one
-     * does not. Left to the ordinary upstream translation of FR-031 that throw becomes a 502, which
+     * does not. Left to the ordinary upstream-failure translation, that throw becomes a 502, which
      * is the wrong answer in a way that costs the caller real time — 502 is retryable, so a
      * standard client's back-off keeps re-sending a request that cannot succeed however long it
      * waits. The status is the assertion that matters here; the param name is what lets the caller
@@ -943,9 +942,9 @@ public class InferenceImagesTest {
      * @param model  the model to ask for, or null to omit the field
      * @param prompt the prompt to generate from, or null to omit the field
      * @param count  how many images to ask for, or null to omit {@code n} entirely — which is
-     *               why it is boxed: "not sent" is a value a caller can express and FR-012 has to
-     *               answer with one image, and a primitive would silently turn it into the 0 that
-     *               FR-012 refuses
+     *               why it is boxed: "not sent" is a value a caller can express and must be
+     *               answered with one image, and a primitive would silently turn it into the 0 that
+     *               is refused
      * @return an image-generation request asking for that many images
      */
     private static ImageGenerationRequestView generationFor(final String model,
@@ -972,7 +971,7 @@ public class InferenceImagesTest {
      * Builds a request arriving at a given host name, with or without a bearer credential.
      *
      * <p>Request attributes are backed by a real map rather than left as mock no-ops, because both
-     * the authentication handshake and FR-020's site attribution publish through them, and a mock
+     * the authentication handshake and the site-attribution logic publish through them, and a mock
      * that forgot what was set on it would not behave like a servlet container.</p>
      *
      * @param serverName the host name the request arrives on

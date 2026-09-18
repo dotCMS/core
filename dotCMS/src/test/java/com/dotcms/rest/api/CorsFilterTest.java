@@ -36,7 +36,7 @@ public class CorsFilterTest {
      * When the CORS filter decides whether to add its headers
      * Then every one of them is exempt
      *
-     * <p>FR-030. Asserted per class rather than on one of them: the annotation is applied by hand
+     * <p>Asserted per class rather than on one of them: the annotation is applied by hand
      * to each resource, so a fifth operation added later without it is exactly the mistake this
      * catches, and testing a single representative would not.</p>
      */
@@ -62,7 +62,7 @@ public class CorsFilterTest {
      * When the CORS filter decides
      * Then the opt-out does not apply, so dotCMS's default behaviour is untouched
      *
-     * <p>The other half of FR-030's guarantee, and the one that keeps this change additive: the
+     * <p>The other half of that guarantee, and the one that keeps this change additive: the
      * exemption has to be something a resource asks for, not something the filter now does to
      * everyone. A null stands in for a request that matched no resource, which the filter already
      * tolerates.</p>

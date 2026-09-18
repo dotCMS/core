@@ -15,8 +15,8 @@ package com.dotcms.inference.model;
  * this type is a statement that the message was authored here and may be returned; everything
  * else is answered with a generic sentence and logged in full. Extending
  * {@link IllegalArgumentException} keeps existing callers that catch the broader type working
- * unchanged, which matters because the throw sites are shared with the endpoints FR-033 puts out
- * of bounds.</p>
+ * unchanged, which matters because the throw sites are shared with the older dotAI endpoints,
+ * whose behaviour must not shift.</p>
  */
 public class CallerSafeException extends IllegalArgumentException {
 

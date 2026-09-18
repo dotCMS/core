@@ -41,7 +41,7 @@ import static org.mockito.Mockito.when;
  * Specifies model discovery through
  * {@link ModelsResource#models(HttpServletRequest, HttpServletResponse, String)}.
  *
- * <p>FR-024 removed every reserved alias and every implicit default from this family, which makes
+ * <p>Every reserved alias and every implicit default was removed from this family, which makes
  * this endpoint load-bearing rather than decorative: the list it returns is the <em>only</em> way
  * a caller can learn which {@code model} values the chat endpoint will accept. That is what the
  * tests here pin down — that the list is complete, that it is exactly the configured set with
@@ -49,10 +49,10 @@ import static org.mockito.Mockito.when;
  * unconfigured instance says so with an empty list rather than with somebody else's models.</p>
  *
  * <ul>
- *     <li>FR-010 — every entry of a fallback chain is listed, in configured order, because each
+ *     <li>Every entry of a fallback chain is listed, in configured order, because each
  *     one is a real choice a caller may name.</li>
- *     <li>FR-024 — nothing synthetic is added; the count equals the configured count.</li>
- *     <li>FR-022 — no configuration at either the site or the system level yields an empty
+ *     <li>Nothing synthetic is added; the count equals the configured count.</li>
+ *     <li>No configuration at either the site or the system level yields an empty
  *     {@code data} array, never another site's models.</li>
  *     <li>The models come from the <strong>chat</strong> section, not the embeddings or image
  *     ones, matching what the chat endpoint validates against.</li>
@@ -115,8 +115,8 @@ public class InferenceModelsTest {
         wireMockServer = AiTest.prepareWireMock();
 
         // A bare UserDataGen user has no roles at all, so it is neither a backend nor a frontend
-        // user and FR-016 rejects it; it also cannot read the sites these tests pass as an
-        // explicit override, which FR-019 checks. Two roles are needed, not one: the check in
+        // user, and is rejected; it also cannot read the sites these tests pass as an
+        // explicit override, which is also checked. Two roles are needed, not one: the check in
         // WebResource.checkRolePermissions is doesUserHaveRole(user, "DOTCMS_BACK_END_USER") by
         // key and does not walk inheritance, so being an admin does not imply it. Admin is what
         // grants read on the site.
@@ -185,7 +185,7 @@ public class InferenceModelsTest {
      * When the models are listed
      * Then every entry of the chain is listed, in configured order, the primary first
      *
-     * <p>FR-010. Each entry of the chain is a name the completions endpoint accepts, so a list
+     * <p>Each entry of the chain is a name the completions endpoint accepts, so a list
      * that showed only the primary would hide choices the caller is entitled to make.</p>
      */
     @Test
@@ -217,7 +217,7 @@ public class InferenceModelsTest {
      * When the models are listed
      * Then the list is exactly those three — no alias, no placeholder, no invented entry
      *
-     * <p>FR-024 removed the reserved alias precisely so the list equals the set of acceptable
+     * <p>The reserved alias was removed precisely so the list equals the set of acceptable
      * {@code model} values. An extra entry here would be a name the completions endpoint refuses,
      * which is worse than no list at all.</p>
      */
@@ -249,7 +249,7 @@ public class InferenceModelsTest {
      * When the models are listed
      * Then the answer is a successful, empty list
      *
-     * <p>FR-022. The failure this guards against is not an error but a wrong success: falling
+     * <p>The failure this guards against is not an error but a wrong success: falling
      * back to whichever site happens to be configured would hand a caller model names their own
      * site will refuse, and would disclose that some other site has dotAI set up.</p>
      */
@@ -304,7 +304,7 @@ public class InferenceModelsTest {
      * When the models are listed
      * Then the resolved site is published on the request, so every response can report it
      *
-     * <p>FR-020. Asserted on the request attribute rather than on the header because invoking the
+     * <p>Asserted on the request attribute rather than on the header because invoking the
      * resource method directly never runs the JAX-RS response filter that turns the attribute into
      * {@code X-dotCMS-Resolved-Site} — the attribute is the part this endpoint is responsible
      * for.</p>
@@ -327,7 +327,7 @@ public class InferenceModelsTest {
      * When the models are listed
      * Then it is refused as unauthorized, in the standard error shape
      *
-     * <p>FR-015. The model list names the site's configured vendors and models, which is exactly
+     * <p>The model list names the site's configured vendors and models, which is exactly
      * the kind of reconnaissance an anonymous caller should not get for free.</p>
      */
     @Test

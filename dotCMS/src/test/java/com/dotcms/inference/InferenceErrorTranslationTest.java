@@ -14,11 +14,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Covers FR-031's translation of a provider failure into the status a client backs off on.
+ * Covers the translation of a provider failure into the status a client backs off on.
  *
  * <p>The distinction this pins is not cosmetic. A standard client decides what to do next from the
  * HTTP status alone — the error shape carries no retryable field, and inventing one would break the
- * no-adapter promise of SC-008 — so answering 502 to a throttled request tells the client the
+ * no-adapter promise — so answering 502 to a throttled request tells the client the
  * provider is broken rather than busy, and it retries on the wrong schedule. Every assertion here
  * is about that one decision.</p>
  */
@@ -92,8 +92,9 @@ public class InferenceErrorTranslationTest {
      * When the failure is translated
      * Then it is 502, and the translation terminates
      *
-     * <p>The 5xx half of FR-031, plus the loop guard: a cause chain that points at itself is rare
-     * but legal, and a walk without the guard hangs the request thread rather than failing it.</p>
+     * <p>The 5xx half of the translation rule, plus the loop guard: a cause chain that points at
+     * itself is rare but legal, and a walk without the guard hangs the request thread rather than
+     * failing it.</p>
      */
     @Test
     public void test_ordinaryFailure_becomes502_andSelfReferencingCauseTerminates() {
@@ -235,8 +236,8 @@ public class InferenceErrorTranslationTest {
      * When it is translated
      * Then the provider's own wording never reaches the caller
      *
-     * <p>FR-031 and FR-036 together: a provider message can carry its endpoint, account
-     * identifiers, or a fragment of the prompt, so only the status is taken from it.</p>
+     * <p>A provider message can carry its endpoint, account identifiers, or a fragment of the
+     * prompt, so only the status is taken from it.</p>
      */
     @Test
     public void test_providerWordingIsNeverReturned() {

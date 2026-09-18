@@ -61,15 +61,15 @@ import static org.mockito.Mockito.when;
  * <em>ends</em>, which is the only part a client cannot recover from on its own.</p>
  *
  * <ul>
- *     <li>FR-007 — every chunk carries {@code id}, {@code object} = {@code chat.completion.chunk},
+ *     <li>Every chunk carries {@code id}, {@code object} = {@code chat.completion.chunk},
  *     {@code created} and {@code model}; the last content chunk carries a {@code finish_reason};
  *     the stream closes with {@code data: [DONE]}.</li>
- *     <li>FR-008 — tool-call arguments arrive as fragments that reassemble into the complete
+ *     <li>Tool-call arguments arrive as fragments that reassemble into the complete
  *     argument JSON, with the call's id carried verbatim rather than synthesised.</li>
- *     <li>FR-009 — a usage chunk, with an empty {@code choices} array, appears immediately before
+ *     <li>A usage chunk, with an empty {@code choices} array, appears immediately before
  *     the terminal marker only when the caller asked for it through
  *     {@code stream_options.include_usage}, and never otherwise.</li>
- *     <li>FR-039 — a provider that fails part-way through produces an error frame and a stream
+ *     <li>A provider that fails part-way through produces an error frame and a stream
  *     that closes <strong>without</strong> the terminal marker. This is the assertion that
  *     matters most in this file: withholding {@code [DONE]} is what stops a client which does not
  *     parse the error frame from reading a truncated answer as a finished one.</li>
@@ -161,7 +161,7 @@ public class ChatCompletionsStreamingTest {
     /**
      * A stream that starts well and then breaks: the third frame is truncated JSON and the
      * provider never sends a terminal marker. The generation is already in flight by then, which
-     * is exactly the window FR-039 is about.
+     * is exactly the window that matters here.
      */
     private static final String PROVIDER_MALFORMED_STREAM = """
             data: {"id":"chatcmpl-stream-3","object":"chat.completion.chunk","created":1789000000,"model":"gpt-4o-mini","choices":[{"index":0,"delta":{"role":"assistant","content":""}}]}
@@ -188,8 +188,8 @@ public class ChatCompletionsStreamingTest {
         wireMockServer = AiTest.prepareWireMock();
 
         // A bare UserDataGen user has no roles at all, so it is neither a backend nor a
-        // frontend user and FR-016 rejects it; it also cannot read the site these tests pass
-        // as an explicit override, which FR-019 checks. Two roles are needed, not one: the check
+        // frontend user, and is rejected; it also cannot read the site these tests pass
+        // as an explicit override, which is also checked. Two roles are needed, not one: the check
         // in WebResource.checkRolePermissions is doesUserHaveRole(user, "DOTCMS_BACK_END_USER")
         // by key and does not walk inheritance, so being an admin does not imply it. Admin is
         // what grants read on the site. Role-specific behaviour is US3's tests, not these.
@@ -521,10 +521,11 @@ public class ChatCompletionsStreamingTest {
      * Then it is refused with a 429 that carries {@code Retry-After}, and nothing reaches the
      * provider
      *
-     * <p>FR-037 for the ceiling itself, which had no coverage at all until now, and FR-031 for the
-     * header. The two belong in one test because the ceiling is only half an answer without it: a
-     * refusal that says "retry shortly" in a prose message tells a program nothing, and a client
-     * that cannot read a wait interval invents one — which under load means every refused caller
+     * <p>Covers the ceiling itself, which had no coverage at all until now, together with the
+     * {@code Retry-After} header. The two belong in one test because the ceiling is only half an
+     * answer without it: a refusal that says "retry shortly" in a prose message tells a program
+     * nothing, and a client that cannot read a wait interval invents one — which under load means
+     * every refused caller
      * returning at once and holding the node at capacity it was trying to shed.</p>
      *
      * <p>The ceiling is driven to zero rather than fifty streams being opened. Fifty real streams
@@ -583,7 +584,7 @@ public class ChatCompletionsStreamingTest {
      * When a streamed completion is requested
      * Then what the caller receives names nothing about the provider or the site's credentials
      *
-     * <p>FR-031 and FR-036. The fallback chain reports a failed initialisation by rethrowing an
+     * <p>The fallback chain reports a failed initialisation by rethrowing an
      * {@code IllegalArgumentException} whose message is dotCMS's prefix followed by whatever the
      * provider client said — and a provider client's message can carry its endpoint, its account
      * identifiers, or a fragment of the prompt. The stream's error translator used to return that

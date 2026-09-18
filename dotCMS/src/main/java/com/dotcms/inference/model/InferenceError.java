@@ -65,7 +65,7 @@ public record InferenceError(String type, String message, String param, int http
     /**
      * Translates a provider failure into the status a standard client's back-off keys off.
      *
-     * <p>FR-031. A provider refusing on rate limit and a provider genuinely broken are different
+     * <p>A provider refusing on rate limit and a provider genuinely broken are different
      * events with different right answers, and collapsing both into 502 tells a client to retry a
      * throttled request on the wrong schedule while telling it nothing about when to come back.
      * Rate limiting is 429; anything else upstream stays 502.</p>

@@ -87,9 +87,9 @@ public class InferenceErrorLeakTest {
      * When it is translated
      * Then it stays on the upstream path, rate limits included
      *
-     * <p>Guards against the fix above swallowing the FR-031 translation: the new branch sits in
-     * front of it, and a version that matched too eagerly would turn every 429 into a 400 and
-     * stop clients backing off.</p>
+     * <p>Guards against the fix above swallowing the translation of upstream status codes: the new
+     * branch sits in front of it, and a version that matched too eagerly would turn every 429 into
+     * a 400 and stop clients backing off.</p>
      */
     @Test
     public void test_upstreamFailures_stillTranslateByStatus() {

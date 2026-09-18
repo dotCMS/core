@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Covers FR-037's request-size ceiling, including the case that used to skip it entirely.
+ * Covers the request-size ceiling, including the case that used to skip it entirely.
  *
  * <p>A body that declares its length is easy: the filter compares one number. A body that does
  * not — chunked, or simply streamed by a client that omits {@code Content-Length}, which several

@@ -64,7 +64,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Proves SC-008: every one of the four operations returns payloads that deserialize into a
+ * Proves that every one of the four operations returns payloads that deserialize into a
  * standard client library's own result types <strong>with no adapter</strong>.
  *
  * <p>Every other test in this family asserts the shape dotCMS <em>intended</em> to produce, by
@@ -86,7 +86,7 @@ import static org.mockito.Mockito.when;
  * <p>"No adapter" is the load-bearing phrase, and it is what the absence of code here demonstrates:
  * the payload goes from the endpoint to the client untouched except by {@code writeValueAsString}.
  * If a field had to be renamed, re-typed, or removed to make the client accept it, that work would
- * be visible in this file, and SC-008 would be false.</p>
+ * be visible in this file, and the no-adapter promise would be false.</p>
  *
  * <p>Two WireMock roles share one server, separated by path prefix. The provider stubs sit at the
  * root ({@code /chat/completions}) and stand in for OpenAI as dotCMS's upstream. The client-facing
@@ -223,7 +223,7 @@ public class InferenceClientConformanceTest {
      * Then it deserializes into the library's own {@link ChatResponse}, carrying the answer, the
      * finish reason and the token usage
      *
-     * <p>SC-008 for the operation every agent framework drives first. The finish reason and usage
+     * <p>This is the operation every agent framework drives first. The finish reason and usage
      * are asserted alongside the text because they are what a framework acts on rather than
      * displays: a client decides whether to continue a tool loop from the finish reason, and bills
      * or budgets from the usage, so a payload that carries readable text and an unreadable finish
@@ -267,7 +267,7 @@ public class InferenceClientConformanceTest {
      * When an unmodified OpenAI client library consumes the event stream
      * Then it reassembles the answer from the library's own streaming callbacks
      *
-     * <p>SC-003 and SC-008 together, and the case most likely to break in a way no other test in
+     * <p>This is the case most likely to break in a way no other test in
      * this file would catch. Streaming is not JSON — it is a framing format, and a client can parse
      * every individual chunk correctly while still failing on the frame boundaries, the terminal
      * {@code [DONE]} sentinel, or a usage event whose {@code choices} array is empty. The assertion
@@ -342,7 +342,7 @@ public class InferenceClientConformanceTest {
      * When an unmodified OpenAI client library reads it
      * Then it deserializes into the library's own {@link ModelsListResponse}
      *
-     * <p>SC-008 for the listing. This is the one operation with no high-level client API to drive,
+     * <p>This is the one operation with no high-level client API to drive,
      * so the library's response type is used directly rather than through a model class — which is
      * the same thing the library's own client does with the bytes once they arrive.</p>
      */
@@ -380,7 +380,7 @@ public class InferenceClientConformanceTest {
      * When an unmodified OpenAI client library reads them
      * Then they deserialize into the library's own {@link Embedding} vectors
      *
-     * <p>SC-008 for the operation that carries the most data and the least tolerance for a wrong
+     * <p>This is the operation that carries the most data and the least tolerance for a wrong
      * type: an embedding is a list of numbers, and a payload that renders them as strings parses
      * as JSON and fails in the client. The vector's contents are asserted, not merely its presence,
      * for that reason.</p>
@@ -419,7 +419,7 @@ public class InferenceClientConformanceTest {
      * When an unmodified OpenAI client library reads it
      * Then it deserializes into the library's own {@link Image}, carrying the base64 payload
      *
-     * <p>SC-008 for images, and the place FR-012's inline-only rule meets a real client: the
+     * <p>This is the place the inline-only rule for images meets a real client: the
      * library populates either the URL or the base64 field depending on what arrived, so asserting
      * that it found base64 is simultaneously a conformance check and a check that dotCMS never
      * handed out a hosted artifact.</p>
@@ -444,7 +444,7 @@ public class InferenceClientConformanceTest {
 
         assertNotNull(parsed);
         assertNotNull("The client library produced no image", parsed.content());
-        assertNotNull("FR-012 returns the bytes inline, so this is where a client finds them",
+        assertNotNull("The bytes are returned inline, so this is where a client finds them",
                 parsed.content().base64Data());
         assertFalse(parsed.content().base64Data().isBlank());
         assertNull("A client that received a URL instead would be holding a hosted artifact "

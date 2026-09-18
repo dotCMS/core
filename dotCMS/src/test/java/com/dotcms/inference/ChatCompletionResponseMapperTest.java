@@ -27,13 +27,13 @@ import static org.junit.Assert.assertTrue;
  *
  * <p>Coverage:</p>
  * <ul>
- *   <li>Envelope fields — {@code id}, {@code object}, {@code created}, {@code model} (FR-003).</li>
+ *   <li>Envelope fields — {@code id}, {@code object}, {@code created}, {@code model}.</li>
  *   <li>{@code model} reporting the model that actually served the request, which is how a caller
  *       detects that a site's fallback chain moved on to a later entry.</li>
  *   <li>A text answer rendering as exactly one choice, index {@code 0}, role {@code assistant},
  *       finish reason {@code stop}.</li>
  *   <li>A tool-calling answer rendering {@code tool_calls}, with the provider-assigned id carried
- *       verbatim rather than synthesised (FR-004).</li>
+ *       verbatim rather than synthesised.</li>
  *   <li>Every serializable {@link FinishReason} mapping to its wire string.</li>
  *   <li>Usage mapping to {@code prompt_tokens} / {@code completion_tokens} / {@code total_tokens},
  *       and {@link InferenceUsage#UNREPORTED} leaving usage absent rather than fabricating zeros —
@@ -49,7 +49,7 @@ public class ChatCompletionResponseMapperTest {
     /**
      * Given a completed response with an id, a model and a creation time.
      * When it is rendered to the wire shape.
-     * Then every envelope field is populated and {@code object} is {@code chat.completion}. (FR-003)
+     * Then every envelope field is populated and {@code object} is {@code chat.completion}.
      */
     @Test
     public void test_toView_textResponse_populatesEnvelopeFields() {
@@ -140,7 +140,7 @@ public class ChatCompletionResponseMapperTest {
      * Given an assistant turn asking for two tools to be executed.
      * When it is rendered to the wire shape.
      * Then the finish reason is {@code tool_calls} and each entry carries its provider-assigned id
-     * verbatim, type {@code function}, and the function name and raw JSON arguments. (FR-004)
+     * verbatim, type {@code function}, and the function name and raw JSON arguments.
      */
     @Test
     public void test_toView_toolCallAnswer_mapsToolCallsCarryingIdVerbatim() {

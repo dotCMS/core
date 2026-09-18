@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for the streamed usage chunk rendered by
- * {@link SseSerializer#toFrame(InferenceStreamEvent, String, String, long)} (FR-009, research R5).
+ * {@link SseSerializer#toFrame(InferenceStreamEvent, String, String, long)}.
  *
  * <p>In the chat-completions wire format the usage event is a chunk whose {@code choices} array is
  * <strong>empty</strong>. Some stream readers assume every chunk has a non-empty {@code choices}
@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
  *   <li>A {@link InferenceStreamEvent.Usage} event rendering a chunk with a present but empty
  *       {@code choices} array.</li>
  *   <li>That chunk still carrying the per-chunk envelope — {@code id}, {@code object}
- *       ({@code chat.completion.chunk}), {@code created}, {@code model} (FR-007).</li>
+ *       ({@code chat.completion.chunk}), {@code created}, {@code model}.</li>
  *   <li>The counts landing on the wire as {@code usage.prompt_tokens},
  *       {@code usage.completion_tokens} and {@code usage.total_tokens}.</li>
  *   <li>{@link InferenceUsage#UNREPORTED} rendering with the token fields absent or null rather
@@ -52,7 +52,7 @@ public class SseUsageGatingTest {
      * Given a usage event closing a stream.
      * When it is rendered to a frame.
      * Then the chunk carries a {@code choices} array that is present and empty, which is the shape
-     * standard clients recognise as a usage-only chunk. (FR-009)
+     * standard clients recognise as a usage-only chunk.
      *
      * @throws Exception when the rendered frame cannot be parsed
      */
@@ -76,7 +76,7 @@ public class SseUsageGatingTest {
      * When it is rendered to a frame.
      * Then the chunk carries the same envelope as every other chunk — {@code id}, {@code object},
      * {@code created}, {@code model} — because a client stitching a stream together keys off those
-     * on every frame, usage-only ones included. (FR-007)
+     * on every frame, usage-only ones included.
      *
      * @throws Exception when the rendered frame cannot be parsed
      */
@@ -176,7 +176,7 @@ public class SseUsageGatingTest {
      * Given a usage event, which on an asking stream is the last event before the terminator.
      * When the serializer is asked whether the terminal marker follows.
      * Then it says yes, so a stream that ends with usage still closes cleanly and a client is not
-     * left waiting on a stream that will never terminate. (FR-009)
+     * left waiting on a stream that will never terminate.
      */
     @Test
     public void test_shouldWriteDoneMarker_usageEvent_returnsTrue() {

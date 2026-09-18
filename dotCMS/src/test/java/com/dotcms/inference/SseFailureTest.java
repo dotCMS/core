@@ -16,7 +16,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Unit tests for how {@link SseSerializer} ends a stream that failed after it had begun (FR-039).
+ * Unit tests for how {@link SseSerializer} ends a stream that failed after it had begun.
  *
  * <p>Once the first chunk is written the HTTP status is already on the wire and can no longer
  * carry the failure. The error event is the only way a caller learns the answer is incomplete,
@@ -61,7 +61,6 @@ public class SseFailureTest {
      * When the error event is rendered.
      * Then the frame's JSON carries a top-level {@code error} object with {@code message} and
      * {@code type}, which is the shape a standard client deserializes into its own error type.
-     * (FR-039)
      *
      * @throws Exception when the rendered frame cannot be parsed
      */
@@ -124,7 +123,7 @@ public class SseFailureTest {
      *
      * <p>This is the single most important assertion in the streaming work: withholding
      * {@code [DONE]} is the only thing that stops a client which does not parse the error event
-     * from treating a truncated answer as a complete one. (FR-039)</p>
+     * from treating a truncated answer as a complete one.</p>
      */
     @Test
     public void test_shouldWriteDoneMarker_errorEvent_returnsFalse() {
@@ -143,7 +142,7 @@ public class SseFailureTest {
      * has started.
      * When the serializer is asked whether the terminal marker follows.
      * Then it says no, identically to the provider-failure path — the caller must not be able to
-     * tell a timed-out answer from a complete one only by luck. (FR-039)
+     * tell a timed-out answer from a complete one only by luck.
      */
     @Test
     public void test_shouldWriteDoneMarker_completionTimeoutErrorEvent_returnsFalse() {
@@ -190,7 +189,6 @@ public class SseFailureTest {
      * When it is rendered to a frame.
      * Then the frame is neither equal to nor contains {@link SseSerializer#DONE_MARKER}, so a
      * client scanning the byte stream for the terminator never finds one on a failed stream.
-     * (FR-039)
      */
     @Test
     public void test_toFrame_errorEvent_frameNeitherIsNorContainsDoneMarker() {
@@ -222,7 +220,7 @@ public class SseFailureTest {
      * When the error event is rendered.
      * Then it renders the same standard error shape as the provider-failure path — a top-level
      * {@code error} object with {@code message} and {@code type}, and no status in the body — so
-     * the second way to fail mid-stream is indistinguishable in handling from the first. (FR-039)
+     * the second way to fail mid-stream is indistinguishable in handling from the first.
      *
      * @throws Exception when the rendered frame cannot be parsed
      */

@@ -53,7 +53,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Holds FR-036's line: metadata may be logged, the caller's content may not.
+ * Holds the line between what may be logged and what may not: metadata may be logged, the
+ * caller's content may not.
  *
  * <p>No request or response body is written to a log today. That was true before this test
  * existed and is exactly why the test is worth having — nothing enforced it. Every log line in
@@ -295,7 +296,7 @@ public class InferenceLoggingTest {
             }
         }
 
-        assertTrue("FR-036 allows metadata in the logs and never the caller's content, but "
+        assertTrue("Metadata is allowed in the logs and never the caller's content, but "
                         + what + " wrote it: " + leaking,
                 leaking.isEmpty());
     }

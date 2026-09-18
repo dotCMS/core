@@ -55,8 +55,8 @@ import static org.mockito.Mockito.when;
  * Specifies {@code POST /api/inference/v1/embeddings} through
  * {@link EmbeddingsResource#embeddings(HttpServletRequest, HttpServletResponse, String, EmbeddingsRequestView)}.
  *
- * <p>FR-011 is not "expose an embeddings endpoint" — the vector round trip is the easy half. What
- * the requirement actually adds is that the model gate of FR-023 has to look at a
+ * <p>This endpoint is not "expose an embeddings endpoint" — the vector round trip is the easy half.
+ * What actually matters is that the model gate has to look at a
  * <strong>different section</strong> of the site's configuration than the chat endpoint does. A
  * site configures its chat models and its embeddings model separately, so an implementation that
  * reuses the chat section here would accept a chat model for an embeddings call and refuse the
@@ -65,17 +65,18 @@ import static org.mockito.Mockito.when;
  * the same site in one go: the embeddings model succeeds <em>and</em> the chat model is refused.
  * Either assertion alone is satisfied by the bug.</p>
  *
- * <p>The second thing FR-011 adds is that {@code input} is not a string. It is <em>either</em> a
- * string <em>or</em> an array of strings, because batching is how content is ordinarily embedded —
- * anyone indexing a site sends an array — and a scalar-only endpoint would fail that common case
- * while still looking correct against a one-off example. The array form is what makes the response
- * a list of more than one entry, and therefore what makes {@code index} load-bearing: it is the
- * only thing that lets a caller correlate a vector back to the text it sent. The tests below
- * assert that index explicitly, looking each entry up by it rather than by its position in
+ * <p>The second thing this endpoint gets right is that {@code input} is not a string. It is
+ * <em>either</em> a string <em>or</em> an array of strings, because batching is how content is
+ * ordinarily embedded — anyone indexing a site sends an array — and a scalar-only endpoint
+ * would fail that common case while still looking correct against a one-off example. The array
+ * form is what makes the response a list of more than one entry, and therefore what makes
+ * {@code index} load-bearing: it is the only thing that lets a caller correlate a vector back to
+ * the text it sent. The tests below assert that index explicitly, looking each entry up by it
+ * rather than by its position in
  * {@code data}, and they pin every refusal the array form introduces — nothing to embed, and
  * elements that are not text.</p>
  *
- * <p>FR-011 now spells out what "an array of strings" costs an implementation, and each clause is
+ * <p>Accepting "an array of strings" costs an implementation several things, and each clause is
  * a test below. <strong>Every</strong> element has to be a string, so the all-numeric array is
  * joined by a mixed one: an implementation that inspects only the first element passes the
  * all-numeric case and still accepts {@code ["some text", 5]}, which is the shape that actually
@@ -84,7 +85,7 @@ import static org.mockito.Mockito.when;
  * "null" has two wire forms — the JSON null and the field left out — which are separate code paths
  * and so are asserted separately.</p>
  *
- * <p>FR-011 also settles two things this file used to leave open. A <strong>blank or
+ * <p>This file also settles two things that used to be left open. A <strong>blank or
  * whitespace-only</strong> string is refused on the same grounds as an absent, null or empty one,
  * whether it arrives alone or as one element of an array: there is no meaningful embedding of
  * nothing, and providers differ in whether they error on it or hand back a zero vector — which is
@@ -102,22 +103,22 @@ import static org.mockito.Mockito.when;
  * so a message that happens to contain a digit cannot pass for one that locates the fault.</p>
  *
  * <ul>
- *     <li>FR-011 — input text comes back as a vector in the standard embeddings shape, with the
+ *     <li>Input text comes back as a vector in the standard embeddings shape, with the
  *     serving model and the token counts.</li>
- *     <li>FR-011 — {@code input} accepts a single string or an array of strings; an array yields
+ *     <li>{@code input} accepts a single string or an array of strings; an array yields
  *     one entry per input, each carrying the index of the input it corresponds to, and the
  *     reported usage covers the whole batch. An empty array, a null or absent input, a blank or
  *     whitespace-only string, and an array any of whose elements is not a string or is blank, are
  *     all refused naming {@code input}.</li>
- *     <li>FR-011 — where one element of an array is at fault, the message identifies which
+ *     <li>Where one element of an array is at fault, the message identifies which
  *     one.</li>
- *     <li>FR-011 / R7 — {@code model} is validated against the site's <strong>embeddings</strong>
+ *     <li>{@code model} is validated against the site's <strong>embeddings</strong>
  *     section; the site's chat model is refused here, even though the same site has it
  *     configured.</li>
- *     <li>FR-023 — a model the site configured for nothing at all is refused the same way.</li>
- *     <li>FR-024 — {@code model} is required; there is no implicit default.</li>
- *     <li>FR-015 — an anonymous caller is refused.</li>
- *     <li>FR-020 — the serving site is published for the response filter to report.</li>
+ *     <li>A model the site configured for nothing at all is refused the same way.</li>
+ *     <li>{@code model} is required; there is no implicit default.</li>
+ *     <li>An anonymous caller is refused.</li>
+ *     <li>The serving site is published for the response filter to report.</li>
  * </ul>
  *
  * <p>The provider is a WireMock server standing in for an OpenAI-compatible endpoint, wired in
@@ -156,7 +157,7 @@ public class InferenceEmbeddingsTest {
     private static final String EMPTY_INPUT = "";
 
     /**
-     * A string with nothing in it but whitespace. FR-011 refuses it on the same grounds as the
+     * A string with nothing in it but whitespace. It is refused on the same grounds as the
      * empty string, and it is asserted separately because it is a separate guard: an
      * {@code isEmpty()} check accepts it and passes three spaces to a provider that will either
      * error or bill for a zero vector.
@@ -261,8 +262,8 @@ public class InferenceEmbeddingsTest {
         stubProvider();
 
         // A bare UserDataGen user has no roles at all, so it is neither a backend nor a frontend
-        // user and FR-016 rejects it; it also cannot read the site these tests pass as an explicit
-        // override, which FR-019 checks. Two roles are needed, not one: the check in
+        // user and is rejected on that ground; it also cannot read the site these tests pass as an
+        // explicit override, which is checked separately. Two roles are needed, not one: the check in
         // WebResource.checkRolePermissions is doesUserHaveRole(user, "DOTCMS_BACK_END_USER") by key
         // and does not walk inheritance, so being an admin does not imply it. Admin is what grants
         // read on the site. Role-specific behaviour is US3's tests, not these.
@@ -347,7 +348,7 @@ public class InferenceEmbeddingsTest {
      * Then three entries come back, one per input, each carrying the index of the input it
      * corresponds to and a vector of its own
      *
-     * <p>FR-011's array form. The assertions look each entry up <em>by its index</em> rather than
+     * <p>The array form. The assertions look each entry up <em>by its index</em> rather than
      * reading positions out of {@code data}, because the index is the whole mechanism by which a
      * caller correlates a vector back to the text it sent; a test that trusted array position
      * would pass against an implementation that stamped indexes on positionally and never
@@ -396,11 +397,12 @@ public class InferenceEmbeddingsTest {
      * When the embedding is requested
      * Then exactly one entry comes back, at index 0
      *
-     * <p>The scalar form is the half of FR-011 that already worked, and widening {@code input} to
-     * accept an array is exactly the kind of change that quietly breaks it — by normalising the
-     * scalar into a one-element array and then losing it, or by rejecting anything that is not an
-     * array. Both halves of "a string or an array of strings" have to hold at once, so the scalar
-     * form gets its own guard rather than living only inside the standard-shape test above.</p>
+     * <p>The scalar form is the half of this behavior that already worked, and widening
+     * {@code input} to accept an array is exactly the kind of change that quietly breaks it — by
+     * normalising the scalar into a one-element array and then losing it, or by rejecting anything
+     * that is not an array. Both halves of "a string or an array of strings" have to hold at once,
+     * so the scalar form gets its own guard rather than living only inside the standard-shape test
+     * above.</p>
      */
     @Test
     public void test_embeddings_withScalarInput_returnsSingleEntryAtIndexZero() {
@@ -434,7 +436,7 @@ public class InferenceEmbeddingsTest {
      *
      * <p>Embedding nothing is a caller mistake — a batch built from a query that matched no
      * content, most likely. Answering it with an empty {@code data} list and a 200 would look like
-     * success, and the caller would index nothing and never find out why. FR-011 now says this in
+     * success, and the caller would index nothing and never find out why. This is now stated in
      * as many words — an absent, null or empty input is refused naming the field — where before it
      * had to be inferred from the response being "one entry per input"; the test is unchanged,
      * which is the point of recording it.</p>
@@ -488,7 +490,7 @@ public class InferenceEmbeddingsTest {
      * Then it is refused as a client error naming {@code input}, and the message identifies the
      * element at fault, and the provider is never contacted
      *
-     * <p>FR-011 requires <strong>every</strong> element of the array to be a string, and this is
+     * <p><strong>Every</strong> element of the array is required to be a string, and this is
      * the test that makes that word load-bearing. The all-numeric array above is refused by an
      * implementation that looks only at {@code input.get(0)}; a mixed array is not, and a mixed
      * array is the one a caller actually sends — a list assembled from two sources where one
@@ -498,7 +500,7 @@ public class InferenceEmbeddingsTest {
      * that the strings ahead of it are not decoration: an implementation that checks the first two
      * elements and stops passes a two-element mixed array and fails this one.</p>
      *
-     * <p>Naming the field is no longer enough on its own. FR-011 requires the message to identify
+     * <p>Naming the field is no longer enough on its own. The message is required to identify
      * <em>which</em> element is at fault, because {@code param} can only ever say {@code input} and
      * a caller who sent a batch is otherwise left to find the bad one themselves. The assertion
      * looks for the offending position in the message; the position is one no other number in the
@@ -527,7 +529,7 @@ public class InferenceEmbeddingsTest {
      * Then both are refused as a client error naming {@code input}, and the provider is never
      * contacted
      *
-     * <p>FR-011 refuses a blank or whitespace-only string on the same grounds as an absent, null or
+     * <p>A blank or whitespace-only string is refused on the same grounds as an absent, null or
      * empty input: there is nothing there to embed. Leaving it to the provider is the failure this
      * family exists to prevent — some error, some return a zero vector, and a caller indexing a
      * site would silently store a meaningless vector against a document and retrieve it forever
@@ -551,7 +553,7 @@ public class InferenceEmbeddingsTest {
      * actually happens — a column that was empty for one row of five hundred — and an
      * implementation that validates the array as a whole rather than element by element sends it
      * upstream without noticing. Refusing the batch rather than skipping the blank is the point:
-     * dropping it would shift the index of every entry after it, and FR-011 makes those indexes the
+     * dropping it would shift the index of every entry after it, and those indexes are the
      * caller's only means of correlating vectors back to what they sent.</p>
      *
      * <p>As with the mixed array, the message must say which element — and the blank sits at a
@@ -574,7 +576,7 @@ public class InferenceEmbeddingsTest {
      * Then both are refused as a client error naming {@code input}, and the provider is never
      * contacted
      *
-     * <p>FR-011 lists "absent" and "null" alongside "empty", and the two are asserted together
+     * <p>"Absent" and "null" are refused alongside "empty", and the two are asserted together
      * because they are not the same code path. A JSON {@code "input": null} deserializes to a
      * {@link NullNode} — an object, present, and non-null as far as a {@code != null} guard is
      * concerned — while an omitted field leaves the component null outright. An implementation
@@ -638,7 +640,8 @@ public class InferenceEmbeddingsTest {
      * Then the embeddings model is served and the chat model is refused as a model this site has
      * not configured — because it is not configured <em>for embeddings</em>
      *
-     * <p>FR-011 and R7, stated as one assertion rather than two files apart. An implementation
+     * <p>Model validation and section separation, stated as one assertion rather than two files
+     * apart. An implementation
      * that validated against the chat section would fail exactly one of these two halves, and an
      * implementation that validated against nothing at all would fail only the second — so both
      * belong in the same test, against the same site, in the same configuration.</p>
@@ -713,9 +716,10 @@ public class InferenceEmbeddingsTest {
      * When the embedding is requested
      * Then it is refused as a client error naming {@code model}, with no implicit default applied
      *
-     * <p>FR-024 holds across the family, not only on chat. A site has exactly one embeddings model
-     * configured, which makes defaulting to it look harmless — and is precisely why it has to be
-     * refused here: a caller who never named a model cannot tell when the site's changes.</p>
+     * <p>The requirement that {@code model} be explicit holds across the family, not only on chat.
+     * A site has exactly one embeddings model configured, which makes defaulting to it look
+     * harmless — and is precisely why it has to be refused here: a caller who never named a model
+     * cannot tell when the site's changes.</p>
      */
     @Test
     public void test_embeddings_withoutModel_isRejectedNamingTheField() {
@@ -740,7 +744,7 @@ public class InferenceEmbeddingsTest {
      * When the embedding is requested
      * Then it is refused as unauthorized and the provider is never contacted
      *
-     * <p>FR-015. Accepts a thrown {@link WebApplicationException} as well as a returned 401, since
+     * <p>Accepts a thrown {@link WebApplicationException} as well as a returned 401, since
      * the surrounding authentication handshake may refuse before the resource body runs and either
      * is a valid refusal.</p>
      */
@@ -769,7 +773,7 @@ public class InferenceEmbeddingsTest {
      * When the embedding is requested
      * Then the resolved site is published on the request for the response filter to report
      *
-     * <p>FR-020 asks for the serving site on every response, and it reaches a real caller as the
+     * <p>The serving site is published on every response, and it reaches a real caller as the
      * {@code X-dotCMS-Resolved-Site} header that {@link ResolvedSiteHeaderFilter} writes from
      * {@link InferenceRequestAttributes#RESOLVED_SITE_ID}. This test calls the resource method
      * directly, so no JAX-RS response filter runs and no header exists to read; the attribute is
@@ -831,7 +835,7 @@ public class InferenceEmbeddingsTest {
     }
 
     /**
-     * Asserts that an {@code input} FR-011 refuses is refused here — as a 400 in the standard
+     * Asserts that an invalid {@code input} is refused here — as a 400 in the standard
      * error shape, naming the field, with nothing reaching the provider.
      *
      * <p>Shared by the refusals that differ only in what was sent, so that a new one is a line
@@ -867,7 +871,7 @@ public class InferenceEmbeddingsTest {
      * Asserts everything {@link #assertInputRefusedNamingTheField(JsonNode)} does, and additionally
      * that the message identifies <em>which</em> element of the array is at fault.
      *
-     * <p>FR-011 keeps {@code param} at {@code input} — that is the field the caller sent — so the
+     * <p>{@code param} stays at {@code input} — that is the field the caller sent — so the
      * message is the only place the offending position can appear, and a caller who batched five
      * hundred strings should not have to bisect their own payload to find it. The index is the
      * 0-based one the response's own {@code index} correlates on, so that the number in the error
@@ -906,7 +910,7 @@ public class InferenceEmbeddingsTest {
     /**
      * The array form of {@code input}, as
      * {@code {"model": "…", "input": ["The quick brown fox", "…"]}}. Called with no inputs it
-     * builds the empty array, which FR-011 refuses.
+     * builds the empty array, which is refused.
      *
      * @param model  the model to ask for, or null to omit the field
      * @param inputs the texts to embed, in the order the caller sent them
@@ -926,7 +930,7 @@ public class InferenceEmbeddingsTest {
      * Builds a request arriving at a given host name, with or without a bearer credential.
      *
      * <p>Request attributes are backed by a real map rather than left as mock no-ops, because both
-     * the authentication handshake and FR-020's site attribution publish through them, and a mock
+     * the authentication handshake and the site-attribution logic publish through them, and a mock
      * that forgot what was set on it would not behave like a servlet container.</p>
      *
      * @param serverName  the host name the request arrives on

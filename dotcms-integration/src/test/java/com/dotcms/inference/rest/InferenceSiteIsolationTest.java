@@ -46,7 +46,7 @@ import static org.mockito.Mockito.when;
 /**
  * Specifies cross-site isolation for
  * {@link ChatCompletionsResource#completions(HttpServletRequest, HttpServletResponse, String, ChatCompletionRequestView)}
- * — FR-027 and FR-028.
+ * — cross-site isolation of provider configuration and credentials.
  *
  * <p>Isolation here is not enforced by a check anywhere; it is a property of one line, the cache
  * key {@code host + ":" + providerConfigHash} in
@@ -63,11 +63,11 @@ import static org.mockito.Mockito.when;
  * made it.</p>
  *
  * <ul>
- *     <li>FR-028 — two sites with different provider configurations, driven with interleaved
+ *     <li>Two sites with different provider configurations, driven with interleaved
  *     requests, are each served by their own provider.</li>
- *     <li>FR-028 — rotating one site's configuration takes effect on its next request and leaves
+ *     <li>Rotating one site's configuration takes effect on its next request and leaves
  *     the other site untouched.</li>
- *     <li>FR-020 / FR-027 — a completion never reports another site's resolved site id.</li>
+ *     <li>A completion never reports another site's resolved site id.</li>
  * </ul>
  */
 public class InferenceSiteIsolationTest {
@@ -201,7 +201,7 @@ public class InferenceSiteIsolationTest {
      * When a completion is requested for each
      * Then each publishes its own site as the one that served, and never the other's
      *
-     * <p>The serving site is what FR-020 puts on every response and what a reconciliation
+     * <p>The serving site is what is published on every response and what a reconciliation
      * pipeline would bill against, so reporting a neighbour's id would be a billing error rather
      * than a cosmetic one.</p>
      */

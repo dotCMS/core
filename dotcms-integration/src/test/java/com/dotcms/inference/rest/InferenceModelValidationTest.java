@@ -51,19 +51,19 @@ import static org.mockito.Mockito.when;
  *
  * <p>The interesting assertion in this file is the negative one: there is no administrator
  * exemption. A role-conditional passthrough is exactly the branching that let two shipped dotAI
- * endpoints drift to opposite model policies, and it would make SC-007 unstatable as a blanket
- * invariant. So an administrator naming an unconfigured model is refused with the same status and
- * the same body as a caller with no privileges at all, and that equality is asserted directly
+ * endpoints drift to opposite model policies, and it would make that invariant unstatable as a
+ * blanket rule. So an administrator naming an unconfigured model is refused with the same status
+ * and the same body as a caller with no privileges at all, and that equality is asserted directly
  * rather than inferred from two separate tests.</p>
  *
  * <ul>
- *     <li>FR-023 — a model the site configured is accepted; one it did not is refused with the
+ *     <li>A model the site configured is accepted; one it did not is refused with the
  *     standard "no such model" shape, naming nothing the caller did not already send.</li>
- *     <li>FR-023 / SC-007 — the refusal is identical for an administrator and for a
+ *     <li>The refusal is identical for an administrator and for a
  *     non-administrator, so no caller of any role can cause an unconfigured model to be invoked.</li>
- *     <li>FR-024 — a request omitting {@code model} is refused naming the field; there is no
+ *     <li>A request omitting {@code model} is refused naming the field; there is no
  *     implicit default.</li>
- *     <li>FR-023 — a site configured with a fallback chain accepts any entry of the chain, not
+ *     <li>A site configured with a fallback chain accepts any entry of the chain, not
  *     only the first.</li>
  * </ul>
  *
@@ -137,7 +137,7 @@ public class InferenceModelValidationTest {
                 .nextPersisted();
         adminToken = bearerTokenFor(adminUser);
 
-        // The counterpart: admitted by FR-016 as an authenticated backend user, and nothing more.
+        // The counterpart: admitted as an authenticated backend user, and nothing more.
         // Read on the site is granted per test, since the site is created per test.
         limitedUser = new UserDataGen()
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole())
@@ -226,8 +226,9 @@ public class InferenceModelValidationTest {
      * When each names a model the site has not configured
      * Then both are refused, with the same status and the same error body
      *
-     * <p>This is the SC-007 invariant stated as one assertion rather than two: no caller, of any
-     * role, can cause a model outside the site's configuration to be invoked. Asserting the two
+     * <p>This is the no-administrator-exemption invariant stated as one assertion rather than
+     * two: no caller, of any role, can cause a model outside the site's configuration to be
+     * invoked. Asserting the two
      * refusals are <em>equal</em> is what would catch an exemption added later, which two
      * independent single-role tests would not.</p>
      */
@@ -336,7 +337,7 @@ public class InferenceModelValidationTest {
 
     /**
      * Grants read on a site to a user's own role, so a caller with no administrative role can
-     * still name the site as an explicit override. FR-019 refuses the override otherwise, which
+     * still name the site as an explicit override. The override is otherwise refused, which
      * would make the non-administrator's refusal a 403 about the site rather than the 404 about
      * the model this file is comparing.
      *

@@ -211,8 +211,9 @@ public class ChatCompletionsResource {
     // Pricing this honestly means charging on what a request actually consumed, token counts being
     // the unit that matches what the provider bills, which is a design this endpoint cannot settle
     // on its own: it needs a decision about where usage is metered, what happens when a stream
-    // fails halfway, and how that reconciles with the per-site spend attribution FR-032 puts out
-    // of scope. Until that exists, the flat price stands and is known to be wrong for streams.
+    // fails halfway, and how it reconciles with per-site spend attribution, which is not
+    // something this endpoint family answers. Until that exists, the flat price stands and is
+    // known to be wrong for streams.
     @RequestCost(Price.HTTP_FETCH)
     @Path("/completions")
     @Consumes(MediaType.APPLICATION_JSON)
