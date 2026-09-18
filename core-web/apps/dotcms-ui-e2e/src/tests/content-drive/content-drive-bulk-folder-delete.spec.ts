@@ -42,7 +42,7 @@ test.describe.skip('Content Drive bulk folder delete', () => {
         await apiHelpers.createFolders(site.hostname, folders);
 
         const drive = new ContentDrivePage(adminPage);
-        await drive.goto();
+        await drive.goTo();
 
         // Select both folders, delete, confirm.
         // Expected: the confirmation names the count and says the contents go too; the rows are
@@ -59,7 +59,7 @@ test.describe.skip('Content Drive bulk folder delete', () => {
         await apiHelpers.createFolders(site.hostname, [folder]);
 
         const drive = new ContentDrivePage(adminPage);
-        await drive.goto();
+        await drive.goTo();
 
         // Start the delete on a folder large enough to still be running, then reload.
         // Expected: the row is still marked and still inert, and the tree node with it — the state
@@ -76,7 +76,7 @@ test.describe.skip('Content Drive bulk folder delete', () => {
         await apiHelpers.createFolders(site.hostname, [folder]);
 
         const drive = new ContentDrivePage(adminPage);
-        await drive.goto();
+        await drive.goTo();
 
         // Provoke a per-folder failure (locked content inside), then wait for the run to settle.
         // Expected: the folder is named in the outcome with a reason, the marking clears, and the

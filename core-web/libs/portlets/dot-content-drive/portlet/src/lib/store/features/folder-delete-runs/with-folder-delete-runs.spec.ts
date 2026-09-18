@@ -1,7 +1,9 @@
-import { signalStore, withState } from '@ngrx/signals';
+import { signalStore, signalStoreFeature, type, withComputed, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { computed } from '@angular/core';
 
 import {
     DotEventsSocket,
@@ -9,17 +11,15 @@ import {
     DotHttpErrorManagerService,
     DotSystemEventType
 } from '@dotcms/data-access';
-import { DotFolderDeleteActiveRun, DotFolderDeleteAnnouncementEvent } from '@dotcms/dotcms-models';
+import {
+    DotContentDriveItem,
+    DotFolderDeleteActiveRun,
+    DotFolderDeleteAnnouncementEvent
+} from '@dotcms/dotcms-models';
 
 import { withFolderDeleteRuns } from './with-folder-delete-runs';
 
-import {
-    DEFAULT_PAGE,
-    DEFAULT_PAGINATION,
-    DEFAULT_PATH,
-    DEFAULT_SORT,
-    DEFAULT_TREE_EXPANDED
-} from '../../../shared/constants';
+import { buildContentDriveState } from '../../../shared/content-drive-state.fixture';
 import { DotContentDriveState, DotContentDriveStatus } from '../../../shared/models';
 
 /**
@@ -41,23 +41,33 @@ describe('withFolderDeleteRuns', () => {
             path,
             inode,
             identifier
-        }) as unknown as DotContentDriveState['items'][0];
+        }) as unknown as DotContentDriveItem;
 
-    const initialState: DotContentDriveState = {
-        currentSite: undefined,
-        path: DEFAULT_PATH,
-        filters: {},
+    const initialState = buildContentDriveState({
         items: [folderRow(PATH_A, 'inode-a', 'id-a'), folderRow(PATH_B, 'inode-b', 'id-b')],
-        status: DotContentDriveStatus.LOADED,
-        pagination: DEFAULT_PAGINATION,
-        page: DEFAULT_PAGE,
-        sort: DEFAULT_SORT,
-        isTreeExpanded: DEFAULT_TREE_EXPANDED
-    } as DotContentDriveState;
+        status: DotContentDriveStatus.LOADED
+    });
+
+    /**
+     * `withFolderDeleteRuns` declares `busyRows` as a required input — it belongs to
+     * `withActionExecution`, which the real store installs first. Standing in for it here keeps this
+     * spec about the server-derived half without dragging in the whole execution feature.
+     *
+     * Declared through `signalStoreFeature` with an explicit input rather than inline in the
+     * `signalStore` call: a bare `withComputed` leaves its own input generic to be inferred from
+     * position, and in a chain that long TypeScript gives up and widens the store to `object`,
+     * which surfaces as an unreadable "no overload matches" on the `signalStore` call itself.
+     */
+    const withBusyRowsStub = () =>
+        signalStoreFeature(
+            { state: type<DotContentDriveState>() },
+            withComputed(() => ({ busyRows: computed<string[]>(() => []) }))
+        );
 
     const store = signalStore(
         { providedIn: 'root' },
         withState(initialState),
+        withBusyRowsStub(),
         withFolderDeleteRuns()
     );
 

@@ -1,6 +1,6 @@
 import { signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
-import { of, Subject, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -13,7 +13,11 @@ import {
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
-import { DotBulkRefreshCompletedEvent, DotBulkUploadCompletedEvent } from '@dotcms/dotcms-models';
+import {
+    DotBulkRefreshCompletedEvent,
+    DotBulkUploadCompletedEvent,
+    DotFolderBulkDeleteSubmitResponse
+} from '@dotcms/dotcms-models';
 
 import { withActionExecution } from './withActionExecution';
 
@@ -90,8 +94,17 @@ describe('withActionExecution', () => {
     const addToBundle = vi.fn();
     const pushPublishAssets = vi.fn();
     const refresh = vi.fn();
-    /** Left pending by default: the guard tests need the run still in flight. */
-    const submitFolderBulkDelete = vi.fn(() => new Subject());
+    /**
+     * Left pending by default: the guard tests need the run still in flight.
+     *
+     * The return type is annotated rather than inferred. Inferring it from the default pins the mock
+     * to `Subject`, and a test that hands it an `of(...)` — which is what a settled submission looks
+     * like — is then rejected for lacking `next`/`error`/`complete` it never needed.
+     */
+    const submitFolderBulkDelete = vi.fn(
+        (): Observable<DotFolderBulkDeleteSubmitResponse> =>
+            new Subject<DotFolderBulkDeleteSubmitResponse>()
+    );
     const handle = vi.fn();
 
     /** Lets a test push a completion event onto the socket the feature subscribes to on init. */

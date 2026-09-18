@@ -85,7 +85,10 @@ describe('DotFolderBulkDeleteService', () => {
          */
         const refusalFor = (
             status: number,
-            body: unknown
+            // The shape `flush` actually takes. `unknown` here is not "anything": the only bodies
+            // this helper is ever handed are error envelopes, and saying so keeps the call sites
+            // honest instead of widening the boundary.
+            body: object
         ): DotFolderBulkDeleteRefusal | undefined => {
             let refusal: DotFolderBulkDeleteRefusal | undefined;
 
