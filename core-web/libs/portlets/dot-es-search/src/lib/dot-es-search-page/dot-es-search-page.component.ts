@@ -25,6 +25,7 @@ import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { SplitterPassThrough } from 'primeng/types/splitter';
 
 import {
     DotCurrentUserService,
@@ -129,14 +130,17 @@ export class DotEsSearchPageComponent {
 
     readonly $queryEditorOptions = computed(() => ({
         ...QUERY_EDITOR_OPTIONS,
-        wordWrap: this.store.wrapCode() ? 'on' : 'off'
+        wordWrap: this.store.wrapCode() ? ('on' as const) : ('off' as const)
     }));
     readonly RAW_EDITOR_OPTIONS = DOT_MONACO_RAW_OPTIONS;
     readonly MAX_HITS = MAX_HITS;
 
     readonly ComponentStatus = ComponentStatus;
 
-    readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
+    readonly splitterPt: SplitterPassThrough = {
+        root: { class: 'border-0! rounded-none!' },
+        panel: {}
+    };
     readonly tabPanelsPt = { root: { class: 'flex-1 min-h-0 overflow-auto p-0!' } };
     readonly tabPanelPt = { root: { class: 'h-full p-0!' } };
 
@@ -230,7 +234,7 @@ export class DotEsSearchPageComponent {
         }
     }
 
-    onTabChange(value: string): void {
+    onTabChange(value: string | number | undefined): void {
         if (VALID_TABS.has(value as ESSearchActiveTab)) {
             this.store.setActiveTab(value as ESSearchActiveTab);
         }
@@ -276,6 +280,15 @@ export class DotEsSearchPageComponent {
             archived: contentlet['archived'] as DotContentState['archived'],
             deleted: contentlet['deleted'] as DotContentState['deleted']
         };
+    }
+
+    /**
+     * Sub-columns of a bucket aggregation, read off the first bucket.
+     *
+     * Indexing is typed as always-present, but an aggregation can come back with no buckets.
+     */
+    subColsOf(agg: ParsedAggregation): string[] {
+        return agg.buckets[0]?.subCols ?? [];
     }
 
     private splitAggKey(key: string): { type: string; name: string } {

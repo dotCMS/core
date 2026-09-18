@@ -18,15 +18,15 @@
             <dot-native-field [field]="field" [contentlet]="$contentlet()" />
         }
     </dot-card-field-content>
-    @if ((fieldHasError && isRequired) || (!fieldHasError && field.hint)) {
+    @if ((fieldHasError && isRequired) || (!fieldHasError && field?.hint)) {
         <dot-card-field-footer>
             @if (fieldHasError && isRequired) {
                 <small class="p-field-error">
                     {{ 'dot.edit.content.form.field.required' | dm }}
                 </small>
             }
-            @if (!fieldHasError && field.hint) {
-                <div class="flex justify-between items-center">
+            @if (!fieldHasError && field?.hint) {
+                <div class="flex items-center justify-between">
                     <div class="hint-message">
                         <small
                             [attr.data-testId]="'hint-' + field.variable"

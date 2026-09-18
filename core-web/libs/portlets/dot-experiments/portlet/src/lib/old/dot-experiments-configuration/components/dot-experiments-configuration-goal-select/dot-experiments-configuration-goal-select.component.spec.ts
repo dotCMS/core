@@ -114,22 +114,22 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             byTestId('dot-options-item-header_URL_PARAMETER')
         );
 
-        spectator.click(bounceRateOption);
+        spectator.click(bounceRateOption!);
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Minimize Bounce Rate'
         );
 
-        spectator.click(exitRateOption);
+        spectator.click(exitRateOption!);
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Detect exit rate'
         );
 
-        spectator.click(reachPageOption);
+        spectator.click(reachPageOption!);
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Maximize Reaching a Page'
         );
 
-        spectator.click(urlParameterOption);
+        spectator.click(urlParameterOption!);
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             'Detect URL Parameter'
         );
@@ -146,8 +146,8 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         const bounceRateOption = spectator.query(byTestId('dot-options-item-header_BOUNCE_RATE'));
         const reachPageOption = spectator.query(byTestId('dot-options-item-header_REACH_PAGE'));
 
-        spectator.click(bounceRateOption);
-        spectator.click(reachPageOption);
+        spectator.click(bounceRateOption!);
+        spectator.click(reachPageOption!);
 
         expect((spectator.query(byTestId('goal-name-input')) as HTMLInputElement).value).toEqual(
             customName
@@ -157,10 +157,10 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     it('should be a form valid in case of click on a No content option item', () => {
         const bounceRateOption = spectator.query(byTestId('dot-options-item-header_BOUNCE_RATE'));
 
-        spectator.component.form.get('primary.name').setValue('default');
+        spectator.component.form.get('primary.name')!.setValue('default')!;
         spectator.component.form.updateValueAndValidity();
 
-        spectator.click(bounceRateOption);
+        spectator.click(bounceRateOption!);
 
         const applyBtn = spectator.query(byTestId('add-goal-button')) as HTMLButtonElement;
         spectator.detectComponentChanges();
@@ -169,7 +169,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         expect(applyBtn.disabled).toEqual(false);
 
         const exitRateOption = spectator.query(byTestId('dot-options-item-header_EXIT_RATE'));
-        spectator.click(exitRateOption);
+        spectator.click(exitRateOption!);
         spectator.detectComponentChanges();
 
         expect(spectator.component.form.valid).toEqual(true);
@@ -179,7 +179,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     it('should be a form invalid in case of click on an option item with conditions', () => {
         const reachPageOption = spectator.query(byTestId('dot-options-item-header_REACH_PAGE'));
 
-        spectator.click(reachPageOption);
+        spectator.click(reachPageOption!);
 
         const applyBtn = spectator.query(byTestId('add-goal-button')) as HTMLButtonElement;
         spectator.detectComponentChanges();
@@ -190,7 +190,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         const urlParameterOption = spectator.query(
             byTestId('dot-options-item-header_URL_PARAMETER')
         );
-        spectator.click(urlParameterOption);
+        spectator.click(urlParameterOption!);
 
         spectator.detectComponentChanges();
 
@@ -202,7 +202,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.detectChanges();
 
         const reachPageOption = spectator.query(byTestId('dot-options-item-header_REACH_PAGE'));
-        spectator.click(reachPageOption);
+        spectator.click(reachPageOption!);
 
         spectator.detectComponentChanges();
 
@@ -257,12 +257,12 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         const urlParameterOption = spectator.query(
             byTestId('dot-options-item-header_URL_PARAMETER')
         );
-        spectator.click(urlParameterOption);
+        spectator.click(urlParameterOption!);
 
         spectator.detectComponentChanges();
 
         const applyBtn = spectator.query<HTMLButtonElement>(byTestId('add-goal-button'));
-        expect(applyBtn.disabled).toEqual(true);
+        expect(applyBtn!.disabled!).toEqual(true);
 
         const invalidFormValues = {
             primary: {
@@ -312,7 +312,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.component.form.valid).toEqual(false);
-        expect(applyBtn.disabled).toEqual(true);
+        expect(applyBtn!.disabled!).toEqual(true);
 
         // Invalid path
         spectator.component.form.setValue(validFormValuesExistOperator, { emitEvent: false });
@@ -320,7 +320,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
         spectator.detectChanges();
 
         expect(spectator.component.form.valid).toEqual(false);
-        expect(applyBtn.disabled).toEqual(true);
+        expect(applyBtn!.disabled!).toEqual(true);
     });
 
     it('should call setSelectedGoal from the store when a item is selected and the button of apply is clicked', async () => {
@@ -336,23 +336,23 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
             }
         };
 
-        spectator.component.form.get('primary.name').setValue('default');
+        spectator.component.form.get('primary.name')!.setValue('default')!;
         spectator.component.form.updateValueAndValidity();
 
         spectator.detectChanges();
 
         const bounceRateOption = spectator.query(byTestId('dot-options-item-header_BOUNCE_RATE'));
 
-        spectator.click(bounceRateOption);
+        spectator.click(bounceRateOption!);
 
         const applyBtn = spectator.query<HTMLButtonElement>(byTestId('add-goal-button'));
         spectator.detectChanges();
 
-        spectator.click(applyBtn);
+        spectator.click(applyBtn!);
         await spectator.fixture.whenStable();
 
         expect(spectator.component.form.valid).toEqual(true);
-        expect(applyBtn.disabled).toEqual(false);
+        expect(applyBtn!.disabled!).toEqual(false);
         expect(store.setSelectedGoal).toHaveBeenCalledWith(expectedGoal);
     });
 
@@ -380,7 +380,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
     it('should add the class expand to an option clicked that contains content', () => {
         const reachPageOption = spectator.query(byTestId('dot-options-item-header_REACH_PAGE'));
 
-        spectator.click(reachPageOption);
+        spectator.click(reachPageOption!);
         spectator.detectComponentChanges();
 
         const reachPageOptionContent = spectator.query(
@@ -403,7 +403,7 @@ describe('DotExperimentsConfigurationGoalSelectComponent', () => {
 
         spectator.detectChanges();
 
-        expect(sidebar.visible).toEqual(false);
+        expect(sidebar!.visible!).toEqual(false);
     });
 
     it('should render coming soon placeholder', () => {

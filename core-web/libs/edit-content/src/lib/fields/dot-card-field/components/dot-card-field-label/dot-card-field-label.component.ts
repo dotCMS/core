@@ -45,5 +45,7 @@ export class DotCardFieldLabelComponent {
      *
      * @optional
      */
-    $hint = input<string>(null, { alias: 'hint' });
+    // Both spellings of "no hint" arrive here: `field.hint` is optional (`undefined`) and the
+    // calendar field passes an explicit `null` when the timezone note does not apply.
+    $hint = input<string | null | undefined>(null, { alias: 'hint' });
 }

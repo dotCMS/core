@@ -16,7 +16,7 @@ export class DotBulkInformationComponent implements OnInit {
     ref = inject(DynamicDialogRef);
     config = inject(DynamicDialogConfig);
 
-    data: DotActionBulkResult;
+    data!: DotActionBulkResult;
     ngOnInit(): void {
         this.data = this.config.data;
     }

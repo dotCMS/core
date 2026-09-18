@@ -77,7 +77,9 @@ export interface EditContentState {
     workflowActionSuccess: DotCMSContentlet | null;
 
     // User state
-    currentUser: DotCurrentUser;
+    // Null before `loadCurrentUser` resolves, and set back to null when it fails — the initial
+    // state seeds null and the error branch restores it, so the state genuinely holds it.
+    currentUser: DotCurrentUser | null;
 
     // UI state
     uiState: UIState;
@@ -96,7 +98,9 @@ export interface EditContentState {
     lockSwitchLabel: string;
 
     // Form state
-    formValues: FormValues;
+    // Null after a locale copy clears it — `locales.feature` patches null and a spec asserts it.
+    // The only reader spreads the value, where null and `{}` are indistinguishable.
+    formValues: FormValues | null;
     formStatus: 'init' | 'valid' | 'invalid';
 
     // Locales state
@@ -106,7 +110,9 @@ export interface EditContentState {
     currentIdentifier: string | null;
     localesStatus: {
         status: ComponentStatus;
-        error: string;
+        // `| null` like every other status block in this state — this one was the odd one out,
+        // and the initial state seeds it null.
+        error: string | null;
     };
     /**
      * Inode of the content we were editing right before switching to an

@@ -4,8 +4,8 @@
     [text]="true"
     size="small"
     data-testId="persona-button">
-    @if (value?.identifier !== 'modes.persona.no.persona') {
-        <p-avatar [text]="value?.name" [image]="photo" shape="circle" [pt]="avatarPt" dotAvatar />
+    @if (value.identifier !== 'modes.persona.no.persona') {
+        <p-avatar [text]="value.name" [image]="photo" shape="circle" [pt]="avatarPt" dotAvatar />
     } @else {
         <p-avatar
             [text]="'modes.persona.no.persona' | dm"
@@ -52,7 +52,7 @@
             </div>
         </ng-template>
     </p-listbox>
-    @if ($personas()?.totalRecords > MAX_PERSONAS_PER_PAGE) {
+    @if ($personas().totalRecords > MAX_PERSONAS_PER_PAGE) {
         <p-paginator
             class="p-paginator-sm"
             [rows]="$personas().itemsPerPage"

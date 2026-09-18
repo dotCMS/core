@@ -9,7 +9,12 @@ import { LoggerService } from '@dotcms/dotcms-js';
 import { GCircle } from '../../../../../models/gcircle.model';
 import { ServerSideFieldModel } from '../../../../../services/api/serverside-field/ServerSideFieldModel';
 import { I18nService } from '../../../../../services/i18n/i18n.service';
-import { DotVisitorsLocationComponent } from '../dot-visitors-location.component';
+import { DropdownInputModel } from '../../../../../services/models/input.model';
+import {
+    DISTANCE_UNITS,
+    DistanceUnit,
+    DotVisitorsLocationComponent
+} from '../dot-visitors-location.component';
 
 interface Param<T> {
     key: string;
@@ -51,19 +56,22 @@ export class DotVisitorsLocationContainerComponent {
     readonly parameterValuesChange = output<{ name: string; value: string }[]>();
 
     // State
-    circle$: BehaviorSubject<GCircle> = new BehaviorSubject({
+    /** Seed for `circle$`, and the fallback the template needs because `| async` is typed nullable. */
+    readonly initialCircle: GCircle = {
         center: { lat: 38.89, lng: -77.04 },
         radius: 10000
-    });
-    apiKey: string;
-    preferredUnit = 'm';
+    };
+    circle$: BehaviorSubject<GCircle> = new BehaviorSubject(this.initialCircle);
+    preferredUnit: DistanceUnit = 'm';
 
     lat = 0;
     lng = 0;
     radius = 50000;
     comparisonValue = 'within';
-    comparisonControl: UntypedFormControl;
-    comparisonOptions: { value: string; label: Observable<string>; icon: string }[];
+    // Both are built by `initializeFromInstance`, which runs from the effect below as soon as
+    // the field instance arrives.
+    comparisonControl!: UntypedFormControl;
+    comparisonOptions: { value: string; label: Observable<string>; icon: string }[] = [];
     fromLabel = 'of';
 
     private i18nCache: { [key: string]: Observable<string> } = {};
@@ -106,7 +114,12 @@ export class DotVisitorsLocationContainerComponent {
         const params: VisitorsLocationParams = temp as VisitorsLocationParams;
         const comparisonDef = instance.parameterDefs['comparison'];
 
-        const opts = comparisonDef.inputType['options'];
+        // `options` lives on `DropdownInputModel`, not on the `InputDefinition` base, so the
+        // comparison input has to be narrowed before its options can be read.
+        const comparisonType = comparisonDef.inputType;
+        const opts = (
+            comparisonType instanceof DropdownInputModel ? comparisonType.options : {}
+        ) as Record<string, { value: string; i18nKey: string; icon: string }>;
         const i18nBaseKey = comparisonDef.i18nBaseKey || instance.type.i18nKey;
         const rsrcKey = i18nBaseKey + '.inputs.comparison.';
         const optsAry = Object.keys(opts).map((key) => {
@@ -119,16 +132,22 @@ export class DotVisitorsLocationContainerComponent {
             };
         });
 
-        this.comparisonValue = params.comparison.value || comparisonDef.defaultValue;
+        this.comparisonValue = params.comparison.value || comparisonDef.defaultValue || '';
         this.comparisonOptions = optsAry;
         this.comparisonControl = ServerSideFieldModel.createNgControl(instance, 'comparison');
 
         this.lat = parseFloat(params.latitude.value) || this.lat;
         this.lng = parseFloat(params.longitude.value) || this.lng;
         this.radius = parseFloat(params.radius.value) || 50000;
-        this.preferredUnit =
+        const preferredUnit =
             params.preferredDisplayUnits.value ||
-            instance.parameterDefs['preferredDisplayUnits'].defaultValue;
+            instance.parameterDefs['preferredDisplayUnits'].defaultValue ||
+            'm';
+        // The rule parameter is a free-form string; anything unrecognised falls back to metres
+        // rather than reaching the child as an invalid DistanceUnit.
+        this.preferredUnit = DISTANCE_UNITS.includes(preferredUnit as DistanceUnit)
+            ? (preferredUnit as DistanceUnit)
+            : 'm';
 
         this.circle$.next({ center: { lat: this.lat, lng: this.lng }, radius: this.radius });
     }

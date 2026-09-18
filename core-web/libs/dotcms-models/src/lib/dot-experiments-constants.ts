@@ -71,9 +71,7 @@ export const ExperimentsStatusList: Array<DotDropdownSelectOption<string>> = [
     }
 ];
 
-export const GoalsConditionsParametersListByType: Partial<
-    Record<GOAL_TYPES, Array<DotDropdownSelectOption<GOAL_PARAMETERS>>>
-> = {
+export const GoalsConditionsParametersListByType = {
     [GOAL_TYPES.URL_PARAMETER]: [
         {
             label: 'experiments.goal.conditions.params.query_param.label',
@@ -88,12 +86,10 @@ export const GoalsConditionsParametersListByType: Partial<
             inactive: false
         }
     ]
-};
+} satisfies Partial<Record<GOAL_TYPES, Array<DotDropdownSelectOption<GOAL_PARAMETERS>>>>;
 
 type SelectOptionsOperators = Array<DotDropdownSelectOption<GOAL_OPERATORS>>;
-export const GoalsConditionsOperatorsListByType: Partial<
-    Record<GOAL_TYPES, SelectOptionsOperators>
-> = {
+export const GoalsConditionsOperatorsListByType = {
     [GOAL_TYPES.URL_PARAMETER]: [
         {
             label: 'experiments.goal.conditions.operators.contains.label',
@@ -123,7 +119,7 @@ export const GoalsConditionsOperatorsListByType: Partial<
             inactive: false
         }
     ]
-};
+} satisfies Partial<Record<GOAL_TYPES, SelectOptionsOperators>>;
 
 export enum SIDEBAR_STATUS {
     OPEN = 'OPEN',

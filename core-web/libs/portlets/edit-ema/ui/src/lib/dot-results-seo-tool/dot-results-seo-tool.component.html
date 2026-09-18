@@ -16,7 +16,7 @@
                                         class="results-seo-tool__card"
                                         data-testId="seo-preview-mobile">
                                         <div class="results-seo-tool__card-title">
-                                            @if (noFavicon) {
+                                            @if (noFavicon || !seoOGTags?.favicon) {
                                                 <div
                                                     class="results-seo-tool__card-favicon"
                                                     data-testId="favicon-default">
@@ -51,7 +51,7 @@
                     }
                     @case (seoMediaTypes.TWITTER) {
                         <div>
-                            <dot-seo-image-preview [image]="mainPreview.image" />
+                            <dot-seo-image-preview [image]="mainPreview.image ?? ''" />
                             <div class="results-seo-tool__preview">
                                 <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                                 <h5>{{ mainPreview.twitterTitle }}</h5>
@@ -61,7 +61,7 @@
                     }
                     @default {
                         <div>
-                            <dot-seo-image-preview [image]="mainPreview.image" />
+                            <dot-seo-image-preview [image]="mainPreview.image ?? ''" />
                             <div class="results-seo-tool__preview">
                                 <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                                 <h5>{{ mainPreview.title }}</h5>
@@ -85,7 +85,7 @@
         <ul class="results-seo-tool__result-card-list">
             @for (item of result.items; track item) {
                 <li data-testId="seo-tag">
-                    <i [ngClass]="[item.color, item.itemIcon]" class="pi"></i>
+                    <i [class]="[item.color, item.itemIcon]" class="pi"></i>
                     <span [innerHTML]="item.message | safeHtml"></span>
                 </li>
             }
@@ -100,7 +100,7 @@
         </div>
     </ng-template>
     <ul class="results-seo-tool__result-card-list">
-        @for (item of readMoreValues[seoMedia]; track item) {
+        @for (item of seoMedia ? readMoreValues[seoMedia] : []; track item) {
             <li>
                 <i class="results-seo-tool__result-icon pi pi-info-circle"></i>
                 <span

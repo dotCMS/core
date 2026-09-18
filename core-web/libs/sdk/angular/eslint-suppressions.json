@@ -1,0 +1,37 @@
+{
+  "src/lib/components/dotcms-block-editor-renderer/blocks/dot-contentlet.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/lib/components/dotcms-block-editor-renderer/blocks/grid-block.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/components/dotcms-block-editor-renderer/blocks/table.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/components/dotcms-block-editor-renderer/blocks/text.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/components/dotcms-block-editor-renderer/item/dotcms-block-editor-item.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/components/dotcms-layout-body/components/fallback-component/fallback-component.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/directives/dotcms-show-when/dotcms-show-when.directive.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  }
+}

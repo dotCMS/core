@@ -1,4 +1,4 @@
-import { Validators, ValidatorFn } from '@angular/forms';
+import { ValidationErrors, Validators, ValidatorFn } from '@angular/forms';
 
 import { CustomValidators } from '../validators/custom-validators';
 
@@ -51,42 +51,49 @@ const VALIDATIONS: Record<string, ValidatorDefinition> = {
 };
 
 export class DataTypeModel {
-    private _vFns: ValidatorFn[];
+    /** Built on first call to `validators()`, so `null` means "not yet computed". */
+    private _vFns: ValidatorFn[] | null = null;
 
     constructor(
         public id: string,
         public errorMessageKey: string,
         private _constraints: Record<string, TypeConstraint>,
-        public defaultValue: string = null
+        // A JSON data type need not declare a default. `ServerSideFieldModel` reads this as
+        // `paramDef.defaultValue || paramDef.inputType.dataType.defaultValue`, so absence is
+        // the expected case rather than an error.
+        public defaultValue: string | null = null
     ) {}
 
     validators(): ValidatorFn[] {
         if (this._vFns == null) {
-            this._vFns = [];
+            // Accumulated in a local: assigning `this._vFns` first and pushing inside the
+            // callback loses the narrowing, because a closure could reassign the property.
+            const fns: ValidatorFn[] = [];
             Object.keys(VALIDATIONS).forEach((vDefKey) => {
                 const vDef = VALIDATIONS[vDefKey];
                 const constraint = this._constraints[vDef.key];
                 if (constraint) {
-                    const fn = vDef.providerFn(constraint);
-                    this._vFns.push(fn);
+                    fns.push(vDef.providerFn(constraint));
                 }
             });
+            this._vFns = fns;
         }
 
         return this._vFns;
     }
 
-    validator(): ValidatorFn {
+    /** `null` when this data type declares no constraints — what `Validators.compose` returns. */
+    validator(): ValidatorFn | null {
         return Validators.compose(this.validators());
     }
 }
 
 export class InputDefinition {
-    private _vFns: ValidatorFn[];
-    private _validator: ValidatorFn;
+    private _vFns: ValidatorFn[] | null = null;
+    private _validator: ValidatorFn | null = null;
 
     static fromJson(json: Record<string, unknown>, name: string): InputDefinition {
-        const typeId = (json.id || json.type) as string;
+        const typeId = (json['id'] || json['type']) as string;
         let type = Registry[typeId];
 
         if (!type) {
@@ -95,32 +102,34 @@ export class InputDefinition {
             type = InputDefinition;
         }
 
-        let dataType: DataTypeModel = null;
-        const dataTypeJson = json.dataType as Record<string, unknown>;
+        let dataType: DataTypeModel | null = null;
+        const dataTypeJson = json['dataType'] as Record<string, unknown>;
         if (dataTypeJson) {
             dataType = new DataTypeModel(
-                dataTypeJson.id as string,
-                dataTypeJson.errorMessageKey as string,
-                dataTypeJson.constraints as Record<string, TypeConstraint>,
-                dataTypeJson.defaultValue as string
+                dataTypeJson['id'] as string,
+                dataTypeJson['errorMessageKey'] as string,
+                dataTypeJson['constraints'] as Record<string, TypeConstraint>,
+                dataTypeJson['defaultValue'] as string
             );
         }
 
-        return new type(json, typeId, name, json.placeholder as string, dataType);
+        return new type(json, typeId, name, json['placeholder'] as string, dataType);
     }
 
     constructor(
         public json: Record<string, unknown>,
         public type: string,
-        public name: string,
-        public placeholder: string,
-        public dataType: DataTypeModel,
+        public name: string | null,
+        public placeholder: string | null,
+        // `null` for `SpacerInputDefinition`, which has nothing to validate. Every definition
+        // built from JSON has one, which is why `validators()` could get away with assuming it.
+        public dataType: DataTypeModel | null,
         private _validators: ValidatorFn[] = []
     ) {}
 
     validators(): ValidatorFn[] {
         if (this._vFns == null) {
-            this._vFns = this.dataType.validators().concat(this._validators);
+            this._vFns = (this.dataType?.validators() ?? []).concat(this._validators);
         }
 
         return this._vFns;
@@ -128,18 +137,19 @@ export class InputDefinition {
 
     validator(): ValidatorFn {
         if (this._validator == null) {
-            this._vFns = this.validators();
-            if (this._vFns && this._vFns.length) {
-                this._validator = Validators.compose(this._vFns);
-            } else {
-                this._validator = () => null;
-            }
+            const fns = this.validators();
+            this._validator = (fns.length ? Validators.compose(fns) : null) ?? (() => null);
         }
 
         return this._validator;
     }
 
-    verify(value: unknown): { [key: string]: boolean } {
+    /**
+     * `null` when the value passes — that is `ValidationErrors`, and it is what the one caller
+     * expects: `ServerSideFieldModel` tests `paramDef.inputType.verify(value) == null`. The old
+     * `{ [key: string]: boolean }` return type could not express the passing case at all.
+     */
+    verify(value: unknown): ValidationErrors | null {
         return this.validator()({ value } as never);
     }
 }
@@ -165,12 +175,11 @@ export class DropdownInputModel extends InputDefinition {
     minSelections = 0;
     maxSelections = 1;
     selected: unknown[] = [];
-    i18nBaseKey: string;
 
     static createValidators(json: Record<string, unknown>): ValidatorFn[] {
         return [
-            CustomValidators.minSelections((json.minSelections as number) || 0),
-            CustomValidators.maxSelections((json.maxSelections as number) || 1)
+            CustomValidators.minSelections((json['minSelections'] as number) || 0),
+            CustomValidators.maxSelections((json['maxSelections'] as number) || 1)
         ];
     }
 
@@ -182,12 +191,12 @@ export class DropdownInputModel extends InputDefinition {
         dataType: DataTypeModel
     ) {
         super(json, type, name, placeholder, dataType, DropdownInputModel.createValidators(json));
-        this.options = json.options as { [key: string]: unknown };
-        this.allowAdditions = json.allowAdditions as boolean;
-        this.minSelections = json.minSelections as number;
-        this.maxSelections = json.maxSelections as number;
-        const dataTypeJson = json.dataType as Record<string, unknown>;
-        const defV = dataTypeJson?.defaultValue;
+        this.options = json['options'] as { [key: string]: unknown };
+        this.allowAdditions = json['allowAdditions'] as boolean;
+        this.minSelections = json['minSelections'] as number;
+        this.maxSelections = json['maxSelections'] as number;
+        const dataTypeJson = json['dataType'] as Record<string, unknown>;
+        const defV = dataTypeJson?.['defaultValue'];
         this.selected = defV == null || defV === '' ? [] : [defV];
     }
 }
@@ -203,7 +212,6 @@ export class RestDropdownInputModel extends InputDefinition {
     minSelections = 0;
     maxSelections = 1;
     selected: unknown[] = [];
-    i18nBaseKey: string;
 
     constructor(
         json: Record<string, unknown>,
@@ -213,14 +221,14 @@ export class RestDropdownInputModel extends InputDefinition {
         dataType: DataTypeModel
     ) {
         super(json, type, name, placeholder, dataType, DropdownInputModel.createValidators(json));
-        this.optionUrl = json.optionUrl as string;
-        this.optionValueField = json.jsonValueField as string;
-        this.optionLabelField = json.jsonLabelField as string;
-        this.allowAdditions = json.allowAdditions as boolean;
-        this.minSelections = json.minSelections as number;
-        this.maxSelections = json.maxSelections as number;
-        const dataTypeJson = json.dataType as Record<string, unknown>;
-        const defV = dataTypeJson?.defaultValue;
+        this.optionUrl = json['optionUrl'] as string;
+        this.optionValueField = json['jsonValueField'] as string;
+        this.optionLabelField = json['jsonLabelField'] as string;
+        this.allowAdditions = json['allowAdditions'] as boolean;
+        this.minSelections = json['minSelections'] as number;
+        this.maxSelections = json['maxSelections'] as number;
+        const dataTypeJson = json['dataType'] as Record<string, unknown>;
+        const defV = dataTypeJson?.['defaultValue'];
         this.selected = defV == null || defV === '' ? [] : [defV];
     }
 }
@@ -229,22 +237,30 @@ export class RestDropdownInputModel extends InputDefinition {
 export const CwRestDropdownInputModel = RestDropdownInputModel;
 
 export class ParameterDefinition {
-    defaultValue: string;
-    priority: number;
-    key: string;
-    inputType: InputDefinition;
-    i18nBaseKey: string;
+    /**
+     * Constructed only through `fromJson`, which is why these were declared without
+     * initialisers. Made constructor parameters so the class cannot exist half-filled.
+     */
+    constructor(
+        // Empty string and absent both mean "no default", collapsed to `null` by `fromJson`.
+        public defaultValue: string | null,
+        public priority: number,
+        public key: string,
+        public inputType: InputDefinition,
+        public i18nBaseKey: string
+    ) {}
 
     static fromJson(json: Record<string, unknown>): ParameterDefinition {
-        const m = new ParameterDefinition();
-        const defV = json.defaultValue as string;
-        m.defaultValue = defV == null || defV === '' ? null : defV;
-        m.priority = json.priority as number;
-        m.key = json.key as string;
-        m.inputType = InputDefinition.fromJson(json.inputType as Record<string, unknown>, m.key);
-        m.i18nBaseKey = json.i18nBaseKey as string;
+        const defV = json['defaultValue'] as string;
+        const key = json['key'] as string;
 
-        return m;
+        return new ParameterDefinition(
+            defV == null || defV === '' ? null : defV,
+            json['priority'] as number,
+            key,
+            InputDefinition.fromJson(json['inputType'] as Record<string, unknown>, key),
+            json['i18nBaseKey'] as string
+        );
     }
 }
 

@@ -7,7 +7,7 @@
         mode="basic" />
 } @else {
     <div class="preview-container">
-        @if (status === 'UPLOAD') {
+        @if (status === 'UPLOAD' && file) {
             <dot-asset-preview [type]="type" [file]="file" [src]="src" />
         }
         @if (status === 'ERROR') {
@@ -19,7 +19,7 @@
     <div class="action-container">
         <div class="loading-message">
             <dot-spinner [size]="'30px'" />
-            <span (@shakeit.done)="shakeEnd($event)" class="warning" [@shakeit]="animation">
+            <span (@shakeit.done)="shakeEnd()" class="warning" [@shakeit]="animation">
                 {{ errorMessage }}
             </span>
         </div>

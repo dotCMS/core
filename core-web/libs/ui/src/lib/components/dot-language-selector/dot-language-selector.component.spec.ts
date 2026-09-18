@@ -88,7 +88,7 @@ describe('DotLanguageSelectorComponent', () => {
 
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.loading).toBe(false);
         });
     });
@@ -193,14 +193,14 @@ describe('DotLanguageSelectorComponent', () => {
             spectator.setInput('disabled', true);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.disabled()).toBe(true);
         });
 
         it('should disable the underlying select when disabled via ControlValueAccessor', () => {
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.disabled()).toBe(false);
 
             spectator.component.setDisabledState(true);

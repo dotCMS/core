@@ -2,9 +2,9 @@ import {
     ChangeDetectionStrategy,
     Component,
     inject,
-    Input,
     OnChanges,
-    signal
+    signal,
+    input
 } from '@angular/core';
 
 import { DotCMSPageAsset, DotCMSPageRendererMode, DotPageAssetLayoutRow } from '@dotcms/types';
@@ -44,9 +44,9 @@ import { DotCMSStore } from '../../store/dotcms.store';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotCMSLayoutBodyComponent implements OnChanges {
-    @Input({ required: true }) page!: DotCMSPageAsset;
-    @Input({ required: true }) components: DotCMSPageComponent = {};
-    @Input() mode: DotCMSPageRendererMode = 'production';
+    readonly page = input.required<DotCMSPageAsset>();
+    readonly components = input.required<DotCMSPageComponent>();
+    readonly mode = input<DotCMSPageRendererMode>('production');
 
     #dotCMSStore = inject(DotCMSStore);
 
@@ -57,14 +57,15 @@ export class DotCMSLayoutBodyComponent implements OnChanges {
     $isEmpty = signal(false);
 
     ngOnChanges() {
+        const page = this.page();
         this.#dotCMSStore.setStore({
-            page: this.page,
-            components: this.components,
-            mode: this.mode
+            page: page,
+            components: this.components(),
+            mode: this.mode()
         });
 
-        this.$isEmpty.set(!this.page?.layout?.body);
+        this.$isEmpty.set(!page?.layout?.body);
 
-        this.$rows.set(this.page?.layout?.body?.rows ?? []);
+        this.$rows.set(page?.layout?.body?.rows ?? []);
     }
 }

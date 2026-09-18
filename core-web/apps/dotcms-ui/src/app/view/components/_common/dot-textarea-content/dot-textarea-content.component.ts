@@ -1,6 +1,9 @@
-import { MonacoEditorModule, MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
+import {
+    MonacoEditorModule,
+    MonacoEditorConstructionOptions,
+    MonacoStandaloneCodeEditor
+} from '@materia-ui/ngx-monaco-editor';
 
-import { NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -18,6 +21,12 @@ import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { SelectItem } from 'primeng/api';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
+/** Payload of {@link DotTextareaContentComponent.monacoInit}. */
+export interface DotTextareaMonacoInit {
+    name: string;
+    editor: MonacoStandaloneCodeEditor;
+}
+
 @Component({
     selector: 'dot-textarea-content',
     templateUrl: './dot-textarea-content.component.html',
@@ -30,7 +39,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
         }
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, SelectButtonModule, MonacoEditorModule, NgStyle]
+    imports: [FormsModule, SelectButtonModule, MonacoEditorModule]
 })
 export class DotTextareaContentComponent implements OnInit, ControlValueAccessor {
     private sanitizer = inject(DomSanitizer);
@@ -42,25 +51,25 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     };
 
     @Input()
-    height: string;
+    height!: string;
 
     @Input()
-    show;
+    show?: string[];
 
     @Input()
     value = '';
 
     @Input()
-    width: string;
+    width!: string;
 
     @Input()
-    customStyles: Record<string, unknown>;
+    customStyles!: Record<string, unknown>;
 
     @Input()
-    editorName: string;
+    editorName!: string;
 
     @Output()
-    monacoInit = new EventEmitter<unknown>();
+    monacoInit = new EventEmitter<DotTextareaMonacoInit>();
 
     @Output()
     valueChange = new EventEmitter<string>();
@@ -72,14 +81,20 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
         };
     }
 
+    /**
+     * TODO(#37120): this has never produced valid CSS. `styles` is an object, so the host ends
+     * up with `style="[object Object]"` and nothing is applied — the width/height already reach
+     * the textarea and the editor through `[style]`. Making it emit real CSS would newly style
+     * the host element, so it is left as-is and needs its own issue.
+     */
     @HostBinding('style')
     get myStyle(): SafeStyle {
-        return this.sanitizer.bypassSecurityTrustStyle(this.styles as string);
+        return this.sanitizer.bypassSecurityTrustStyle(this.styles as unknown as string);
     }
 
     selectOptions: SelectItem[] = [];
-    selected: string;
-    styles: Record<string, unknown> | string;
+    selected!: string;
+    styles!: Record<string, unknown>;
     editorOptions: MonacoEditorConstructionOptions = {
         theme: 'vs-light',
         minimap: {
@@ -130,7 +145,9 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      * @param {KeyboardEvent} $event
      * @memberof DotTextareaContentComponent
      */
-    onKeyEnter($event: KeyboardEvent): void {
+    // `Event`, not `KeyboardEvent`: Angular types the payload of a key-modified binding
+    // (`keydown.enter`) as the base `Event`, and only `stopPropagation()` is needed here.
+    onKeyEnter($event: Event): void {
         /*
             This field is use in dot-dialog.component when we hit enter it triggers the "Accept"
             action in the dialog, but for this case we don't want to do that because this fields
@@ -141,10 +158,10 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     /**
      * Initializes the Monaco Editor
      *
-     * @param {unknown} editor
+     * @param {MonacoStandaloneCodeEditor} editor
      * @memberof DotTextareaContentComponent
      */
-    onInit(editor: unknown): void {
+    onInit(editor: MonacoStandaloneCodeEditor): void {
         this.monacoInit.emit({ name: this.editorName, editor });
     }
 
@@ -177,7 +194,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      * @param any fn
      * @memberof DotTextareaContentComponent
      */
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 
@@ -191,7 +208,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
                   .map((item) => {
                       return this.DEFAULT_OPTIONS.find((option) => option.value === item);
                   })
-                  .filter((item) => item) // Remove undefined values in the array
+                  .filter((item): item is SelectItem => !!item) // Remove undefined values
             : this.DEFAULT_OPTIONS;
     }
 }

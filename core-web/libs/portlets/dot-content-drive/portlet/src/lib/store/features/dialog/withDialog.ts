@@ -6,9 +6,16 @@ import {
     DotContentDriveState
 } from '../../../shared/models';
 
+/**
+ * Members are declared **required with an `| undefined` value**, not optional. In
+ * `@ngrx/signals`, an optional state *key* makes the generated store *member* optional too, so
+ * `store.x` itself becomes possibly-undefined and `store.x()` is not callable — that alone
+ * accounted for 40 `TS2722` errors here. The values are still seeded and cleared with `undefined`,
+ * so nothing changes at runtime.
+ */
 interface WithDialogState {
-    dialog?: DotContentDriveDialog;
-    dialogDrillDown?: DotContentDriveDialogDrillDown;
+    dialog: DotContentDriveDialog | undefined;
+    dialogDrillDown: DotContentDriveDialogDrillDown | undefined;
 }
 
 export function withDialog() {

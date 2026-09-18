@@ -9,7 +9,8 @@ import { DotCMSResponse, DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotMenuService {
-    menu$: Observable<DotMenu[]>;
+    /** Null until the menu has been fetched, and again after `reloadMenu` invalidates it. */
+    menu$: Observable<DotMenu[]> | null = null;
 
     private urlMenus = '/api/v1/menu';
     private readonly http = inject(HttpClient);
@@ -88,8 +89,9 @@ export class DotMenuService {
     getDotMenuId(portletId: string): Observable<string> {
         return this.loadMenu().pipe(
             mergeMap((menus: DotMenu[]) => menus),
+            // `find` emits `undefined` for a portlet id the loaded menu does not carry.
             find((menu: DotMenu) => menu.menuItems.some((menuItem) => menuItem.id === portletId)),
-            map((menu: DotMenu) => menu.id)
+            map((menu) => menu?.id ?? '')
         );
     }
 

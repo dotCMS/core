@@ -1,7 +1,9 @@
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 export const getRelationshipFromContentlet = (params: {
-    contentlet: DotCMSContentlet;
+    // Nullable: resolution functions run for new content too, and the `!contentlet` guard below
+    // was already written for it.
+    contentlet: DotCMSContentlet | null;
     variable: string;
 }): DotCMSContentlet[] => {
     const { contentlet, variable } = params;

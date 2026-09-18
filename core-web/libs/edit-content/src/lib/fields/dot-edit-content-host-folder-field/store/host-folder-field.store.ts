@@ -163,7 +163,7 @@ function buildInitialPaginationMap(
 
     const walk = (nodes: TreeNodeItem[]) => {
         nodes.forEach((node) => {
-            if (Array.isArray(node.children)) {
+            if (node.key && Array.isArray(node.children)) {
                 map[node.key] = fromMeta(node.key);
                 walk(node.children as TreeNodeItem[]);
             }
@@ -192,7 +192,7 @@ function injectLoadMoreSentinels(
 
             return {
                 ...node,
-                children: withSentinel(node.children as TreeNodeItem[], node.key)
+                children: withSentinel(node.children as TreeNodeItem[], node.key ?? '')
             };
         });
 
@@ -759,7 +759,11 @@ export const HostFolderFiledStore = signalStore(
                         }
 
                         const site = store.selectedSite();
-                        if (!site) {
+                        const siteData = site?.data;
+
+                        // Narrowed through the model's own discriminant: a load-more sentinel
+                        // carries no hostname, and the request below needs one.
+                        if (!siteData || !isTreeNodeContentData(siteData)) {
                             return EMPTY;
                         }
 
@@ -768,14 +772,14 @@ export const HostFolderFiledStore = signalStore(
                         return dotBrowsingService
                             .searchFolders(
                                 {
-                                    siteId: site.data.id,
+                                    siteId: siteData.id,
                                     path: '/',
                                     recursive: true,
                                     name: term,
                                     page: 1,
                                     per_page: FOLDER_PAGE_LIMIT
                                 },
-                                site.data.hostname
+                                siteData.hostname
                             )
                             .pipe(
                                 tapResponse({
@@ -1215,7 +1219,8 @@ export const HostFolderFiledStore = signalStore(
                             );
                     }),
                     tap(({ site, node, tree, pagination }) => {
-                        if (!site) {
+                        // `data` too: `loadFolders` below reads `site.data.id`.
+                        if (!site?.data) {
                             patchState(store, {
                                 sitesStatus: ComponentStatus.ERROR
                             });
@@ -1270,6 +1275,12 @@ export const HostFolderFiledStore = signalStore(
                     return;
                 }
 
+                const siteData = site.data;
+
+                if (!siteData || !isTreeNodeContentData(siteData)) {
+                    return;
+                }
+
                 patchState(store, {
                     selectedSite: site,
                     folders: [],
@@ -1286,7 +1297,7 @@ export const HostFolderFiledStore = signalStore(
                 store.loadFolders({
                     key: ROOT_NODE_KEY,
                     path: '/',
-                    siteId: site.data.id,
+                    siteId: siteData.id,
                     page: 1,
                     append: false
                 });
@@ -1308,14 +1319,20 @@ export const HostFolderFiledStore = signalStore(
                 }
 
                 const site = store.selectedSite();
-                if (!site?.data || !isTreeNodeContentData(node.data)) {
+                const siteData = site?.data;
+
+                if (!siteData || !isTreeNodeContentData(siteData) || !node.key) {
+                    return;
+                }
+
+                if (!node.data || !isTreeNodeContentData(node.data)) {
                     return;
                 }
 
                 store.loadFolders({
                     key: node.key,
                     path: node.data.path,
-                    siteId: site.data.id,
+                    siteId: siteData.id,
                     page: 1,
                     append: false,
                     targetNode: node
@@ -1331,7 +1348,7 @@ export const HostFolderFiledStore = signalStore(
                     return;
                 }
 
-                const key = node ? node.key : ROOT_NODE_KEY;
+                const key = node?.key ?? ROOT_NODE_KEY;
                 const pagination = store.nodePagination()[key];
                 const nextPage = (pagination?.page ?? 1) + 1;
                 const path = node?.data && isTreeNodeContentData(node.data) ? node.data.path : '/';
@@ -1350,8 +1367,10 @@ export const HostFolderFiledStore = signalStore(
              */
             loadMoreSearchResults: () => {
                 const site = store.selectedSite();
+                const siteData = site?.data;
                 const term = store.searchTerm();
-                if (!site || !term) {
+
+                if (!siteData || !isTreeNodeContentData(siteData) || !term) {
                     return;
                 }
 
@@ -1359,8 +1378,8 @@ export const HostFolderFiledStore = signalStore(
 
                 store.searchMore({
                     term,
-                    siteId: site.data.id,
-                    hostname: site.data.hostname,
+                    siteId: siteData.id,
+                    hostname: siteData.hostname,
                     page: nextPage
                 });
             },

@@ -63,7 +63,7 @@ export class DotEditContentBlockEditorComponent extends BaseWrapperField {
      * A signal that holds the contentlet.
      * It is used to display the contentlet in the block editor component.
      */
-    $contentlet = input.required<DotCMSContentlet>({
+    $contentlet = input.required<DotCMSContentlet | null>({
         alias: 'contentlet'
     });
 

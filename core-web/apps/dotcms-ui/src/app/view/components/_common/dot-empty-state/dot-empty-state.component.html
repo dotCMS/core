@@ -11,11 +11,11 @@
         <p class="dot-empty-container__content" data-testid="content">{{ content }}</p>
     }
     <button
-        (click)="handleClick($event)"
+        (click)="handleClick()"
         pButton
         type="button"
         data-testid="button"
-        label="{{ buttonLabel }}"></button>
+        label="{{ buttonLabel() }}"></button>
 </div>
 <table class="dot-empty-state" data-testid="dot-empty-state">
     <tbody>
@@ -24,7 +24,7 @@
                 <td [style.width]="checkBoxWidth + '%'" data-testid="checkbox">
                     <div class="checkbox-dummy"></div>
                 </td>
-                @for (width of colsTextWidth; track $index) {
+                @for (width of colsTextWidth(); track $index) {
                     <td [style.width]="columnWidth" data-testid="dummy-text-td">
                         <span [style.width]="width + '%'" class="dot-dummy-text"></span>
                     </td>

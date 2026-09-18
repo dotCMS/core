@@ -50,14 +50,14 @@ describe('DotLanguageSelectorComponent', () => {
         expect(dotLanguagesService.getLanguagesUsedPage).toHaveBeenCalledTimes(1);
         expect(spectator.component.languagesList().length).toBe(mockLanguageArray.length);
 
-        const pSelect = spectator.query(Select);
+        const pSelect = spectator.query(Select)!;
         expect(pSelect?.options).toEqual(mockLanguageArray);
     });
 
     it('should have right attributes on dropdown', () => {
         const valueKey = 'id';
         const labelKey = 'language';
-        const pSelect = spectator.query(Select);
+        const pSelect = spectator.query(Select)!;
 
         expect(pSelect).toBeTruthy();
         expect(pSelect.dataKey).toBe(valueKey);

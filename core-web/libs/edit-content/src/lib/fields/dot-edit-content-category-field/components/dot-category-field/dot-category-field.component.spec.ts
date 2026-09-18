@@ -35,10 +35,10 @@ import { DotCategoryFieldComponent } from './dot-category-field.component';
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
-    hasError: boolean;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
+    hasError!: boolean;
 }
 
 const FAKE_FORM_GROUP = new FormGroup({
@@ -93,15 +93,15 @@ describe('DotCategoryFieldComponent', () => {
 
             it('should the button be type=button', () => {
                 spectator.detectChanges();
-                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
-                expect(selectBtn.type).toBe('button');
+                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'))!;
+                expect(selectBtn!.type).toBe('button');
             });
 
             it('should render the `Select` button as primary', () => {
                 spectator.detectChanges();
-                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
-                expect(selectBtn.classList).not.toContain('p-button-secondary');
-                expect(selectBtn.classList).not.toContain('p-button-text');
+                const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'))!;
+                expect(selectBtn!.classList).not.toContain('p-button-secondary');
+                expect(selectBtn!.classList).not.toContain('p-button-text');
             });
 
             it('should render a `Clear all` button when there are selected categories', () => {
@@ -111,7 +111,7 @@ describe('DotCategoryFieldComponent', () => {
 
             it('should invoke `clearAllSelected` method when the `Clear all` button is clicked', () => {
                 spectator.detectChanges();
-                const clearAllBtn = spectator.query(byTestId('clear-all-btn'));
+                const clearAllBtn = spectator.query(byTestId('clear-all-btn'))!;
                 const clearAllSelectedSpy = vi.spyOn(spectator.component, 'clearAllSelected');
                 expect(clearAllBtn).not.toBeNull();
 
@@ -136,7 +136,7 @@ describe('DotCategoryFieldComponent', () => {
                     'onChange'
                 );
 
-                const clearAllBtn = spectator.query(byTestId('clear-all-btn'));
+                const clearAllBtn = spectator.query(byTestId('clear-all-btn'))!;
                 spectator.click(clearAllBtn);
                 spectator.detectChanges();
                 spectator.flushEffects();
@@ -150,7 +150,7 @@ describe('DotCategoryFieldComponent', () => {
                 spectator.detectChanges();
                 spectator.component.ngOnInit();
                 spectator.detectChanges();
-                const clearAllBtn = spectator.query(byTestId('clear-all-btn'));
+                const clearAllBtn = spectator.query(byTestId('clear-all-btn'))!;
                 spectator.click(clearAllBtn);
                 spectator.detectChanges();
                 tick();
@@ -260,7 +260,7 @@ describe('DotCategoryFieldComponent', () => {
 
         it('should invoke `showCategoriesDialog` method when the select button is clicked', () => {
             spectator.detectChanges();
-            const selectBtn = spectator.query(byTestId('show-dialog-btn'));
+            const selectBtn = spectator.query(byTestId('show-dialog-btn'))!;
             const showCategoriesDialogSpy = vi.spyOn(spectator.component, 'openCategoriesDialog');
             expect(selectBtn).not.toBeNull();
 
@@ -282,7 +282,7 @@ describe('DotCategoryFieldComponent', () => {
 
         it('should create a DotCategoryFieldDialogComponent instance when the `Select` button is clicked', async () => {
             spectator.detectChanges();
-            const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'));
+            const selectBtn = spectator.query<HTMLButtonElement>(byTestId('show-dialog-btn'))!;
             expect(selectBtn).not.toBeNull();
 
             expect(spectator.query(DotCategoryFieldDialogComponent)).toBeNull();
@@ -303,7 +303,7 @@ describe('DotCategoryFieldComponent', () => {
             spectator.click(selectBtn);
             await spectator.fixture.whenStable();
 
-            const dialogComponentRef = spectator.query(DotCategoryFieldDialogComponent);
+            const dialogComponentRef = spectator.query(DotCategoryFieldDialogComponent)!;
             expect(dialogComponentRef).not.toBeNull();
 
             dialogComponentRef.closedDialog.emit();

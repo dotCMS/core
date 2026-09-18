@@ -96,7 +96,7 @@ describe('ContentletComponent', () => {
             expect(hostAttr('data-dot-title')).toBe('Test Contentlet');
             expect(hostAttr('data-dot-inode')).toBe('test-inode');
             expect(hostAttr('data-dot-type')).toBe('test-content-type');
-            expect(hostAttr('data-dot-container')).toBe(JSON.stringify(component.containerData));
+            expect(hostAttr('data-dot-container')).toBe(JSON.stringify(component.containerData()));
             expect(hostAttr('data-dot-on-number-of-pages')).toBe('1');
             // The editor's permission gates read this attribute off the
             // contentlet wrapper; without it every gate fails open on headless

@@ -206,8 +206,8 @@ pnpm nx generate @nx/angular:library --name=portlet \
 1. **tsconfig alias** in `core-web/tsconfig.base.json`: change generated `"portlet"` → `"@dotcms/portlets/dot-{feature}/portlet"`
 2. **project.json** `name`: change to `portlets-dot-{feature}-portlet`
 3. **jest.config.ts** `displayName`: change to `portlets-dot-{feature}-portlet`
-4. **tsconfig.spec.json**: add `isolatedModules: true` in `compilerOptions` (required for transitive deps) — not in the jest transform block
-5. **tsconfig.spec.json**: keep minimal — only `module`, `target`, `types`
+4. **tsconfig.spec.json**: add `isolatedModules: true` in `compilerOptions` (required for transitive deps)
+5. **tsconfig.spec.json**: keep minimal — only `module`, `target`, `types`, `moduleResolution`
 6. **Delete** generated `README.md` and boilerplate component in `src/lib/portlet/`
 7. **Add the lib to the `@nx/jest/plugin` `include` list in `core-web/nx.json`** — that plugin
    is scoped to an explicit allowlist, so until the new path is listed the project gets **no
@@ -263,8 +263,9 @@ and fail later on `SerializationHelperTest`.
 | Store opens dialogs or injects DialogService | Component opens dialogs, passes result to store |
 | Missing `untracked()` in effect | Wrap store method calls in `untracked()` |
 | Missing `isolatedModules: true` in jest config | Add it — transitive deps fail without it |
-| Adding `"strict": true` to tsconfig.json | Omit — causes issues with Angular compiler |
+| Adding `"strict": true` to tsconfig.json | Omit — strict is inherited workspace-wide from `tsconfig.base.json` (epic #35932) |
 | Omitting `isolatedModules: true` from tsconfig.spec.json `compilerOptions` | Add it — transitive deps fail without it |
+| `"module": "commonjs"` / `"moduleResolution": "node10"` in tsconfig.spec.json | Use `"module": "esnext"` + `"moduleResolution": "bundler"`. `node10` cannot resolve the `@dotcms/*` subpath exports, which produced 733 phantom errors in `dot-plugins` |
 | Hardcoded text in templates | Use `DotMessagePipe` (`| dm`) for all user-facing text |
 | Custom error dialogs | Use `DotHttpErrorManagerService.handle(error)` everywhere |
 | `@Input()` / `@Output()` decorators | Use `input()` / `output()` signal functions |

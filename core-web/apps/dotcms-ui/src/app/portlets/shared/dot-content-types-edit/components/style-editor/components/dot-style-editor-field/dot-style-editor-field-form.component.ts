@@ -81,10 +81,10 @@ export class DotStyleEditorFieldFormComponent {
 
     readonly $isCollapsed = signal(false);
 
-    readonly columnOptions = [
+    readonly columnOptions: { label: string; value: number }[] = [
         { label: '1', value: 1 },
         { label: '2', value: 2 }
-    ] as const;
+    ];
 
     readonly #state = signalState<FieldFormState>({
         type: 'input',

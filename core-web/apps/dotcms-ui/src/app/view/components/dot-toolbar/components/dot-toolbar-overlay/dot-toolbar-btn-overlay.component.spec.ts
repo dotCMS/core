@@ -76,7 +76,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
 
         it('should render overlay button with correct attributes', () => {
-            const button = spectator.query(byTestId('btn-overlay'));
+            const button = spectator.query(byTestId('btn-overlay'))!;
 
             expect(button).toBeTruthy();
             expect(button).toHaveClass('overlay-btn');
@@ -86,7 +86,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
 
         it('should not show mask initially', () => {
-            const mask = spectator.query('.dot-mask');
+            const mask = spectator.query('.dot-mask')!;
             expect(mask).not.toExist();
         });
 
@@ -94,7 +94,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
             component.$showMask.set(true);
             spectator.detectChanges();
 
-            const mask = spectator.query('.dot-mask');
+            const mask = spectator.query('.dot-mask')!;
             expect(mask).toExist();
         });
 
@@ -115,7 +115,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
             component.$showMask.set(true);
             spectator.detectChanges();
 
-            const button = spectator.query(byTestId('btn-overlay'));
+            const button = spectator.query(byTestId('btn-overlay'))!;
             expect(button).toHaveClass('p-highlight');
         });
 
@@ -162,7 +162,7 @@ describe('DotToolbarBtnOverlayComponent', () => {
         });
 
         it('should toggle overlay panel when button is clicked', () => {
-            const button = spectator.query(byTestId('btn-overlay'));
+            const button = spectator.query(byTestId('btn-overlay'))!;
 
             // Spy on the actual overlay panel's toggle method
             const overlayPanel = component.$overlayPanel();
@@ -180,14 +180,14 @@ describe('DotToolbarBtnOverlayComponent', () => {
             const overlayPanel = component.$overlayPanel();
             vi.spyOn(overlayPanel, 'hide');
 
-            const mask = spectator.query('.dot-mask');
+            const mask = spectator.query('.dot-mask')!;
             spectator.click(mask);
 
             expect(overlayPanel.hide).toHaveBeenCalled();
         });
 
         it('should handle multiple rapid clicks on button', () => {
-            const button = spectator.query(byTestId('btn-overlay'));
+            const button = spectator.query(byTestId('btn-overlay'))!;
             const overlayPanel = component.$overlayPanel();
             vi.spyOn(overlayPanel, 'toggle');
 

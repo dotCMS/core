@@ -10,5 +10,5 @@ import { DotLinkComponent } from '../dot-link/dot-link.component';
 })
 export class DotApiLinkComponent {
     @Input()
-    href: string;
+    href = '';
 }

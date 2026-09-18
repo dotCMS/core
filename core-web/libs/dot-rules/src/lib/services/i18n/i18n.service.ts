@@ -11,13 +11,16 @@ import { Verify } from '../utils/verify.util';
 
 export class TreeNode {
     [key: string]: TreeNode | unknown;
-    _p: TreeNode;
+    /** `null` on the root node only. */
+    _p: TreeNode | null;
     _k: string;
-    _loading: Promise<TreeNode>;
+    /** `null` until a fetch for this node is in flight. */
+    _loading: Promise<TreeNode> | null;
     _loaded: boolean;
-    _value: string;
+    /** Set by `$addAllFromJson` when the node turns out to hold a leaf string. */
+    _value!: string;
 
-    constructor(parent: TreeNode, key: string) {
+    constructor(parent: TreeNode | null, key: string) {
         this._p = parent;
         this._k = key;
         this._loading = null;
@@ -150,7 +153,9 @@ export class I18nService {
                         })
                     )
                     .subscribe((jsonVal) => {
-                        cNode._p.$addAllFromJson(cNode._k, jsonVal);
+                        // `_p` is null only on the root node, and the root is never the child
+                        // being fetched here.
+                        cNode._p?.$addAllFromJson(cNode._k, jsonVal);
                         cNode.$markAsLoaded();
                         resolve(cNode);
                     });

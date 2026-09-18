@@ -9,13 +9,15 @@ import { RenderProps } from '../asset-form.extension';
 
 interface PluginState {
     open: boolean;
-    type: EditorAssetTypes;
+    /** Null while the form is closed. */
+    type: EditorAssetTypes | null;
 }
 
 export interface BubbleAssetFormProps {
     pluginKey: PluginKey;
     editor: Editor;
-    render?: () => RenderProps;
+    // Required: `BubbleAssetFormView` calls it in the constructor and in `update`.
+    render: () => RenderProps;
 }
 
 export type BubbleAssetFormViewProps = BubbleAssetFormProps & {

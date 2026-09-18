@@ -34,7 +34,7 @@
                                 {{ locale.isoCode | dotIsoCode }}
                             </span>
                         </span>
-                        @if ($defaultLocale().id === locale.id) {
+                        @if ($defaultLocale()?.id === locale.id) {
                             <p-tag
                                 [value]="'edit.content.sidebar.locales.selector.default' | dm"
                                 data-testid="default-badge" />
@@ -74,7 +74,7 @@
                                 {{ locale.isoCode | dotIsoCode }}
                             </span>
                         </span>
-                        @if ($defaultLocale().id === locale.id) {
+                        @if ($defaultLocale()?.id === locale.id) {
                             <p-tag
                                 [value]="'edit.content.sidebar.locales.selector.default' | dm"
                                 data-testid="default-badge" />
@@ -105,7 +105,7 @@
                         <span class="text-sm">{{ item.label | dm }}</span>
                         <p-badge
                             severity="secondary"
-                            [value]="$tabCounts()[item.value]"
+                            [value]="tabCount(item.value)"
                             [class.bg-white!]="item.value === $activeTab()" />
                     </div>
                 </ng-template>
@@ -136,26 +136,28 @@
             data-testid="locales-list-card">
             <!-- Sticky selected row -->
             @let currentLocale = $currentLocale();
-            <div
-                class="flex items-center justify-between border-b border-surface-300 bg-surface-100 px-4 py-2.5"
-                data-testid="selected-locale">
-                <div class="flex items-center gap-1.5 text-sm">
-                    <span class="font-bold text-primary-700">
-                        {{ 'edit.content.sidebar.locales.selector.selected' | dm }}
-                    </span>
-                    <span class="font-semibold text-zinc-700">
-                        {{ currentLocale.language }}
-                    </span>
-                    <span class="text-xs text-slate-500">
-                        {{ currentLocale.isoCode | dotIsoCode }}
-                    </span>
+            @if (currentLocale) {
+                <div
+                    class="flex items-center justify-between border-b border-surface-300 bg-surface-100 px-4 py-2.5"
+                    data-testid="selected-locale">
+                    <div class="flex items-center gap-1.5 text-sm">
+                        <span class="font-bold text-primary-700">
+                            {{ 'edit.content.sidebar.locales.selector.selected' | dm }}
+                        </span>
+                        <span class="font-semibold text-zinc-700">
+                            {{ currentLocale.language }}
+                        </span>
+                        <span class="text-xs text-slate-500">
+                            {{ currentLocale.isoCode | dotIsoCode }}
+                        </span>
+                    </div>
+                    @if ($defaultLocale()?.id === currentLocale.id) {
+                        <p-tag
+                            [value]="'edit.content.sidebar.locales.selector.default' | dm"
+                            data-testid="default-badge" />
+                    }
                 </div>
-                @if ($defaultLocale().id === currentLocale.id) {
-                    <p-tag
-                        [value]="'edit.content.sidebar.locales.selector.default' | dm"
-                        data-testid="default-badge" />
-                }
-            </div>
+            }
 
             <!-- Scrollable list -->
             <p-listbox
@@ -174,7 +176,7 @@
                                 {{ locale.isoCode | dotIsoCode }}
                             </span>
                         </span>
-                        @if ($defaultLocale().id === locale.id) {
+                        @if ($defaultLocale()?.id === locale.id) {
                             <p-tag
                                 class="bg-transparent! font-bold! text-primary-700!"
                                 [value]="'edit.content.sidebar.locales.selector.default' | dm"

@@ -1,5 +1,6 @@
 import { createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
 import { BehaviorSubject, of } from 'rxjs';
+import { Editor } from 'tinymce';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -27,8 +28,8 @@ const mockSystemWideConfig = { systemWideOption: 'value' };
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
     hasError = false;
 }
 
@@ -82,7 +83,7 @@ describe('DotWysiwygTinymceComponent', () => {
         const expectedConfiguration = {
             ...DEFAULT_TINYMCE_CONFIG,
             ...mockSystemWideConfig,
-            setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+            setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
         };
 
         spectator.detectChanges();
@@ -125,7 +126,7 @@ describe('DotWysiwygTinymceComponent', () => {
             JSON.stringify({
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...mockSystemWideConfig,
-                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+                setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
 
@@ -137,7 +138,7 @@ describe('DotWysiwygTinymceComponent', () => {
             JSON.stringify({
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...newSystemWideConfig,
-                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+                setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
     }));
@@ -180,7 +181,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...mockSystemWideConfig,
                 ...{ toolbar1: 'undo redo' },
-                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+                setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
     });

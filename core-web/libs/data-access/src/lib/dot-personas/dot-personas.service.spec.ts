@@ -3,6 +3,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 
 import { DotPersona } from '@dotcms/dotcms-models';
+import { mockDotPersona } from '@dotcms/utils-testing';
 
 import { DotPersonasService } from './dot-personas.service';
 
@@ -25,6 +26,7 @@ describe('DotPersonasService', () => {
     it('should get personas', () => {
         const mockPersonas: DotPersona[] = [
             {
+                ...mockDotPersona,
                 name: 'Test Persona',
                 keyTag: 'test',
                 identifier: 'test-id',

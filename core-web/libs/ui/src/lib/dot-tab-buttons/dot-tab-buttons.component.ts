@@ -42,8 +42,8 @@ export class DotTabButtonsComponent implements OnChanges {
         target?: HTMLElement;
     }>();
     @Output() clickOption = new EventEmitter<{ event: PointerEvent; optionId: string }>();
-    @Input() activeId: string;
-    @Input() options: SelectItem<TabButtonOptions>[];
+    @Input() activeId = '';
+    @Input() options: SelectItem<TabButtonOptions>[] = [];
     @Output() dropdownClick = new EventEmitter();
 
     _options: SelectItem<TabButtonOptions>[] = [];
@@ -52,7 +52,7 @@ export class DotTabButtonsComponent implements OnChanges {
     protected readonly dropDownCloseIcon = 'pi pi-angle-down';
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.options) {
+        if (changes['options']) {
             this._options = this.options.map((option) => ({
                 ...option,
                 value: {

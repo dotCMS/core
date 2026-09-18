@@ -12,7 +12,8 @@ interface PluginState {
 
 export interface FloatingActionsPluginProps {
     editor: Editor;
-    render?: () => FloatingRenderActions;
+    // Required: `FloatingActionsView` calls it unconditionally in `update` and `handleKeyDown`.
+    render: () => FloatingRenderActions;
     command: ({
         editor,
         range,
@@ -39,7 +40,8 @@ export interface FloatingActionsProps {
 export interface FloatingActionsKeydownProps {
     view: EditorView;
     event: KeyboardEvent;
-    range: Range;
+    /** Optional because this plugin's state never populates `range`. */
+    range?: Range;
 }
 
 export interface FloatingRenderActions {
@@ -52,7 +54,6 @@ export const FLOATING_ACTIONS_MENU_KEYBOARD = 'menuFloating';
 
 export class FloatingActionsView {
     editor: Editor;
-    element: HTMLElement;
     view: EditorView;
     render: () => FloatingRenderActions;
     command: (props: { editor: Editor; range: Range; props: SuggestionsCommandProps }) => void;
@@ -86,14 +87,17 @@ export class FloatingActionsView {
             const { from, to } = this.editor.state.selection;
             const rect = posToDOMRect(this.view, from, to);
 
-            this.render().onStart({
+            this.render().onStart?.({
                 clientRect: () => rect,
                 range: { from, to },
                 editor: this.editor,
                 command: this.command
             });
         } else if (prev && prev.open) {
-            this.render().onExit(null);
+            // FIXME(#35955): `onExit` is called with null, but ActionsMenu's handler
+            // destructures `editor` from its argument. Cast preserves the current runtime
+            // exactly rather than changing it as part of the strict-mode pass.
+            this.render().onExit?.(null as unknown as FloatingActionsProps);
         }
     }
 }
@@ -145,12 +149,13 @@ export const FloatingActionsPlugin = (options: FloatingActionsPluginProps) => {
              * @return {*}
              */
             handleKeyDown(view: EditorView, event: KeyboardEvent) {
-                const { open, range } = this.getState(view.state);
-                if (!open) {
+                const state = this.getState(view.state);
+
+                if (!state?.open) {
                     return false;
                 }
 
-                return options.render().onKeyDown({ event, range, view });
+                return options.render().onKeyDown?.({ event, range: state.range, view }) ?? false;
             }
         }
     });

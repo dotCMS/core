@@ -21,6 +21,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     CALENDAR_OPTIONS_PER_TYPE,
+    CalendarTypes,
     convertServerTimeToUtc,
     createUtcDateAtMidnight,
     extractDateComponents,
@@ -128,7 +129,13 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      * Computed based on the field type.
      */
     $fieldTypeConfig = computed(() => {
-        const fieldType = this.$field().fieldType;
+        // `fieldType` is a plain string on `DotCMSContentTypeField`, but the field-type router
+        // in `dot-edit-content-field` only mounts this component under `@case (DATE)`,
+        // `@case (DATE_AND_TIME)` and `@case (TIME)` — which is exactly `CalendarTypes`. The
+        // cast states that precondition; `CalendarConfig` is a total Record over those three,
+        // so the lookup cannot miss and the template can dereference the result directly.
+        const fieldType = this.$field().fieldType as CalendarTypes;
+
         return CALENDAR_OPTIONS_PER_TYPE[fieldType];
     });
 

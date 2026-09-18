@@ -76,7 +76,9 @@ export class DotEditorModeSelectorComponent {
         return menu;
     });
 
-    readonly $currentMode = computed(() => this.#store.pageParams().mode);
+    // `pageParams()` is null before the first page load, and `mode` is optional on it. `UNKNOWN` is
+    // the same stand-in `withView` already uses for a mode that is not set.
+    readonly $currentMode = computed(() => this.#store.pageParams()?.mode ?? UVE_MODE.UNKNOWN);
 
     /**
      * The option the select shows, **derived** from the store rather than copied into it once.
@@ -91,7 +93,7 @@ export class DotEditorModeSelectorComponent {
      * `null` when no option matches — the Draft entry is absent for a user without edit access —
      * which is what leaves the select showing nothing rather than the wrong thing.
      */
-    readonly selectedModeModel = linkedSignal<UVE_MODE | undefined, EditorModeOption | null>({
+    readonly selectedModeModel = linkedSignal<UVE_MODE, EditorModeOption | null>({
         source: this.$currentMode,
         computation: (mode) => this.$menuItems().find((item) => item.id === mode) ?? null
     });
@@ -147,7 +149,7 @@ export class DotEditorModeSelectorComponent {
         });
 
         /* More info here: https://github.com/dotCMS/core/issues/31719 */
-        this.#store.pageLoad({ mode: mode, publishDate: undefined });
+        this.#store['pageLoad']({ mode: mode, publishDate: undefined });
     }
 
     onModeOptionChange(option: EditorModeOption | null) {

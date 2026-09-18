@@ -91,7 +91,7 @@ describe('NamePropertyComponent', () => {
     });
 
     it('should focus on input on load using the directive', () => {
-        const input = spectator.query('input.name__input');
+        const input = spectator.query('input.name__input')!;
         expect(input).toBeTruthy();
         expect(input.getAttribute('dotautofocus')).toBeDefined();
     });
@@ -111,8 +111,8 @@ describe('NamePropertyComponent', () => {
 
         const copyEl = copySpectator.debugElement.query(By.css('dot-copy-link'));
         expect(copyEl).toBeTruthy();
-        const copyComp = copyEl.componentInstance as { copy: string; label: string };
-        expect(copyComp.copy).toBe('thisIsAVar');
+        const copyComp = copyEl.componentInstance as { copy: () => string; label: string };
+        expect(copyComp.copy()).toBe('thisIsAVar');
         expect(copyComp.label).toBe('thisIsAVar');
     });
 });

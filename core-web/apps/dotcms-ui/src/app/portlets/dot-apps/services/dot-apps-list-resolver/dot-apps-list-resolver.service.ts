@@ -16,10 +16,10 @@ import { DotApp } from '@dotcms/dotcms-models';
  * @implements {Resolve<DotApp[]>}
  */
 @Injectable()
-export class DotAppsListResolver implements Resolve<DotApp[]> {
+export class DotAppsListResolver implements Resolve<DotApp[] | null> {
     private dotAppsService = inject(DotAppsService);
 
-    resolve(_route: ActivatedRouteSnapshot): Observable<DotApp[]> {
+    resolve(_route: ActivatedRouteSnapshot): Observable<DotApp[] | null> {
         return this.dotAppsService.get().pipe(take(1));
     }
 }

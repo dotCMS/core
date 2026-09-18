@@ -13,7 +13,7 @@ import { signal } from '@angular/core';
 import { MessageService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotContentDriveItem } from '@dotcms/dotcms-models';
 
 import { DotContentDriveWorkflowActionsComponent } from './dot-content-drive-workflow-actions.component';
 
@@ -49,7 +49,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 add: vi.fn()
             }),
             mockProvider(DotMessageService, {
-                get: vi.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: vi.fn(),
@@ -183,7 +183,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 baseType: 'CONTENT',
                 inode: 'test-inode-1',
                 identifier: 'test-id'
-            } as DotContentDriveItem;
+            } as DotCMSContentlet;
 
             mockSelectedItems.set([mockItem]);
             spectator.detectChanges();
@@ -192,7 +192,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.GOT_TO_EDIT_CONTENTLET}"]`
             );
 
-            spectator.click(editContentButton);
+            spectator.click(editContentButton!);
 
             expect(navigationService.editContent).toHaveBeenCalledWith(mockItem);
         });
@@ -205,7 +205,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 baseType: 'HTMLPAGE',
                 inode: 'test-inode-1',
                 identifier: 'test-id'
-            } as DotContentDriveItem;
+            } as DotCMSContentlet;
 
             mockSelectedItems.set([mockItem]);
             spectator.detectChanges();
@@ -214,7 +214,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.GOT_TO_EDIT_PAGE}"]`
             );
 
-            spectator.click(editPageButton);
+            spectator.click(editPageButton!);
 
             expect(navigationService.editPage).toHaveBeenCalledWith(mockItem);
         });
@@ -295,7 +295,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 inode: 'test-asset-inode',
                 title: 'test-document.pdf',
                 fileAsset: '/dA/test-asset-id/fileAsset/test-document.pdf'
-            } as unknown as DotContentDriveItem;
+            } as unknown as DotCMSContentlet;
 
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
@@ -306,7 +306,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
             );
 
-            spectator.click(downloadButton);
+            spectator.click(downloadButton!);
 
             expect(windowSpy).toHaveBeenCalledWith(
                 expect.stringContaining('force_download=true'),
@@ -329,7 +329,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 inode: 'test-asset-inode',
                 title: 'test-image.jpg',
                 asset: '/dA/test-asset-id/asset/test-image.jpg'
-            } as unknown as DotContentDriveItem;
+            } as unknown as DotCMSContentlet;
 
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
@@ -340,7 +340,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
             );
 
-            spectator.click(downloadButton);
+            spectator.click(downloadButton!);
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'success',
@@ -373,7 +373,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 title: 'test-asset.png',
                 assetVersion: '/dA/version/test-asset.png',
                 asset: '/dA/test-asset.png'
-            } as unknown as DotContentDriveItem;
+            } as unknown as DotCMSContentlet;
 
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
@@ -384,7 +384,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
             );
 
-            spectator.click(downloadButton);
+            spectator.click(downloadButton!);
 
             expect(windowSpy).toHaveBeenCalledWith(
                 expect.stringContaining(mockAsset['assetVersion'] as string),
@@ -404,7 +404,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 title: 'document.pdf',
                 fileAssetVersion: '/dA/version/document.pdf',
                 fileAsset: '/dA/document.pdf'
-            } as unknown as DotContentDriveItem;
+            } as unknown as DotCMSContentlet;
 
             mockSelectedItems.set([mockAsset]);
             spectator.detectChanges();
@@ -415,7 +415,7 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
                 `[data-testid="workflow-action-${WORKFLOW_ACTION_ID.DOWNLOAD}"]`
             );
 
-            spectator.click(downloadButton);
+            spectator.click(downloadButton!);
 
             expect(windowSpy).toHaveBeenCalledWith(
                 expect.stringContaining(mockAsset['fileAssetVersion'] as string),

@@ -3,9 +3,7 @@
     "compilerOptions": {
         "jsx": "react-jsx",
         "allowJs": false,
-        "esModuleInterop": false,
         "allowSyntheticDefaultImports": true,
-        "strict": true,
         "moduleResolution": "bundler"
     },
     "files": [],

@@ -347,7 +347,7 @@ describe('DotQueryToolPageComponent', () => {
                 limit: 50,
                 offset: 20,
                 userId: 'admin@dotcms.com'
-            });
+            }) as unknown as typeof store.apiRequestBody;
             const copySpy = setupClipboardSpy();
             spectator.component.exportItems[1].command?.({} as never);
 

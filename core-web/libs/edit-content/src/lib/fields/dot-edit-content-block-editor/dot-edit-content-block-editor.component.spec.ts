@@ -25,9 +25,9 @@ import { DotEditContentStore } from '../../store/edit-content.store';
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {
@@ -129,7 +129,7 @@ describe('DotEditContentBlockEditorComponent', () => {
             string,
             unknown
         >;
-        expect(blockEditorComponent.languageId).toBe(2);
+        expect(blockEditorComponent['languageId']).toBe(2);
     });
 
     it('should pass the correct field to dot-block-editor', () => {
@@ -140,7 +140,7 @@ describe('DotEditContentBlockEditorComponent', () => {
             string,
             unknown
         >;
-        expect(blockEditorComponent.field).toEqual(BLOCK_EDITOR_FIELD_MOCK);
+        expect(blockEditorComponent['field']).toEqual(BLOCK_EDITOR_FIELD_MOCK);
     });
 
     it('should pass the correct contentlet to dot-block-editor', () => {
@@ -151,7 +151,7 @@ describe('DotEditContentBlockEditorComponent', () => {
             string,
             unknown
         >;
-        const contentlet = blockEditorComponent.contentlet as DotCMSContentlet;
+        const contentlet = blockEditorComponent['contentlet'] as DotCMSContentlet;
         expect(contentlet).toBeTruthy();
         expect(contentlet[BLOCK_EDITOR_FIELD_MOCK.variable]).toBe('');
     });
@@ -165,7 +165,7 @@ describe('DotEditContentBlockEditorComponent', () => {
             unknown
         >;
         // Initially should be false (no errors)
-        expect(blockEditorComponent.hasError).toBe(false);
+        expect(blockEditorComponent['hasError']).toBe(false);
     });
 
     it('should use formControlName from field variable', () => {

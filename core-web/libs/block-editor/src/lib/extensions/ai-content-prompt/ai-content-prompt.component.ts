@@ -62,18 +62,23 @@ export class AIContentPromptComponent implements OnInit {
     vm$: Observable<AiContentPromptState> = this.store.vm$;
     readonly ComponentStatus = ComponentStatus;
     form: FormGroup<AIContentForm> = new FormGroup<AIContentForm>({
-        textPrompt: new FormControl('', [Validators.required, DotValidators.noWhitespace]),
-        generatedText: new FormControl('')
+        // `nonNullable` so the controls match the `FormControl<string>` contract declared above;
+        // without it Angular infers `FormControl<string | null>`.
+        textPrompt: new FormControl('', {
+            nonNullable: true,
+            validators: [Validators.required, DotValidators.noWhitespace]
+        }),
+        generatedText: new FormControl('', { nonNullable: true })
     });
     confirmationService = inject(ConfirmationService);
     dotMessageService = inject(DotMessageService);
-    submitButtonLabel: string;
+    submitButtonLabel = '';
     emptyConfiguration: PrincipalConfiguration = {
         title: this.dotMessageService.get('block-editor.extension.ai-content.error'),
         icon: 'pi-exclamation-triangle'
     };
     private destroyRef = inject(DestroyRef);
-    @ViewChild('inputTextarea') private inputTextarea: ElementRef<HTMLTextAreaElement>;
+    @ViewChild('inputTextarea') private inputTextarea!: ElementRef<HTMLTextAreaElement>;
 
     ngOnInit() {
         this.setSubscriptions();
@@ -118,7 +123,10 @@ export class AIContentPromptComponent implements OnInit {
 
         // Set the form content based on the active index
         this.store.activeContent$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((data) => {
-            this.form.patchValue({ textPrompt: data?.prompt, generatedText: data?.content });
+            this.form.patchValue({
+                textPrompt: data?.prompt,
+                generatedText: data?.content ?? undefined
+            });
         });
 
         // Set the submit button label

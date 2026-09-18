@@ -20,9 +20,9 @@ import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
 })
 class TestFieldValidationMessageComponent {
     @Input()
-    field: NgControl;
+    field!: NgControl;
     @Input()
-    message: string;
+    message!: string;
 }
 
 @Injectable()

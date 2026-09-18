@@ -432,13 +432,19 @@ export class DotFolderListViewContextMenuComponent {
     }
 
     #openWizard(workflowAction: DotCMSWorkflowAction, contentlet: DotCMSContentlet) {
+        // `setWizardInput` returns null when the action has no wizard steps; there is no dialog to
+        // open in that case. `DotWorkflowEventHandlerService.openWizard` guards the same way.
+        const wizardInput = this.#dotWorkflowEventHandlerService.setWizardInput(
+            workflowAction,
+            this.#dotMessageService.get('Workflow-Action')
+        );
+
+        if (!wizardInput) {
+            return;
+        }
+
         this.#dotWizardService
-            .open<DotWorkflowPayload>(
-                this.#dotWorkflowEventHandlerService.setWizardInput(
-                    workflowAction,
-                    this.#dotMessageService.get('Workflow-Action')
-                )
-            )
+            .open<DotWorkflowPayload>(wizardInput)
             .pipe(take(1))
             .subscribe((data: DotWorkflowPayload) => {
                 const payload = this.#dotWorkflowEventHandlerService.processWorkflowPayload(
@@ -764,7 +770,7 @@ export class DotFolderListViewContextMenuComponent {
             actionName: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
             total: 1,
             targetLabel: folder.name,
-            targets: [folder.identifier, folder.inode].filter(Boolean)
+            targets: [folder.identifier, folder.inode].filter((id): id is string => !!id)
         });
 
         this.#dotFolderService

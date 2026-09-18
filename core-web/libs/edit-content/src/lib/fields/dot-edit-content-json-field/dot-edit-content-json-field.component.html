@@ -41,7 +41,7 @@
             </div>
         }
 
-        @if (!fieldHasError && field.hint) {
+        @if (!fieldHasError && field?.hint) {
             <div class="hint-message">
                 <small [attr.data-testId]="'hint-' + field.variable">
                     {{ field.hint }}

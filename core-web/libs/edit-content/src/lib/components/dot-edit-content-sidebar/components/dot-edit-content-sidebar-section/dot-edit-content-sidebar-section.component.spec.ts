@@ -26,7 +26,7 @@ describe('DotEditContentSidebarSectionComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createHost(null, {
+        spectator = createHost(undefined, {
             hostProps: {
                 title: 'Test Section',
                 key: ''
@@ -69,7 +69,7 @@ describe('DotEditContentSidebarSectionComponent', () => {
     describe('Without title', () => {
         beforeEach(() => {
             // Create fresh host with title: null to avoid ExpressionChangedAfterItHasBeenCheckedError
-            spectator = createHost(null, {
+            spectator = createHost(undefined, {
                 hostProps: { title: null, key: '' }
             });
         });
@@ -126,7 +126,7 @@ describe('DotEditContentSidebarSectionComponent', () => {
         let localStorageService: Mocked<DotLocalstorageService>;
 
         beforeEach(() => {
-            spectator = createHost(null, {
+            spectator = createHost(undefined, {
                 hostProps: { title: 'Workflow', key: 'workflow' },
                 detectChanges: false
             });

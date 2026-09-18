@@ -39,12 +39,14 @@ export class EditEmaNavigationBarComponent {
 
     // Computed set of active hrefs — recalculates whenever the URL signal changes
     readonly $activeHref = computed<string>(() => {
-        const currentUrl = this.#currentUrl().split('?').shift(); // track the signal
+        // `[0]` rather than `.shift()`: `split` on a non-empty separator always yields at least
+        // one element, but `shift()` is typed `string | undefined` and cannot know that.
+        const currentUrl = this.#currentUrl().split('?')[0]; // track the signal
 
         for (const item of this.items()) {
             if (!item.href) continue;
 
-            const url = item.href.split('/').shift();
+            const url = item.href.split('/')[0];
 
             if (currentUrl.includes(url)) {
                 return item.href;

@@ -74,7 +74,7 @@ export class DotEditContentCalendarFieldComponent extends BaseWrapperField {
      * Used to determine if the field is a date or time field.
      * Alias: contentlet
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
 
     /**
      * The system timezone (optional).

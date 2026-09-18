@@ -52,9 +52,12 @@ const SIMPLE_VIEW_MAX_LOCALES = 5;
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidebarLocalesSelectorComponent {
-    readonly $locales = input.required<DotLanguage[]>({ alias: 'locales' });
-    readonly $defaultLocale = input.required<DotLanguage>({ alias: 'defaultLocale' });
-    readonly $currentLocale = input.required<DotLanguage>({ alias: 'currentLocale' });
+    // Nullable: the sidebar renders this component while the locales are still loading, and in
+    // that state the store has nothing to give. The `@if ($isLoading())` branch of the template
+    // renders a skeleton and reads none of them, so absent data never reaches the views below.
+    readonly $locales = input.required<DotLanguage[] | null>({ alias: 'locales' });
+    readonly $defaultLocale = input.required<DotLanguage | null>({ alias: 'defaultLocale' });
+    readonly $currentLocale = input.required<DotLanguage | null>({ alias: 'currentLocale' });
     readonly $isLoading = input.required<boolean>({ alias: 'isLoading' });
     readonly $activeTab = input<LocaleTab>('all', { alias: 'activeTab' });
 
@@ -70,10 +73,15 @@ export class DotEditContentSidebarLocalesSelectorComponent {
 
     readonly $searchQuery = signal('');
 
-    readonly $translatedLocales = computed(() => this.$locales().filter((l) => l.translated));
-    readonly $pendingLocales = computed(() => this.$locales().filter((l) => !l.translated));
+    /** `$locales` before it has loaded is an empty list for every derivation below. */
+    readonly $localeList = computed(() => this.$locales() ?? []);
 
-    readonly $showEnhancedView = computed(() => this.$locales().length > SIMPLE_VIEW_MAX_LOCALES);
+    readonly $translatedLocales = computed(() => this.$localeList().filter((l) => l.translated));
+    readonly $pendingLocales = computed(() => this.$localeList().filter((l) => !l.translated));
+
+    readonly $showEnhancedView = computed(
+        () => this.$localeList().length > SIMPLE_VIEW_MAX_LOCALES
+    );
 
     readonly $filteredLocales = computed(() => {
         const tab = this.$activeTab();
@@ -84,7 +92,7 @@ export class DotEditContentSidebarLocalesSelectorComponent {
                 ? this.$translatedLocales()
                 : tab === 'pending'
                   ? this.$pendingLocales()
-                  : this.$locales();
+                  : this.$localeList();
 
         if (!query) return base;
 
@@ -96,10 +104,18 @@ export class DotEditContentSidebarLocalesSelectorComponent {
     });
 
     readonly $tabCounts = computed(() => ({
-        all: this.$locales().length,
+        all: this.$localeList().length,
         translated: this.$translatedLocales().length,
         pending: this.$pendingLocales().length
     }));
+
+    /**
+     * Count for a tab. PrimeNG's `let-item` template context is untyped, so the tab key arrives
+     * as `any`; taking it as a `LocaleTab` restores the check at the one place it is lost.
+     */
+    protected tabCount(tab: LocaleTab): number {
+        return this.$tabCounts()[tab];
+    }
 
     readonly tabDefs: TabDef[] = [
         { value: 'all', label: 'edit.content.sidebar.locales.selector.tab.all' },

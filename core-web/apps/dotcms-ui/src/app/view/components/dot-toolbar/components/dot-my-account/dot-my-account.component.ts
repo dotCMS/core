@@ -107,7 +107,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
     });
 
     // Form
-    form: FormGroup;
+    form!: FormGroup;
     emailRegex = '';
 
     // Private fields
@@ -171,8 +171,9 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
             this.resetFormState();
 
             // Load user data when dialog is opened
-            if (this.currentUser()) {
-                this.updateFormWithUserData(this.currentUser());
+            const currentUser = this.currentUser();
+            if (currentUser) {
+                this.updateFormWithUserData(currentUser);
             }
         }
     }

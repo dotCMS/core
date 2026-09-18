@@ -42,7 +42,7 @@ export class ConditionGroupService {
 
     static toJson(conditionGroup: ConditionGroupModel): ConditionGroupJson {
         return {
-            id: conditionGroup.key,
+            id: conditionGroup.key ?? undefined,
             operator: conditionGroup.operator,
             priority: conditionGroup.priority,
             conditions: conditionGroup.conditions
@@ -162,22 +162,26 @@ export class ConditionGroupService {
             return this.createConditionGroup(ruleId, model);
         } else {
             const json = ConditionGroupService.toJson(model);
-            const save = this.http.put<unknown>(this._getPath(ruleId, model.key), json).pipe(
-                map(() => {
-                    return model;
-                })
-            );
+            const save = this.http
+                .put<unknown>(this._getPath(ruleId, model.key ?? undefined), json)
+                .pipe(
+                    map(() => {
+                        return model;
+                    })
+                );
 
             return save.pipe(catchError(this._catchRequestError('save')));
         }
     }
 
     remove(ruleId: string, model: ConditionGroupModel): Observable<ConditionGroupModel> {
-        const remove = this.http.delete<unknown>(this._getPath(ruleId, model.key)).pipe(
-            map(() => {
-                return model;
-            })
-        );
+        const remove = this.http
+            .delete<unknown>(this._getPath(ruleId, model.key ?? undefined))
+            .pipe(
+                map(() => {
+                    return model;
+                })
+            );
 
         return remove.pipe(catchError(this._catchRequestError('remove')));
     }

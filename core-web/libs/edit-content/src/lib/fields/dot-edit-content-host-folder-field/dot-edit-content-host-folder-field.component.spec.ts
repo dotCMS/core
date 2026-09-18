@@ -30,9 +30,9 @@ import { HOST_FOLDER_TEXT_MOCK, TREE_SELECT_SITES_MOCK } from '../../utils/mocks
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 describe('DotEditContentHostFolderFieldComponent', () => {
@@ -93,7 +93,7 @@ describe('DotEditContentHostFolderFieldComponent', () => {
                 }
             }
         );
-        field = spectator.query(DotHostFolderFieldComponent);
+        field = spectator.query(DotHostFolderFieldComponent)!;
         store = field.store;
         service = spectator.inject(DotBrowsingService);
         hostFormControl = spectator.hostComponent.formGroup.get(

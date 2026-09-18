@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
-import { FormsModule, UntypedFormGroup } from '@angular/forms';
+import { AbstractControl, FormsModule, UntypedFormGroup } from '@angular/forms';
 
 import { RadioButtonModule } from 'primeng/radiobutton';
 
@@ -45,17 +45,17 @@ export class DotRelationshipsPropertyComponent implements OnInit {
     readonly STATUS_NEW = 'NEW';
     readonly STATUS_EXISTING = 'EXISTING';
 
-    property: FieldProperty<{ [key: string]: unknown }>;
-    group: UntypedFormGroup;
+    property!: FieldProperty<{ [key: string]: unknown }>;
+    group!: UntypedFormGroup;
 
     status = this.STATUS_NEW;
 
-    editing: boolean;
+    editing = false;
 
-    beforeValue: DotRelationshipsPropertyValue;
+    beforeValue!: DotRelationshipsPropertyValue;
     ngOnInit() {
-        this.beforeValue = structuredClone(this.group.get(this.property.name).value);
-        this.editing = !!this.group.get(this.property.name).value.velocityVar;
+        this.beforeValue = structuredClone(this.#control().value);
+        this.editing = !!this.#control().value.velocityVar;
     }
 
     /**
@@ -65,7 +65,7 @@ export class DotRelationshipsPropertyComponent implements OnInit {
      * @memberof DotRelationshipsPropertyComponent
      */
     handleChange(value: DotRelationshipsPropertyValue): void {
-        this.group.get(this.property.name).setValue(value);
+        this.#control().setValue(value);
     }
 
     /**
@@ -74,7 +74,19 @@ export class DotRelationshipsPropertyComponent implements OnInit {
      * @memberof DotRelationshipsPropertyComponent
      */
     clean(): void {
-        this.group.get(this.property.name).setValue(structuredClone(this.beforeValue));
+        this.#control().setValue(structuredClone(this.beforeValue));
+    }
+
+    /**
+     * The control backing this property.
+     *
+     * Reached through `controls[...]` rather than `get(...)`: the parent form builds one control
+     * per property before rendering this component, and unlike `get()` — which returns
+     * `AbstractControl | null` for arbitrary paths — an `UntypedFormGroup`'s `controls` map is
+     * declared non-nullable, so there is no absence to invent a fallback for.
+     */
+    #control(): AbstractControl {
+        return this.group.controls[this.property.name];
     }
 
     /**

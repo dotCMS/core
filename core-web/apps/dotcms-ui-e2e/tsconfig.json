@@ -10,7 +10,6 @@
         "noPropertyAccessFromIndexSignature": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
-        "baseUrl": ".",
         "paths": {
             "@pages": ["./src/pages/index"],
             "@locators/*": ["./src/locators/*"],

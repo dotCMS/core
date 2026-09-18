@@ -205,7 +205,7 @@ export class DotEditContentLayoutComponent {
 
     constructor() {
         if (this.#dialogRef) {
-            this.#interceptDirtyClose();
+            this.#interceptDirtyClose(this.#dialogRef);
         }
 
         // In-place hosts (dialog) request related-content navigation without a
@@ -301,8 +301,7 @@ export class DotEditContentLayoutComponent {
      * 2. dialogRef.close override — catches programmatic closes (dialogRef.close()
      *    called directly from code, e.g. DotEditContentDialogComponent.closeDialog()).
      */
-    #interceptDirtyClose(): void {
-        const dialogRef = this.#dialogRef!;
+    #interceptDirtyClose(dialogRef: DynamicDialogRef): void {
         const originalClose = dialogRef.close.bind(dialogRef);
 
         // --- Programmatic close path ---
@@ -477,12 +476,21 @@ export class DotEditContentLayoutComponent {
         // NOTE: inode is intentionally optional — new (unsaved) content has no inode yet and
         // the create flow relies on that. Do NOT add an `if (!inode) return` guard here: it
         // silently blocks saving brand-new content (the workflow action never fires).
+        const contentType = this.$store.contentType();
+
+        // Only `contentType` is guarded: it is null while the editor is still resolving, and every
+        // workflow action needs the variable to build its payload. `inode` and `identifier` stay
+        // unguarded on purpose — see the note above — and are optional on the params type.
+        if (!contentType) {
+            return;
+        }
+
         this.$editContentForm()?.fireWorkflowAction({
             workflow,
             inode: this.$store.contentlet()?.inode,
-            contentType: this.$store.contentType().variable,
+            contentType: contentType.variable,
             languageId: currentLocale ? currentLocale.id.toString() : '',
-            identifier: this.$store.currentIdentifier()
+            identifier: this.$store.currentIdentifier() ?? undefined
         });
     }
 

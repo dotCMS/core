@@ -23,6 +23,15 @@ export interface GetChildrenParams {
     parentList?: boolean;
 }
 
+/**
+ * `GetChildrenParams` once {@link CategoriesService.mergeParams} has applied
+ * {@link DEFAULT_PARAMS}. Everything the defaults supply is guaranteed present, which is what
+ * lets `toHttpParams` read `parentList` and `showChildrenCount` without a fallback. `filter` stays
+ * optional — it has no default, and the request shape branches on its absence.
+ */
+type ResolvedChildrenParams = Required<Omit<GetChildrenParams, 'filter'>> &
+    Pick<GetChildrenParams, 'filter'>;
+
 const DEFAULT_PARAMS: Omit<GetChildrenParams, 'inode'> = {
     per_page: 7000,
     direction: 'ASC',
@@ -75,19 +84,19 @@ export class CategoriesService {
      * Merges default parameters with provided parameters.
      *
      * @param {Partial<GetChildrenParams>} params - The provided parameters.
-     * @returns {GetChildrenParams} - The merged parameters.
+     * @returns {ResolvedChildrenParams} - The merged parameters.
      */
-    private mergeParams(params: Partial<GetChildrenParams>): GetChildrenParams {
-        return { ...DEFAULT_PARAMS, ...params } as GetChildrenParams;
+    private mergeParams(params: Partial<GetChildrenParams>): ResolvedChildrenParams {
+        return { ...DEFAULT_PARAMS, ...params } as ResolvedChildrenParams;
     }
 
     /**
      * Converts an object to HttpParams.
      *
-     * @param {GetChildrenParams} params - The parameters object.
+     * @param {ResolvedChildrenParams} params - The parameters object.
      * @returns {HttpParams} - The HttpParams object.
      */
-    private toHttpParams(params: GetChildrenParams): HttpParams {
+    private toHttpParams(params: ResolvedChildrenParams): HttpParams {
         let httpParams = new HttpParams()
             .set('inode', params.inode)
             .set('per_page', params.per_page.toString())

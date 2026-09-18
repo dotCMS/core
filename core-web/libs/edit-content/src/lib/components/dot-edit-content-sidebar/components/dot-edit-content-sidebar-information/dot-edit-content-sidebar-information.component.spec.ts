@@ -89,7 +89,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
         });
 
         it('should show content type information', () => {
-            const contentTypeLink = spectator.query(byTestId('content-type-link'));
+            const contentTypeLink = spectator.query(byTestId('content-type-link'))!;
             expect(contentTypeLink).toBeTruthy();
             expect(contentTypeLink.textContent).toContain('Blog');
         });
@@ -100,7 +100,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
         });
 
         it('should show the modified-by row with an initials avatar', () => {
-            const modifiedBy = spectator.query(byTestId('modified-by'));
+            const modifiedBy = spectator.query(byTestId('modified-by'))!;
             expect(modifiedBy).toBeTruthy();
             expect(modifiedBy.textContent).toContain('E');
         });
@@ -135,7 +135,7 @@ describe('DotEditContentSidebarInformationComponent', () => {
         });
 
         it('should show content type information', () => {
-            const contentTypeLink = spectator.query(byTestId('content-type-link'));
+            const contentTypeLink = spectator.query(byTestId('content-type-link'))!;
             expect(contentTypeLink).toBeTruthy();
             expect(contentTypeLink.textContent).toContain('Blog');
         });

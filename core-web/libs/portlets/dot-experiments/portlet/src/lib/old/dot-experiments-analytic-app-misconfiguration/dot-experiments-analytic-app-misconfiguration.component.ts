@@ -29,8 +29,8 @@ export class DotExperimentsAnalyticAppMisconfigurationComponent implements OnIni
     private location = inject(Location);
     private dotMessageService = inject(DotMessageService);
 
-    emptyConfiguration: PrincipalConfiguration;
-    pageTitle: string;
+    emptyConfiguration!: PrincipalConfiguration;
+    pageTitle!: string;
 
     ngOnInit(): void {
         const location = this.location.getState() as {
@@ -66,7 +66,7 @@ export class DotExperimentsAnalyticAppMisconfigurationComponent implements OnIni
         this.router.navigate(['edit-page/content'], { queryParamsHandling: 'merge' });
     }
 
-    private setConfiguration(title, subtitle): void {
+    private setConfiguration(title: string, subtitle: string): void {
         this.emptyConfiguration = {
             title: this.dotMessageService.get(title),
             subtitle: this.dotMessageService.get(subtitle),

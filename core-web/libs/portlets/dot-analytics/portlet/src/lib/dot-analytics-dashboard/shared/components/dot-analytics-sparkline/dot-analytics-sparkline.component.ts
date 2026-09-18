@@ -28,6 +28,8 @@ import {
 import { AnalyticsChartColors, ChartData } from '../../types';
 import { hexToRgba } from '../../utils/dot-analytics.utils';
 
+import type { Plugin } from 'chart.js';
+
 /** Context object passed to the Chart.js external tooltip callback */
 interface SparklineTooltipContext {
     chart: { width: number };
@@ -166,7 +168,7 @@ export class DotAnalyticsSparklineComponent {
      * Plugins for gradient fill and line drawing animation.
      * Animation runs outside Angular's zone to avoid triggering change detection.
      */
-    readonly chartPlugins = [
+    readonly chartPlugins: Plugin[] = [
         // Gradient fill plugin (applies to all filled datasets using each dataset's borderColor)
         createGradientFillPlugin(
             () => ({

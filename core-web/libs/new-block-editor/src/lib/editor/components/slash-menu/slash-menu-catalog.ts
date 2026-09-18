@@ -385,7 +385,7 @@ export function createSlashOverlayBlockItems(
                 // query, which becomes a stale offset once the slash text is deleted, so
                 // every subsequent reposition (via autoUpdate) reads the wrong document
                 // location. Compute coords lazily so scroll/resize re-queries the line.
-                const anchorPos = range.from;
+                const anchorPos = range!.from;
                 popovers.open('table', () => {
                     const coords = editor.view.coordsAtPos(anchorPos);
                     return new DOMRect(coords.left, coords.top, 0, coords.bottom - coords.top);

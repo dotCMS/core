@@ -1,7 +1,7 @@
 import { DotCMSBasicContentlet, DotCMSPageAsset } from '@dotcms/types';
 import { getContentletsInContainer } from '@dotcms/uve/internal';
 
-import { ActionPayload } from '../../../../shared/models';
+import { ContentletActionPayload } from '../../../../shared/models';
 
 /**
  * Filters out null and undefined values from an object recursively.
@@ -62,7 +62,7 @@ export function filterFormValues<T extends Record<string, unknown>>(obj: T): Par
  */
 export function updateContentletPropertiesInPageAsset(
     pageAsset: DotCMSPageAsset,
-    payload: ActionPayload,
+    payload: ContentletActionPayload,
     properties: Record<string, unknown>
 ): DotCMSPageAsset {
     const contentletId = payload.contentlet.identifier;
@@ -75,9 +75,11 @@ export function updateContentletPropertiesInPageAsset(
 
     contentlets.forEach((contentlet: DotCMSBasicContentlet) => {
         if (contentlet?.identifier === contentletId) {
-            Object.keys(properties).forEach((key) => {
-                contentlet[key] = properties[key];
-            });
+            // `Object.assign` copies exactly the keys the loop copied, without indexing a type that
+            // names only the fields every contentlet has. The properties written here are the
+            // content type's own — style properties in practice — which is precisely the set
+            // `DotCMSBasicContentlet` does not declare.
+            Object.assign(contentlet, properties);
         }
     });
 
@@ -94,7 +96,7 @@ export function updateContentletPropertiesInPageAsset(
  */
 export function extractContentletPropertiesFromPageAsset(
     pageAsset: DotCMSPageAsset,
-    payload: ActionPayload,
+    payload: ContentletActionPayload,
     properties: Array<string>
 ): Record<string, unknown> {
     const contentletId = payload.contentlet.identifier;
@@ -109,8 +111,15 @@ export function extractContentletPropertiesFromPageAsset(
         (c: DotCMSBasicContentlet) => c?.identifier === contentletId
     );
 
-    return properties.reduce((acc, property) => {
-        acc[property] = contentlet?.[property];
+    // Reading a content field by name off a type that declares only the static ones needs the
+    // wider view; it is the read half of the `Object.assign` above. Two steps because
+    // `DotCMSBasicContentlet` has no index signature to overlap with `Record`, which is the very
+    // reason the direct index was an error.
+    const contentletFields = contentlet as unknown as Record<string, unknown> | undefined;
+
+    return properties.reduce<Record<string, unknown>>((acc, property) => {
+        acc[property] = contentletFields?.[property];
+
         return acc;
     }, {});
 }

@@ -9,12 +9,15 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DEFAULT_VARIANT_NAME, DotDevice } from '@dotcms/dotcms-models';
 import { withFlags } from '@dotcms/store';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSViewAs, UVE_MODE } from '@dotcms/types';
 import { getRunningExperimentMock, mockDotDevices } from '@dotcms/utils-testing';
 
 import { withView } from './withView';
 
-import { DotPageApiService } from '../../../../services/dot-page-api/dot-page-api.service';
+import {
+    DotPageApiParams,
+    DotPageApiService
+} from '../../../../services/dot-page-api/dot-page-api.service';
 import {
     DEFAULT_DEVICE,
     DEFAULT_DEVICES,
@@ -97,13 +100,25 @@ describe('withView', () => {
         store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
     });
 
+    /**
+     * `store.pageParams()` is `DotPageApiParams | null` — null only before the first page load, and
+     * `beforeEach` above seeds it. Spreading it directly makes every field optional, which is no
+     * longer a `DotPageApiParams`, so the overrides below go through this.
+     */
+    const currentPageParams = (): DotPageApiParams => store.pageParams() ?? pageParams;
+
+    /**
+     * `viewAs` is optional on `DotCMSPageAsset`; this fixture has one, and each test below overrides
+     * a single field of it.
+     */
+    const mockViewAs = MOCK_RESPONSE_HEADLESS.viewAs as DotCMSViewAs;
+
     describe('Computed', () => {
         it('should return the right API URL', () => {
-            const params = { ...pageParams };
-
-            // Delete the url from the params to test the function
-            delete params.url;
-            delete params.clientHost;
+            // Destructured away rather than deleted: `url` and `clientHost` are required on
+            // `DotPageApiParams`, and `delete` is only allowed on optional properties.
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { url: _url, clientHost: _clientHost, ...params } = pageParams;
 
             const queryParams = new URLSearchParams(params).toString();
             const expectURL = `/api/v1/page/json/test-url?${queryParams}`;
@@ -133,12 +148,12 @@ describe('withView', () => {
 
                     const variantID = currentExperiment.trafficProportion.variants.find(
                         (variant) => variant.name !== DEFAULT_VARIANT_NAME
-                    ).id;
+                    )!.id;
 
                     patchStoreState(store, {
                         pageExperiment: currentExperiment,
                         pageParams: {
-                            ...store.pageParams(),
+                            ...currentPageParams(),
                             mode: UVE_MODE.EDIT
                         }
                     });
@@ -146,7 +161,7 @@ describe('withView', () => {
                         pageAsset: {
                             ...MOCK_RESPONSE_HEADLESS,
                             viewAs: {
-                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                ...mockViewAs,
                                 variantId: variantID
                             }
                         }
@@ -167,12 +182,12 @@ describe('withView', () => {
 
                     const variantID = currentExperiment.trafficProportion.variants.find(
                         (variant) => variant.name !== DEFAULT_VARIANT_NAME
-                    ).id;
+                    )!.id;
 
                     patchStoreState(store, {
                         pageExperiment: currentExperiment,
                         pageParams: {
-                            ...store.pageParams(),
+                            ...currentPageParams(),
                             mode: UVE_MODE.PREVIEW
                         }
                     });
@@ -180,7 +195,7 @@ describe('withView', () => {
                         pageAsset: {
                             ...MOCK_RESPONSE_HEADLESS,
                             viewAs: {
-                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                ...mockViewAs,
                                 variantId: variantID
                             }
                         }
@@ -202,12 +217,12 @@ describe('withView', () => {
 
                     const variantID = currentExperiment.trafficProportion.variants.find(
                         (variant) => variant.name !== DEFAULT_VARIANT_NAME
-                    ).id;
+                    )!.id;
 
                     patchStoreState(store, {
                         pageExperiment: currentExperiment,
                         pageParams: {
-                            ...store.pageParams(),
+                            ...currentPageParams(),
                             mode: UVE_MODE.LIVE
                         }
                     });
@@ -215,7 +230,7 @@ describe('withView', () => {
                         pageAsset: {
                             ...MOCK_RESPONSE_HEADLESS,
                             viewAs: {
-                                ...MOCK_RESPONSE_HEADLESS.viewAs,
+                                ...mockViewAs,
                                 variantId: variantID
                             }
                         }
@@ -237,7 +252,7 @@ describe('withView', () => {
             it('should return false when in preview mode', () => {
                 patchStoreState(store, {
                     pageParams: {
-                        ...store.pageParams(),
+                        ...currentPageParams(),
                         mode: UVE_MODE.PREVIEW
                     }
                 });
@@ -247,7 +262,7 @@ describe('withView', () => {
             it('should return true when not in preview mode and is default variant', () => {
                 patchStoreState(store, {
                     pageParams: {
-                        ...store.pageParams(),
+                        ...currentPageParams(),
                         mode: UVE_MODE.EDIT
                     }
                 });
@@ -255,7 +270,7 @@ describe('withView', () => {
                     pageAsset: {
                         ...MOCK_RESPONSE_HEADLESS,
                         viewAs: {
-                            ...MOCK_RESPONSE_HEADLESS.viewAs,
+                            ...mockViewAs,
                             variantId: DEFAULT_VARIANT_ID
                         }
                     }
@@ -268,7 +283,7 @@ describe('withView', () => {
                     pageAsset: {
                         ...MOCK_RESPONSE_HEADLESS,
                         viewAs: {
-                            ...MOCK_RESPONSE_HEADLESS.viewAs,
+                            ...mockViewAs,
                             variantId: 'some-other-variant'
                         }
                     }
@@ -319,7 +334,7 @@ describe('withView', () => {
                 expect(store.viewDeviceOrientation()).toBe(Orientation.PORTRAIT);
 
                 expect(store.viewParams()).toEqual({
-                    device: store.viewParams().device,
+                    device: store.viewParams()?.device,
                     orientation: Orientation.PORTRAIT,
                     seo: null
                 });

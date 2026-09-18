@@ -66,7 +66,7 @@ export class DotPublishingQueueBundleDetailsDialogComponent {
      * cell. Computed because the `scheduledFor` row is only included when the
      * bundle is in SCHEDULED status (the BE leaves `scheduledPublishDate` null
      * for every other status, so the row would be a permanent "—" otherwise). */
-    readonly $metaRows = computed<readonly MetaRow[]>(() => {
+    readonly $metaRows = computed<MetaRow[]>(() => {
         const isScheduled = this.store.detail()?.status === PublishAuditStatus.SCHEDULED;
         return [
             { key: 'title', label: this.#dotMessageService.get('publishing-queue.detail.title') },

@@ -63,7 +63,7 @@ const wizardInput: DotWizardInput = {
     standalone: false
 })
 class FormOneComponent {
-    @Input() data: DotPushPublishDialogData;
+    @Input() data!: DotPushPublishDialogData;
     @Output() value = new EventEmitter<any>();
     @Output() valid = new EventEmitter<boolean>();
 }
@@ -74,7 +74,7 @@ class FormOneComponent {
     standalone: false
 })
 class FormTwoComponent {
-    @Input() data: DotPushPublishDialogData;
+    @Input() data!: DotPushPublishDialogData;
     @Output() value = new EventEmitter<any>();
     @Output() valid = new EventEmitter<boolean>();
 }

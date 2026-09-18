@@ -32,11 +32,11 @@ const SUBMIT_FORM_API_URL = '/api/v1/workflow/actions/default/fire/NEW';
 })
 export class DotFormComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** (optional) List of fields (variableName) separated by comma, to be shown */
     @Prop()
-    fieldsToShow: string;
+    fieldsToShow?: string;
 
     /** (optional) Text to be rendered on Reset button */
     @Prop({ reflect: true })
@@ -65,10 +65,11 @@ export class DotFormComponent {
 
     /**Emit when submit the form */
     @Event()
-    submit: EventEmitter<DotCMSContentlet>;
+    submit!: EventEmitter<DotCMSContentlet>;
 
     private fieldsStatus: { [key: string]: { [key: string]: boolean } } = {};
-    private value = {};
+    /** One entry per field, keyed by its `variable` — a name only known at runtime. */
+    private value: Record<string, unknown> = {};
 
     /**
      * Update the form value when valueChange in any of the child fields.
@@ -82,7 +83,7 @@ export class DotFormComponent {
         const { name, value } = event.detail;
         const process = fieldCustomProcess[tagName];
         if (tagName === 'DOT-BINARY-FILE' && value) {
-            this.uploadFile(event).then((tempFile: DotCMSTempFile) => {
+            this.uploadFile(event).then((tempFile: DotCMSTempFile | null) => {
                 this.value[name] = tempFile && tempFile.id;
             });
         } else {
@@ -158,7 +159,7 @@ export class DotFormComponent {
 
     private getTouched(): boolean {
         return Object.values(this.fieldsStatus)
-            .map((field: { [key: string]: boolean }) => field.dotTouched)
+            .map((field: { [key: string]: boolean }) => field['dotTouched'])
             .includes(true);
     }
 
@@ -194,7 +195,8 @@ export class DotFormComponent {
                     this.submit.emit(contentlet);
                 })
                 .catch(({ message, status }: DotHttpErrorResponse) => {
-                    this.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
+                    this.errorMessage =
+                        getErrorMessage(message) || fallbackErrorMessages[status] || '';
                 })
                 .finally(() => {
                     this.processingSubmit = false;
@@ -214,24 +216,34 @@ export class DotFormComponent {
         });
     }
 
-    private getUpdateValue(): { [key: string]: string } {
-        return getFieldsFromLayout(this.layout)
-            .filter((field: DotCMSContentTypeField) => field.fixed === false)
-            .reduce(
-                (
-                    acc: { [key: string]: string },
-                    { variable, defaultValue, dataType, values }: DotCMSContentTypeField
-                ) => {
-                    return {
-                        ...acc,
-                        [variable]: defaultValue || (dataType !== 'TEXT' ? values : null)
-                    };
-                },
-                {}
-            );
+    /**
+     * The form's current value, keyed by field variable.
+     *
+     * Values are nullable: a non-TEXT field with no `defaultValue` contributes null, which is what
+     * the expression below has always produced.
+     */
+    private getUpdateValue(): { [key: string]: string | null | undefined } {
+        return (
+            getFieldsFromLayout(this.layout)
+                .filter((field: DotCMSContentTypeField) => field.fixed === false)
+                // Explicit type argument: from the `{}` seed alone TypeScript picks the array's own
+                // element type for the accumulator, and a `DotCMSContentTypeField` is not a string map.
+                .reduce<{ [key: string]: string | null | undefined }>(
+                    (
+                        acc: { [key: string]: string | null | undefined },
+                        { variable, defaultValue, dataType, values }: DotCMSContentTypeField
+                    ) => {
+                        return {
+                            ...acc,
+                            [variable]: defaultValue || (dataType !== 'TEXT' ? values : null)
+                        };
+                    },
+                    {}
+                )
+        );
     }
 
-    private getMaxSize(event: any): string {
+    private getMaxSize(event: any): string | undefined {
         const attributes = [...event.target.attributes];
         const maxSize = attributes.filter((item) => {
             return item.name === 'max-file-length';
@@ -239,7 +251,11 @@ export class DotFormComponent {
         return maxSize && maxSize.value;
     }
 
-    private uploadFile(event: CustomEvent): Promise<DotCMSTempFile> {
+    /**
+     * Uploads the dropped file, or resolves null when it is rejected — over the size limit, or the
+     * request failed. The caller reads it as `tempFile && tempFile.id` for that reason.
+     */
+    private uploadFile(event: CustomEvent): Promise<DotCMSTempFile | null> {
         const uploadService = new DotUploadService();
         const file = event.detail.value;
         const maxSize = this.getMaxSize(event);
@@ -260,7 +276,8 @@ export class DotFormComponent {
                 .catch(({ message, status }: DotHttpErrorResponse) => {
                     binary.clearValue();
                     this.uploadFileInProgress = false;
-                    binary.errorMessage = getErrorMessage(message) || fallbackErrorMessages[status];
+                    binary.errorMessage =
+                        getErrorMessage(message) || fallbackErrorMessages[status] || '';
                     return null;
                 });
         } else {

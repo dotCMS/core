@@ -83,7 +83,7 @@ export class DotToolbarUserComponent implements OnInit {
      * @param event - Click event used by the PrimeNG menu popup.
      */
     toggleMenu(event: Event): void {
-        this.$menu().toggle(event);
+        this.$menu()?.toggle(event);
         this.$showMask.update((value) => !value);
     }
 

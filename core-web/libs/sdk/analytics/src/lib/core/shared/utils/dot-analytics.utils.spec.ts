@@ -1085,6 +1085,7 @@ describe('Analytics Utils', () => {
         const mockLocationWithUtm: Location = {
             href: 'https://example.com/page',
             pathname: '/page',
+            host: 'example.com',
             hostname: 'example.com',
             protocol: 'https:',
             hash: '#section',

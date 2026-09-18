@@ -74,7 +74,7 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
-import { DotPageAssetParams } from '../../../shared/models';
+import { DotPageAssetParams, InfoOptions } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { WithPageApiMethods } from '../../../store/features/page-api/withPageApi';
 import { Orientation, PageType } from '../../../store/models';
@@ -151,7 +151,7 @@ const baseUVEToolbarState = {
         apiUrl: `${'http://localhost'}${pageAPI}`
     },
     preview: null,
-    currentLanguage: pageAssetResponse?.viewAs.language,
+    currentLanguage: pageAssetResponse?.viewAs?.language,
     urlContentMap: null,
     runningExperiment: null,
     workflowActionsInode: pageAssetResponse?.page.inode,
@@ -159,16 +159,20 @@ const baseUVEToolbarState = {
 };
 
 // Mutable signals for test control (computed properties that tests need to mutate)
+// Each of these stands in for a store signal, so it is annotated with what that signal declares.
+// Seeded bare, `signal(null)` infers `WritableSignal<null>` and `signal(undefined)` infers
+// `WritableSignal<undefined>` — so every `.set(realValue)` below was an error, 20 of them in this
+// file alone. The types are `$lockOptions`, `$infoDisplayProps` and `$urlContentMap` from the store.
 const showWorkflowsActionsSignal = signal(true);
-const toggleLockOptionsSignal = signal(null);
-const infoDisplayPropsSignal = signal(undefined);
-const urlContentMapSignal = signal(undefined);
+const toggleLockOptionsSignal = signal<WorkflowLockOptions | null>(null);
+const infoDisplayPropsSignal = signal<InfoOptions | null>(null);
+const urlContentMapSignal = signal<DotCMSURLContentMap | null>(null);
 
 // Separate signals for view state properties (for test control)
 const deviceSignal = signal(
     DEFAULT_DEVICES.find((device) => device.inode === DEFAULT_DEVICE.inode)
 );
-const socialMediaSignal = signal(null);
+const socialMediaSignal = signal<string | null>(null);
 const orientationSignal = signal(Orientation.LANDSCAPE);
 const viewParamsSignal = signal({
     seo: undefined,
@@ -267,7 +271,7 @@ const baseUVEState = {
     $showWorkflowsActions: showWorkflowsActionsSignal, // Mutable for tests
     $personaSelector: () => ({
         pageId: pageAssetResponse?.page.identifier,
-        value: pageAssetResponse?.viewAs.persona ?? DEFAULT_PERSONA
+        value: pageAssetResponse?.viewAs?.persona ?? DEFAULT_PERSONA
     }),
     $infoDisplayProps: infoDisplayPropsSignal, // Mutable for tests
     $urlContentMap: urlContentMapSignal, // Mutable for tests
@@ -573,12 +577,14 @@ describe('DotUveToolbarComponent', () => {
 
                 // The edit URL content map button is only rendered in EDIT mode and when the map exists
                 baseUVEState.pageParams.set({ ...params, mode: UVE_MODE.EDIT });
-                baseUVEState.$urlContentMap.set(contentlet);
+                // The fixture is the slice this test needs; `DotCMSURLContentMap` extends
+                // `DotCMSBasicContentlet`, whose ~30 required fields none of these assertions read.
+                baseUVEState.$urlContentMap.set(contentlet as unknown as DotCMSURLContentMap);
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('edit-url-content-map'));
 
-                spectator.click(button);
+                spectator.click(button!);
 
                 expect(spy).toHaveBeenCalledWith(contentlet);
             });
@@ -605,7 +611,7 @@ describe('DotUveToolbarComponent', () => {
 
         describe('dot-ema-bookmarks', () => {
             it('should pass bookmarks URL to dot-ema-bookmarks component', () => {
-                const bookmarks = spectator.query(DotEmaBookmarksComponent);
+                const bookmarks = spectator.query(DotEmaBookmarksComponent)!;
 
                 expect(bookmarks.url).toBe('/test-url?host_id=123-xyz-567-xxl&language_id=1');
             });
@@ -623,14 +629,14 @@ describe('DotUveToolbarComponent', () => {
             });
 
             it('should have api link button with correct href', () => {
-                const btn = spectator.query(byTestId('uve-toolbar-api-link'));
+                const btn = spectator.query(byTestId('uve-toolbar-api-link'))!;
                 expect(btn.getAttribute('href')).toBe(API_URL);
             });
         });
 
         describe('dot-edit-ema-persona-selector', () => {
             it('should pass pageId and default persona value to persona selector', () => {
-                const personaSelector = spectator.query(EditEmaPersonaSelectorComponent);
+                const personaSelector = spectator.query(EditEmaPersonaSelectorComponent)!;
 
                 expect(personaSelector.pageId).toBe('123');
                 expect(personaSelector.value).toEqual({
@@ -1017,7 +1023,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('toggle-lock-button'));
-                spectator.click(button);
+                spectator.click(button!);
 
                 expect(spy).toHaveBeenCalledWith('test-inode-unlock', false, false, undefined);
             });
@@ -1036,7 +1042,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('toggle-lock-button'));
-                spectator.click(button);
+                spectator.click(button!);
 
                 expect(spy).toHaveBeenCalledWith('test-inode-lock', true, true, undefined);
             });
@@ -1073,7 +1079,7 @@ describe('DotUveToolbarComponent', () => {
                 spectator.detectChanges();
 
                 const button = spectator.query(byTestId('toggle-lock-button'));
-                spectator.click(button);
+                spectator.click(button!);
 
                 expect(spy).toHaveBeenCalledWith('test-inode-other', true, false, undefined);
             });
@@ -1287,7 +1293,7 @@ describe('DotUveToolbarComponent', () => {
 
                 expect(todayButton).toBeTruthy();
 
-                spectator.click(todayButton);
+                spectator.click(todayButton!);
 
                 expect(spyLoadPageAsset).toHaveBeenCalledWith({
                     publishDate: expect.any(String)
@@ -1308,7 +1314,7 @@ describe('DotUveToolbarComponent', () => {
 
                 expect(todayButton).toBeTruthy();
 
-                spectator.click(todayButton);
+                spectator.click(todayButton!);
 
                 expect(spyTrackUVECalendarChange).toHaveBeenCalledWith({
                     selectedDate: expect.any(String)
@@ -1582,7 +1588,7 @@ describe('DotUveToolbarComponent', () => {
                         baseUVEState.workflowLockIsLoading.set(true);
                         spectator.detectChanges();
 
-                        const options = spectator.component.$lockOptions();
+                        const options = spectator.component.$lockOptions()!;
 
                         expect(options).toEqual({
                             inode: 'test-inode',
@@ -1609,7 +1615,7 @@ describe('DotUveToolbarComponent', () => {
                         baseUVEState.workflowLockIsLoading.set(false);
                         spectator.detectChanges();
 
-                        const options = spectator.component.$lockOptions();
+                        const options = spectator.component.$lockOptions()!;
 
                         expect(options.disabled).toBe(true);
                         expect(options.message).toBe('editpage.locked-by');
@@ -1626,7 +1632,7 @@ describe('DotUveToolbarComponent', () => {
                         );
                         spectator.detectChanges();
 
-                        const options = spectator.component.$lockOptions();
+                        const options = spectator.component.$lockOptions()!;
 
                         expect(options.args).toEqual(['john.doe@example.com']);
                     });

@@ -36,7 +36,7 @@ const mockFieldTab: DotCMSContentTypeLayoutRow = {
     standalone: false
 })
 class DotTestHostComponent {
-    data: DotCMSContentTypeLayoutRow;
+    data!: DotCMSContentTypeLayoutRow;
 
     setData(data: DotCMSContentTypeLayoutRow): void {
         this.data = data;
@@ -128,7 +128,7 @@ describe('ContentTypeFieldsTabComponent', () => {
 
     it('should emit delete evt', () => {
         vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
-            conf.accept();
+            conf.accept!();
         });
         vi.spyOn(comp.removeTab, 'emit');
         const deleteButton = de.query(By.css('p-button')).nativeElement;

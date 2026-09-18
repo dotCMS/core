@@ -174,8 +174,8 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should not emit and mark form as invalid when submitting invalid form', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
+            const form = spectator.query(byTestId('activities-form'))!;
 
             spectator.typeInElement('', commentInput);
             spectator.detectChanges();
@@ -184,14 +184,14 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.commentSubmitted.emit).not.toHaveBeenCalled();
-            expect(spectator.component.form.get('comment').errors).toBeTruthy();
+            expect(spectator.component.form.get('comment')!.errors).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
 
         it('should show maxlength error when comment exceeds max length', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
+            const form = spectator.query(byTestId('activities-form'))!;
             const longComment = 'a'.repeat(501);
 
             spectator.typeInElement(longComment, commentInput);
@@ -201,14 +201,14 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.detectChanges();
 
             const control = spectator.component.form.get('comment');
-            expect(control.errors).toBeTruthy();
+            expect(control!.errors).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
 
         it('should show required error when comment is empty', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
+            const form = spectator.query(byTestId('activities-form'))!;
 
             spectator.typeInElement('', commentInput);
             spectator.detectChanges();
@@ -217,16 +217,16 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.detectChanges();
 
             const control = spectator.component.form.get('comment');
-            expect(control.errors).toBeTruthy();
-            expect(control.errors['required']).toBeTruthy();
+            expect(control!.errors).toBeTruthy();
+            expect(control!.errors!['required']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
 
         it('should emit comment when form is submitted with valid input', () => {
             const commentText = 'New valid comment';
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
+            const form = spectator.query(byTestId('activities-form'))!;
 
             spectator.typeInElement(commentText, commentInput);
             spectator.detectChanges();
@@ -238,8 +238,8 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should clear form after successful submission', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
+            const form = spectator.query(byTestId('activities-form'))!;
 
             spectator.typeInElement('Valid comment', commentInput);
             spectator.detectChanges();
@@ -252,8 +252,8 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should not emit comment when input contains only whitespace', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
+            const form = spectator.query(byTestId('activities-form'))!;
 
             spectator.typeInElement('   ', commentInput);
             spectator.detectChanges();
@@ -266,8 +266,8 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
         it('should trim whitespace from comment before emitting', () => {
             const commentText = '  Valid comment with spaces  ';
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
+            const form = spectator.query(byTestId('activities-form'))!;
 
             spectator.typeInElement(commentText, commentInput);
             spectator.detectChanges();
@@ -282,8 +282,8 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
         it('should maintain form state after failed submission', () => {
             const commentText = '';
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
+            const form = spectator.query(byTestId('activities-form'))!;
 
             spectator.typeInElement(commentText, commentInput);
             spectator.detectChanges();
@@ -297,7 +297,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should clear comment when clear button is clicked', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
             spectator.typeInElement('Test comment', commentInput);
             spectator.detectChanges();
 
@@ -308,7 +308,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             expect(commentInput).toHaveValue('');
             expect(spectator.component.form.pristine).toBe(true);
-            expect(spectator.component.form.get('comment').untouched).toBe(true);
+            expect(spectator.component.form.get('comment')!.untouched).toBe(true);
         });
 
         it('should keep clear button enabled regardless of comment field content', () => {
@@ -321,7 +321,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             expect(getButton()?.disabled).toBe(false);
 
             // Enabled when it has content
-            const commentInput = spectator.query(byTestId('activities-input'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
             spectator.typeInElement('Test comment', commentInput);
             spectator.detectChanges();
             expect(getButton()?.disabled).toBe(false);
@@ -342,7 +342,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             expect(getButton()?.disabled).toBe(false);
 
             // Enabled when it has content
-            const commentInput = spectator.query(byTestId('activities-input'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
             spectator.typeInElement('Test comment', commentInput);
             spectator.detectChanges();
             expect(getButton()?.disabled).toBe(false);
@@ -364,10 +364,10 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         const getValidationErrorMsg = () =>
-            spectator.query(DotFieldValidationMessageComponent).errorMsg;
+            spectator.query(DotFieldValidationMessageComponent)!.errorMsg;
 
         it('should show "A message is required." error when submitting an empty comment', () => {
-            const form = spectator.query(byTestId('activities-form'));
+            const form = spectator.query(byTestId('activities-form'))!;
 
             spectator.dispatchFakeEvent(form, 'submit');
             spectator.detectChanges();
@@ -376,36 +376,36 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should clear the required error message once a non-empty message is entered', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
+            const form = spectator.query(byTestId('activities-form'))!;
 
             spectator.dispatchFakeEvent(form, 'submit');
             spectator.detectChanges();
-            expect(spectator.component.form.get('comment').hasError('required')).toBe(true);
+            expect(spectator.component.form.get('comment')!.hasError('required')).toBe(true);
 
             spectator.typeInElement('Now it has content', commentInput);
             spectator.detectChanges();
 
-            expect(spectator.component.form.get('comment').hasError('required')).toBe(false);
+            expect(spectator.component.form.get('comment')!.hasError('required')).toBe(false);
             expect(getValidationErrorMsg()).toBeFalsy();
         });
 
         it('should clear the required error message when clear button is clicked', () => {
-            const form = spectator.query(byTestId('activities-form'));
+            const form = spectator.query(byTestId('activities-form'))!;
 
             spectator.dispatchFakeEvent(form, 'submit');
             spectator.detectChanges();
-            expect(spectator.component.form.get('comment').hasError('required')).toBe(true);
+            expect(spectator.component.form.get('comment')!.hasError('required')).toBe(true);
 
             spectator.component.clearComment();
             spectator.detectChanges();
 
-            expect(spectator.component.form.get('comment').hasError('required')).toBe(false);
+            expect(spectator.component.form.get('comment')!.hasError('required')).toBe(false);
             expect(getValidationErrorMsg()).toBeFalsy();
         });
 
         it('should keep the meta row present with a fixed height regardless of error state, to avoid shifting the sticky footer', () => {
-            const form = spectator.query(byTestId('activities-form'));
+            const form = spectator.query(byTestId('activities-form'))!;
             const getMetaRow = () => spectator.query(byTestId('activities-meta-row'));
 
             // No error yet: row must still be present and reserve its height.
@@ -428,7 +428,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should lay out the error on the left and the character counter on the right of the same row', () => {
-            const metaRow = spectator.query(byTestId('activities-meta-row'));
+            const metaRow = spectator.query(byTestId('activities-meta-row'))!;
             const validationMessage = metaRow.querySelector('dot-field-validation-message');
             const charCounter = metaRow.querySelector('[data-testid="activities-char-counter"]');
 
@@ -445,7 +445,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should reset form state when clearComment is called', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
             spectator.typeInElement('Test comment', commentInput);
             spectator.detectChanges();
 
@@ -454,13 +454,13 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             expect(commentInput).toHaveValue('');
             expect(spectator.component.form.pristine).toBe(true);
-            expect(spectator.component.form.get('comment').untouched).toBe(true);
-            expect(spectator.component.form.get('comment').value).toBe(null);
+            expect(spectator.component.form.get('comment')!.untouched).toBe(true);
+            expect(spectator.component.form.get('comment')!.value).toBe(null);
         });
 
         // New test cases for custom validation behavior
         it('should not show validation errors when input field is empty before submit', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
 
             // Type something and then delete it
             spectator.typeInElement('Test', commentInput);
@@ -471,17 +471,17 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             // Check that there are no errors shown before submission
             const control = spectator.component.form.get('comment');
-            expect(control.valid).toBe(true);
-            expect(control.errors).toBeFalsy();
+            expect(control!.valid).toBe(true);
+            expect(control!.errors).toBeFalsy();
             expect(commentInput).not.toHaveClass('ng-invalid');
         });
 
         it('should apply required validation only when form is submitted with empty value', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
-            const form = spectator.query(byTestId('activities-form'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
+            const form = spectator.query(byTestId('activities-form'))!;
 
             // Initially no errors
-            expect(spectator.component.form.get('comment').errors).toBeFalsy();
+            expect(spectator.component.form.get('comment')!.errors).toBeFalsy();
 
             // Submit empty form
             spectator.dispatchFakeEvent(form, 'submit');
@@ -489,8 +489,8 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
 
             // Now should have required error
             const control = spectator.component.form.get('comment');
-            expect(control.errors).toBeTruthy();
-            expect(control.errors['required']).toBeTruthy();
+            expect(control!.errors).toBeTruthy();
+            expect(control!.errors!['required']).toBeTruthy();
             expect(commentInput).toHaveClass('ng-invalid');
             expect(commentInput).toHaveClass('ng-touched');
         });
@@ -515,7 +515,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.detectChanges();
 
             // Add content to comment field
-            const commentInput = spectator.query(byTestId('activities-input'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
             spectator.typeInElement('Test comment', commentInput);
             spectator.detectChanges();
 
@@ -526,7 +526,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should update character counter and isAtMaxLength as user types', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
             // Type a short comment
             spectator.typeInElement('abc', commentInput);
             spectator.detectChanges();
@@ -544,7 +544,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
         });
 
         it('should display correct character counter text', () => {
-            const commentInput = spectator.query(byTestId('activities-input'));
+            const commentInput = spectator.query(byTestId('activities-input'))!;
             const charCounter = () => spectator.query(byTestId('activities-char-counter'));
 
             // Type a short comment
@@ -552,7 +552,7 @@ describe('DotEditContentSidebarActivitiesComponent', () => {
             spectator.detectChanges();
 
             // Should show: 4/500 characters
-            expect(charCounter().textContent).toContain('4/500');
+            expect(charCounter()!.textContent).toContain('4/500');
         });
     });
 

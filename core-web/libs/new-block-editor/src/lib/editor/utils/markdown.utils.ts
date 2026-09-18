@@ -72,7 +72,8 @@ function createTurndownService(): TurndownService {
     const service = new TurndownService(MARKDOWN_CONFIG);
     service.addRule('tables', {
         filter: 'table',
-        replacement: (_content, node) => '\n\n' + processTable(node as HTMLTableElement) + '\n\n'
+        replacement: (_content: string, node: Node) =>
+            '\n\n' + processTable(node as HTMLTableElement) + '\n\n'
     });
     return service;
 }

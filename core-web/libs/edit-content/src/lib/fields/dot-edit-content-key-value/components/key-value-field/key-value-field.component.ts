@@ -79,7 +79,8 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<DotKeyVa
      * their position; a plain object is still accepted for any caller outside that
      * path, at the cost of losing it.
      */
-    private parseToDotKeyValue(data: DotKeyValueFieldValue): DotKeyValue[] {
+    // `| null` because the accessor's `$value` is null until the form writes one.
+    private parseToDotKeyValue(data: DotKeyValueFieldValue | null): DotKeyValue[] {
         if (typeof data === 'string') {
             return parseOrderedKeyValue(data);
         }
@@ -111,7 +112,9 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<DotKeyVa
      * Handles the change value of the component.
      * It is used to update the initial value of the component.
      */
-    readonly handleChangeValue = signalMethod<DotKeyValueFieldValue>((value) => {
+    // `| null` because this is called with the accessor's `$value`, which is null until the form
+    // writes one — `parseToDotKeyValue` returns `[]` for it.
+    readonly handleChangeValue = signalMethod<DotKeyValueFieldValue | null>((value) => {
         this.$initialValue.set(this.parseToDotKeyValue(value));
     });
 }

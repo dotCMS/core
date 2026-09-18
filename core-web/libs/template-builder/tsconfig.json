@@ -10,12 +10,6 @@
             "path": "./tsconfig.spec.json"
         }
     ],
-    "angularCompilerOptions": {
-        "enableI18nLegacyMessageIdFormat": false,
-        "strictInjectionParameters": true,
-        "strictInputAccessModifiers": true,
-        "strictTemplates": true
-    },
     "compilerOptions": {
         "module": "preserve",
         "moduleResolution": "bundler",

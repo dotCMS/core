@@ -160,7 +160,7 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
         groupMappings: parseJson(values['groupMappings'], config.oidc.groupMappings),
         allowUnmappedGroups: booleanValue(
             values['allowUnmappedGroups'],
-            config.oidc.allowUnmappedGroups
+            config.oidc.allowUnmappedGroups ?? false
         ),
         groupFilterPattern: String(values['groupFilterPattern'] ?? config.oidc.groupFilterPattern)
     };

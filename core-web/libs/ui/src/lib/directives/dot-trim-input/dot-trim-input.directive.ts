@@ -13,7 +13,12 @@ export class DotTrimInputDirective implements AfterViewInit {
 
     @HostListener('blur')
     onBlur() {
-        this.ngControl.control.setValue(this.ngControl.value.trim());
+        const control = this.ngControl?.control;
+        const value = this.ngControl?.value;
+
+        if (control && typeof value === 'string') {
+            control.setValue(value.trim());
+        }
     }
 
     ngAfterViewInit(): void {

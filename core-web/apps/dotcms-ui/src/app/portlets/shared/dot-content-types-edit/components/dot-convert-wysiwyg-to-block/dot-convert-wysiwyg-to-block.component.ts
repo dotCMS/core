@@ -6,6 +6,8 @@ import { CheckboxModule } from 'primeng/checkbox';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { FieldType } from '../fields/models';
+
 @Component({
     selector: 'dot-convert-wysiwyg-to-block',
     templateUrl: './dot-convert-wysiwyg-to-block.component.html',
@@ -17,7 +19,11 @@ import { DotMessagePipe } from '@dotcms/ui';
     imports: [FormsModule, ButtonModule, CheckboxModule, DotMessagePipe]
 })
 export class DotConvertWysiwygToBlockComponent {
-    readonly $currentFieldType = input({ alias: 'currentFieldType' });
+    // See DotConvertToBlockInfoComponent: `input()` takes the initial value first, so
+    // `input({ alias })` left this input unaliased and `[currentFieldType]` bound to nothing.
+    readonly $currentFieldType = input<FieldType | undefined>(undefined, {
+        alias: 'currentFieldType'
+    });
 
     readonly $convert = output<MouseEvent>();
 

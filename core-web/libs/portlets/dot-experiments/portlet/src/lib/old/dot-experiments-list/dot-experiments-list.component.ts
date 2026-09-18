@@ -74,7 +74,7 @@ export class DotExperimentsListComponent {
         title: this.dotMessageService.get('experimentspage.not.experiments.founds'),
         icon: 'pi-filter-fill rotate-180'
     };
-    private componentRef: ComponentRef<DotExperimentsCreateComponent>;
+    private componentRef!: ComponentRef<DotExperimentsCreateComponent>;
 
     /**
      * Update the list of selected statuses

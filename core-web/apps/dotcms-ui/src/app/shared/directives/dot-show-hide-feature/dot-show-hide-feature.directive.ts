@@ -5,7 +5,8 @@ import {
     OnInit,
     TemplateRef,
     ViewContainerRef,
-    inject
+    inject,
+    input
 } from '@angular/core';
 
 import { DotPropertiesService } from '@dotcms/data-access';
@@ -53,17 +54,21 @@ export class DotShowHideFeatureDirective implements OnInit {
     private viewContainer = inject(ViewContainerRef);
     private dotPropertiesService = inject(DotPropertiesService);
 
-    private _featureFlag: FeaturedFlags;
+    private _featureFlag!: FeaturedFlags;
+    // TODO: Skipped for migration because:
+    //  Accessor inputs cannot be migrated as they are too complex.
     @Input() set dotShowHideFeature(featureFlag: FeaturedFlags) {
         this._featureFlag = featureFlag;
     }
 
-    private _alternateTemplateRef: TemplateRef<Component>;
+    private _alternateTemplateRef!: TemplateRef<Component>;
+    // TODO: Skipped for migration because:
+    //  Accessor inputs cannot be migrated as they are too complex.
     @Input() set dotShowHideFeatureAlternate(alternateTemplateRef: TemplateRef<Component>) {
         this._alternateTemplateRef = alternateTemplateRef;
     }
 
-    @Input() dotShowOnNotFound: boolean;
+    readonly dotShowOnNotFound = input<boolean>();
 
     get alternateTemplateRef(): TemplateRef<Component> {
         return this._alternateTemplateRef;

@@ -1,0 +1,7 @@
+{
+  "src/lib/fields/dot-edit-content-file-field/components/dot-binary-field-ce-bridge/dot-binary-field-ce-bridge.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  }
+}

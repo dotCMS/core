@@ -90,7 +90,7 @@ describe('RegexCheckPropertyComponent', () => {
             value: '^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$'
         });
 
-        expect(spectator.component.group.get('regexCheck').value).toBe(
+        expect(spectator.component.group.get('regexCheck')!.value).toBe(
             '^([a-zA-Z0-9]+[a-zA-Z0-9._%+-]*@(?:[a-zA-Z0-9-]+.)+[a-zA-Z]{2,4})$'
         );
     });

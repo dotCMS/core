@@ -390,18 +390,29 @@ export const CategoryFieldStore = signalStore(
                         }
                     }),
 
-                    // Only pass if you click a item with children
+                    // Only pass if you click a item with children.
+                    // `!!` because `hasChildren` is optional: without it the predicate returned
+                    // `boolean | undefined`, which `filter` does not accept.
                     filter(
                         (event) =>
                             !event ||
-                            (event?.item?.hasChildren &&
-                                !store.keyParentPath().includes(event?.item?.key))
+                            (!!event.item.hasChildren &&
+                                !store.keyParentPath().includes(event.item.key))
                     ),
                     tap(() => patchState(store, { state: ComponentStatus.LOADING })),
                     switchMap((event) => {
-                        const categoryInode: string = event
-                            ? event?.item.inode
-                            : store.rootCategoryInode();
+                        // Both sources are optional on their models — `inode` on the clicked item
+                        // and `values` behind `rootCategoryInode` — so neither is guaranteed by
+                        // the types even though a category field always carries a root.
+                        const categoryInode = event ? event.item.inode : store.rootCategoryInode();
+
+                        // Nothing to fetch without an inode. The LOADING patch above already
+                        // landed, so settle the state rather than leaving the list spinning.
+                        if (!categoryInode) {
+                            patchState(store, { state: ComponentStatus.LOADED });
+
+                            return EMPTY;
+                        }
 
                         return categoryService.getChildren(categoryInode).pipe(
                             tapResponse({
@@ -443,24 +454,36 @@ export const CategoryFieldStore = signalStore(
                         patchState(store, { mode: 'search', state: ComponentStatus.LOADING })
                     ),
                     switchMap((filter) => {
-                        return categoryService
-                            .getChildren(store.rootCategoryInode(), { filter })
-                            .pipe(
-                                tapResponse({
-                                    next: (categories) => {
-                                        patchState(store, {
-                                            searchCategories: [...categories],
-                                            state: ComponentStatus.LOADED
-                                        });
-                                    },
-                                    error: () => {
-                                        patchState(store, {
-                                            state: ComponentStatus.ERROR,
-                                            searchCategories: []
-                                        });
-                                    }
-                                })
-                            );
+                        // `values` is optional on the field model, so the root inode is not
+                        // guaranteed by the types. Nothing to search without it; settle the
+                        // state so the list does not stay on the LOADING patch above.
+                        const rootInode = store.rootCategoryInode();
+
+                        if (!rootInode) {
+                            patchState(store, {
+                                state: ComponentStatus.LOADED,
+                                searchCategories: []
+                            });
+
+                            return EMPTY;
+                        }
+
+                        return categoryService.getChildren(rootInode, { filter }).pipe(
+                            tapResponse({
+                                next: (categories) => {
+                                    patchState(store, {
+                                        searchCategories: [...categories],
+                                        state: ComponentStatus.LOADED
+                                    });
+                                },
+                                error: () => {
+                                    patchState(store, {
+                                        state: ComponentStatus.ERROR,
+                                        searchCategories: []
+                                    });
+                                }
+                            })
+                        );
                     })
                 )
             )
