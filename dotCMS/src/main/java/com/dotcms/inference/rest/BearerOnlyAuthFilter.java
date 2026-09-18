@@ -1,7 +1,13 @@
 package com.dotcms.inference.rest;
 
+import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessorImpl;
+import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.inference.model.InferenceError;
 import com.dotcms.inference.rest.view.InferenceErrorView;
+import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
 
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
@@ -74,5 +80,64 @@ public class BearerOnlyAuthFilter implements ContainerRequestFilter {
                         + " Session and basic credentials are not accepted.",
                 null,
                 Response.Status.UNAUTHORIZED.getStatusCode()));
+    }
+
+    /**
+     * Resolves the caller from the bearer token itself, ignoring any session on the request.
+     *
+     * <p>Checking the header's shape is not authentication. {@code WebResource.getCurrentUser}
+     * reads {@code PortalUtil.getUser(request)} before it authenticates anything, so a request
+     * carrying both a session cookie and an unparseable {@code Authorization: Bearer} header is
+     * served as the session user — the token is never examined. That accepts a credential this
+     * family refuses, and where the token is valid but belongs to someone else, it runs the
+     * request as the session's owner rather than the token's.</p>
+     *
+     * <p>The same two processors {@code WebResource} uses are called here, in its order, so a
+     * token accepted elsewhere in dotCMS is accepted here. What differs is that nothing else is
+     * consulted when they decline.</p>
+     *
+     * @param request the inbound request
+     * @return the token's user, or null when the token authenticates nobody
+     */
+    public static User bearerUser(final HttpServletRequest request) {
+        try {
+            final User sessionRefUser = DotAuthSessionCredentialProcessorImpl.getInstance()
+                    .processAuthHeaderFromSessionRef(request);
+            if (sessionRefUser != null) {
+                return sessionRefUser;
+            }
+            return JsonWebTokenAuthCredentialProcessorImpl.getInstance()
+                    .processAuthHeaderFromJWT(request);
+        } catch (final Exception e) {
+            // A credential that cannot be processed is a credential that did not authenticate.
+            // The reason is logged rather than returned: it describes the token the caller sent,
+            // and a caller learning why their forgery failed is being told how to forge better.
+            Logger.warn(BearerOnlyAuthFilter.class,
+                    "Bearer credential could not be processed: " + e.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    /**
+     * @return the refusal for a bearer token that authenticated nobody
+     */
+    public static InferenceError invalidBearerToken() {
+        return new InferenceError(
+                "invalid_request_error",
+                "The bearer token is not valid.",
+                null,
+                Response.Status.UNAUTHORIZED.getStatusCode());
+    }
+
+    /**
+     * @return the refusal for a request whose session names a different caller than its token
+     */
+    public static InferenceError credentialConflict() {
+        return new InferenceError(
+                "invalid_request_error",
+                "The request carries a session for a different user than its bearer token."
+                        + " Send the token without a session.",
+                null,
+                Response.Status.UNAUTHORIZED.getStatusCode());
     }
 }

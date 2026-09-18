@@ -380,4 +380,65 @@ public class InferenceAuthorizationTest {
     private static HttpServletResponse mockResponse() {
         return mock(HttpServletResponse.class);
     }
+
+    /**
+     * Given a request carrying both a live session and an {@code Authorization} header whose
+     * token authenticates nobody
+     * When a completion is requested
+     * Then it is refused as unauthorized
+     *
+     * <p>The bypass the shape check alone could not catch. Refusing a request with no
+     * {@code Authorization} header proves only that the header is required, not that its contents
+     * are ever read — and they were not: the surrounding authentication answers with
+     * {@code PortalUtil.getUser(request)} before it authenticates a credential, so a session plus
+     * any syntactically valid bearer value was served as the session's owner. A caller who cannot
+     * obtain a token could therefore reach this family with an ambient browser credential, which
+     * is the precondition this family's absence of CORS headers assumes is impossible.</p>
+     */
+    @Test
+    public void test_completions_withSessionAndUnauthenticatedBearer_isUnauthorized() {
+        final HttpServletRequest request =
+                mockRequest(host.getHostname(), "Bearer not-a-real-token");
+        givenSessionAuthenticatedAs(request, backendUser);
+
+        try {
+            final Response response = resource.completions(
+                    request, mockResponse(), null, completionFor(CHAT_MODEL));
+            assertEquals("A session must not stand in for a token that authenticates nobody",
+                    Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+            assertTrue("a refusal carries the standard error shape",
+                    response.getEntity() instanceof InferenceErrorView);
+        } catch (final WebApplicationException e) {
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(),
+                    e.getResponse().getStatus());
+        }
+    }
+
+    /**
+     * Given a request whose session is one user and whose bearer token is another
+     * When a completion is requested
+     * Then it is refused rather than served as either
+     *
+     * <p>The quieter half of the same defect. With the session consulted first, a valid token was
+     * not merely unverified but overridden: the request ran as the session's owner while the
+     * caller believed they had authenticated as the token's. Nothing in the response said which
+     * identity was used, so the two could differ indefinitely without anyone noticing — including
+     * for the site whose credentials were spent.</p>
+     */
+    @Test
+    public void test_completions_withSessionAndTokenNamingDifferentUsers_isUnauthorized() {
+        final HttpServletRequest request =
+                mockRequest(host.getHostname(), frontendBearerToken);
+        givenSessionAuthenticatedAs(request, backendUser);
+
+        try {
+            final Response response = resource.completions(
+                    request, mockResponse(), null, completionFor(CHAT_MODEL));
+            assertEquals("A session naming a different user than the token must be refused",
+                    Response.Status.UNAUTHORIZED.getStatusCode(), response.getStatus());
+        } catch (final WebApplicationException e) {
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(),
+                    e.getResponse().getStatus());
+        }
+    }
 }

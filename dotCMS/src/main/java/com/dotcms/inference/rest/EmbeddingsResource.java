@@ -179,6 +179,20 @@ public class EmbeddingsResource {
                 .init()
                 .getUser();
 
+        // The token, not the session, says who this is. The builder above reads
+        // PortalUtil.getUser(request) before it authenticates anything, so on a request carrying
+        // both a session and a bearer header it answers with the session's owner and never looks
+        // at the token. Resolved here from the token alone and compared, so an unparseable token
+        // cannot ride a session in, and a valid token cannot be overridden by one.
+        final User bearerUser = BearerOnlyAuthFilter.bearerUser(request);
+        if (bearerUser == null) {
+            return errorResponse(BearerOnlyAuthFilter.invalidBearerToken());
+        }
+        if (!bearerUser.getUserId().equals(user.getUserId())) {
+            Logger.warn(this, "Bearer token and session name different users; refusing");
+            return errorResponse(BearerOnlyAuthFilter.credentialConflict());
+        }
+
         final ResolvedAiContext context;
         try {
             context = AiHostResolver.resolve(request, siteOverride(request, siteId), user);

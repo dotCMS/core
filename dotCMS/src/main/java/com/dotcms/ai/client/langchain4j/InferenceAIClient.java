@@ -59,6 +59,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -365,7 +366,7 @@ public final class InferenceAIClient {
         if (!state.awaitTerminal(timeoutSeconds)) {
             Logger.warn(InferenceAIClient.class,
                     "Inference stream exceeded the " + timeoutSeconds + " second ceiling");
-            state.fail(InferenceError.upstream(
+            state.failAtDeadline(InferenceError.upstream(
                     "The completion exceeded the configured ceiling of " + timeoutSeconds + " seconds"));
         }
     }
@@ -848,6 +849,18 @@ public final class InferenceAIClient {
         private final Consumer<InferenceStreamEvent> sink;
         private final boolean includeUsage;
         private final CountDownLatch terminalLatch = new CountDownLatch(1);
+        /**
+         * Guards event ordering. A lock rather than {@code synchronized} because the deadline has
+         * to be enforceable while this is held: {@link #emit} writes to the consumer's socket
+         * inside it, and a consumer that has stopped reading holds it for as long as it likes.
+         */
+        private final ReentrantLock lock = new ReentrantLock();
+
+        /**
+         * How long the deadline will wait for the lock before ending the stream unreported. Short
+         * on purpose: it covers a write that is merely in progress, not one that has stalled.
+         */
+        private static final long DEADLINE_REPORT_BUDGET_MILLIS = 250;
         private final AtomicBoolean terminated = new AtomicBoolean();
         private final AtomicBoolean emitted = new AtomicBoolean();
         private final Set<Integer> fragmentedToolCalls = Collections.synchronizedSet(new HashSet<>());
@@ -940,11 +953,53 @@ public final class InferenceAIClient {
          *
          * @param error what went wrong
          */
-        private synchronized void fail(final InferenceError error) {
-            if (terminated.get()) {
-                return;
+        private void fail(final InferenceError error) {
+            lock.lock();
+            try {
+                if (terminated.get()) {
+                    return;
+                }
+                emit(new InferenceStreamEvent.Error(error));
+                terminate();
+            } finally {
+                lock.unlock();
             }
-            emit(new InferenceStreamEvent.Error(error));
+        }
+
+        /**
+         * Ends the stream at the deadline, whether or not the consumer is still reading.
+         *
+         * <p>{@link #fail} cannot be used for this. It waits for the lock, and the thread most
+         * likely to be holding the lock at the deadline is one blocked writing to the consumer
+         * that caused the deadline — so the timeout would wait on exactly the condition it exists
+         * to break, and neither the request thread nor its concurrency slot would be released.</p>
+         *
+         * <p>The error is offered to the consumer only if the lock is free almost immediately.
+         * When it is not, the stream is ended anyway and nothing is written: a consumer that has
+         * not read for the length of the ceiling is not waiting for an explanation.</p>
+         *
+         * @param error what to report, if there is anyone left to report it to
+         */
+        private void failAtDeadline(final InferenceError error) {
+            boolean held = false;
+            try {
+                held = lock.tryLock(DEADLINE_REPORT_BUDGET_MILLIS, TimeUnit.MILLISECONDS);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            if (held) {
+                try {
+                    if (!terminated.get()) {
+                        emit(new InferenceStreamEvent.Error(error));
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                Logger.warn(InferenceAIClient.class,
+                        "Inference stream consumer still held the stream at the deadline; ending"
+                                + " it without reporting");
+            }
             terminate();
         }
 
@@ -957,7 +1012,17 @@ public final class InferenceAIClient {
          *
          * @param event the event to emit
          */
-        private synchronized void emit(final InferenceStreamEvent event) {
+        private void emit(final InferenceStreamEvent event) {
+            lock.lock();
+            try {
+                emitLocked(event);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        /** @param event the event to emit, with the lock already held */
+        private void emitLocked(final InferenceStreamEvent event) {
             if (terminated.get()) {
                 return;
             }
