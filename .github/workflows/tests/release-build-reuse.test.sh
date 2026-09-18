@@ -28,8 +28,9 @@
 # Run:  bash .github/workflows/tests/release-build-reuse.test.sh
 # Deps: bash 3.2+ (macOS default is fine), awk, sed, grep, cut.
 #
-# Not wired into CI yet: .github/filters.yaml does not route .github/workflows/**
-# to any build. Same status as link-issue-to-pr.test.sh.
+# Run in CI by cicd_pr_workflow-lint.yml, which executes every suite under
+# .github/workflows/tests/ on PRs touching .github/**. That workflow's actionlint
+# job covers the workflow YAML; these suites cover the composite actions too.
 
 set -uo pipefail
 
