@@ -726,8 +726,9 @@ export const DotContentDriveStore = signalStore(
     withFolderDeleteRuns(),
     withPushPublishEnvironments(),
     withSitePermissions(),
-    withComputed(() => {
+    withComputed((store) => {
         const globalStore = inject(GlobalStore);
+        const { selectedNode, siteCanAddChildren } = store;
 
         return {
             /**
@@ -739,25 +740,7 @@ export const DotContentDriveStore = signalStore(
              * an instance older than the field, which callers must treat alike — no readable
              * ceiling, so the refusing is left to the server.
              */
-            uploadCeilings: computed(() => globalStore.systemBulkUpload())
-        };
-    }),
-    withComputed(({ busyRows, inFlightFolderKeys }) => ({
-        /**
-         * Every row key that should render as busy, from **both** sources.
-         *
-         * `busyRows` covers runs this client fired, of any kind. `inFlightFolderKeys` covers folder
-         * deletes the server knows about — this client's and other authors' alike, established on
-         * load and kept current by announcements.
-         *
-         * Merged here, once, so the listing and the sidebar tree read the same answer. Two
-         * derivations would drift, and the drift reads as a folder inert in one surface and usable
-         * in the other — worse than marking neither, because it teaches the author that the marking
-         * cannot be trusted (FR-014, US2 T024).
-         */
-        allBusyRows: computed(() => [...new Set([...busyRows(), ...inFlightFolderKeys()])])
-    })),
-    withComputed(({ selectedNode, siteCanAddChildren }) => ({
+            uploadCeilings: computed(() => globalStore.systemBulkUpload()),
         /**
          * Whether the browsed folder accepts new children.
          *
@@ -786,7 +769,8 @@ export const DotContentDriveStore = signalStore(
 
             return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
         })
-    })),
+        };
+    }),
     withHooks((store) => ({
         onInit() {
             // Fed the signal rather than called on each site change: `rxMethod` re-runs on every

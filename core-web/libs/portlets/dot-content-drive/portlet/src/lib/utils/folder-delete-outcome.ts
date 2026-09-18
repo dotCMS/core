@@ -79,7 +79,11 @@ export function messageKeyForFolderDeleteReason(reason: string | undefined): str
  * The server's per-folder `message` is never read here. It is diagnostic, written for a log (CR-04).
  */
 export function describeFolderDeleteOutcome(
-    results: DotBatchItemResult<DotFolderDeleteFailureReason>[],
+    // Deliberately the wide type. The outcome's `failures` carries whichever vocabulary its
+    // producer speaks, and this function's whole contract is that an unrecognised reason still names
+    // its folder and still reports as failed — narrowing would only move the problem to a cast at
+    // the call site, where the fallback stops being visible.
+    results: DotBatchItemResult<string>[],
     resolve: ResolveMessage
 ): string[] {
     const byKey = new Map<string, string[]>();

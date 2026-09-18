@@ -9,21 +9,38 @@ import {
 } from '@ngrx/signals';
 import { EMPTY } from 'rxjs';
 
-import { computed, DestroyRef, inject } from '@angular/core';
+import { computed, DestroyRef, inject, Signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { catchError, take } from 'rxjs/operators';
-
 
 import {
     DotEventsSocket,
     DotFolderBulkDeleteService,
     DotSystemEventType
 } from '@dotcms/data-access';
-import { DotFolderDeleteAnnouncementEvent } from '@dotcms/dotcms-models';
+import { DotContentDriveItem, DotFolderDeleteAnnouncementEvent } from '@dotcms/dotcms-models';
 
 import { DotContentDriveState } from '../../../shared/models';
 import { isFolder } from '../../../utils/functions';
+
+/**
+ * Resolves folder paths to the keys the listing and the tree mark by.
+ *
+ * Against the rows **currently shown**, not the whole in-flight set: a folder nothing is rendering
+ * needs no marking, and this keeps the work bounded by the page rather than by how much is being
+ * deleted across the instance.
+ *
+ * Each match contributes **both** `inode` and `identifier`, because the search service only
+ * backfills one from the other when the API returned none.
+ */
+const resolveRowKeys = (paths: Set<string>, items: DotContentDriveItem[]): string[] =>
+    paths.size
+        ? items
+              .filter((item) => isFolder(item) && paths.has(item.path))
+              .flatMap((item) => [item.inode, item.identifier])
+              .filter((key): key is string => !!key)
+        : [];
 
 interface WithFolderDeleteRunsState {
     /**
@@ -67,7 +84,16 @@ interface WithFolderDeleteRunsState {
  */
 export function withFolderDeleteRuns() {
     return signalStoreFeature(
-        { state: type<DotContentDriveState>() },
+        {
+            state: type<DotContentDriveState>(),
+            // A required input rather than something recomputed: `busyRows` belongs to
+            // `withActionExecution`, which must be installed before this feature. Reading it here is
+            // what lets both sources meet in ONE computed — see `allBusyRows`.
+            //
+            // `props`, not `computed`: this version of @ngrx/signals names the slot `props`, and the
+            // wrong key fails as "busyRows does not exist" rather than as an unknown option.
+            props: type<{ busyRows: Signal<string[]> }>()
+        },
         withState<WithFolderDeleteRunsState>({
             folderDeleteRuns: {},
             folderDeleteRunsEstablished: false
@@ -88,19 +114,32 @@ export function withFolderDeleteRuns() {
              * only backfills one from the other when the API returned none — so neither is
              * reliably the key a given row carries.
              */
-            inFlightFolderKeys: computed<string[]>(() => {
-                const paths = new Set(Object.values(store.folderDeleteRuns()).flat());
-
-                if (!paths.size) {
-                    return [];
-                }
-
-                return store
-                    .items()
-                    .filter((item) => isFolder(item) && paths.has(item.path))
-                    .flatMap((item) => [item.inode, item.identifier])
-                    .filter((key): key is string => !!key);
-            })
+            inFlightFolderKeys: computed<string[]>(() =>
+                resolveRowKeys(
+                    new Set(Object.values(store.folderDeleteRuns()).flat()),
+                    store.items()
+                )
+            ),
+            /**
+             * Every row key that should render as busy, from **both** sources.
+             *
+             * `busyRows` covers runs this client fired, of any kind; the server-derived half covers
+             * folder deletes the server knows about, this client's and other authors' alike.
+             *
+             * Merged here, once, so the listing and the sidebar tree read the same answer. Two
+             * derivations would drift, and the drift reads as a folder inert in one surface and
+             * usable in the other — worse than marking neither, because it teaches the author that
+             * the marking cannot be trusted (FR-014).
+             */
+            allBusyRows: computed<string[]>(() => [
+                ...new Set([
+                    ...store.busyRows(),
+                    ...resolveRowKeys(
+                        new Set(Object.values(store.folderDeleteRuns()).flat()),
+                        store.items()
+                    )
+                ])
+            ])
         })),
         withMethods(
             (
