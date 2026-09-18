@@ -64,6 +64,31 @@ import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions'
                knows nothing about the rows it happens to sit between. */
             padding: 0 0.75rem 0.75rem 1px;
         }
+
+        /* The two rows that are not tree nodes still have to feel like them.
+
+           PrimeNG paints a node's hover state through a rule scoped under the tree root, so the
+           class alone buys nothing out here: all-site-content and System Host sit outside the
+           tree on purpose, and both were left with no hover at all while every row between them
+           had one. Same tokens as the tree node, read with the underlying content token as a
+           fallback so a rename of the component-level one degrades instead of going blank.
+
+           Selected rows are excluded: PrimeNG already paints those, and a hover on top of the
+           selected background reads as the selection having been lost. */
+        :host button.p-tree-node-content:not(.p-tree-node-selected):hover {
+            background-color: var(
+                --p-tree-node-hover-background,
+                var(--p-content-hover-background)
+            );
+            color: var(--p-tree-node-hover-color, var(--p-text-hover-color));
+        }
+
+        /* Drop target, matching what the tree marks its own active row with rather than a second
+           look for the same meaning. The all-site-content row deliberately does the opposite and
+           dims, because it refuses the drop. */
+        :host button.is-drop-target {
+            background-color: var(--color-palette-primary-200);
+        }
     `
 })
 export class DotContentDriveSidebarComponent {
@@ -106,6 +131,15 @@ export class DotContentDriveSidebarComponent {
     protected readonly $allSiteContentDragOver = signal(false);
 
     /**
+     * Whether a drag is currently over the System Host row.
+     *
+     * Unlike the all-site-content row above, this one accepts the drop, so it marks itself as a
+     * target rather than as refusing. The tree does the same for its own rows; without it, the one
+     * place in the column that would take the item was the only one giving nothing back.
+     */
+    protected readonly $systemHostDragOver = signal(false);
+
+    /**
      * The drop target that stands for System Host.
      *
      * An empty `path` is what marks it as the host itself rather than a folder on it — the same
@@ -137,10 +171,18 @@ export class DotContentDriveSidebarComponent {
 
         event.preventDefault();
         event.stopPropagation();
+        this.$systemHostDragOver.set(true);
+    }
+
+    /** Clears the mark when the drag leaves without dropping. */
+    protected onSystemHostDragLeave(): void {
+        this.$systemHostDragOver.set(false);
     }
 
     /** Files land as an upload, anything else as a move — the same fork the tree makes. */
     protected onSystemHostDrop(event: DragEvent): void {
+        this.$systemHostDragOver.set(false);
+
         if (this.$systemHostCanAddChildren() === false) {
             return;
         }
@@ -194,18 +236,20 @@ export class DotContentDriveSidebarComponent {
      *
      * @param {DotFolderTreeNodeItem} selectedNode - The selected node with fromTable flag
      */
-    readonly handleSelectedNodeFromTable = signalMethod<DotFolderTreeNodeItem>((selectedNode) => {
-        const data = selectedNode?.data;
-        if (!data || data.type === LOAD_MORE_NODE_TYPE || !data.fromTable) {
-            return;
+    readonly handleSelectedNodeFromTable = signalMethod<DotFolderTreeNodeItem | undefined>(
+        (selectedNode) => {
+            const data = selectedNode?.data;
+            if (!data || data.type === LOAD_MORE_NODE_TYPE || !data.fromTable) {
+                return;
+            }
+
+            const segments = data.path.split('/').filter(Boolean).slice(0, -1);
+
+            this.recursiveExpandOneNode(segments);
+
+            this.#revealNode(selectedNode, 'smooth');
         }
-
-        const segments = data.path.split('/').filter(Boolean).slice(0, -1);
-
-        this.recursiveExpandOneNode(segments);
-
-        this.#revealNode(selectedNode, 'smooth');
-    });
+    );
 
     /**
      * Brings the folder the drive is open on into view once a cold load has rendered.

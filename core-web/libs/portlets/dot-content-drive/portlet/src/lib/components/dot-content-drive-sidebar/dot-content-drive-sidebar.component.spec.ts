@@ -364,6 +364,59 @@ describe('DotContentDriveSidebarComponent', () => {
             ).toBeTruthy();
         });
 
+        // A valid drop target that never changes while a drag is over it reads as one that will
+        // refuse the drop. The tree marks its own active target, and the all-site-content row
+        // marks itself as refusing, so this row was the only one in the column giving the author
+        // nothing back. Asserted on the state attribute rather than the class, so the test says
+        // what the row IS rather than how it happens to be painted.
+        it('should mark itself while a drag is over it', () => {
+            const dragTo = (type: string) =>
+                row()?.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true }));
+
+            dragTo('dragenter');
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('data-drag-over')).toBe('true');
+        });
+
+        it('should stop marking itself once the drag leaves', () => {
+            const dragTo = (type: string) =>
+                row()?.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true }));
+
+            dragTo('dragenter');
+            spectator.detectChanges();
+            dragTo('dragleave');
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('data-drag-over')).toBeNull();
+        });
+
+        // The mark has to clear on drop as well as on leave: a drop fires no dragleave, so a row
+        // that only listened for the latter would stay highlighted after the item had landed.
+        it('should stop marking itself once the item is dropped', () => {
+            const dragTo = (type: string) =>
+                row()?.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true }));
+
+            dragTo('dragenter');
+            spectator.detectChanges();
+            dragTo('drop');
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('data-drag-over')).toBeNull();
+        });
+
+        // Nothing to accept means nothing to advertise.
+        it('should not mark itself when it cannot accept children', () => {
+            systemHostCanAddChildren.set(false);
+            const dragTo = (type: string) =>
+                row()?.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true }));
+
+            dragTo('dragenter');
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('data-drag-over')).toBeNull();
+        });
+
         it('should ask the store for System Host when the row is chosen', () => {
             spectator.click(byTestId('system-host'));
 

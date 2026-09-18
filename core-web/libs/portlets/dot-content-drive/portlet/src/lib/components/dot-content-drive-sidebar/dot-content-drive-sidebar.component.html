@@ -57,8 +57,11 @@
         data-testid="system-host"
         [class.p-tree-node-selected]="$systemHostSelected()"
         [attr.aria-current]="$systemHostSelected() ? 'true' : null"
+        [attr.data-drag-over]="$systemHostDragOver() ? 'true' : null"
+        [class.is-drop-target]="$systemHostDragOver()"
         (dragenter)="onSystemHostDragOver($event)"
         (dragover)="onSystemHostDragOver($event)"
+        (dragleave)="onSystemHostDragLeave()"
         (drop)="onSystemHostDrop($event)"
         (click)="onSelectSystemHost()">
         <i
