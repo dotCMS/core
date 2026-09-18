@@ -68,11 +68,11 @@
 
     <!--
         Present from the first row onwards: an empty list has nothing to clear and
-        nothing to page through, so the whole foot goes rather than sitting there
-        disabled. With rows, only the paging control is conditional.
+        nothing to expand, so the whole foot goes rather than sitting there disabled.
+        With rows, only the Show all toggle is conditional.
     -->
     <ng-template #footer>
-        @if ($variableList().length && ($remaining() > 0 || !readOnly)) {
+        @if ($variableList().length && ($canToggleAll() || !readOnly)) {
             <tr data-testId="dot-key-value-footer-row">
                 <!--
                     The separator is this row's top border: the last body row has its own
@@ -82,18 +82,31 @@
                     [attr.colspan]="$colspan()"
                     class="border-t border-t-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3">
                     <div class="flex items-center justify-between gap-4">
-                        @if ($remaining() > 0) {
+                        @if ($canToggleAll()) {
+                            <!--
+                                The count belongs on "Show all" and not on "Show less":
+                                expanding is the decision that needs a number — how much is
+                                hidden — while collapsing always returns to the same first page.
+                                Matches `dot-relationship-field`.
+                            -->
                             <button
-                                (click)="loadMore()"
+                                (click)="toggleShowAll()"
+                                [attr.aria-expanded]="$showingAll()"
                                 class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-sm font-normal text-primary-500 hover:underline"
-                                data-testId="dot-key-value-load-more"
+                                data-testId="dot-key-value-show-all"
                                 type="button">
                                 <span
                                     class="material-symbols-outlined text-base!"
                                     aria-hidden="true">
-                                    add_circle
+                                    {{ $showingAll() ? 'remove_circle' : 'add_circle' }}
                                 </span>
-                                {{ 'keyValue.action.load_more' | dm }}
+                                @if ($showingAll()) {
+                                    {{ 'keyValue.action.show_less' | dm }}
+                                } @else {
+                                    {{ 'keyValue.action.show_all' | dm }} ({{
+                                        $variableList().length
+                                    }})
+                                }
                             </button>
                         } @else {
                             <!-- Holds the left half so Clear All stays put as rows are revealed. -->
