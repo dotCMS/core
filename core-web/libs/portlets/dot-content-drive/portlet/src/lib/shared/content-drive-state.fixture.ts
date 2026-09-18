@@ -1,9 +1,9 @@
 import {
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
-    DEFAULT_PATH,
     DEFAULT_SORT,
-    DEFAULT_TREE_EXPANDED
+    DEFAULT_TREE_EXPANDED,
+    SYSTEM_HOST
 } from './constants';
 import { DotContentDriveState, DotContentDriveStatus } from './models';
 
@@ -22,13 +22,21 @@ import { DotContentDriveState, DotContentDriveStatus } from './models';
  * ```ts
  * const state = buildContentDriveState({ items: [folderRow('//demo/old-a/')] });
  * ```
+ *
+ * **Two fields differ from the store's own `initialState`.** That object seeds `currentSite` and
+ * `path` with `undefined` to mean "not resolved yet", which the state type does not actually admit
+ * — both are declared non-optional. The lie is pre-existing and predates this file, but repeating
+ * it here would put it on new lines, where the strict gate rightly rejects it. A mounted site and
+ * an empty path are also the better default for a feature spec, which is testing behaviour after
+ * the portlet has settled. A spec that genuinely needs the pre-mount shape overrides it and owns
+ * the cast itself.
  */
 export function buildContentDriveState(
     overrides: Partial<DotContentDriveState> = {}
 ): DotContentDriveState {
     return {
-        currentSite: undefined,
-        path: DEFAULT_PATH,
+        currentSite: SYSTEM_HOST,
+        path: '',
         filters: {},
         items: [],
         selectedItems: [],
