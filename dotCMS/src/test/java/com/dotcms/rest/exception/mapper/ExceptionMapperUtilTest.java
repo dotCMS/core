@@ -46,6 +46,19 @@ public class ExceptionMapperUtilTest {
     }
 
     @Test
+    public void redirect_and_no_content_statuses_get_no_body() {
+        // 3xx/204/304 must not carry an entity; only error statuses get the JSON message.
+        final Response redirect = ExceptionMapperUtil.createResponse(
+                new javax.ws.rs.RedirectionException(Response.Status.SEE_OTHER,
+                        java.net.URI.create("/elsewhere")),
+                null, Response.Status.SEE_OTHER);
+
+        assertEquals(303, redirect.getStatus());
+        assertEquals("/elsewhere", redirect.getHeaderString(HttpHeaders.LOCATION));
+        assertEquals(false, redirect.hasEntity());
+    }
+
+    @Test
     public void WebApplicationException_with_an_entity_is_returned_untouched() {
         final Response own = Response.status(409).entity("already there").build();
         final Response rsp = ExceptionMapperUtil.createResponse(

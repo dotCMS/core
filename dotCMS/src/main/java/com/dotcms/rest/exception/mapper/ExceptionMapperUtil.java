@@ -164,13 +164,16 @@ public final class ExceptionMapperUtil {
         if (exception instanceof WebApplicationException) {
 
             final Response own = WebApplicationException.class.cast(exception).getResponse();
-            if (own.hasEntity()) {
+            final Response.Status.Family family = own.getStatusInfo().getFamily();
+            if (own.hasEntity() || (family != Response.Status.Family.CLIENT_ERROR
+                    && family != Response.Status.Family.SERVER_ERROR)) {
+                // Already has a body, or is a 3xx/204/304 that must not carry one.
                 return own;
             }
             // e.g. new BadRequestException("why"): the status is right but the body is
             // empty, so the container would send its HTML error page and the client
-            // never sees "why". Keep status and headers (WWW-Authenticate, Location),
-            // carry the message as JSON.
+            // never sees "why". Keep status and headers (WWW-Authenticate), carry the
+            // message as JSON.
             final String message = Objects.requireNonNullElse(
                     getI18NMessage(exception.getMessage()), own.getStatusInfo().getReasonPhrase());
             return Response.fromResponse(own)
