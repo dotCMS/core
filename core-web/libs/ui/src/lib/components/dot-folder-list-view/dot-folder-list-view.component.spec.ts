@@ -382,6 +382,24 @@ describe('DotFolderListViewComponent', () => {
             expect(box?.querySelector('[data-testid="row-busy"]')).toBeTruthy();
         });
 
+        it('should report a busy row to assistive technology', () => {
+            // #37063 FR-014a. The marking is conveyed by reduced opacity and disabled pointer
+            // events, both of which reach one sense only. For an operation that permanently
+            // destroys things, an author who cannot see the marking must still be told the row is
+            // busy before they act on it.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-row'))?.getAttribute('aria-busy')).toBe('true');
+        });
+
+        it('should not report an untouched row as busy', () => {
+            spectator.setInput('busyRows', ['some-other-inode']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-row'))?.getAttribute('aria-busy')).toBeNull();
+        });
+
         it('should leave rows the operation is not touching alone', () => {
             spectator.setInput('busyRows', ['some-other-inode']);
             spectator.detectChanges();

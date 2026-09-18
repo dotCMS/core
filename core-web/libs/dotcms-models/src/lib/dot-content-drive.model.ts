@@ -493,3 +493,38 @@ export const DOT_BULK_UPLOAD_FAILURE_REASONS = [
 ] as const;
 
 export type DotBulkUploadFailureReason = (typeof DOT_BULK_UPLOAD_FAILURE_REASONS)[number];
+
+/**
+ * Why a folder in a bulk delete could not be removed.
+ *
+ * The closed set fixed by the submission contract
+ * (`specs/37063-bulk-folder-delete-frontend/contracts/client-requirements.md` CR-04), carried as
+ * `results[].reason` on a `FAILED` item. Adding a member is a change to both halves of #37063 —
+ * and to folder copy (#37062) and move (#37165), which read the same outcome shape.
+ *
+ * Four of these are delete's own; `PERMISSION_DENIED` and `UNCLASSIFIED` already existed in the
+ * shared batch vocabulary. `UNCLASSIFIED` is also what an **unrecognised** value renders as: a
+ * reason the client does not know must still name its folder and still report it as failed
+ * (frontend FR-030), never swallow it.
+ *
+ * Here rather than beside the copy that renders it, for the same reason as
+ * {@link DOT_BULK_UPLOAD_FAILURE_REASONS}: this is a **wire** vocabulary read by a `data-access`
+ * service, and a service there cannot import a type out of a portlet. Mapping a reason to product
+ * copy is the portlet's business and stays there.
+ */
+export const DOT_FOLDER_DELETE_FAILURE_REASONS = [
+    /** No rights on the folder, or on something inside it. */
+    'PERMISSION_DENIED',
+    /** The path no longer resolves, or does not name a folder. */
+    'PATH_NOT_FOUND',
+    /** A system folder or site root; refused outright. */
+    'PROTECTED_FOLDER',
+    /** Locked or referenced content inside blocked the delete. */
+    'IN_USE',
+    /** An ancestor in the same submission removed it first — not a failure to be alarmed by. */
+    'COVERED_BY_PARENT',
+    /** Anything else, and the fallback for a value this client does not recognise. */
+    'UNCLASSIFIED'
+] as const;
+
+export type DotFolderDeleteFailureReason = (typeof DOT_FOLDER_DELETE_FAILURE_REASONS)[number];

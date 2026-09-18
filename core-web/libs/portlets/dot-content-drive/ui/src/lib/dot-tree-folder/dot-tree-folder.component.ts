@@ -2,6 +2,7 @@ import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    computed,
     ElementRef,
     HostListener,
     inject,
@@ -53,6 +54,24 @@ export class DotTreeFolderComponent {
     $loading = input.required<boolean>({ alias: 'loading' });
 
     $selectedNode = input<TreeNode | null>(null, { alias: 'selectedNode' });
+
+    /**
+     * Row keys of folders an operation is currently running on — today, a bulk delete (#37063).
+     *
+     * **Optional, and empty by default**, because the AssetPicker renders this same tree and has no
+     * such concept. Carries **both** a folder's inode and its identifier, matching what the listing
+     * marks by: the search service only backfills `inode` from `identifier` when the API returned
+     * none, so neither is reliably the key a given node carries.
+     *
+     * Fed from the same store signal the grid's `busyRows` comes from. Deriving it separately here
+     * would let the two surfaces drift, and the drift reads as a folder that is inert in one place
+     * and usable in the other — worse than marking neither, because it teaches the author the
+     * marking cannot be trusted.
+     */
+    $inFlightKeys = input<string[]>([], { alias: 'inFlightKeys' });
+
+    /** One lookup per node instead of a scan, rebuilt only when the input changes. */
+    protected readonly $inFlightKeySet = computed(() => new Set(this.$inFlightKeys()));
 
     onNodeExpand = output<TreeNodeExpandEvent>();
     onNodeSelect = output<TreeNodeExpandEvent>();
@@ -155,6 +174,46 @@ export class DotTreeFolderComponent {
      * @description Prevent the default behavior to allow drop and not opening the file in the browser
      * @param event - DragEvent
      */
+    /**
+     * Whether a node is a folder an operation is currently running on.
+     *
+     * Checks the node's own keys only — it does **not** walk ancestors. Marking covers the folders
+     * an operation was submitted for and their own nodes, not everything inside them (FR-015):
+     * a prefix test on every node on every render, for folders about to disappear, buys nothing.
+     */
+    protected isNodeInFlight(node: TreeNode | null | undefined): boolean {
+        const data = node?.data as { inode?: string; id?: string } | undefined;
+
+        if (!data) {
+            return false;
+        }
+
+        const keys = this.$inFlightKeySet();
+
+        return (!!data.inode && keys.has(data.inode)) || (!!data.id && keys.has(data.id));
+    }
+
+    /**
+     * Opening a folder that is being deleted would navigate into something about to cease to exist,
+     * so the event is dropped rather than forwarded.
+     */
+    protected onSelect(event: TreeNodeExpandEvent): void {
+        if (this.isNodeInFlight(event?.node)) {
+            return;
+        }
+
+        this.onNodeSelect.emit(event);
+    }
+
+    /** Same reasoning as {@link onSelect}: there is nothing worth listing underneath. */
+    protected onExpand(event: TreeNodeExpandEvent): void {
+        if (this.isNodeInFlight(event?.node)) {
+            return;
+        }
+
+        this.onNodeExpand.emit(event);
+    }
+
     @HostListener('dragover', ['$event'])
     onDragOver(event: DragEvent) {
         event.stopPropagation();
@@ -182,7 +241,14 @@ export class DotTreeFolderComponent {
             return;
         }
 
-        this.$activeDropNode.set(JSON.parse(nodeData));
+        const parsed = JSON.parse(nodeData);
+
+        // Content dropped on a folder being deleted would be created and then destroyed with it.
+        if (this.isNodeInFlight({ data: parsed } as TreeNode)) {
+            return;
+        }
+
+        this.$activeDropNode.set(parsed);
     }
 
     /**

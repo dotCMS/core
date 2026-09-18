@@ -122,6 +122,7 @@
                     $disabled() || $readOnly() || isUnselectable || $busyRowsSet().has(item.inode)
                 "
                 [class.opacity-60]="$busyRowsSet().has(item.inode)"
+                [attr.aria-busy]="$busyRowsSet().has(item.inode) ? 'true' : null"
                 [class.pointer-events-none]="$busyRowsSet().has(item.inode)"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"

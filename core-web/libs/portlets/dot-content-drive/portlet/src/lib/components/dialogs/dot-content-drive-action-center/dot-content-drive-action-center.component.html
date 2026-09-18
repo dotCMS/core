@@ -458,6 +458,28 @@
                         }
                     }
 
+                    <!--
+                        Delete is the one action in this dialog that destroys things the author did
+                        not select — everything inside the folders goes with them, permanently, and
+                        there is no undo. The confirmation therefore says so before the preview
+                        rather than relying on the button label (#37063 FR-008).
+
+                        It deliberately makes no claim about workflow. Saying "no workflow action
+                        runs on the contents" would be false: a content type declaring an action for
+                        the destroy system action will fire it (FR-010).
+                    -->
+                    @if ($isDeleteAction()) {
+                        <p-message
+                            class="m-4 shrink-0"
+                            severity="error"
+                            data-testid="delete-warning">
+                            {{
+                                'content-drive.action-center.delete.warning'
+                                    | dm: [$previewCount().toString()]
+                            }}
+                        </p-message>
+                    }
+
                     <dot-content-drive-action-preview
                         [items]="$previewItems()"
                         [selection]="$includedItems()"
