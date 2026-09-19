@@ -180,30 +180,35 @@ and confirm they match the asset's own record.
 - **FR-009**: Where a property name could refer either to the referenced asset or to the binary
   file it carries, the API MUST give that name exactly one documented meaning, and MUST offer an
   unambiguous way to reach the other.
-- **FR-009a**: No existing property name may change what it returns — not visibly, and above all
-  not silently. Where this feature exposes a value that differs from what a name returns today,
-  it MUST do so through a **new** surface and leave the existing one alone. The worked example is
-  the asset description: today that name returns the asset's title, and the asset's own stored
-  description is unreachable. Both MUST be available afterwards, under names that cannot be
-  confused, and the existing name MUST keep returning what it returns today.
+- **FR-009a**: No property name may **silently** change what it returns. This requirement survives
+  the decision to break: where a value differs from what a name returns today, that name MUST be
+  removed rather than repurposed, so the client receives an explicit failure instead of different
+  data. The worked example is the asset description — removed from the asset-pointing field rather
+  than left in place answering with a new value.
 - **FR-010**: The delivered behavior MUST be covered by an automated API-level test that a
   customer-defined property on an extended asset type is readable through both an Image field and
   a File field.
 - **FR-011**: Reading N properties of one referenced asset MUST NOT cost N times the work of
   reading one; per-asset work MUST be performed once per asset per request.
-- **FR-012**: Existing customer queries MUST keep working unchanged. Every property the current
-  asset view exposes MUST continue to be selectable and MUST continue to return exactly what it
-  returns today. The new capability is delivered **alongside** the current view, not by replacing
-  it.
-- **FR-012a**: The current asset view MUST be marked as superseded **in the published API
-  description itself**, not only in code or release notes, so that a client's own tooling surfaces
-  the warning without anyone reading a changelog. The marking MUST say what replaces each property.
-- **FR-012b**: Removal of the current asset view is **out of scope for this feature** and MUST NOT
-  happen in the same release that introduces the replacement. It is a later, separately tracked
-  step, gated on an explicit floor: the oldest still-supported release no longer depending on it,
-  **and** a confirmed observation window with no remaining use. A tracking item for that removal
-  MUST be opened when this feature ships, naming the surface to be retired — not deferred to a
-  later cleanup pass.
+- **FR-012**: *(Superseded — see "Decision: the flat view is replaced, not kept alongside" below.)*
+  ~~Existing customer queries MUST keep working unchanged.~~ The flat asset view is **replaced**.
+  Two selections stop working, and both MUST fail **visibly** rather than return a different value:
+  - `description` on an asset-pointing field. It is the one property whose meaning differs between
+    the flat view (the contentlet title) and the content answering it (a stored description), so it
+    cannot be carried over without changing what a live query returns.
+  - An asset-pointing field aimed at content that is not an asset now resolves to nothing rather
+    than to the flat view.
+
+  Every other property the flat view exposed — `fileName`, `fileAsset`, `metaData`, `showOnMenu`,
+  `sortOrder` — MUST remain selectable **and** return exactly what it returns today, on every
+  surface a client can narrow through.
+- **FR-012a**: *(No longer applicable.)* There is no surviving surface to mark as superseded. What
+  replaces it is documentation and release communication, not an in-schema deprecation.
+- **FR-012b**: *(No longer applicable.)* Retirement is not deferred; it happens in this feature.
+  The tracking item this requirement called for is therefore not opened.
+- **FR-012c**: The break MUST be announced ahead of the release and MUST ship with migration
+  guidance naming, for each removed selection, its replacement — `description` through a narrowing
+  clause on the concrete content type, where it returns the stored value rather than the title.
 - **FR-013**: This feature supersedes PR dotCMS/core#35363. That PR MUST be closed as superseded
   rather than merged, and the convenience it aimed at — reading an asset's binary properties
   without descending a level — MUST be re-raised as a second, separately tracked stage of issue
@@ -260,11 +265,12 @@ and confirm they match the asset's own record.
   of per-asset work as requesting one, measured as a constant rather than a per-property cost.
 - **SC-007**: The AI tagging workflow, which cannot read an asset's tags today, completes
   end-to-end.
-- **SC-008**: Zero existing customer queries stop working. Every selection valid against the
-  current asset view is still valid after this feature ships and returns the same value it
-  returned before.
-- **SC-009**: A client inspecting the API's own published description sees the current asset view
-  marked as superseded, with its replacement named — without reading release notes.
+- **SC-008**: Of the six properties the flat asset view exposed, **five** are still selectable
+  after this feature ships and return the same values they returned before. The sixth,
+  `description`, fails explicitly rather than returning a different value.
+- **SC-009**: Every removed selection fails visibly. Zero selections keep working while returning
+  different data — measured by querying each removed name and confirming an error rather than a
+  value.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -273,13 +279,14 @@ and confirm they match the asset's own record.
   legacy corner: customers run production front-ends against it today. The asset base types
   themselves are long-standing product surface.
 
-- **Backward-compatibility expectations**: Customers already query the six properties the current
-  asset view exposes. **Those queries must keep working, unchanged** (FR-012). The new capability
-  ships alongside the current view; the current view is marked as superseded in the published API
-  description (FR-012a) and retired later, as a separately gated step (FR-012b).
+- **Backward-compatibility expectations**: Customers already query the six properties the flat
+  asset view exposes. **Five keep working and return the same values; one does not** (FR-012), and
+  an asset field aimed at non-asset content stops resolving. Both breaks are visible.
 
-  An earlier draft of this spec accepted breaking those queries outright. That was reversed after
-  consulting the accepted architecture decisions — see ADR Alignment below.
+  This spec changed position twice. It first accepted breaking, then reversed to a non-breaking
+  design after consulting the accepted architecture decisions, and has now returned to breaking —
+  **as a product decision, not a technical one**. See "Decision: the flat view is replaced" and
+  ADR Alignment below.
 
 ### ADR Alignment
 
@@ -296,29 +303,73 @@ both were consulted before this spec was finalized:
   supported-version floor and a confirmed zero-use window, and requires the deprecation to be
   marked **in the schema itself**, not only in code.
 
-This feature follows that pattern: FR-012 expands, FR-012a marks, FR-012b defers retirement behind
-the same gate and requires the tracking item to be opened up front rather than left to a later
-cleanup pass. **No exception to either ADR is requested.**
+**An exception to ADR-0022 IS requested, knowingly.** This feature does not expand, adopt, bake and
+retire — it retires now. The expand phase was designed, implemented and verified green (a companion
+field beside each asset field, breaking nothing), and was then set aside because it could not put
+the narrowing clauses in the same block as the flat properties. That ergonomic difference — one
+block instead of two — was judged by product to be worth the break.
 
-### Why breaking was rejected, and what the facade actually hides
+The technical constraint is not negotiable and is worth recording, because it is what makes the
+compliant option unable to deliver the requested shape: a GraphQL field has exactly one type and a
+resolved value has exactly one runtime type, so the flat view and the asset itself — two
+descriptions of the same content — cannot occupy the same position. Keeping both means keeping them
+at different positions, which is precisely what the expand-phase design did.
 
-Measured against a running instance, the six properties the current view exposes split in two:
+What the exception preserves from the ADR's intent:
 
-- **Five are invented for image-style assets** — the file name, the binary, the metadata, the menu
-  flag and the sort order do not exist on that content at all; the current view synthesizes them,
-  borrowing names from the other base type. Removing the view would remove them outright, and a
-  client asking for one would get an immediate request failure.
-- **One is real but currently masked** — the description. The current view does not return the
-  asset's stored description; it returns the asset's title, which for an image is the file name.
-  The stored description is unreachable. Had the view been replaced in place, that name would have
-  kept working and kept returning a string, but a different one: measured on a real instance, the
-  current view returns a value for 57 of 57 images while only 2 of those 57 have a stored
-  description. So 55 of 57 would have gone from a populated string to empty, **with no error of
-  any kind** — undetectable by the client.
+- The break is **visible**, never silent. ADR-0022's concern is a self-hosted customer who upgrades
+  on their own schedule and cannot tell that data changed; every removal here fails loudly
+  (FR-009a).
+- Five of the six properties are carried over unchanged, so the blast radius is one property plus
+  one edge case, not the whole surface.
+- FR-012c requires the announcement and migration guidance the ADR's process would otherwise have
+  provided through the bake window.
 
-That second case is decisive, and it is why FR-012 keeps the current view intact and FR-009a
-routes the real value through a new surface instead. A self-hosted customer who has not upgraded
-would not have seen a failure; they would have seen different data.
+**Sign-off needed**: @fmontes as an author of ADR-0020, and @nollymar who approved the spec in its
+non-breaking form (PR #37537). Neither has agreed to this exception yet — it is recorded here as
+requested, not granted.
+
+### Decision: the flat view is replaced, not kept alongside
+
+**This is a product decision, and it overrides what the rest of this section originally argued.**
+Recorded in full because the reasoning ran both ways and a later reader will otherwise assume the
+compliant option was never available.
+
+**What was built and set aside.** A non-breaking design was implemented and verified green: a
+companion field beside each asset field (`image` gaining `imageContent`), typed by the asset
+interface. Nothing broke, the spec needed no change, and no ADR exception was required. It was set
+aside for one reason — the narrowing clauses lived in a second block rather than beside the flat
+properties:
+
+```
+imageContent { ... on Images { tags } }     # what the compliant option offered
+image        { fileName  ... on Images { tags } }   # what was asked for
+```
+
+**Why the compliant option could not deliver the requested shape.** A GraphQL field has exactly one
+type, and a resolved value has exactly one runtime type. The flat view and the asset itself are two
+descriptions of the same content, so they cannot occupy the same position — keeping both means
+keeping them at different positions. That is a property of GraphQL, not of this implementation, and
+no amount of work removes it.
+
+**What the break actually costs**, measured rather than estimated:
+
+- **Five of the six properties survive unchanged** — `fileName`, `fileAsset`, `metaData`,
+  `showOnMenu`, `sortOrder`. They are synthesized onto DOTASSET-derived types using the very same
+  fetchers the flat view used, so they answer identically. Notably `fileName`, which was never a
+  stored value for that content.
+- **`description` does not.** It is the one property whose meaning differs: the flat view answered
+  with the contentlet title, while the content answering it stores something else. On a real
+  instance the flat view returned a value for 57 of 57 images while only 2 of those 57 have a
+  stored description. Carrying the name over would have returned different data **without
+  failing** — so it is removed instead, and fails loudly.
+- **An asset field aimed at non-asset content** now resolves to nothing rather than to the flat
+  view. Forced: a contentlet outside the interface cannot be handed on, and doing so fails the
+  entire request with `UnresolvedTypeException` rather than just that field.
+
+**What is preserved from the earlier position.** FR-009a survives intact and is the reason the two
+breaks take the shape they do: nothing may change value silently. A removal a client can see is
+acceptable; a name that keeps working and returns something else is not.
 
 ### Depth of the type hierarchy
 
@@ -344,9 +395,8 @@ Recorded as FR-013. The reasoning, verified rather than assumed:
   instance. The client still descends exactly one level, just to the correctly named property. The
   saving the PR offers is gone.
 - **Its deliverable lands on a view that is now on a retirement path.** The twelve properties
-  would be attached to the current asset view, which FR-012a marks as superseded and FR-012b
-  schedules for removal — so the work would be spent extending a surface already being retired,
-  and would have to be redone on the replacement.
+  would be attached to the flat asset view, which this feature removes — so the work would be
+  spent extending a surface that no longer exists and would have to be redone on the interface.
 - **It is not in a mergeable state.** Its automated checks have been failing since it was last
   updated, on a check in its own area, tripped by its own change and left unaddressed. It carries
   no review. See FR-014: the check in question is itself wrong and must be corrected regardless.
@@ -375,7 +425,6 @@ stage's design depends on the shape this one establishes.
   it stays on issue #34540, which remains open after this feature ships.
 - "Single request" in SC-002 means one GraphQL query from the client's perspective; it makes no
   claim about server-side work.
-- The current asset view keeps its exact present behavior for the whole of its remaining life,
-  including the two synthesized property values it derives rather than stores. Correcting them
-  would be a silent change to a live contract, which FR-009a forbids; the corrected values are
-  reached through the new surface instead.
+- The five surviving flat properties keep their exact present behaviour, including the synthesized
+  `fileName` that derives rather than stores its value. Correcting it would be a silent change to a
+  live contract, which FR-009a forbids.
