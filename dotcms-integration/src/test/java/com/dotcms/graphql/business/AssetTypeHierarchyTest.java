@@ -76,6 +76,16 @@ public class AssetTypeHierarchyTest extends IntegrationTestBase {
     private static final List<String> FLAT_PROPERTIES =
             List.of("fileName", "fileAsset", "metaData", "showOnMenu", "sortOrder");
 
+    /**
+     * The binary's own properties, flattened onto the asset so a client need not descend into the
+     * binary field. Ten of the thirteen {@code DotBinary} carries. {@code title} and {@code modDate}
+     * are excluded because on a contentlet those names already mean the contentlet's own, and
+     * {@code focalPoint} because it has no meaning for a contentlet.
+     */
+    private static final List<String> BINARY_PROPERTIES =
+            List.of("name", "size", "mime", "versionPath", "idPath", "path", "sha256",
+                    "isImage", "width", "height");
+
     private static User systemUser;
 
     @BeforeClass
@@ -160,6 +170,13 @@ public class AssetTypeHierarchyTest extends IntegrationTestBase {
                 fileAssetType.variable())) {
 
             final Set<String> fields = fieldNamesOf(schema, surface);
+            for (final String property : BINARY_PROPERTIES) {
+                assertTrue("binary property '" + property + "' must be reachable through '"
+                                + surface + "' — a client writing the same selection against a "
+                                + "Binary field and against an asset field should not need two "
+                                + "different queries",
+                        fields.contains(property));
+            }
             for (final String property : FLAT_PROPERTIES) {
                 assertTrue("'" + property + "' must be reachable through '" + surface
                                 + "' — otherwise the same query changes shape depending on which "
