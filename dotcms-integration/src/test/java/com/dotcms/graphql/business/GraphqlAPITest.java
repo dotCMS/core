@@ -822,9 +822,9 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 // `... on DotFileasset` clauses, and still carries the long-standing flat
                 // properties -- minus `description`, whose meaning differs between the flat view
                 // (the contentlet title) and the content answering it. See #34540.
-                assertEquals(InterfaceType.ASSET_CONTENT_INTERFACE_NAME,
+                assertEquals(InterfaceType.ASSET_INTERFACE_NAME,
                         ((GraphQLNamedSchemaElement) fileFieldDefinition.getType()).getName());
-                assertEquals(InterfaceType.ASSET_CONTENT_INTERFACE_NAME,
+                assertEquals(InterfaceType.ASSET_INTERFACE_NAME,
                         ((GraphQLNamedSchemaElement) imageFieldDefinition.getType()).getName());
             } finally {
                 APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
