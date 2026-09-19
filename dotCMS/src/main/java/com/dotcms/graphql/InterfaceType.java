@@ -69,6 +69,22 @@ public enum InterfaceType {
     public static final String FORM_INTERFACE_NAME = "FormBaseType";
     public static final String DOTASSET_INTERFACE_NAME = "DotAssetBaseType";
 
+    /**
+     * Describes the content an Image or File field points at, by whatever content type it actually
+     * is. Unlike the interfaces above it is not tied to a single base type: an asset-pointing field
+     * can hold either DOTASSET- or FILEASSET-based content — an Image field resolves a FileAsset
+     * perfectly well today — so neither {@link #DOTASSET_INTERFACE_NAME} nor
+     * {@link #FILE_INTERFACE_NAME} alone can describe what such a field may return.
+     *
+     * <p><b>It deliberately keeps the name the flat object type used to carry.</b> That name is
+     * what clients already write in {@code ... on DotFileasset} clauses, and a fragment on the
+     * position's own interface always matches — so those clauses keep working and keep returning
+     * data. Introducing a new name instead would have left every such clause invalid. The kind
+     * does change, from object to interface, which query text does not notice but client code
+     * generators do: anyone with generated types must regenerate them. See #34540.
+     */
+    public static final String ASSET_INTERFACE_NAME = "DotFileasset";
+
     public static final String DOT_CONTENTLET = "DotContentlet";
 
     static {
@@ -87,6 +103,11 @@ public enum InterfaceType {
         final Map<String, TypeFetcher> fileAssetFields = new HashMap<>(contentFields);
         addBaseTypeFields(fileAssetFields, ImmutableFileAssetContentType.builder().name("dummy")
                 .build().requiredFields());
+        // Same flat properties the asset interface carries. Every possible type of this interface
+        // already has them, and leaving them off would make `fileName` selectable on the concrete
+        // types and on the asset interface but not here — the same query changing shape depending
+        // on which clause a client happens to narrow through. See #34540.
+        fileAssetFields.putAll(CustomFieldType.getAssetFlatFields());
         interfaceTypes.put("FILEASSET", createInterfaceType(FILE_INTERFACE_NAME, fileAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> pageAssetFields = new HashMap<>(contentFields);
@@ -124,7 +145,47 @@ public enum InterfaceType {
         final Map<String, TypeFetcher> dotAssetFields = new HashMap<>(contentFields);
         addBaseTypeFields(dotAssetFields, ImmutableDotAssetContentType.builder().name("dummy")
                 .build().requiredFields());
+        // See the note on the FILEASSET interface above: DOTASSET content has no stored file name,
+        // but every DOTASSET-derived object type carries the synthesized one, so the interface must
+        // too or `fileName` is reachable everywhere except through this clause.
+        dotAssetFields.putAll(CustomFieldType.getAssetFlatFields());
         interfaceTypes.put("DOTASSET", createInterfaceType(DOTASSET_INTERFACE_NAME, dotAssetFields, new ContentResolver()));
+
+        // Carries the common content fields plus the flat properties an asset-pointing field has
+        // always exposed, so that retyping such a field to this interface leaves those selections
+        // working. Every implementing object type must therefore carry them too -- synthesized for
+        // DOTASSET-derived types, already present on FILEASSET-derived ones.
+        //
+        // `description` is deliberately absent. FILEASSET content stores one; DOTASSET content does
+        // not, and the flat view answered it with the contentlet title instead. Declaring it here
+        // would make DOTASSET-derived types answer with their own stored description -- the same
+        // name quietly returning a different value, which is the one outcome this work refuses.
+        // It is reachable, correctly, through a narrowing clause on the concrete type.
+        final Map<String, TypeFetcher> assetContentFields = new HashMap<>(contentFields);
+        assetContentFields.putAll(CustomFieldType.getAssetFlatFields());
+
+        assetContentInterface = createInterfaceType(ASSET_INTERFACE_NAME,
+                assetContentFields, new ContentResolver());
+    }
+
+    private static GraphQLInterfaceType assetContentInterface;
+
+
+    /**
+     * @return the interface describing what an asset-pointing field returns, implemented by every
+     * content type derived from either asset base type.
+     */
+    public static GraphQLInterfaceType getAssetContentInterface() {
+        return assetContentInterface;
+    }
+
+    /**
+     * @return whether content of this base type can sit behind an Image or File field, and must
+     * therefore implement {@link #getAssetContentInterface()}.
+     */
+    public static boolean isAssetBaseType(final BaseContentType baseContentType) {
+        return BaseContentType.DOTASSET == baseContentType
+                || BaseContentType.FILEASSET == baseContentType;
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.dotcms.graphql;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.graphql.datafetcher.AssetBinaryPropertyDataFetcher;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
@@ -19,6 +20,7 @@ import graphql.schema.GraphQLTypeReference;
 import graphql.schema.PropertyDataFetcher;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -46,7 +48,7 @@ public enum CustomFieldType {
     KEY_VALUE("DotKeyValue"),
     LANGUAGE("DotLanguage"),
     USER("DotUser"),
-    FILEASSET("DotFileasset"),
+    FILEASSET("DotFileassetFlat"),
     STORY_BLOCK("DotStoryBlock");
 
     CustomFieldType(String typeName) {
@@ -60,6 +62,25 @@ public enum CustomFieldType {
     }
 
     private static Map<String, GraphQLObjectType> customFieldTypes = new HashMap<>();
+
+    private static Map<String, TypeFetcher> assetFlatFields;
+
+    /**
+     * @return the long-standing flat properties of an asset-pointing field, minus
+     * {@code description}, for reuse by the asset-content interface and by the object types that
+     * implement it.
+     */
+    public static Map<String, TypeFetcher> getAssetFlatFields() {
+        if (null == assetFlatFields) {
+            // Only reachable if something reads this while this class is still initializing --
+            // i.e. a new static-init cycle. Returning null would surface much later as an
+            // unexplained NPE inside schema construction; say so here instead.
+            throw new IllegalStateException("CustomFieldType is still initializing: asset flat "
+                    + "fields were read from within its own static initialization, which means a "
+                    + "type-initialization cycle has been introduced.");
+        }
+        return Collections.unmodifiableMap(assetFlatFields);
+    }
 
     static {
         final Map<String, GraphQLOutputType> binaryTypeFields = new HashMap<>();
@@ -158,7 +179,42 @@ public enum CustomFieldType {
                 new TypeFetcher(list(CustomFieldType.KEY_VALUE.getType()), new KeyValueFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_SHOW_ON_MENU_FIELD_VAR, new TypeFetcher(list(GraphQLString), new MultiValueFieldDataFetcher()));
         fileAssetTypeFields.put(FILEASSET_SORT_ORDER_FIELD_VAR, new TypeFetcher(GraphQLInt, new FieldDataFetcher()));
-        customFieldTypes.put("FILEASSET", TypeUtil.createObjectType(FILEASSET.getTypeName(), fileAssetTypeFields));
+
+        // Deliberately NOT registered as a schema type. Asset-pointing fields are described by
+        // the asset interface now, so nothing references this object type; registering it would
+        // leave an orphan in every customer's schema, visible in introspection and reachable by
+        // nobody. The field map below is still built because the interface and the object types
+        // that implement it reuse these exact fetchers.
+
+        // The same properties, minus `description`, reused as the flat half of the asset-content
+        // interface and synthesized onto DOTASSET-derived object types. Reusing these exact
+        // TypeFetchers is what guarantees the synthesized fields answer identically to the flat
+        // view -- notably `fileName`, which is not a stored value for DOTASSET content, and the
+        // binary, which BinaryFieldDataFetcher already maps to `asset` for that base type.
+        //
+        // `description` is excluded on purpose: DOTASSET-derived types either have their own with
+        // a different meaning, or none at all. See InterfaceType#ASSET_INTERFACE_NAME.
+        assetFlatFields = new HashMap<>(fileAssetTypeFields);
+        assetFlatFields.remove(FILEASSET_DESCRIPTION_FIELD_VAR);
+
+        // The binary's own properties, flattened onto the asset so a client need not descend into
+        // the binary field to reach them. Ten of the twelve DotBinary carries: `title` and
+        // `modDate` are deliberately absent, because on a contentlet those names already mean the
+        // contentlet's title and modification date. Declaring them here would make the same name
+        // answer with the FILE's title on an asset and the CONTENT's title everywhere else — the
+        // class of silent divergence this work exists to avoid. Both remain reachable through the
+        // binary field itself. See issue #34540.
+        final AssetBinaryPropertyDataFetcher binaryProperty = new AssetBinaryPropertyDataFetcher();
+        assetFlatFields.put("name", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("size", new TypeFetcher(GraphQLLong, binaryProperty));
+        assetFlatFields.put("mime", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("versionPath", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("idPath", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("path", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("sha256", new TypeFetcher(GraphQLString, binaryProperty));
+        assetFlatFields.put("isImage", new TypeFetcher(GraphQLBoolean, binaryProperty));
+        assetFlatFields.put("width", new TypeFetcher(GraphQLLong, binaryProperty));
+        assetFlatFields.put("height", new TypeFetcher(GraphQLLong, binaryProperty));
 
         final Map<String, TypeFetcher> siteTypeFields = new HashMap<>(ContentFields.getContentFields());
         siteTypeFields.remove(HOST_KEY); // remove myself
