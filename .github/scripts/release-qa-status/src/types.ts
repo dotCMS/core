@@ -16,7 +16,9 @@ export type ExclusionReason =
   | 'bot-author'
   | 'dependency-bump'
   | 'version-bump'
-  | 'release-machinery';
+  | 'release-machinery'
+  | 'spec-only'
+  | 'docs-only';
 
 /** Label resolution for a single linked issue. */
 export interface LinkedIssueInfo {
@@ -49,6 +51,13 @@ export interface PRDetails {
   linkedIssues: number[];
   /** Cross-repo closing-issue references. */
   externalRefs: ExternalRef[];
+  /**
+   * Paths changed by the PR. `undefined` means the list is unknown — the API
+   * call failed, or the PR has more files than one page returns. Never exclude
+   * a PR on an unknown list: a missing list must degrade to today's behaviour,
+   * not silently hide a code change from QA.
+   */
+  changedFiles?: string[];
 }
 
 /** A single PR with its computed QA result. */

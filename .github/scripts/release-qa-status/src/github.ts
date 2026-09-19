@@ -312,6 +312,136 @@ export async function fetchClosingIssueRefs(
   return results;
 }
 
+interface GraphQLFilesResponse {
+  repository: Record<
+    string,
+    {
+      files: {
+        nodes: Array<{ path: string }>;
+        pageInfo: { hasNextPage: boolean };
+      } | null;
+    } | null
+  >;
+}
+
+/** Max paths one GraphQL page returns — GitHub caps `first` at 100. */
+const FILES_PAGE_SIZE = 100;
+
+/**
+ * Shape one GraphQL batch response into per-PR path lists.
+ *
+ * `undefined` means "we don't know what this PR changed" and is deliberately
+ * distinct from `[]`. A PR whose alias is missing, whose `files` connection is
+ * null, or that has more files than one page holds all resolve to `undefined`
+ * so the caller keeps it in QA scope. Not paginating past 100 is a judgement
+ * call, not an oversight: this list exists only to answer "is every file
+ * documentation?", and a 100+ file PR is never documentation-only.
+ *
+ * Exported for tests — pure, so it needs no network.
+ */
+export function parseChangedFilesResponse(
+  data: GraphQLFilesResponse,
+  prNumbers: number[]
+): Map<number, string[] | undefined> {
+  const results = new Map<number, string[] | undefined>();
+
+  for (const n of prNumbers) {
+    const pr = data.repository?.[`pr${n}`];
+    if (!pr || !pr.files) {
+      results.set(n, undefined);
+      continue;
+    }
+    if (pr.files.pageInfo.hasNextPage) {
+      process.stderr.write(
+        `Note: PR #${n} changed more than ${FILES_PAGE_SIZE} files — ` +
+          `treating its file list as unknown (stays in QA scope).\n`
+      );
+      results.set(n, undefined);
+      continue;
+    }
+    results.set(
+      n,
+      pr.files.nodes.map((f) => f.path)
+    );
+  }
+
+  return results;
+}
+
+/**
+ * Fetch the changed paths for a batch of PRs, so `classifyExclusion` can tell
+ * a spec/docs-only PR from one carrying implementation.
+ *
+ * Batched GraphQL rather than one REST `pulls.listFiles` per PR: the report
+ * already spends 3+ REST calls per PR, and this adds roughly one request per
+ * twenty instead of one per PR.
+ *
+ * Unlike `fetchClosingIssueRefs`, a GraphQL failure here is swallowed rather
+ * than re-thrown. There, an empty result silently demotes PRs to `unlinked`
+ * and floods Slack with bogus warnings, so failing loudly is right. Here the
+ * failure mode is the opposite and harmless: an unknown file list simply means
+ * no path-based exclusion, which is exactly how the report behaved before this
+ * existed. Killing the whole QA section over it would be the worse trade.
+ */
+export async function fetchChangedFiles(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  prNumbers: number[]
+): Promise<Map<number, string[] | undefined>> {
+  const results = new Map<number, string[] | undefined>();
+  const BATCH = 20;
+
+  for (let i = 0; i < prNumbers.length; i += BATCH) {
+    const batch = prNumbers.slice(i, i + BATCH);
+    // GraphQL aliases must be static field names (no $variables), so PR numbers
+    // are interpolated. They come from the commits→pulls API and are already
+    // integers; re-check anyway before building the query.
+    const safeBatch = batch.filter((n) => Number.isInteger(n) && n > 0);
+    if (safeBatch.length === 0) continue;
+
+    const aliases = safeBatch
+      .map(
+        (n) =>
+          `  pr${n}: pullRequest(number: ${n}) {\n` +
+          `    files(first: ${FILES_PAGE_SIZE}) {\n` +
+          `      nodes { path }\n` +
+          `      pageInfo { hasNextPage }\n` +
+          `    }\n` +
+          `  }`
+      )
+      .join('\n');
+
+    const query =
+      `query($owner: String!, $repo: String!) {\n` +
+      `  repository(owner: $owner, name: $repo) {\n` +
+      aliases +
+      `\n  }\n}`;
+
+    try {
+      const data = await octokit.graphql<GraphQLFilesResponse>(query, {
+        owner,
+        repo,
+      });
+      for (const [n, files] of parseChangedFilesResponse(data, safeBatch)) {
+        results.set(n, files);
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      process.stderr.write(
+        `Warning: could not fetch changed files for PR(s) ` +
+          `${safeBatch.map((n) => `#${n}`).join(', ')}: ${msg}. ` +
+          `They stay in QA scope (no path-based exclusion).\n`
+      );
+      for (const n of safeBatch) results.set(n, undefined);
+    }
+
+    if (i + BATCH < prNumbers.length) await sleep(500);
+  }
+
+  return results;
+}
+
 export async function fetchPRDetails(
   octokit: Octokit,
   owner: string,
@@ -366,18 +496,21 @@ export async function fetchPRDetails(
     );
   }
 
-  const refs = await fetchClosingIssueRefs(
-    octokit,
-    owner,
-    repo,
-    Array.from(results.keys())
-  );
+  const prNumbersFetched = Array.from(results.keys());
+
+  const refs = await fetchClosingIssueRefs(octokit, owner, repo, prNumbersFetched);
   for (const [n, pr] of results) {
     const r = refs.get(n);
     if (r) {
       pr.linkedIssues = r.sameRepo;
       pr.externalRefs = r.external;
     }
+  }
+
+  const changed = await fetchChangedFiles(octokit, owner, repo, prNumbersFetched);
+  for (const [n, pr] of results) {
+    // Leave `changedFiles` undefined when unknown — see classifyExclusion.
+    pr.changedFiles = changed.get(n);
   }
 
   return results;
