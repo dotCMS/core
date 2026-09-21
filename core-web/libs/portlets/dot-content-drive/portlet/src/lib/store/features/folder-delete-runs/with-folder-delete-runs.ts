@@ -183,7 +183,7 @@ export function withFolderDeleteRuns() {
                                 patchState(store, {
                                     folderDeleteRuns: runs.reduce<Record<string, string[]>>(
                                         (acc, run) => {
-                                            acc[run.id] = run.parameters?.assetPaths ?? [];
+                                            acc[run.id] = run.paths;
 
                                             return acc;
                                         },

@@ -8,6 +8,7 @@ import { catchError, map } from 'rxjs/operators';
 import {
     DotFolderBulkDeleteSubmitResponse,
     DotFolderDeleteActiveRun,
+    DotJobState,
     isJobInProgress
 } from '@dotcms/dotcms-models';
 
@@ -46,6 +47,21 @@ export interface DotFolderBulkDeleteRefusal {
  */
 interface RefusalBody {
     errors?: { errorCode?: string; message?: string; fieldName?: string }[];
+}
+
+/**
+ * One run as the generic job listing serialises it.
+ *
+ * `parameters` is the free-form bag the run was submitted with, so its shape is this queue's
+ * business rather than the framework's: `{ userId, paths: [{ path }] }`. The nesting is deliberate
+ * on the backend's side — an entry is an object so it can carry more than a path later, and a
+ * folder identifier is already announced for it (dotCMS/core#37612, comment 5736831790). Reading
+ * it here, rather than in the store, is what keeps that addition to one file.
+ */
+interface ActiveRunEntry {
+    id: string;
+    state: DotJobState;
+    parameters?: { userId?: string; paths?: { path?: string }[] };
 }
 
 const SUBMIT_URL = '/api/v1/assets/folders/_bulkdelete';
@@ -96,13 +112,26 @@ export class DotFolderBulkDeleteService {
      * Answers with an empty list rather than erroring: see the `catchError` below.
      */
     readActiveRuns(): Observable<DotFolderDeleteActiveRun[]> {
-        return this.#http.get<{ entity?: { jobs?: DotFolderDeleteActiveRun[] } }>(ACTIVE_URL).pipe(
+        return this.#http.get<{ entity?: { jobs?: ActiveRunEntry[] } }>(ACTIVE_URL).pipe(
             map((response) => response?.entity?.jobs ?? []),
             // THE filter. The endpoint is called "active" but answers with every run in a
             // NON-TERMINAL state, failed and abandoned ones included. Without this, folders
             // whose delete already failed are reported as still being deleted, and they stay
             // that way until the framework moves the run on (contract CR-10).
             map((jobs) => jobs.filter((job) => isJobInProgress(job?.state))),
+            map((jobs) =>
+                jobs.map(
+                    (job): DotFolderDeleteActiveRun => ({
+                        id: job.id,
+                        state: job.state,
+                        // A run with no readable paths marks nothing, which is the same outcome as
+                        // not knowing about it — better than dropping the run and losing its id.
+                        paths: (job.parameters?.paths ?? [])
+                            .map((entry) => entry?.path)
+                            .filter((path): path is string => !!path)
+                    })
+                )
+            ),
             // Never surfaced to the author: they did not ask for this read, and a listing that
             // renders unmarked is exactly the behaviour Content Drive has today. Marking
             // degrades; the portlet does not (FR-022, SC-010).

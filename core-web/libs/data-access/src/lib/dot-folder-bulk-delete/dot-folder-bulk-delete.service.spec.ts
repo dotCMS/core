@@ -182,14 +182,52 @@ describe('DotFolderBulkDeleteService', () => {
             spectator.service.readActiveRuns().subscribe((result) => (runs = result));
 
             flushJobs([
-                { id: 'running', state: 'RUNNING', parameters: { assetPaths: [PATH_A] } },
-                { id: 'pending', state: 'PENDING', parameters: { assetPaths: [PATH_B] } },
-                { id: 'failed', state: 'FAILED', parameters: { assetPaths: ['//x/failed/'] } },
-                { id: 'abandoned', state: 'ABANDONED', parameters: { assetPaths: ['//x/gone/'] } },
-                { id: 'done', state: 'SUCCESS', parameters: { assetPaths: ['//x/done/'] } }
+                { id: 'running', state: 'RUNNING', parameters: { paths: [{ path: PATH_A }] } },
+                { id: 'pending', state: 'PENDING', parameters: { paths: [{ path: PATH_B }] } },
+                { id: 'failed', state: 'FAILED', parameters: { paths: [{ path: '//x/failed/' }] } },
+                {
+                    id: 'abandoned',
+                    state: 'ABANDONED',
+                    parameters: { paths: [{ path: '//x/gone/' }] }
+                },
+                { id: 'done', state: 'SUCCESS', parameters: { paths: [{ path: '//x/done/' }] } }
             ]);
 
             expect(runs?.map((run) => run.id)).toEqual(['running', 'pending']);
+        });
+
+        it("should unpack each run's folders out of the job parameters", () => {
+            // The queue stores `paths: [{ path }]`, not a flat list of strings: an entry is an
+            // object so it can carry more than a path, and a folder identifier is already announced
+            // for it. Unpacking here is what keeps that addition out of the store.
+            let runs: DotFolderDeleteActiveRun[] | undefined;
+            spectator.service.readActiveRuns().subscribe((result) => (runs = result));
+
+            flushJobs([
+                {
+                    id: 'two-folders',
+                    state: 'RUNNING',
+                    parameters: {
+                        userId: 'dotcms.org.1',
+                        paths: [{ path: PATH_A }, { path: PATH_B }]
+                    }
+                }
+            ]);
+
+            expect(runs).toEqual([
+                { id: 'two-folders', state: 'RUNNING', paths: [PATH_A, PATH_B] }
+            ]);
+        });
+
+        it('should keep a run whose parameters carry no readable folders', () => {
+            // Marking nothing is the same outcome as not knowing about the run, and dropping it
+            // would lose the id the completion signal later clears by.
+            let runs: DotFolderDeleteActiveRun[] | undefined;
+            spectator.service.readActiveRuns().subscribe((result) => (runs = result));
+
+            flushJobs([{ id: 'bare', state: 'RUNNING', parameters: { userId: 'dotcms.org.1' } }]);
+
+            expect(runs).toEqual([{ id: 'bare', state: 'RUNNING', paths: [] }]);
         });
 
         it('should treat a cancelling run as still in progress', () => {
@@ -197,7 +235,9 @@ describe('DotFolderBulkDeleteService', () => {
             let runs: DotFolderDeleteActiveRun[] | undefined;
             spectator.service.readActiveRuns().subscribe((result) => (runs = result));
 
-            flushJobs([{ id: 'c', state: 'CANCELLING', parameters: { assetPaths: [PATH_A] } }]);
+            flushJobs([
+                { id: 'c', state: 'CANCELLING', parameters: { paths: [{ path: PATH_A }] } }
+            ]);
 
             expect(runs?.length).toBe(1);
         });

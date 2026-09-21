@@ -104,7 +104,7 @@ describe('withFolderDeleteRuns', () => {
     const run = (id: string, paths: string[]): DotFolderDeleteActiveRun => ({
         id,
         state: 'RUNNING',
-        parameters: { assetPaths: paths }
+        paths
     });
 
     const build = (active: DotFolderDeleteActiveRun[] = []) => {

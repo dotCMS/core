@@ -95,6 +95,21 @@ Four refusals must be **distinguishable**, because each has different copy:
   and structure, not content.
 - This is what makes the load-time in-flight read possible at all. It was **decided by this half's
   requirements**, not inherited: marking after a reload and marking another author's run both need it.
+- **Shape**, settled on dotCMS/core#37612 comment 5736831790 — the run's `parameters` are the
+  queue's own bag, not a framework shape:
+
+```json
+{ "userId": "dotcms.org.1", "paths": [{ "path": "//demo.dotcms.com/old-a/" }] }
+```
+
+- An entry is an **object**, not a bare string, so it can grow per-path fields without a breaking
+  change; a folder identifier is already announced for it. The flatter `assetPaths: string[]` was
+  offered and declined for that reason.
+- **Client obligation**: unpack this in `DotFolderBulkDeleteService` and nowhere else. The store
+  holds normalised runs (`{ id, state, paths }`), so the announced identifier reaches one file.
+- **Note the asymmetry**: the *submission* body is still `{ assetPaths: string[] }` while the
+  *read-back* is `{ paths: [{ path }] }` — two names for the same thing. Worth converging when the
+  identifier lands, since the submission is changing anyway.
 
 ## CR-12 — Announcements: a folder enters and leaves a delete (C-012, backend FR-035a/b)
 
