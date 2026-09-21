@@ -85,6 +85,34 @@ ADRs are binding architectural context and live **only** in the private reposito
   `/speckit-*` skill may **propose** an ADR (title + rationale, recorded under "Proposed
   ADRs" in the plan), but must never write an ADR file in this repo or that one.
 
+## Reporting to the Developer
+
+Naming a reference is never the problem. The problem is **gatekeeping the meaning on it** — making
+the reader open a file, a commit, a task list or an ADR to find out what the sentence meant.
+
+The test applies to the sentence, not to the kind of token in it: **could the reader act on this
+without opening the thing it names?**
+
+- Every finding, status line and summary MUST say what the thing is or does, in ordinary words,
+  and then attach the pointer in parentheses: "proving that choosing ten files uploads ten files
+  is still pending (T065)", not "T065 is pending".
+- This holds whatever the pointer is. A spec or task identifier, a commit sha, a CI run id and an
+  ADR number are all unreadable on their own, so none of them may stand in for the meaning:
+  "reverted the row-targeting change, which stopped rows accepting a drag (016fb679f0)", not
+  "reverted in 016fb679f0"; "ADR-0018 makes the database authoritative for folder and host, so the
+  scope belongs in the SQL builder", not "per ADR-0018".
+- **References are encouraged.** File paths, class and method names, config keys, field names and
+  line numbers are specific and directly checkable, and a sha earns its place once the sentence
+  has said what changed. The repair for a bare reference is always to add the meaning beside it,
+  never to delete the reference.
+- If a list of pending items reads as a column of codes, rewrite it.
+
+Why it matters: there are hundreds of identifiers across `spec.md` and `tasks.md` and no developer
+holds them in their head, and a sha or run id cannot be read at all without going to fetch it.
+
+This governs in-session output, not the spec artifacts: `spec.md` and `tasks.md` keep their IDs, and
+the convergence findings table keeps its `Source` column. What changes is the prose around them.
+
 ## Governance
 
 - This constitution supersedes ad-hoc practices for spec-driven work. All specs, plans, and
@@ -94,7 +122,10 @@ ADRs are binding architectural context and live **only** in the private reposito
   table, or the plan is rejected.
 - Amendments: keep this file and root `CLAUDE.md` in sync; bump the version below.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-07-03
+**Version**: 1.2.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-09-21
 
 <!-- 1.1.0: Principle V strengthened to Test-First / TDD (NON-NEGOTIABLE) with the 3-gate rule. -->
+<!-- 1.2.0: Added "Reporting to the Developer" — never let a reference carry the meaning. Say what
+     a thing is or does, then attach the pointer. Applies to spec/task IDs, commit shas, run ids
+     and ADR numbers alike; references themselves stay encouraged. -->
 
