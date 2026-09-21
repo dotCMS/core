@@ -36,7 +36,8 @@ import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import {
     SUGGESTED_ALLOWED_FILE_EXTENSIONS,
     DEFAULT_FILE_ASSET_TYPES,
-    FOLDER_UPLOAD_BEHAVIOR_OPTIONS
+    FOLDER_UPLOAD_BEHAVIOR_OPTIONS,
+    ROOT_PATH
 } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 interface FolderForm {
@@ -436,13 +437,21 @@ export class DotContentDriveDialogFolderComponent {
      * different folder entirely — saving would 404, or silently overwrite a same-named folder under
      * the open one.
      *
+     * Only a location that *is* a folder path anchors anything. The sidebar can select two things
+     * that are not: all site content, which is the absence of a location, and System Host, a
+     * reserved word that can never be mistaken for a path precisely because it does not start with
+     * `/`. Pasted onto the hostname the reserved word produced `//demo.dotcms.comSYSTEM_HOST/`, a
+     * path resolving to nothing, and the dialog showed it as where the folder would land.
+     *
      * @returns {string} The parent path, e.g. `/application/blog` or `''` at the site root
      */
     #getParentPath(): string {
         const folder = this.$folder();
 
         if (!folder) {
-            return this.#store.path()?.replace(/\/$/, '') ?? '';
+            const location = this.#store.path() ?? '';
+
+            return location.startsWith(ROOT_PATH) ? location.replace(/\/$/, '') : '';
         }
 
         const withoutTrailingSlash = folder.path.replace(/\/$/, '');

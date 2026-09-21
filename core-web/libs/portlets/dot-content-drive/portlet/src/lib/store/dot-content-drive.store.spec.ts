@@ -48,6 +48,7 @@ import {
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
+    ROOT_PATH,
     DEFAULT_TREE_EXPANDED,
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_ENABLED_VALUE,
@@ -301,10 +302,12 @@ describe('DotContentDriveStore', () => {
 
         it('should still show folders when a language is selected', () => {
             // Folders have no language, so a locale filter — which selects a *version* of content —
-            // must not tear down the structure being navigated.
+            // must not tear down the structure being navigated. Asserted at the site root, which is
+            // where structure exists: all site content asks for no folders by design, so testing it
+            // there would prove nothing about the language filter.
             store.initContentDrive({
                 currentSite: SYSTEM_HOST,
-                path: DEFAULT_PATH,
+                path: ROOT_PATH,
                 filters: { languageId: ['1', '2'] },
                 isTreeExpanded: false
             });
@@ -345,7 +348,10 @@ describe('DotContentDriveStore', () => {
                 // Likewise `status`: omitted entirely when nothing is selected, so an unfiltered
                 // request stays byte-identical to one that never knew about the filter (FR-002).
                 expect(request.status).toBeUndefined();
-                expect(request.showFolders).toBe(true);
+                // No location means all site content, which spans every folder in the site and so
+                // lists none of them; the tree is still there to navigate. Browsing the site root
+                // instead is what asks for the top-level folders.
+                expect(request.showFolders).toBe(false);
             });
 
             describe('includeSystemHost', () => {
@@ -429,6 +435,199 @@ describe('DotContentDriveStore', () => {
                 const request = store.$request();
 
                 expect(request.assetPath).toBe(`//${customSite.hostname}/`);
+            });
+
+            describe('browse scope', () => {
+                // The wire values are written out rather than imported: this is the one place the
+                // client's idea of a location turns into what the endpoint is asked for, so the
+                // assertions should fail if that mapping drifts, not follow it.
+
+                it('should ask for all site content when the URL carries no location', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('ALL');
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                // An empty path reaches the same branch as an absent one today, because
+                // toRequestLocation asks `!path?.length`. Both forms occur — the URL yields
+                // undefined, a cleared location yields '' — so the equivalence is pinned rather
+                // than assumed. Narrowing that check to one of the two would fail here.
+                it('should treat an empty location the same as an absent one', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    const absent = store.$request();
+
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    const empty = store.$request();
+
+                    expect(empty.browseScope).toBe(absent.browseScope);
+                    expect(empty.assetPath).toBe(absent.assetPath);
+                    expect(empty.showFolders).toBe(absent.showFolders);
+                });
+
+                it('should ask for the site root when the location is the root itself', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('ROOT');
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should name no scope when the location is a folder', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/documents/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    // A folder is addressed by its path alone. Naming a scope as well would be
+                    // refused by the endpoint, and it is what would turn this into a listing of
+                    // every descendant.
+                    expect(request.browseScope).toBeUndefined();
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/documents/`);
+                });
+
+                it('should ask for System Host without pasting the reserved word onto the site', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('SYSTEM_HOST');
+                    // The bug this exists to catch: interpolating the location straight into the
+                    // path produces `//demo.dotcms.comSYSTEM_HOST`, which resolves to nothing.
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should keep System Host selected when the site is switched', () => {
+                    // **Characterization test: green the day it is written**, like the host-clause
+                    // guard on the backend. System Host belongs to no site, so switching sites does
+                    // not change what it lists, and the selection already survives because it is
+                    // derived from the location while a switch changes the site.
+                    //
+                    // Written precisely because nothing would notice if that stopped being true. A
+                    // later change that reset the path on a site switch would drift the highlight
+                    // onto the new site's root, and the sidebar would claim the user is in two
+                    // places at once — with every other test still passing.
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    expect(store.$systemHostSelected()).toBe(true);
+
+                    // A site switch reaches the store as a re-init carrying the new site and the
+                    // location the route still holds — which is how the switch can change the
+                    // site without disturbing where the drive is browsing.
+                    store.initContentDrive({
+                        currentSite: MOCK_SITES[0],
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$systemHostSelected()).toBe(true);
+                    expect(store.$allSiteContentSelected()).toBe(false);
+                    // The hierarchy below re-renders for the newly chosen site, so the switch
+                    // visibly does something rather than appearing to fail.
+                    expect(store.currentSite()).toEqual(MOCK_SITES[0]);
+                    // And the request still asks for System Host, not for the new site's content.
+                    expect(store.$request().browseScope).toBe('SYSTEM_HOST');
+                });
+
+                it('should not ask for folders in all site content', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    // Folders are not results in a flat listing that spans the whole site, and the
+                    // tree is still there to navigate them.
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                // Searching all site content asks for them again: a term matches names rather
+                // than browsing a place, and a folder should be found wherever it lives
+                // (#37479 FR-011). Suppressing them for the whole scope broke that feature's
+                // e2e at the default view, which is the only place the two rules meet.
+                it('should ask for folders when all site content is searched', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { title: 'report' },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(true);
+                });
+
+                // System Host has none either way, so a term changes nothing there.
+                it('should still ask for no folders when System Host is searched', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: { title: 'report' },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                it('should not ask for folders in System Host, which has none', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                it('should still ask for folders at the site root', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    // The top-level folders sit at the root, so they are part of what is there.
+                    expect(store.$request().showFolders).toBe(true);
+                });
             });
 
             it('should include title filter in request when provided', () => {
@@ -595,14 +794,15 @@ describe('DotContentDriveStore', () => {
 
             it('should KEEP showFolders true when a languageId filter is provided', () => {
                 // Folders have no language, so a locale filter — which picks a *version* of content
-                // — must not tear down the structure being navigated.
+                // — must not tear down the structure being navigated. At the site root for the same
+                // reason as the sibling test above.
                 const filters = {
                     languageId: ['en']
                 };
 
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters,
                     isTreeExpanded: false
                 });
@@ -647,7 +847,7 @@ describe('DotContentDriveStore', () => {
             it('should drop the status filter when filters are cleared', () => {
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters: { status: ['ARCHIVED'] },
                     isTreeExpanded: false
                 });
@@ -694,9 +894,11 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should set showFolders to true when no filters are provided', () => {
+                // At the site root: with no location at all this is now all site content, which
+                // asks for no folders whatever the filters say.
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters: {},
                     isTreeExpanded: false
                 });
@@ -2072,7 +2274,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
 
             const lockInFlight = store.actionExecution();
-            expect(lockInFlight).toEqual(expect.objectContaining({ actionName: 'Lock', total: 1 }));
+            expect(lockInFlight).toEqual(expect.objectContaining({ operation: 'LOCK', total: 1 }));
 
             store.reportRefreshCompleted('Refresh', {
                 jobId: 'job-1',
@@ -2133,7 +2335,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
 
             const lockInFlight = store.actionExecution();
-            expect(lockInFlight).toEqual(expect.objectContaining({ actionName: 'Lock', total: 1 }));
+            expect(lockInFlight).toEqual(expect.objectContaining({ operation: 'LOCK', total: 1 }));
 
             store.reportRefreshCompleted('Refresh', {
                 jobId: 'job-1',
@@ -2253,7 +2455,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
             expect(store.actionExecution()).toEqual(
-                expect.objectContaining({ actionName: 'Lock', total: 2 })
+                expect.objectContaining({ operation: 'LOCK', total: 2 })
             );
         });
 
@@ -2539,7 +2741,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
 
             expect(store.actionExecution()).toEqual(
-                expect.objectContaining({ actionName: 'Add to Bundle', total: 2 })
+                expect.objectContaining({ operation: 'Add to Bundle', total: 2 })
             );
         });
 
@@ -2713,7 +2915,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
 
             expect(store.actionExecution()).toEqual(
-                expect.objectContaining({ actionName: 'Push Publish', total: 2 })
+                expect.objectContaining({ operation: 'Push Publish', total: 2 })
             );
         });
 

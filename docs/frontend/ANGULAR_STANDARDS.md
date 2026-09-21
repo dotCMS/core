@@ -71,6 +71,12 @@ This is the norm, not a suggestion. A new component that duplicates an existing 
 ## Accessibility Requirements
 - **AXE**: All components must pass AXE accessibility checks
 - **WCAG AA**: Follow WCAG AA minimums (focus management, color contrast, ARIA attributes where needed)
+- **Naming a form field**: `<label for>` only associates with *labelable* elements — `input`,
+  `textarea`, `select`, `button`. Pointing it at a `<div role="group">` or at PrimeNG's
+  `<span role="combobox">` associates nothing; those need `aria-labelledby`. Nothing throws and
+  AXE may still pass, so verify with `label.control` in the console rather than by confirming an
+  element with that id exists. Full rules, including which roles accept `aria-required`, in
+  [Styling Standards → Naming a field for assistive technology](./STYLING_STANDARDS.md#naming-a-field-for-assistive-technology).
 
 ## Icons (Material Symbols)
 

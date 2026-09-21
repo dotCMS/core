@@ -29,6 +29,8 @@ type DotAuthConfigStatus = 'init' | 'loading' | 'loaded' | 'saving' | 'error';
 
 interface DotAuthConfigState {
     siteId: string;
+    // Hostname the server resolved for siteId; '' for SYSTEM_HOST and until loaded.
+    hostName: string;
     original: DotAuthConfig;
     draft: DotAuthConfig;
     configured: boolean;
@@ -46,6 +48,7 @@ interface DotAuthConfigState {
 
 const initialState: DotAuthConfigState = {
     siteId: DOT_AUTH_SYSTEM_HOST,
+    hostName: '',
     original: clone(DEFAULT_CONFIG),
     draft: clone(DEFAULT_CONFIG),
     configured: false,
@@ -92,6 +95,7 @@ export const DotAuthConfigStore = signalStore(
                     patchState(store, {
                         original: config,
                         draft: clone(config),
+                        hostName: view.hostName ?? '',
                         configured: view.configured,
                         inherited: view.inherited,
                         status: 'loaded',
@@ -100,7 +104,12 @@ export const DotAuthConfigStore = signalStore(
                 });
         }
 
-        function saveSso(): boolean {
+        /**
+         * @param options.regenerateKeypair set only after the admin confirmed replacing a
+         * stored SAML SP keypair; the server rejects an empty keypair on an existing config
+         * without it.
+         */
+        function saveSso(options?: { regenerateKeypair?: boolean }): boolean {
             const draft = store.draft();
             if (draft.protocol === 'none') {
                 return false;
@@ -111,8 +120,12 @@ export const DotAuthConfigStore = signalStore(
                 return false;
             }
             patchState(store, { status: 'saving', errors: {} });
+            const payload = toPayload(draft, store.siteId());
+            if (options?.regenerateKeypair && payload.protocol === 'SAML') {
+                payload.values['regenerateKeypair'] = true;
+            }
             service
-                .saveConfig(store.siteId(), toPayload(draft, store.siteId()))
+                .saveConfig(store.siteId(), payload)
                 .pipe(
                     take(1),
                     catchError((error) => {

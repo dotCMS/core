@@ -49,6 +49,7 @@ import {
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST,
+    SYSTEM_HOST_PATH,
     USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
@@ -64,8 +65,10 @@ import {
     buildUserSearchablePayload,
     decodeFilters,
     getUserSearchableActive,
+    listsFolders,
     parseWorkflowFilter,
     sortedEncodedFilters,
+    toRequestLocation,
     withFilterDefaults
 } from '../utils/functions';
 
@@ -129,8 +132,14 @@ export const DotContentDriveStore = signalStore(
                             userSearchableFields()
                         );
 
+                        // One value says where the user is; this is where it becomes the two the
+                        // endpoint expects. Mapped rather than interpolated: pasting the location
+                        // into the path yields `//demo.dotcms.comSYSTEM_HOST` for a reserved word.
+                        const location = toRequestLocation(currentSite()?.hostname, path());
+
                         return {
-                            assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
+                            assetPath: location.assetPath,
+                            browseScope: location.browseScope,
                             // Off only when explicitly turned off. The key is seeded on every path
                             // that builds filters (see `withFilterDefaults`), so a missing one means
                             // state that predates the seeding, not a deliberate opt-out.
@@ -178,6 +187,11 @@ export const DotContentDriveStore = signalStore(
                             // and pinning it would contradict an Archived selection.
                             status: filters()?.status?.length ? filters()?.status : undefined,
                             showFolders:
+                                // Folders are not results in a listing that spans the whole site,
+                                // and System Host has none -- but a search matches names rather
+                                // than browsing a place, so all site content admits them again
+                                // once there is a term to match (#37479 FR-011).
+                                listsFolders(location.browseScope, !!filters()?.title?.length) &&
                                 page.hasMoreFolders &&
                                 !filters()?.baseType?.length &&
                                 !filters()?.contentType?.length &&
@@ -726,61 +740,158 @@ export const DotContentDriveStore = signalStore(
     withFolderDeleteRuns(),
     withPushPublishEnvironments(),
     withSitePermissions(),
-    withComputed((store) => {
-        const globalStore = inject(GlobalStore);
-        const { selectedNode, siteCanAddChildren } = store;
+    /*
+     * Four unrelated computeds in one feature, which is not how they would be grouped by hand.
+     *
+     * `signalStore`'s typed overloads stop at fifteen features and this store is at that ceiling.
+     * Adding a sixteenth does not fail where you added it: inference gives up, `store` widens to
+     * `object`, and every later member access reports "Property X does not exist" — a page of
+     * errors pointing everywhere except the cause. Both halves of #37063 added a feature here, so
+     * something had to fold, and merging blocks that already share their inputs costs the least.
+     *
+     * `$allSiteContentSelected` and `$systemHostSelected` are locals as well as exports because
+     * the destinations below consume them, and a `withComputed` callback cannot destructure what
+     * the same callback is still returning.
+     */
+    withComputed(
+        ({ path, currentSite, selectedNode, siteCanAddChildren, systemHostCanAddChildren }) => {
+            const globalStore = inject(GlobalStore);
+
+            const $allSiteContentSelected = computed(() => !path());
+            const $systemHostSelected = computed(() => path() === SYSTEM_HOST_PATH);
+
+            return {
+                /**
+                 * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
+                 *
+                 * Read through the store rather than injected into the shell so the component keeps to
+                 * rendering: the ceilings are data, and every other piece of server state this portlet
+                 * shows arrives the same way. Null covers both a configuration that has not loaded and
+                 * an instance older than the field, which callers must treat alike — no readable
+                 * ceiling, so the refusing is left to the server.
+                 */
+                uploadCeilings: computed(() => globalStore.systemBulkUpload()),
+
+                /**
+                 * Whether the sidebar's first entry, all site content, is the selected one.
+                 *
+                 * Derived from the location rather than stored beside it: an absent location *is* what
+                 * all site content means, so a second piece of state saying so could only ever
+                 * disagree.
+                 */
+                $allSiteContentSelected,
+
+                /** Whether the sidebar's last entry, System Host, is the selected one. */
+                $systemHostSelected,
+
+                /**
+                 * The host that would receive new content here.
+                 *
+                 * Three paths ask this and used to answer it separately: the upload button, a drag and
+                 * drop, and the New menu. Each fell back to the current site when no folder was
+                 * selected, which is right everywhere except System Host, where the current site is
+                 * context rather than the destination. The New menu was worse than wrong — it built
+                 * its target by pasting the location onto the hostname, which with a reserved word
+                 * yields `demo.dotcms.comSYSTEM_HOST` and resolves to nothing.
+                 *
+                 * A folder, when one is selected, is still more specific than this and wins.
+                 */
+                $newContentHostId: computed(() =>
+                    $systemHostSelected() ? SYSTEM_HOST.identifier : currentSite()?.identifier
+                ),
+
+                /**
+                 * Whether the browsed folder accepts new children.
+                 *
+                 * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
+                 * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
+                 * the contentlet checkin path never checks it, so that one is gated here for consistency
+                 * rather than as a preview of a refusal — otherwise uploading would quietly allow what
+                 * creating a folder in the same place forbids.
+                 *
+                 * Computed here rather than in each consumer because three surfaces gate on it — the New
+                 * menu, the Upload button and the drop zone — and three copies of the folder-then-site
+                 * fallback would be three chances to disagree.
+                 *
+                 * A node with no permissions is the site root, whose parent is the host rather than a
+                 * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
+                 * in flight, and an instance too old to report the field. Starting disabled would flicker
+                 * the affordances off and on for the common case, and the server refuses the write anyway.
+                 */
+                $canAddChildren: computed(() => {
+                    // System Host is a real destination, so this is a permission answer — but about
+                    // System Host, not about whichever site the switcher happens to show.
+                    if ($systemHostSelected()) {
+                        return systemHostCanAddChildren() !== false;
+                    }
+
+                    // All site content spans every folder, so it names no single place — but content
+                    // added here lands on the site root, and that is whose permission decides. Asked
+                    // before the node below on purpose: selecting all site content clears the tree
+                    // selection, and a node left over from before it was cleared would be answering
+                    // about a folder that is not the destination.
+                    if ($allSiteContentSelected()) {
+                        return siteCanAddChildren() !== false;
+                    }
+
+                    const permissions = (
+                        selectedNode()?.data as { permissions?: string[] } | undefined
+                    )?.permissions;
+
+                    if (!permissions?.length) {
+                        return siteCanAddChildren() !== false;
+                    }
+
+                    return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
+                })
+            };
+        }
+    ),
+    withHooks((store) => {
+        let systemHostGate: EffectRef | undefined;
 
         return {
-            /**
-             * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
-             *
-             * Read through the store rather than injected into the shell so the component keeps to
-             * rendering: the ceilings are data, and every other piece of server state this portlet
-             * shows arrives the same way. Null covers both a configuration that has not loaded and
-             * an instance older than the field, which callers must treat alike — no readable
-             * ceiling, so the refusing is left to the server.
-             */
-            uploadCeilings: computed(() => globalStore.systemBulkUpload()),
-            /**
-             * Whether the browsed folder accepts new children.
-             *
-             * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
-             * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
-             * the contentlet checkin path never checks it, so that one is gated here for consistency
-             * rather than as a preview of a refusal — otherwise uploading would quietly allow what
-             * creating a folder in the same place forbids.
-             *
-             * Computed here rather than in each consumer because three surfaces gate on it — the New
-             * menu, the Upload button and the drop zone — and three copies of the folder-then-site
-             * fallback would be three chances to disagree.
-             *
-             * A node with no permissions is the site root, whose parent is the host rather than a
-             * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
-             * in flight, and an instance too old to report the field. Starting disabled would flicker
-             * the affordances off and on for the common case, and the server refuses the write anyway.
-             */
-            $canAddChildren: computed(() => {
-                const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
-                    ?.permissions;
+            onInit() {
+                // Fed the signal rather than called on each site change: `rxMethod` re-runs on every
+                // emission and `switchMap` drops the previous site's in-flight answer, so switching
+                // sites quickly can never settle the gate with the wrong site's result.
+                store.loadSitePermissions(store.currentSite);
+                // Once, not per site: System Host belongs to none of them.
+                store.loadSystemHostPermissions();
+                // Fire-and-forget on purpose: the listing renders unmarked and marks appear when
+                // this answers. Nothing here is awaited, and a failure leaves the portlet exactly
+                // as it is today (FR-022, FR-023).
+                store.establishInFlightFolders();
 
-                if (!permissions?.length) {
-                    return siteCanAddChildren() !== false;
-                }
+                /**
+                 * Sends a user who cannot read System Host back to all site content.
+                 *
+                 * The sidebar hides the entry, but hiding a button is not a gate: the location is
+                 * carried in the URL, so a link, a reload or a typed address reaches the scope
+                 * without ever touching the sidebar.
+                 *
+                 * Silently, and to all site content rather than an error: the user did nothing
+                 * wrong — usually they followed a colleague's link — and the drive has somewhere
+                 * sensible to put them. This is an affordance, not a defence; the listing enforces
+                 * read permissions on its own, so nothing here is what stops content leaking.
+                 *
+                 * Lives in the store's own hooks rather than in `withSidebar`, which composes
+                 * earlier and cannot see this answer.
+                 */
+                systemHostGate = effect(() => {
+                    const onSystemHost = store.$systemHostSelected();
+                    const canRead = store.systemHostCanRead();
 
-                return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
-            })
+                    untracked(() => {
+                        if (onSystemHost && !canRead) {
+                            store.selectAllSiteContent();
+                        }
+                    });
+                });
+            },
+            onDestroy() {
+                systemHostGate?.destroy();
+            }
         };
-    }),
-    withHooks((store) => ({
-        onInit() {
-            // Fed the signal rather than called on each site change: `rxMethod` re-runs on every
-            // emission and `switchMap` drops the previous site's in-flight answer, so switching
-            // sites quickly can never settle the gate with the wrong site's result.
-            store.loadSitePermissions(store.currentSite);
-            // Fire-and-forget on purpose: the listing renders unmarked and marks appear when this
-            // answers. Nothing here is awaited, and a failure leaves the portlet exactly as it is
-            // today (FR-022, FR-023).
-            store.establishInFlightFolders();
-        }
-    }))
+    })
 );

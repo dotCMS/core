@@ -122,12 +122,28 @@ describe('DotUsersReplacementPickerComponent', () => {
         it('surfaces an error flag when the service fails and clears suggestions', () => {
             spectator = createComponent();
             const service = spectator.inject(DotUsersService, true);
-            (service.getUsersPaginated as Mock).mockReturnValue(
+
+            // Seed suggestions through a successful search first — the
+            // component reads `$suggestions` off the store as a computed
+            // since #37298 extracted the HTTP into
+            // `DotUsersReplacementPickerStore`, so it can no longer be
+            // `.set()` directly.
+            (service.getUsersPaginated as Mock).mockReturnValueOnce(
+                of({
+                    entity: [createFakeUser({ userId: 'stale-1' })],
+                    errors: [],
+                    messages: [],
+                    permissions: [],
+                    i18nMessagesMap: {},
+                    pagination: { currentPage: 1, perPage: 10, totalEntries: 1 }
+                })
+            );
+            spectator.component['onSearch'](searchEvent('warm'));
+            expect(spectator.component['$suggestions']().map((u) => u.userId)).toEqual(['stale-1']);
+
+            (service.getUsersPaginated as Mock).mockReturnValueOnce(
                 throwError(() => new Error('boom'))
             );
-
-            spectator.component['$suggestions'].set([createFakeUser()]);
-
             spectator.component['onSearch'](searchEvent('ada'));
 
             expect(spectator.component['$hasError']()).toBe(true);
