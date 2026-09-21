@@ -123,7 +123,7 @@
      placed first takes the first cell and shifts every panel along. -->
 <dot-status-toast position="bottom-center" />
 
-@if ($contextMenuData()?.showAddToBundle) {
+@if ($contextMenuData().showAddToBundle) {
     <dot-add-to-bundle
         (cancel)="cancelAddToBundle()"
         (added)="onBundleAdded()"

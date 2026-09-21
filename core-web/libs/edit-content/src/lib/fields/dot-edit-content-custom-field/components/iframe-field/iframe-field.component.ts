@@ -57,7 +57,7 @@ import { INPUT_TEXT_OPTIONS } from '../../../dot-edit-content-text-field/utils';
         // A Custom Field renders its Velocity inside an iframe, and ARIA cannot cross a document
         // boundary — nothing in there can be named from out here. The region is named instead.
         role: 'group',
-        '[attr.aria-labelledby]': "$field() ? 'label-' + $field().variable : null",
+        '[attr.aria-labelledby]': '$ariaLabelledBy()',
         '[class.no-label]': '!$showLabel()'
     }
 })
@@ -86,6 +86,14 @@ export class IframeFieldComponent implements OnDestroy {
      * The inode of the content to render the field for.
      */
     $inode = computed(() => this.$contentlet()?.inode);
+    /**
+     * The id of the element naming this region, or null when there is no field to be named after.
+     */
+    $ariaLabelledBy = computed(() => {
+        const field = this.$field();
+
+        return field ? `label-${field.variable}` : null;
+    });
     /**
      * The window object.
      */
