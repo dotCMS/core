@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 export const ERROR_COPY: Record<number | 'default', { heading: string; body: string }> = {
@@ -19,7 +19,6 @@ export const ERROR_COPY: Record<number | 'default', { heading: string; body: str
 @Component({
     selector: 'app-error',
     imports: [RouterLink],
-    changeDetection: ChangeDetectionStrategy.Eager,
     template: `
         <div class="bg-slate-100 min-h-dvh w-full flex justify-center items-center">
             <section>

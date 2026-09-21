@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 import { DatePipe, NgOptimizedImage } from '@angular/common';
 
@@ -16,7 +16,6 @@ import { Contentlet } from '../../../../dotcms/types/contentlet.model';
 @Component({
   selector: 'app-recommended-card',
   imports: [NgOptimizedImage, DatePipe, EditContentletButtonComponent],
-  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="flex gap-4 min-h-16 relative">
       <app-edit-contentlet-button [contentlet]="contentlet()" />

@@ -1,11 +1,10 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { RecommendedCardComponent } from '../recommended-card/recommended-card.component';
 import { Blog } from '../../../../dotcms/types/contentlet.model';
 
 @Component({
   selector: 'app-blogs',
   imports: [RecommendedCardComponent],
-  changeDetection: ChangeDetectionStrategy.Eager,
   template: ` <div class="flex flex-col">
     <h2 class="mb-7 text-2xl font-bold text-black">Latest Blog Posts</h2>
     <div class="flex flex-col gap-5">

@@ -1,4 +1,4 @@
-import { Component, effect, input, output, ChangeDetectionStrategy } from '@angular/core';
+import { Component, effect, input, output } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -6,7 +6,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 @Component({
   selector: 'app-search',
   templateUrl: './search.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [ReactiveFormsModule],
 })
 export class SearchComponent {

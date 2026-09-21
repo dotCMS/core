@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { DotCMSNavigationItem } from '@dotcms/types';
 import { NavigationComponent } from './components/navigation/navigation.component';
@@ -20,7 +20,6 @@ type PageResponse = {
   selector: 'app-root',
   imports: [RouterOutlet, HeaderComponent, NavigationComponent, FooterComponent],
   templateUrl: './app.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.css',
 })
 export class App {

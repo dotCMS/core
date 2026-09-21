@@ -1,4 +1,4 @@
-import { Component, computed, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, Input } from '@angular/core';
 import { BlockEditorNode } from '@dotcms/types';
 
 import { Activity } from '../../../../../types/contentlet.model';
@@ -12,7 +12,6 @@ import { Activity } from '../../../../../types/contentlet.model';
         <span class="text-sm text-cyan-700">{{ contentlet().contentType }}</span>
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
 })
 export class ActivityComponent {

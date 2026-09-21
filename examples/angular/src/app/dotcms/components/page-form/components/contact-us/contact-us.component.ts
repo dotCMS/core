@@ -1,4 +1,4 @@
-import { Component, input, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 interface FormData {
@@ -18,7 +18,6 @@ const initialFormData: FormData = {
 @Component({
   selector: 'app-contact-us',
   imports: [FormsModule],
-  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './contact-us.component.html',
 })
 export class ContactUsComponent {

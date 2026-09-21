@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-loading',
@@ -45,7 +45,6 @@ import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
       }
     </div>
   `,
-  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [
     `
       .loading-container {

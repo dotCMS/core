@@ -1,4 +1,4 @@
-import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { NgOptimizedImage } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { editContentlet } from '@dotcms/uve';
@@ -8,7 +8,6 @@ import { DotCMSShowWhenDirective } from '@dotcms/angular';
 @Component({
   selector: 'app-blog-card',
   templateUrl: './blog-card.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink, NgOptimizedImage, DotCMSShowWhenDirective],
 })
 export class BlogCardComponent {

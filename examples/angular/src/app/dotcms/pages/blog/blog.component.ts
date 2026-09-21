@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, signal } from '@angular/core';
 
 import { BlogPostComponent } from './blog-post/blog-post.component';
 import {
@@ -29,7 +29,6 @@ type BlogPage = {
 @Component({
   selector: 'app-blog',
   imports: [BlogPostComponent],
-  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './blog.component.html',
 })
 export class BlogComponent {

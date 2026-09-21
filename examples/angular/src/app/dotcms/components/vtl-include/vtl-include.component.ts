@@ -1,4 +1,4 @@
-import { Component, input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 import { DotCMSShowWhenDirective } from '@dotcms/angular';
 import { UVE_MODE } from '@dotcms/types';
@@ -10,7 +10,6 @@ import { VTLIncludeWithVariations } from '../../types/contentlet.model';
 @Component({
   selector: 'app-vtl-include',
   imports: [DotCMSShowWhenDirective, DestinationListingComponent],
-  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @switch (contentlet().componentType) {
       @case ('destinationListing') {

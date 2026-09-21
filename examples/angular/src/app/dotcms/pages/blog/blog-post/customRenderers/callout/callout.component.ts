@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input } from '@angular/core';
 
 import { BlockEditorNode } from '@dotcms/types';
 
@@ -14,7 +14,6 @@ import { BlockEditorNode } from '@dotcms/types';
 @Component({
   selector: 'app-callout',
   standalone: true,
-  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <aside
       class="flex items-start gap-3 my-4 py-4 px-5 rounded-lg border-l-4 border-pink-500 bg-pink-50">
