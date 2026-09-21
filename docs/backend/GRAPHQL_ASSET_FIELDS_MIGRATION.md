@@ -109,6 +109,91 @@ This is why the release carries an updated minimum SDK version.
 
 ---
 
+## A whole query, before and after
+
+A page listing banners, where each banner points at an image. This is the shape most clients have.
+
+**Before** — everything the old flat view offered:
+
+```graphql
+query Banners {
+  BannerCollection(limit: 10) {
+    title
+    image {
+      fileName
+      description
+      fileAsset { versionPath size mime width height }
+      metaData { key value }
+    }
+  }
+}
+```
+
+**After** — the same query, minimally corrected. Only `description` moved:
+
+```graphql
+query Banners {
+  BannerCollection(limit: 10) {
+    title
+    image {
+      fileName
+      title                      # was `description`: same value, honest name
+      fileAsset { versionPath size mime width height }
+      metaData { key value }
+    }
+  }
+}
+```
+
+That is the whole migration for a typical client: one line. `description` returned the contentlet
+title, so `title` returns exactly what the page was already rendering.
+
+**After, using what is now available** — the same query taking advantage of the change:
+
+```graphql
+query Banners {
+  BannerCollection(limit: 10) {
+    title
+    image {
+      # the binary, without descending a level
+      fileName  versionPath  size  mime  width  height
+
+      # the asset's own identity — none of this was selectable before
+      identifier  title  live  urlMap
+      __typename                       # which content type this actually is
+
+      # properties defined on the customer's own asset types
+      ... on Images       { tags description }
+      ... on BannerImages { campaignName adSize }
+    }
+  }
+}
+```
+
+Note `... on Images { description }` here returns the **stored** description, which is usually
+empty — a different value from the `title` above. Both are available; they were never the same
+thing.
+
+**A mixed collection**, where the same field points at different kinds of asset:
+
+```graphql
+query MixedAssets {
+  ArticleCollection(limit: 10) {
+    image {
+      baseType                         # DOTASSET or FILEASSET, no clause needed
+      __typename                       # the concrete type
+      ... on DotAssetBaseType { asset     { size mime } }
+      ... on FileBaseType     { fileAsset { size mime } }
+    }
+  }
+}
+```
+
+Each row answers with only the clause that applies. Reading `baseType` is enough to branch without
+writing any clause at all.
+
+---
+
 ## Checking your queries
 
 Three things to grep your codebase for:
