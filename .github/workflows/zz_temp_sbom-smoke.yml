@@ -13,26 +13,37 @@
 # It scans an ALREADY-PUBLISHED image and creates nothing outside this run.
 name: zz temp — SBOM smoke (delete before merge)
 
+# push, not workflow_dispatch: a dispatchable workflow must exist on the DEFAULT branch to be
+# launchable at all (the API 404s otherwise), and putting a temporary smoke test on main to
+# test a branch is backwards. Scoped to this branch and to the paths it exercises, so it does
+# not fire on unrelated pushes and disappears when the file is deleted before merge.
 on:
+  push:
+    branches:
+      - nicobytes/build-the-product-sbom-does-not-cover-core-webs
+    paths:
+      - '.github/actions/legacy-release/sbom-generator/**'
+      - '.github/actions/core-cicd/sbom-merge/**'
+      - '.github/workflows/zz_temp_sbom-smoke.yml'
   workflow_dispatch:
-    inputs:
-      dotcms_version:
-        description: 'An already-published dotcms/dotcms tag to scan'
-        required: true
-        default: '25.07.10_lts_v15'
-      expect_frontend:
-        description: 'Expect frontend coverage (uncheck to exercise the degraded path)'
-        type: boolean
-        default: true
 
 permissions:
   contents: read
 
+env:
+  DOTCMS_VERSION: '25.07.10_lts_v15'
+
 jobs:
   smoke:
-    name: SBOM smoke
+    name: SBOM smoke (frontend=${{ matrix.expect_frontend }})
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both paths in one run: the normal one, and the degraded one a release line
+        # without this change would take.
+        expect_frontend: [true, false]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -40,19 +51,19 @@ jobs:
         id: sbom
         uses: ./.github/actions/legacy-release/sbom-generator
         with:
-          dotcms_version: ${{ inputs.dotcms_version }}
+          dotcms_version: ${{ env.DOTCMS_VERSION }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # Empty when exercising the degraded path: the action then skips the frontend
           # half, which is exactly what a release line without this change does.
-          release_ref: ${{ inputs.expect_frontend && github.ref || '' }}
+          release_ref: ${{ matrix.expect_frontend && github.ref || '' }}
 
       - name: Verify the merged document
         shell: bash
         env:
-          EXPECT_FRONTEND: ${{ inputs.expect_frontend }}
+          EXPECT_FRONTEND: ${{ matrix.expect_frontend }}
         run: |
           set -euo pipefail
-          SBOM="core/sbom-dotcms-${{ inputs.dotcms_version }}.json"
+          SBOM="core/sbom-dotcms-${DOTCMS_VERSION}.json"
           [ -f "$SBOM" ] || { echo "::error::no SBOM at $SBOM"; exit 1; }
 
           echo "::group::Components by ecosystem"
@@ -102,6 +113,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: smoke-sbom-${{ inputs.dotcms_version }}-frontend-${{ inputs.expect_frontend }}
+          name: smoke-sbom-${{ env.DOTCMS_VERSION }}-frontend-${{ matrix.expect_frontend }}
           path: core/sbom-dotcms-*.json
           if-no-files-found: warn
