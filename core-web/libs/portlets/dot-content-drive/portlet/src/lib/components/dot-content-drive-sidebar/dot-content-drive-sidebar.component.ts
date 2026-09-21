@@ -8,13 +8,18 @@ import {
     inject,
     Injector,
     output,
+    signal,
     untracked,
     viewChild
 } from '@angular/core';
 
 import type { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/types/tree';
 
-import { DotContentDriveActionableFolder, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
+import {
+    DotContentDriveActionableFolder,
+    PERMISSIONS_TYPE,
+    TreeNodeLoadMoreData
+} from '@dotcms/dotcms-models';
 import {
     DotContentDriveMoveItems,
     DotContentDriveTreeRightClick,
@@ -24,7 +29,9 @@ import {
     DotTreeFolderComponent,
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
+import { SYSTEM_HOST } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions';
 /**
@@ -37,14 +44,41 @@ import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions'
     selector: 'dot-content-drive-sidebar',
     templateUrl: './dot-content-drive-sidebar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DotTreeFolderComponent],
-    host: { class: 'block w-full h-full' },
+    imports: [DotTreeFolderComponent, DotMessagePipe],
+    host: { class: 'flex h-full w-full flex-col' },
     styles: `
-        /* The top inset used to come from the site-name header that sat above the tree. With the
-           site now named by the tree's own root row, the tree owns that spacing — and the amount is
-           what centers that first row on the toolbar's search box and tree toggler beside it. */
+        /* The top inset used to come from the site-name header that sat above the tree, then from
+           the tree itself once the site was named by its own root row. It now belongs to whatever
+           is first in the column, which is the all-site-content row — the amount is what centers
+           that first row on the toolbar's search box and tree toggler beside it, so it has to
+           travel with the row rather than stay on the tree. */
         :host ::ng-deep .p-tree {
-            padding: 1.25rem 0.75rem 0.75rem;
+            /* Almost no left inset, so the tree's chevron sits in the same column as the icons on
+               the rows above and below it.
+
+               What has to match is the middle of each mark, not the left of its box. The chevron is
+               a 10.5px glyph centred in a 24.5px button, while those rows carry a 16px icon, so
+               lining the boxes up leaves the chevron looking 4px to the right of everything else.
+               Working back from the icon centre through the row's own 0.625rem leaves this much for
+               the tree, and it belongs to the sidebar layout rather than to the shared tree, which
+               knows nothing about the rows it happens to sit between. */
+            padding: 0 0.75rem 0.75rem 1px;
+        }
+
+        /* PrimeNG's own drag-over state, aligned with the colour the folder tree marks its active
+           drop row with. Without this it resolves to the hover background, so dragging over the
+           row would look the same as pointing at it, and different from every folder above it.
+
+           Hover itself needs nothing here: the rule is
+           .p-tree-node-content.p-tree-node-selectable:not(.p-tree-node-selected):hover, so the two
+           standalone rows only ever needed the selectable class the markup was missing.
+
+           That same rule is why this one names every class it does. A row being dragged onto is
+           usually also under the pointer, and PrimeNG's hover selector scores four classes; a
+           shorter selector here loses to it and the drop colour never appears, which is what the
+           first attempt did. Measured in the browser, not reasoned about. */
+        :host button.p-tree-node-content.p-tree-node-selectable.p-tree-node-dragover {
+            background-color: var(--color-palette-primary-200);
         }
     `
 })
@@ -53,12 +87,124 @@ export class DotContentDriveSidebarComponent {
     readonly #injector = inject(Injector);
 
     readonly $loading = this.#store.sidebarLoading;
+
+    /** Whether the sidebar's first entry, all site content, is the selected one. */
+    readonly $allSiteContentSelected = this.#store.$allSiteContentSelected;
+
+    /** Whether the sidebar's last entry, System Host, is the selected one. */
+    readonly $systemHostSelected = this.#store.$systemHostSelected;
     readonly $folders = this.#store.folders;
     readonly $selectedNode = this.#store.selectedNode;
     readonly $currentSite = this.#store.currentSite;
 
     readonly uploadFiles = output<DotContentDriveUploadFiles>();
     readonly moveItems = output<DotContentDriveMoveItems>();
+
+    /** Whether the user may add content to System Host; unknown reads as allowed. */
+    readonly $systemHostCanAddChildren = this.#store.systemHostCanAddChildren;
+
+    /**
+     * Whether to offer the System Host entry at all.
+     *
+     * A user who cannot read it gets no entry rather than a disabled one. The scope is still
+     * gated in the store for anyone arriving by URL — this only stops the drive advertising a
+     * door that opens onto nothing.
+     */
+    readonly $systemHostVisible = this.#store.systemHostCanRead;
+
+    /**
+     * Whether a drag is currently over the all-site-content entry.
+     *
+     * Held so the row can look refused rather than inert. A gesture that simply does nothing
+     * reads as a broken UI, and this row is the one place in the sidebar where a drop is
+     * declined by what the row *means* rather than by a permission.
+     */
+    protected readonly $allSiteContentDragOver = signal(false);
+
+    /**
+     * Whether a drag is currently over the System Host row.
+     *
+     * Unlike the all-site-content row above, this one accepts the drop, so it marks itself as a
+     * target rather than as refusing. The tree does the same for its own rows; without it, the one
+     * place in the column that would take the item was the only one giving nothing back.
+     */
+    protected readonly $systemHostDragOver = signal(false);
+
+    /**
+     * The drop target that stands for System Host.
+     *
+     * An empty `path` is what marks it as the host itself rather than a folder on it — the same
+     * distinction the upload contract draws, where a folder id with no path is a site. The
+     * permission travels with the target so the shell's existing gate answers about System Host
+     * instead of about whichever site the switcher happens to show.
+     */
+    private systemHostTarget(): DotFolderTreeNodeContentData {
+        return {
+            type: 'folder',
+            id: SYSTEM_HOST.identifier,
+            path: '',
+            hostname: SYSTEM_HOST.hostname,
+            permissions: [PERMISSIONS_TYPE.CAN_ADD_CHILDREN]
+        } as DotFolderTreeNodeContentData;
+    }
+
+    /**
+     * Offers the System Host entry as a drop target, but only while the user may add to it.
+     *
+     * Cancelling the event is what makes a drop possible at all, so declining to cancel is how
+     * the row declines the drop — the browser then shows the "no drop" cursor on its own, which
+     * is the refusal the spec asks for without inventing a second way to say it.
+     */
+    protected onSystemHostDragOver(event: DragEvent): void {
+        if (this.$systemHostCanAddChildren() === false) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        this.$systemHostDragOver.set(true);
+    }
+
+    /** Clears the mark when the drag leaves without dropping. */
+    protected onSystemHostDragLeave(): void {
+        this.$systemHostDragOver.set(false);
+    }
+
+    /** Files land as an upload, anything else as a move — the same fork the tree makes. */
+    protected onSystemHostDrop(event: DragEvent): void {
+        this.$systemHostDragOver.set(false);
+
+        if (this.$systemHostCanAddChildren() === false) {
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const targetFolder = this.systemHostTarget();
+        const files = event.dataTransfer?.files ?? undefined;
+
+        if (files?.length) {
+            this.uploadFiles.emit({ files, targetFolder });
+
+            return;
+        }
+
+        this.moveItems.emit({ targetFolder });
+    }
+
+    /**
+     * All site content is never a destination: it spans every folder, and the site row directly
+     * beneath it already means the site root. The event is deliberately left uncancelled so the
+     * drop cannot happen; all this does is let the row say so while the drag is over it.
+     */
+    protected onAllSiteContentDragOver(): void {
+        this.$allSiteContentDragOver.set(true);
+    }
+
+    protected onAllSiteContentDragLeave(): void {
+        this.$allSiteContentDragOver.set(false);
+    }
 
     readonly treeFolder = viewChild<DotTreeFolderComponent>('treeFolder');
     readonly getSiteFoldersEffect = effect(() => {
@@ -81,18 +227,20 @@ export class DotContentDriveSidebarComponent {
      *
      * @param {DotFolderTreeNodeItem} selectedNode - The selected node with fromTable flag
      */
-    readonly handleSelectedNodeFromTable = signalMethod<DotFolderTreeNodeItem>((selectedNode) => {
-        const data = selectedNode?.data;
-        if (!data || data.type === LOAD_MORE_NODE_TYPE || !data.fromTable) {
-            return;
+    readonly handleSelectedNodeFromTable = signalMethod<DotFolderTreeNodeItem | undefined>(
+        (selectedNode) => {
+            const data = selectedNode?.data;
+            if (!data || data.type === LOAD_MORE_NODE_TYPE || !data.fromTable) {
+                return;
+            }
+
+            const segments = data.path.split('/').filter(Boolean).slice(0, -1);
+
+            this.recursiveExpandOneNode(segments);
+
+            this.#revealNode(selectedNode, 'smooth');
         }
-
-        const segments = data.path.split('/').filter(Boolean).slice(0, -1);
-
-        this.recursiveExpandOneNode(segments);
-
-        this.#revealNode(selectedNode, 'smooth');
-    });
+    );
 
     /**
      * Brings the folder the drive is open on into view once a cold load has rendered.
@@ -151,6 +299,21 @@ export class DotContentDriveSidebarComponent {
             { injector: this.#injector }
         );
     }
+    /**
+     * Chooses the whole site. The store clears the tree's selection as it does so, because exactly
+     * one entry in the sidebar is ever selected and the tree cannot represent this one.
+     */
+    protected onSelectAllSiteContent(): void {
+        this.#store.selectAllSiteContent();
+    }
+
+    /**
+     * Chooses System Host, which belongs to no site and so clears the tree's selection too.
+     */
+    protected onSelectSystemHost(): void {
+        this.#store.selectSystemHost();
+    }
+
     /**
      * Handles node selection events
      *
