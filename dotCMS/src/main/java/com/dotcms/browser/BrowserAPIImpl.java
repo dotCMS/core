@@ -16,7 +16,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
 import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
-import com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy;
+import com.dotcms.rest.api.v1.drive.SearchScope;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.Host;
@@ -794,10 +794,36 @@ public class BrowserAPIImpl implements BrowserAPI {
             ? browserQuery.site.getIdentifier()
             : browserQuery.folder.getHostId();
 
-        if (browserQuery.forceSystemHost || browserQuery.folder.isSystemFolder()) {
+        // The caller's request decides this, and nothing else. This used to widen the clause
+        // whenever the folder happened to be the system folder — that is, at every site root —
+        // which made this builder answer differently from the SQL one about a structural
+        // criterion. ADR-0018 makes the database authoritative for exactly those criteria and
+        // forbids re-routing them to the index, so the two must name the same hosts for the same
+        // request. The divergence only ever surfaced under the non-default PURE_ES heuristic,
+        // which is why it went unnoticed rather than why it was acceptable.
+        if (SystemHostMode.ONLY == browserQuery.systemHostMode) {
+            query.append("+conhost:SYSTEM_HOST ");
+        } else if (SystemHostMode.INCLUDE == browserQuery.systemHostMode) {
             query.append("+(conhost:").append(hostId).append(" OR conhost:SYSTEM_HOST) ");
         } else {
             query.append("+conhost:").append(hostId).append(" ");
+        }
+
+        // Confine the contentlets to the folder being browsed, mirroring the SQL builder's
+        // `id.parent_path = ?`. Without it this builder emitted no folder criterion at all, so a
+        // request for the site root returned the whole site: `ROOT` and `ALL` produced byte-for-byte
+        // the same query, and the scope existed only on the database path.
+        //
+        // `skipFolder` is the same switch the SQL side reads, so the two agree by construction:
+        // all site content (and a request carrying no scope at the root) deliberately spans every
+        // depth and sets it, while the site root, a folder and System Host each name a place and
+        // do not.
+        //
+        // Only contentlets are at stake. Folders are never indexed and never come from here --
+        // both paths list them from the database through `findSubFoldersByParent` -- so this
+        // changes what content is returned and nothing about the folder rows beside it.
+        if (!browserQuery.skipFolder) {
+            query.append("+conFolder:").append(browserQuery.folder.getInode()).append(" ");
         }
 
         // Content type filters - include specific types if provided
@@ -1094,6 +1120,23 @@ public class BrowserAPIImpl implements BrowserAPI {
                 inodes.size(), collectedInodes.size(), duration));
 
         } catch (final Exception e) {
+            // Deliberately swallowed, and it is worth saying why rather than leaving it to look
+            // like an oversight. Raising this instead was tried while fixing #37532 and reverted:
+            // once the term is escaped (see buildAllFieldsScopedQuery/buildTitleScopedQuery) no
+            // user input can break the query, so what remains here is infrastructure failure — and
+            // raising it also broke the guarantee that a Lucene-injection attempt is escaped,
+            // matches nothing, and does NOT produce a 500 (see
+            // ContentDriveFieldFilterTest#testMalformedDateBoundIsSafe).
+            //
+            // This does NOT give the shell's error banner (dot-content-drive-shell.component.html)
+            // full coverage, and the comment should not be read as claiming it does: the request
+            // still completes with HTTP 200 here, falling through to whatever was collected into
+            // `collectedInodes` before the failure — a short, silently partial result rather than
+            // an explicit error. The banner only fires for failures the front end can itself
+            // observe (network/transport errors surfacing as a failed HTTP call); a query that
+            // fails inside this method never becomes one. Narrower than the ideal, wider than
+            // nothing: still strictly better than the pre-#37532 state, where EVERY failure here
+            // (including a reserved-character term) looked exactly like this.
             Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
         }
 
@@ -1137,6 +1180,10 @@ public class BrowserAPIImpl implements BrowserAPI {
                 }, submitter)
                 .orTimeout(60, TimeUnit.SECONDS)
                 .exceptionally(throwable -> {
+                    // Same partial-result trade-off as processSingleESQuery's catch block, one
+                    // level up: a timed-out or failed chunk contributes an empty set rather than
+                    // failing the whole request, so the other chunks' hits still come back with
+                    // HTTP 200 and this chunk's rows are simply missing from the page.
                     Logger.error(BrowserAPIImpl.this, String.format("ES sub-query %d failed: %s",
                         batchIndex, throwable.getMessage()), throwable);
                     return new LinkedHashSet<>();
@@ -1457,16 +1504,15 @@ public class BrowserAPIImpl implements BrowserAPI {
         final StringBuilder textGroup = new StringBuilder();
 
         if (UtilMethods.isSet(browserQuery.filter)) {
-            // Reuse the Content Search global-search strategy so Content Drive keyword search stays
-            // consistent with the Search portlet (issue #36688). It builds a selective mandatory
-            // "+catchall:<kw>*" prefix plus tokenized, escaped title boosts — replacing the previous
-            // broad "catchall:*<kw>*" leading wildcard, which returned unrelated body matches and
-            // scanned slowly on large, indexed datasets.
-            final FieldContext globalSearchContext = new FieldContext.Builder()
-                    .withFieldName("title")
-                    .withFieldValue(browserQuery.filter)
-                    .build();
-            textGroup.append(new GlobalSearchAttributeStrategy().generateQuery(globalSearchContext));
+            if (SearchScope.TITLE == browserQuery.searchScope) {
+                textGroup.append(buildTitleScopedQuery(browserQuery.filter));
+            } else {
+                // All Fields (the default): match the term as literal text against every indexed
+                // field (issue #37532, customer ticket 39185). See buildAllFieldsScopedQuery's
+                // Javadoc for why this is Content Drive's own implementation rather than a call
+                // into the Search portlet's shared GlobalSearchAttributeStrategy.
+                textGroup.append(buildAllFieldsScopedQuery(browserQuery.filter));
+            }
         }
 
         if (UtilMethods.isSet(browserQuery.fileName)) {
@@ -1513,6 +1559,244 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         return baseQuery.toString();
+    }
+
+    /** Splits a term into tokens, matching the shared field strategies. */
+    private static final String TITLE_SCOPE_SPLIT_REGEX = "[,|\\s+]";
+
+    /**
+     * The subset of {@link LuceneQueryUtils#LUCENE_SPECIAL_CHARS} that reads as query intent — a
+     * wildcard or an escape — rather than as a word boundary. These are dropped from the token
+     * outright (the historical behavior) instead of splitting it: {@code file*.txt} keeps meaning
+     * the literal {@code file.txt}, rather than becoming two mandatory words, one of which
+     * ({@code .txt}) could never match an analyzed token and would sink the whole search.
+     */
+    private static final String WILDCARD_CHARS = "*?\\";
+
+    /**
+     * Reserved by the {@code query_string} range-query syntax ({@code field:>value},
+     * {@code field:<=value}, …) but absent from {@link LuceneQueryUtils#LUCENE_SPECIAL_CHARS} — that
+     * set is the shared escape/split list every field strategy agrees on, and widening it would also
+     * change escaping for the Search portlet and the Relationships dialog. Kept local to this
+     * Content-Drive-only split instead: without it, a token like {@code >2024} survives untouched and
+     * becomes {@code title:>2024*}, which Elasticsearch parses as a range query rather than the
+     * prefix search intended, so the clause is broad instead of empty and costs precision rather than
+     * failing outright.
+     */
+    private static final String TITLE_SCOPE_EXTRA_SPLIT_CHARS = "<>=";
+
+    /**
+     * The clause for a term whose every token is query syntax ({@code ***}, a lone {@code /}): a
+     * required existence test on {@code title} paired with its own negation — a contradiction no
+     * document can satisfy. {@code field:*} is the established {@code query_string} exists idiom
+     * (see {@code PersonaAPIImpl}'s {@code +languageid:*}); the wrapping group in
+     * {@link #buildBaseESQuery} applies the {@code +} and {@code -} as written.
+     */
+    private static final String MATCH_NOTHING_CLAUSE = "+title:* -title:*";
+
+    /**
+     * Builds the Elasticsearch clause for {@link SearchScope#ALL_FIELDS} — the default search scope
+     * that matches a term as literal text against every indexed field (issue #37532, customer
+     * ticket 39185).
+     *
+     * <p>This used to be a direct call into
+     * {@code com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy}, the
+     * same class that builds the Search portlet's and the Relationships dialog's global search
+     * query. It is now Content Drive's own implementation instead: escaping every Lucene reserved
+     * character in every clause below — including the mandatory gate, which is exactly what that
+     * shared class does <b>not</b> do — would have changed the Search portlet's and Relationships
+     * dialog's behavior too (a term like {@code foo*}, today a wildcard search there, would start
+     * matching a literal asterisk). Product asked for the fix to land in Content Drive only, so the
+     * query-building code is forked rather than the shared class being changed underneath its other
+     * callers.</p>
+     *
+     * @param filter The raw, unescaped term the user typed.
+     *
+     * @return The Lucene clause for an all-fields search.
+     */
+    static String buildAllFieldsScopedQuery(final String filter) {
+        final String value = LuceneQueryUtils.escape(filter);
+        final StringBuilder query = new StringBuilder();
+        // Mandatory gate: match either a catchall token PREFIX (fast) OR the title_dotraw raw
+        // value via wildcard. Unlike catchall (which aggregates every field of the document),
+        // title_dotraw is scoped to this one field, so this alternative recovers mid-token and
+        // exact-full-value matches (issue #36791) without reintroducing an unscoped,
+        // whole-document wildcard like the old broad catchall:*value* (issue #36688).
+        query.append("+(catchall:").append(value).append("*^10 OR ")
+                .append("title_dotraw:*").append(value).append("*^2)").append(" ");
+        query.append("title:'").append(value).append("'^15").append(" ");
+
+        // Tokenize the RAW value so the split sees the user's real separators, then escape each
+        // token individually. Empty tokens are dropped: consecutive separators would otherwise
+        // emit a term-less "title:^5" clause that cannot parse.
+        final String[] titleSplit = filter.split(TITLE_SCOPE_SPLIT_REGEX);
+        if (titleSplit.length > 1) {
+            for (final String term : titleSplit) {
+                if (term.isEmpty()) {
+                    continue;
+                }
+                query.append("title:").append(LuceneQueryUtils.escape(term)).append("^5").append(" ");
+            }
+        }
+
+        // The "*" wildcard here is syntax this method adds itself, so it is appended AFTER
+        // escaping and stays live rather than becoming a literal asterisk.
+        query.append("title:").append(value).append("*");
+        return query.toString();
+    }
+
+    /**
+     * Builds the Elasticsearch clause for {@link SearchScope#TITLE} — the search scope that matches
+     * a term against the contentlet title alone (issue #37479).
+     *
+     * <p>This is a <b>sibling</b> of {@link #buildAllFieldsScopedQuery} rather than a branch inside
+     * it, for the same reason that method is a sibling of the Search portlet's shared strategy:
+     * neither the Title scope nor the All Fields scope should have to route through a query shape
+     * another portlet's behavior depends on.</p>
+     *
+     * <p><b>One mandatory clause per token</b>, mirroring {@code TextFieldStrategy}. This is not a
+     * style choice — the first version of this method interpolated the whole term into a single
+     * {@code title:<term>*} clause, and for a multi-word term the {@code title:} prefix binds only
+     * to the first word. Every word after it became a bare term, which Elasticsearch matches
+     * against <b>every</b> field, so "mixed case" in Title scope returned stylesheets whose
+     * <i>body</i> contained "case". Tokenizing also means a term containing {@code OR} or
+     * {@code AND} is matched as a word rather than parsed as a boolean operator.</p>
+     *
+     * <p>Two things this clause must not do, both of which would make the scope a display filter
+     * rather than the cheaper query path it exists to be:</p>
+     *
+     * <ul>
+     *   <li><b>No {@code catchall}.</b> That field aggregates every field of the document, which is
+     *       exactly the breadth the Title scope is meant to avoid.</li>
+     *   <li><b>No leading wildcard.</b> {@code title_dotraw} is a keyword field, so {@code *term*}
+     *       scans every distinct raw title while {@code term*} is a prefix seek. Issue #36688
+     *       removed a leading wildcard for this reason and it must not return.</li>
+     * </ul>
+     *
+     * <p><b>Known trade-offs</b>, both signed off, and both the same consequence of matching by
+     * prefix rather than by substring:</p>
+     *
+     * <ul>
+     *   <li><b>Mid-token.</b> Searching {@code 1004} will not find {@code IMG_1004.jpeg} here. All
+     *       Fields keeps it (issue #36791).</li>
+     *   <li><b>Punctuation mid-title.</b> The punctuation itself is never matchable: a prefix query
+     *       is not analyzed, and the indexed token had it removed — {@code (XETRA:} is indexed as
+     *       {@code xetra}. Reaching the punctuation would need {@code *(XETRA:*}, the leading
+     *       wildcard this method exists to avoid. The words around it stay reachable — a split
+     *       aligns the term with the tokens the analyzer stored — and All Fields, the default,
+     *       matches the punctuated term in full, which is the path the customer case of issue
+     *       #37532 takes.</li>
+     * </ul>
+     *
+     * <p>Restoring either would cost the prefix seek that makes this scope worth having.</p>
+     *
+     * <p>No boost clauses. The all-fields strategy carries several, but Content Drive orders by the
+     * grid's sort — modification date by default — and never by score, so a boost changes nothing a
+     * user can see. Adding one here would only be another place for a term to be interpolated
+     * badly.</p>
+     *
+     * <p><b>{@code title_dotraw} rides only on the first word</b> (issue #37554 review, SC-003
+     * follow-up). It is the whole raw title as one keyword term, so a prefix match against it can
+     * only ever succeed when the fragment is a prefix of the ENTIRE title — true, at best, for the
+     * first word of a multi-word search term, never for the ones after it. Every later word still
+     * gets its {@code title} check alone.</p>
+     *
+     * @param filter The raw, unescaped term the user typed.
+     *
+     * @return The Lucene clause for a title-only search, or {@link #MATCH_NOTHING_CLAUSE} when the
+     *         term carries no usable token at all — matching nothing, never everything.
+     */
+    static String buildTitleScopedQuery(final String filter) {
+        final StringBuilder query = new StringBuilder();
+        boolean firstFragment = true;
+        for (final String token : filter.split(TITLE_SCOPE_SPLIT_REGEX)) {
+            // SPLIT the query-syntax characters that are word separators; DROP the wildcard ones.
+            //
+            // Escaping is the right move for a substring match, and it is what the all-fields
+            // strategy does. It is the wrong move here. A prefix query is NOT analyzed, so the
+            // term is compared against the indexed token as-is — and the analyzer already removed
+            // that punctuation at index time: "(XETRA:" is indexed as "xetra". An escaped
+            // "\(XETRA\:" can therefore never match, and because every token is mandatory, one
+            // such token sinks the whole search. Pasting a punctuated title into Title scope
+            // returned nothing.
+            //
+            // Stripping alone aligns the term with what the analyzer stored, but it also FUSES
+            // the words around the stripped character: title is indexed with the standard
+            // tokenizer, which treats punctuation as word separators — "COVID-19" is stored as
+            // the tokens "covid" and "19", and a stripped token turned the term into "COVID19",
+            // a word no document contains. A hyphenated title findable in All Fields vanished
+            // from Title scope. Splitting on the same separators the analyzer uses keeps every
+            // word reachable by its own prefix; at a token's edges a split and a strip are
+            // equivalent, because the empty side is dropped — which is what the punctuated-paste
+            // cases rely on. Either way, a fragment with no reserved characters left in it
+            // cannot be query syntax.
+            for (final String value : splitQuerySyntax(token)) {
+                if (firstFragment) {
+                    // title_dotraw is the WHOLE raw title as one keyword term (issue #37554
+                    // review, SC-003 performance follow-up), so a prefix match against it can
+                    // only ever succeed for the very first word of the search term — no later
+                    // word can be a prefix of the full title string. Carrying it on every word
+                    // paid for nothing beyond the first: a prefix search against title_dotraw
+                    // walks a keyword dictionary with close to one term per document, against
+                    // title's much smaller per-word vocabulary.
+                    query.append("+(title:").append(value).append("* title_dotraw:")
+                            .append(value).append("*) ");
+                    firstFragment = false;
+                } else {
+                    query.append("+title:").append(value).append("* ");
+                }
+            }
+        }
+
+        if (query.length() == 0) {
+            // Every token was pure query syntax (e.g. "***" or a lone "/"). Returning BLANK here
+            // would drop the text constraint entirely and return the whole folder — the exact
+            // "term silently ignored" failure the injection-shaped test guards against, reached
+            // from the opposite direction, and the opposite of All Fields, which matches nothing
+            // for the same input.
+            return MATCH_NOTHING_CLAUSE;
+        }
+
+        return query.toString().trim();
+    }
+
+    /**
+     * Splits a single token of the user's term on the Lucene reserved characters, so it can be
+     * compared against an analyzed field that never stored those characters.
+     *
+     * <p>Deliberately not {@code LuceneQueryUtils.escape}: escaping preserves the character, which
+     * is correct when the term is matched as a substring of a raw value and wrong when it is
+     * matched as a prefix of an analyzed token. And deliberately a character walk, not a regex,
+     * for the same OpenSearch-migration reasons documented on {@code LuceneQueryUtils.escape}.</p>
+     *
+     * @param token A single token of the user's term (already split on the shared separators).
+     *
+     * @return The word fragments the analyzer would have stored; never empty, never blank.
+     */
+    static List<String> splitQuerySyntax(final String token) {
+        final List<String> segments = new ArrayList<>();
+        final StringBuilder current = new StringBuilder(token.length());
+        for (int i = 0; i < token.length(); i++) {
+            final char c = token.charAt(i);
+            final boolean isReserved = LuceneQueryUtils.LUCENE_SPECIAL_CHARS.indexOf(c) >= 0
+                    || TITLE_SCOPE_EXTRA_SPLIT_CHARS.indexOf(c) >= 0;
+            if (!isReserved) {
+                current.append(c);
+            } else if (WILDCARD_CHARS.indexOf(c) >= 0) {
+                // A wildcard or escape: query intent, dropped rather than treated as a separator
+                // (see WILDCARD_CHARS).
+            } else {
+                // A word separator for the analyzer: flush the fragment accumulated so far.
+                if (current.length() > 0) {
+                    segments.add(current.toString());
+                    current.setLength(0);
+                }
+            }
+        }
+        if (current.length() > 0) {
+            segments.add(current.toString());
+        }
+        return segments;
     }
 
     /**
@@ -2296,8 +2580,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (shouldApplySiteFiltering) {
                 if (browserQuery.site != null) {
                     appendSiteQuery(candidatesPredicates, browserQuery.site.getIdentifier(),
-                            browserQuery.forceSystemHost, parameters);
-                } else if (browserQuery.forceSystemHost) {
+                            browserQuery.systemHostMode, parameters);
+                } else if (SystemHostMode.EXCLUDE != browserQuery.systemHostMode) {
                     appendSystemHostQuery(candidatesPredicates);
                 }
             }
@@ -2333,9 +2617,11 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (shouldApplySiteFiltering) {
                 if (browserQuery.site != null) {
                     appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
-                            browserQuery.forceSystemHost, parameters);
+                            browserQuery.systemHostMode, parameters);
                 } else {
-                    if (browserQuery.forceSystemHost) {
+                    // No site to narrow to, so the only host clause worth emitting is the
+                    // System Host one, which both INCLUDE and ONLY want here.
+                    if (SystemHostMode.EXCLUDE != browserQuery.systemHostMode) {
                         appendSystemHostQuery(selectQuery);
                     }
                 }
@@ -2506,9 +2792,14 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param siteIdentifier The site identifier to filter by.
      * @param parameters     The list of parameters to add the site identifier to.
      */
-    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier, boolean forceSystemHost,
-            List<Object> parameters) {
-        if(forceSystemHost){
+    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier,
+            SystemHostMode systemHostMode, List<Object> parameters) {
+        if (SystemHostMode.ONLY == systemHostMode) {
+            // The site is context rather than a filter here, so nothing is bound.
+            appendSystemHostQuery(sqlQuery);
+            return;
+        }
+        if (SystemHostMode.INCLUDE == systemHostMode) {
             sqlQuery.append(" and (id.host_inode = ? or id.host_inode = 'SYSTEM_HOST') ");
         } else {
             sqlQuery.append(" and (id.host_inode = ?) ");
@@ -3363,6 +3654,16 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return a list of folders that match the filtering criteria specified in the browser query
      */
     private List<Folder> getFolders(BrowserQuery browserQuery) {
+        // System Host holds no folders, so a request scoped to it has none to report -- whatever
+        // it asked for. Without this the parent is still the browsed SITE, and asking for folders
+        // in the System Host scope returned that site's folders beside System Host's content: rows
+        // belonging to a host the caller did not ask about. Content Drive never asks, so nothing
+        // showed, but the listing's own contract (FR-010) said one thing and the server did
+        // another, and only the client's good manners hid it.
+        if (SystemHostMode.ONLY == browserQuery.systemHostMode) {
+            return Collections.emptyList();
+        }
+
         List<Folder> folders = Collections.emptyList();
         try {
 

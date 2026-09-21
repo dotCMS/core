@@ -41,7 +41,7 @@ import {
     DotContentDriveUploadJob,
     DotContentDriveState
 } from '../../../shared/models';
-import { normalizeFolderRef, toFolderRef } from '../../../utils/functions';
+import { browsedFolderRef, normalizeFolderRef } from '../../../utils/functions';
 
 interface WithActionExecutionState {
     /**
@@ -329,7 +329,6 @@ export function withActionExecution() {
 
                     const runId = startRun({
                         operation: actionName,
-                        actionName,
                         // Counted in identifiers, because that is what the server queues: language
                         // versions of one contentlet are one asset.
                         total: identifiers.length,
@@ -408,7 +407,6 @@ export function withActionExecution() {
 
                         const runId = startRun({
                             operation: actionId,
-                            actionName,
                             total: inodes.length,
                             targets: inodes
                         });
@@ -619,7 +617,7 @@ export function withActionExecution() {
                         // A move changes two folders: the one the rows leave and the one they
                         // arrive in. Every other workflow action changes rows where they already
                         // are, so the browsed folder is the only one affected.
-                        const browsedFolder = toFolderRef(
+                        const browsedFolder = browsedFolderRef(
                             store.currentSite()?.hostname,
                             store.path()
                         );
@@ -629,7 +627,6 @@ export function withActionExecution() {
 
                         const runId = startRun({
                             operation: workflowActionId,
-                            actionName,
                             total: contentletIds.length,
                             targets: contentletIds
                         });
@@ -751,28 +748,6 @@ export function withActionExecution() {
 
                     /** Settles a run registered with {@link startExternalRun}. */
                     endExternalRun: (runId: string): void => endRun(runId),
-
-                    /**
-                     * Updates a run in flight, for the fields it reports as it goes.
-                     *
-                     * Ignores a run that is already gone rather than resurrecting it: progress can
-                     * arrive a tick after the run settled, and re-adding it would leave the
-                     * indicator reporting something finished.
-                     */
-                    updateExternalRun: (
-                        runId: string,
-                        patch: Partial<Pick<DotContentDriveRun, 'processed'>>
-                    ): void => {
-                        const run = store.runs()[runId];
-
-                        if (!run) {
-                            return;
-                        }
-
-                        patchState(store, {
-                            runs: { ...store.runs(), [runId]: { ...run, ...patch } }
-                        });
-                    },
 
                     /**
                      * Remembers a batch this store submitted, so its completion can be told from

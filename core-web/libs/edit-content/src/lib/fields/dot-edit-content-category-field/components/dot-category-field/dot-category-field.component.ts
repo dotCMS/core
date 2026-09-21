@@ -45,6 +45,11 @@ import { sameInodes } from '../../utils/category-field.utils';
     styleUrls: ['./dot-category-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
+        // The field's value is a collection, so no single control can carry `<label for>`. The
+        // widget is the named thing, via the label's id. No aria-required: ARIA defines that
+        // attribute on radiogroup, not on a plain group.
+        role: 'group',
+        '[attr.aria-labelledby]': "'label-' + $field().variable",
         class: 'dot-category-field__container',
         '[class.dot-category-field__container--has-categories]': '$hasSelectedCategories()',
         '[class.dot-category-field__container--disabled]': '$isDisabled()'

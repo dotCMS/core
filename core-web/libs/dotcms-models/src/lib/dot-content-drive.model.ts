@@ -189,7 +189,26 @@ export interface DotContentDriveQueryFilters {
      * Text to search for.
      */
     text: string;
+
+    /**
+     * Which fields {@link text} is matched against.
+     *
+     * Sits here rather than at the top level because it qualifies `text` and means nothing without
+     * it — the same reason {@link filterFolders} lives here. Omit it for the historical behaviour:
+     * an absent scope is processed exactly as it was before the field existed, which is what keeps
+     * the AssetPicker unaffected.
+     *
+     * Not to be confused with a *browse* scope, which says where you are browsing rather than which
+     * fields a search reads.
+     */
+    searchScope?: 'TITLE' | 'ALL_FIELDS';
 }
+
+/**
+ * Which slice of content a Content Drive listing is asked for: the whole current site at any
+ * depth, only what sits at the site root, or System Host alone.
+ */
+export type DotContentDriveBrowseScope = 'ALL' | 'ROOT' | 'SYSTEM_HOST';
 
 /**
  * Request body for the /api/v1/drive/search endpoint.
@@ -226,6 +245,15 @@ export interface DotContentDriveSearchRequest {
      * @default true
      */
     includeSystemHost?: boolean;
+
+    /**
+     * Which slice of content to list. Omitting it means today's behavior, and it carries no
+     * default for that reason: at the site root an omitted scope and `ALL` agree, but inside a
+     * folder they do not, so defaulting it would turn folder requests into listings of every
+     * descendant. Only valid with a site-root `assetPath`; naming one alongside a folder path is
+     * refused by the endpoint.
+     */
+    browseScope?: DotContentDriveBrowseScope;
 
     /**
      * List of language identifiers to include in the search.

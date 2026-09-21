@@ -22,13 +22,13 @@
     <ng-template let-candidate pTemplate="item">
         <div class="flex flex-col">
             <span class="font-medium">{{ displayName(candidate) }}</span>
-            <span class="text-color-secondary text-xs">{{ candidate.emailAddress }}</span>
+            <span class="text-xs text-slate-500">{{ candidate.emailAddress }}</span>
         </div>
     </ng-template>
     <ng-template pTemplate="empty">
         @if ($isLoading()) {
             <div
-                class="text-color-secondary px-3 py-2 text-sm"
+                class="px-3 py-2 text-sm text-slate-500"
                 data-testid="users-replacement-picker-loading">
                 {{ 'users.dialog.replacement-picker.loading' | dm }}
             </div>
@@ -40,7 +40,7 @@
             </div>
         } @else {
             <div
-                class="text-color-secondary px-3 py-2 text-sm"
+                class="px-3 py-2 text-sm text-slate-500"
                 data-testid="users-replacement-picker-empty">
                 {{ 'users.dialog.replacement-picker.empty' | dm }}
             </div>
