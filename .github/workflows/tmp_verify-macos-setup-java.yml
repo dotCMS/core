@@ -17,7 +17,17 @@
 name: TMP Verify macOS setup-java (#37650)
 
 on:
+  # `workflow_dispatch` alone is not usable here: GitHub resolves dispatchable workflows
+  # against the DEFAULT branch, so `gh workflow run --ref <feature-branch>` returns 404 for a
+  # workflow that only exists on this branch. Hence the `push` trigger, scoped to this single
+  # throwaway branch so it can never fire anywhere else.
+  #
+  # To re-run without a new commit (e.g. the warm-cache check), use `gh run rerun <run-id>` —
+  # re-running an existing run has no default-branch requirement.
   workflow_dispatch:
+  push:
+    branches:
+      - 37650-macos-cli-sdkman-no-homebrew-impl
 
 permissions:
   contents: read
