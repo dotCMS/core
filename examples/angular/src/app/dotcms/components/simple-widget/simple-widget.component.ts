@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotCMSShowWhenDirective } from '@dotcms/angular';
 import { UVE_MODE } from '@dotcms/types';
@@ -8,6 +8,7 @@ import { SimpleWidget } from '../../types/contentlet.model';
 @Component({
   selector: 'app-simple-widget',
   imports: [DotCMSShowWhenDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (isTravelBot()) {
       <div

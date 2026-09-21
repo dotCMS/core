@@ -1,4 +1,4 @@
-import { Component, computed, input, OnChanges, signal } from '@angular/core';
+import { Component, computed, input, OnChanges, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotCMSBlockEditorRendererNativeComponent } from '@dotcms/angular';
 import { BlogContentlet } from '../blog.component';
@@ -9,6 +9,7 @@ import { enableBlockEditorInline, getUVEState } from '@dotcms/uve';
   selector: 'app-blog-post',
   imports: [DotCMSBlockEditorRendererNativeComponent, NgOptimizedImage],
   templateUrl: './blog-post.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './blog-post.component.css',
 })
 export class BlogPostComponent implements OnChanges {

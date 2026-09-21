@@ -1,4 +1,4 @@
-import { Component, HostBinding, input } from '@angular/core';
+import { Component, HostBinding, input, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotCMSShowWhenDirective } from '@dotcms/angular';
 import { UVE_MODE } from '@dotcms/types';
@@ -15,6 +15,7 @@ import { Contentlet } from '../../dotcms/types/contentlet.model';
 @Component({
   selector: 'app-edit-contentlet-button',
   imports: [DotCMSShowWhenDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <button
       *dotCMSShowWhen="uveMode.EDIT"

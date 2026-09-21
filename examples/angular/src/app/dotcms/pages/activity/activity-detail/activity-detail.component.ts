@@ -1,4 +1,4 @@
-import { Component, computed, input, OnChanges, signal } from '@angular/core';
+import { Component, computed, input, OnChanges, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { ActivityContentlet } from '../activity.component';
 import { NgOptimizedImage } from '@angular/common';
@@ -7,6 +7,7 @@ import { NgOptimizedImage } from '@angular/common';
   selector: 'app-activity-detail',
   imports: [NgOptimizedImage],
   templateUrl: './activity-detail.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './activity-detail.component.css',
 })
 export class ActivityDetailComponent {

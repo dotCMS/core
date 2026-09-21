@@ -1,6 +1,6 @@
 
 import { NgOptimizedImage } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { EditContentletButtonComponent } from '../../../../../components/edit-contentlet-button/edit-contentlet-button.component';
@@ -9,6 +9,7 @@ import { DestinationListingWidgetJSON } from '../../../../types/contentlet.model
 @Component({
   selector: 'app-destination-listing',
   templateUrl: './destination-listing.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [RouterLink, NgOptimizedImage, EditContentletButtonComponent],
 })
 export class DestinationListingComponent {

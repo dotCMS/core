@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotCMSShowWhenDirective } from '@dotcms/angular';
 import { UVE_MODE } from '@dotcms/types';
@@ -13,6 +13,7 @@ import { reorderMenu } from '@dotcms/uve';
 @Component({
   selector: 'app-reorder-button',
   imports: [DotCMSShowWhenDirective],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <ng-template [dotCMSShowWhen]="uveMode.EDIT">
       <button

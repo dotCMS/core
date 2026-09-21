@@ -1,4 +1,4 @@
-import { Component, computed, Input } from '@angular/core';
+import { Component, computed, Input, ChangeDetectionStrategy } from '@angular/core';
 import { BlockEditorNode } from '@dotcms/types';
 
 import { Product } from '../../../../../types/contentlet.model';
@@ -12,6 +12,7 @@ import { Product } from '../../../../../types/contentlet.model';
         <span class="text-sm text-blue-500">{{ contentlet().contentType }}</span>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   standalone: true,
 })
 export class ProductComponent {

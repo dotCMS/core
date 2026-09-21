@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, signal } from '@angular/core';
+import { Component, DestroyRef, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { ActivityDetailComponent } from './activity-detail/activity-detail.component';
 import {
@@ -33,6 +33,7 @@ type ActivityPage = {
 @Component({
   selector: 'app-activity',
   imports: [ActivityDetailComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './activity.component.html',
 })
 export class ActivityComponent {

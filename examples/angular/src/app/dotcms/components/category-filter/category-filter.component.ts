@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { CategoryFilter } from '../../types/contentlet.model';
@@ -6,6 +6,7 @@ import { CategoryFilter } from '../../types/contentlet.model';
 @Component({
   selector: 'app-category-filter',
   imports: [RouterLink],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (hasCategories()) {
       <div class="bg-white rounded-lg shadow-sm p-4">

@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 import { Product, StoreProductList } from '../../types/contentlet.model';
 
@@ -11,6 +11,7 @@ type ProductWithDiscount = Product & {
 @Component({
   selector: 'app-store-product-list',
   imports: [NgOptimizedImage],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './store-product-list.component.html',
 })
 export class StoreProductListComponent {

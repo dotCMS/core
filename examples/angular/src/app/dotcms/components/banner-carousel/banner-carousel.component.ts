@@ -5,6 +5,7 @@ import {
   OnDestroy,
   OnInit,
   signal,
+  ChangeDetectionStrategy
 } from '@angular/core';
 
 import { BannerCarousel } from '../../types/contentlet.model';
@@ -13,6 +14,7 @@ import { NgOptimizedImage } from '@angular/common';
 @Component({
   selector: 'app-banner-carousel',
   templateUrl: './banner-carousel.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [NgOptimizedImage],
 })
 export class BannerCarouselComponent implements OnInit, OnDestroy {

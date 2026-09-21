@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, computed, input, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotCMSShowWhenDirective } from '@dotcms/angular';
 import { UVE_MODE } from '@dotcms/types';
@@ -10,6 +10,7 @@ import { PageForm } from '../../types/contentlet.model';
 @Component({
   selector: 'app-page-form',
   imports: [DotCMSShowWhenDirective, ContactUsComponent],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (formType() === 'contact-us') {
       <app-contact-us [description]="description()" />
