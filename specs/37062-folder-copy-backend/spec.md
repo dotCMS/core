@@ -1,0 +1,723 @@
+# Feature Specification: Content Drive folder copy (backend)
+
+**Feature Branch**: `37062-content-drive-folder-copy`
+
+**Created**: 2026-09-21
+
+**Status**: Draft
+
+**Type**: New Feature
+
+**Input**: GitHub issue [dotCMS/core#37062](https://github.com/dotCMS/core/issues/37062): "Content Drive: folder copy, async job endpoint and frontend wiring".
+
+---
+
+## Context
+
+Content Drive lets an author select several rows at once. Folders are selectable, and there is no
+way to copy them: not in bulk, and not one at a time. Unlike delete, which shipped a single-folder
+context menu item on #35161, **copy has no presence in Content Drive at all**. The only folder copy
+in the product is the Site Browser's, reached through a legacy remoting method that no modern
+surface calls.
+
+**This specification covers the server side only.** #37062 carries both halves; they are specified
+separately, following #37063 and #37166, because the two are delivered against a contract rather
+than as one body of work. §Contract Consumed by the Client is a mandatory output of this document,
+and the frontend half restates it from the consumer's side rather than re-deciding it.
+
+**The operation duplicates a folder in place.** A selected folder is copied into its own parent,
+beside the original, under a name derived so it does not collide. There is no destination: the
+author does not choose where the copy lands, so this feature has no destination picker, no
+destination path in its submission, and none of the target validation that a relocation would need.
+This is a deliberate narrowing of what #37062's description proposes, recorded as D-005.
+
+**Why this cannot be a synchronous call.** Copying a folder is a single unbounded transaction over
+a recursive walk: `FolderAPIImpl.copy` is `@WrapInTransaction` and the walk beneath it recurses
+through file assets, pages, links and child folders, loading each folder's children whole. A folder
+holding thousands of assets holds one long transaction and times out at the proxy, and a
+multi-select multiplies that by the size of the selection. Designing a synchronous endpoint around
+an expected timeout is an asynchronous design without the machinery, so it is built as one.
+
+**Reuse, stated up front.** Three things already exist and this feature consumes them rather than
+redefining them: the per-item outcome contract in `com.dotcms.jobs.business.batch`, shared with
+bulk upload and bulk refresh; the job-queue framework in `com.dotcms.jobs.business`; and
+`FolderAPI.copy`, which already performs the permission checks and emits the copy event. The
+sibling tickets #37063 (bulk delete) and #37165 (move) share the outcome contract; **the three must
+not diverge**.
+
+**Copy is not delete with a different verb, and the differences run in both directions.** It is
+gentler in the ways that shaped most of delete's specification: nothing is destroyed, so no folder
+becomes unusable while a run works on it, nothing is announced to other authors, and two runs over
+the same folders cannot harm each other. It is harsher in one way delete is not: **copy is not
+idempotent**. Re-running a delete over a folder that is already gone changes nothing; re-running a
+copy produces a second duplicate. See FR-034 and D-015.
+
+---
+
+## User Scenarios & Testing *(mandatory)*
+
+<!--
+  Server behaviour, described from the perspective of the author whose action reaches it. Each is
+  verifiable against the server alone, through integration or Postman tests, with no browser
+  involved.
+-->
+
+### User Story 1 - A selection of folders is duplicated at once (Priority: P1)
+
+An author's multi-row selection reaches the server as one submission naming several folder paths.
+The server accepts it immediately with a handle, duplicates each folder in the background beside
+its original, and records what happened to each one.
+
+**Why this priority**: This is the reported gap, and nothing else in the feature has value until a
+selection can be submitted as one operation. It is also the only story that must ship for the
+feature to be usable.
+
+**Independent Test**: Submit five folders the author may copy; confirm the submission is answered
+at once, and that five new folders exist beside the originals when the run reports itself finished.
+
+**Acceptance Scenarios**:
+
+1. **Given** five folder paths the author may copy, **When** the submission is made, **Then** the
+   server answers immediately with a handle the caller can use to follow and cancel the run. It
+   does not hold the caller until the copies exist.
+2. **Given** an accepted submission, **When** the run finishes, **Then** each source folder still
+   exists untouched, and a duplicate of each exists in the same parent.
+3. **Given** a duplicated folder, **When** its contents are inspected, **Then** everything the
+   shipped copy carries is present: child folders, file assets, pages and links, with the folder's
+   permissions copied across.
+4. **Given** a folder whose parent is a site root, **When** it is duplicated, **Then** the copy
+   lands at that site root; **Given** a nested folder, **Then** the copy lands in its parent folder.
+   Both cases work.
+5. **Given** a submission naming exactly one folder, **When** it is made, **Then** it is accepted
+   and runs as a batch of one. There is no separate synchronous endpoint for a single folder, and
+   the submission is not special-cased into one.
+6. **Given** any folder in the selection, **When** it is copied, **Then** the result is
+   indistinguishable from copying that same folder through the shipped Site Browser copy: same
+   permission rules, same contents carried, same event emitted.
+
+---
+
+### User Story 2 - The duplicate is named so it never collides (Priority: P1)
+
+A duplicate lands beside its original, so its name always collides by construction. The server
+derives a free name rather than refusing, and reports the name it chose so the author can find what
+it made.
+
+**Why this priority**: P1 because it is not an edge case here. Under duplicate-in-place **every
+single copy collides**, so the naming rule is the operation's normal path rather than a rare
+branch. An author who cannot tell which of two similarly named folders is the new one has not been
+given a working feature.
+
+**Independent Test**: Duplicate the same folder three times; confirm three new folders exist, all
+named distinctly, and that each run's outcome reports the name it produced.
+
+**Acceptance Scenarios**:
+
+1. **Given** a folder is duplicated, **When** the copy is created, **Then** it is given a name that
+   is free in that parent, derived by the rule the shipped copy already uses.
+2. **Given** a folder that has already been duplicated, **When** it is duplicated again, **Then** a
+   second copy is created under a further derived name, and neither the original nor the first copy
+   is disturbed.
+3. **Given** a successful per-path outcome, **When** it is read, **Then** it carries the name the
+   duplicate was given, not only the source path.
+4. **Given** any duplication, **When** it completes, **Then** no existing folder has been renamed,
+   replaced or overwritten to make room for the copy.
+
+---
+
+### User Story 3 - A folder that cannot be copied does not take the run down with it (Priority: P1)
+
+A selection routinely contains a folder the author may not copy, a path that no longer resolves, or
+a folder the system refuses outright. The run continues past it and records, per path, what
+happened and why.
+
+**Why this priority**: Partial failure is the normal case over a multi-select, not an edge case. A
+run that aborts at the first refusal leaves the author unable to tell which duplicates were made.
+
+**Independent Test**: Submit five folders of which two cannot be copied, one for want of rights and
+one whose path does not resolve; confirm the other three were duplicated and the outcome reports
+three succeeded and two failed, naming both failures with distinguishable reasons.
+
+**Acceptance Scenarios**:
+
+1. **Given** a selection containing a folder that is refused, **When** the run proceeds, **Then**
+   every remaining folder is still attempted.
+2. **Given** a finished run, **When** its outcome is read, **Then** it carries a total, a success
+   count, a failure count, a skipped count and a per-path record.
+3. **Given** a path that failed, **When** its record is read, **Then** it names the path, marks it
+   failed, and carries both a machine-readable reason and a human-readable diagnostic message.
+4. **Given** a path the author may not read, or whose parent the author may not add to, **When** the
+   run reaches it, **Then** it is recorded as that path's own failure with a permission reason, not
+   as a failure of the submission.
+5. **Given** a path that does not resolve to a folder, **When** the run reaches it, **Then** it is
+   that path's own failure, distinguishable from a permission refusal.
+6. **Given** a selection where every path fails, **When** the run finishes, **Then** the outcome
+   shows zero successes and names every failure. The run is not recorded as a success.
+
+---
+
+### User Story 4 - A cancelled run never leaves a half-copied folder (Priority: P2)
+
+The author cancels a run that is part-way through. Every folder in the selection has either been
+fully duplicated or not touched at all. No partially populated copy is left behind.
+
+**Why this priority**: P2 rather than P1 because a partial copy is recoverable in a way a partial
+delete is not: the author can delete it. It still matters, because a half-populated duplicate that
+looks complete is a quiet data problem, and because the guarantee is free under the current
+transaction boundary and is only lost if someone deliberately gives it up.
+
+**Independent Test**: Cancel a run mid-selection; confirm the folders already completed have
+complete duplicates, no partially populated duplicate exists, and the untouched remainder is
+recorded as skipped.
+
+**Acceptance Scenarios**:
+
+1. **Given** a run in progress, **When** it is cancelled, **Then** the cancellation takes effect
+   between top-level folders and never mid-subtree.
+2. **Given** a cancelled run, **When** its outcome is read, **Then** each folder is recorded as
+   succeeded, failed or skipped, and the skipped ones are distinguishable from the failed ones.
+3. **Given** a cancelled run, **When** the site is inspected afterwards, **Then** no duplicate
+   exists that holds only part of its source's contents.
+4. **Given** a folder whose copy fails part-way through for any reason, **When** the failure is
+   recorded, **Then** no partial duplicate of it remains.
+
+---
+
+### User Story 5 - The author learns how it ended, even if they walked away (Priority: P2)
+
+The submission is answered long before the work is done, so something has to close the loop. When
+the run reaches a terminal state the submitter is told, pushed to them if they are still looking
+and recorded durably so the outcome survives navigating away or closing the tab.
+
+**Why this priority**: P2 because the job framework already exposes a readable terminal status, so
+the feature works without the push. It is not optional work: an author who duplicated forty folders
+and closed the tab must still be able to find out what was made, and under FR-034 they need it more
+than a delete author does, because resubmitting blindly creates duplicates rather than doing
+nothing.
+
+**Independent Test**: Submit a run, disconnect, reconnect after it finishes, and confirm the
+per-path outcome is still readable and a durable notification was addressed to the submitter.
+
+**Acceptance Scenarios**:
+
+1. **Given** a run reaching any terminal state, **When** it resolves, **Then** the submitter is
+   notified, and only the submitter.
+2. **Given** a notified run, **When** the notification is read, **Then** its wording reflects what
+   happened: a clean run, a partial one and a cancelled one read differently.
+3. **Given** a finished run, **When** its outcome is requested later, **Then** the counts and the
+   per-path records, including the names the duplicates were given, are still readable.
+4. **Given** a run whose notification could not be delivered, **When** that happens, **Then** the
+   run is still recorded as having finished.
+
+---
+
+### Edge Cases
+
+- **A selected folder is an ancestor of another selected folder.** Both are duplicated
+  independently and neither interferes with the other. The ancestor's duplicate contains a copy of
+  the descendant, and the descendant's own duplicate is created beside the descendant inside the
+  original ancestor. This produces two copies of the descendant's contents, which is what was asked
+  for, and is not reported as an anomaly. See FR-016. **Delete behaves oppositely here** and its
+  spec records the descendant as skipped; copying must not inherit that wording.
+- **The same path appears twice in one submission.** Deduplicated before the run, so the author
+  gets one duplicate rather than two, and the outcome reports the path once (FR-015).
+- **An empty path list, or one over the configured maximum.** Refused at submission, before a job
+  exists (FR-004).
+- **A folder the author may read but whose parent they may not add to.** A per-path permission
+  failure. The two rights are separate and either can be the one that is missing (FR-012).
+- **A folder at a site root.** Duplicated through the site rather than through a parent folder.
+  Both paths exist in the shipped API and both are on the hot path here (FR-008).
+- **An asset inside the folder that the author cannot read.** It is copied anyway: the walk beneath
+  the two entry checks runs as the system user. Documented and unchanged (FR-012b, D-009).
+- **An asset that is missing from the search index.** Copy resolves a folder's contents from
+  storage rather than from the index, so unindexed content is carried. This is a difference from
+  delete, which resolves contents by querying the index.
+- **A folder whose name already ends in the suffix the rename rule appends.** The rule appends
+  again, so names grow with each duplication. Known and accepted behaviour (FR-010, D-008).
+- **Cancellation arriving while the last folder is in progress.** There is nothing left to skip;
+  the run finishes that folder and reports as cancelled with an empty skipped set.
+- **A run is abandoned and re-queued.** Folders the first attempt completed are duplicated **a
+  second time**, because a copy that succeeded leaves nothing that would make a retry a no-op. This
+  is the one place copy is materially more dangerous than delete on retry. See FR-034 and D-015.
+- **Two authors duplicate the same folder at the same time.** Both succeed, each duplicate takes a
+  distinct derived name, and neither run is refused. There is no overlap guard and none is needed
+  (FR-033).
+- **Every path in the submission is refused at submission-time validation.** Still a submission
+  refusal, not an accepted job that fails immediately. A caller must be able to tell "you sent me
+  nothing usable" from "the work failed".
+
+---
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+#### Submission
+
+- **FR-001**: The system MUST expose a submission that accepts several folder paths in one request
+  and answers immediately, before any folder is copied.
+- **FR-002**: The answer MUST carry a handle the caller can use to follow the run, cancel it and
+  read its outcome, plus a ready-to-use address for doing so. The caller MUST NOT have to assemble
+  that address itself.
+- **FR-003**: The answer MUST state how many paths the **server** accepted into the run, and that
+  number MUST equal the total the outcome later reports.
+- **FR-004**: A submission that is malformed, meaning no paths, an empty list, or more paths than
+  the configured maximum, MUST be refused before any run is created, with distinguishable refusals.
+- **FR-005**: A caller who is not entitled to use the operation at all MUST be refused at
+  submission. Per-path permission is a different question and is FR-012.
+- **FR-005a**: A submission's folder paths are recorded with the run and are therefore readable by
+  any back-end user, including paths on sites they have no rights to, because the listings that
+  expose in-flight runs gate on "is a back-end user" and nothing more. This feature inherits that
+  from the job framework and **does not depend on it**: unlike bulk delete, which asked for the
+  listing to stay readable so it could mark folders across authors (its D-015), copy marks nothing
+  and would be unharmed by a narrower listing. Recorded so the exposure is not later read as a
+  choice this feature made.
+- **FR-006**: The system MUST NOT change the shipped Site Browser folder copy, its behaviour or its
+  entry point. It is the only folder copy in the product today and is not this feature's to move.
+- **FR-007**: The maximum number of paths one submission may carry MUST be configurable, with a
+  documented default.
+- **FR-007a**: The system MUST NOT add a synchronous single-folder copy endpoint. A single folder
+  is submitted through the same asynchronous endpoint as a batch of one. The cost of copying is set
+  by the size of the folder rather than the size of the selection, so a synchronous single-folder
+  path would carry exactly the proxy-timeout exposure this feature exists to remove, and would
+  require a second error mapping and a second set of client copy for the same failures.
+
+#### Where the duplicate lands and what it is called
+
+- **FR-008**: Each folder in the selection MUST be duplicated into **its own parent**. A folder
+  whose parent is a site root is duplicated at that site root; a nested folder is duplicated into
+  its parent folder. Both cases MUST work, and the submission MUST NOT carry a destination.
+- **FR-009**: The duplicate MUST be given a name that is free within that parent, derived by the
+  rule the shipped copy already applies. The system MUST NOT refuse a duplication because the
+  source's name is taken: under this feature it always is.
+- **FR-009a**: A successful per-path outcome MUST report **the name the duplicate was given**, not
+  only the source path. Without it an author who duplicated several folders cannot tell which new
+  folder corresponds to which source, and the derived names are not predictable from the source
+  name alone once a folder has been duplicated before.
+- **FR-010**: Repeated duplication of the same folder MUST keep producing new folders under further
+  derived names, and the system MUST NOT overwrite, merge into, or rename an existing folder to
+  make room. That the derived names grow longer with each duplication is known, visible behaviour
+  and is not corrected here (D-008).
+- **FR-011**: A duplication MUST leave its source folder, and everything in it, untouched.
+
+#### Per-path execution and outcome
+
+- **FR-012**: Each folder in the selection MUST be attempted independently: a refusal or failure on
+  one MUST NOT abort the run or roll back a folder already duplicated. A per-path permission
+  refusal MUST be recorded as that path's failure with a machine-readable reason. Both rights the
+  operation needs, reading the source and adding to its parent, MUST be distinguishable in what is
+  reported, because either one alone can be the missing one.
+- **FR-012a**: The bulk path MUST NOT be more permissive than the shipped copy. The same two checks
+  apply, against the same rights, before any folder is duplicated.
+- **FR-012b**: The system MUST define what happens to content within the subtree that the acting
+  user cannot read. **Today the entire recursive walk beneath the two entry checks runs as the
+  system user**: the folder's file assets, pages, child folders and the contentlets themselves are
+  all resolved and copied with system rights, so content the acting user cannot see is duplicated
+  along with everything else. The folder's permissions are copied to the duplicate, so the copy is
+  no more visible than the source was. **This feature does not change that** (D-009). It is
+  recorded here because it means a successful copy can create content the submitting author was
+  never able to read, and because a reader who assumes the two entry checks govern the whole
+  operation will be wrong about what the feature does.
+- **FR-012c**: The contract MUST NOT imply that a client-side permission check can predict the
+  outcome. The client can see a folder's own rights but not its parent's, so a gate built on what
+  the listing carries is a courtesy that reduces obviously futile submissions, never a guarantee.
+  The per-path outcome is the only authority.
+- **FR-013**: A path that does not resolve to a folder, whether it is gone, it is a file, or it is
+  malformed, MUST be recorded as that path's own failure, distinguishable from a permission
+  refusal.
+- **FR-014**: A path the system protects MUST be recorded as that path's own failure with a reason
+  saying it is protected, and the rest of the selection MUST still run.
+- **FR-015**: Duplicate paths within one submission MUST be collapsed before the run, so one
+  submission of the same folder twice produces one duplicate and one outcome record.
+- **FR-016**: When one selected path is an ancestor of another selected path, both MUST be
+  duplicated independently and both MUST be reported as successes. Neither is skipped, and the
+  resulting two copies of the descendant's contents are the correct outcome of what was submitted.
+  This MUST NOT reuse bulk delete's ancestor wording, where the descendant is reported as skipped
+  because the ancestor already removed it.
+- **FR-017**: Every path in the run MUST produce exactly one outcome record.
+- **FR-018**: The outcome MUST use the shared per-item contract already in use by bulk upload and
+  bulk refresh, extended additively if at all.
+- **FR-019**: The outcome MUST carry a total, a processed count, a success count, a failure count,
+  a skipped count and a per-path record with a three-valued status.
+- **FR-020**: Every failure reason MUST be machine-readable and drawn from a stable, enumerated
+  set, and MUST carry a separate human-readable diagnostic message intended for a log rather than
+  for display.
+- **FR-021**: Reasons MUST be derived from facts the system established, never guessed from the
+  shape of an exception.
+- **FR-022**: Any new failure reason this feature needs MUST be agreed with the client half before
+  either is implemented, and MUST be added to the shared set additively. Copy needs **fewer** new
+  reasons than delete: it has no analogue of "something inside is in use" and no analogue of "an
+  ancestor in the same submission removed it first".
+
+#### The transaction boundary
+
+- **FR-023**: One top-level folder MUST be copied as **one transaction**, which is what the shipped
+  copy already does.
+- **FR-024**: Copying one folder MUST NOT be made slower, hungrier or less atomic than copying that
+  same folder through the shipped path today.
+- **FR-025**: The known costs of FR-023 MUST be recorded rather than discovered: a folder's
+  children are loaded whole at each level rather than paged, so peak memory is bounded by the
+  widest single folder in the subtree, and the transaction is held for the whole walk.
+- **FR-026**: All-or-nothing MUST hold under **every** interruption: cancellation, process death
+  and a failure part-way through a folder. A duplicate that holds only part of its source's
+  contents MUST NOT survive any of them. **This corrects #37062**, which states that a cancelled
+  copy leaves the partial subtree in place at the destination and that the author can delete it.
+  That is true only if the recursion is broken into separate transactions, which D-012 defers, so
+  under this specification the stronger guarantee holds and the weaker wording must not be used.
+
+#### Progress, cancellation and concurrency
+
+- **FR-027**: The system MUST report progress while a run is in flight, and MUST report it only
+  when the rounded percentage changes rather than on every item.
+- **FR-028**: A run that is working MUST NOT be mistaken for one that has stalled. A single folder
+  can take many minutes with no progress event, so whatever the framework uses to detect abandoned
+  work MUST tolerate that silence.
+- **FR-029**: Progress MUST be reported at the granularity that actually exists, which is completed
+  top-level folders and nothing finer, and the contract MUST say so rather than leaving the client
+  to infer precision the number does not carry.
+- **FR-030**: An in-flight run MUST be cancellable, and the cancellation MUST take effect between
+  folders so that FR-026 holds.
+- **FR-031**: Paths not reached when a cancellation takes effect MUST be recorded as skipped, and
+  MUST be distinguishable from failures: they were never attempted, not refused.
+- **FR-032**: A cancelled run's outcome MUST record where it stopped, so the remainder can be
+  resubmitted deliberately.
+- **FR-033**: The system MUST NOT refuse a submission because it overlaps an in-flight run, and
+  MUST NOT carry an overlap guard. Two runs duplicating the same folder, or duplicating into the
+  same parent, cannot interfere: neither destroys anything, and the naming rule gives each
+  duplicate a distinct name. **This is a deliberate omission of a requirement bulk delete carries**
+  (its FR-029), recorded so its absence reads as a decision rather than an oversight.
+- **FR-034**: The system MUST state its position on re-running a copy, and the position MUST NOT be
+  borrowed from delete. **Copy is not idempotent**: a folder that was duplicated successfully has
+  nothing about it that would make a second attempt a no-op, so a re-queued or resubmitted run
+  produces a second duplicate. Because the framework holds no durable per-item state, a run that is
+  abandoned and automatically re-queued restarts from the first path and duplicates again
+  everything the first attempt completed. Whether automatic re-queue is therefore disabled for this
+  queue, or accepted with the consequence documented, MUST be settled at the plan phase and MUST
+  NOT be left to the framework's default by omission.
+
+#### Telling the author
+
+- **FR-035**: On any terminal state the system MUST notify the **submitter**, and only the
+  submitter.
+- **FR-036**: The notification MUST be both pushed, so a present author sees it without polling,
+  and durably recorded, so an absent one can find it later.
+- **FR-036a**: "Durable" MUST be given a lifetime. The retention of completed runs and their
+  outcomes MUST be stated rather than assumed to be forever.
+- **FR-037**: The notification's wording MUST reflect what happened: a clean run, a partial one and
+  a cancelled one MUST read differently, and a cancelled run MUST NOT read as a fault.
+- **FR-038**: Notification MUST be best-effort. A failure to deliver it MUST NOT change the run's
+  recorded outcome.
+- **FR-039**: The system MUST emit a distinguishable completion signal type, so a client can tell a
+  finished copy from a finished run of any other kind without inspecting its payload.
+- **FR-040**: The system MUST NOT announce a folder's entry into or exit from a copy to other
+  authors. Bulk delete broadcasts that, so every author who may see a folder can be stopped from
+  walking into one that is being destroyed; nothing about a folder being copied makes it unsafe to
+  use, so the broadcast has no purpose here. Recorded as a deliberate omission (D-016).
+
+#### Contract and documentation
+
+- **FR-041**: The published API description MUST state that the operation is asynchronous, name the
+  queue it enqueues onto, and point at the generic job status, cancel and monitor addresses.
+- **FR-042**: The published schema MUST match what the endpoint actually returns, and the generated
+  API document MUST be regenerated from the annotations and committed alongside the change.
+- **FR-043**: Configuration this feature introduces MUST ship with documented defaults.
+
+### Key Entities
+
+- **Submission**: the folder paths an author asked to duplicate, accepted as one unit.
+- **Run**: one accepted submission, identified by a handle, with an observable state and an
+  outcome.
+- **Per-path outcome**: one record per submitted path, carrying the path, a three-valued status,
+  the name of the duplicate on success, and a machine-readable reason plus diagnostic message on
+  failure.
+- **Duplicate**: the folder the run created, living in the same parent as its source under a
+  derived name.
+
+---
+
+## Contract Consumed by the Client *(mandatory: the frontend half of #37062 depends on it)*
+
+- **C-001**: **One call, one handle.** The client sends the selected folder paths in a single
+  ordinary request and is answered immediately with a handle and a ready-made address for following
+  the run. No destination travels with the submission (FR-001, FR-002, FR-008).
+- **C-002**: **Every guarantee in this contract begins at the handle.** Surviving the author
+  leaving, the outcome being readable later, and the completion signal are all properties of the
+  run, not of the request that created it (FR-002).
+- **C-003**: **A count the client should display is returned at submission** (FR-003), and it
+  equals the total the outcome later reports.
+- **C-004**: **Distinguishable submission refusals** for: nothing submitted, over the configured
+  maximum, and not entitled (FR-004, FR-005). **There is no overlap refusal**, because there is no
+  overlap guard (FR-033). A client written against bulk delete's contract must not carry copy for a
+  refusal this operation cannot produce.
+- **C-005**: **A stable, enumerated set of failure reasons**, each mapped to client copy (FR-020).
+  The server's message is diagnostic and is never displayed. Copy's set is a **subset** of the one
+  delete needs: no rights on the folder, no rights to add to its parent, the folder no longer
+  resolves, the folder is protected, and a general fallback.
+- **C-006**: **The name each duplicate was given, per successful path** (FR-009a). This is the one
+  addition copy makes to the shared outcome shape, and the client depends on it: the author needs
+  to be told what was created, and the name is not derivable from the source path.
+- **C-007**: **Progress, and an honest statement of what it counts** (FR-027, FR-029). It counts
+  completed top-level folders and nothing finer, so the client must not render a proportion.
+- **C-008**: **A way to cancel, with this operation's guarantee and not the one #37062 describes**
+  (FR-026, FR-030, FR-031). Each folder is left either fully duplicated or not created at all. Any
+  wording stating that a partial copy is left behind is wrong under this specification.
+- **C-009**: **A readable terminal state and outcome** (FR-019): counts plus per-path records, each
+  failure carrying its reason and each success carrying its duplicate's name.
+- **C-010**: **A pushed completion signal carrying the outcome, plus a durable record of the same**
+  (FR-035, FR-036, FR-039). The client renders the push while the author is present and follows the
+  durable record afterwards; it does not poll for completion and does not build a jobs screen.
+- **C-011**: **The signal is emitted after the copies are complete**, so a listing refreshed on it
+  shows the new folders rather than racing them.
+- **C-012**: **Nothing is announced to other authors, and nothing needs marking** (FR-040). A
+  folder being copied stays fully usable: it can be opened, uploaded into and dragged onto while a
+  run works on it, and neither the source nor any other folder is made inert. A client written
+  against bulk delete's contract must not carry its marking machinery here.
+
+**Explicitly the server's business, not specified by the client half**: how a run is executed, the
+transaction boundary, what happens to content within a subtree the author cannot read, retry and
+abandonment behaviour, and the durable record's lifetime.
+
+---
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: An author duplicates a selection of N folders with one action, where today no folder
+  can be duplicated from Content Drive at all.
+- **SC-002**: The submission is answered within the same time regardless of how much content the
+  selected folders hold, and zero submissions fail for having taken too long to answer.
+- **SC-003**: 100% of accepted paths produce exactly one outcome record: succeeded with a name,
+  failed with a reason, or skipped. Zero are silently dropped.
+- **SC-004**: 100% of successful duplications are findable from the outcome alone, without the
+  author searching the listing for what changed.
+- **SC-005**: Zero duplicates exist that hold only part of their source's contents, across
+  cancellation, failure and process death.
+- **SC-006**: A folder being duplicated remains fully usable throughout the run, in 100% of cases.
+- **SC-007**: Every failure reason the server can emit is drawn from the enumerated set, and zero
+  diagnostic messages reach an author.
+- **SC-008**: An author absent when a run ended can determine the full outcome, including the names
+  of everything created, without having watched it.
+- **SC-009**: Concurrent runs over the same folders, from the same or different authors, complete
+  without either being refused and without either producing a folder the other disturbed.
+- **SC-010**: Duplicating one folder through this feature costs no more time or memory than
+  duplicating it through the shipped path.
+
+---
+
+## Legacy Considerations *(dotCMS-specific, mandatory)*
+
+- **Existing behavior touched**: folder copy in `com.dotmarketing.portlets.folders.business`, which
+  is long-standing legacy. `FolderAPIImpl.copy` has two overloads, one taking a parent folder and
+  one taking a site, both wrapping the whole recursive walk in a single transaction. This feature
+  calls them and does not rewrite them.
+- **There is no REST folder copy today.** `WebAssetResource` under `/v1/assets` exposes asset
+  download, delete and archive, a single-folder delete, and folder create and update; it has no
+  copy. `FolderResource` under `/v1/folder` has none either. The only shipped folder copy is
+  `BrowserAjax.copyFolder` (`BrowserAjax.java:925`), reached through legacy remoting from the Site
+  Browser. **This is the largest difference in size from bulk delete**, which extended a shipped
+  single-folder endpoint; copy is building its first REST surface, and the plan must not assume a
+  synchronous path exists to be wrapped.
+- **The two permission checks govern the entry, not the walk.** `FolderAPIImpl.copy` checks read
+  rights on the source and add-children rights on the target, then `FolderFactoryImpl` performs the
+  entire recursion as the system user, resolving and copying file assets, pages, child folders and
+  the contentlets themselves with system rights. Folder permissions are copied to the duplicate.
+  See FR-012b and D-009; this is documented, not corrected.
+- **Only one of the two overloads validates the folder name.** The site-parented overload validates
+  it; the folder-parented one does not. This asymmetry was harmless while only the Site Browser
+  called them, and stops being harmless here, because duplicate-in-place puts **both** overloads on
+  the hot path: a folder at a site root goes through one and a nested folder through the other. The
+  plan must decide whether to even this up as progressive enhancement or to state why not.
+- **Copy maintains the search index and delete does not.** The copy walk refreshes content under
+  each new folder as it goes, so duplicated content is indexed. Bulk delete's specification records
+  that its own path leaves orphaned search documents permanently (its FR-009d); **copy has no
+  analogue of that finding**, and a reader moving between the two documents should not carry it
+  across.
+- **The self-target and descendant-target guards are not in the API.** They live in
+  `BrowserAjax.copyFolder` (`BrowserAjax.java:963-970`), not in `FolderAPI.copy`, so any caller
+  going directly to the API can copy a folder into its own descendant. Under duplicate-in-place
+  neither case is expressible, because the target is always the source's existing parent, so **this
+  feature does not need the guards and does not add them**. The gap remains for folder move
+  (#37165), which does choose a destination, and should be closed there rather than inherited
+  silently. Worth knowing why it matters: the walk re-reads each folder's children level by level,
+  so copying into a descendant can pick up folders the copy is itself creating.
+- **Backward-compatibility expectations**: the Site Browser copy is untouched (FR-006). The
+  per-item outcome contract is shared with shipped features and MUST be extended additively, so the
+  duplicate's name (C-006) is a new field rather than a changed one.
+- **Known related decisions**: the job-queue framework and the shared batch outcome contract landed
+  with #37131 and #37166 and are consumed here unchanged. That framework holds **no durable
+  per-item state**, which for copy is sharper than for delete because of FR-034. Bulk folder delete
+  (#37063) and folder move (#37165) share the outcome contract. `/speckit-plan` will consult
+  `dotCMS/platform-adrs` formally; the batch permission filtering decision applies to any per-path
+  permission gate this feature adds.
+
+---
+
+## Out of Scope
+
+- **The frontend half of #37062.** Specified separately in
+  `specs/37062-folder-copy-frontend/spec.md`; this document's contract is its input.
+- **Copying a folder to a chosen destination.** Removed by D-005. Folder move (#37165) is where a
+  destination picker belongs, and #33468 carries the intended experience for it.
+- **Folder move (#37165) and bulk folder delete (#37063).** They share this feature's outcome
+  contract and must not diverge from it, but neither is built here.
+- **The job-progress client primitive.** Owned by #37166.
+- **Copying contentlets.** A Content Drive selection can contain files as well as folders; this
+  feature copies the folders. How a mixed selection is presented is the client's to decide.
+- **Bounding the recursive copy**, which #37062 calls "the real work". Deferred by D-012 to a
+  sibling of #37565, filed alongside this specification rather than promised by it. What that work
+  carries: paging a folder's children instead of loading them whole, and splitting the transaction,
+  which would reopen FR-026 and is the larger and riskier half.
+- **Correcting what the copy walk may read** (D-009, FR-012b). Content the author cannot see is
+  duplicated. Changing that means changing a path the Site Browser and any plugin calling
+  `FolderAPI.copy` share.
+- **Evening up the naming rule so derived names do not grow** (FR-010). Changing it changes what
+  Site Browser authors have seen for years.
+- **Adding the self-target and descendant-target guards to `FolderAPI.copy`.** Not needed here;
+  owed by #37165.
+
+---
+
+## Decisions
+
+- **D-001: Asynchronous, not synchronous, and this is settled.** #37062 records that three
+  synchronous endpoints were proposed and did not survive review, on the reasoning that designing a
+  synchronous endpoint around an expected proxy timeout is an asynchronous design without the
+  machinery. Not relitigated here.
+- **D-002: The outcome field names follow what shipped, not what the issue text says.** #37062's
+  description writes a success count, a failure count and a per-item boolean. What is in the
+  product, from bulk upload and bulk refresh, is a total, a processed count, a success count, a
+  failure count, a skipped count, and per-item records with a three-valued status. A boolean cannot
+  express the cancellation outcome. This feature uses the shipped names, as bulk delete does.
+- **D-003: A domain endpoint, not the generic job submission address.** Callers post folder paths
+  to a folder-shaped address that enqueues on their behalf, following the content-import precedent,
+  with the generic job addresses used for status, cancellation and monitoring.
+- **D-004: An ordinary JSON body, not multipart.** Nothing is uploaded.
+- **D-005: Duplicate in place. There is no destination.** *(Developer decision, 2026-09-21.)*
+  #37062's description specifies a destination path and a picker. The copy instead lands in the
+  source folder's own parent. This removes the destination from the submission, removes the picker
+  from the client, and removes three of the issue's acceptance criteria outright: copying a folder
+  onto itself, copying a folder into one of its own descendants, and the add-children check on a
+  chosen destination. None of the three is expressible when the target is always the source's
+  existing parent. The submission body is consequently the same shape as bulk delete's, a list of
+  folder paths, which is what #37062 anticipated when it said the body would be shared with move.
+  Relocation, and the destination picker #33468 describes, belong to #37165.
+- **D-006: Two specifications for #37062, one contract.** Recorded because the issue does not say.
+  The halves are delivered against §Contract Consumed by the Client rather than as one body of
+  work, following #37063 and #37166.
+- **D-007: Per-path permission failures are per-path, not submission failures.** A submission is
+  refused only for entitlement to the operation itself; rights over an individual folder are the
+  run's business (FR-005, FR-012).
+- **D-008: The naming rule stays exactly as it shipped, and #37062's collision criterion is
+  corrected.** *(Developer decision, 2026-09-21.)* The issue requires that a name collision at the
+  destination be a per-path failure and never a silent success. Under duplicate-in-place that
+  criterion would fail **every** copy, since the source's name is always taken in its own parent.
+  The shipped rule appends a suffix until the name is free, and that is what this feature uses. The
+  cost is accepted and recorded rather than hidden: names grow with each duplication, so a folder
+  duplicated three times yields progressively longer derived names. The mitigation is FR-009a,
+  reporting the chosen name, rather than a change to the rule, because the rule is shared with the
+  Site Browser.
+- **D-009: Copy duplicates content the acting user cannot read, and this feature does not change
+  that.** *(Developer decision, 2026-09-21.)* The walk beneath the two entry checks runs as the
+  system user (FR-012b). The developer accepted it deliberately: the duplicate receives the
+  source's permissions, so the copy is no more visible than the original was. Recorded with its
+  consequence stated rather than inherited silently, in the shape of bulk delete's equivalent
+  decision. Correcting it would mean changing a path the Site Browser and customer plugins share,
+  which is a different piece of work.
+- **D-010: One endpoint, asynchronous, and no synchronous single-folder copy** *(FR-007a,
+  developer decision, 2026-09-21)*. The context menu submits a batch of one. Bulk delete keeps a
+  synchronous single-folder endpoint only because it shipped first on #35161 and its own
+  specification forbids special-casing a single path back into it; copy has no such endpoint to
+  preserve, and copying one large folder carries the same timeout exposure as copying several.
+- **D-011: Cancellation is honoured between folders, and the strong guarantee holds.** Unlike the
+  behaviour #37062 describes, no partial duplicate survives (FR-026). This follows from D-012: the
+  shipped copy is one transaction per folder, so leaving the recursion alone keeps the guarantee.
+- **D-012: The recursive copy is left exactly as it is; only the multi-select is new.** #37062
+  calls bounding that walk "the real work" and says to estimate on it. This specification
+  deliberately does not do it, following bulk delete's equivalent decision. The reported gap is
+  that folder copy does not exist in Content Drive, and an asynchronous run delivers that plus the
+  timeout fix. Bounding means changing code every caller of folder copy shares, so it is either a
+  behaviour change for all of them, which is rollback-unsafe, or a second copy path that behaves
+  differently depending on how it was invoked, permanently. Filed as a sibling of #37565, not
+  promised here.
+- **D-013: The all-or-nothing guarantee needed no new machinery, and #37062's cancellation text is
+  corrected.** The issue states that a cancelled copy leaves a partial subtree the user can delete.
+  That follows from chunking, which D-012 defers, so the opposite is true under this
+  specification's design and the weaker wording must not reach the client (FR-026, C-008).
+- **D-014: Behaviour on locked or in-use content is today's behaviour.** Copy reads its sources
+  and does not need to destroy or modify them, so it has no analogue of the lock failure delete
+  reports per path. Recorded so its absence from the failure-reason set is deliberate.
+- **D-015: Copy is not idempotent, and the position on retry is settled at the plan phase.**
+  *(FR-034.)* A successful duplication leaves nothing that makes a second attempt a no-op, so an
+  automatically re-queued run duplicates again everything the first attempt completed. Bulk delete
+  faces the same absence of durable per-item state and is unharmed by it, because a delete that
+  already happened simply fails to resolve the second time. Copy is the sibling where the framework
+  default is actively wrong, and the plan must choose between disabling automatic re-queue for this
+  queue and accepting duplicated duplicates with the consequence documented.
+- **D-016: Nothing is marked, blocked or announced.** *(Developer decision, 2026-09-21; FR-040,
+  C-012.)* Bulk delete makes a folder inert everywhere it appears while a run works on it, keeps
+  that true across reloads and authors, and broadcasts a folder's entry into and exit from a
+  delete. All of it exists because a folder being deleted is about to stop existing. Nothing about
+  a folder being copied makes it unsafe to open, upload into or drag onto, so this feature carries
+  none of that machinery: no marking, no reading the in-flight run listing, no announcements. The
+  author gets a completion signal and a report. This is the single largest reduction in scope
+  relative to the sibling feature and is why the client half is substantially smaller than bulk
+  delete's.
+
+---
+
+## Planning Obligations
+
+- **Test coverage** (Constitution V). The plan MUST name which layers this feature exercises and
+  which it does not, with a reason for each omission. At minimum it MUST cover, as integration
+  tests: a happy path over several folders, a mixed partial failure, a source the author cannot
+  read, a parent the author cannot add to, an unresolvable path, a protected path, a folder at a
+  site root and a nested folder, duplicate paths in one submission, an ancestor and its descendant
+  both selected, repeated duplication of the same folder producing distinct names, and cancellation
+  mid-run leaving no partial duplicate. #37062's list additionally names a subtree large enough to
+  exercise more than one chunk; under D-012 that case no longer applies and **must not be written**.
+- **The retry position** (FR-034, D-015). The plan MUST settle whether automatic re-queue is
+  disabled for this queue or accepted, and MUST NOT leave it to the framework default by omission.
+  This is the plan obligation with the most user-visible consequence in the document.
+- **How a folder is matched between a run and a row.** The client has both a path and an identifier
+  for every folder it lists, and which one travels in the submission, in the run's parameters and
+  in the outcome need not be the same choice. Both plans MUST agree, and this half MUST state what
+  the outcome is keyed by.
+- **Where the duplicate's name is carried** (FR-009a, C-006). It is the one field copy adds to a
+  shared contract, so the plan MUST say how it is added additively and confirm that bulk upload and
+  bulk refresh are unaffected.
+- **Whether the naming asymmetry between the two API overloads is evened up.** Only the
+  site-parented overload validates the folder name, and duplicate-in-place puts both on the hot
+  path. Progressive enhancement suggests correcting it; the plan MUST decide rather than inherit.
+- **The configured maximum** (FR-007) and the durable record's lifetime (FR-036a) both need
+  concrete values and a documented default.
+- **Concrete field names and the exact submission shape** are deliberately left at behaviour
+  altitude here and belong in the plan, recorded under `specs/*/contracts/` so they survive.
+
+---
+
+## Open Decisions
+
+**None.** Every question this specification raised is closed, either here in §Decisions or inline
+at the requirement it governs.
+
+What remains genuinely undecided is not a specification question and is listed under §Planning
+Obligations: the retry position, what the outcome is keyed by, and whether the overload asymmetry
+is corrected. All three are sized at the plan phase and none changes what this document requires.
+
+---
+
+## Assumptions
+
+- The job-queue framework's capabilities are as bulk upload and bulk refresh use them today:
+  enqueue with parameters, progress reporting, cancellation, a terminal result harvested once, and
+  no durable per-item state.
+- The shared per-item outcome contract can be extended additively with the duplicate's name without
+  disturbing its existing consumers.
+- `FolderAPI.copy` remains the single place folder copying happens, and this feature calls it
+  rather than reimplementing the walk.
+- Folder rights arrive with the folders the client already lists, so the client's courtesy gate
+  needs no separate rights lookup (FR-012c).
+- The number of folders in one submission is bounded by the configured maximum, so neither the run
+  nor its report is designed for an unbounded selection.
+- Authors reaching this are back-office users; no front-end or anonymous path submits these runs.
