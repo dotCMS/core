@@ -33,8 +33,8 @@ describe('DotUserFilterComponent', () => {
                 useValue: new MockDotMessageService({
                     'dot.common.remove': 'Remove',
                     'content-drive.chip-filter.overflow-label': '{0} and {1} more',
-                    'experiments.list.filter.created-by': 'Created By',
-                    'experiments.list.filter.all': 'All'
+                    'users.filter.title': 'User',
+                    all: 'All'
                 })
             }
         ],
@@ -50,7 +50,7 @@ describe('DotUserFilterComponent', () => {
         // Cast because the inputs are aliased signal inputs, which Spectator types by property
         // name rather than alias.
         spectator = createComponent({
-            props: { title: 'Created By', emptyLabel: 'All' } as never
+            props: { titleKey: 'users.filter.title', emptyLabelKey: 'all' } as never
         });
         searchService = spectator.inject(DotUserSearchService);
 

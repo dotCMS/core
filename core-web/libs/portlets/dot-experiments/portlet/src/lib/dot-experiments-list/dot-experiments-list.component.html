@@ -70,8 +70,7 @@
                 data-testid="experiments-goal-filter" />
 
             <dot-user-filter
-                [title]="'experiments.list.filter.created-by' | dm"
-                [emptyLabel]="'experiments.list.filter.all' | dm"
+                titleKey="experiments.list.filter.created-by"
                 [selected]="store.selectedCreators()"
                 (selectionChange)="onCreatorsChange($event)"
                 data-testid="experiments-created-by-filter" />

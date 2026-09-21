@@ -1,7 +1,7 @@
 <dot-chip-filter
-    [title]="$title()"
+    [title]="$titleKey() | dm"
     [selections]="$selectedLabels()"
-    [emptyLabel]="$emptyLabel()"
+    [emptyLabel]="$emptyLabelKey() | dm"
     [loading]="$resolving()"
     (clicked)="popover.toggle($event)"
     (removed)="onRemoveAll()"

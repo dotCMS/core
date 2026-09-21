@@ -40,11 +40,17 @@ const SEARCH_DEBOUNCE_MS = 300;
 export class DotUserFilterComponent {
     readonly #search = inject(DotUserSearchService);
 
-    /** Chip label, already translated — what this filter is asking, e.g. "Created By". */
-    readonly $title = input.required<string>({ alias: 'title' });
+    /**
+     * Message key for the chip label — what this filter is asking, e.g. `Created By`.
+     *
+     * Every label here is a **key**, not translated text, so that the component is complete on its
+     * own and a consumer only names what it wants to differ. Defaulting to the plain noun means a
+     * screen with nothing special to say can drop the input entirely.
+     */
+    readonly $titleKey = input<string>('users.filter.title', { alias: 'titleKey' });
 
-    /** What the chip reads while nothing is selected, already translated, e.g. "All". */
-    readonly $emptyLabel = input.required<string>({ alias: 'emptyLabel' });
+    /** Message key for what the chip reads while nothing is selected. */
+    readonly $emptyLabelKey = input<string>('all', { alias: 'emptyLabelKey' });
 
     /** Applied user ids. Owned by the consumer, usually backed by its address. */
     readonly $selected = input<string[]>([], { alias: 'selected' });
