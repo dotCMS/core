@@ -1,5 +1,7 @@
 package com.dotcms.graphql.business;
 
+import static com.dotcms.contenttype.model.type.FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR;
+
 import static com.dotcms.contenttype.model.type.WidgetContentType.WIDGET_CODE_JSON_FIELD_VAR;
 import static com.dotcms.graphql.CustomFieldType.isCustomFieldType;
 import static com.dotcms.graphql.business.GraphqlAPI.TYPES_AND_FIELDS_VALID_NAME_REGEX;
@@ -92,12 +94,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     private final Map<Class<? extends Field>, GraphQLOutputType> fieldClassGraphqlTypeMap = new HashMap<>();
 
     private final Map<Class<? extends Field>, DataFetcher> fieldClassGraphqlDataFetcher = new HashMap<>();
-
-    /**
-     * Suffix of the companion field generated beside every Image and File field, e.g. an
-     * {@code image} field gains an {@code imageContent} companion. See #34540.
-     */
-    public static final String ASSET_CONTENT_FIELD_SUFFIX = "Content";
 
     private final Map<String, GraphQLType> typesMap = new HashMap<>();
 
@@ -291,6 +287,17 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         if (!InterfaceType.isAssetBaseType(contentType.baseType())) {
             return;
         }
+
+        // `description` is the one flat property that must OVERRIDE rather than fill in. Most
+        // asset types define a `description` of their own, so filling in would leave their stored
+        // -value fetcher in place -- and an asset-pointing field would silently start answering
+        // with the stored value instead of the title it has always returned. Dropping the type's
+        // own definition here hands the name to AssetDescriptionDataFetcher, which returns the
+        // right one of the two depending on how the asset was reached, so neither reading breaks.
+        // The interface declares it as String, so a type declaring it as anything else could not
+        // have built a valid schema in the first place: replacing is the only option, not a choice.
+        fieldDefinitions.removeIf(
+                definition -> FILEASSET_DESCRIPTION_FIELD_VAR.equals(definition.getName()));
 
         final Set<String> alreadyDefined = fieldDefinitions.stream()
                 .map(GraphQLFieldDefinition::getName).collect(Collectors.toSet());

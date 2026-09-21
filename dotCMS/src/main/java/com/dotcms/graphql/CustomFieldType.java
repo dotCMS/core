@@ -2,6 +2,7 @@ package com.dotcms.graphql;
 
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.graphql.datafetcher.AssetBinaryPropertyDataFetcher;
+import com.dotcms.graphql.datafetcher.AssetDescriptionDataFetcher;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.FieldDataFetcher;
 import com.dotcms.graphql.datafetcher.KeyValueFieldDataFetcher;
@@ -195,7 +196,13 @@ public enum CustomFieldType {
         // `description` is excluded on purpose: DOTASSET-derived types either have their own with
         // a different meaning, or none at all. See InterfaceType#ASSET_INTERFACE_NAME.
         assetFlatFields = new HashMap<>(fileAssetTypeFields);
-        assetFlatFields.remove(FILEASSET_DESCRIPTION_FIELD_VAR);
+
+        // `description` stays, but resolved by a fetcher that answers according to how the asset
+        // was reached. Two meanings already share this name in production -- the flat view's
+        // title-derived one and the content type's stored one -- and declaring a single meaning
+        // would break one set of clients or the other. See AssetDescriptionDataFetcher.
+        assetFlatFields.put(FILEASSET_DESCRIPTION_FIELD_VAR,
+                new TypeFetcher(GraphQLString, new AssetDescriptionDataFetcher()));
 
         // The binary's own properties, flattened onto the asset so a client need not descend into
         // the binary field to reach them. Ten of the twelve DotBinary carries: `title` and

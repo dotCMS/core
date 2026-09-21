@@ -90,11 +90,18 @@ public class AssetFieldValueContractTest extends IntegrationTestBase {
         assertEquals("fileName must keep returning the contentlet name for DOTASSET content",
                 dotAsset.getName(), asset.get("fileName"));
 
+        // description is NOT the stored description here: it answers with the TITLE, exactly as
+        // the flat view always did. Reaching the same content directly returns the stored value.
+        assertEquals("description must keep returning the TITLE when reached through an asset "
+                        + "field — changing this is a silent break",
+                dotAsset.getTitle(), asset.get("description"));
+
         assertNotNull("fileAsset must still resolve", asset.get("fileAsset"));
         assertNotNull("metaData must still resolve", asset.get("metaData"));
         assertTrue("all six properties must still be selectable",
                 asset.keySet().containsAll(
-                        List.of("fileName", "fileAsset", "metaData", "showOnMenu", "sortOrder")));
+                        List.of("fileName", "description", "fileAsset", "metaData",
+                                "showOnMenu", "sortOrder")));
     }
 
     /**
@@ -106,7 +113,17 @@ public class AssetFieldValueContractTest extends IntegrationTestBase {
     @Test
     public void test_fileAsset_throughFileField_sixPropertiesUnchanged() throws Exception {
         final File file = FileUtil.createTemporaryFile("value-contract", ".txt", "contract");
-        final Contentlet fileAsset = new FileAssetDataGen(site, file)
+        // A stored description on purpose: leaving it unset makes the assertion below vacuous,
+        // since an absent value and a wrong one both read as empty.
+        final String storedDescription = "a description an editor typed";
+        final FileAssetDataGen generator = new FileAssetDataGen(site, file);
+        generator.setProperty("description", storedDescription);
+        // showOnMenu and sortOrder are the two properties the concrete type defines ITSELF, so
+        // the flat view's fetcher is not the one that answers them any more. Set them to values
+        // that are not the defaults, or the assertion below passes on an empty result.
+        generator.setProperty("showOnMenu", "true");
+        generator.setProperty("sortOrder", 7);
+        final Contentlet fileAsset = generator
                 .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
         // See the note in the DOTASSET test: the asset's live state must match the holder's.
         ContentletDataGen.publish(fileAsset);
@@ -124,11 +141,29 @@ public class AssetFieldValueContractTest extends IntegrationTestBase {
 
         assertEquals("fileName must keep returning the stored file name for FILEASSET content",
                 fileAsset.getStringProperty("fileName"), asset.get("fileName"));
+
+        // Unlike the DOTASSET case above, description here IS the stored value -- and was before.
+        assertEquals("description must keep returning the stored value for FILEASSET content",
+                storedDescription, asset.get("description"));
+
         assertNotNull("fileAsset must still resolve", asset.get("fileAsset"));
         assertNotNull("metaData must still resolve", asset.get("metaData"));
+
+        // These two are the ones to watch. A FILEASSET-derived type declares showOnMenu and
+        // sortOrder itself, so once the field is interface-typed it is the CONTENT TYPE's field
+        // definition that answers them, not the flat view's. They only stay identical because a
+        // Checkbox field resolves through the same MultiValueFieldDataFetcher the flat view used
+        // and sortOrder falls through to the same default fetcher -- which is reasoning, not a
+        // guarantee, so it is asserted here rather than argued.
+        assertEquals("showOnMenu must keep returning the stored value, as a list",
+                List.of("true"), asset.get("showOnMenu"));
+        assertEquals("sortOrder must keep returning the stored value, as an int",
+                7, asset.get("sortOrder"));
+
         assertTrue("all six properties must still be selectable",
                 asset.keySet().containsAll(
-                        List.of("fileName", "fileAsset", "metaData", "showOnMenu", "sortOrder")));
+                        List.of("fileName", "description", "fileAsset", "metaData",
+                                "showOnMenu", "sortOrder")));
     }
 
     /**
@@ -177,7 +212,7 @@ public class AssetFieldValueContractTest extends IntegrationTestBase {
                 reloaded.get(fieldVar));
 
         final String query = String.format(
-                "{ %sCollection(query: \"+identifier:%s\") { %s { fileName "
+                "{ %sCollection(query: \"+identifier:%s\") { %s { fileName description "
                         + "showOnMenu sortOrder fileAsset { name size mime } "
                         + "metaData { key value } } } }",
                 holder.variable(), content.getIdentifier(), fieldVar);

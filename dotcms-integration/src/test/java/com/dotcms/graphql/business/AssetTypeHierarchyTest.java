@@ -69,12 +69,13 @@ import org.junit.Test;
 public class AssetTypeHierarchyTest extends IntegrationTestBase {
 
     /**
-     * The long-standing properties of an asset-pointing field. {@code description} is deliberately
-     * absent: its meaning differs between the flat view (the contentlet title) and the content
-     * answering it (a stored description), so it is reachable only through a concrete type.
+     * The long-standing properties of an asset-pointing field. All six, {@code description}
+     * included — nothing an asset field could select before is unreachable now. What
+     * {@code description} answers with depends on how the asset was reached, which is what it
+     * already did before this work; see {@code AssetDescriptionDataFetcher}.
      */
     private static final List<String> FLAT_PROPERTIES =
-            List.of("fileName", "fileAsset", "metaData", "showOnMenu", "sortOrder");
+            List.of("fileName", "description", "fileAsset", "metaData", "showOnMenu", "sortOrder");
 
     /**
      * The binary's own properties, flattened onto the asset so a client need not descend into the
@@ -189,24 +190,28 @@ public class AssetTypeHierarchyTest extends IntegrationTestBase {
     /**
      * Given: the interfaces an asset field can be narrowed through.
      * When: {@code description} is looked for.
-     * Then: none of them declares it.
+     * Then: every one of them declares it.
      *
-     * <p>Deliberate, and the single property this work removes from that position. The flat view
-     * answered it with the contentlet title while the content that answers it stores something
-     * else, so declaring it on an interface would have made the same name quietly return a
-     * different value. It stays reachable on the concrete types that genuinely have it.
+     * <p>The hard case of this work, and the reason it breaks nobody. Two meanings have always
+     * shared this name — an asset-pointing field answered it with the contentlet title, while the
+     * content type's own field holds what an editor typed — so a single declaration would have
+     * had to pick one and silently change the other. Declaring it everywhere and letting the
+     * query path select the meaning keeps both contracts, which is why no client has to touch a
+     * query.
+     *
+     * @see com.dotcms.graphql.datafetcher.AssetDescriptionDataFetcher
      */
     @Test
-    public void test_description_isNotOnAnyAssetInterface() throws Exception {
+    public void test_description_isOnEveryAssetSurface() throws Exception {
         final GraphQLSchema schema = rebuiltSchema();
 
         for (final String surface : List.of(
                 InterfaceType.ASSET_INTERFACE_NAME,
                 InterfaceType.DOTASSET_INTERFACE_NAME,
                 InterfaceType.FILE_INTERFACE_NAME)) {
-            assertFalse("'description' must not be declared on '" + surface
-                            + "': its meaning differs between the flat view and the content "
-                            + "answering it, so a shared declaration would change values silently",
+            assertTrue("'description' must be declared on '" + surface
+                            + "': an asset field could always select it, and a selection that "
+                            + "stops validating is the one break this work refuses",
                     fieldNamesOf(schema, surface).contains("description"));
         }
     }

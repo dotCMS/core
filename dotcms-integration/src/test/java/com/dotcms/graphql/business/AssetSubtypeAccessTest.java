@@ -46,13 +46,18 @@ import org.junit.Test;
  * the properties of the content type that field actually points at — including properties the
  * customer defined on their own type — and can tell which type it received.
  *
- * <p>The new description arrives as a <b>companion field</b> beside the asset field
- * ({@code image} gains {@code imageContent}) rather than as a property of the flat
- * {@code DotFileasset} view. A GraphQL field has exactly one type and a resolved value has exactly
- * one runtime type, so the flat view and the asset itself — two descriptions of the same thing —
- * cannot occupy the same position. Putting the new one beside the old is what lets a client narrow
- * to a concrete asset type at the same level as the flat properties, with none of those properties
- * changing.
+ * <p>The asset field itself is the polymorphic position: it is typed by an interface, so a
+ * narrowing clause sits directly on it, in the same block as the long-standing flat properties.
+ * That shape is the whole point — an earlier design put the clauses in a second field beside the
+ * first, which worked and was set aside because a client had to write two blocks to read one
+ * asset.
+ *
+ * <p>A GraphQL field has exactly one type and a resolved value has exactly one runtime type, so
+ * the flat view and the asset itself cannot both occupy that position. What made it possible to
+ * keep both anyway is that only one of the six flat properties actually collided —
+ * {@code description} — and its two meanings were already both shipping, separated by query path.
+ * Conserving that separation costs one data fetcher and leaves every existing client query
+ * valid.
  *
  * <p>Two fixture traps already paid for in {@link AssetFieldValueContractTest} and repeated here:
  * an asset-reference field needs {@code DataTypes.TEXT} or its value never persists, and the
@@ -86,7 +91,7 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     /**
      * Given: a customer-defined content type extending DOTASSET with a property of its own, and an
      * Image field pointing at content of it.
-     * When: that property is requested through the companion field.
+     * When: that property is requested through the asset field.
      * Then: its stored value is returned.
      *
      * <p>This is the capability the issue exists for, and the one with no workaround today.
@@ -109,7 +114,7 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     /**
      * Given: a customer-defined content type extending FILEASSET with a property of its own, and a
      * File field pointing at content of it.
-     * When: that property is requested through the companion field.
+     * When: that property is requested through the asset field.
      * Then: its stored value is returned.
      */
     @Test
@@ -128,8 +133,66 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     }
 
     /**
+     * Given: a DOTASSET-derived type with its own {@code description}, holding a value that is not
+     * the title.
+     * When: the same asset is read through an Image field, and again through its own collection.
+     * Then: the first answers with the title and the second with the stored value.
+     *
+     * <p><b>The same field name returning two different values is the point, not a defect.</b>
+     * Both answers are what shipped. An asset-pointing field resolved to a flat view that derived
+     * {@code description} from the title; the content type's own field holds what an editor typed.
+     * Once the field is typed by an interface, the concrete type's definition is what resolves —
+     * so without a path-aware resolver the first query would silently start returning the second's
+     * value. That is the one failure mode this whole design exists to prevent: a name that keeps
+     * working while meaning something else.
+     *
+     * <p>Getting this right is why no client has to rewrite a query. If it regresses, the symptom
+     * in the field is a page that used to render a file name suddenly rendering blank.
+     *
+     * @see com.dotcms.graphql.datafetcher.AssetDescriptionDataFetcher
+     */
+    @Test
+    public void test_description_answersAccordingToHowTheAssetWasReached() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        addDescriptionProperty(assetType);
+
+        final String stored = "an editor typed this";
+        final File file = FileUtil.createTemporaryFile("subtype", ".txt", "subtype");
+        final Contentlet asset = new ContentletDataGen(assetType.id())
+                .host(site)
+                .setProperty(DotAssetContentType.ASSET_FIELD_VAR, file)
+                .setProperty(DotAssetContentType.SITE_OR_FOLDER_FIELD_VAR, site.getIdentifier())
+                .setProperty("description", stored)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        ContentletDataGen.publish(asset);
+
+        // Precondition: the two answers must genuinely differ, or this test proves nothing.
+        assertNotEquals("fixture is useless unless the stored description differs from the title",
+                asset.getTitle(), stored);
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final Map<String, Object> throughField =
+                queryCompanion(holder, content, IMAGE_COMPANION, "description");
+
+        final Map<String, Object> direct = (Map<String, Object>)
+                ((List<Map<String, Object>>) GraphqlQueryRunner.executeAndExpectSuccess(
+                        String.format("{ %sCollection(query: \"+identifier:%s\") "
+                                        + "{ description } }",
+                                assetType.variable(), asset.getIdentifier()),
+                        systemUser).get(assetType.variable() + "Collection")).get(0);
+
+        assertEquals("reached through an asset field, description must stay the TITLE — this is "
+                        + "what the flat view always answered and what live pages render",
+                asset.getTitle(), throughField.get("description"));
+        assertEquals("read directly, description must stay the STORED value",
+                stored, direct.get("description"));
+    }
+
+    /**
      * Given: an asset carrying tags.
-     * When: its tags are requested through the companion field.
+     * When: its tags are requested through the asset field.
      * Then: they are returned.
      *
      * <p>This is the AI tagging blocker named in the issue: {@code tags} is not on the flat view,
@@ -326,7 +389,7 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
      * Given: an Image field pointing at content that is not an asset at all — nothing stops this,
      * since the field stores a bare identifier and {@code FileFieldDataFetcher} falls back to the
      * raw contentlet when {@code FileAssetAPI.fromContentlet} cannot convert it.
-     * When: the companion field is selected.
+     * When: the asset field is selected.
      * Then: it resolves to nothing, and the request still succeeds.
      *
      * <p>A resolved type that does not implement the interface must not surface a GraphQL error:
@@ -713,6 +776,18 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                         .owner(systemUser.getUserId()).build());
         addCustomProperty(type);
         return APILocator.getContentTypeAPI(systemUser).find(type.variable());
+    }
+
+    /**
+     * Gives an asset type its own stored {@code description}, the field whose name collides with
+     * the flat view's derived one.
+     */
+    private void addDescriptionProperty(final ContentType type) throws Exception {
+        final Field field = FieldBuilder.builder(TextField.class)
+                .name("description").variable("description")
+                .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build();
+        APILocator.getContentTypeFieldAPI().save(field, systemUser);
+        APILocator.getGraphqlAPI().invalidateSchema();
     }
 
     private void addCustomProperty(final ContentType type) throws Exception {
