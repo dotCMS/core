@@ -47,6 +47,13 @@ jobs:
           - os: macos-15-intel
             label: macOS-Intel
             arch: x86_64
+          # Linux is not affected by the defect, but the fix rewrites the shared
+          # `Install SDKMan` step for every platform (curl|bash -> download then execute).
+          # setup-java reaches 8 workflows plus both release paths, so a Linux regression
+          # would be far worse than the bug being fixed. Verify it rather than assume it.
+          - os: ubuntu-24.04
+            label: Linux
+            arch: x86_64
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -55,11 +62,13 @@ jobs:
       - name: Report runner baseline
         shell: bash
         run: |
-          echo "runner os       : $(sw_vers -productName) $(sw_vers -productVersion)"
           echo "architecture    : $(uname -m)  (expected: ${{ matrix.arch }})"
           echo "system bash     : $(/bin/bash --version | head -1)"
           echo "shell bash      : ${BASH_VERSION}"
-          echo "homebrew bash   : $([ -x "$(brew --prefix 2>/dev/null)/bin/bash" ] && echo present || echo absent)"
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            echo "runner os       : $(sw_vers -productName) $(sw_vers -productVersion)"
+            echo "homebrew bash   : $([ -x "$(brew --prefix 2>/dev/null)/bin/bash" ] && echo present || echo absent)"
+          fi
 
       # The action under test. This is the step expected to fail before the fix.
       - name: Setup Java (action under test)
@@ -89,6 +98,7 @@ jobs:
           "${GRAALVM_HOME}/bin/native-image" --version
 
       - name: 'AC-002 — no Homebrew dependency'
+        if: runner.os == 'macOS'
         shell: bash
         run: |
           set -euo pipefail
