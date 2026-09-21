@@ -83,6 +83,7 @@
                     titleKey="experiments.list.filter.created-by"
                     [selected]="store.selectedCreators()"
                     (selectionChange)="onCreatorsChange($event)"
+                    (loadFailed)="onDirectoryError($event)"
                     data-filter-chip="createdBy"
                     data-testid="experiments-created-by-filter" />
 

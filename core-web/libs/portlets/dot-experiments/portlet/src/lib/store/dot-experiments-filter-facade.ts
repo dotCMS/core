@@ -2,11 +2,12 @@ import { Dispatcher } from '@ngrx/signals/events';
 
 import { computed, inject, Provider } from '@angular/core';
 
-import { DotExperimentStatus, GOAL_TYPES } from '@dotcms/dotcms-models';
 import { DOT_FILTER_FACADE, DotFilterFacade, DotFilterValue, toFilterValues } from '@dotcms/ui';
 
 import { dotExperimentsListPageEvents } from './dot-experiments-list-page.events';
 import { DotExperimentsListStore } from './dot-experiments-list.store';
+
+import { parseGoals, parseStatuses } from '../util/dot-experiments-list-store.util';
 
 type ExperimentsListStore = InstanceType<typeof DotExperimentsListStore>;
 
@@ -87,19 +88,22 @@ export function createExperimentsFilterFacade(
     };
 
     const patchFilters = (patch: Record<string, DotFilterValue>): void => {
+        // Parsed, not cast. These values arrive through the shared facade contract, so any chip
+        // on any surface can hand over arbitrary strings — the same untrusted shape the address
+        // has, which is why these parsers already exist and why the URL path already uses them.
+        // A cast would let an unknown status into typed state through the one door that was left
+        // open.
         if (STATUS in patch) {
             dispatcher.dispatch(
                 dotExperimentsListPageEvents.statusesChanged(
-                    toFilterValues(patch[STATUS]) as DotExperimentStatus[]
+                    parseStatuses(toFilterValues(patch[STATUS]))
                 )
             );
         }
 
         if (GOAL in patch) {
             dispatcher.dispatch(
-                dotExperimentsListPageEvents.goalsChanged(
-                    toFilterValues(patch[GOAL]) as GOAL_TYPES[]
-                )
+                dotExperimentsListPageEvents.goalsChanged(parseGoals(toFilterValues(patch[GOAL])))
             );
         }
 

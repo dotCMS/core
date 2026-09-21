@@ -1,9 +1,21 @@
-import { computed, effect, inject, input, output, signal, untracked, Component } from '@angular/core';
+
+import { HttpErrorResponse } from '@angular/common/http';
+import {
+    Component,
+    computed,
+    effect,
+    inject,
+    input,
+    output,
+    signal,
+    untracked
+} from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { PopoverModule } from 'primeng/popover';
 
 import { map } from 'rxjs/operators';
+
 
 import { DotUserSearchService, dotUserDisplayName } from '@dotcms/data-access';
 
@@ -70,6 +82,16 @@ export class DotUserFilterComponent {
 
     /** Emits the selected ids on every toggle and on clear. */
     readonly selectionChange = output<string[]>();
+
+    /**
+     * The directory could not be read.
+     *
+     * Forwarded rather than handled: this component is in `@dotcms/ui`, which cannot reach
+     * `DotHttpErrorManagerService` — it transitively needs `Router` and `DotEventsSocket`, absent
+     * in the legacy Dojo host. The surface rendering the chip routes it to wherever it reports
+     * errors (FR-012).
+     */
+    readonly loadFailed = output<HttpErrorResponse>();
 
     protected readonly DEBOUNCE_MS = SEARCH_DEBOUNCE_MS;
 

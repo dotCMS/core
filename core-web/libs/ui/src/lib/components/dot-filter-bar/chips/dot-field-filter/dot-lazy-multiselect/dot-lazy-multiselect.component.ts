@@ -1,6 +1,7 @@
 import { patchState, signalState } from '@ngrx/signals';
 import { EMPTY, Observable, Subject, timer } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -121,6 +122,15 @@ export class DotLazyMultiselectComponent implements OnInit {
     readonly $errorKey = input<string>('content-drive.field-filter.more.error', {
         alias: 'errorKey'
     });
+
+    /**
+     * A page failed to load.
+     *
+     * Optional for consumers — the panel already shows its own failed state, so ignoring this
+     * costs the inline message and nothing else. A consumer that has somewhere to report errors
+     * should route it there.
+     */
+    readonly loadFailed = output<HttpErrorResponse>();
     protected readonly SCROLL_HEIGHT = FIELD_FILTER_PANEL_SCROLL_HEIGHT;
     protected readonly ITEM_HEIGHT = ITEM_HEIGHT;
 
@@ -221,12 +231,21 @@ export class DotLazyMultiselectComponent implements OnInit {
                 // A failed page must not leave the list spinning forever; stop loading and paging
                 // and flag the error so the panel shows a distinct "failed" state rather than a
                 // silent "no results" that looks like an empty search.
-                catchError(() => {
+                catchError((error: HttpErrorResponse) => {
                     patchState(this.$state, {
                         loading: false,
                         canLoadMore: false,
                         error: true
                     });
+
+                    // Also reported outwards. The inline state tells the person looking at the
+                    // panel that this list failed; it does not tell the surface, which is the only
+                    // thing that can route a 403 or a dead session to wherever that surface shows
+                    // errors. This component cannot do that itself — `DotHttpErrorManagerService`
+                    // transitively needs `Router` and `DotEventsSocket`, which the legacy Dojo
+                    // host `@dotcms/ui` is bundled into does not have. Same reasoning, and the
+                    // same shape, as `dot-field-filter-menu`'s `error` output.
+                    this.loadFailed.emit(error);
 
                     return EMPTY;
                 }),

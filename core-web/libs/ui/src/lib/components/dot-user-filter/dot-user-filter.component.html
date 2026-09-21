@@ -15,6 +15,7 @@
         <dot-lazy-multiselect
             [loadPage]="loadPage"
             [selectedValues]="$selected()"
+            (loadFailed)="loadFailed.emit($event)"
             [debounceMs]="DEBOUNCE_MS"
             [emptyKey]="$emptyKey()"
             [errorKey]="$errorKey()"

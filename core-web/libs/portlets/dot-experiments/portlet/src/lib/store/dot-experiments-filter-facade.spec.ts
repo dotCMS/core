@@ -42,6 +42,7 @@ describe('DotExperimentsFilterFacade', () => {
     let facade: DotFilterFacade;
     let dispatch: ReturnType<typeof vi.fn>;
     let state: {
+        filter: ReturnType<typeof signal<string>>;
         selectedStatuses: ReturnType<typeof signal<DotExperimentStatus[]>>;
         selectedGoals: ReturnType<typeof signal<GOAL_TYPES[]>>;
         selectedCreators: ReturnType<typeof signal<string[]>>;
@@ -53,6 +54,7 @@ describe('DotExperimentsFilterFacade', () => {
 
     beforeEach(() => {
         state = {
+            filter: signal<string>(''),
             selectedStatuses: signal<DotExperimentStatus[]>([]),
             selectedGoals: signal<GOAL_TYPES[]>([]),
             selectedCreators: signal<string[]>([]),
@@ -139,6 +141,28 @@ describe('DotExperimentsFilterFacade', () => {
             expect(dispatched()).toEqual([]);
         });
 
+        it.each([
+            [
+                'status',
+                () => facade.patchFilters({ [STATUS]: ['RUNNING', 'NOT-A-STATUS'] }),
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+            ],
+            [
+                'goal',
+                () => facade.patchFilters({ [GOAL]: ['BOUNCE_RATE', 'NOT-A-GOAL'] }),
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+            ]
+        ])(
+            'should drop an unknown %s rather than casting it into typed state',
+            (_l, act, expected) => {
+                // Values reach this through the shared facade contract, so they are as untrusted as
+                // the address is — and the address path already drops what it cannot recognise.
+                act();
+
+                expect(dispatched()).toContainEqual(expected);
+            }
+        );
+
         /**
          * The two bounds are one event, so a patch naming one has to carry the other across.
          * Dispatching twice would put a half-applied period on screen and reset paging twice.
@@ -157,10 +181,17 @@ describe('DotExperimentsFilterFacade', () => {
             ]);
         });
 
-        it('should send one event when both bounds are patched together', () => {
+        it('should send one event carrying both bounds when they are patched together', () => {
             facade.patchFilters({ [SCHEDULE_FROM]: '2026-06-01', [SCHEDULE_TO]: '2026-06-30' });
 
-            expect(dispatched()).toHaveLength(1);
+            // The payload, not just the count: two events with the bounds swapped would also be
+            // "one event each" and would read as a period nobody picked.
+            expect(dispatched()).toEqual([
+                dotExperimentsListPageEvents.scheduleChanged({
+                    from: '2026-06-01',
+                    to: '2026-06-30'
+                })
+            ]);
         });
     });
 
@@ -220,7 +251,11 @@ describe('DotExperimentsFilterFacade', () => {
 
         it('should not count the search term', () => {
             // The term is not a chip, and "Clear all" sits in the chip row: the search box has its
-            // own clear affordance beside it, and the no-results state clears both together.
+            // own clear affordance beside it, and the no-results state clears both together. Set
+            // for real — asserting `false` without setting one tests nothing and reads identically
+            // to the fresh-listing case above.
+            state.filter.set('quarterly report');
+
             expect(facade.$hasNonDefaultFilters()).toBe(false);
         });
     });

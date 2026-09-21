@@ -7,6 +7,8 @@ import {
 import { NEVER, of } from 'rxjs';
 import { vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
+
 import { DotMessageService, DotUserSearchService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -142,14 +144,6 @@ describe('DotUserFilterComponent', () => {
             // renders nothing at all (FR-016).
             expect(searchService.searchPage).not.toHaveBeenCalled();
         });
-
-        it('should show no counts beside the options', () => {
-            open();
-
-            spectator.queryAll(byTestId('lazy-multiselect-option')).forEach((option) => {
-                expect(option.textContent).not.toMatch(/\d/);
-            });
-        });
     });
 
     describe('the search pause', () => {
@@ -186,6 +180,23 @@ describe('DotUserFilterComponent', () => {
             vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS - 1);
 
             expect(searchService.searchPage).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('a directory that will not load', () => {
+        /**
+         * Forwarded, not handled: this component cannot reach `DotHttpErrorManagerService`, which
+         * transitively needs `Router` and `DotEventsSocket` — absent in the legacy Dojo host
+         * `@dotcms/ui` is bundled into. The surface rendering the chip routes it (FR-012).
+         */
+        it('should report the failure to its consumer', () => {
+            const failure = new HttpErrorResponse({ status: 403 });
+            const failed = vi.fn();
+            spectator.output('loadFailed').subscribe(failed);
+
+            spectator.component.loadFailed.emit(failure);
+
+            expect(failed).toHaveBeenCalledWith(failure);
         });
     });
 

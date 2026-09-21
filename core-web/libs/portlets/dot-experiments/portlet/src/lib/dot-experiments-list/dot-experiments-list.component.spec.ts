@@ -7,6 +7,7 @@ import {
 } from '@openng/spectator/vitest';
 import { Mock, MockInstance, vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideLocationMocks } from '@angular/common/testing';
 import { inject } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
@@ -14,7 +15,11 @@ import { provideRouter, Router } from '@angular/router';
 import { ConfirmationService, Confirmation, MenuItem } from 'primeng/api';
 import { Table } from 'primeng/table';
 
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
@@ -232,6 +237,7 @@ describe('DotExperimentsListComponent', () => {
             provideLocationMocks(),
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotMessageDisplayService),
+            mockProvider(DotHttpErrorManagerService),
             mockProvider(DotPushPublishDialogService),
             // Not `mockProvider`: `GlobalStore` is a signal store, so its methods live on the
             // instance rather than the prototype and Spectator's auto-mock finds none of them.
@@ -1168,6 +1174,53 @@ describe('DotExperimentsListComponent', () => {
 
             expect(headers).toHaveLength(9);
             expect(loadingRow?.querySelectorAll('td')).toHaveLength(headers.length);
+        });
+    });
+
+    describe('the created by filter (#37307)', () => {
+        it('should dispatch the chosen creators', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onCreatorsChange(['dotcms.org.1', 'dotcms.org.2']);
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1', 'dotcms.org.2'])
+            );
+        });
+
+        it('should dispatch an empty selection when the chip is cleared', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onCreatorsChange([]);
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.creatorsChanged([])
+            );
+        });
+    });
+
+    describe('a directory that will not load (#37307)', () => {
+        it('should route the failure to the screen shared error reporting', () => {
+            const failure = new HttpErrorResponse({ status: 403 });
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onDirectoryError(failure);
+
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                failure
+            );
+        });
+
+        it('should leave the rows on screen', () => {
+            // A directory that will not load says nothing about the experiments already listed.
+            const experiment = renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onDirectoryError(new HttpErrorResponse({ status: 500 }));
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiment-name'))?.textContent).toContain(
+                experiment.name
+            );
         });
     });
 

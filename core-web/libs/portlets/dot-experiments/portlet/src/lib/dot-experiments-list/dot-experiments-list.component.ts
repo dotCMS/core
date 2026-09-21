@@ -1,6 +1,7 @@
 import { EventCreator, Events, injectDispatch } from '@ngrx/signals/events';
 
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     Component,
     computed,
@@ -30,6 +31,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import {
     DotExperimentsService,
+    DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService
 } from '@dotcms/data-access';
@@ -159,6 +161,7 @@ export class DotExperimentsListComponent {
      */
     readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
     readonly #experimentsRouter = inject(DotExperimentsRouter);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     protected readonly $inPanel = !!this.#panel;
 
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
@@ -557,6 +560,22 @@ export class DotExperimentsListComponent {
 
     onCreatorsChange(creatorIds: string[]): void {
         this.#dispatch.creatorsChanged(creatorIds);
+    }
+
+    /**
+     * The user directory could not be read (FR-012).
+     *
+     * Routed to the screen's shared error reporting, which is the same place a failed list load
+     * goes. The chip cannot do this itself: it lives in `@dotcms/ui`, which cannot reach
+     * `DotHttpErrorManagerService` — that service transitively needs `Router` and
+     * `DotEventsSocket`, absent in the legacy Dojo host. So the chip reports outwards and the
+     * surface decides, exactly as `dot-field-filter-menu` already does.
+     *
+     * The table is deliberately left alone: a directory that will not load says nothing about the
+     * experiments already on screen.
+     */
+    onDirectoryError(error: HttpErrorResponse): void {
+        this.#httpErrorManager.handle(error);
     }
 
     onScheduleChange(period: ExperimentsListSchedulePeriod): void {

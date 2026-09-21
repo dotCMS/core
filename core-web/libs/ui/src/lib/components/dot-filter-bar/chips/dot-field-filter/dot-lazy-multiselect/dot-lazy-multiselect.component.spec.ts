@@ -2,6 +2,8 @@ import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/v
 import { of, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -97,6 +99,35 @@ describe('DotLazyMultiselectComponent', () => {
             vi.advanceTimersByTime(SHORT_DEBOUNCE_MS - 1);
 
             expect(loadPage).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('a failed page', () => {
+        /**
+         * The inline state tells the person looking at the panel; the output tells the surface,
+         * which is the only thing that can route a 403 or a dead session to wherever that surface
+         * reports errors. Both, because neither substitutes for the other (FR-012).
+         */
+        it('should report the failure outwards as well as inline', () => {
+            const failure = new HttpErrorResponse({ status: 403 });
+            const failed = vi.fn();
+
+            // Subscribed before the first load runs: `build` renders, which fires `ngOnInit`, and
+            // an output emitted then is gone by the time a later subscriber arrives.
+            loadPage = vi.fn().mockReturnValue(throwError(() => failure));
+            spectator = createComponent({ props: { loadPage, selectedValues: [] } as never });
+            spectator.output('loadFailed').subscribe(failed);
+            spectator.detectChanges();
+
+            expect(failed).toHaveBeenCalledWith(failure);
+        });
+
+        it('should still show its own failed state', () => {
+            build(
+                vi.fn().mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })))
+            );
+
+            expect(spectator.component['$state'].error()).toBe(true);
         });
     });
 
