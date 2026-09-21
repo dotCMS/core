@@ -726,14 +726,44 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should leave the paginator usable once loading finishes', () => {
+            // Offset 20 of 100 (a mid-list page, neither first nor last) rather than the default
+            // 0: at offset 0 PrimeNG's own `isFirstPage()` natively disables Previous, which would
+            // make this assertion pass for the wrong reason. This test is about our lockout getting
+            // out of the way when unlocked, not about PrimeNG's boundary logic (found in review,
+            // issue #37212 QA follow-up #3 -- `disabled: locked || undefined` used to leave a
+            // `disabled: undefined` key behind when unlocked, and `Bind`'s effect treats that as
+            // "clear the attribute", which overrode PrimeNG's own `isFirstPage()`/`isLastPage()`
+            // disabling on every unlocked render, at every page, not just the boundaries).
             spectator.setInput('items', manyItems);
             spectator.setInput('totalItems', 100);
+            spectator.setInput('offset', 20);
             spectator.setInput('loading', false);
             spectator.detectChanges();
 
             expect(spectator.component.$ptConfig().pcPaginator.root.class).toBe('');
             const prevBtn = spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            const nextBtn = spectator.query('.p-paginator-next') as HTMLButtonElement;
             expect(prevBtn.disabled).toBe(false);
+            expect(nextBtn.disabled).toBe(false);
+        });
+
+        it('should leave PrimeNG in control of Previous at the first page once unlocked', () => {
+            // The regression this pins: `disabled: locked || undefined` still wrote a `disabled`
+            // key (value `undefined`) into the pt object when unlocked. `Bind`'s effect iterates
+            // every present key, including ones whose value is `undefined`, and clears the DOM
+            // attribute for it -- for a boolean-reflected property like `disabled`, clearing the
+            // attribute forces the property to `false` regardless of what PrimeNG's own
+            // `[disabled]="isFirstPage() || empty()"` binding had just set. At offset 0 (the first
+            // page), that meant Previous stayed clickable even though PrimeNG itself considers the
+            // control disabled there.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('offset', 0);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            const prevBtn = spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            expect(prevBtn.disabled).toBe(true);
         });
 
         it('should take the paginator out of play as soon as a click is accepted, before loading catches up', () => {

@@ -633,19 +633,32 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             // still protects the rows-per-page dropdown (a plain CSS lockout is good enough for it,
             // and it is a more complex nested component to risk a `disabled` pass-through into).
             //
-            // `prev`/`next` set a real `disabled` on the actual buttons, which is stronger than the
-            // CSS-only lockout for two reasons `pointer-events-none` cannot cover on its own:
-            // keyboard activation (Enter/Space still reaches a `pointer-events: none` button) and
-            // assistive tech (a screen reader still announces it as enabled). Verified against the
-            // installed PrimeNG 21.1.3: `Paginator`'s `prev`/`next` buttons bind
+            // `prev`/`next` set a real `disabled` on the actual buttons when locked, which is
+            // stronger than the CSS-only lockout for two reasons `pointer-events-none` cannot cover
+            // on its own: keyboard activation (Enter/Space still reaches a `pointer-events: none`
+            // button) and assistive tech (a screen reader still announces it as enabled). Verified
+            // against the installed PrimeNG 21.1.3: `Paginator`'s `prev`/`next` buttons bind
             // `[pBind]="ptm('prev'/'next')"` alongside their own `[disabled]="isFirstPage() ||
             // empty()"` -- `pBind`'s effect (from the shared `Bind` directive) writes the DOM
             // property after the template's own binding runs, so it wins.
-            pcPaginator: {
-                root: { class: locked ? 'pointer-events-none opacity-60' : '' },
-                prev: { disabled: locked || undefined },
-                next: { disabled: locked || undefined }
-            },
+            //
+            // The `disabled` key is only present at all when locked -- omitted, not `false` or
+            // `undefined`, when unlocked. `Bind`'s effect iterates every key still present on the
+            // pt object, including one whose value is `undefined`, and removes the attribute for
+            // it; for a boolean-reflected DOM property like `disabled`, removing the attribute
+            // clears the property outright, unconditionally overriding whatever PrimeNG's own
+            // `isFirstPage()`/`empty()` binding had just set. That silently defeated the paginator's
+            // own boundary disabling on every unlocked render -- Previous stayed clickable on page
+            // 1, Next on the last page (found in review, issue #37212 QA follow-up #3). Leaving the
+            // key out entirely means `Bind` never touches `disabled` when unlocked, so PrimeNG's own
+            // template binding is the only thing writing it.
+            pcPaginator: locked
+                ? {
+                      root: { class: 'pointer-events-none opacity-60' },
+                      prev: { disabled: true },
+                      next: { disabled: true }
+                  }
+                : { root: { class: '' } },
             table: {
                 style: {
                     'table-layout': 'fixed',
