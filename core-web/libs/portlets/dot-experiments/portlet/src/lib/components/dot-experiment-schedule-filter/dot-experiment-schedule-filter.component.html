@@ -1,7 +1,7 @@
 <dot-chip-filter
-    [title]="$title()"
+    [title]="'experiments.list.filter.schedule' | dm"
     [selections]="$selectedLabels()"
-    [emptyLabel]="$emptyLabel()"
+    [emptyLabel]="'experiments.list.filter.schedule.any' | dm"
     (clicked)="popover.toggle($event)"
     (removed)="onRemove()"
     data-testid="experiment-schedule-filter-chip" />
@@ -17,6 +17,6 @@
         [inline]="true"
         dateFormat="yy-mm-dd"
         [pt]="datePickerPt"
-        [attr.aria-label]="$title()"
+        [attr.aria-label]="'experiments.list.filter.schedule' | dm"
         data-testid="experiment-schedule-filter-calendar" />
 </p-popover>

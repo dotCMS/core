@@ -53,6 +53,13 @@ export class DotUserFilterComponent {
     readonly $emptyLabelKey = input<string>('all', { alias: 'emptyLabelKey' });
 
     /** Applied user ids. Owned by the consumer, usually backed by its address. */
+    /**
+     * Ids currently applied, owned by the consumer.
+     *
+     * Bound straight to the option list so a selected person stays ticked — the consumer is the
+     * single writer, so a selection restored from an address or cleared from an empty state lands
+     * there too, with nothing local to fall out of step.
+     */
     readonly $selected = input<string[]>([], { alias: 'selected' });
 
     /** Message key shown when a search matches nobody. */
@@ -102,14 +109,6 @@ export class DotUserFilterComponent {
 
     /** True while ids from the address are still being turned into names. */
     readonly $resolving = computed<boolean>(() => this.#resolved.isLoading());
-
-    /**
-     * Bound to the option list so a selected person stays ticked.
-     *
-     * Straight off the input rather than held locally: the consumer is the single writer, so a
-     * selection restored from an address or cleared from an empty state lands here too.
-     */
-    readonly $selectedValues = computed<string[]>(() => this.$selected());
 
     /**
      * What the chip renders after its title, and what makes it read as active.

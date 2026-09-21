@@ -219,7 +219,7 @@ describe('DotUserFilterComponent', () => {
             spectator.setInput('selected', ['u1']);
             spectator.detectChanges();
 
-            expect(spectator.component.$selectedValues()).toContain('u1');
+            expect(spectator.component.$selected()).toContain('u1');
         });
     });
 

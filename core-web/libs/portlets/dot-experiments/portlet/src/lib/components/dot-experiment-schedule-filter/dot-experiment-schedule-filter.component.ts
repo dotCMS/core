@@ -5,7 +5,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { PopoverModule } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotChipFilterComponent } from '@dotcms/ui';
+import { DotChipFilterComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { ExperimentsListSchedulePeriod } from '../../shared/models';
 import {
@@ -46,7 +46,13 @@ import {
  */
 @Component({
     selector: 'dot-experiment-schedule-filter',
-    imports: [FormsModule, DatePickerModule, PopoverModule, DotChipFilterComponent],
+    imports: [
+        FormsModule,
+        DatePickerModule,
+        PopoverModule,
+        DotChipFilterComponent,
+        DotMessagePipe
+    ],
     templateUrl: './dot-experiment-schedule-filter.component.html'
 })
 export class DotExperimentScheduleFilterComponent {
@@ -59,6 +65,7 @@ export class DotExperimentScheduleFilterComponent {
     /** Emits the whole period: the calendar hands over a range, never one bound at a time. */
     readonly selectionChange = output<ExperimentsListSchedulePeriod>();
 
+    /** Only `$selectedLabels` needs it — the constant labels go through `| dm`. */
     readonly #dotMessageService = inject(DotMessageService);
 
     /**
@@ -72,19 +79,13 @@ export class DotExperimentScheduleFilterComponent {
      *
      * The width cap is not decoration either: the month and year grids are wider than the day
      * grid, so without it the panel grows when one is opened and the popover jumps sideways.
+     *
+     * A field rather than an inline object in the template: an object literal there is rebuilt on
+     * every change detection, handing PrimeNG a new `pt` reference each time.
      */
     protected readonly datePickerPt = {
         panel: { class: '!border-0 !rounded-none !shadow-none !max-w-96' }
     };
-
-    protected readonly $title = computed<string>(() =>
-        this.#dotMessageService.get('experiments.list.filter.schedule')
-    );
-
-    /** What the chip reads while unfiltered. Not a range of its own — see the class note. */
-    protected readonly $emptyLabel = computed<string>(() =>
-        this.#dotMessageService.get('experiments.list.filter.schedule.any')
-    );
 
     /**
      * What the chip renders, and what makes it read as active.
@@ -92,6 +93,10 @@ export class DotExperimentScheduleFilterComponent {
      * Three phrasings rather than one with blanks: a chip reading "Scheduled 2026-06-01 to" while
      * the second end is still being picked looks broken, and an open upper bound is a state the
      * calendar passes through every time.
+     *
+     * The one label that stays in TypeScript. The chip's title and its unfiltered label are
+     * constants and resolve through `| dm` in the template; this one picks between three keys and
+     * feeds a `string[]`, which a template expression would only obscure.
      */
     protected readonly $selectedLabels = computed<string[]>(() => {
         const from = this.$from();
