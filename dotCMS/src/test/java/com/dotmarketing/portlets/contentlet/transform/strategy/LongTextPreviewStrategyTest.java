@@ -277,30 +277,57 @@ public class LongTextPreviewStrategyTest {
     }
 
     /**
-     * AC-008: when a content type's title-source field is itself a WYSIWYG or TextArea field
-     * (i.e. its variable is literally {@code "title"}), the {@code title} map key -- already
-     * populated independently by {@code DefaultTransformStrategy}/{@code COMMON_PROPS} from
-     * {@code Contentlet#getTitle()} -- must NOT be overwritten with a truncated preview. Found
-     * while designing this coverage: without the guard, {@code LongTextPreviewStrategy} would
-     * match the field by its WYSIWYG type and clobber the already-correct {@code title} value.
+     * AC-008 (revised, issue #37185 QA follow-up): when a content type's title-source field is
+     * itself a WYSIWYG or TextArea field (i.e. its variable is literally {@code "title"}), the
+     * {@code title} map key must still be trimmed like any other in-scope field.
+     *
+     * <p>An earlier version of this test asserted the opposite -- that {@code title} must stay
+     * untouched -- on the theory that {@code COMMON_PROPS}/{@code Contentlet#getTitle()} having
+     * already populated it meant it should not be touched again. In practice {@code getTitle()}
+     * returns that field's own raw value verbatim (no HTML stripping, no length bound), so
+     * "already populated" just meant "holds the same raw HTML every other in-scope field starts
+     * from" -- exempting it left a WYSIWYG/TextArea title at full, untruncated length in the
+     * listing response, defeating this strategy's purpose for that one field and failing the
+     * issue's own acceptance criterion ("a content type whose title field is itself a long-text
+     * field still returns a correct title"). Confirmed against a live repro (QA content type "QA
+     * 37185 Long Text Title").</p>
      */
     @Test
-    public void transform_wysiwygFieldNamedTitle_doesNotOverwriteTitleKey() throws Exception {
+    public void transform_wysiwygFieldNamedTitle_trimsLikeAnyOtherInScopeField() throws Exception {
         final Field titleField = mockField(WysiwygField.class, "title");
         final ContentType contentType = mockContentType(List.of(titleField), List.of(), List.of());
         final Contentlet contentlet = mockContentlet(contentType);
 
         // Simulates DefaultTransformStrategy/COMMON_PROPS having already run and populated
-        // "title" from Contentlet#getTitle() -- untruncated, HTML markup and all in this
-        // worst-case scenario, since getTitle() does not itself strip HTML.
+        // "title" from Contentlet#getTitle() -- untruncated, HTML markup and all, since
+        // getTitle() does not itself strip HTML.
         final String realTitle = "<p>" + "word ".repeat(60) + "</p>";
         final Map<String, Object> map = new HashMap<>();
         map.put("title", realTitle);
 
         newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
 
-        assertEquals("The 'title' key must be untouched by the long-text preview strategy",
-                realTitle, map.get("title"));
+        final String preview = (String) map.get("title");
+        assertTrue("The 'title' key must be trimmed to <=150 chars like any other in-scope field",
+                preview.length() <= 150);
+        assertFalse("Preview must not contain HTML tags",
+                preview.contains("<") || preview.contains(">"));
+        assertTrue("A truncated title must carry the truncation marker", preview.endsWith("…"));
+    }
+
+    /** A short WYSIWYG-backed title (under 150 chars) is trimmed of HTML but not truncated. */
+    @Test
+    public void transform_wysiwygFieldNamedTitle_shortValue_isNotTruncated() throws Exception {
+        final Field titleField = mockField(WysiwygField.class, "title");
+        final ContentType contentType = mockContentType(List.of(titleField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put("title", "<p>Short title</p>");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertEquals("Short title", map.get("title"));
     }
 
     /**

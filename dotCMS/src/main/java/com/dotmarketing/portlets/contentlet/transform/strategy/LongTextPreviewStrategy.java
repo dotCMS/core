@@ -10,7 +10,6 @@ import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -32,6 +31,17 @@ import java.util.function.Function;
  * every {@code text} leaf value, and truncates the concatenation to 150 characters. This is why
  * {@link TransformOptions#LONG_TEXT_PREVIEW} must be declared after {@code STORY_BLOCK_VIEW} and
  * {@code JSON_VIEW} in the enum -- {@code EnumSet} iteration order runs this strategy last.
+ * <p>
+ * A content type's title-source field is trimmed like any other in-scope field, including when
+ * its variable is literally {@code "title"} -- {@link Contentlet#getTitle()} returns that field's
+ * own raw value verbatim (it does not strip HTML or bound its length itself), so an untrimmed
+ * long-text title defeats this strategy's entire purpose for that one field (issue #37185 QA
+ * follow-up: a WYSIWYG/TextArea field used as the title rode through at full, untruncated length).
+ * An earlier version of this strategy exempted the {@code "title"} key outright on the theory that
+ * {@code COMMON_PROPS} had already populated it and it should not be touched again -- but "already
+ * populated" here just means "holds the same raw value every other in-scope field starts from",
+ * and the issue's own acceptance criteria call for a *correct*, not necessarily untouched, title
+ * in this exact scenario.
  *
  * @since 25.xx
  */
@@ -107,10 +117,6 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
             return;
         }
         fields.stream()
-                // AC-008: the "title" key is independently populated by COMMON_PROPS from
-                // Contentlet#getTitle() -- never overwrite it with a truncated preview, even when
-                // the content type's title-source field is itself WYSIWYG/TextArea/Story Block.
-                .filter(field -> !TITTLE_KEY.equals(field.variable()))
                 // A field entirely absent from the row's map must stay absent -- otherwise every
                 // in-scope field on the content type gets a synthesized "" entry, growing the
                 // payload this strategy exists to shrink (found in review).
