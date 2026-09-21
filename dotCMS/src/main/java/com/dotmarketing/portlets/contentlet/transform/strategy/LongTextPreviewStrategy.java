@@ -10,6 +10,7 @@ import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Replaces WYSIWYG, TextArea and Story Block field values in a transformed map with a
@@ -85,13 +87,53 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
                     String.format("Content Type in Contentlet '%s' is not set", source.getIdentifier()));
         }
 
-        applyPreview(contentType.fields(WysiwygField.class), map, LongTextPreviewStrategy::extractHtmlPreview);
-        applyPreview(contentType.fields(TextAreaField.class), map, LongTextPreviewStrategy::extractHtmlPreview);
+        final List<Field> wysiwygFields = contentType.fields(WysiwygField.class);
+        final List<Field> textAreaFields = contentType.fields(TextAreaField.class);
         final List<Field> storyBlockFields = contentType.fields(StoryBlockField.class);
+
+        applyPreview(wysiwygFields, map, LongTextPreviewStrategy::extractHtmlPreview);
+        applyPreview(textAreaFields, map, LongTextPreviewStrategy::extractHtmlPreview);
         applyPreview(storyBlockFields, map, LongTextPreviewStrategy::extractStoryBlockPreview);
         removeRawCompanionKeys(storyBlockFields, map);
+        trimTitleCopyFromDifferentlyNamedSourceField(contentType, wysiwygFields, textAreaFields, map);
 
         return map;
+    }
+
+    /**
+     * {@code COMMON_PROPS} always writes an independent copy of {@link Contentlet#getTitle()}'s
+     * raw return value into the {@code "title"} key (see {@code DefaultTransformStrategy
+     * #addCommonProperties}), regardless of the title-source field's own variable name. When that
+     * field's variable is literally {@code "title"}, {@link #applyPreview} already trims this same
+     * key directly (it IS the field's own key), so there is nothing left to do here. But when the
+     * title source is a differently-named long-text field matching dotCMS's own
+     * {@code Contentlet#getFieldWithVarStartingWithTitleWord} fallback (e.g. {@code titleLongText}),
+     * {@code applyPreview} only trims that field's OWN key -- the separate {@code "title"} copy is
+     * never iterated and rides through at full length, the same payload bloat this strategy exists
+     * to remove (found in review, issue #37185 PR #37663).
+     */
+    private void trimTitleCopyFromDifferentlyNamedSourceField(final ContentType contentType,
+            final List<Field> wysiwygFields, final List<Field> textAreaFields, final Map<String, Object> map) {
+        if (!(map.get(TITTLE_KEY) instanceof String)) {
+            return;
+        }
+        final boolean titleIsItsOwnField = contentType.fields().stream()
+                .anyMatch(field -> TITTLE_KEY.equals(field.variable()));
+        if (titleIsItsOwnField) {
+            return;
+        }
+        final boolean titleSourceIsInScopeHtmlField = Stream.concat(wysiwygFields.stream(), textAreaFields.stream())
+                .anyMatch(field -> UtilMethods.isSet(field.variable()) && field.variable().startsWith(TITTLE_KEY));
+        if (!titleSourceIsInScopeHtmlField) {
+            // Either no field's variable starts with "title" (a dedicated, short title column is
+            // in play), or the one that does is not WYSIWYG/TextArea -- e.g. a plain Text field,
+            // which is out of scope for this strategy the same way it is for every other field.
+            return;
+        }
+        Try.run(() -> map.put(TITTLE_KEY, extractHtmlPreview(map.get(TITTLE_KEY))))
+                .onFailure(e -> Logger.warn(LongTextPreviewStrategy.class, String.format(
+                        "An error occurred extracting a long-text preview for the title key [%s]: %s",
+                        contentType.id(), e.getMessage())));
     }
 
     /**

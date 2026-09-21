@@ -48,6 +48,11 @@ public class LongTextPreviewStrategyTest {
         Mockito.when(contentType.fields(WysiwygField.class)).thenReturn(wysiwygFields);
         Mockito.when(contentType.fields(TextAreaField.class)).thenReturn(textAreaFields);
         Mockito.when(contentType.fields(StoryBlockField.class)).thenReturn(storyBlockFields);
+        final List<Field> allFields = new java.util.ArrayList<>();
+        allFields.addAll(wysiwygFields);
+        allFields.addAll(textAreaFields);
+        allFields.addAll(storyBlockFields);
+        Mockito.when(contentType.fields()).thenReturn(allFields);
         return contentType;
     }
 
@@ -328,6 +333,58 @@ public class LongTextPreviewStrategyTest {
         newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
 
         assertEquals("Short title", map.get("title"));
+    }
+
+    /**
+     * Dotbot review finding on PR #37663: {@code COMMON_PROPS} always writes an independent copy
+     * of {@link Contentlet#getTitle()}'s raw value into the {@code "title"} key, regardless of the
+     * title-source field's own variable name -- {@code DefaultTransformStrategy#addCommonProperties}
+     * does {@code map.put("title", contentlet.getTitle())} unconditionally. When that field is
+     * named e.g. {@code titleLongText} rather than exactly {@code "title"} (dotCMS's own
+     * {@code Contentlet#getFieldWithVarStartingWithTitleWord} fallback), {@code applyPreview} only
+     * trims {@code titleLongText}'s own key -- the separate {@code "title"} copy is a different map
+     * entry entirely and would otherwise ride through at full length.
+     */
+    @Test
+    public void transform_titleDerivedFromDifferentlyNamedWysiwygField_trimsBothKeys() throws Exception {
+        final Field titleSourceField = mockField(WysiwygField.class, "titleLongText");
+        final ContentType contentType = mockContentType(List.of(titleSourceField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final String longBody = "<p>" + "word ".repeat(60) + "</p>";
+        final Map<String, Object> map = new HashMap<>();
+        // Both keys start out holding the exact same raw HTML -- "titleLongText" as the field's
+        // own entry, "title" as COMMON_PROPS's independent copy from Contentlet#getTitle().
+        map.put("titleLongText", longBody);
+        map.put("title", longBody);
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String fieldPreview = (String) map.get("titleLongText");
+        final String titlePreview = (String) map.get("title");
+        assertTrue("The field's own key must be trimmed", fieldPreview.length() <= 150);
+        assertTrue("The separate 'title' copy must also be trimmed", titlePreview.length() <= 150);
+        assertFalse("The 'title' copy must not contain HTML tags",
+                titlePreview.contains("<") || titlePreview.contains(">"));
+    }
+
+    /**
+     * A dedicated, short "title" field (a normal Text column, not WYSIWYG/TextArea/Story Block)
+     * means no field's variable starts with "title" among the in-scope lists -- nothing to trim.
+     */
+    @Test
+    public void transform_dedicatedShortTitleField_leavesTitleKeyAlone() throws Exception {
+        final Field bodyField = mockField(WysiwygField.class, "body");
+        final ContentType contentType = mockContentType(List.of(bodyField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put("title", "A normal, short title");
+        map.put("body", "<p>Short body</p>");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertEquals("A normal, short title", map.get("title"));
     }
 
     /**
