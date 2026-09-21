@@ -2,7 +2,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { DotUserSearchService } from './dot-user-search.service';
+import {
+    dotUserDisplayName,
+    DotUserSearchRow,
+    DotUserSearchService
+} from './dot-user-search.service';
 
 /**
  * One page of the directory as `GET /api/v1/users/filter` returns it: the envelope, not a bare
@@ -142,5 +146,46 @@ describe('DotUserSearchService', () => {
 
             httpMock.expectNone((request) => request.url === '/api/v1/users/filter');
         });
+    });
+});
+
+describe('dotUserDisplayName', () => {
+    const row = (fields: Partial<DotUserSearchRow>): DotUserSearchRow => ({
+        userId: 'dotcms.org.1',
+        ...fields
+    });
+
+    it('should prefer the full name', () => {
+        expect(
+            dotUserDisplayName(
+                row({ fullName: 'Jane Doe', firstName: 'Jane', emailAddress: 'jane@dotcms.com' })
+            )
+        ).toBe('Jane Doe');
+    });
+
+    it('should fall back to first and last name when the full name is blank', () => {
+        // Blank rather than absent: this is the shape a legacy or partially-imported account
+        // actually arrives in, and the reason the chain exists at all.
+        expect(
+            dotUserDisplayName(row({ fullName: '   ', firstName: 'Jane', lastName: 'Doe' }))
+        ).toBe('Jane Doe');
+    });
+
+    it('should use whichever half of the name is present', () => {
+        expect(dotUserDisplayName(row({ lastName: 'Doe' }))).toBe('Doe');
+    });
+
+    it('should fall back to the email when there is no name at all', () => {
+        expect(dotUserDisplayName(row({ emailAddress: 'jane@dotcms.com' }))).toBe(
+            'jane@dotcms.com'
+        );
+    });
+
+    it('should fall back to the id last, so the result is never blank', () => {
+        expect(dotUserDisplayName(row({ fullName: '', emailAddress: '  ' }))).toBe('dotcms.org.1');
+    });
+
+    it('should trim what it returns', () => {
+        expect(dotUserDisplayName(row({ fullName: '  Jane Doe  ' }))).toBe('Jane Doe');
     });
 });

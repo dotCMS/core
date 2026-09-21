@@ -99,6 +99,22 @@ describe('DotUserFilterComponent', () => {
             ]);
         });
 
+        it('should label a row with no full name rather than showing its id', () => {
+            // The chain lives in the service; this pins that the loader actually goes through it,
+            // because a row whose `fullName` is blank is a real legacy account, not a hypothetical.
+            (searchService.searchPage as ReturnType<typeof vi.fn>).mockReturnValue(
+                of({
+                    entity: [{ userId: 'u9', fullName: '', emailAddress: 'jane@dotcms.com' }],
+                    pagination: { currentPage: 1, perPage: 20, totalEntries: 1 }
+                })
+            );
+
+            let page: { options: { value: string; label: string }[] } | undefined;
+            load().subscribe((result) => (page = result));
+
+            expect(page?.options).toEqual([{ value: 'u9', label: 'jane@dotcms.com' }]);
+        });
+
         it('should report more pages while the total exceeds what has been served', () => {
             (searchService.searchPage as ReturnType<typeof vi.fn>).mockReturnValue(
                 of(directoryPage(['u1', 'u2'], 57))
