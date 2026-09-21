@@ -83,9 +83,17 @@ def _merge_components(
 
     sources: dict[int, list[str]] = {id(component): [SOURCE_IMAGE] for component in kept}
 
+    seen_in_frontend: set[tuple] = set()
+
     for component, _ in frontend:
         key = _identity(component)
-        existing = by_identity.get(key)
+        # Reconciliation is BETWEEN sources, never within one — on this side too. A second
+        # frontend component with the same identity is a duplicate within its own source and
+        # must survive, exactly as an image-side duplicate does. A pnpm lockfile lists each
+        # name@version once so this does not arise today, but a rule enforced on one side
+        # only is not the rule the data model states.
+        existing = None if key in seen_in_frontend else by_identity.get(key)
+        seen_in_frontend.add(key)
         if existing:
             # Rule 2: both sources found it. No new entry, but the fact that the frontend
             # inventory also saw it survives — and it may carry a licence the scan lacked.

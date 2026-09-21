@@ -69,8 +69,15 @@ runs:
     # (devEngines.packageManager, falling back to packageManager), which maven-job's
     # toolchain check already holds against nodejs-parent/pom.xml. Hardcoding a version
     # here would add a fourth declaration that nothing keeps in sync.
+    # continue-on-error here for the same reason as the generation step below: a resolver,
+    # cache or network failure in setup would otherwise abort the whole composite action
+    # before the merge runs, and the release would lose its Java/OS inventory too. FR-009
+    # promises a release never loses existing coverage when the frontend half breaks —
+    # that has to include the setup that the frontend half depends on.
     - name: Set up pnpm
+      id: setup-pnpm
       if: ${{ inputs.release_ref != '' }}
+      continue-on-error: true
       uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
       with:
         working-directory: core/core-web
@@ -83,7 +90,7 @@ runs:
     # for a complete one (FR-009).
     - name: Generate frontend SBOM
       id: frontend-sbom
-      if: ${{ inputs.release_ref != '' }}
+      if: ${{ inputs.release_ref != '' && steps.setup-pnpm.outcome == 'success' }}
       continue-on-error: true
       shell: bash
       working-directory: core/core-web
@@ -102,7 +109,7 @@ runs:
         echo "components=$(jq '.components | length' "${GITHUB_WORKSPACE}/core/sbom-frontend.json")" >> "$GITHUB_OUTPUT"
 
     - name: Setup uv
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5.4.2
 
     - name: Merge frontend SBOM into the image SBOM
       shell: bash

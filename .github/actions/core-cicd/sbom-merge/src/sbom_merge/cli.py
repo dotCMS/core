@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Sequence
 
@@ -52,7 +53,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         return EXIT_INVALID_INPUT
 
     try:
-        frontend_doc = _load_optional(Path(args.frontend))
+        frontend_doc = _load_optional(
+            Path(args.frontend), strict=args.fail_on_missing_frontend
+        )
     except _InputError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_INVALID_INPUT
@@ -102,7 +105,19 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 class _InputError(Exception):
-    pass
+    """A document cannot be used and the caller must be told."""
+
+
+class _UnreadableError(_InputError):
+    """The bytes are not a usable document at all — unparseable, or not a JSON object.
+
+    Split from _InputError because the two have different causes and deserve different
+    handling. Unreadable is what a truncated write looks like (`pnpm sbom > file` creates
+    the file before the command runs), so for the optional frontend input it degrades.
+    A well-formed document declaring the wrong bomFormat or specVersion is a configuration
+    error — someone changed a flag — and must stay loud, or the published document's spec
+    version could drift without anyone noticing.
+    """
 
 
 def _load_required(path: Path, label: str) -> dict:
@@ -111,11 +126,31 @@ def _load_required(path: Path, label: str) -> dict:
     return _validate(_parse(path), path)
 
 
-def _load_optional(path: Path) -> dict | None:
-    """Absent or empty frontend inventory is the degraded path, not an error (FR-009)."""
+def _load_optional(path: Path, *, strict: bool) -> dict | None:
+    """Absent, empty or unreadable frontend inventory is the degraded path (FR-009).
+
+    Unreadable counts because `pnpm sbom > file` creates the file before the command runs:
+    a mid-stream failure leaves partial JSON behind, non-empty and unparseable. Treating
+    that as fatal would lose the Java/OS inventory too — the exact outcome FR-009 exists to
+    prevent. Under --fail-on-missing-frontend it still raises, so strict mode stays strict.
+
+    A readable document declaring the wrong bomFormat or specVersion is NOT degraded: that
+    is a configuration error, and silently dropping it would let the published document's
+    spec version drift unnoticed.
+    """
     if not path.is_file() or path.stat().st_size == 0:
         return None
-    doc = _validate(_parse(path), path)
+    try:
+        doc = _validate(_parse(path), path)
+    except _UnreadableError:
+        if strict:
+            raise
+        print(
+            f"warning: the frontend inventory at {path} is unreadable and was skipped; "
+            "publishing image coverage only",
+            file=sys.stderr,
+        )
+        return None
     return doc if doc.get("components") else None
 
 
@@ -123,10 +158,15 @@ def _parse(path: Path) -> dict:
     try:
         return json.loads(path.read_text())
     except json.JSONDecodeError as exc:
-        raise _InputError(f"{path} is not valid JSON: {exc}") from exc
+        raise _UnreadableError(f"{path} is not valid JSON: {exc}") from exc
 
 
-def _validate(doc: dict, path: Path) -> dict:
+def _validate(doc: object, path: Path) -> dict:
+    # Valid JSON is not necessarily an object. A truncated or replaced artifact can be `[]`
+    # or `null`, which used to reach .get() and raise AttributeError past the _InputError
+    # handler — a traceback and exit 1, outside the documented contract.
+    if not isinstance(doc, dict):
+        raise _UnreadableError(f"{path} is not a JSON object (got {type(doc).__name__})")
     if doc.get("bomFormat") != "CycloneDX":
         raise _InputError(f"{path} is not a CycloneDX document")
     if doc.get("specVersion") != SPEC_VERSION:
@@ -139,13 +179,29 @@ def _validate(doc: dict, path: Path) -> dict:
 
 
 def _components_lost(image_doc: dict, frontend_doc: dict | None, merged: dict) -> set:
-    def identities(doc: dict | None) -> set:
-        return {
+    """Components present in an input but missing from the output (SC-009).
+
+    Counts rather than checks membership. Keying on a set could not detect losing one of two
+    identical components — both tuples still appeared — which is precisely the Syft dual-path
+    case this tool exists to preserve.
+
+    The expected multiplicity is the per-source maximum, not the sum: a component found by
+    both sources collapses to one entry by design (rule 2), while two entries within one
+    source must both survive (rule 7).
+    """
+    def counts(doc: dict | None) -> Counter:
+        return Counter(
             (c.get("name"), c.get("version"))
             for c in (doc or {}).get("components", [])
-        }
+        )
 
-    return (identities(image_doc) | identities(frontend_doc)) - identities(merged)
+    image, frontend, out = counts(image_doc), counts(frontend_doc), counts(merged)
+
+    expected = {
+        key: max(image[key], frontend[key])
+        for key in set(image) | set(frontend)
+    }
+    return {key for key, n in expected.items() if out[key] < n}
 
 
 if __name__ == "__main__":  # pragma: no cover
