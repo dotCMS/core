@@ -120,6 +120,54 @@ public class LongTextPreviewStrategyTest {
         assertEquals("Hello world", map.get(WYSIWYG_VAR));
     }
 
+    /**
+     * Every Story Block field carries an untouched {@code <var>_raw} companion holding the full,
+     * untruncated JSON schema (written upstream by {@code ContentletJsonAPIImpl} for consumers
+     * that read it directly off the {@code Contentlet}, e.g. nested Block Editor reference
+     * resolution). Left in a listing row, it rides alongside the trimmed preview and carries the
+     * exact bytes this strategy exists to shed (issue #37185 QA follow-up: Rafael found both
+     * {@code body} and {@code body_raw} in the search response for a Block Editor field).
+     */
+    @Test
+    public void transform_storyBlockField_removesRawCompanionKey() throws Exception {
+        final Field storyField = mockField(StoryBlockField.class, STORY_VAR);
+        final ContentType contentType = mockContentType(List.of(), List.of(), List.of(storyField));
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> textNode = Map.of("type", "text", "text", "Launch announcement");
+        final Map<String, Object> paragraph = Map.of("type", "paragraph", "content", List.of(textNode));
+        final LinkedHashMap<String, Object> storyBlockDoc = new LinkedHashMap<>();
+        storyBlockDoc.put("type", "doc");
+        storyBlockDoc.put("content", List.of(paragraph));
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(STORY_VAR, storyBlockDoc);
+        map.put(STORY_VAR + "_raw", "{\"type\":\"doc\",\"content\":[/* the full, untruncated schema */]}");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertFalse("The _raw companion key must not survive into a trimmed listing row",
+                map.containsKey(STORY_VAR + "_raw"));
+        assertTrue("The trimmed preview itself must still be present",
+                ((String) map.get(STORY_VAR)).contains("Launch announcement"));
+    }
+
+    /** A content type with no Story Block field at all must not touch any {@code _raw} key. */
+    @Test
+    public void transform_noStoryBlockFields_leavesUnrelatedRawKeyAlone() throws Exception {
+        final Field wysiwygField = mockField(WysiwygField.class, WYSIWYG_VAR);
+        final ContentType contentType = mockContentType(List.of(wysiwygField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(WYSIWYG_VAR, "<p>Hello world</p>");
+        map.put("someOtherField_raw", "unrelated value");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertEquals("unrelated value", map.get("someOtherField_raw"));
+    }
+
     // --- T011: Story Block -- recursive traversal + truncation, run after StoryBlockViewStrategy
 
     /**

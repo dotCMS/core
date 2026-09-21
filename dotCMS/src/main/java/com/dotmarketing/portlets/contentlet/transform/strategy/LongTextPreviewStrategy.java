@@ -77,9 +77,28 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
 
         applyPreview(contentType.fields(WysiwygField.class), map, LongTextPreviewStrategy::extractHtmlPreview);
         applyPreview(contentType.fields(TextAreaField.class), map, LongTextPreviewStrategy::extractHtmlPreview);
-        applyPreview(contentType.fields(StoryBlockField.class), map, LongTextPreviewStrategy::extractStoryBlockPreview);
+        final List<Field> storyBlockFields = contentType.fields(StoryBlockField.class);
+        applyPreview(storyBlockFields, map, LongTextPreviewStrategy::extractStoryBlockPreview);
+        removeRawCompanionKeys(storyBlockFields, map);
 
         return map;
+    }
+
+    /**
+     * Every Story Block field carries an untouched {@code <var>_raw} companion holding the full
+     * JSON schema, written far upstream of this strategy (see {@code ContentletJsonAPIImpl}) for
+     * consumers that need to re-parse it (e.g. nested Block Editor reference resolution in
+     * {@code StoryBlockAPIImpl}). None of those consumers read it off a listing row's map -- they
+     * read it directly off the {@link Contentlet} -- so removing it here does not affect them, and
+     * leaving it in defeats the whole point of this strategy for Story Block fields: the &lt;=150
+     * character preview {@link #applyPreview} just wrote rides alongside the complete, untruncated
+     * schema it was supposed to replace (issue #37185 QA follow-up).
+     */
+    private void removeRawCompanionKeys(final List<Field> storyBlockFields, final Map<String, Object> map) {
+        if (!UtilMethods.isSet(storyBlockFields)) {
+            return;
+        }
+        storyBlockFields.forEach(field -> map.remove(field.variable() + "_raw"));
     }
 
     private void applyPreview(final List<Field> fields, final Map<String, Object> map,
