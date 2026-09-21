@@ -37,6 +37,8 @@ import {
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    EMPTY_CELL_PLACEHOLDER,
+    EXPERIMENTS_LIST_SORT_FIELDS,
     LIST_TABLE_STYLE,
     PANEL_LIST_TABLE_STYLE,
     ROWS_PER_PAGE_OPTIONS,
@@ -1032,6 +1034,123 @@ describe('DotExperimentsListComponent', () => {
             expect(table).not.toBeNull();
             expect(table.style.tableLayout).toBe('fixed');
         });
+
+        /**
+         * FR-034. Not a cosmetic number. With `table-layout: fixed` the floor is the only thing
+         * stopping the one elastic column, Name, from shrinking towards zero on a narrow viewport;
+         * below it the scroll container takes over instead. Each surface's floor is the sum of the
+         * fixed columns it renders plus the floor Name is granted, and the sums are written out in
+         * the constants' own docblocks.
+         *
+         * Pinned because a wrong floor is silent: the table simply scrolls a little too early, or
+         * squeezes Name a little too far, at a width nobody happens to test at. A column added or
+         * resized without revisiting the arithmetic fails here.
+         */
+        it('should floor each surface at the width its own column set needs', () => {
+            expect(LIST_TABLE_STYLE['min-width']).toBe('91rem');
+            expect(PANEL_LIST_TABLE_STYLE['min-width']).toBe('74rem');
+        });
+    });
+
+    describe('created by column (#37307)', () => {
+        /** One row whose creator name is whatever the payload carried — including nothing. */
+        const renderRowCreatedBy = (createdByUserName?: string): DotExperiment => {
+            const experiment = {
+                ...experimentWith(DotExperimentStatus.DRAFT),
+                createdByUserName
+            };
+            storeMock.pagedExperiments.mockReturnValue([experiment]);
+            storeMock.totalRecords.mockReturnValue(1);
+            spectator.detectChanges();
+
+            return experiment;
+        };
+
+        const cell = () => spectator.query(byTestId('experiment-created-by'));
+
+        /**
+         * FR-029, FR-029a. #37304 resolves the name on the server and never sends null, absent or
+         * blank: a resolvable creator gives their trimmed full name, the system user gives
+         * `System`, and every unresolvable case — deleted user, orphaned reference, no name set,
+         * failed lookup — gives `unknown`. All three arrive as ordinary strings, so the column's
+         * whole job is to print them.
+         *
+         * Asserted as one table because the failure being guarded against is the screen deciding
+         * that `unknown` looks like an error and re-mapping it — to the id, to a placeholder, or
+         * to copy of its own. Two unresolvable creators reading identically is the accepted cost
+         * of matching what Content Drive publishes for the same question.
+         */
+        it.each(['Jane Doe', 'System', 'unknown'])(
+            'should render %s exactly as delivered',
+            (createdByUserName) => {
+                renderRowCreatedBy(createdByUserName);
+
+                expect(cell()?.textContent?.trim()).toBe(createdByUserName);
+            }
+        );
+
+        /** FR-030, as Name and Page already do: truncate, and let hover carry the rest. */
+        it('should keep the full name reachable when it does not fit', () => {
+            const createdByUserName = 'Bartholomew Featherstonehaugh-Montgomery';
+            renderRowCreatedBy(createdByUserName);
+
+            expect(cell()?.className).toContain('truncate');
+            expect(cell()?.getAttribute('title')).toBe(createdByUserName);
+        });
+
+        /**
+         * FR-031. Reachable only against a backend older than #37304, which is why it is pinned
+         * rather than assumed impossible: the cell must not print `undefined`.
+         */
+        it('should show the placeholder when the payload carries no name', () => {
+            renderRowCreatedBy(undefined);
+
+            expect(cell()?.textContent?.trim()).toBe(EMPTY_CELL_PLACEHOLDER);
+        });
+
+        /** FR-029a again, from the other side: the id is not a name and must not stand in. */
+        it('should not fall back to the creator id', () => {
+            const experiment = renderRowCreatedBy(undefined);
+
+            expect(cell()?.textContent).not.toContain(experiment.createdBy);
+        });
+
+        /**
+         * FR-034a. Every other column sorts, so the absence has to be asserted rather than left
+         * to be noticed. The sort field values double as the `orderby` URL param and as the
+         * comparator keys, so a sortable creator column would reach into the address contract this
+         * feature otherwise leaves alone.
+         */
+        it('should not be sortable', () => {
+            renderRowCreatedBy('Jane Doe');
+
+            const header = spectator.query(byTestId('experiments-header-created-by'));
+
+            expect(header).not.toBeNull();
+            expect(header?.className).not.toContain('p-datatable-sortable-column');
+            expect(header?.querySelector('p-sorticon')).toBeNull();
+        });
+
+        it('should not add a creator to the sortable field set', () => {
+            expect(Object.values(EXPERIMENTS_LIST_SORT_FIELDS)).not.toContain('createdBy');
+        });
+
+        /**
+         * FR-033. The skeleton is a plain run of `<td>`, so a count that drifts from the header
+         * pushes a cell outside the table for as long as the first load takes. Counted off what
+         * actually rendered rather than off the constant, so the constant and the header cannot
+         * agree with each other while both disagree with the DOM.
+         */
+        it('should draw one skeleton cell per rendered column', () => {
+            storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+            spectator.detectChanges();
+
+            const headers = spectator.queryAll('table.p-datatable-table thead th');
+            const loadingRow = spectator.query(byTestId('experiments-loading-row'));
+
+            expect(headers).toHaveLength(9);
+            expect(loadingRow?.querySelectorAll('td')).toHaveLength(headers.length);
+        });
     });
 
     describe('filters', () => {
@@ -1499,6 +1618,37 @@ describe('DotExperimentsListComponent', () => {
                 expect(spectator.component.SKELETON_COLUMNS).toHaveLength(
                     SKELETON_COLUMNS.length - 1
                 );
+            });
+
+            /**
+             * FR-033. The panel's count is derived from the portlet's by dropping one, which is
+             * only correct while exactly one column differs between the two. Created By adds a
+             * column to both, so the derivation has to be re-checked rather than assumed — and
+             * counting the rendered DOM is the only assertion that notices if it stops holding.
+             */
+            it('should draw one skeleton cell per column the panel renders', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                const headers = spectator.queryAll('table.p-datatable-table thead th');
+                const loadingRow = spectator.query(byTestId('experiments-loading-row'));
+
+                expect(headers).toHaveLength(8);
+                expect(loadingRow?.querySelectorAll('td')).toHaveLength(headers.length);
+            });
+
+            /**
+             * FR-032a. Unlike Page, Created By is not hidden here: the panel is one page, so a
+             * Page column repeats itself on every row, while the creator differs row to row and
+             * answers the same question the portlet's column does. So the panel gains a column
+             * rather than staying where #37478 left it.
+             */
+            it('should render the created by column, unlike the page column', () => {
+                renderPanelRow();
+
+                expect(spectator.query(byTestId('experiment-created-by'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiment-page'))).toBeNull();
             });
 
             /**

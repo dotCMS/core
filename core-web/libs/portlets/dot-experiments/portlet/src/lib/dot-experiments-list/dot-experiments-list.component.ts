@@ -64,7 +64,7 @@ import {
     PANEL_LIST_TABLE_STYLE,
     PANEL_SKELETON_COLUMNS,
     LIST_TITLE_KEY,
-    NO_GOAL_PLACEHOLDER,
+    EMPTY_CELL_PLACEHOLDER,
     ROWS_PER_PAGE_OPTIONS,
     SEARCH_DEBOUNCE_MS,
     SKELETON_COLUMNS,
@@ -153,7 +153,7 @@ export class DotExperimentsListComponent {
     protected readonly $inPanel = !!this.#panel;
 
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
-    readonly NO_GOAL_PLACEHOLDER = NO_GOAL_PLACEHOLDER;
+    readonly EMPTY_CELL_PLACEHOLDER = EMPTY_CELL_PLACEHOLDER;
     readonly ROWS_PER_PAGE_OPTIONS = ROWS_PER_PAGE_OPTIONS;
     /** The panel drops the Page column, so it does not need the portlet's 81rem floor. */
     readonly TABLE_STYLE = this.$inPanel ? PANEL_LIST_TABLE_STYLE : LIST_TABLE_STYLE;
@@ -186,6 +186,9 @@ export class DotExperimentsListComponent {
                 pagePath: resolvePagePath(experiment.pageId, pageInfoByPageId),
                 goalLabelKey: goalType ? GOALS_METADATA_MAP[goalType].label : null,
                 variants: variantsCount(experiment.trafficProportion),
+                // Blank folds in with absent: both mean the payload named nobody, and neither is
+                // reachable against a backend carrying #37304.
+                createdByName: experiment.createdByUserName || null,
                 schedule: formatSchedule(experiment.scheduling, scheduleLabels),
                 statusSeverity: STATUS_SEVERITIES[experiment.status] ?? 'secondary',
                 statusLabelKey: STATUS_LABEL_KEYS.get(experiment.status) ?? ''

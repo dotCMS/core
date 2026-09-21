@@ -110,6 +110,14 @@ export interface ExperimentRow {
     /** i18n key of the primary goal type, or `null` when the experiment has no goal. */
     goalLabelKey: string | null;
     variants: number;
+    /**
+     * Display name of the creator as the payload delivered it, or `null` when it carried none.
+     *
+     * Null only against a backend older than #37304, which resolves the name server-side and
+     * always sends one — `System` for the system user, `unknown` for a creator that cannot be
+     * resolved. Those are values to print, not conditions to detect (FR-029).
+     */
+    createdByName: string | null;
     schedule: string;
     statusSeverity: TagSeverity;
     statusLabelKey: string;

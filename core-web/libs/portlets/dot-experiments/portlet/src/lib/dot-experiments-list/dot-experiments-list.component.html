@@ -137,6 +137,11 @@
                         <th class="w-28 text-center! whitespace-nowrap">
                             {{ 'experiments.list.header.variants' | dm }}
                         </th>
+                        <th
+                            class="w-40 whitespace-nowrap"
+                            data-testid="experiments-header-created-by">
+                            {{ 'experiments.list.header.created-by' | dm }}
+                        </th>
                         <th class="w-60 whitespace-nowrap" pSortableColumn="schedule">
                             {{ 'experiments.list.header.schedule' | dm }}
                             <p-sortIcon field="schedule" />
@@ -201,11 +206,19 @@
                             }
                             <td class="whitespace-nowrap" data-testid="experiment-goal">
                                 {{
-                                    row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER
+                                    row.goalLabelKey
+                                        ? (row.goalLabelKey | dm)
+                                        : EMPTY_CELL_PLACEHOLDER
                                 }}
                             </td>
                             <td class="text-center!" data-testid="experiment-variants">
                                 {{ row.variants }}
+                            </td>
+                            <td
+                                class="max-w-40 truncate"
+                                [title]="row.createdByName"
+                                data-testid="experiment-created-by">
+                                {{ row.createdByName ?? EMPTY_CELL_PLACEHOLDER }}
                             </td>
                             <td class="whitespace-nowrap" data-testid="experiment-schedule">
                                 {{ row.schedule }}
