@@ -425,14 +425,15 @@ export const DotExperimentsListStore = signalStore(
          * the page they left. Carrying them across would silently answer the old question with the
          * new page's data, which reads as a result rather than as a leftover.
          *
-         * The reset is total for that reason, and it is expressed as the defaults rather than as a
-         * list of fields to clear: a field added to the view state later is reset by construction
-         * instead of by remembering to add it here.
+         * The reset is total for that reason. Every narrowing has to be named here, so adding one
+         * to the view state means adding it here too — `selectedCreators` (#37307) is the one that
+         * proved the point by being missed.
          */
         on(dotExperimentsListPageEvents.scopedToPage, ({ payload }) => ({
             filter: '',
             selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
             selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+            selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
             perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
             orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -459,11 +460,18 @@ export const DotExperimentsListStore = signalStore(
             status: ComponentStatus.LOADING
         })),
         /**
-         * `languageId` goes with it: it exists only to return the editor to the version of the
-         * narrowed page they came from, so it means nothing once that page is gone.
+         * One transition, so neither the row set nor the address is ever derived from a view state
+         * that is only half cleared.
+         *
+         * `languageId` goes with the page narrowing: it exists only to return the editor to the
+         * version of the narrowed page they came from, so it means nothing once that page is gone.
          * `syncUrlEffect` follows, which is what takes the params out of the address.
          */
-        on(dotExperimentsListPageEvents.pageNarrowingCleared, () => ({
+        on(dotExperimentsListPageEvents.filtersCleared, () => ({
+            filter: '',
+            selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+            selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+            selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
             selectedPageId: null,
             selectedPageUrl: null,

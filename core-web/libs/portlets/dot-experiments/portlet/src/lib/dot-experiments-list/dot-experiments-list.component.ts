@@ -327,24 +327,31 @@ export class DotExperimentsListComponent {
               };
     });
 
-    /**
-     * Any narrowing in force, as opposed to a site that simply has no experiments.
-     *
-     * A page narrowing by path counts. It arrives in the address rather than from a control here —
-     * `?url=` is the shape of every Universal Visual Editor address — and one that resolves to no
-     * page is the case this exists for: the list has nothing to show and no reason on screen for
-     * it, so it has to read as "nothing matched" with a way out, not as an empty site.
-     *
-     * A narrowing by `pageId` deliberately does not count: that one has its own empty state, which
-     * names the page and offers to create the first experiment for it.
-     */
-    readonly $hasActiveFilters = computed<boolean>(
+    /** The search box and the three chips: everything the toolbar itself can narrow by. */
+    readonly #hasToolbarNarrowing = computed<boolean>(
         () =>
             this.store.filter().length > 0 ||
             this.store.selectedStatuses().length > 0 ||
             this.store.selectedGoals().length > 0 ||
-            this.store.selectedCreators().length > 0 ||
-            !!this.store.selectedPageUrl()
+            this.store.selectedCreators().length > 0
+    );
+
+    /**
+     * A page narrowing that arrived by path and resolved to no page — the dead end.
+     *
+     * It counts as a filter even though no control here set it: `?url=` is the shape of every
+     * Universal Visual Editor address, and one pasted into the list that matches nothing leaves
+     * the screen with nothing to show and no reason on it for that, so it has to read as "nothing
+     * matched" with a way out rather than as an empty site.
+     *
+     * A narrowing by `pageId` deliberately does not count: that one has its own empty state, which
+     * names the page and offers to create the first experiment for it.
+     */
+    readonly #hasDeadEndPageNarrowing = computed<boolean>(() => !!this.store.selectedPageUrl());
+
+    /** Any narrowing in force, as opposed to a site that simply has no experiments. */
+    readonly $hasActiveFilters = computed<boolean>(
+        () => this.#hasToolbarNarrowing() || this.#hasDeadEndPageNarrowing()
     );
 
     /** The table is replaced by an empty state once a settled load has nothing to show. */
@@ -513,19 +520,18 @@ export class DotExperimentsListComponent {
     /**
      * Clears the narrowings the user applied, from the no-results state.
      *
-     * Not the page filter: that one is not the user's — they arrived with it from the editor — and
-     * it lives in the address rather than in a control on this screen. Nothing here can widen it;
-     * see the note on `$pageFilter`.
+     * Two lines rather than one because the search box is a control of *this* component: its model
+     * has to be written here, while the store's own copy of the term, the three chips and the page
+     * narrowing all go in the single event.
+     *
+     * The page narrowing goes with them only because this button is on screen beside one that
+     * matched nothing. A narrowing that *is* matching shows the page-scoped empty state instead,
+     * whose action creates an experiment for the page rather than widening the list — see the note
+     * on `$pageFilter`.
      */
     onClearFilters(): void {
         this.$searchTerm.set('');
-        this.#dispatch.statusesChanged([]);
-        this.#dispatch.goalsChanged([]);
-        this.#dispatch.creatorsChanged([]);
-        // Including a page narrowing that matched nothing — the only case where this button is on
-        // screen beside one. A narrowing that *is* matching shows the page-scoped empty state,
-        // whose action creates an experiment for the page rather than widening the list.
-        this.#dispatch.pageNarrowingCleared();
+        this.#dispatch.filtersCleared();
     }
 
     /**

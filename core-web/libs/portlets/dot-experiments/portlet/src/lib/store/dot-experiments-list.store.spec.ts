@@ -703,11 +703,11 @@ describe('DotExperimentsListStore', () => {
                 expect(store.pageAssetFilteredExperiments()).toEqual([]);
             });
 
-            it('should be dropped by pageNarrowingCleared, revealing the site-wide list', () => {
+            it('should be dropped by filtersCleared, revealing the site-wide list', () => {
                 hydrateWithPath('/asdasd');
                 expect(store.pageAssetFilteredExperiments()).toEqual([]);
 
-                dispatcher.dispatch(dotExperimentsListPageEvents.pageNarrowingCleared());
+                dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
 
                 expect(store.pageAssetFilteredExperiments()).toEqual(store.searchedExperiments());
             });
@@ -1417,6 +1417,75 @@ describe('DotExperimentsListStore', () => {
             // beside the statuses and goals the user has not picked.
             expect(store.statusCounts()).toEqual(statusCountsBefore);
             expect(store.goalCounts()).toEqual(goalCountsBefore);
+        });
+    });
+
+    describe('clearing every filter at once', () => {
+        /**
+         * The no-results state's way out is one intent, so it is one event. The point of the
+         * single transition is that nothing downstream ever sees a half-cleared view state: the
+         * row set and the address are both derived from state, and four dispatches would derive
+         * them four times from four different partial answers.
+         */
+        it('should widen every narrowing the screen can set', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('nothing-matches'));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.SCHEDULED])
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+            );
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+
+            expect(store.filter()).toBe('');
+            expect(store.selectedStatuses()).toEqual([]);
+            expect(store.selectedGoals()).toEqual([]);
+            expect(store.selectedCreators()).toEqual([]);
+        });
+
+        it('should return to the first page', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 3, perPage: 20 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        /**
+         * `languageId` exists only to return the editor to the version of the narrowed page they
+         * came from, so it is meaningless once that page is no longer the scope — and leaving it
+         * behind would put a stale language in the address.
+         */
+        it('should drop the page narrowing and its return context', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+
+            expect(store.selectedPageId()).toBeNull();
+            expect(store.selectedPageUrl()).toBeNull();
+            expect(store.languageId()).toBeNull();
+        });
+
+        /**
+         * #37307. The panel re-scope resets the view state by naming each field, so a narrowing
+         * added later is only reset if someone remembers to add it — `selectedCreators` was
+         * missed exactly that way. Carrying it across would answer the new page's question with
+         * the creator the user picked on the page they left.
+         */
+        it('should also clear a creator selection when the panel re-scopes', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scopedToPage({ pageId: PANEL_PAGE_ID, languageId: 1 })
+            );
+
+            expect(store.selectedCreators()).toEqual([]);
         });
     });
 

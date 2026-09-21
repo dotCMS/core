@@ -1345,7 +1345,7 @@ describe('DotExperimentsListComponent', () => {
             spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
 
             expect(dispatchedEvents().map(({ type }) => type)).toContain(
-                dotExperimentsListPageEvents.pageNarrowingCleared.type
+                dotExperimentsListPageEvents.filtersCleared.type
             );
         });
 
@@ -1363,6 +1363,11 @@ describe('DotExperimentsListComponent', () => {
             expect(emptyTitle()).toContain('experiments.list.no-results.title');
         });
 
+        /**
+         * One event, not one per control. What each narrowing is reset *to* is the store's
+         * business and is asserted there; what the component owes is a single intent, so the row
+         * set and the address are never derived from a half-cleared view state.
+         */
         it('should offer a way out of the filtered empty state', () => {
             storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.SCHEDULED]);
             storeMock.selectedGoals.mockReturnValue([GOAL_TYPES.EXIT_RATE]);
@@ -1371,11 +1376,20 @@ describe('DotExperimentsListComponent', () => {
             spectator.component.onClearFilters();
 
             expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListPageEvents.statusesChanged([])
+                dotExperimentsListPageEvents.filtersCleared()
             );
-            expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListPageEvents.goalsChanged([])
-            );
+        });
+
+        it('should clear the filters with one dispatch rather than one per control', () => {
+            storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.SCHEDULED]);
+            storeMock.selectedGoals.mockReturnValue([GOAL_TYPES.EXIT_RATE]);
+            storeMock.selectedCreators.mockReturnValue(['dotcms.org.1']);
+            renderEmpty();
+            const before = dispatchedEvents().length;
+
+            spectator.component.onClearFilters();
+
+            expect(dispatchedEvents().length - before).toBe(1);
         });
 
         it('should treat a creator selection as an active filter (#37307)', () => {
@@ -1394,7 +1408,7 @@ describe('DotExperimentsListComponent', () => {
             spectator.component.onClearFilters();
 
             expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListPageEvents.creatorsChanged([])
+                dotExperimentsListPageEvents.filtersCleared()
             );
         });
 

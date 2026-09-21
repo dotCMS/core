@@ -45,16 +45,22 @@ export const dotExperimentsListPageEvents = eventGroup({
         hydratedFromUrl: type<DotExperimentsListViewState>(),
 
         /**
-         * Drops the page narrowing, whichever way it arrived — by identifier or by path.
+         * Widens the list back out: the search term, the three chips and the page narrowing all go
+         * at once.
          *
-         * The narrowing otherwise has exactly one writer, the address (`hydratedFromUrl`), and no
-         * control on the screen widens a page filter that is *working*: the page-scoped empty state
-         * offers to create an experiment for the page instead, which is the help that case wants.
-         * This exists for the other case — a narrowing that matched nothing, where the list is a
-         * dead end and clearing it is the only way out. The empty state's own button is the only
-         * caller.
+         * One event rather than one per control, because it is one intent and because the
+         * narrowings have to go together. Dispatched separately they are four state transitions,
+         * each recomputing the row set and re-deriving the address from a view state that is only
+         * half cleared; a reader then has to work out for themselves that the intermediate states
+         * are never observed.
+         *
+         * The page narrowing is included for the case this exists for. It otherwise has exactly
+         * one writer, the address (`hydratedFromUrl`), and no control on the screen widens a page
+         * filter that is *working* — the page-scoped empty state offers to create an experiment
+         * for the page instead, which is the help that case wants. A narrowing that matched
+         * nothing is the dead end, and clearing it is the only way out.
          */
-        pageNarrowingCleared: type<void>(),
+        filtersCleared: type<void>(),
 
         /**
          * The panel is now about this page (#37478).
