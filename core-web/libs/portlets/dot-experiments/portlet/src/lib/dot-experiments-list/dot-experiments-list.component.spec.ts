@@ -11,6 +11,7 @@ import { provideLocationMocks } from '@angular/common/testing';
 import { provideRouter, Router } from '@angular/router';
 
 import { ConfirmationService, Confirmation, MenuItem } from 'primeng/api';
+import { Table } from 'primeng/table';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
@@ -1250,7 +1251,9 @@ describe('DotExperimentsListComponent', () => {
 
     describe('paginator', () => {
         it('should render the content-drive paginator shape: a page report, prev and next only', () => {
-            renderRowWith(DotExperimentStatus.DRAFT);
+            storeMock.pagedExperiments.mockReturnValue([experimentWith(DotExperimentStatus.DRAFT)]);
+            storeMock.totalRecords.mockReturnValue(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
+            spectator.detectChanges();
 
             const paginator = spectator.query('p-paginator');
 
@@ -1392,17 +1395,83 @@ describe('DotExperimentsListComponent', () => {
         const rowsPerPageSelect = () =>
             spectator.query('.p-paginator .p-select, .p-paginator p-select');
 
-        it('should offer no page size while everything fits in the smallest one', () => {
-            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS));
-
-            // Every option would render the same single page, and the arrows are already disabled.
-            expect(rowsPerPageSelect()).toBeNull();
-        });
+        const paginator = () => spectator.query('p-paginator') as HTMLElement | null;
 
         it('should offer the page sizes once there is more than one page to reach', () => {
             renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
 
             expect(rowsPerPageSelect()).not.toBeNull();
+        });
+
+        /**
+         * FR-036. Nothing here is new — the default and the three options already agree with
+         * Content Drive. The point of pinning them is that the agreement is the whole requirement:
+         * two listings in one admin disagreeing about what a page is would be a defect nobody
+         * would think to look for, and a later edit to either number is silent.
+         */
+        it('should page in twenties and offer twenties, forties and sixties', () => {
+            expect(ROWS_PER_PAGE_OPTIONS).toEqual([20, 40, 60]);
+            expect(DEFAULT_EXPERIMENTS_LIST_PER_PAGE).toBe(20);
+            // The paginator opens on the option its dropdown shows first.
+            expect(DEFAULT_EXPERIMENTS_LIST_PER_PAGE).toBe(Math.min(...ROWS_PER_PAGE_OPTIONS));
+        });
+
+        /**
+         * FR-037. Content Drive's rule read literally would show the paginator always: it shows
+         * one unconditionally because its table is genuinely server-paged, and this table is
+         * flagged as paged while holding every row. What it means is "no paginator when there is
+         * nothing to page", and this listing knows its own true total, so it can say so. A bar
+         * reading "Page 1" with both arrows dead is furniture.
+         */
+        it('should show no paginator while the whole result set fits on one page', () => {
+            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS));
+
+            // PrimeNG hides the bar rather than removing it, so the element is still there and
+            // asking whether it exists would pass either way.
+            expect(paginator()?.style.display).toBe('none');
+        });
+
+        it('should show the paginator once there is a second page to reach', () => {
+            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
+
+            expect(paginator()?.style.display).not.toBe('none');
+        });
+
+        /**
+         * FR-035. The table scrolls (`scrollHeight="flex"`) inside a wrapper that hides its
+         * overflow, so an overlay rendered in place is clipped by an ancestor: the rows-per-page
+         * panel opens cut off with only the first option reachable. Content Drive hit this on the
+         * same configuration and its template says so in a comment.
+         *
+         * Asserted on the binding, which is weaker than it looks like it should be, and
+         * deliberately: PrimeNG moves the overlay into the body from inside the open animation,
+         * and jsdom fires no animation events, so the node stays nested no matter what this is
+         * set to. Confirmed by walking the parent chain — it read
+         * `p-overlay < p-select < p-paginator < p-table` with `appendTo` set. So the placement
+         * itself is not observable here; what this catches is the attribute being dropped.
+         */
+        it('should send the page-size overlay to the body so it cannot be clipped', () => {
+            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
+
+            const table = spectator.query(Table);
+
+            expect(table?.paginatorDropdownAppendTo).toBe('body');
+        });
+
+        /**
+         * FR-038. PrimeNG's `lazyLoadOnInit` defaults to true, so the table asks for its first
+         * page by itself; the risk the requirement guards against is a second ask arriving beside
+         * it once the flag is written out explicitly. Green from the start, which is the answer
+         * the requirement wanted rather than an assumption.
+         */
+        it('should ask for the first page exactly once on entry', () => {
+            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
+
+            const pageChanges = dispatchedEvents().filter(
+                ({ type }) => type === dotExperimentsListPageEvents.pageChanged.type
+            );
+
+            expect(pageChanges).toHaveLength(1);
         });
     });
 

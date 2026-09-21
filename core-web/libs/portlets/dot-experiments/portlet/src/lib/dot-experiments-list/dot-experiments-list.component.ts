@@ -155,22 +155,8 @@ export class DotExperimentsListComponent {
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
     readonly EMPTY_CELL_PLACEHOLDER = EMPTY_CELL_PLACEHOLDER;
     readonly ROWS_PER_PAGE_OPTIONS = ROWS_PER_PAGE_OPTIONS;
-    /** The panel drops the Page column, so it does not need the portlet's 81rem floor. */
+    /** The panel drops the Page column, so it does not need the portlet's 91rem floor. */
     readonly TABLE_STYLE = this.$inPanel ? PANEL_LIST_TABLE_STYLE : LIST_TABLE_STYLE;
-
-    /**
-     * Page sizes to offer, or `null` for none.
-     *
-     * A list that fits in the smallest of them has nothing to page: every option would render the
-     * same single page, so the select is dropped rather than left there doing nothing. PrimeNG only
-     * renders it when this is set, and it already disables the page arrows on a single page — so the
-     * whole bar goes inert together.
-     */
-    readonly $rowsPerPageOptions = computed<number[] | null>(() =>
-        this.store.totalRecords() > Math.min(...ROWS_PER_PAGE_OPTIONS)
-            ? ROWS_PER_PAGE_OPTIONS
-            : null
-    );
     readonly SKELETON_COLUMNS = this.$inPanel ? PANEL_SKELETON_COLUMNS : SKELETON_COLUMNS;
 
     /** Rows currently rendered by the table, already resolved for display. */
