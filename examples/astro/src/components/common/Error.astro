@@ -1,5 +1,5 @@
 ---
-import type { DotErrorPage } from "@dotcms/types";
+import type { DotCMSGraphQLError, DotErrorPage } from "@dotcms/types";
 
 const ERROR_COPY: Record<number | "default", { heading: string; body: string }> = {
   403: {
@@ -17,11 +17,13 @@ const ERROR_COPY: Record<number | "default", { heading: string; body: string }> 
 };
 
 interface Props {
-  error: DotErrorPage;
+  // A page fetch fails with a DotErrorPage; a page that loads but whose content
+  // query fails reports a DotCMSGraphQLError instead. Both land here.
+  error: DotErrorPage | DotCMSGraphQLError;
 }
 
 const { error } = Astro.props;
-const status = error?.status ?? 500;
+const status = (error && "httpError" in error ? error.httpError?.status : undefined) ?? 500;
 const copy = ERROR_COPY[status] ?? ERROR_COPY["default"];
 ---
 
