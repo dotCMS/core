@@ -76,7 +76,7 @@ plan.md PO-7):
 
 | Field | Type | Notes |
 |---|---|---|
-| `total` | int | Equals `acceptedCount` from the submission response, by construction (FR-003, C-003). |
+| `total` | int | Equals `submitted` from the submission response, by construction (FR-003, C-003). |
 | `processed` | int | Paths actually attempted (excludes `SKIPPED` from cancellation, includes `SKIPPED` from ancestor-removal since those *were* processed as a dedup decision). |
 | `successCount` | int | |
 | `failedCount` | int | |
@@ -97,9 +97,24 @@ individual item state.
 ## 5. Announcement events — transient, not stored
 
 FR-035a's two per-folder signals (`entering` / `left` a delete) are `SystemEventsAPI.pushAsync` calls
-with no durable record of their own — they are fire-and-forget, matching the existing `DELETE_FOLDER`
-event's own lack of persistence (plan.md PO-3). Their audience (`PermissionAPI.getRolesWithPermission
-(folder, PERMISSION_READ)`) is computed at the moment each event fires and is not carried in the
-job's parameters — it cannot be, since by the time a "left" event fires the folder no longer exists
-to compute rights against, which is exactly why "entering" must be computed **before** the delete
-and "left" is naturally computed by the existing code that already runs at the end of `delete()`.
+with no durable record of their own — fire-and-forget (plan.md PO-3).
+
+**Both are new `SystemEventType` values fired by `FolderBulkDeleteProcessor` itself** —
+`FOLDER_DELETE_STARTED` before a top-level folder's delete is attempted, `FOLDER_DELETE_FINISHED`
+after, regardless of whether that attempt succeeded or was caught as a classified failure.
+Revised 2026-09-21 from an earlier plan that assumed "left" could reuse the existing `DELETE_FOLDER`
+event fired inside `FolderAPIImpl.delete` — checking the frontend half (PR dotCMS/core#37612) found
+it subscribes to its own `FOLDER_DELETE_FINISHED` instead, expected on a failed delete too (its own
+fixture: "leaving a delete, success or failure alike"), which `DELETE_FOLDER`'s success-only push
+cannot provide — see research.md R4.
+
+| Field | Type | Notes |
+|---|---|---|
+| `jobId` | string | The run this announcement belongs to, so a client following its own submission does not double-count one for a run it did not start. |
+| `path` | string | The site-qualified path of the folder entering or leaving the delete. |
+
+Their audience (`PermissionAPI.getRolesWithPermission(folder, PERMISSION_READ)`, pushed with
+`Visibility.EXCLUDE_OWNER`) is computed **once per folder**, before the delete attempt, and reused
+for both pushes — it is not carried in the job's parameters, since by the time "left" fires a
+successful delete has left nothing to compute rights against, which is exactly why "entering" must
+be computed before the delete and "left" reuses that same computation rather than repeating it.
