@@ -50,6 +50,23 @@ const RESOLVE_CONCURRENCY = 3;
  * (`GET /v1/users/{userId}`) demands administrator rights or both the Roles and Users portlets and
  * refuses everyone else, so it must not be used to resolve a name. Doing that would give a filter
  * that labels correctly when a person is picked and breaks on reload, for non-administrators only.
+ *
+ * **What every caller inherits, and should decide about deliberately.** This endpoint applies no
+ * permission filtering to the rows it returns. `UserPaginator` reaches
+ * `UserAPI.getUsersByName(filter, roles, start, limit, filteringParams)` — the overload that takes
+ * no requesting user — and the requester is used only to drop itself from the list. An overload
+ * that *does* take a requesting user exists and is not the one used. So any back-end user sees the
+ * whole directory: names, and the email addresses the rows carry.
+ *
+ * That is the pre-existing behaviour of the Users and Roles portlets, which are administrative
+ * screens. A caller on a screen reachable by a lower-privileged editor is widening *where* the
+ * directory is exposed, not whether it is — and should say out loud that it accepts that. The
+ * narrowing tool if it does not: the endpoint takes a `roleKey`, so candidates can be limited to
+ * holders of a given role (e.g. `DOTCMS_BACK_END_USER`).
+ *
+ * Anonymous and default users are excluded unless asked for: `includeanonymous` and
+ * `includedefault` both default to false and this service does not send them, so the list is real
+ * people rather than system accounts.
  */
 @Injectable({ providedIn: 'root' })
 export class DotUserSearchService {

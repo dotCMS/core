@@ -28,6 +28,28 @@ which is exactly why the existing roles-portlet copy asks for `per_page=500` and
 
 Only two fields of a row are consumed here: the user id and a display name.
 
+## The rows are not permission-filtered
+
+Worth stating because it is the kind of thing a reader assumes the other way round: this endpoint
+returns the **whole directory to any back-end user**. `UserPaginator` reaches the
+`UserAPI.getUsersByName` overload that takes no requesting user, and the requester is used only to
+drop itself from the list. An overload that does take one exists and is not the one used, so this
+is a standing property of the endpoint rather than something overlooked here.
+
+For this feature that is the answer to "will the chip look empty for a simple role?" — no. It
+behaves identically for every back-end role, which is what makes FR-002 ("all users in the system")
+true as written.
+
+The other side of it is accepted rather than unnoticed: the chip shows staff names, and the email
+addresses the rows carry, to any back-end user who can reach the Experiments listing. That is
+already the behaviour of the Users and Roles portlets against the same endpoint; what this feature
+changes is *where* the directory is on screen, not whether it is reachable. If that is ever
+revisited, the tool is the endpoint's `roleKey` parameter, which can limit candidates to holders of
+a given role.
+
+Anonymous and default users are excluded: `includeanonymous` and `includedefault` default to false
+and are not sent, so the list is real people rather than system accounts.
+
 ## Permissions — load-bearing
 
 `GET /v1/users/filter` requires only `requiredBackendUser(true)`, so **any back-end user** can call
