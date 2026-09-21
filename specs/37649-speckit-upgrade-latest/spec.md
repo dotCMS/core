@@ -62,7 +62,7 @@ The pin is 43 releases behind, and the installed CLI is already ahead of the tre
 
 ### User Story 1 - The spec-driven flow still enforces our gates after the upgrade (Priority: P1)
 
-A dotCMS developer starts a new piece of work with `/speckit-specify`, moves to `/speckit-plan`, `/speckit-tasks` and `/speckit-implement`. Everything that made the flow ours before the upgrade is still there: the spec asks for Legacy Considerations, the plan carries Legacy Impact and ADR Alignment, the ADR consultation fires by itself before planning, and the task list still orders tests → approval → Red → implementation.
+A dotCMS developer starts a new piece of work with `/speckit-specify` — or an issue/bug resolution with `/speckit-specify-fix` — and moves to `/speckit-plan`, `/speckit-tasks` and `/speckit-implement`. Everything that made the flow ours before the upgrade is still there: the spec asks for Legacy Considerations, the plan carries Legacy Impact and ADR Alignment, the ADR consultation fires by itself before planning, and the task list still orders tests → approval → Red → implementation.
 
 **Why this priority**: this is the whole point of the upgrade being safe. If the gates survive, a partially finished upgrade is still usable; if they do not, the upgrade has quietly removed the controls the constitution calls non-negotiable, and every subsequent feature is planned without them. Nothing fails loudly when this breaks, which is exactly why it is P1.
 
@@ -80,7 +80,7 @@ A dotCMS developer starts a new piece of work with `/speckit-specify`, moves to 
 
 ### User Story 2 - No upstream change to our gates slips through unread (Priority: P1)
 
-A reviewer opening the pull request can see, without re-doing the work, exactly what upstream changed in each of the 10 regenerated shipped skills, and is told explicitly whether anything touched the ADR Alignment gate or the TDD gate.
+A reviewer opening the pull request can see, without re-doing the work, exactly what upstream changed in each regenerated shipped skill, and is told explicitly whether anything touched the ADR Alignment gate or the TDD gate.
 
 **Why this priority**: equal-first with US1 because it is the only defence against a silent regression. US1 proves the gates *appear*; US2 proves nobody accepted an upstream behaviour change without seeing it. Accepting 10 regenerated skills blind is the single largest risk in this work, and it is a review problem, not a runtime one.
 
@@ -88,7 +88,7 @@ A reviewer opening the pull request can see, without re-doing the work, exactly 
 
 **Acceptance Scenarios**:
 
-1. **Given** the 10 shipped skills have been regenerated, **When** the reviewer opens the committed review record, **Then** each of the 10 has its own entry — none is accepted as an unexamined bulk change, and an empty diff is recorded as an empty diff rather than omitted.
+1. **Given** the shipped skills have been regenerated, **When** the reviewer opens the committed review record, **Then** every shipped skill in the target release has its own entry — none is accepted as an unexamined bulk change, and an empty diff is recorded as an empty diff rather than omitted.
 2. **Given** an upstream change alters wording or behaviour around the ADR Alignment gate or the TDD `[GATE]` steps, **When** the reviewer reads the pull request description, **Then** that change is called out explicitly in prose, not left to be inferred from the diff.
 3. **Given** an upstream change would weaken either gate, **When** the author reaches that diff, **Then** the gate is re-imposed from a file we own — never by editing the shipped skill — and if no such route reaches it, the upgrade halts and the decision is escalated.
 
@@ -165,9 +165,9 @@ Six months from now another developer upgrades Spec-Kit again. `CUSTOMIZATIONS.m
 
 **Shipped skills reviewed, not accepted blind**
 
-- **FR-013**: Each of the 10 regenerated shipped skills MUST be diffed and reviewed individually; bulk acceptance is not permitted.
+- **FR-013**: Every shipped skill present in the target release MUST be diffed and reviewed individually; bulk acceptance is not permitted. The number reviewed is whatever that release ships — 10 in v1.0.9, the baseline this specification was written against — not a fixed count, so a release that adds, removes or renames a shipped skill is still covered.
 - **FR-013a**: The review MUST leave a **committed record** in the feature directory carrying one entry per shipped skill: what upstream changed, whether it touches the ADR gate or the TDD gate, and the verdict. A skill whose diff was empty is recorded as such — silence is not an acceptable entry, since it cannot be distinguished from an unreviewed one.
-- **FR-014**: Any upstream change affecting the ADR Alignment gate or the TDD gate MUST be called out explicitly in the pull request description in prose. The pull request links the committed record and narrates the gate-affecting entries rather than reproducing all ten.
+- **FR-014**: Any upstream change affecting the ADR Alignment gate or the TDD gate MUST be called out explicitly in the pull request description in prose. The pull request links the committed record and narrates the gate-affecting entries rather than reproducing every entry.
 - **FR-015**: Where an upstream change would weaken either gate, the gate MUST be re-imposed through an upgrade-safe mechanism — a template override, a registered hook, or a net-new skill — so that it survives the next regeneration without a re-apply step. Editing the shipped skill is **not** an admissible response, and neither is accepting the weakened gate silently.
 - **FR-015a**: Where no upgrade-safe mechanism can reach a weakened gate, the upgrade MUST halt and the decision be escalated to the team. Absorbing the loss, or shipping the upgrade with the gate weakened, requires an explicit human decision recorded in the pull request — it is never the default.
 
@@ -207,8 +207,8 @@ Six months from now another developer upgrades Spec-Kit again. `CUSTOMIZATIONS.m
 - **SC-001**: A developer running the complete flow on a throwaway feature sees every dotCMS-specific section — Legacy Considerations, Legacy Impact, ADR Alignment — present in the generated artifacts, with zero missing.
 - **SC-002**: The ADR consultation runs on 100% of planning invocations without being requested, for both the feature flow and the fix flow.
 - **SC-003**: The security scan reports zero command-injection findings in the vendored scripts — the same result as before the upgrade, not a regression absorbed as acceptable.
-- **SC-004**: Starting two features from two unpushed branches produces two distinct identifiers, 100% of the time.
-- **SC-005**: All 10 regenerated shipped skills are individually accounted for as reviewed; a reviewer can name any one of them and find its entry in the committed review record, including the ones whose diff turned out to be empty.
+- **SC-004**: Starting two features from two unpushed branches in the same clone, one after the other, produces two distinct identifiers, 100% of the time. Two cases sit outside what either route can guarantee and are accepted as residual risk rather than engineered away: creation concurrent enough to race the numbering read, and a branch that exists only in another developer's clone and so cannot be observed at all.
+- **SC-005**: Every regenerated shipped skill in the target release is individually accounted for as reviewed — 10 of them where the target is v1.0.9; a reviewer can name any one of them and find its entry in the committed review record, including the ones whose diff turned out to be empty.
 - **SC-006**: A reader can determine, from the customizations document alone and without inspecting the tree, which version we are on and what a future upgrade will have to re-apply — and every statement they read matches the tree.
 - **SC-007**: The number of modifications to upstream-owned files does not increase as a result of this work; it stays at two or drops to one. This holds even where a gate had to be re-imposed — a re-imposed gate lives in a file we own, never in one upstream ships.
 - **SC-008**: The recorded version, the regenerated tree and the CLI used to generate it all name the same release — the drift that exists today is gone.
