@@ -90,6 +90,15 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
             ...DEFAULT_TINYMCE_CONFIG,
             ...(this.$wideConfig() || {}),
             ...this.$customPropsContentField(),
+            // TinyMCE renders into an iframe, which no label outside can name. Two surfaces need
+            // the field's name: `iframe_aria_text` labels the body inside the iframe, which is what
+            // a screen reader announces once inside the editing area, and `iframe_attrs.title`
+            // names the frame itself, which it announces on the way in. TinyMCE hardcodes that
+            // title to "Rich Text Area" otherwise — identical for every rich-text field on the
+            // form. Set after the spreads so a system-wide or per-field config cannot leave the
+            // editor unnamed.
+            iframe_aria_text: this.$field()?.name,
+            iframe_attrs: { title: this.$field()?.name },
             setup: (editor) => {
                 this.#dotWysiwygPluginService.initializePlugins(editor);
             }

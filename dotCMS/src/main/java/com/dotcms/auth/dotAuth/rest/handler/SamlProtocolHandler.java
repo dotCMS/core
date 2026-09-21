@@ -31,6 +31,13 @@ public final class SamlProtocolHandler implements ProtocolHandler {
 
     private static final Set<String> HIDDEN_KEYS = Set.of("privateKey");
 
+    /**
+     * Request-only flag: when true and both key fields are empty, replace the stored SP
+     * keypair. Never persisted. Without it, clearing both fields on a config that already
+     * holds a keypair is rejected so the IdP is not silently left with a stale certificate.
+     */
+    public static final String REGENERATE_KEYPAIR_KEY = "regenerateKeypair";
+
     private static final Set<String> BOOLEAN_KEYS = Set.of("enable");
 
     /**
@@ -126,6 +133,16 @@ public final class SamlProtocolHandler implements ProtocolHandler {
                     : "A private key was supplied without its public certificate — supply both, or neither to auto-generate a keypair");
         }
         if (!hasPrivateKey && !hasPublicCert) {
+            final boolean regenerate = Boolean.parseBoolean(
+                    String.valueOf(incoming.get(REGENERATE_KEYPAIR_KEY)));
+            final boolean keypairStored = existing.map(AppSecrets::getSecrets)
+                    .filter(m -> m.containsKey("privateKey") || m.containsKey("publicCert"))
+                    .isPresent();
+            if (keypairStored && !regenerate) {
+                throw new BadRequestException("An SP keypair is already stored. Leave the private key "
+                        + "and certificate as they are, or confirm regeneration ("
+                        + REGENERATE_KEYPAIR_KEY + "=true) and upload the new certificate to your IdP");
+            }
             final String hostname = incoming.get("sPEndpointHostname") != null
                     ? String.valueOf(incoming.get("sPEndpointHostname"))
                     : null;
@@ -142,6 +159,7 @@ public final class SamlProtocolHandler implements ProtocolHandler {
             final String key = entry.getKey();
             if (SAML_SECRET_KEYS.contains(key)
                     || DotAuthConstants.LAST_SAVED_PROTOCOL_AT_KEY.equals(key)
+                    || REGENERATE_KEYPAIR_KEY.equals(key)
                     || entry.getValue() == null) continue;
             if (!EXTRA_KEY_NAME.matcher(key).matches()) {
                 throw new BadRequestException("Invalid SAML extra-attribute key '" + key
