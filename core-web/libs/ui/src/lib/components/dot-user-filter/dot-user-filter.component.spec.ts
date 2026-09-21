@@ -10,19 +10,19 @@ import { vi } from 'vitest';
 import { DotMessageService, DotUserSearchService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotExperimentUserFilterComponent } from './dot-experiment-user-filter.component';
+import { DotUserFilterComponent } from './dot-user-filter.component';
 
 const directoryPage = (userIds: string[], totalEntries: number) => ({
     entity: userIds.map((userId) => ({ userId, fullName: `Name ${userId}` })),
     pagination: { currentPage: 1, perPage: 20, totalEntries }
 });
 
-describe('DotExperimentUserFilterComponent', () => {
-    let spectator: Spectator<DotExperimentUserFilterComponent>;
+describe('DotUserFilterComponent', () => {
+    let spectator: Spectator<DotUserFilterComponent>;
     let searchService: DotUserSearchService;
 
     const createComponent = createComponentFactory({
-        component: DotExperimentUserFilterComponent,
+        component: DotUserFilterComponent,
         providers: [
             mockProvider(DotUserSearchService, {
                 searchPage: vi.fn().mockReturnValue(of(directoryPage(['u1', 'u2'], 2))),
@@ -42,18 +42,15 @@ describe('DotExperimentUserFilterComponent', () => {
     });
 
     const open = (): void => {
-        spectator.click(spectator.query(byTestId('experiment-user-filter-chip')) as HTMLElement);
+        spectator.click(spectator.query(byTestId('user-filter-chip')) as HTMLElement);
         spectator.detectChanges();
     };
 
     beforeEach(() => {
         // Cast because the inputs are aliased signal inputs, which Spectator types by property
-        // name rather than alias — the same workaround the sibling filter's spec uses.
+        // name rather than alias.
         spectator = createComponent({
-            props: {
-                title: 'Created By',
-                emptyLabel: 'All'
-            } as never
+            props: { title: 'Created By', emptyLabel: 'All' } as never
         });
         searchService = spectator.inject(DotUserSearchService);
 
@@ -78,7 +75,7 @@ describe('DotExperimentUserFilterComponent', () => {
      */
     describe('the loader handed to the option list', () => {
         const load = (page = 1, filter = '') =>
-            spectator.component.$loadPage()({ page, perPage: 20, filter });
+            spectator.component.loadPage({ page, perPage: 20, filter });
 
         it('should ask the directory for the requested page and term', () => {
             load(2, 'jane').subscribe();

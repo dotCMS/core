@@ -52,11 +52,11 @@ import {
     DotAddToBundleComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
+    DotUserFilterComponent,
     PrincipalConfiguration
 } from '@dotcms/ui';
 
 import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
-import { DotExperimentUserFilterComponent } from '../components/dot-experiment-user-filter/dot-experiment-user-filter.component';
 import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     GOAL_LABEL_KEYS,
@@ -110,7 +110,7 @@ import {
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
         DotExperimentListFilterComponent,
-        DotExperimentUserFilterComponent,
+        DotUserFilterComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-list.component.html',

@@ -1,13 +1,4 @@
-import {
-    Component,
-    computed,
-    effect,
-    inject,
-    input,
-    output,
-    signal,
-    untracked
-} from '@angular/core';
+import { computed, effect, inject, input, output, signal, untracked, Component } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { PopoverModule } from 'primeng/popover';
@@ -15,59 +6,54 @@ import { PopoverModule } from 'primeng/popover';
 import { map } from 'rxjs/operators';
 
 import { DotUserSearchService, dotUserDisplayName } from '@dotcms/data-access';
+
+import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
+import { DotChipFilterComponent } from '../dot-chip-filter/dot-chip-filter.component';
 import {
-    DotChipFilterComponent,
     DotLazyMultiselectComponent,
     DotLazyMultiselectLoader,
     DotLazyMultiselectOption
-} from '@dotcms/ui';
+} from '../dot-filter-bar/chips/dot-field-filter/dot-lazy-multiselect/dot-lazy-multiselect.component';
 
-import { SEARCH_DEBOUNCE_MS } from '../../shared/constants';
+/** Idle time before a typed term is searched. Matches the listing search boxes it sits beside. */
+const SEARCH_DEBOUNCE_MS = 300;
 
 /**
- * Created By chip for the experiments list: pick one or more people and narrow the table to the
- * experiments they created (#37307).
+ * Chip that narrows a listing to one or more people from the dotCMS user directory.
  *
- * **It owns the catalogue; the parent owns the selection.** Only user ids cross the boundary —
- * `selected` in, `selectionChange` out — because the selection is view state that lives in the
- * address, while the directory is a paged resource with a lifecycle of its own that nothing else
- * on the screen needs. That is the opposite split from the Status and Goal chips, whose options
- * are derived from experiments the store already holds and are therefore handed in.
+ * **It owns the catalogue; the consumer owns the selection.** Only user ids cross that boundary —
+ * `selected` in, `selectionChange` out — because the selection is the consumer's view state, while
+ * the directory is a paged resource with a lifecycle of its own that no screen wants to hold.
  *
- * Paging, cancellation and the stop at the last page are **not** here: they belong to the shared
- * lazy multi-select, which already solves them for the Tag and Category filters. This component
- * supplies the loader and nothing more.
+ * Specific in what it picks, generic in what it says: the copy is handed in, because "Created By"
+ * on an experiments list and "Owner" on a content list are the same control asking a different
+ * question.
  *
- * Kept local to the portlet deliberately. A shared "user picker chip" would be an abstraction over
- * a single consumer; promote it when a second one appears (a "last modified by" filter is the
- * likely first, per #37304).
+ * Paging, virtual scrolling, search debouncing and cancelling a superseded load are **not** here:
+ * {@link DotLazyMultiselectComponent} already solves them. This supplies the loader and the labels.
  */
 @Component({
-    selector: 'dot-experiment-user-filter',
-    imports: [PopoverModule, DotChipFilterComponent, DotLazyMultiselectComponent],
-    templateUrl: './dot-experiment-user-filter.component.html'
+    selector: 'dot-user-filter',
+    imports: [PopoverModule, DotChipFilterComponent, DotLazyMultiselectComponent, DotMessagePipe],
+    templateUrl: './dot-user-filter.component.html'
 })
-export class DotExperimentUserFilterComponent {
+export class DotUserFilterComponent {
     readonly #search = inject(DotUserSearchService);
 
-    /** Chip label, already translated. */
+    /** Chip label, already translated — what this filter is asking, e.g. "Created By". */
     readonly $title = input.required<string>({ alias: 'title' });
 
-    /** What the chip reads while nothing is selected — `All`, as Status and Goal do. */
+    /** What the chip reads while nothing is selected, already translated, e.g. "All". */
     readonly $emptyLabel = input.required<string>({ alias: 'emptyLabel' });
 
-    /** Applied user ids, owned by the parent's store and backed by the address. */
+    /** Applied user ids. Owned by the consumer, usually backed by its address. */
     readonly $selected = input<string[]>([], { alias: 'selected' });
 
-    /** Message key for "the search matched nobody". */
-    readonly $emptyKey = input<string>('experiments.list.filter.users.empty', {
-        alias: 'emptyKey'
-    });
+    /** Message key shown when a search matches nobody. */
+    readonly $emptyKey = input<string>('users.filter.empty', { alias: 'emptyKey' });
 
-    /** Message key for "the directory could not be read". */
-    readonly $errorKey = input<string>('experiments.list.filter.users.error', {
-        alias: 'errorKey'
-    });
+    /** Message key shown when the directory cannot be read. */
+    readonly $errorKey = input<string>('users.filter.error', { alias: 'errorKey' });
 
     /** Emits the selected ids on every toggle and on clear. */
     readonly selectionChange = output<string[]>();
@@ -92,7 +78,7 @@ export class DotExperimentUserFilterComponent {
     });
 
     /**
-     * Turns ids that arrived from the address into names.
+     * Turns ids that arrived from the consumer's address into names.
      *
      * A resource rather than an effect around `subscribe`, for two reasons that are correctness
      * rather than taste. It **cancels** a resolution the moment the selection changes, where two
@@ -114,8 +100,8 @@ export class DotExperimentUserFilterComponent {
     /**
      * Bound to the option list so a selected person stays ticked.
      *
-     * Straight off the input rather than held locally: the parent is the single writer, so a
-     * selection restored from the address or cleared from the empty state lands here too.
+     * Straight off the input rather than held locally: the consumer is the single writer, so a
+     * selection restored from an address or cleared from an empty state lands here too.
      */
     readonly $selectedValues = computed<string[]>(() => this.$selected());
 
@@ -123,7 +109,7 @@ export class DotExperimentUserFilterComponent {
      * What the chip renders after its title, and what makes it read as active.
      *
      * Falls back to the id for anything not yet resolved, so the chip is never blank and a failed
-     * resolution costs a name rather than the filter (FR-009f).
+     * resolution costs a name rather than the filter.
      */
     protected readonly $selectedLabels = computed<string[]>(() => {
         const namesById = this.#namesById();
@@ -137,25 +123,26 @@ export class DotExperimentUserFilterComponent {
      * `hasMore` comes from the response total rather than from "a full page came back": the latter
      * asks for one extra empty page whenever the total is an exact multiple of the page size.
      *
-     * Public because it is this component's whole contract with the option list. What that list
-     * then does with it — scrolling, counting pages, cancelling a superseded load — belongs to the
-     * shared component and is tested there, not here.
+     * Public because it is this component's whole contract with the option list, which is handed
+     * it as `[loadPage]` and calls it once per page it wants. What that list then does — scrolling,
+     * counting pages, cancelling a superseded load — belongs to the shared component and is tested
+     * there, not here.
+     *
+     * A plain property rather than a `computed`: it reads no signal, so there is nothing for a
+     * computed to recompute, and a `$` name would claim a reactivity it does not have.
      */
-    readonly $loadPage = computed<DotLazyMultiselectLoader>(
-        () =>
-            ({ page, perPage, filter }) =>
-                this.#search.searchPage({ page, perPage, filter }).pipe(
-                    map((response) => ({
-                        options: (response?.entity ?? []).map((row) => ({
-                            // The id is the value because that is what narrowing compares and what
-                            // the address carries; the name is only ever displayed.
-                            value: row.userId,
-                            label: dotUserDisplayName(row)
-                        })),
-                        hasMore: page * perPage < (response?.pagination?.totalEntries ?? 0)
-                    }))
-                )
-    );
+    readonly loadPage: DotLazyMultiselectLoader = ({ page, perPage, filter }) =>
+        this.#search.searchPage({ page, perPage, filter }).pipe(
+            map((response) => ({
+                options: (response?.entity ?? []).map((row) => ({
+                    // The id is the value because that is what a consumer narrows on and what an
+                    // address carries; the name is only ever displayed.
+                    value: row.userId,
+                    label: dotUserDisplayName(row)
+                })),
+                hasMore: page * perPage < (response?.pagination?.totalEntries ?? 0)
+            }))
+        );
 
     constructor() {
         /**

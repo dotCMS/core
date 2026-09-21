@@ -69,7 +69,7 @@
                 (selectionChange)="onGoalsChange($event)"
                 data-testid="experiments-goal-filter" />
 
-            <dot-experiment-user-filter
+            <dot-user-filter
                 [title]="'experiments.list.filter.created-by' | dm"
                 [emptyLabel]="'experiments.list.filter.all' | dm"
                 [selected]="store.selectedCreators()"
