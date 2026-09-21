@@ -15,6 +15,9 @@ import { FIELD_FILTER_DEBOUNCE_TIME } from '../constants';
 
 const page = (options: DotLazyMultiselectOption[], hasMore = false) => of({ options, hasMore });
 
+/** Shorter than `FIELD_FILTER_DEBOUNCE_TIME`, so a default-bound pipe cannot pass by accident. */
+const SHORT_DEBOUNCE_MS = 100;
+
 describe('DotLazyMultiselectComponent', () => {
     let spectator: Spectator<DotLazyMultiselectComponent>;
     let loadPage: Mock;
@@ -59,6 +62,41 @@ describe('DotLazyMultiselectComponent', () => {
             vi.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(loadPage).toHaveBeenCalledWith({ page: 1, perPage: 20, filter: 'ang' });
+        });
+
+        /**
+         * The override has to be honoured per emission, not read once while the component is
+         * built. Signal inputs still hold their defaults during construction — Angular binds them
+         * afterwards — so a `debounceTime(this.$debounceMs())` in the constructor silently pins
+         * every consumer to the default, and `debounceTime` captures its argument once anyway.
+         *
+         * A test that only advances by the default cannot see any of that, which is how the
+         * override shipped inert (#37307): the user filter asked for 300ms and waited 500.
+         */
+        it('should honour a shorter debounce than the default', () => {
+            build(vi.fn().mockReturnValue(page([{ label: 'A', value: 'a' }], true)));
+            spectator.setInput('debounceMs', SHORT_DEBOUNCE_MS);
+            spectator.detectChanges();
+            loadPage.mockClear();
+
+            const input = spectator.query(byTestId('lazy-multiselect-search')) as HTMLInputElement;
+            spectator.typeInElement('ang', input);
+            vi.advanceTimersByTime(SHORT_DEBOUNCE_MS);
+
+            expect(loadPage).toHaveBeenCalledWith({ page: 1, perPage: 20, filter: 'ang' });
+        });
+
+        it('should still wait out the shorter debounce rather than searching on every keystroke', () => {
+            build(vi.fn().mockReturnValue(page([{ label: 'A', value: 'a' }], true)));
+            spectator.setInput('debounceMs', SHORT_DEBOUNCE_MS);
+            spectator.detectChanges();
+            loadPage.mockClear();
+
+            const input = spectator.query(byTestId('lazy-multiselect-search')) as HTMLInputElement;
+            spectator.typeInElement('ang', input);
+            vi.advanceTimersByTime(SHORT_DEBOUNCE_MS - 1);
+
+            expect(loadPage).not.toHaveBeenCalled();
         });
     });
 

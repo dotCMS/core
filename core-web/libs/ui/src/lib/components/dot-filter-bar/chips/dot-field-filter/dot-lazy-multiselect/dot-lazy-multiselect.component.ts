@@ -1,5 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { EMPTY, Observable, Subject } from 'rxjs';
+import { EMPTY, Observable, Subject, timer } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -20,7 +20,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ListboxModule } from 'primeng/listbox';
 import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
-import { catchError, debounceTime, take, takeUntil } from 'rxjs/operators';
+import { catchError, debounce, take, takeUntil } from 'rxjs/operators';
 
 import { DotMessagePipe } from '../../../../../dot-message/dot-message.pipe';
 import { LISTBOX_OPTION_HEIGHT } from '../../../../../theme/theme.config';
@@ -151,7 +151,11 @@ export class DotLazyMultiselectComponent implements OnInit {
     constructor() {
         this.#search$
             .pipe(
-                debounceTime(this.$debounceMs()),
+                // Read per emission, not once here. Signal inputs still hold their defaults while
+                // the constructor runs — Angular binds them afterwards — and `debounceTime`
+                // captures its argument when the pipe is built, so `debounceTime($debounceMs())`
+                // pinned every consumer to the default however it was bound.
+                debounce(() => timer(this.$debounceMs())),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((filter) => {

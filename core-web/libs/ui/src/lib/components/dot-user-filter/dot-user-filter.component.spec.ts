@@ -12,6 +12,9 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUserFilterComponent } from './dot-user-filter.component';
 
+/** The pause the listing's own search box uses; this chip must match it (FR-013). */
+const SEARCH_DEBOUNCE_MS = 300;
+
 const directoryPage = (userIds: string[], totalEntries: number) => ({
     entity: userIds.map((userId) => ({ userId, fullName: `Name ${userId}` })),
     pagination: { currentPage: 1, perPage: 20, totalEntries }
@@ -146,6 +149,43 @@ describe('DotUserFilterComponent', () => {
             spectator.queryAll(byTestId('lazy-multiselect-option')).forEach((option) => {
                 expect(option.textContent).not.toMatch(/\d/);
             });
+        });
+    });
+
+    describe('the search pause', () => {
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
+
+        /**
+         * FR-013. The shared option list's own pause is longer than the listing's search box uses,
+         * and two controls on one screen waiting different lengths is the thing that requirement
+         * forbids. So this chip overrides it — and the override shipped inert once already, read
+         * out of a signal input inside the shared component's constructor where inputs still hold
+         * their defaults. Asserted here, at the consumer, because that is where the wrong value
+         * was actually visible.
+         */
+        it('should apply the listing search box pause, not the shared default', () => {
+            open();
+            (searchService.searchPage as ReturnType<typeof vi.fn>).mockClear();
+
+            const input = spectator.query(byTestId('lazy-multiselect-search')) as HTMLInputElement;
+            spectator.typeInElement('jane', input);
+            vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
+
+            expect(searchService.searchPage).toHaveBeenCalledWith(
+                expect.objectContaining({ filter: 'jane' })
+            );
+        });
+
+        it('should not search before the pause elapses', () => {
+            open();
+            (searchService.searchPage as ReturnType<typeof vi.fn>).mockClear();
+
+            const input = spectator.query(byTestId('lazy-multiselect-search')) as HTMLInputElement;
+            spectator.typeInElement('jane', input);
+            vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS - 1);
+
+            expect(searchService.searchPage).not.toHaveBeenCalled();
         });
     });
 
