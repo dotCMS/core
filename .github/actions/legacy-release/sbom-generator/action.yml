@@ -7,6 +7,15 @@ inputs:
   github_token:
     description: 'GitHub token for pushing changes'
     required: true
+  release_ref:
+    description: >-
+      Git ref of the release being scanned. The frontend SBOM is generated from
+      core-web's lockfile, so it must be read at the RELEASED ref — the default branch
+      would describe a different dependency tree than the one in the image. Optional:
+      when empty the frontend half is skipped and the document is marked as lacking
+      core-web coverage rather than silently describing the wrong tree.
+    required: false
+    default: ''
 outputs:
   sbom-artifact:
     description: 'SBOM artifact'
@@ -21,6 +30,11 @@ runs:
         repository: dotCMS/core
         token: ${{ inputs.github_token }}
         path: core
+        # Empty ref keeps the previous behaviour (default branch). That was harmless while
+        # this checkout only provided a directory to write into — Syft scans the published
+        # image, not the working tree. It stopped being harmless once the frontend SBOM
+        # started reading core-web's lockfile from here.
+        ref: ${{ inputs.release_ref }}
 
     - name: Set dotCMS version
       shell: bash
@@ -46,10 +60,67 @@ runs:
         # so a future packaging change can't silently break releases again.
         pipx run --spec anchore_syft==1.18.1 syft dotcms/dotcms:${{ env.DOTCMS_VERSION }} -o cyclonedx-json > core/sbom-cyclonedx.json
 
-    - name: Rename SBOM file with dotCMS version
+    # The image scan cannot see core-web's npm tree: the WAR ships bundled, minified
+    # JavaScript with no package manifests, so ~2,365 packages are invisible to it
+    # (#37575). The lockfile is the only place they are described, so the frontend half
+    # of the inventory is generated here, from the same lockfile the install uses.
+    #
+    # No `version` input, deliberately. pnpm/setup resolves it from core-web/package.json
+    # (devEngines.packageManager, falling back to packageManager), which maven-job's
+    # toolchain check already holds against nodejs-parent/pom.xml. Hardcoding a version
+    # here would add a fourth declaration that nothing keeps in sync.
+    - name: Set up pnpm
+      if: ${{ inputs.release_ref != '' }}
+      uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+      with:
+        working-directory: core/core-web
+        install: false
+        cache: true
+
+    # continue-on-error, not a hard failure: a release must still publish the Java/OS
+    # inventory if this half breaks. The merge step below detects the absence and marks
+    # the document as lacking frontend coverage, so a degraded release is never mistaken
+    # for a complete one (FR-009).
+    - name: Generate frontend SBOM
+      id: frontend-sbom
+      if: ${{ inputs.release_ref != '' }}
+      continue-on-error: true
       shell: bash
+      working-directory: core/core-web
       run: |
-        mv core/sbom-cyclonedx.json core/sbom-dotcms-${{ env.DOTCMS_VERSION }}.json
+        # `pnpm fetch` populates the store from the lockfile without linking node_modules.
+        # It is what makes licences resolvable: `--lockfile-only` yields the same component
+        # count with ZERO licences, which looks correct and is useless for a licence audit.
+        pnpm fetch
+
+        # --sbom-spec-version 1.6 matches what Syft emits. pnpm defaults to 1.7, and the
+        # published document's spec version is an external contract for downstream
+        # consumers; the merge tool rejects a mismatch rather than merging it silently.
+        pnpm sbom --sbom-format cyclonedx --sbom-spec-version 1.6 --prod \
+          > "${GITHUB_WORKSPACE}/core/sbom-frontend.json"
+
+        echo "components=$(jq '.components | length' "${GITHUB_WORKSPACE}/core/sbom-frontend.json")" >> "$GITHUB_OUTPUT"
+
+    - name: Setup uv
+      uses: astral-sh/setup-uv@v5
+
+    - name: Merge frontend SBOM into the image SBOM
+      shell: bash
+      env:
+        IMAGE_SBOM: ${{ github.workspace }}/core/sbom-cyclonedx.json
+        FRONTEND_SBOM: ${{ github.workspace }}/core/sbom-frontend.json
+        MERGED_SBOM: ${{ github.workspace }}/core/sbom-dotcms-${{ env.DOTCMS_VERSION }}.json
+      working-directory: .github/actions/core-cicd/sbom-merge
+      run: |
+        OUTPUT=$(uv run sbom-merge \
+          --image "$IMAGE_SBOM" \
+          --frontend "$FRONTEND_SBOM" \
+          --output "$MERGED_SBOM")
+        echo "$OUTPUT"
+
+        if echo "$OUTPUT" | grep -q '::frontend-covered::false'; then
+          echo "::warning::SBOM published without core-web npm coverage (#37575)"
+        fi
 
     - name: Upload SBOM to GitHub
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -61,7 +132,6 @@ runs:
       shell: bash
       id: sbom-artifact
       env:
-        PACKAGE: ${{ inputs.dotcms_package }}
         VERSION: ${{ env.DOTCMS_VERSION }}
       run: |
         echo "artifact=sbom-dotcms-${VERSION}" >> $GITHUB_OUTPUT
