@@ -45,7 +45,10 @@ export class FileField {
         this.editButtonResponsive = this.root.getByTestId('edit-button-responsive');
         this.removeButton = this.root.getByTestId('remove-button');
         this.removeButtonResponsive = this.root.getByTestId('remove-button-responsive');
-        this.requiredError = this.root.locator('.error-message small');
+        // `small.p-field-error`, not `.error-message small`: #37464 replaced this field's own
+        // error markup with the footer every field type now shares, so the <small> carries the
+        // class itself rather than sitting inside a wrapper.
+        this.requiredError = this.root.locator('small.p-field-error');
     }
 
     async expectVisible() {
