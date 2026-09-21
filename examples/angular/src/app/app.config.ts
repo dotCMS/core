@@ -11,6 +11,7 @@ import {
   provideClientHydration,
   withEventReplay,
   withHttpTransferCacheOptions,
+  withNoIncrementalHydration
 } from '@angular/platform-browser';
 import { provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
 import { provideHttpClient, withFetch } from '@angular/common/http';
@@ -34,7 +35,7 @@ export const appConfig: ApplicationConfig = {
       withHttpTransferCacheOptions({
         includePostRequests: true,
         includeRequestsWithAuthHeaders: true,
-      })
+      }), withNoIncrementalHydration()
     )
   ],
 };

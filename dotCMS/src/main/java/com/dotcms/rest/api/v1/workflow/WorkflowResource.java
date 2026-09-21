@@ -6208,25 +6208,32 @@ public class WorkflowResource {
     }
 
     /**
-     * Returns the status of a specific piece of Content in the Workflow it is assigned to. In
-     * summary:
-     * <ul>
-     *     <li>The Workflow Scheme that the Contentlet is in.</li>
-     *     <li>The Step that the Contentlet is in.</li>
-     *     <li>The User assigned to such a Step.</li>
-     * </ul>
+     * Returns the Workflow timeline of a specific piece of Content: the comments left on its
+     * Workflow task, interleaved with its Workflow change history, newest first.
+     * <p>
+     * A Contentlet that has never been through a Workflow has no task, and therefore an empty
+     * timeline. A Site never has one at all, because Workflow actions are prohibited on the Host
+     * Content Type. Both cases return an empty list rather than an error.
+     * <p>
+     * A Workflow task is per language — {@code findTaskByContentlet} keys on identifier <i>and</i>
+     * language — so this timeline is the one belonging to the language version being viewed. A
+     * Contentlet whose task and comments live under another language therefore returns an empty
+     * timeline here, not that other language's history.
+     * <p>
      * Here's an example of how to use this endpoint:
      * <pre>
-     *     http://localhost:8080/api/v1/workflow/status/{contentletInode}
+     *     http://localhost:8080/api/v1/workflow/tasks/history/comments/{contentletIdentifier}
      * </pre>
      *
-     * @param request         The current instance of the {@link HttpServletRequest}.
-     * @param response        The current instance of the {@link HttpServletResponse}.
-     * @param contentletIdentifier The inode of the Contentlet whose status will be checked.
+     * @param request              The current instance of the {@link HttpServletRequest}.
+     * @param response             The current instance of the {@link HttpServletResponse}.
+     * @param contentletIdentifier The identifier of the Contentlet whose timeline is requested.
+     * @param language             The language version of the Contentlet to inspect, or {@code -1}
+     *                             to resolve it from the request.
      *
-     * @return The status information of the Contentlet in the Workflow it is assigned to.
+     * @return The Contentlet's Workflow comments and change history, empty if it has no task.
      *
-     * @throws DotDataException          The specified Contentlet Inode was not found.
+     * @throws DotDataException          The specified Contentlet identifier was not found.
      * @throws DotSecurityException      The User calling this endpoint does not have required
      *                                   permissions to do so.
      * @throws InvocationTargetException Failed to transform the {@link WorkflowTask} data for this
@@ -6287,6 +6294,21 @@ public class WorkflowResource {
         if (currentContentlet.isPresent()) {
 
             final WorkflowTask currentWorkflowTask = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
+            if (null == currentWorkflowTask) {
+                // A Contentlet that has never been through a Workflow has no task, and a Site never
+                // can have one at all, since Workflow actions are prohibited on the Host Content
+                // Type. That is an empty timeline, not an error.
+                //
+                // Note this is per LANGUAGE: findTaskByContentlet keys on identifier AND
+                // languageId, so a Contentlet whose task lives under another language resolves
+                // here too. That is the intended reading - the timeline belongs to the language
+                // version being viewed - and it is pinned by
+                // History_Comments_Are_Scoped_To_The_Requested_Language.
+                Logger.debug(this, () -> String.format(
+                        "No Workflow task for Contentlet '%s' in language '%d'; returning an empty timeline",
+                        contentletIdentifier, currentContentlet.get().getLanguageId()));
+                return new ResponseEntityWorkflowHistoryCommentsView(List.of());
+            }
             final List<WorkflowTimelineItem> workflowComments = this.workflowAPI.getCommentsAndChangeHistory(currentWorkflowTask);
             final List<WorkflowTimelineItemView> workflowTimelineItemViews = workflowComments.stream()
                     .map(this::toWorkflowTimelineItemView)

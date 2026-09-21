@@ -7,12 +7,17 @@ import { BlogListingPage } from "@/views/BlogListingPage";
 
 const pageResponse = await getDotCMSPage("/blog");
 
-const pageAsset = pageResponse?.pageAsset;
-const errors = pageResponse?.error;
+// Set on a failed fetch, and also on a page that loaded but whose content query
+// came back with GraphQL errors.
+const error = pageResponse.error;
+const pageAsset = pageResponse.ok ? pageResponse.pageAsset : undefined;
 const { vanityUrl } = pageAsset ?? {};
 
 if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
-  return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
+  return Astro.redirect(
+    vanityUrl.forwardTo,
+    vanityUrl.permanentRedirect ? 301 : 302,
+  );
 }
 
 const title = pageAsset ? pageAsset.page.title : "Error";
@@ -21,11 +26,11 @@ const title = pageAsset ? pageAsset.page.title : "Error";
 {
   (
     <Layout title={title}>
-      {errors ? (
-        <Error error={errors} />
-      ) : (
+      {error ? (
+        <Error error={error} />
+      ) : pageResponse.ok ? (
         <BlogListingPage client:only="react" pageResponse={pageResponse} />
-      )}
+      ) : null}
     </Layout>
   )
 }
