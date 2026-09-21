@@ -212,11 +212,19 @@ and confirm they match the asset's own record.
   ship with migration guidance: what `__typename` returns now and who depends on it (notably
   normalized client caches keyed on it), and that a type-kind change from object to interface
   requires clients generating types from the schema to regenerate.
-- **FR-013**: This feature supersedes PR dotCMS/core#35363. That PR MUST be closed as superseded
-  rather than merged, and the convenience it aimed at — reading an asset's binary properties
-  without descending a level — MUST be re-raised as a second, separately tracked stage of issue
-  #34540, delivered after this one. Issue #34540 MUST remain open after this feature ships,
-  carrying that remaining scope, so it is not lost.
+- **FR-013**: This feature supersedes PR dotCMS/core#35363, which MUST be closed as superseded
+  rather than merged. The convenience it aimed at — reading an asset's binary properties without
+  descending a level — MUST be **delivered here rather than deferred**: one PR, both limbs of
+  issue #34540, so the issue closes with this work.
+- **FR-013a**: The binary's properties MUST be selectable directly on an asset-pointing field,
+  without descending into the binary. Any whose name already means something else on a contentlet
+  MUST be excluded rather than redefined, and MUST stay reachable through the binary itself. The
+  two that collide are the file's title and its modification date: on a contentlet those names
+  already mean the contentlet's own, and the modification date is not even the same type — a date
+  on the content, a numeric timestamp on the file — so one name could not describe both.
+- **FR-013b**: Deriving the binary's properties MUST cost the same whether one or all of them are
+  requested. #35363 derived them once per property, so selecting ten ran the full transformer ten
+  times per asset, per row of a result set.
 - **FR-014**: The existing automated check that locks the current shape of an asset-pointing field
   MUST be corrected as part of this work. It currently asserts that the asset view exposes *no
   property other than* the six it has today, while being named as though it asserts those six are
@@ -266,6 +274,10 @@ and confirm they match the asset's own record.
   — no property is reachable only through an untyped escape hatch.
 - **SC-006**: Requesting all available properties of a referenced asset performs the same amount
   of per-asset work as requesting one, measured as a constant rather than a per-property cost.
+- **SC-006a**: The binary's properties are selectable directly on an asset-pointing field, with
+  no intermediate level, on both DOTASSET- and FILEASSET-derived content. The two whose names
+  already mean something else on a contentlet are the only ones absent, and both are still
+  reachable through the binary.
 - **SC-007**: The AI tagging workflow, which cannot read an asset's tags today, completes
   end-to-end.
 - **SC-008**: **All six** properties the flat asset view exposed are still selectable after this
@@ -419,25 +431,36 @@ the design need not account for one.
 
 Recorded as FR-013. The reasoning, verified rather than assumed:
 
-- **Its benefit does not survive this feature.** #35363 exists to spare the client one level of
-  nesting: `image { size }` instead of `image { fileAsset { size } }`. But once an asset-pointing
-  field returns the asset's real type, that type's binary property is already a fully described
-  binary carrying all twelve of those properties plus a focal point — verified against a running
-  instance. The client still descends exactly one level, just to the correctly named property. The
-  saving the PR offers is gone.
-- **Its deliverable lands on a view that is now on a retirement path.** The twelve properties
-  would be attached to the flat asset view, which this feature removes — so the work would be
-  spent extending a surface that no longer exists and would have to be redone on the interface.
+- **Its goal is kept; its implementation could not be.** #35363 exists to spare the client one
+  level of nesting — `image { size }` instead of `image { fileAsset { size } }` — and that is
+  delivered here (FR-013a). What could not carry over is where it hung the properties: on the flat
+  asset object, which is no longer the type an asset-pointing field resolves to. The same
+  properties had to be declared on the interface and synthesized onto every concrete asset type
+  instead, or they would be selectable through one clause and not another.
+- **Two of its twelve could not come along.** It flattened the file's `title` and modification
+  date, and both names already mean the contentlet's own at that level — the modification date
+  not even as the same type. Carrying them would have made one name answer differently depending
+  on where it was read, which is the exact failure FR-009a forbids. Both stay reachable through
+  the binary.
+- **Its per-property cost could not come along either.** It derived the binary once per property
+  resolved, so selecting all twelve ran the full transformer twelve times per asset, per row.
+  Here the derivation is cached per asset per request (FR-013b, SC-006).
 - **It is not in a mergeable state.** Its automated checks have been failing since it was last
   updated, on a check in its own area, tripped by its own change and left unaddressed. It carries
   no review. See FR-014: the check in question is itself wrong and must be corrected regardless.
 - **What to keep from it**: its recognition of the problem, and the corrected version of the check
   it trips.
 
-**The remaining scope is not dropped.** Issue #34540 stays open after this feature ships, carrying
-the second stage: exposing an asset's binary properties conveniently on the new per-type shape.
-That is deliberate sequencing, not an oversight — this feature must land first because the second
-stage's design depends on the shape this one establishes.
+**The remaining scope is absorbed, not deferred.** An earlier revision of this spec sequenced it
+as a second stage on a still-open issue. That was reversed by a product decision: one PR delivers
+both limbs, so issue #34540 closes with this work. The convenience #35363 aimed at ships here —
+ten of the binary's twelve properties are selectable directly on the asset field (FR-013a),
+derived once per asset per request rather than once per property (FR-013b).
+
+What genuinely stays out is the file's own `title` and modification date. Not sequencing — those
+two names are already taken at the asset level by the contentlet's own, and for the modification
+date the types differ besides. Both remain reachable through the binary. If exposing them under
+different names is ever wanted, that is a new question, not leftover scope from this one.
 
 ## Assumptions
 
@@ -451,9 +474,9 @@ stage's design depends on the shape this one establishes.
   type created moments earlier was already described by the API, carrying its own properties,
   with no administrative action. FR-005 therefore records an existing guarantee that must be
   preserved, not new work.
-- Limb (b) of issue #34540 — conveniently exposing the general asset/binary properties — is out
-  of scope for this stage. It is **not** tracked through PR #35363, which is superseded (FR-013);
-  it stays on issue #34540, which remains open after this feature ships.
+- Limb (b) of issue #34540 — conveniently exposing the general asset/binary properties — is **in**
+  scope and delivered here (FR-013a), not tracked through PR #35363, which is superseded. The
+  issue closes with this feature rather than staying open for a second stage.
 - "Single request" in SC-002 means one GraphQL query from the client's perspective; it makes no
   claim about server-side work.
 - The five surviving flat properties keep their exact present behaviour, including the synthesized
