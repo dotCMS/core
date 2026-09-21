@@ -106,26 +106,62 @@
 
                  Full `role="grid"` wiring (cell navigation, `aria-rowcount`/`aria-colindex`) is
                  tracked in #37439. -->
+            @let isUnselectable = $unselectableSet().has(item[$dataKey()]);
+
             <tr
                 class="group transition-colors duration-200"
                 [class.cursor-grabbing]="state.isDragging()"
                 [class.text-gray-900]="state.dragOverRowId() === item.identifier"
                 [class.bg-primary-100]="state.dragOverRowId() === item.identifier"
+                [class.opacity-50]="isUnselectable"
                 [pSelectableRow]="item"
                 [pSelectableRowIndex]="rowIndex"
                 [attr.aria-selected]="$selectedKeys().has(item[$dataKey()])"
-                [pSelectableRowDisabled]="$disabled() || $readOnly()"
+                [attr.aria-disabled]="isUnselectable || null"
+                [pSelectableRowDisabled]="
+                    $disabled() || $readOnly() || isUnselectable || $busyRowsSet().has(item.inode)
+                "
+                [class.opacity-60]="$busyRowsSet().has(item.inode)"
+                [class.pointer-events-none]="$busyRowsSet().has(item.inode)"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
-                (dblclick)="onDoubleClick(item)"
+                (dblclick)="onDoubleClick(item, $event)"
                 [attr.draggable]="!$readOnly()"
                 (dragstart)="onDragStart($event, item)"
                 (dragend)="onDragEnd()"
                 (dragover)="onDragOver($event, item)"
                 (drop)="onDrop($event, item)">
+                <!-- A refused row's control is disabled rather than hidden: an empty cell where
+                     every other row has a control reads as a rendering fault, and the greyed-out
+                     control is what the dialog this replaced showed.
+
+                     Refused and allowed are two separate branches rather than one element with a
+                     bound `[disabled]`, because PrimeNG's table controls drive their checkbox
+                     through `[(ngModel)]`: the form directive calls `setDisabledState` on init and
+                     that latches, so a row that was refused and then allowed again keeps a dead
+                     control. Separate branches destroy and rebuild the control on the transition,
+                     which is the only way it comes back correct in **both** directions. -->
                 <td data-testId="item-checkbox" (click)="onCheckboxClick($event, rowIndex)">
-                    @if ($selectionMode() === 'multiple') {
-                        <p-tableCheckbox [value]="item" [disabled]="$disabled()" />
+                    <!-- Two reasons a control is dead, kept apart because they behave differently.
+                         A **busy** row is transient — the operation ends and the same control comes
+                         back — so it takes a bound `[disabled]`. An **unselectable** row is a
+                         standing refusal, and its branch is separate: PrimeNG's table controls drive
+                         their checkbox through `[(ngModel)]`, whose `setDisabledState` latches on
+                         init, so a bound `[disabled]` that flips back to false leaves a dead
+                         control. Rebuilding it is the only way it recovers. -->
+                    @if (isUnselectable) {
+                        @if ($selectionMode() === 'multiple') {
+                            <p-tableCheckbox [value]="item" [disabled]="true" />
+                        } @else {
+                            <p-tableRadioButton
+                                [value]="item"
+                                [disabled]="true"
+                                data-testId="item-radio" />
+                        }
+                    } @else if ($selectionMode() === 'multiple') {
+                        <p-tableCheckbox
+                            [value]="item"
+                            [disabled]="$disabled() || $busyRowsSet().has(item.inode)" />
                     } @else {
                         <p-tableRadioButton [value]="item" data-testId="item-radio" />
                     }
@@ -134,10 +170,25 @@
                     <td
                         class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
                         data-testId="item-title">
+                        <!-- The busy marker swaps the thumbnail's *contents*, never its box: this
+                             is the title cell's first grid column and it is sized (4.5rem), so
+                             replacing the container collapses the column and the row loses its
+                             layout. Deliberately not a skeleton either - swapping a busy row for
+                             placeholders repeats, one row at a time, the very thing this feature
+                             removes, since the row the author wants to watch is the one that
+                             disappears. -->
                         <div
                             class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
+                            data-testId="item-thumbnail-box"
                             (click)="onTitleClick($event, item)">
-                            @if (!isFolder) {
+                            @if ($busyRowsSet().has(item.inode)) {
+                                <i
+                                    class="pi pi-spin pi-spinner flex! size-full! items-center! justify-center! text-2xl! text-(--color-palette-primary-500)"
+                                    role="status"
+                                    aria-live="off"
+                                    [attr.title]="'content-drive.list-view.row-busy' | dm"
+                                    data-testId="row-busy"></i>
+                            } @else if (!isFolder) {
                                 <!-- No fieldVariable: rows are the assets themselves, so the mapper
                                      resolves through titleImage / the default /dA path. Passing the
                                      contentType here (legacy quirk) 404s the /contentAsset-based
@@ -176,11 +227,12 @@
                                  column, and only shared rows render it.
                                  The wording went through the full sentence (crowded the row), "Shared"
                                  alone (reads as shared with other USERS) and "All Sites" (unambiguous
-                                 about scope, but never says what it is describing). "Shared Asset" is the
-                                 term the toolbar's own filter uses -- "Show Shared Assets" sits directly
-                                 above this table -- so the label is defined by the control the user just
-                                 operated, which disambiguates it better than any rewording can. The full
-                                 sentence stays on hover. -->
+                                 about scope, but never says what it is describing). What settled it is
+                                 that the label should name whatever the toolbar's own filter names, since
+                                 that control sits directly above this table and is what the user just
+                                 operated. That filter is now "Show System Host", and the sidebar carries
+                                 a System Host entry beside it, so this follows both rather than drifting
+                                 into a third word for one thing. The full sentence stays on hover. -->
                                 <span
                                     data-testId="shared-asset-hint"
                                     class="block truncate text-xs text-gray-500"
@@ -332,7 +384,7 @@
     </ng-template>
     <ng-template pTemplate="emptymessage">
         @if (!$loading()) {
-            <tr class="h-max hover:bg-transparent!">
+            <tr class="h-max hover:bg-transparent!" data-testId="empty-state">
                 <td [attr.colspan]="$columnSpan()" class="h-full border-none p-6 text-center">
                     <div class="mx-auto flex max-w-100 flex-col items-center gap-4">
                         <div class="flex size-20 items-center justify-center rounded-full">

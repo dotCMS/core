@@ -4,7 +4,7 @@ import type { DotCMSCustomDetailPageResponse } from "@/types/page.model";
 
 import Layout from "@/components/common/Layout.astro";
 import Error from "@/components/common/Error.astro";
-import { getDotCMSPage, isPageFetchError } from "@/dotcms-integration";
+import { getDotCMSPage } from "@/dotcms-integration";
 import { DetailPage } from "@/views/DetailPage";
 
 const params = Astro.params;
@@ -12,12 +12,17 @@ const pageResponse = await getDotCMSPage<DotCMSCustomDetailPageResponse>(
   "/blog/post/" + params?.post,
 );
 
-const fetchFailed = isPageFetchError(pageResponse);
-const pageAsset = fetchFailed ? undefined : pageResponse.pageAsset;
+// Set on a failed fetch, and also on a page that loaded but whose content query
+// came back with GraphQL errors.
+const error = pageResponse.error;
+const pageAsset = pageResponse.ok ? pageResponse.pageAsset : undefined;
 const { vanityUrl } = pageAsset ?? {};
 
 if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
-  return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
+  return Astro.redirect(
+    vanityUrl.forwardTo,
+    vanityUrl.permanentRedirect ? 301 : 302,
+  );
 }
 
 const title = pageAsset ? pageAsset.page.title : "Error";
@@ -26,11 +31,11 @@ const title = pageAsset ? pageAsset.page.title : "Error";
 {
   (
     <Layout title={title}>
-      {fetchFailed ? (
-        <Error error={pageResponse.error} />
-      ) : (
+      {error ? (
+        <Error error={error} />
+      ) : pageResponse.ok ? (
         <DetailPage client:only="react" pageResponse={pageResponse} />
-      )}
+      ) : null}
     </Layout>
   )
 }

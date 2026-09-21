@@ -148,14 +148,21 @@ PrimeNG ships two visually similar but semantically different components. Pick b
 
 ## Form Fields
 
-The codebase currently has **more than one field-markup convention** (e.g. the global `.form`/
-`.field` classes in `apps/dotcms-ui/src/style.css`, and `edit-content`'s own
-`dot-card-field`/`dot-card-field-label` components). They do not render identically — before
-writing a new form, check how the most relevant *existing* surface (usually `edit-content`, the
-most actively maintained field UI) actually looks, don't just grep for a `.form`/`.field` example
-and copy it. Do not extend the global `.form`/`.field` classes to new features.
+**The global `.form` / `.field` classes in `apps/dotcms-ui/src/style.css` are the convention.**
+Use them. They carry label typography, the label-to-control gap, and hint/error colors, so a form
+that adopts them needs no local CSS for any of it.
 
-Regardless of which markup you use, these rules apply to every field:
+> This reverses earlier guidance here, which called them legacy and told you not to extend them.
+> `edit-content` was the one surface that had never adopted them — its labels rendered larger and
+> lighter than every other admin form, and its hints and errors rendered unstyled, because the
+> editor's root `<form>` carried no `.form` class and every rule below it is scoped to one
+> (#37460). It now uses them like the rest of the product.
+
+`edit-content` still wraps fields in `dot-card-field` / `dot-card-field-label`, but those now
+*emit* the global markup rather than reimplementing it — see
+[Reaching a direct-child rule from a component](#reaching-a-direct-child-rule-from-a-component).
+
+These rules apply to every field:
 
 - **No `text-*` size class on the label of a form control.** A control's label inherits the
   PrimeNG default size/weight — do not add `text-sm`, `text-base`, `font-medium`, etc. to make it
@@ -168,8 +175,10 @@ Regardless of which markup you use, these rules apply to every field:
 - **Use one gray scale.** `text-gray-*` and `text-surface-*` are separate scales
   (`--color-gray-*` maps to `--p-gray-*`, not to surface). `text-gray-*` is the app's majority
   convention — don't mix the two in one screen.
-- **Label-to-control gap is `gap-2`.** A field wrapper is `flex flex-col gap-2` — label, then
-  control, nothing wider.
+- **Do not write the label-to-control gap yourself.** `.form .field` is `flex flex-col gap-1`;
+  adding your own `gap-*` to a `.field` overrides the system for no reason. Outside a `.form` — a
+  dialog appended to `body`, a bundle that does not load the app stylesheet — `flex flex-col gap-1`
+  is the equivalent to hand-roll.
 - **A field reserves space for its hint only when it has one.** Render the hint conditionally
   (`@if (field.hint) { <small class="text-sm text-gray-500">...</small> }`) — never a permanent
   empty slot or a fixed `min-h-*` "for alignment" when there is no hint to show.
@@ -189,27 +198,29 @@ Regardless of which markup you use, these rules apply to every field:
   renders with the padding of a labelled one.
 
 ```html
-<!-- ✅ Field -->
-<div class="flex flex-col gap-2">
-  <label for="name">Name</label>
-  <input pInputText id="name" [formControlName]="'name'" />
-  @if (hint) {
-    <small class="text-sm text-gray-500">{{ hint }}</small>
-  }
-</div>
+<!-- ✅ Field: the global system supplies typography, gap and hint color -->
+<form class="form" [formGroup]="form">
+  <div class="field">
+    <label for="name" dotFieldRequired>Name</label>
+    <input pInputText id="name" formControlName="name" class="w-full" />
+    @if (hint) {
+      <small class="p-field-hint">{{ hint }}</small>
+    }
+  </div>
+</form>
 
-<!-- ❌ NEVER: sized/weighted label, permanently reserved hint slot -->
-<div class="flex flex-col gap-1">
+<!-- ❌ NEVER: sized/weighted label, hand-rolled gap, permanently reserved hint slot -->
+<div class="flex flex-col gap-2">
   <label for="name" class="text-sm font-medium">Name</label>
-  <input pInputText id="name" [formControlName]="'name'" />
+  <input pInputText id="name" formControlName="name" />
   <small class="text-sm text-gray-500 min-h-5">{{ hint }}</small>
 </div>
 ```
 
-### Legacy: the global `.form` / `.field` classes
+### What the global classes actually define
 
-**Do not use these in new work.** They are documented here because 88 existing templates use them,
-and because two of the class names silently do nothing outside their scope.
+Two of these class names silently do nothing outside their scope, which is worth knowing before
+you copy a template that uses them.
 
 `apps/dotcms-ui/src/style.css` defines:
 
@@ -245,22 +256,36 @@ with a `severity`, not a field error borrowed for the occasion.
 ### The `dotFieldRequired` directive
 
 `libs/ui/src/lib/dot-field-required/dot-field-required.directive.ts` puts the required asterisk on
-a label without markup. It has exactly two usages — there is **no** `dotFieldRequired` *input*:
+a label without markup. Four usages:
 
 ```html
-<!-- Always required -->
+<!-- 1. Always required -->
 <label dotFieldRequired for="name">Name</label>
 
-<!-- Required only if the named control carries Validators.required -->
+<!-- 2. Required only if the named control carries Validators.required -->
 <label dotFieldRequired checkIsRequiredControl="name" for="name">Name</label>
+
+<!-- 3. Signal forms: follows the field's own required() -->
+<label [dotFieldRequired]="field" for="name">Name</label>
+
+<!-- 4. Boolean: for a caller that already knows, from content type metadata rather than a form -->
+<label [dotFieldRequired]="isRequired" for="name">Name</label>
+```
+
+Mode 4 exists because a component cannot apply a directive to its own host from its template. A
+component whose host *is* the label declares it through `hostDirectives` and forwards the flag:
+
+```ts
+hostDirectives: [{ directive: DotFieldRequiredDirective, inputs: ['dotFieldRequired: isRequired'] }]
 ```
 
 It adds the class `p-label-input-required`, whose `::after { content: '*' }` rule lives at the top
 level of `apps/dotcms-ui/src/style.css` — **not** scoped to `.form`, so unlike `p-field-hint` it
 works anywhere.
 
-**Use it for a form whose required fields are fixed.** Do not use it for a form built from runtime
-metadata, for three reasons visible in the source:
+**Modes 1 and 2 are for a form whose required fields are fixed.** Do not use *mode 2* for a form
+built from runtime metadata — use mode 3 or 4, which recompute. The reasons are visible in the
+source:
 
 - **It is a one-way latch.** The constructor adds the class unconditionally; `checkIsRequiredControl`
   is a plain setter that only ever *removes* it. Once removed it never comes back, and the setter
@@ -275,8 +300,77 @@ metadata, for three reasons visible in the source:
 `FormGroup` is rebuilt on every provider switch, while `@for (… track field.name)` reuses the DOM
 node. The same field name can change requiredness between providers — `model` is
 `ProviderField.required` for Vertex AI and `ProviderField.optionalUnless` for Azure — which the
-latch above would render stale. That screen uses the literal `*` bound to the metadata flag
-instead, per the Form Fields rules above.
+latch above would render stale. That screen predates mode 4 and uses a literal `*` bound to the
+metadata flag; mode 4 now covers the same case through the directive.
+
+### Reaching a direct-child rule from a component
+
+`.form .field > label` is a **direct-child** selector. A component that renders its own `<label>`
+inside its element makes that label a *grandchild* of `.field`, and the rule never matches — the
+label keeps the inherited size and weight.
+
+**`display: contents` does not fix this.** `display` governs box generation; selectors match the
+**DOM tree**, which `display` never changes. It collapses the layout correctly and leaves the
+typography untouched, so the gap looks right while the rule still does not apply — a failure that
+looks like success. Verify in devtools that the rule appears as **matched**, not merely that the
+spacing looks correct.
+
+The fix is to remove the intermediate element: give the component an **attribute selector on the
+element it is meant to be**, so its host *is* the label.
+
+```ts
+// ❌ renders <dot-card-field-label><label>…</label></dot-card-field-label>
+@Component({ selector: 'dot-card-field-label', template: '<label …><ng-content /></label>' })
+
+// ✅ the host IS the label; nothing sits between it and .field
+@Component({
+    selector: 'label[dotCardFieldLabel]',
+    template: '<ng-content />',
+    host: { '[attr.for]': '$variableName()' }
+})
+```
+
+```html
+<label dotCardFieldLabel [variableName]="field.variable">{{ field.name }}</label>
+```
+
+This applies to any component that must satisfy a global rule written with `>`. Wrapper components
+whose element no global rule targets — `dot-card-field-content`, `dot-card-field-footer` — need no
+such treatment.
+
+### Naming a field for assistive technology
+
+The required asterisk is `::after` content and is deliberately **not** in the label's accessible
+name, so a screen reader never announces "star". That means the control has to carry the
+information itself — and before it can, it has to *have* a name. Three shapes, by widget:
+
+| Widget | Name it with | Required |
+|---|---|---|
+| A labelable control (`input`, `textarea`, `select`, `button`) | `<label for>` + matching `id` | `aria-required` on the control |
+| A group or collection (`div` of options, a chips list, a dropzone) | `role` + `aria-labelledby` → the label's `id` | only where the role allows it |
+| A third-party editor that owns its DOM | the editor's own option | — |
+
+- **`<label for>` only associates with *labelable* elements.** A `<div role="group">` can never be
+  named that way however many roles it carries, and neither can PrimeNG's select, which puts
+  `inputId` on a `<span role="combobox">`. Those take `aria-labelledby` — PrimeNG exposes
+  `ariaLabelledBy` for exactly this.
+- **Verify with `label.control`, not by checking an id exists.** The browser's own resolution is
+  the only thing that proves the association; an id that is present but on a non-labelable element
+  looks correct and associates nothing.
+- **ARIA defines `aria-required` on `combobox`, `listbox`, `radiogroup`, `spinbutton`, `textbox`
+  and `tree` — not on plain `group`,** and there is no `checkboxgroup` role. For a widget that
+  takes `group`, leave it off rather than write invalid ARIA; the asterisk and the required message
+  carry it visually.
+- **Declare the role a widget already behaves as, do not invent one.** A button that carries
+  `aria-expanded` and opens a listbox-like overlay *is* a combobox; saying so makes `aria-required`
+  available to it.
+- **Never infer the control from "the first focusable descendant".** Text Area and WYSIWYG both
+  render an editor-mode dropdown above their real control, so that heuristic marks the dropdown as
+  the mandatory field. A screen reader announcing the wrong control is worse than announcing none.
+  Mark only what the label declares.
+- **Third-party editors** take their own option: Monaco `ariaLabel`, TinyMCE `iframe_aria_text`
+  (the body inside the frame) plus `iframe_attrs.title` (the frame itself), the block editor a
+  field-derived label in place of its generic one.
 
 ## See also
 - [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Component rules, templates

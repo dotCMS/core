@@ -22,14 +22,13 @@ export function DetailPage({
     "prose lg:prose-xl prose-a:text-blue-600",
   );
 
-  // Undefined while the UVE resolves a draft page — default before destructuring.
   const { pageAsset, content } =
     useEditableDotCMSPage<DotCMSCustomDetailPageResponse>(pageResponse) ?? {};
-  const { urlContentMap } = pageAsset ?? {};
+  const { urlContentMap, layout } = pageAsset ?? {};
   const { blogContent } = urlContentMap || {};
 
-  const showHeader = pageAsset?.layout.header && content;
-  const showFooter = pageAsset?.layout.footer && content;
+  const showHeader = layout?.header && content;
+  const showFooter = layout?.footer && content;
   const isEditMode = useIsEditMode();
 
   useEffect(() => {

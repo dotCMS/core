@@ -16,6 +16,11 @@ import java.util.Map;
 public class DotAuthConfigView {
 
     private final String hostId;
+    /**
+     * Hostname of the site being configured, so the portlet can predict the OAuth redirect URI
+     * the IdP will receive. Null for SYSTEM_HOST: that host depends on where the user logs in.
+     */
+    private final String hostName;
     private final DotAuthProtocol protocol;
     private final boolean configured;
     private final boolean inherited;
@@ -23,12 +28,14 @@ public class DotAuthConfigView {
     private final Map<String, Object> headlessValues;
 
     public DotAuthConfigView(final String hostId,
+                             final String hostName,
                              final DotAuthProtocol protocol,
                              final boolean configured,
                              final boolean inherited,
                              final Map<String, Object> values,
                              final Map<String, Object> headlessValues) {
         this.hostId = hostId;
+        this.hostName = hostName;
         this.protocol = protocol;
         this.configured = configured;
         this.inherited = inherited;
@@ -38,6 +45,10 @@ public class DotAuthConfigView {
 
     public String getHostId() {
         return hostId;
+    }
+
+    public String getHostName() {
+        return hostName;
     }
 
     public DotAuthProtocol getProtocol() {

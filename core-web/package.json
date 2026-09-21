@@ -327,47 +327,17 @@
     "nx": {
         "includedScripts": []
     },
-    "pnpm": {
-        "overrides": {
-            "@babel/helper-define-polyfill-provider": "0.6.6",
-            "@tiptap/core": "3.22.2",
-            "@vue/shared": "3.5.29",
-            "http-cache-semantics": "4.1.1",
-            "pdfjs-dist": "4.2.67",
-            "stylus": "github:stylus/stylus#0.59.0"
+    "packageManager": "pnpm@12.4.2",
+    "devEngines": {
+        "runtime": {
+            "name": "node",
+            "version": "22.22.3",
+            "onFail": "download"
         },
-        "peerDependencyRules": {
-            "allowedVersions": {
-                "@angular/core": "22",
-                "@angular/common": "22",
-                "@angular/forms": "22",
-                "@angular/router": "22",
-                "@angular/platform-browser": "22",
-                "@angular/cdk": "22",
-                "primeng>@angular/core": "22",
-                "primeng>@angular/common": "22",
-                "primeng>@angular/forms": "22",
-                "primeng>@angular/router": "22",
-                "primeng>@angular/platform-browser": "22",
-                "@ngrx/signals>@angular/core": "22",
-                "@ngrx/component-store>@angular/core": "22"
-            }
-        },
-        "ignoredOptionalDependencies": [
-            "canvas"
-        ],
-        "onlyBuiltDependencies": [
-            "canvas",
-            "esbuild",
-            "@swc/core",
-            "nx",
-            "@parcel/watcher",
-            "core-js",
-            "document-register-element",
-            "lmdb",
-            "msgpackr-extract",
-            "unrs-resolver"
-        ]
-    },
-    "packageManager": "pnpm@10.17.1"
+        "packageManager": {
+            "name": "pnpm",
+            "version": "12.4.2",
+            "onFail": "download"
+        }
+    }
 }

@@ -1,5 +1,5 @@
 // Stub the side panel so the flag-on "create new" branch can create it via `ViewContainerRef`
-// without pulling in the real editor (and its module cycle). Placed before the imports so jest
+// without pulling in the real editor (and its module cycle). Placed before the imports so Vitest
 // hoists it ahead of the dynamic `import()` the component performs. Kept as a real standalone
 // component so `createComponent`/`setInput('data')`/`instance.closed` all work.
 vi.mock(
@@ -133,7 +133,7 @@ describe('DotRelationshipFieldComponent', () => {
     // `showCreateNewContentDialog()` reaches the centered dialog through a dynamic
     // `import()`, and under Vitest that import is where the dialog component and its whole
     // Angular graph get transformed — inside the 5s budget of whichever test calls it first.
-    // ts-jest resolved it at compile time, so it cost nothing there. On an idle machine the
+    // the previous compile-time transform resolved it for free. On an idle machine the
     // transform fits; with `nx run-many` running three projects at once it does not, and the
     // suite failed with "Test timed out in 5000ms" plus a second, collateral failure in the
     // next test (the timed-out call's `dialogService.open` landed during it, so the mock had
@@ -161,31 +161,38 @@ describe('DotRelationshipFieldComponent', () => {
         get: vi.fn((key: string) => key)
     };
 
-    const createStoreMock = (overrides: Record<string, unknown> = {}) => ({
-        data: vi.fn().mockReturnValue([buildItem()]),
-        paginatedData: vi.fn().mockReturnValue([buildItem()]),
-        columns: vi.fn().mockReturnValue([TITLE_COLUMN, LANGUAGE_COLUMN, STATUS_COLUMN]),
-        staticColumns: vi.fn().mockReturnValue(2),
-        totalPages: vi.fn().mockReturnValue(1),
-        pagination: vi.fn().mockReturnValue({ offset: 0, currentPage: 1, rowsPerPage: 6 }),
-        showThumbnail: vi.fn().mockReturnValue(false),
-        isDisabledCreateNewContent: vi.fn().mockReturnValue(false),
-        isNewEditorEnabled: vi.fn().mockReturnValue(true),
-        selectionMode: vi.fn().mockReturnValue('multiple'),
-        contentType: vi.fn().mockReturnValue({ id: 'ct-1' }),
-        formattedRelationship: vi.fn().mockReturnValue('id-1'),
-        lastChangeSource: vi.fn().mockReturnValue('load'),
-        // `withFlags` slice — side panel off by default (empty map ⇒ create-new uses the dialog).
-        flags: vi.fn().mockReturnValue({}),
-        initialize: vi.fn(),
-        setData: vi.fn(),
-        refreshItem: vi.fn(),
-        deleteItem: vi.fn(),
-        reorderData: vi.fn(),
-        nextPage: vi.fn(),
-        previousPage: vi.fn(),
-        ...overrides
-    });
+    const createStoreMock = (overrides: Record<string, unknown> = {}) => {
+        const mock = {
+            data: vi.fn().mockReturnValue([buildItem()]),
+            // Derived from `data` by default so a test that sets one list does not have to remember
+            // to set the other; tests about withholding override it explicitly.
+            $visibleItems: vi.fn(() => mock.data()),
+
+            showingAll: vi.fn().mockReturnValue(false),
+            $canToggleAll: vi.fn().mockReturnValue(false),
+            toggleShowAll: vi.fn(),
+            columns: vi.fn().mockReturnValue([TITLE_COLUMN, LANGUAGE_COLUMN, STATUS_COLUMN]),
+            staticColumns: vi.fn().mockReturnValue(2),
+
+            showThumbnail: vi.fn().mockReturnValue(false),
+            isDisabledCreateNewContent: vi.fn().mockReturnValue(false),
+            isNewEditorEnabled: vi.fn().mockReturnValue(true),
+            selectionMode: vi.fn().mockReturnValue('multiple'),
+            contentType: vi.fn().mockReturnValue({ id: 'ct-1' }),
+            formattedRelationship: vi.fn().mockReturnValue('id-1'),
+            lastChangeSource: vi.fn().mockReturnValue('load'),
+            // `withFlags` slice — side panel off by default (empty map ⇒ create-new uses the dialog).
+            flags: vi.fn().mockReturnValue({}),
+            initialize: vi.fn(),
+            setData: vi.fn(),
+            refreshItem: vi.fn(),
+            deleteItem: vi.fn(),
+            reorderData: vi.fn(),
+            ...overrides
+        };
+
+        return mock;
+    };
 
     let storeMock: ReturnType<typeof createStoreMock>;
 
@@ -199,6 +206,8 @@ describe('DotRelationshipFieldComponent', () => {
             provideHttpClientTesting(),
             mockProvider(DotMessageService, messageServiceMock),
             mockProvider(DotEditContentStore, {
+                // BaseWrapperField gates required errors on this.
+                hasAttemptedSubmit: vi.fn().mockReturnValue(false),
                 contentType: vi.fn().mockReturnValue(null),
                 currentLocale: vi.fn().mockReturnValue(null),
                 isCopyingLocale: vi.fn().mockReturnValue(false),
@@ -235,6 +244,17 @@ describe('DotRelationshipFieldComponent', () => {
     describe('Locales column', () => {
         beforeEach(() => setup());
 
+        /**
+         * AC-209 — a relationship's value is the list of related contentlets, so no single control
+         * can carry `<label for>`. The widget names itself from the field label instead.
+         */
+        it('should expose itself as a group named by the field label', () => {
+            expect(spectator.element.getAttribute('role')).toBe('group');
+            expect(spectator.element.getAttribute('aria-labelledby')).toBe(
+                'label-' + FIELD_MOCK.variable
+            );
+        });
+
         it('should render the Locales header using the table language key', () => {
             const localeHeader = spectator.query(byTestId('relationship-locale-header'));
             expect(localeHeader).toBeTruthy();
@@ -265,8 +285,6 @@ describe('DotRelationshipFieldComponent', () => {
         beforeEach(() =>
             setup({
                 data: vi.fn().mockReturnValue([]),
-                paginatedData: vi.fn().mockReturnValue([]),
-                totalPages: vi.fn().mockReturnValue(0),
                 formattedRelationship: vi.fn().mockReturnValue('')
             })
         );
@@ -398,8 +416,6 @@ describe('DotRelationshipFieldComponent', () => {
         beforeEach(() => {
             setup({
                 data: vi.fn().mockReturnValue([]),
-                paginatedData: vi.fn().mockReturnValue([]),
-                totalPages: vi.fn().mockReturnValue(0),
                 formattedRelationship: vi.fn().mockReturnValue('')
             });
             spectator.component.setDisabledState(true);
@@ -474,8 +490,6 @@ describe('DotRelationshipFieldComponent', () => {
         const setupWithSource = (source: 'load' | 'user') => {
             setup({
                 data: vi.fn().mockReturnValue([]),
-                paginatedData: vi.fn().mockReturnValue([]),
-                totalPages: vi.fn().mockReturnValue(0),
                 formattedRelationship: vi.fn().mockReturnValue(''),
                 lastChangeSource: vi.fn().mockReturnValue(source)
             });
@@ -812,6 +826,218 @@ describe('DotRelationshipFieldComponent', () => {
                 );
                 expect(storeMock.setData).not.toHaveBeenCalled();
             });
+        });
+    });
+
+    /**
+     * US2 / T028 — the two states in which the picker must not be reachable at all.
+     *
+     * Both already hold today; these are regression guards for the refactor, not new behaviour.
+     * They matter because the dialog is being replaced wholesale, and "the add button still opens
+     * something" is an easy thing to keep while losing the guard in front of it.
+     */
+    describe('when the picker must not open (US2)', () => {
+        it('does not open a dialog when the field is disabled', () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as Mock).mockClear();
+
+            spectator.component.setDisabledState(true);
+            spectator.component.showExistingContentDialog();
+
+            expect(dialogService.open).not.toHaveBeenCalled();
+        });
+
+        it('offers no enabled add affordance once a single-cardinality field holds its item', () => {
+            storeMock.isDisabledCreateNewContent.mockReturnValue(true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$menuItems().every((menuItem) => menuItem.disabled)).toBe(
+                true
+            );
+        });
+    });
+
+    /**
+     * US4 — no paging control, and a Show all / Show less toggle instead.
+     *
+     * The two lists in #37192 are different lists: the *picker* keeps its paging; this one, the
+     * related content inside the form, loses it so a drag can reach any pair of rows.
+     */
+    describe('the related list has no paging (US4)', () => {
+        const rows = (n: number) =>
+            Array.from({ length: n }, (_, i) => buildItem({ inode: `inode-${i}` }));
+
+        it('renders no paging control for a short list', () => {
+            setup({ data: vi.fn().mockReturnValue(rows(3)) });
+
+            expect(spectator.query(byTestId('relationship-table-pagination'))).toBeNull();
+        });
+
+        it('renders no paging control for a list longer than the old page size', () => {
+            setup({
+                data: vi.fn().mockReturnValue(rows(95)),
+                $visibleItems: vi.fn().mockReturnValue(rows(40)),
+                $canToggleAll: vi.fn().mockReturnValue(true)
+            });
+
+            expect(spectator.query(byTestId('relationship-table-pagination'))).toBeNull();
+        });
+
+        it('offers no toggle when everything is on screen', () => {
+            setup({ data: vi.fn().mockReturnValue(rows(12)) });
+
+            expect(spectator.query(byTestId('relationship-show-all'))).toBeNull();
+        });
+
+        /**
+         * The count is on "Show all" because that is the decision needing a number — how much is
+         * hidden. It reads the whole list, not the withheld remainder: "Show all (95)" is what the
+         * editor gets, not "Show all (55)".
+         */
+        it('offers Show all with the total count while rows are withheld', () => {
+            setup({
+                data: vi.fn().mockReturnValue(rows(95)),
+                $visibleItems: vi.fn().mockReturnValue(rows(40)),
+                $canToggleAll: vi.fn().mockReturnValue(true)
+            });
+
+            const toggle = spectator.query(byTestId('relationship-show-all'));
+
+            expect(toggle?.textContent).toContain('95');
+            expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+        });
+
+        it('offers Show less once expanded, with no count', () => {
+            setup({
+                data: vi.fn().mockReturnValue(rows(95)),
+                $visibleItems: vi.fn().mockReturnValue(rows(95)),
+                $canToggleAll: vi.fn().mockReturnValue(true),
+                showingAll: vi.fn().mockReturnValue(true)
+            });
+
+            const toggle = spectator.query(byTestId('relationship-show-all'));
+
+            expect(toggle?.textContent).not.toContain('95');
+            expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+        });
+
+        it('asks the store to toggle when the control is used', () => {
+            setup({
+                data: vi.fn().mockReturnValue(rows(95)),
+                $visibleItems: vi.fn().mockReturnValue(rows(40)),
+                $canToggleAll: vi.fn().mockReturnValue(true)
+            });
+
+            spectator.click(spectator.query(byTestId('relationship-show-all')) as HTMLElement);
+
+            expect(storeMock.toggleShowAll).toHaveBeenCalled();
+        });
+
+        /** Withholding is a rendering limit: the value keeps all 95, the DOM shows 40. */
+        it('renders only the visible rows, not the whole list', () => {
+            setup({
+                data: vi.fn().mockReturnValue(rows(95)),
+                $visibleItems: vi.fn().mockReturnValue(rows(40)),
+                $remaining: vi.fn().mockReturnValue(55)
+            });
+
+            expect(spectator.queryAll(byTestId('relationship-drag-handle'))).toHaveLength(40);
+        });
+    });
+
+    /**
+     * US5 — the drag handle is revealed on hover, like the remove button already is.
+     *
+     * Hover cannot be simulated meaningfully in jsdom, so these assert the *contract that produces*
+     * the hover behaviour — the same `group` / `group-hover` pair the remove button in this very
+     * row already relies on. Asserting the mechanism is what a unit test can honestly claim; the
+     * visual result is covered manually (quickstart §D6).
+     */
+    describe('the drag handle is quiet until hovered (US5)', () => {
+        it('carries the hover-reveal classes rather than being permanently visible', () => {
+            setup();
+
+            const handle = spectator.query(byTestId('relationship-drag-handle'));
+
+            expect(handle?.className).toContain('opacity-0');
+            expect(handle?.className).toContain('group-hover:opacity-100');
+        });
+
+        it('sits inside the row that owns the hover group', () => {
+            setup();
+
+            const handle = spectator.query(byTestId('relationship-drag-handle'));
+
+            expect(handle?.closest('tr')?.className).toContain('group');
+        });
+
+        /** Revealed by keyboard focus too, or the reorder affordance is pointer-only. */
+        it('is revealed on focus as well as on hover', () => {
+            setup();
+
+            const handle = spectator.query(byTestId('relationship-drag-handle'));
+
+            expect(handle?.className).toContain('focus-visible:opacity-100');
+        });
+
+        it('offers no drag handle at all when the field is disabled', () => {
+            setup({ data: vi.fn().mockReturnValue([buildItem()]) });
+            spectator.component.setDisabledState(true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('relationship-drag-handle'))).toBeNull();
+        });
+    });
+
+    /**
+     * US6 — Status right-aligned, and the field respects the form's single-column width.
+     */
+    describe('columns line up (US6)', () => {
+        /**
+         * Status is right-aligned **because it is Status**, not because it happens to be the last
+         * column. The template aligned every last column, so a fixture with Status at the end
+         * passes without the requirement being implemented — which is what this fixture is for.
+         */
+        const withColumnAfterStatus = {
+            columns: vi.fn().mockReturnValue([TITLE_COLUMN, STATUS_COLUMN, LANGUAGE_COLUMN])
+        };
+
+        it('right-aligns the Status column header even when it is not the last column', () => {
+            setup(withColumnAfterStatus);
+
+            expect(spectator.query(byTestId('relationship-status-header'))?.className).toContain(
+                'text-right'
+            );
+        });
+
+        it('right-aligns the Status column body cells even when it is not the last column', () => {
+            setup(withColumnAfterStatus);
+
+            expect(spectator.query(byTestId('relationship-status-cell'))?.className).toContain(
+                'text-right'
+            );
+        });
+
+        /**
+         * The 720px / 1000px rule already lives at the form level (#36615). What this field owes it
+         * is not to break out of the container — a table wider than its column pushes every other
+         * field out of alignment.
+         */
+        it('never exceeds its container', () => {
+            setup();
+
+            const table = spectator.query(byTestId('relationship-field-table'));
+
+            expect(table?.className).toContain('w-full');
+            expect(table?.className).toContain('max-w-full');
+        });
+
+        it('scrolls horizontally inside the field rather than widening it', () => {
+            setup();
+
+            const table = spectator.query(byTestId('relationship-field-table'));
+
+            expect(table?.className).toContain('overflow-hidden');
         });
     });
 });

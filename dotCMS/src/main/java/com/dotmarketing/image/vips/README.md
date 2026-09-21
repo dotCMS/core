@@ -4,8 +4,11 @@ A feature-flagged, drop-in alternative to the legacy pure-JVM image filters
 (`com.dotmarketing.image.filter`), backed by [libvips](https://www.libvips.org/)
 through the [vips-ffm](https://github.com/lopcode/vips-ffm) Panama FFM bindings.
 
-The legacy engine is untouched and remains the default. This engine is selected
-**per request** and falls back automatically when libvips can't do the job.
+The legacy engine is untouched and is still selectable, but it is **not** the default:
+`IMAGE_API_USE_LIBVIPS` defaults to `true`, so the libvips engine is used whenever the
+native library is loadable - which it is in the shipped images - and the legacy engine
+is the fallback. This engine is selected **per request** and falls back automatically
+when libvips can't do the job.
 
 ## Enabling
 
@@ -37,20 +40,26 @@ The engine only activates when the flag is on **and** native libvips is loadable
 (`VipsManager.isEnabled()`); otherwise the legacy engine is used transparently.
 
 > **Setting the flag via environment variable:** dotCMS `Config` only reads env
-> overrides with the `DOT_` prefix (and `.`/`-` become `_`). So the flag is
-> **`DOT_IMAGE_API_USE_LIBVIPS=true`**, not `IMAGE_API_USE_LIBVIPS=true`. A
-> plain (unprefixed) env var is silently ignored and the engine stays on legacy —
-> in which case the libvips-only filters (`avif`, `smartcrop`) no-op while the
-> shared filters still work, which is the tell-tale symptom. The fallback override
-> is `DOT_IMAGE_API_LIBVIPS_FALLBACK`.
+> overrides with the `DOT_` prefix (and `.`/`-` become `_`). So to *change* the flag the
+> variable is **`DOT_IMAGE_API_USE_LIBVIPS`**, not `IMAGE_API_USE_LIBVIPS`. An unprefixed
+> variable is silently ignored, which means the flag keeps its default (`true`) - **not**
+> that the engine drops back to legacy. Use `DOT_IMAGE_API_USE_LIBVIPS=false` to force the
+> legacy engine. The fallback override is `DOT_IMAGE_API_LIBVIPS_FALLBACK`.
 
 ## Native dependency
 
 Unlike the legacy stack (pure-JVM: TwelveMonkeys, PDFBox, Batik, webp-imageio),
 this engine needs native libraries on the host:
 
-- **Linux/CI**: `apt install libvips42` — found on the standard library path; no
-  extra JVM args needed beyond `--enable-native-access=ALL-UNNAMED`.
+- **Linux/production and CI**: libvips is built from source into `/usr/local/libvips`
+  by `docker/java-base/build-libvips.sh` with the **ImageMagick and OpenEXR delegates
+  disabled**, then copied into the runtime and dev-env images. Builds are published as
+  `dotcms/java-base:<java-version>`; CI extracts that prefix so the parity tests exercise
+  exactly what ships. Do **not** install Ubuntu's `libvips42`: on noble it hard-depends
+  on `libmagickcore-6.q16-7t64` and `libopenexr-3-1-30`, which carry unpatched CVEs and
+  have no fixed version in the archive. `docker/java-base/verify-libvips.sh` is the
+  acceptance gate any such build must pass; no extra JVM args are needed beyond
+  `--enable-native-access=ALL-UNNAMED`.
 - **macOS (local dev)**: `brew install vips`. SIP strips `DYLD_*` from forked
   JVMs, so point the loader straight at the dylibs:
   ```
@@ -62,6 +71,24 @@ this engine needs native libraries on the host:
 Format coverage (PDF, SVG, AVIF/HEIC, animated GIF) depends on the **delegates
 compiled into the host libvips** — poppler/pdfium, librsvg, libheif, cgif. Verify
 the target container's build; `IMAGE_API_LIBVIPS_FALLBACK` covers any gap at runtime.
+
+### Format coverage in the shipped images
+
+The shipped images deliberately exclude the ImageMagick and OpenEXR delegates, because
+the Ubuntu packages they drag in (`libmagickcore-6.q16-7t64`, `libopenexr-3-1-30`) carry
+unpatched CVEs with no fixed version in noble. That removes everything only those two
+delegates provided:
+
+| Result | Formats |
+|--------|---------|
+| **Native libvips** (unchanged) | AVIF/HEIC encode+decode, WebP, JXL, JPEG2000, TIFF, PNG (spng), JPEG, animated GIF, PDF (poppler), SVG (librsvg), PNM, FITS, Matlab, OpenSlide |
+| **Legacy JVM fallback** (slower, different decoder semantics) | PSD, BMP, PCX, TGA, PICT, SGI, IFF, ICNS, HDR |
+| **No longer supported** | ICO, DDS, DPX, XCF, and EXR (in any form) |
+
+`IMAGE_API_LIBVIPS_FALLBACK=true` handles the middle row automatically, but it cannot
+recover the last row - those formats have no JVM decoder either, so they fail the same
+way they would under the legacy engine alone. `EPS`/`PS` were already unusable (they
+need Ghostscript, which the images do not install) and are unchanged by this.
 
 > **AVIF encode** needs libheif built with an AV1 encoder. On Ubuntu that's the
 > `libheif-plugin-aomenc` package — a *Recommends* that `--no-install-recommends`

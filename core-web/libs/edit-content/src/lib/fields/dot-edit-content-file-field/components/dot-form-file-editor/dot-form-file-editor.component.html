@@ -44,7 +44,7 @@
     <div class="dot-form-file-editor__body">
         @if (store.allowFileNameEdit()) {
             <div class="dot-form-file-editor__name-field">
-                <label class="p-label-input-required" data-testid="editor-label" for="file-name">
+                <label dotFieldRequired data-testid="editor-label" for="file-name">
                     {{ 'dot.file.field.action.create.new.file.label' | dm }}
                 </label>
                 <input

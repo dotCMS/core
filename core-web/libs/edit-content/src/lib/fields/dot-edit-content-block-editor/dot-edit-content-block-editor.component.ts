@@ -6,9 +6,11 @@ import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
+import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
 import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { BaseWrapperField } from '../shared/base-wrapper-field';
@@ -20,6 +22,8 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotCardFieldComponent,
         DotCardFieldContentComponent,
         DotCardFieldLabelComponent,
+        DotCardFieldFooterComponent,
+        DotMessagePipe,
 
         DotCMSEditorComponent,
         BlockEditorModule
