@@ -74,7 +74,8 @@ Tools panel on its own.
    with its id, its localized title and a `isCustom` flag.
 2. **Given** the same instance, **When** the catalog is returned, **Then** `isCustom` is true
    for every tool an admin created through New Tool and false for every tool that ships with
-   the product, and the flag does not depend on how the tool's id is spelled.
+   the product, Language Variables included. The flag does not depend on how the tool's id is
+   spelled.
 3. **Given** the configuration that hides the old Languages tool is on, **When** the catalog
    is requested, **Then** the old Languages tool is absent; when that configuration is off,
    it is present.
@@ -120,9 +121,9 @@ deletes a custom content tool. Both succeed. A third user with neither is reject
 6. **Given** a custom content tool is deleted, **When** the sections are inspected, **Then**
    the tool is gone from every section that contained it, and open admin sessions refresh
    their navigation without a hard reload. This is existing behaviour and must not regress.
-7. **Given** the id of a tool that ships with the product, **When** any authorised user
-   attempts to delete it through the custom-tool delete, **Then** the response is not found
-   and the tool is still present in every section that had it.
+7. **Given** the id of a tool that ships with the product, Language Variables included, **When**
+   any authorised user attempts to delete it through the custom-tool delete, **Then** the
+   response is not found and the tool is still present in every section that had it.
 8. **Given** a non-admin backend user whose only relevant grant is a section containing the
    Tools (Beta) portlet, **When** they attempt to add a tool to a section through the existing
    add-to-section operation, **Then** the request is rejected as unauthorized, exactly as
@@ -197,6 +198,14 @@ before any portlet named `tools` is registered, which is how the test grants it.
 - **Custom-ness is not the id prefix.** Custom tools conventionally carry a `c_` id prefix, but
   the flag must come from how the tool is registered in the system, so a future change to the
   id scheme cannot mislabel tools.
+- **A built-in tool stored like a custom one.** Language Variables ships with the product but is
+  stored as a database row in the same shape as a hand-made tool. "Registered in the database"
+  alone would call it custom. The product therefore declares it in its portlet id registry, and
+  a custom tool is one registered in the database **and** not declared by the product. A
+  hand-made tool an admin names Language Variables, with a different id, remains custom.
+- **Legacy screen and a protected tool.** The legacy screen still offers Delete on Language
+  Variables, since it goes by id prefix. The call answers not found and the screen shows its
+  error message. Expected.
 - **Catalog freshness.** A tool created or deleted in one request must be present or absent in
   the very next catalog read, from any node.
 - **Deleting a tool that sits in sections.** Existing behaviour removes the tool from every
@@ -229,16 +238,19 @@ before any portlet named `tools` is registered, which is how the test grants it.
   language, and an `isCustom` boolean.
 - **FR-003**: The catalog MUST be sorted by title, ignoring letter case, and MUST contain each
   tool exactly once.
-- **FR-004**: `isCustom` MUST be true only for tools an admin registered at runtime as custom
-  content tools, derived from how the tool is registered in the system and not from its id.
+- **FR-004**: `isCustom` MUST be true exactly when the tool is registered in the database and its
+  id is not one the product declares in its portlet id registry. It MUST NOT depend on the
+  spelling of the id.
 - **FR-005**: When a tool's title has no translation for the caller's language, the catalog
-  MUST return the name the tool was registered with, which only custom tools carry, and if
-  that is absent, its id. It MUST never return the raw translation key.
+  MUST return the name the tool was registered with, when it has one, and otherwise its id. It
+  MUST never return the raw translation key.
 - **FR-006**: The system MUST expose a read of one custom content tool by id returning its id,
   its name, its base types and content types as lists, and its data view mode as stored, in
   lowercase (`list` or `card`). For an unknown id, or for a tool that is not a custom content
   tool, it MUST respond not found.
 - **FR-007**: The product's portlet id registry MUST contain an entry resolving to `tools`.
+- **FR-007a**: The product's portlet id registry MUST declare Language Variables
+  (`c_Language-Variables`), so FR-004 and FR-013 treat it as a product tool.
 - **FR-008**: The catalog and the single-tool read MUST require an authenticated backend user
   who either holds a granted section containing `tools` or `tools-beta`, or is a CMS
   Administrator. Any other caller MUST receive 401 Unauthorized with no tool data.
@@ -257,14 +269,15 @@ before any portlet named `tools` is registered, which is how the test grants it.
 - **FR-012**: Every endpoint added or changed MUST be described in the generated API
   documentation with response schemas that match what is actually returned.
 - **FR-013**: The delete of a custom content tool MUST refuse, with not found and without
-  changing any data, any id that is not a custom content tool. The custom-ness test is the same
-  one that drives `isCustom`.
+  changing any data, any id that is not a custom content tool under FR-004. Language Variables
+  is therefore refused.
 
 ### Key Entities
 
 - **Tool (catalog entry)**: A placeable unit of the backend navigation. Identified by its id;
-  presented by a localized title; flagged as custom or shipped. Shipped tools come from the
-  product's portlet registry; custom tools are registered at runtime by an admin.
+  presented by a localized title; flagged as custom or shipped. Shipped tools are declared by the
+  product, in its configuration or its portlet id registry; custom tools are registered in the
+  database at runtime and are not declared.
 - **Custom content tool configuration**: The editable definition of a custom tool: its id, its
   display name, the base types and content types whose content it lists, and whether that
   content is shown as a list or as cards.
@@ -304,7 +317,8 @@ before any portlet named `tools` is registered, which is how the test grants it.
 
 - **Existing behavior touched**: The custom content tool management surface, which is part of
   the older Roles & Tools admin area and is also driven by the Angular Add to menu dialog, and
-  the portlet id registry, which lives in the legacy
+  the portlet id registry, which gains two entries and is the single place where the product
+  declares a tool as its own, which lives in the legacy
   package tree. The catalog logic being lifted onto the modern API is the legacy remoting
   method the Dojo picker uses. The Dojo screen itself, its remoting methods and the legacy
   layout and portlet services are read, not modified, except for the one-line addition of the
@@ -342,7 +356,11 @@ before any portlet named `tools` is registered, which is how the test grants it.
   the wire in both directions, because every existing writer, the legacy screen and Add to
   menu, sends lowercase and the value is stored without normalisation. The frontend maps its
   display labels to those values.
-- **Title fallback order is translation, then the custom tool's registered name, then id.**
+- **Language Variables is a product tool.** Admins did not create it and cannot easily recreate
+  it, so it is protected like every other product tool. Declaring it in the registry is
+  code-only; a new stored marker was rejected because it would need a data change on every
+  install for one row.
+- **Title fallback order is translation, then the tool's registered name, then id.**
   This replaces the frontend's current recovery of a label from the raw key, which becomes
   unnecessary but harmless.
 - **A Tools grant gives a non-administrator a read-only view of the navigation plus custom
