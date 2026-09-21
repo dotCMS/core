@@ -1,66 +1,12 @@
 package com.dotcms;
 
-import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
+import com.dotcms.analytics.ContentAnalyticsPersistenceModeIT;
 import com.dotcms.business.interceptor.InterceptorHandlerTest;
-import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
-import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
-import com.dotcms.contenttype.test.DotAssetAPITest;
-import com.dotcms.ema.EMAWebInterceptorTest;
-import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandlerTest;
-import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
-import com.dotcms.inference.rest.ChatCompletionsTest;
-import com.dotcms.inference.rest.InferenceAuthorizationTest;
-import com.dotcms.inference.rest.InferenceClientConformanceTest;
-import com.dotcms.inference.rest.InferenceEmbeddingsTest;
-import com.dotcms.inference.rest.InferenceFallbackTest;
-import com.dotcms.inference.rest.InferenceImagesTest;
-import com.dotcms.inference.rest.InferenceLoggingTest;
-import com.dotcms.inference.rest.InferenceModelValidationTest;
-import com.dotcms.inference.rest.InferenceModelsTest;
-import com.dotcms.inference.rest.InferenceSiteIsolationTest;
-import com.dotcms.inference.rest.InferenceSiteResolutionTest;
-import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
+import com.dotcms.inference.rest.*;
 import com.dotcms.junit.MainBaseSuite;
-import com.dotcms.mock.request.CachedParameterDecoratorTest;
-import com.dotcms.publisher.bundle.business.BundleFactoryTest;
-import com.dotcms.publisher.business.PublishAuditAPITest;
-import com.dotcms.publisher.util.PushedAssetUtilTest;
-import com.dotcms.publishing.PublisherFilterImplTest;
-import com.dotcms.publishing.PushPublishFiltersInitializerTest;
-import com.dotcms.rendering.velocity.directive.DotParseTest;
-import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
-import com.dotcms.rest.BundleResourceTest;
-import com.dotcms.rest.api.v1.apps.AppsResourceTest;
-import com.dotcms.rest.api.v1.folder.FolderResourceTest;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
-import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
-import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
-import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
-import com.dotcms.saml.SamlConfigurationServiceTest;
-import com.dotcms.security.apps.AppsAPIImplTest;
-import com.dotcms.security.apps.AppsCacheImplTest;
-import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
-import com.dotmarketing.image.focalpoint.FocalPointAPITest;
-import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
-import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
-import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
-import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
-import com.dotmarketing.portlets.folders.model.FolderTest;
-import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
-import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
-import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
-import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
-import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
-import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
-import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
-import com.dotmarketing.startup.runonce.Task240131UpdateLanguageVariableContentTypeTest;
-import com.dotmarketing.util.HashBuilderTest;
-import com.dotmarketing.util.TestConfig;
-import com.liferay.portal.language.LanguageUtilTest;
-import org.apache.felix.framework.OSGIUtilTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -143,7 +89,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
         com.dotcms.rest.AuditPublishingResourceTest.class,
         MaintenanceResourceIntegrationTest.class,
-        FolderHandlerTest.class
+        FolderHandlerTest.class,
+        ContentAnalyticsPersistenceModeIT.class
 })
 public class MainSuite2a {
 
