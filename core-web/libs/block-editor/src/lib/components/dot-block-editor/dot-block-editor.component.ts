@@ -803,8 +803,13 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     }
 
     private setEditorJSONContent(content: Content) {
-        // `content` is also guarded for null: spreading it produced a document-less object
-        // whose `content` came from `preserveUnknownBlockNodes(undefined)`.
+        // `!content` alongside the string check: a new contentlet with an empty Story Block sends
+        // null, and `typeof null === 'object'` let it fall through to `content.content` below,
+        // throwing during ngOnInit. That uncaught error aborted the change-detection pass partway
+        // through the field's template, so a required empty Block Editor showed no "required"
+        // message even though its control was invalid and the save was correctly blocked. Null
+        // also reached the spread below, producing a document-less object whose `content` came
+        // from `preserveUnknownBlockNodes(undefined)`.
         if (!this.editor || !content || typeof content === 'string') {
             this.content = content;
 

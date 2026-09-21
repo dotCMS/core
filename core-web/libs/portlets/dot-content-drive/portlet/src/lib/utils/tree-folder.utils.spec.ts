@@ -9,6 +9,7 @@ import {
     buildTreeFolderNodes,
     createSiteNode,
     createTreeNode,
+    findNodeByPath,
     generateAllParentPaths
 } from './tree-folder.utils';
 
@@ -754,5 +755,61 @@ describe('Sidebar Utils', () => {
                 expect(result.selectedNode.key).toBe('empty-path-root');
             });
         });
+    });
+});
+
+describe('findNodeByPath', () => {
+    // Shaped like the real tree: the site row on top, its folders as children, nesting below.
+    const tree = [
+        {
+            key: 'site',
+            label: 'demo.dotcms.com',
+            data: { id: 'site-1', path: '', type: 'folder' },
+            children: [
+                {
+                    key: '/blog/',
+                    label: 'blog',
+                    data: { id: 'f1', path: '/blog/', type: 'folder' },
+                    children: [
+                        {
+                            key: '/blog/2026/',
+                            label: '2026',
+                            data: { id: 'f2', path: '/blog/2026/', type: 'folder' },
+                            children: []
+                        }
+                    ]
+                },
+                {
+                    key: '/images/',
+                    label: 'images',
+                    data: { id: 'f3', path: '/images/', type: 'folder' },
+                    children: []
+                }
+            ]
+        }
+    ] as never;
+
+    it('should find a folder at the top level', () => {
+        expect(findNodeByPath(tree, '/images/')?.data?.id).toBe('f3');
+    });
+
+    it('should find a folder nested below another', () => {
+        // The case the bug turned on: Back can land on any depth, not just a root folder.
+        expect(findNodeByPath(tree, '/blog/2026/')?.data?.id).toBe('f2');
+    });
+
+    it('should return undefined for a path no folder has', () => {
+        expect(findNodeByPath(tree, '/nope/')).toBeUndefined();
+    });
+
+    it('should return undefined rather than throwing when the tree is not loaded yet', () => {
+        // A cold start knows the location before it has any folders, so this is reached on the
+        // common path rather than as an edge case.
+        expect(findNodeByPath(undefined, '/blog/')).toBeUndefined();
+    });
+
+    it('should match on the path the URL carries, not the node key', () => {
+        // Keys encode tree position; the URL carries the path, and the two are not the same thing.
+        expect(findNodeByPath(tree, 'site')).toBeUndefined();
     });
 });

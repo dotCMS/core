@@ -482,9 +482,7 @@ export class DotFolderListViewContextMenuComponent {
         // the listing" and nothing else (FR-007, FR-009).
         const runId = this.#store.startExternalRun({
             operation: actionId,
-            actionName,
             total: 1,
-            targetLabel: itemTitle,
             targets: [contentletInode]
         });
         this.#workflowActionsFireService
@@ -524,13 +522,7 @@ export class DotFolderListViewContextMenuComponent {
         // workflow action, this locks through the contentlet service. Only the *reporting* is shared.
         const runId = this.#store.startExternalRun({
             operation: canLockData.locked ? 'UNLOCK' : 'LOCK',
-            actionName: this.#dotMessageService.get(
-                canLockData.locked
-                    ? 'content-drive.context-menu.unlock'
-                    : 'content-drive.context-menu.lock'
-            ),
             total: 1,
-            targetLabel: contentlet.title,
             targets: [contentlet.inode]
         });
 
@@ -767,9 +759,7 @@ export class DotFolderListViewContextMenuComponent {
         // shows nothing — the delete still working, but looking like nothing is happening.
         const runId = this.#store.startExternalRun({
             operation: 'DELETE_FOLDER',
-            actionName: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
             total: 1,
-            targetLabel: folder.name,
             targets: [folder.identifier, folder.inode].filter((id): id is string => !!id)
         });
 

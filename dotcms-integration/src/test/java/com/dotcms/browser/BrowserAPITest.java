@@ -1988,7 +1988,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .ignoreSiteForFolders(true)
                 .respectFrontEndRoles(false) // <-- This is key for this test!
                 .withUser(limitedUser)
-                .forceSystemHost(false)
+                .systemHostMode(SystemHostMode.EXCLUDE)
                 .showContent(true)
                 .showFiles(false)
                 .showFolders(false)
@@ -2088,7 +2088,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .ignoreSiteForFolders(true)
                 .respectFrontEndRoles(false)
                 .withUser(limitedUser)
-                .forceSystemHost(false)
+                .systemHostMode(SystemHostMode.EXCLUDE)
                 .showContent(true)
                 .contentCursor(0)
                 .showFiles(false)
@@ -4491,7 +4491,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .ignoreSiteForFolders(true)
                 .respectFrontEndRoles(false)
                 .withUser(limitedUser)
-                .forceSystemHost(false)
+                .systemHostMode(SystemHostMode.EXCLUDE)
                 .showFiles(true)
                 .showWorking(true)
                 .build();

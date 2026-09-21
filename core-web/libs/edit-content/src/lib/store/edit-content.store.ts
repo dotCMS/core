@@ -102,6 +102,19 @@ export interface EditContentState {
     // The only reader spreads the value, where null and `{}` are indistinguishable.
     formValues: FormValues | null;
     formStatus: 'init' | 'valid' | 'invalid';
+    /**
+     * Whether the author has tried to save or publish at least once.
+     *
+     * Required-field errors are gated on this rather than on the control's `touched` flag, so
+     * tabbing through an empty required field no longer turns it red before the author has
+     * attempted anything. One-way: once a save has been attempted, later errors surface
+     * immediately, which is the intent — the editor has moved from "being filled in" to
+     * "being corrected".
+     *
+     * Deliberately separate from `formStatus`: after one field is fixed the form can still be
+     * invalid because of another, yet the fixed field must clear on its own.
+     */
+    hasAttemptedSubmit: boolean;
 
     // Locales state
     locales: DotLanguage[] | null;
@@ -242,6 +255,7 @@ export const initialRootState: EditContentState = {
     // Form state
     formValues: {},
     formStatus: 'init',
+    hasAttemptedSubmit: false,
 
     // Locales state
     locales: null,

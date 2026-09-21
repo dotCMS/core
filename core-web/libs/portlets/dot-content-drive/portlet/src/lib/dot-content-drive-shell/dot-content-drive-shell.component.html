@@ -20,13 +20,44 @@
 <dot-content-drive-toolbar (upload)="onUpload($event)" data-testid="toolbar" />
 
 <div
-    class="col-start-1 row-span-2 row-start-2 flex flex-col items-center justify-center overflow-hidden border-r border-gray-300 font-semibold transition-all duration-300 ease-in-out"
+    class="col-start-1 row-span-3 row-start-2 flex flex-col items-center justify-center overflow-hidden border-r border-gray-300 font-semibold transition-all duration-300 ease-in-out"
     [class]="$treeExpanded() ? 'w-66' : 'w-0'"
     data-testid="tree-selector">
     <dot-content-drive-sidebar
         data-testid="sidebar"
         (uploadFiles)="onRequestUpload($event)"
         (moveItems)="onMoveItems($event)" />
+</div>
+
+<!-- Only all site content gets a bar: the other two scopes answer the question it asks simply by
+     being chosen.
+
+     Always mounted, opening and closing by height, exactly as the tree column beside it does. An
+     `@if` with `animate.enter` was tried first and did nothing visible — the element is created and
+     destroyed, so there is no before-state to move from. Keeping it in the DOM and transitioning a
+     property is what the sidebar does, and it is why the sidebar's animation works. -->
+<div
+    class="col-start-2 row-start-3 grid transition-all duration-300 ease-in-out"
+    [class]="
+        $allSiteContentSelected() ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+    "
+    [attr.inert]="$allSiteContentSelected() ? null : ''"
+    [attr.aria-hidden]="$allSiteContentSelected() ? null : 'true'"
+    data-testid="scope-bar-slot">
+    <!-- A grid row from `0fr` to `1fr` rather than a max-height: max-height has to be given a
+         ceiling, and the visible motion then finishes as soon as the real height is reached, part
+         way through the duration. A fractional row resolves to exactly the content's height, so the
+         movement lasts as long as it says it does and no number has to be guessed.
+
+         `overflow-hidden` belongs on this inner element: it is the one being squeezed.
+
+         Closed means zero-height and transparent, which hides the bar from the eye but not from
+         the keyboard: without `inert` its toggle stays tabbable, and stays in the accessibility
+         tree, in every scope that does not show the bar. `inert` removes it from both; the
+         `aria-hidden` beside it covers anything that does not honour `inert` yet. -->
+    <div class="overflow-hidden">
+        <dot-content-drive-scope-bar data-testid="scope-bar-host" />
+    </div>
 </div>
 
 <dot-upload-dropzone
@@ -36,7 +67,7 @@
     [targetFolder]="$selectedFolder()"
     (uploadFiles)="onRequestUpload($event)"
     (dragEnter)="onDropzoneDragEnter()"
-    class="col-start-2 row-start-3 overflow-auto">
+    class="col-start-2 row-start-4 overflow-auto">
     <!-- A search that failed to run must not read as a search that found nothing: the second tells
          the user their content does not exist, and that is what sent a customer looking for a
          document that was there all along (issue #37532). The message sits above the listing rather
@@ -60,6 +91,9 @@
         </p-message>
     }
 
+    <!-- `dataKey="inode"`: the language filter is multi-select, so one identifier can occupy
+         several rows here. On the component's `identifier` default, ticking one language version
+         ticked them all. The search service already backfills folder inodes for exactly this. -->
     <dot-folder-list-view
         [items]="$items()"
         [selection]="$selectedItems()"
@@ -84,7 +118,12 @@
 
 <dot-toast position="top-center" />
 
-@if ($contextMenuData().showAddToBundle) {
+<!-- The run in flight, which the toolbar used to draw at the end of its filter row. Beside the
+     outlet above rather than at the top of the template: this shell is a grid, and a component
+     placed first takes the first cell and shifts every panel along. -->
+<dot-status-toast position="bottom-center" />
+
+@if ($contextMenuData()?.showAddToBundle) {
     <dot-add-to-bundle
         (cancel)="cancelAddToBundle()"
         (added)="onBundleAdded()"
@@ -93,7 +132,7 @@
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->
 <div
-    class="col-start-3 row-span-2 row-start-2 flex w-0 flex-col items-center justify-center font-semibold"></div>
+    class="col-start-3 row-span-3 row-start-2 flex w-0 flex-col items-center justify-center font-semibold"></div>
 <p-dialog
     [visible]="$dialogVisible()"
     [header]="$activeDialog()?.header"

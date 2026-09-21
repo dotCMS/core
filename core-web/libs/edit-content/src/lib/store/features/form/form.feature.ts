@@ -34,6 +34,15 @@ export function withForm() {
              */
             setFormStatus: (state: 'init' | 'valid' | 'invalid') => {
                 patchState(store, { formStatus: state });
+            },
+            /**
+             * Records that a save or publish has been attempted, which is what allows required
+             * errors to surface. One-way — nothing resets it while the editor is open.
+             *
+             * @memberof withForm
+             */
+            markSubmitAttempted: () => {
+                patchState(store, { hasAttemptedSubmit: true });
             }
         }))
     );

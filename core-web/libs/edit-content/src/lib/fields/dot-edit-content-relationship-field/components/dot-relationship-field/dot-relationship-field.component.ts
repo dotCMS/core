@@ -68,6 +68,13 @@ import type { DotEditContentSidePanelComponent } from '../../../../components/do
     ],
     templateUrl: './dot-relationship-field.component.html',
     styleUrl: './dot-relationship-field.component.scss',
+    host: {
+        // The field's value is a collection, so no single control can carry `<label for>`. The
+        // widget is the named thing, via the label's id. No aria-required: ARIA defines that
+        // attribute on radiogroup, not on a plain group.
+        role: 'group',
+        '[attr.aria-labelledby]': "'label-' + $field().variable"
+    },
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         RelationshipFieldStore,

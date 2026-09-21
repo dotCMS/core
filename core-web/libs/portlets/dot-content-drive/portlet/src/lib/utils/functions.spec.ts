@@ -43,6 +43,7 @@ import {
     isDateFieldFilterType,
     isFolder,
     isMultiValueFieldFilterType,
+    listsFolders,
     parseUserSearchableValue,
     parseWorkflowFilter,
     mergeFolderNodePage,
@@ -2083,5 +2084,31 @@ describe('canAddChildrenTo', () => {
     it('should prefer the folder answer over the site answer', () => {
         expect(canAddChildrenTo(node(['CAN_ADD_CHILDREN']), false)).toBe(true);
         expect(canAddChildrenTo(node(['READ']), true)).toBe(false);
+    });
+});
+
+describe('listsFolders', () => {
+    // Browsing all site content is a flat listing over every folder, so folder rows there would
+    // be noise -- the tree beside it is how folders are navigated. Searching is the other case:
+    // a name match should find a folder wherever it lives, which is what #37479 FR-011 asks for
+    // and what its e2e caught when this returned false for a search at the default view.
+    it('should not list folders while browsing all site content', () => {
+        expect(listsFolders('ALL', false)).toBe(false);
+    });
+
+    it('should list folders when all site content is being searched', () => {
+        expect(listsFolders('ALL', true)).toBe(true);
+    });
+
+    // System Host has none to list, searching or not: the API returns an empty folder set for
+    // that scope, so asking would spend a query to be told nothing.
+    it('should never list folders on System Host', () => {
+        expect(listsFolders('SYSTEM_HOST', false)).toBe(false);
+        expect(listsFolders('SYSTEM_HOST', true)).toBe(false);
+    });
+
+    it('should list folders at the site root and inside a folder', () => {
+        expect(listsFolders('ROOT', false)).toBe(true);
+        expect(listsFolders(undefined, false)).toBe(true);
     });
 });

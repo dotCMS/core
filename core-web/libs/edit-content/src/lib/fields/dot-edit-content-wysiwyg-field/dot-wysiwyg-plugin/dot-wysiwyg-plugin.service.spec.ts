@@ -127,7 +127,10 @@ describe('DotWysiwygPluginService', () => {
             },
             {
                 provide: DotEditContentStore,
-                useValue: { currentLocale: signal({ id: LOCALE_ID }) }
+                useValue: {
+                    hasAttemptedSubmit: signal(false),
+                    currentLocale: signal({ id: LOCALE_ID })
+                }
             },
             // Angular Edit Content host: the launcher is what makes the new picker the picker.
             // Its legacy counterpart lives in `dot-wysiwyg-plugin.service.legacy-host.spec.ts`.

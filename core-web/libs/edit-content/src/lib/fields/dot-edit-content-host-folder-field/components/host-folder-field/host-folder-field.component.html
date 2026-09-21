@@ -39,6 +39,10 @@
             [class.ng-dirty]="hasError"
             [class.border-(--p-inputtext-invalid-border-color)]="hasError"
             [disabled]="isDisabled"
+            [attr.id]="$controlId() || null"
+            role="combobox"
+            aria-haspopup="tree"
+            [attr.aria-required]="$isRequired() ? 'true' : null"
             [attr.aria-expanded]="store.overlayOpen()"
             data-testid="host-folder-trigger"
             (click)="toggleOverlay($event)">

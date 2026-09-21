@@ -9,6 +9,7 @@ import {
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
     DotContentDriveBrowseItem,
+    DotContentDriveBrowseScope,
     DotContentDriveItem,
     DotContentDriveLink,
     DotFolder,
@@ -25,8 +26,11 @@ import {
     FOLDER_NAME_FILTER_MIN_LENGTH,
     FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
+    ROOT_PATH,
     SHARED_ASSETS_ENABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
+    SYSTEM_HOST,
+    SYSTEM_HOST_PATH,
     USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
@@ -34,7 +38,9 @@ import {
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
     DotContentDriveSearchScope,
-    DotKnownContentDriveFilters
+    DotKnownContentDriveFilters,
+    FolderTreeHierarchyLevel,
+    WorkflowFilterEntry
 } from '../shared/models';
 
 /**
@@ -59,12 +65,6 @@ const multiSelector = (value = ''): string[] =>
  * @return {*}  {string}
  */
 const singleSelector: DotContentDriveDecodeFunction = (value = ''): string => value.trim();
-
-/** A single workflow filter entry: one scheme, optionally pinned to a step. */
-export interface WorkflowFilterEntry {
-    scheme: string;
-    step?: string;
-}
 
 /** Separator for the `schemeId[:stepId]` workflow token encoding. */
 export const WORKFLOW_TOKEN_SEPARATOR = ':';
@@ -457,25 +457,6 @@ export function folderSearchViewToDotFolder(view: FolderSearchView, hostName: st
         permissions: view.permissions ?? undefined
     };
 }
-
-/**
- * One level of the folder hierarchy returned by {@link getFolderHierarchyByPath}.
- * `path` is the parent path that was queried; `folders` are its direct children (first page).
- */
-export type FolderTreeHierarchyLevel = {
-    path: string;
-    folders: DotFolder[];
-    totalEntries: number;
-    /**
-     * The 1-based page "Load more" should request next for this level, expressed in
-     * {@link FOLDER_TREE_PAGE_SIZE} units because that is what load-more pages by.
-     *
-     * Derived from the folders actually fetched, never from the rendered node count: a level can
-     * carry one extra folder that {@link resolveHierarchyAncestor} appended out of sort order, and
-     * counting that as paged-through would make load-more skip a page of real folders.
-     */
-    nextPage: number;
-};
 
 /**
  * The last segment of a folder path: `/a/b/` → `b`, `/a/` → `a`.
@@ -946,6 +927,68 @@ export function canAddChildrenTo(
 }
 
 /**
+ * Turns the one value that says where the user is browsing into the two the endpoint expects.
+ *
+ * The sidebar can select four things and the URL carries one value for all of them: absent means
+ * all site content, `/` means the site root, a deeper path means that folder, and a reserved word
+ * means System Host. Keeping it to one value is what stops a location and a scope disagreeing,
+ * and this is the single place the two representations meet.
+ *
+ * Written as a mapping rather than interpolation on purpose. Pasting the location into the path
+ * produces `//demo.dotcms.comSYSTEM_HOST` for the reserved word, which resolves to nothing.
+ *
+ * A folder deliberately gets **no** scope: it is addressed by its path, the endpoint refuses a
+ * scope alongside a folder path, and a scope there is what would turn the listing into every
+ * descendant.
+ */
+export function toRequestLocation(
+    hostname: string | undefined,
+    path: string | undefined
+): { assetPath: string; browseScope?: DotContentDriveBrowseScope } {
+    const siteRoot = `//${hostname}/`;
+
+    if (!path?.length) {
+        return { assetPath: siteRoot, browseScope: 'ALL' };
+    }
+
+    if (path === SYSTEM_HOST_PATH) {
+        return { assetPath: siteRoot, browseScope: 'SYSTEM_HOST' };
+    }
+
+    if (path === ROOT_PATH) {
+        return { assetPath: siteRoot, browseScope: 'ROOT' };
+    }
+
+    return { assetPath: `//${hostname}${path}` };
+}
+
+/**
+ * Whether the listing should ask for folders at all.
+ *
+ * Browsing all site content is a flat listing over every folder on the site, so folder rows there
+ * are noise -- the tree beside it is how folders are navigated. Searching is the other case: a
+ * name is being matched rather than a place browsed, and a match should be found wherever it
+ * lives. That is #37479's FR-011, that folder matching behaves the same in either search scope,
+ * and suppressing folders for the whole of all site content broke it at the default view.
+ *
+ * System Host is unconditional: it has no folders to list either way. `getFolders` returns an
+ * empty list for that scope, so asking spends a query to be told nothing.
+ *
+ * @param browseScope which scope the listing is showing
+ * @param isSearching whether a text filter is narrowing it
+ */
+export function listsFolders(
+    browseScope: DotContentDriveBrowseScope | undefined,
+    isSearching: boolean
+): boolean {
+    if (browseScope === 'SYSTEM_HOST') {
+        return false;
+    }
+
+    return browseScope !== 'ALL' || isSearching;
+}
+
+/**
  * Canonical form for comparing two folder references: `//hostname/path`, lower-cased and without a
  * trailing slash.
  *
@@ -961,3 +1004,44 @@ export const toFolderRef = (hostname: string | null | undefined, path: string | 
 /** Normalises an already-formed `//hostname/path` reference. See {@link toFolderRef}. */
 export const normalizeFolderRef = (ref: string | null | undefined): string =>
     (ref ?? '').toLowerCase().replace(/\/+$/, '');
+
+/**
+ * The folder reference for the location the drive is on, in the form runs are compared against.
+ *
+ * Not {@link toFolderRef} applied to the site and the location directly, because the location is
+ * not always a path on the browsed site. System Host belongs to no site, so pairing its reserved
+ * location value with whatever hostname the switcher happens to show produced
+ * `//demo.dotcms.comsystem_host` — a reference to nothing, which matched no run's affected folders.
+ * The listing therefore never reloaded after an upload landed there.
+ *
+ * @param {string | null | undefined} hostname - The browsed site's hostname
+ * @param {string | null | undefined} path - The location, which may not be a folder path at all
+ * @returns {string} the canonical reference for what is on screen
+ */
+export const browsedFolderRef = (
+    hostname: string | null | undefined,
+    path: string | null | undefined
+): string =>
+    path === SYSTEM_HOST_PATH
+        ? toFolderRef(SYSTEM_HOST.hostname, ROOT_PATH)
+        : toFolderRef(hostname, path);
+
+/**
+ * Which wording an upload run names itself with.
+ *
+ * The messages spell "file" or "files" out instead of hedging with "file(s)", so the count has to
+ * choose between them, and only the caller knows the count. Nothing here names a destination: the
+ * drive already shows where the author is, and the sentence was long enough that the part they
+ * could read at a glance was getting lost behind the part they could not.
+ *
+ * @param {number} count - How many files the batch carries
+ * @param {{ backgrounded?: boolean }} [options] - Whether the batch is the server's now
+ * @returns {string} the message key for that run
+ */
+export const uploadIndicatorKey = (count: number, options?: { backgrounded?: boolean }): string => {
+    const base = options?.backgrounded
+        ? 'content-drive.upload.indicator.background'
+        : 'content-drive.upload.indicator';
+
+    return count === 1 ? `${base}.one` : base;
+};

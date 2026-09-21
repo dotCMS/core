@@ -116,6 +116,13 @@ type GeneratedAIImage = DotGeneratedAIImage & {
     ],
     templateUrl: './dot-file-field.component.html',
     styleUrls: ['./dot-file-field.component.scss'],
+    host: {
+        // No control here can carry `<label for>`: the file input is display:none and the rest are
+        // a dropzone and buttons. The widget is the named thing. No aria-required — ARIA defines it
+        // on radiogroup, not on a plain group.
+        role: 'group',
+        '[attr.aria-labelledby]': '$labelledBy() || null'
+    },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFileFieldComponent
@@ -214,6 +221,15 @@ export class DotFileFieldComponent
      * @default false
      */
     $hasError = input.required<boolean>({ alias: 'hasError' });
+
+    /**
+     * The id of the field's label, when there is one.
+     *
+     * Empty by default on purpose: this component also compiles into the
+     * dotcms-binary-field-builder bundle the legacy Dojo editor loads, where no such label exists.
+     * An empty value leaves the attribute off rather than pointing at an id that is not on the page.
+     */
+    $labelledBy = input<string>('', { alias: 'labelledBy' });
     /**
      * When true, forces the drop zone and action buttons to stack vertically.
      * Use in narrow containers where side-by-side layout would clip the buttons.

@@ -72,7 +72,7 @@ public class BrowserQuery {
     final Set<String> contentTypeIds;
     final Set<String> excludedContentTypeIds;
     final Host site;
-    final boolean forceSystemHost;
+    final SystemHostMode systemHostMode;
     final boolean skipFolder;
     final boolean ignoreSiteForFolders;
     final Folder folder;
@@ -132,7 +132,7 @@ public class BrowserQuery {
                 ", contentCursor=" + contentCursor + ", folderCursor=" + folderCursor +
                 ", linkCursor=" + linkCursor +
                 " ,site:" + site + ", folder:" + folder + ", filter:"
-                + filter + ", sortBy:" + sortBy + ", forceSystemHost:" + forceSystemHost
+                + filter + ", sortBy:" + sortBy + ", systemHostMode:" + systemHostMode
                 + ", skipFolder:" + skipFolder + ", ignoreSiteForFolders:" + ignoreSiteForFolders
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:"
                 + showWorking + ", showArchived:"
@@ -203,8 +203,9 @@ public class BrowserQuery {
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
         this.folder = siteAndFolder._2;
-        //Despite the site and folder passed, forceSystemHost makes the inclusion of SYSTEM_HOME in the query
-        this.forceSystemHost = builder.forceSystemHost;
+        //Despite the site and folder passed, this decides whether SYSTEM_HOST content joins the
+        //results, is kept out of them, or is the only thing in them.
+        this.systemHostMode = builder.systemHostMode;
         this.directParent = this.folder.isSystemFolder() ? site : folder;
         this.roles= Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0])).getOrElse(new Role[0]);
     }
@@ -319,7 +320,7 @@ public class BrowserQuery {
         private final StringBuilder luceneQuery = new StringBuilder();
         private final Set<BaseContentType> baseTypes = new HashSet<>();
         private String hostFolderId = FolderAPI.SYSTEM_FOLDER;
-        private boolean forceSystemHost = false;
+        private SystemHostMode systemHostMode = SystemHostMode.EXCLUDE;
         private boolean skipFolder = false;
         private boolean ignoreSiteForFolders = false;
         private String hostIdSystemFolder = null;
@@ -367,7 +368,9 @@ public class BrowserQuery {
                     : browserQuery.folder.getInode();
             this.useElasticsearchFiltering = browserQuery.useElasticsearchFiltering;
             this.searchScope = browserQuery.searchScope;
-            this.forceSystemHost = browserQuery.forceSystemHost;
+            // `forceSystemHost` on the other side of this merge; the boolean field is gone, and
+            // the deprecated setter that replaced it translates into this same enum.
+            this.systemHostMode = browserQuery.systemHostMode;
             this.skipFolder = browserQuery.skipFolder;
             this.ignoreSiteForFolders = browserQuery.ignoreSiteForFolders;
             this.filter = browserQuery.filter;
@@ -448,13 +451,36 @@ public class BrowserQuery {
         }
 
         /**
-         * When set, search includes items that belong to system-host
-         * @param forceSystemHost
-         * @return
+         * What the search does about System Host content: keeps it out, admits it alongside the
+         * named site, or returns nothing else.
+         * <p>
+         * Replaces a boolean that could only say the first two. Left unset it is
+         * {@link SystemHostMode#EXCLUDE}, which is what the boolean {@code false} meant, so a
+         * caller that never mentions System Host is unaffected.
+         *
+         * @param systemHostMode how System Host content is treated, never null
+         * @return this builder
          */
-        public Builder forceSystemHost(boolean forceSystemHost) {
-            this.forceSystemHost = forceSystemHost;
+        public Builder systemHostMode(@Nonnull SystemHostMode systemHostMode) {
+            this.systemHostMode = systemHostMode;
             return this;
+        }
+
+        /**
+         * When set, search includes items that belong to system-host.
+         *
+         * @param forceSystemHost whether System Host content joins the results
+         * @return this builder
+         * @deprecated since 26.09, use {@link #systemHostMode(SystemHostMode)}. The boolean can
+         * only name two of the three shapes the host predicate has, and not the one Content Drive
+         * needs ({@link SystemHostMode#ONLY}). It is kept because it is public API that has
+         * shipped for years and may be held by a static plugin, a jar on the container classpath,
+         * or customer code compiled against an older core; it delegates, so it cannot drift.
+         */
+        @Deprecated
+        public Builder forceSystemHost(final boolean forceSystemHost) {
+            return systemHostMode(
+                    forceSystemHost ? SystemHostMode.INCLUDE : SystemHostMode.EXCLUDE);
         }
 
         /**

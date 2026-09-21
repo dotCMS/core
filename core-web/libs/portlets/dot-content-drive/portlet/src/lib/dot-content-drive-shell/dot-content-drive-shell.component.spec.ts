@@ -17,6 +17,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
+import { Popover } from 'primeng/popover';
 import { ZIndexUtils } from 'primeng/utils';
 
 import {
@@ -57,7 +58,11 @@ import {
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
-import { DotFolderListViewComponent, DotUploadTypeSelectorComponent } from '@dotcms/ui';
+import {
+    DotFolderListViewComponent,
+    DotUploadTypeSelectorComponent,
+    STATUS_TOAST_KEY
+} from '@dotcms/ui';
 import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
@@ -70,6 +75,8 @@ import {
     DIALOG_TYPE,
     ERROR_MESSAGE_LIFE,
     SUCCESS_MESSAGE_LIFE,
+    SYSTEM_HOST,
+    SYSTEM_HOST_PATH,
     WARNING_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
@@ -82,6 +89,7 @@ import {
 } from '../shared/mocks';
 import {
     DotContentDriveDialog,
+    DotContentDriveActionExecution,
     DotContentDriveActionExecutionResult,
     DotContentDriveDialogDrillDown,
     DotContentDriveSortOrder,
@@ -101,6 +109,8 @@ const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
 // The site-level answer the drop guard falls back to at the root. Module scope for the same reason
 // as the one above: two store mocks in this file read it from describes with no shared `beforeEach`.
 const siteCanAddChildrenSignal: WritableSignal<boolean | undefined> = signal(undefined);
+const systemHostCanReadSignal = signal(true);
+const allSiteContentSelectedSignal = signal(false);
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -126,6 +136,11 @@ describe('DotContentDriveShellComponent', () => {
     >;
     // Reactive so the shell's $extraColumns computed recomputes when the fields change.
     let showInListFieldsSignal: WritableSignal<DotCMSContentTypeField[]>;
+
+    // The run the toolbar surface speaks for, driven from here so the shell's status-toast effect
+    // can be exercised. Only unmarked runs reach it; the store's own computed does that filtering.
+    const toolbarRunSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    const toolbarRunCountSignal = signal(0);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,
@@ -214,6 +229,8 @@ describe('DotContentDriveShellComponent', () => {
     beforeEach(() => {
         canAddChildrenSignal.set(true);
         siteCanAddChildrenSignal.set(undefined);
+        systemHostCanReadSignal.set(true);
+        allSiteContentSelectedSignal.set(false);
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
@@ -226,6 +243,9 @@ describe('DotContentDriveShellComponent', () => {
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
 
+        const currentSiteMock = vi.fn().mockReturnValue(MOCK_SITES[0]);
+        const systemHostSelectedMock = vi.fn().mockReturnValue(false);
+
         spectator = createComponent({
             providers: [
                 mockProvider(DotContentDriveStore, {
@@ -237,7 +257,10 @@ describe('DotContentDriveShellComponent', () => {
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
                     siteCanAddChildren: siteCanAddChildrenSignal,
-                    currentSite: vi.fn().mockReturnValue(MOCK_SITES[0]),
+                    // The sidebar this shell renders reads it to decide whether to offer the
+                    // System Host entry at all.
+                    systemHostCanRead: systemHostCanReadSignal,
+                    currentSite: currentSiteMock,
                     // Tree collapsed at start to render the toggle button on toolbar
                     isTreeExpanded: vi.fn().mockReturnValue(false),
                     removeFilter: vi.fn(),
@@ -263,8 +286,8 @@ describe('DotContentDriveShellComponent', () => {
                     trackUploadJob: vi.fn(),
                     updateExternalRun: vi.fn(),
                     activeRunCount: signal(0),
-                    toolbarRun: signal(undefined),
-                    toolbarRunCount: signal(0),
+                    toolbarRun: toolbarRunSignal,
+                    toolbarRunCount: toolbarRunCountSignal,
                     busyRows: signal<string[]>([]),
                     endExternalRun: vi.fn(),
                     setPagination: vi.fn(),
@@ -301,6 +324,17 @@ describe('DotContentDriveShellComponent', () => {
                     folders: vi.fn(),
                     selectedNode: vi.fn(),
                     setSelectedNode: vi.fn(),
+                    // The shell renders the sidebar, which asks the store which entry is selected.
+                    $allSiteContentSelected: allSiteContentSelectedSignal,
+                    $systemHostSelected: systemHostSelectedMock,
+                    // Mirrors the store's own computed rather than hardcoding an answer, so these
+                    // tests keep driving the destination through the signals they already control:
+                    // System Host when that is selected, the current site otherwise.
+                    $newContentHostId: vi.fn(() =>
+                        systemHostSelectedMock() ? 'SYSTEM_HOST' : currentSiteMock()?.identifier
+                    ),
+                    selectAllSiteContent: vi.fn(),
+                    selectSystemHost: vi.fn(),
                     sidebarLoading: vi.fn(),
                     closeDialog: vi.fn(),
                     patchContextMenu: vi.fn(),
@@ -387,6 +421,12 @@ describe('DotContentDriveShellComponent', () => {
         router = spectator.inject(Router);
         location = spectator.inject(Location);
         messageService = spectator.inject(MessageService);
+
+        // Module-level, so whatever the last test left here is what the next one starts with. The
+        // shell raises the status toast off these, which made an unrelated test see a message it
+        // never asked for.
+        toolbarRunSignal.set(undefined);
+        toolbarRunCountSignal.set(0);
         uploadService = spectator.inject(DotUploadFileService);
         routerService = spectator.inject(DotRouterService);
         dotMessageService = spectator.inject(DotMessageService);
@@ -2026,7 +2066,7 @@ describe('DotContentDriveShellComponent', () => {
 
             const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
-            expect(selector!.$files()).toBe(files);
+            expect(selector?.$files()).toBe(files);
             expect(uploadService.uploadFilesByBaseType).not.toHaveBeenCalled();
         });
 
@@ -2074,7 +2114,10 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should hide the button popover when a drag-and-drop opens the modal', () => {
             openViaButton(TARGET_FOLDER_DATA);
-            const hideSpy = vi.spyOn(spectator.component.$uploadSelectorPopover(), 'hide');
+            // viewChild() is `Popover | undefined`; narrow before spying.
+            const popover = spectator.component.$uploadSelectorPopover();
+            expect(popover).toBeTruthy();
+            const hideSpy = vi.spyOn(popover as Popover, 'hide');
 
             dropFiles();
             spectator.detectChanges();
@@ -2099,6 +2142,125 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(spectator.component.$uploadSelectorPayload()).toBeTruthy();
             expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
+        });
+    });
+
+    describe('the scope bar slot', () => {
+        it('should take the bar out of reach while it is closed', () => {
+            // Closed is zero-height and transparent, which hides it from the eye and from nothing
+            // else: the toggle inside stayed tabbable and stayed in the accessibility tree in
+            // every scope that does not show the bar.
+            allSiteContentSelectedSignal.set(false);
+            spectator.detectChanges();
+
+            const slot = spectator.query(byTestId('scope-bar-slot'));
+
+            expect(slot?.hasAttribute('inert')).toBe(true);
+            expect(slot?.getAttribute('aria-hidden')).toBe('true');
+        });
+
+        it('should put it back in reach when all site content is selected', () => {
+            allSiteContentSelectedSignal.set(true);
+            spectator.detectChanges();
+
+            const slot = spectator.query(byTestId('scope-bar-slot'));
+
+            expect(slot?.hasAttribute('inert')).toBe(false);
+            expect(slot?.hasAttribute('aria-hidden')).toBe(false);
+        });
+    });
+
+    describe('reporting a run in flight', () => {
+        // Moved here with the effect itself. The toolbar raised this while it still drew the
+        // indicator in its filter row; now that the status is a toast rendered by the shell, the
+        // shell owns raising it -- it holds the outlet and outlives every dialog the run may have
+        // started from.
+        const statusMessages = () =>
+            (messageService.add as unknown as { mock: { calls: unknown[][] } }).mock.calls
+                .map(([message]) => message as { key?: string; summary?: string })
+                .filter((message) => message.key === STATUS_TOAST_KEY);
+
+        it('should raise nothing while nothing is running', () => {
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(0);
+        });
+
+        it('should report a run that brought its own wording', () => {
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(1);
+        });
+
+        it('should stay silent for a run that brought none', () => {
+            // Only unmarked runs arrive here, and every one of those is an upload, which names
+            // itself. Anything else is a run nobody wrote words for, and inventing "Applying X to
+            // Y" for it is what made an upload read "Applying Upload to demo.dotcms.com".
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Publish',
+                total: 3
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(0);
+        });
+
+        it('should clear the status once the run settles', () => {
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            toolbarRunCountSignal.set(0);
+            toolbarRunSignal.set(undefined);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            // Sticky on purpose, so nothing times it out mid-upload. That makes ending it the
+            // store's job, which is the half worth pinning.
+            expect(messageService.clear).toHaveBeenCalledWith(STATUS_TOAST_KEY);
+        });
+
+        it('should raise it as something the reader cannot dismiss', () => {
+            toolbarRunCountSignal.set(1);
+            toolbarRunSignal.set({
+                actionName: 'Upload',
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            } as DotContentDriveActionExecution);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            // PrimeNG reads `closable` off the message, not the outlet, so this is the only place
+            // that can turn the close button off for real.
+            expect(statusMessages()[0]).toEqual(
+                expect.objectContaining({ sticky: true, closable: false })
+            );
+        });
+
+        it('should collapse to a count when several runs are in flight', () => {
+            // With several at once the store leaves the run undefined on purpose: name none of
+            // them and report the number instead.
+            toolbarRunCountSignal.set(3);
+            toolbarRunSignal.set(undefined);
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(statusMessages()).toHaveLength(1);
         });
     });
 
@@ -2161,6 +2323,86 @@ describe('DotContentDriveShellComponent', () => {
             expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({ siteId: MOCK_SITES[0].identifier })
+            );
+        });
+
+        it('should count a single file in the singular', () => {
+            // "Uploading 1 files" is the price of dropping the "(s)" hedge, so the caller picks
+            // the wording -- it is the only place that knows how many were chosen.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({ labelKey: 'content-drive.upload.indicator.one' })
+            );
+        });
+
+        it('should describe itself as an upload, not as an action applied to a site', () => {
+            // Without a label of its own the run falls to the workflow sentence, which reads
+            // "Applying Upload to demo.dotcms.com" — phrased for an action applied TO content,
+            // not for files going INTO a place.
+            selectUploadType({
+                targetFolder: TARGET_FOLDER_DATA,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: expect.stringContaining('content-drive.upload.indicator')
+                })
+            );
+        });
+
+        it('should target System Host when that is where the batch lands, not the switcher site', () => {
+            // The switcher still names a site while System Host is browsed, and that site is
+            // context rather than the destination. Uploading here with the site's identifier
+            // silently lands the files somewhere the author did not choose.
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.$systemHostSelected.mockReturnValue(true);
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png'), createFile('b.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(uploadService.uploadFilesByBaseType).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.objectContaining({ siteId: SYSTEM_HOST.identifier })
+            );
+        });
+
+        it('should remember a System Host batch as landing on System Host', () => {
+            // The listing reloads only when the run's folders include the one on screen, and both
+            // sides of that comparison were computed from the switcher's site plus the location.
+            // On System Host that gave `//demo.dotcms.com` for the batch and
+            // `//demo.dotcms.comsystem_host` for the listing — two references to nothing alike, so
+            // an upload finished and the grid it landed in never refreshed.
+            store.currentSite.mockReturnValue(MOCK_SITES[0]);
+            store.$systemHostSelected.mockReturnValue(true);
+            store.path.mockReturnValue(SYSTEM_HOST_PATH);
+            uploadService.uploadFilesByBaseType.mockReturnValue(
+                of({
+                    kind: 'accepted',
+                    handle: { jobId: 'job-sh', statusUrl: '/api/v1/jobs/job-sh/status' }
+                })
+            );
+
+            selectUploadType({
+                targetFolder: undefined,
+                files: createFileList([createFile('a.png')]),
+                baseType: 'DOTASSET'
+            });
+
+            expect(store.trackUploadJob).toHaveBeenCalledWith(
+                'job-sh',
+                [`//${SYSTEM_HOST.identifier}`.toLowerCase()],
+                expect.any(String),
+                'DOTASSET'
             );
         });
 
@@ -2264,10 +2506,15 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(messageService.add).toHaveBeenCalledWith(
+            // The advisory toast this used to assert is gone: the status it sat beside says
+            // "in the background" itself, and both on screen announced one upload twice.
+            // Matched as a prefix: what this protects is that one file is still announced as
+            // backgrounded, not which noun the sentence uses. The wording does vary by count --
+            // "1 file" against "3 files" -- and pinning the exact key here would fail for the
+            // grammar while the behaviour under test was perfectly intact.
+            expect(store.startExternalRun).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    severity: 'info',
-                    detail: 'content-drive.upload.toast.backgrounded-detail'
+                    labelKey: expect.stringContaining('content-drive.upload.indicator.background')
                 })
             );
         });
@@ -2300,13 +2547,17 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'content-drive.upload.toast.backgrounded-detail',
-                '2'
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 2
+                })
             );
-            expect(dotMessageService.get).not.toHaveBeenCalledWith(
-                'content-drive.upload.toast.backgrounded-detail',
-                '3'
+            expect(store.startExternalRun).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 3
+                })
             );
         });
 
@@ -2359,9 +2610,11 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'content-drive.upload.toast.backgrounded-detail',
-                '2'
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    labelKey: 'content-drive.upload.indicator.background',
+                    total: 2
+                })
             );
         });
 
@@ -2850,10 +3103,9 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(messageService.add).toHaveBeenCalledWith(
+            expect(store.startExternalRun).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    severity: 'info',
-                    detail: 'content-drive.upload.toast.backgrounded-detail'
+                    labelKey: expect.stringContaining('content-drive.upload.indicator.background')
                 })
             );
             // Still nothing that names it a success: the files do not exist yet.
@@ -2974,13 +3226,17 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(addSpy).toHaveBeenCalledTimes(1);
-            expect(addSpy).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: 'info',
-                    summary: 'content-drive.upload.toast.backgrounded'
-                })
-            );
+            // Nothing on the wide outlet. The handoff advisory this used to assert was removed
+            // because the status toast beside it already said the upload was in the background,
+            // and one upload announcing itself twice is the noise this replaced.
+            //
+            // Keyed rather than absolute: the status toast is raised by this same service, and it
+            // is the one thing that SHOULD appear while a run is in flight.
+            const wideOutletMessages = addSpy.mock.calls
+                .map(([message]) => message as { key?: string })
+                .filter((message) => message.key !== STATUS_TOAST_KEY);
+
+            expect(wideOutletMessages).toEqual([]);
         });
 
         it('should not announce an upload the listing now shows', () => {
@@ -3363,6 +3619,24 @@ describe('DotContentDriveShellComponent', () => {
                 dropItems(allowedFolder);
 
                 expect(workflowService.bulkFire).toHaveBeenCalled();
+            });
+
+            // In System Host and all site content there is no selected folder at all, so the
+            // target arrives undefined and the folder-level check has nothing to answer about.
+            // The store's gate already knows which scope is open and whose permission applies;
+            // without deferring to it, a drop here is waved through on the site's answer while
+            // the Upload button beside it is correctly disabled.
+            it('should refuse a drop with no target when the scope refuses content', () => {
+                canAddChildrenSignal.set(false);
+
+                store.dragItems.mockReturnValue({
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                });
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', { targetFolder: undefined });
+
+                expect(workflowService.bulkFire).not.toHaveBeenCalled();
             });
 
             // The site root carries no permissions of its own, so the store's site-level answer is
@@ -4093,6 +4367,33 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.setPath).toHaveBeenCalledWith('/documents/');
         });
 
+        it('should read the site row as the site root, not as no location at all', () => {
+            // The tree tells its site row apart from a folder by carrying an empty path. As a
+            // *location* that means the site root, which is a different thing from all site
+            // content — and all site content is what an absent location means. Without this
+            // translation the two collapse into each other and choosing the site row silently
+            // lands on the flat whole-site view.
+            const siteRow: DotFolderTreeNodeItem = {
+                key: 'site',
+                label: 'demo.dotcms.com',
+                data: {
+                    id: 'site-123',
+                    hostname: 'demo.dotcms.com',
+                    path: '',
+                    type: 'site'
+                },
+                leaf: false
+            };
+
+            store.selectedNode.mockReturnValue(siteRow);
+            store.setPath.mockClear();
+
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            expect(store.setPath).toHaveBeenCalledWith('/');
+        });
+
         it('should not set path when the selected node carries no data', () => {
             // Not `null`: the state seeds `ALL_FOLDER` and `setSelectedNode` takes a required node,
             // so a missing node is unreachable. A node without `data` is the case the effect's
@@ -4699,6 +5000,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
                     siteCanAddChildren: siteCanAddChildrenSignal,
+                    // The sidebar this shell renders reads it to decide whether to offer the
+                    // System Host entry at all.
+                    systemHostCanRead: systemHostCanReadSignal,
                     currentSite: vi.fn().mockReturnValue(MOCK_SITES[0]),
                     isTreeExpanded: vi.fn().mockReturnValue(false),
                     items: vi.fn().mockReturnValue(MOCK_ITEMS),

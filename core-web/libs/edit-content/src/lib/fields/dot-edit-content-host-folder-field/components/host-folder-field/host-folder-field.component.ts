@@ -92,6 +92,15 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
 
     /**
+     * The id the field's label points at, so the two are associated.
+     *
+     * This field has no native form control — the affordance is a button that opens a tree picker
+     * — so without an explicit id there is nothing for `<label for>` to reach, and a screen reader
+     * announces the control with no name.
+     */
+    $controlId = input<string>('', { alias: 'controlId' });
+
+    /**
      * Whether to render this component's own trigger — the input-styled button and its
      * copy-to-clipboard action.
      *

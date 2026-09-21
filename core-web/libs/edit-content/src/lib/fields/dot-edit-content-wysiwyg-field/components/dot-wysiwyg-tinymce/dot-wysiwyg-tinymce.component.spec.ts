@@ -60,6 +60,35 @@ describe('DotWysiwygTinymceComponent', () => {
         ]
     });
 
+    /**
+     * AC-209 — a third-party editor owns its DOM, so `<label for>` cannot reach inside it. Both
+     * editors expose a documented option for the accessible name of their own surface, which is
+     * where the field name belongs: otherwise the control announces itself generically, or with no
+     * name at all.
+     */
+    it('should name the editor iframe from the field so it is not announced unnamed', () => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({ [WYSIWYG_MOCK.variable]: new FormControl() }),
+                    field: WYSIWYG_MOCK,
+                    hasError: false
+                }
+            }
+        );
+        spectator.detectChanges();
+
+        const config = spectator.component.$editorConfig();
+
+        // Two surfaces: the body inside the iframe, announced once inside the editing area, and
+        // the frame itself, announced on the way in. TinyMCE hardcodes the latter otherwise.
+        expect(config.iframe_aria_text).toBe(WYSIWYG_MOCK.name);
+        expect(config.iframe_attrs).toEqual({ title: WYSIWYG_MOCK.name });
+    });
+
     it('should initialize editor with correct configuration', () => {
         spectator = createHost(
             `<form [formGroup]="formGroup">
@@ -83,6 +112,8 @@ describe('DotWysiwygTinymceComponent', () => {
         const expectedConfiguration = {
             ...DEFAULT_TINYMCE_CONFIG,
             ...mockSystemWideConfig,
+            iframe_aria_text: WYSIWYG_MOCK.name,
+            iframe_attrs: { title: WYSIWYG_MOCK.name },
             setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
         };
 
@@ -126,6 +157,9 @@ describe('DotWysiwygTinymceComponent', () => {
             JSON.stringify({
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...mockSystemWideConfig,
+                // TinyMCE renders into an iframe; this is its own option for that iframe's name.
+                iframe_aria_text: WYSIWYG_MOCK.name,
+                iframe_attrs: { title: WYSIWYG_MOCK.name },
                 setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
@@ -138,6 +172,9 @@ describe('DotWysiwygTinymceComponent', () => {
             JSON.stringify({
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...newSystemWideConfig,
+                // TinyMCE renders into an iframe; this is its own option for that iframe's name.
+                iframe_aria_text: WYSIWYG_MOCK.name,
+                iframe_attrs: { title: WYSIWYG_MOCK.name },
                 setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
@@ -181,6 +218,9 @@ describe('DotWysiwygTinymceComponent', () => {
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...mockSystemWideConfig,
                 ...{ toolbar1: 'undo redo' },
+                // TinyMCE renders into an iframe; this is its own option for that iframe's name.
+                iframe_aria_text: WYSIWYG_MOCK.name,
+                iframe_attrs: { title: WYSIWYG_MOCK.name },
                 setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );

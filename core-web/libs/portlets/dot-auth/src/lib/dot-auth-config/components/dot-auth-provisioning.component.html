@@ -35,11 +35,14 @@
                 {{ 'dotauth.field.defaultRoles' | dm }}
                 <i
                     class="label-tip pi pi-question-circle"
+                    data-testid="default-roles-tip"
                     [pTooltip]="'dotauth.tooltip.defaultRoles' | dm"
                     tooltipPosition="top"></i>
             </label>
             <input
                 pInputText
+                data-testid="default-roles"
+                placeholder="exampleRole1, exampleRole2"
                 [ngModel]="defaultRolesText()"
                 (ngModelChange)="onDefaultRolesChange($event)" />
         </div>

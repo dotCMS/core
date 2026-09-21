@@ -10,7 +10,7 @@ import { createFakeFolderSearchView, createFakeSite } from '@dotcms/utils-testin
 
 import { withSidebar } from './withSidebar';
 
-import { SYSTEM_HOST } from '../../../shared/constants';
+import { ROOT_PATH, SYSTEM_HOST, SYSTEM_HOST_PATH } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
 import { createSiteNode } from '../../../utils/tree-folder.utils';
 import { DOT_CONTENT_DRIVE_INITIAL_STATE } from '../../dot-content-drive.store';
@@ -543,5 +543,91 @@ describe('withSidebar - undefined path scenarios', () => {
                     done();
                 }, 0);
             }));
+    });
+});
+
+describe('withSidebar - a location that is not a folder', () => {
+    let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
+    let store: InstanceType<typeof sidebarStoreMock>;
+    let folderService: Mocked<DotFolderService>;
+
+    // System Host belongs to no site, so it is nowhere in this site's hierarchy. It reaches the
+    // sidebar as a location like any other, which is what made it look like a folder path.
+    const systemHostLocationStoreMock = signalStore(
+        withState<DotContentDriveState>({
+            ...initialState,
+            path: SYSTEM_HOST_PATH
+        }),
+        withSidebar()
+    );
+
+    const createService = createServiceFactory({
+        service: systemHostLocationStoreMock,
+        providers: [
+            mockProvider(DotFolderService, {
+                searchFolders: vi.fn().mockReturnValue(searchResult([]))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        folderService = spectator.inject(DotFolderService);
+    });
+
+    it('should not go looking for it among the site folders', () => {
+        // The site's own root level is still fetched — the tree shows this site's folders whatever
+        // location is open. What must not happen is resolving the location itself as a folder: it
+        // was turned into `/SYSTEM_HOST/` and queried, a folder nobody has, so the request could
+        // only ever come back empty.
+        expect(folderService.searchFolders).not.toHaveBeenCalledWith(
+            expect.objectContaining({ path: '/SYSTEM_HOST/' })
+        );
+    });
+
+    it('should leave the tree with nothing selected', () => {
+        // The failing behaviour, and the one the user sees: the hierarchy load fell back to the
+        // site row, so the site root and System Host both looked selected at once. Worse, the
+        // shell syncs the location from the selected node, so that row then rewrote the location
+        // to the site root and bounced the user straight back out of System Host.
+        expect(store.selectedNode()).toBeUndefined();
+    });
+});
+
+describe('withSidebar - the site root as a location', () => {
+    let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
+    let store: InstanceType<typeof sidebarStoreMock>;
+
+    const rootPathStoreMock = signalStore(
+        withState<DotContentDriveState>({
+            ...initialState,
+            path: ROOT_PATH
+        }),
+        withSidebar()
+    );
+
+    const createService = createServiceFactory({
+        service: rootPathStoreMock,
+        providers: [
+            mockProvider(DotFolderService, {
+                searchFolders: vi.fn().mockReturnValue(searchResult([]))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+    });
+
+    it('should keep the site row selected once the location settles', () => {
+        // The tree marks its site row with an empty path, while the site root as a *location* is
+        // `/`. Looking the location up literally finds no node, so the sync that keeps the tree in
+        // step with the location read that as "nothing here" and cleared the selection every time
+        // the user was at the site root.
+        spectator.flushEffects();
+
+        expect(store.selectedNode()?.data?.id).toBe(mockSite.identifier);
     });
 });

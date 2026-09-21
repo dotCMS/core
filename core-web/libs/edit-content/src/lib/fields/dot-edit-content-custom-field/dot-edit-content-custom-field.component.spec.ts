@@ -1,6 +1,7 @@
 import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DotRenderModes, NEW_RENDER_MODE_VARIABLE_KEY } from '@dotcms/dotcms-models';
@@ -19,7 +20,12 @@ import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.componen
 const MOCK_CONTENT_TYPE_NAME = 'test';
 const MOCK_INODE = 'test-inode';
 
+/** Flipped by tests that need the required error to surface (#37464 gates it on save). */
+const submitAttempted = signal(false);
+
 describe('DotEditContentCustomFieldComponent', () => {
+    beforeEach(() => submitAttempted.set(false));
+
     let spectator: SpectatorHost<DotEditContentCustomFieldComponent>;
 
     const FIELD_VARIABLES = {
@@ -50,6 +56,7 @@ describe('DotEditContentCustomFieldComponent', () => {
             {
                 provide: DotEditContentStore,
                 useValue: {
+                    hasAttemptedSubmit: submitAttempted,
                     setFieldVisibility: vi.fn()
                 }
             }
@@ -342,6 +349,7 @@ describe('DotEditContentCustomFieldComponent', () => {
                 {
                     provide: DotEditContentStore,
                     useValue: {
+                        hasAttemptedSubmit: submitAttempted,
                         setFieldVisibility: vi.fn()
                     }
                 }
@@ -386,12 +394,14 @@ describe('DotEditContentCustomFieldComponent', () => {
             expect(spectator.query('small.p-field-error')).toBeNull();
         });
 
-        it('should render the inline error when the required field is empty and touched', () => {
+        it('should render the inline error once a save has been attempted (#37464)', () => {
             const formGroup = renderRequiredField();
 
             const control = formGroup.get(REQUIRED_FIELD.variable);
             control!.setErrors({ required: true });
+            // Touching no longer surfaces the error: it is gated on a save or publish attempt.
             control!.markAsTouched();
+            submitAttempted.set(true);
             spectator.detectChanges();
 
             const errorEl = spectator.query('small.p-field-error')!;
@@ -401,6 +411,7 @@ describe('DotEditContentCustomFieldComponent', () => {
 
         it('should remove the inline error after the field receives a valid value', () => {
             const formGroup = renderRequiredField();
+            submitAttempted.set(true);
 
             const control = formGroup.get(REQUIRED_FIELD.variable);
             control!.setErrors({ required: true });

@@ -169,3 +169,33 @@ export const buildTreeFolderNodes = ({
 
     return { rootNodes, selectedNode };
 };
+
+/**
+ * Finds the node for a folder path in an already-built tree.
+ *
+ * The sidebar's two standalone entries derive their selected state from the location, so they are
+ * always right. The tree's does not: it is stored, and until this existed it was only ever
+ * recomputed when folders loaded — so a Back that changed the location without reloading folders
+ * left the tree showing nothing selected while the listing showed that folder's contents.
+ *
+ * Matches on the node's own path rather than its key, because the key encodes tree position while
+ * the path is what the URL carries.
+ */
+export const findNodeByPath = (
+    nodes: DotFolderTreeNodeItem[] | undefined,
+    path: string
+): DotFolderTreeNodeItem | undefined => {
+    for (const node of nodes ?? []) {
+        if (node.data?.path === path) {
+            return node;
+        }
+
+        const found = findNodeByPath(node.children as DotFolderTreeNodeItem[] | undefined, path);
+
+        if (found) {
+            return found;
+        }
+    }
+
+    return undefined;
+};
