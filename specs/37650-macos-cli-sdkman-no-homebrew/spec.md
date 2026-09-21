@@ -75,10 +75,27 @@ Process completed with exit code 1.
 The subsequent `Install SDKMan` and `Save Cache SDKMan install` steps are skipped, the composite
 action fails, and `fail-fast` cancels the sibling matrix legs.
 
-**Reproducibility**: Always, on both architectures, whenever the SDKMAN install cache is cold.
-Verified on `macos-14`/`arm64_sonoma` (run 35108639064) and independently on
-`macos-15-intel`/`sequoia` (run 35276183950) — the error is identical, so this is not specific to
-one OS version or architecture.
+**Reproducibility**: **Intermittent, and worse for it.** Reproduces on both architectures —
+verified on `macos-14`/`arm64_sonoma` (run 35108639064) and independently on
+`macos-15-intel`/`sequoia` (run 35276183950), with an identical error, so it is not specific to
+one OS version or architecture. It has failed on 18 consecutive Trunk runs. But it does **not**
+fail deterministically: it depends on which `bash` formula the runner's Homebrew index resolves.
+
+| Formula resolved | Dependencies | `arm64_sonoma` bottle | Outcome |
+|---|---|---|---|
+| **5.3.20** (current) | ncurses, readline, gettext | ✗ | `no bottle available!` |
+| **5.3.15** (older) | ncurses | ✓ | installs successfully |
+
+A failing run logs `Downloading Homebrew API data` — it refreshes the index, resolves 5.3.20 and
+dies. A run against a runner whose Homebrew does not auto-update resolves 5.3.15 from the image's
+local index and passes. Whether the toolchain provisions is therefore a race with how stale that
+runner's Homebrew index happens to be.
+
+This strengthens rather than weakens the case for the fix: a build that passes or fails according
+to a package index cache it does not control is worse than one that fails consistently, because
+intermittent failure reads as flakiness and stops being investigated. Note also that the cold
+SDKMAN cache is a **precondition**, not a trigger — a warm cache skips the step entirely and
+masks the defect.
 
 ## Scope of Investigation *(mandatory)*
 
@@ -112,8 +129,12 @@ than re-derive the cause.
    provides Bash 4+** — verified across the `macos-14`, `macos-15`, `macos-26` and Intel
    manifests, all of which report `Bash 3.2.57(1)-release`.
 2. To satisfy that check, `setup-java/action.yml:64-71` runs `brew install bash`.
-3. Homebrew has withdrawn `bash` bottles for `arm64_sonoma` and for every x86_64 macOS tag,
-   marking both as Tier 3 (source builds only). The command therefore exits 1.
+3. The **current** `bash` formula (5.3.20) has no bottle for `arm64_sonoma` or for any x86_64
+   macOS tag — both are Tier 3, source-build only. Its published tags are `arm64_sequoia`,
+   `arm64_tahoe`, `arm64_golden_gate`, `arm64_linux`, `x86_64_linux`. When a runner resolves
+   that formula, the command exits 1. Older formulae (5.3.15) did have an `arm64_sonoma`
+   bottle and fewer dependencies, which is why the failure is intermittent — see
+   Reproducibility.
 4. `-e` propagates the failure up through `setup-java` → `prepare-runner` → `maven-job` → job
    → `fail-fast` → workflow.
 
