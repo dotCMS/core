@@ -183,6 +183,7 @@ describe('page filter view state', () => {
         filter: '',
         selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
         selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+        selectedCreators: [],
         page: DEFAULT_EXPERIMENTS_LIST_PAGE,
         perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
         orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -287,5 +288,91 @@ describe('page filter view state', () => {
         expect(parseViewState(reader({ pageId: String(written['pageId']) })).selectedPageId).toBe(
             'page-1'
         );
+    });
+});
+
+describe('creator filter view state (#37307)', () => {
+    const reader = (params: Record<string, string | string[]>): QueryParamReader => ({
+        get: (key) => {
+            const value = params[key];
+
+            return (Array.isArray(value) ? value[0] : value) ?? null;
+        },
+        getAll: (key) => {
+            const value = params[key];
+
+            return value == null ? [] : Array.isArray(value) ? value : [value];
+        }
+    });
+
+    const DEFAULTS: DotExperimentsListViewState = {
+        filter: '',
+        selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+        selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+        selectedCreators: [],
+        page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+        perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+        orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+        direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+        selectedPageId: null,
+        selectedPageUrl: null,
+        languageId: null
+    };
+
+    describe('parseViewState', () => {
+        it('should read a single creator from ?created_by=', () => {
+            expect(parseViewState(reader({ created_by: 'dotcms.org.1' })).selectedCreators).toEqual(
+                ['dotcms.org.1']
+            );
+        });
+
+        it('should read every repeat of the param', () => {
+            expect(
+                parseViewState(reader({ created_by: ['dotcms.org.1', 'dotcms.org.2'] }))
+                    .selectedCreators
+            ).toEqual(['dotcms.org.1', 'dotcms.org.2']);
+        });
+
+        it('should default to no creator filter when the param is absent', () => {
+            expect(parseViewState(reader({})).selectedCreators).toEqual([]);
+        });
+
+        it('should RETAIN an id it does not recognise', () => {
+            // Deliberately unlike `status` and `goal`, whose value sets are closed and whose
+            // unknown members are dropped. Any string can be a real user id, so the honest
+            // behaviour is to keep it and let it match nothing (FR-048).
+            expect(
+                parseViewState(reader({ created_by: 'nobody-by-this-id' })).selectedCreators
+            ).toEqual(['nobody-by-this-id']);
+        });
+
+        it('should drop an empty entry rather than filter by the empty string', () => {
+            expect(parseViewState(reader({ created_by: '' })).selectedCreators).toEqual([]);
+        });
+    });
+
+    describe('toQueryParams', () => {
+        it('should write the selected creators to created_by', () => {
+            expect(
+                toQueryParams({ ...DEFAULTS, selectedCreators: ['dotcms.org.1', 'dotcms.org.2'] })[
+                    'created_by'
+                ]
+            ).toEqual(['dotcms.org.1', 'dotcms.org.2']);
+        });
+
+        it('should omit the param entirely while nothing is selected', () => {
+            expect(toQueryParams(DEFAULTS)['created_by']).toBeNull();
+        });
+    });
+
+    it('should round-trip a selection through the address unchanged', () => {
+        const written = toQueryParams({
+            ...DEFAULTS,
+            selectedCreators: ['dotcms.org.1', 'dotcms.org.2']
+        });
+
+        expect(
+            parseViewState(reader(written as Record<string, string | string[]>)).selectedCreators
+        ).toEqual(['dotcms.org.1', 'dotcms.org.2']);
     });
 });

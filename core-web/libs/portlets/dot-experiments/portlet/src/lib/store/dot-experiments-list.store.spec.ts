@@ -70,7 +70,6 @@ const buildGoals = (type: GOAL_TYPES) =>
 const EXPERIMENT_DRAFT = buildExperiment({
     id: 'exp-draft',
     pageId: 'page-1',
-    createdBy: 'dotcms.org.1',
     name: 'Alpha campaign',
     description: 'Checkout funnel rework',
     status: DotExperimentStatus.DRAFT,
@@ -81,6 +80,7 @@ const EXPERIMENT_DRAFT = buildExperiment({
 const EXPERIMENT_RUNNING = buildExperiment({
     id: 'exp-running',
     pageId: 'page-2',
+    createdBy: 'dotcms.org.2',
     name: 'Beta rollout',
     description: 'Pricing page headline',
     status: DotExperimentStatus.RUNNING,
@@ -100,7 +100,6 @@ const EXPERIMENT_OTHER_SITE = buildExperiment({
 const EXPERIMENT_ARCHIVED = buildExperiment({
     id: 'exp-archived',
     pageId: 'page-1',
-    createdBy: 'dotcms.org.1',
     name: 'Delta retired',
     status: DotExperimentStatus.ARCHIVED,
     archived: true,
@@ -134,6 +133,7 @@ const VIEW_STATE_DEFAULTS: DotExperimentsListViewState = {
     filter: '',
     selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
     selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+    selectedCreators: [],
     page: DEFAULT_EXPERIMENTS_LIST_PAGE,
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -1338,6 +1338,88 @@ describe('DotExperimentsListStore', () => {
      * address-bound half of this store goes quiet when it is rendered beside a page it does not
      * own.
      */
+    describe('creator filter (#37307)', () => {
+        it('should show every experiment while no creator is selected', () => {
+            initStore();
+
+            expect(store.selectedCreators()).toEqual([]);
+            expect(store.filteredExperiments().map(({ id }) => id)).toEqual(
+                store.goalFilteredExperiments().map(({ id }) => id)
+            );
+        });
+
+        it('should keep only the experiments created by the selected user', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+
+            expect(store.filteredExperiments().map(({ id }) => id)).toEqual(['exp-draft']);
+        });
+
+        it('should widen to either creator when two are selected (OR within the filter)', () => {
+            initStore();
+
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1', 'dotcms.org.2'])
+            );
+
+            expect(
+                store
+                    .filteredExperiments()
+                    .map(({ id }) => id)
+                    .sort()
+            ).toEqual(['exp-draft', 'exp-running']);
+        });
+
+        it('should narrow together with the other filters (AND across filters)', () => {
+            initStore();
+
+            // Creator 1 owns the draft; asking for RUNNING as well leaves nothing, which is the
+            // conjunction and not an accident of either filter on its own.
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+            );
+
+            expect(store.filteredExperiments()).toEqual([]);
+        });
+
+        it('should simply not match an experiment whose creator is no longer a user', () => {
+            initStore();
+
+            // A selection nobody in the loaded set was created by. The filter must empty the list
+            // rather than throw or fall back to showing everything.
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['deleted.user.id']));
+
+            expect(store.filteredExperiments()).toEqual([]);
+            expect(store.totalRecords()).toBe(0);
+        });
+
+        it('should return to the first page when the selection changes', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 20 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        it('should leave the status and goal counts untouched (FR-050)', () => {
+            initStore();
+
+            const statusCountsBefore = { ...store.statusCounts() };
+            const goalCountsBefore = { ...store.goalCounts() };
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+
+            // The counts describe the set the chips are offered against, which is snapshotted
+            // before any selection narrowing — so picking a creator must not move the numbers
+            // beside the statuses and goals the user has not picked.
+            expect(store.statusCounts()).toEqual(statusCountsBefore);
+            expect(store.goalCounts()).toEqual(goalCountsBefore);
+        });
+    });
+
     describe('panel mode (#37478)', () => {
         let panelPageId: WritableSignal<string | null>;
         let panelLanguageId: WritableSignal<number | null>;

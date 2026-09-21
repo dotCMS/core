@@ -56,6 +56,7 @@ import {
 } from '@dotcms/ui';
 
 import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
+import { DotExperimentUserFilterComponent } from '../components/dot-experiment-user-filter/dot-experiment-user-filter.component';
 import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     GOAL_LABEL_KEYS,
@@ -109,6 +110,7 @@ import {
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
         DotExperimentListFilterComponent,
+        DotExperimentUserFilterComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-list.component.html',
@@ -341,6 +343,7 @@ export class DotExperimentsListComponent {
             this.store.filter().length > 0 ||
             this.store.selectedStatuses().length > 0 ||
             this.store.selectedGoals().length > 0 ||
+            this.store.selectedCreators().length > 0 ||
             !!this.store.selectedPageUrl()
     );
 
@@ -518,6 +521,7 @@ export class DotExperimentsListComponent {
         this.$searchTerm.set('');
         this.#dispatch.statusesChanged([]);
         this.#dispatch.goalsChanged([]);
+        this.#dispatch.creatorsChanged([]);
         // Including a page narrowing that matched nothing — the only case where this button is on
         // screen beside one. A narrowing that *is* matching shows the page-scoped empty state,
         // whose action creates an experiment for the page rather than widening the list.
@@ -543,6 +547,10 @@ export class DotExperimentsListComponent {
 
     onStatusesChange(statuses: string[]): void {
         this.#dispatch.statusesChanged(statuses as DotExperimentStatus[]);
+    }
+
+    onCreatorsChange(creatorIds: string[]): void {
+        this.#dispatch.creatorsChanged(creatorIds);
     }
 
     onGoalsChange(goals: string[]): void {

@@ -95,6 +95,32 @@ export class DotLazyMultiselectComponent implements OnInit {
     readonly $selectedValues = input<string[]>([], { alias: 'selectedValues' });
     /** Emits the selected options (value + label) whenever the selection changes. */
     readonly selectionChange = output<DotLazyMultiselectOption[]>();
+
+    /**
+     * Idle time before a typed term is searched, in ms. Defaults to the field-filter value, so
+     * every existing consumer keeps the timing it has.
+     *
+     * Overridable because the pause belongs to the screen, not to this component: a consumer whose
+     * own search box debounces differently would otherwise have two controls on one screen
+     * reacting at different speeds (#37307 FR-013).
+     */
+    readonly $debounceMs = input<number>(FIELD_FILTER_DEBOUNCE_TIME, { alias: 'debounceMs' });
+
+    /**
+     * Message key shown when the search matched nothing. Defaults to the field-filter copy.
+     *
+     * Overridable because the default says "No searchable fields available", which is true of the
+     * Tag and Category filters and wrong for anything else paging through this list — a directory
+     * of people, say (#37307 FR-014).
+     */
+    readonly $emptyKey = input<string>('content-drive.field-filter.more.empty', {
+        alias: 'emptyKey'
+    });
+
+    /** Message key shown when a page failed to load. Same reasoning as {@link $emptyKey}. */
+    readonly $errorKey = input<string>('content-drive.field-filter.more.error', {
+        alias: 'errorKey'
+    });
     protected readonly SCROLL_HEIGHT = FIELD_FILTER_PANEL_SCROLL_HEIGHT;
     protected readonly ITEM_HEIGHT = ITEM_HEIGHT;
 
@@ -124,7 +150,10 @@ export class DotLazyMultiselectComponent implements OnInit {
 
     constructor() {
         this.#search$
-            .pipe(debounceTime(FIELD_FILTER_DEBOUNCE_TIME), takeUntilDestroyed(this.#destroyRef))
+            .pipe(
+                debounceTime(this.$debounceMs()),
+                takeUntilDestroyed(this.#destroyRef)
+            )
             .subscribe((filter) => {
                 this.#cancel$.next();
                 patchState(this.$state, {

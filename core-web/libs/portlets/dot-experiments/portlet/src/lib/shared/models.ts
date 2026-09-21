@@ -52,6 +52,13 @@ export interface DotExperimentsListViewState {
     languageId: number | null;
     selectedStatuses: DotExperimentStatus[];
     selectedGoals: GOAL_TYPES[];
+    /**
+     * Ids of the users whose experiments the list is narrowed to; empty means no constraint.
+     *
+     * Ids rather than names: the payload carries the creator's id, so matching never depends on a
+     * name having been resolved. Carried in the address as `created_by` (#37307).
+     */
+    selectedCreators: string[];
     page: number;
     perPage: number;
     orderBy: string;

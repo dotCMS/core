@@ -38,6 +38,8 @@ export const dotExperimentsListPageEvents = eventGroup({
         filterChanged: type<string>(),
         statusesChanged: type<DotExperimentStatus[]>(),
         goalsChanged: type<GOAL_TYPES[]>(),
+        /** Ids of the users whose experiments the list narrows to; empty clears the filter. */
+        creatorsChanged: type<string[]>(),
         pageChanged: type<DotExperimentsListPageChange>(),
         sortChanged: type<DotExperimentsListSortChange>(),
         hydratedFromUrl: type<DotExperimentsListViewState>(),

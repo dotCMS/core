@@ -30,6 +30,7 @@ import { dotExperimentsApiEvents } from './dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from './dot-experiments-list-page.events';
 
 import {
+    DEFAULT_EXPERIMENTS_LIST_CREATORS,
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -74,6 +75,7 @@ const initialState: DotExperimentsListState = {
     filter: '',
     selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
     selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+    selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
     page: DEFAULT_EXPERIMENTS_LIST_PAGE,
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -261,7 +263,7 @@ export const DotExperimentsListStore = signalStore(
          * no goal at all therefore drops out as soon as any goal is picked, since it matches
          * none of them.
          */
-        const filteredExperiments = computed<DotExperiment[]>(() => {
+        const goalFilteredExperiments = computed<DotExperiment[]>(() => {
             const selectedGoals = store.selectedGoals();
 
             if (!selectedGoals.length) {
@@ -274,6 +276,36 @@ export const DotExperimentsListStore = signalStore(
                 return goal !== null && selectedGoals.includes(goal);
             });
         });
+
+        /**
+         * Narrowed to the chosen creators, or left alone when none are chosen (#37307).
+         *
+         * Matching is on `createdBy`, the user id the payload carries, so it never waits on a
+         * display name having been resolved — and an id belonging to a user who has since been
+         * deleted simply matches nothing rather than erroring.
+         *
+         * Sits **after** `statusCounts` and `goalCounts` are taken, alongside the status and goal
+         * narrowings, so that choosing a creator cannot move the numbers shown beside the statuses
+         * and goals the user has not chosen (FR-050).
+         */
+        const creatorFilteredExperiments = computed<DotExperiment[]>(() => {
+            const selectedCreators = store.selectedCreators();
+
+            if (!selectedCreators.length) {
+                return goalFilteredExperiments();
+            }
+
+            return goalFilteredExperiments().filter((experiment) =>
+                selectedCreators.includes(experiment.createdBy)
+            );
+        });
+
+        /**
+         * Last link of the narrowing chain, and the one everything downstream reads — sorting,
+         * paging and `totalRecords`. Named separately from the narrowings above so that a filter
+         * added later extends the chain rather than redefining what "filtered" means.
+         */
+        const filteredExperiments = computed<DotExperiment[]>(() => creatorFilteredExperiments());
 
         const sortedExperiments = computed<DotExperiment[]>(() => {
             const experiments = filteredExperiments();
@@ -303,6 +335,8 @@ export const DotExperimentsListStore = signalStore(
             statusCounts,
             goalCounts,
             statusFilteredExperiments,
+            goalFilteredExperiments,
+            creatorFilteredExperiments,
             filteredExperiments,
             sortedExperiments,
             pagedExperiments,
@@ -369,6 +403,10 @@ export const DotExperimentsListStore = signalStore(
         })),
         on(dotExperimentsListPageEvents.goalsChanged, ({ payload }) => ({
             selectedGoals: payload,
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE
+        })),
+        on(dotExperimentsListPageEvents.creatorsChanged, ({ payload }) => ({
+            selectedCreators: payload,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
         on(dotExperimentsListPageEvents.pageChanged, ({ payload }) => ({
@@ -735,6 +773,7 @@ export const DotExperimentsListStore = signalStore(
                     filter: store.filter(),
                     selectedStatuses: store.selectedStatuses(),
                     selectedGoals: store.selectedGoals(),
+                    selectedCreators: store.selectedCreators(),
                     page: store.page(),
                     perPage: store.perPage(),
                     selectedPageId: store.selectedPageId(),

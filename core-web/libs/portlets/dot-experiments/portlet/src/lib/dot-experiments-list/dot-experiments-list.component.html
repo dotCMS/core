@@ -69,6 +69,13 @@
                 (selectionChange)="onGoalsChange($event)"
                 data-testid="experiments-goal-filter" />
 
+            <dot-experiment-user-filter
+                [title]="'experiments.list.filter.created-by' | dm"
+                [emptyLabel]="'experiments.list.filter.all' | dm"
+                [selected]="store.selectedCreators()"
+                (selectionChange)="onCreatorsChange($event)"
+                data-testid="experiments-created-by-filter" />
+
             <p-button
                 class="ml-auto"
                 [label]="'experiments.list.action.new' | dm"

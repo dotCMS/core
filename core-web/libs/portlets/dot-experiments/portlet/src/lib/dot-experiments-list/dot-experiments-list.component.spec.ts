@@ -156,6 +156,7 @@ const createStoreMock = () => ({
     selectedStatuses: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_STATUSES),
     goalCounts: vi.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
     selectedGoals: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
+    selectedCreators: vi.fn().mockReturnValue([]),
     filter: vi.fn().mockReturnValue(''),
     selectedPageId: vi.fn().mockReturnValue(null),
     selectedPageUrl: vi.fn().mockReturnValue(null),
@@ -1374,6 +1375,26 @@ describe('DotExperimentsListComponent', () => {
             );
             expect(dispatchedEvents()).toContainEqual(
                 dotExperimentsListPageEvents.goalsChanged([])
+            );
+        });
+
+        it('should treat a creator selection as an active filter (#37307)', () => {
+            // Selecting someone with no experiments must reach the "nothing matched" state, which
+            // offers a way out — not the "this site has no experiments" one, which does not.
+            storeMock.selectedCreators.mockReturnValue(['dotcms.org.1']);
+            renderEmpty();
+
+            expect(emptyTitle()).toContain('experiments.list.no-results.title');
+        });
+
+        it('should clear the creator selection from the empty state action (#37307)', () => {
+            storeMock.selectedCreators.mockReturnValue(['dotcms.org.1']);
+            renderEmpty();
+
+            spectator.component.onClearFilters();
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.creatorsChanged([])
             );
         });
 

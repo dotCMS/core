@@ -55,6 +55,7 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
         filter: reader.get('filter') ?? '',
         selectedStatuses: parseStatuses(reader.getAll('status')),
         selectedGoals: parseGoals(reader.getAll('goal')),
+        selectedCreators: parseCreators(reader.getAll('created_by')),
         page: parsePositiveInteger(reader.get('page'), DEFAULT_EXPERIMENTS_LIST_PAGE),
         perPage: parsePositiveInteger(reader.get('per_page'), DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
         orderBy: reader.get('orderby') || DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -128,6 +129,22 @@ export function parseGoals(rawGoals: string[]): GOAL_TYPES[] {
     return rawGoals
         .map((rawGoal) => rawGoal.toUpperCase() as GOAL_TYPES)
         .filter((goal) => allGoals.includes(goal));
+}
+
+/**
+ * Creator ids from the address, blanks removed.
+ *
+ * Deliberately **not** the rule {@link parseStatuses} and {@link parseGoals} follow. Those narrow
+ * over closed sets, so a value outside the set can only be a mistake and is dropped. A user id is
+ * drawn from an open set — any string can be one — so there is nothing to validate it against
+ * here, and an id this installation does not know is kept rather than discarded. It then matches
+ * no experiment, which is the honest answer to "show me that person's experiments": none.
+ *
+ * Case is preserved: dotCMS user ids are not case-insensitive, and upper-casing them the way the
+ * status parser does would stop them matching anything at all.
+ */
+export function parseCreators(rawCreators: string[]): string[] {
+    return rawCreators.map((rawCreator) => rawCreator.trim()).filter(Boolean);
 }
 
 export function parsePositiveInteger<T extends number | null>(
@@ -210,6 +227,7 @@ export function toQueryParams(
                 : view.selectedGoals,
         pageId: view.selectedPageId || null,
         url: view.selectedPageUrl || null,
+        created_by: view.selectedCreators.length ? view.selectedCreators : null,
         // Written back so it survives filtering, sorting and paging: `writeUrl` merges, and the
         // back-link reads it from the address rather than from a value held only on entry.
         language_id: view.languageId ? String(view.languageId) : null

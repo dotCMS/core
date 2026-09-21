@@ -1,0 +1,24 @@
+<dot-chip-filter
+    [title]="$title()"
+    [selections]="$selectedLabels()"
+    [emptyLabel]="$emptyLabel()"
+    [loading]="$resolving()"
+    (clicked)="popover.toggle($event)"
+    (removed)="onRemoveAll()"
+    data-testid="experiment-user-filter-chip" />
+
+<p-popover #popover>
+    @if (popover.overlayVisible) {
+        <!-- Gated on the popover actually being open: the virtual scroller inside measures its
+             viewport on creation, and created while hidden it measures zero and renders an empty
+             list that never recovers. -->
+        <dot-lazy-multiselect
+            [loadPage]="$loadPage()"
+            [selectedValues]="$selectedValues()"
+            [debounceMs]="DEBOUNCE_MS"
+            [emptyKey]="$emptyKey()"
+            [errorKey]="$errorKey()"
+            (selectionChange)="onSelectionChange($event)"
+            data-testid="experiment-user-filter-options" />
+    }
+</p-popover>

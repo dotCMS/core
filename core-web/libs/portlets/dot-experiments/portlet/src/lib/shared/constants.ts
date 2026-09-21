@@ -47,6 +47,9 @@ export const DEFAULT_EXPERIMENTS_LIST_STATUSES: DotExperimentStatus[] = [];
 /** Same as the status filter: nothing pre-selected, so the chip reads as unfiltered. */
 export const DEFAULT_EXPERIMENTS_LIST_GOALS: GOAL_TYPES[] = [];
 
+/** Same as status and goal: nothing pre-selected, so the chip reads as unfiltered. */
+export const DEFAULT_EXPERIMENTS_LIST_CREATORS: string[] = [];
+
 /** i18n keys of the goal names, in the order the filter lists them. */
 export const GOAL_LABEL_KEYS = new Map<GOAL_TYPES, string>(
     Object.values(GOAL_TYPES).map((goal) => [goal, GOALS_METADATA_MAP[goal].label])
