@@ -1395,6 +1395,32 @@ public class JobQueueManagerAPITest {
     }
 
     /**
+     * Method to test: JobQueueManagerAPI#getJobQueue() already exposes JobQueue#hasJobBeenInState
+     * Given Scenario: #37063 (research.md R7, plan.md PO-7) needed a way to ask whether a job has
+     * ever been ABANDONED, to avoid misreporting an already-deleted folder as a fresh failure on a
+     * re-queued run. A new top-level JobQueueManagerAPI method was planned for this and even
+     * reached this test file (removed here) before this test caught that getJobQueue() already
+     * returns the live JobQueue instance - the exact same one JobQueueManagerAPIImpl uses
+     * internally for its own CANCEL_REQUESTED/CANCELLING check - so hasJobBeenInState was already
+     * publicly reachable with zero framework changes.
+     * ExpectedResult: getJobQueue() returns the same instance passed into the constructor, so
+     * getJobQueue().hasJobBeenInState(...) is already callable by any consumer of
+     * JobQueueManagerAPI - including FolderBulkDeleteProcessor (T067) - with no new method needed.
+     */
+    @Test
+    public void test_getJobQueue_exposesTheSameJobQueueInstance_soHasJobBeenInStateIsAlreadyPublic()
+            throws JobQueueDataException {
+
+        when(mockJobQueue.hasJobBeenInState("job123", JobState.ABANDONED)).thenReturn(true);
+
+        boolean result = jobQueueManagerAPI.getJobQueue()
+                .hasJobBeenInState("job123", JobState.ABANDONED);
+
+        assertTrue(result);
+        assertTrue(jobQueueManagerAPI.getJobQueue() == mockJobQueue);
+    }
+
+    /**
      * Creates a new instance of the JobQueueManagerAPI with the provided configurations.
      *
      * @param jobQueue                           The job queue to be managed.

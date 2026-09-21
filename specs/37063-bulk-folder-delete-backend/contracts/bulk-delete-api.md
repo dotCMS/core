@@ -37,7 +37,7 @@ operation sends paths, not content.
 {
   "jobId": "b3f1...",
   "statusUrl": "/api/v1/jobs/b3f1.../status",
-  "acceptedCount": 5
+  "submitted": 5
 }
 ```
 
@@ -45,7 +45,7 @@ operation sends paths, not content.
 |---|---|---|
 | `jobId` | string | The run's identifier. |
 | `statusUrl` | string | Ready-to-use address for status; the caller never assembles it (FR-002). Generic job address — see §2. |
-| `acceptedCount` | number | How many **distinct** paths the server accepted into the run — equals the total the final outcome reports, by construction (FR-003, C-003). After deduplication, so it can be smaller than `assetPaths.length`. |
+| `submitted` | number | How many **distinct** paths the server accepted into the run — equals the total the final outcome reports, by construction (FR-003, C-003). After deduplication, so it can be smaller than `assetPaths.length`. |
 
 **Submission refusals — distinguishable by `errorCode`, not by status alone**
 
@@ -59,6 +59,16 @@ its body from — rather than inventing a new ad-hoc shape. `errorCode` is the f
 `message` is human-readable but not guaranteed stable wording; `fieldName` names which submitted
 field is at fault, consistently across every refusal below (never repurposed to carry a value).
 
+**Corrected 2026-09-19 — the `ErrorEntity` is carried inside dotCMS's standard error envelope,
+not bare.** An earlier draft of this contract showed the `ErrorEntity` at the response body's top
+level. That is not this product's convention: `com.dotcms.rest.ResponseEntityView`, the wrapper
+every successful response already uses (via its own `entity` field), also carries an `errors`
+array for exactly this case — `ExceptionMapperUtil.createResponse(Status,
+DotContentletValidationException)` already builds an error response this same way. So the body is
+`{"errors": [{...}], ...}`, one `ErrorEntity` in a one-element array — confirmed against the
+frontend half (PR dotCMS/core#37612), which had independently assumed this envelope. Read the
+first (only) element of `errors`.
+
 | Status | `errorCode` | `fieldName` | `message` (example) | When |
 |---|---|---|---|---|
 | `400` | `EMPTY_SELECTION` | `assetPaths` | "no folder paths were submitted" | `assetPaths` missing or empty (FR-004) |
@@ -68,24 +78,51 @@ field is at fault, consistently across every refusal below (never repurposed to 
 | `409` | `OVERLAPPING_RUN` | `assetPaths` | "another deletion is already running for `//default/marketing/2024-campaigns`" | A submitted path is the same as, an ancestor of, or a descendant of a path an in-flight run (in this queue, any submitter) is already covering (FR-029, FR-029a). **Names the conflicting folder, never the other submitter** — there is no field in this body where a user id could appear, by construction, which is the direct answer to whether the payload could leak one. Refused before a job is created (FR-029, FR-029b — see plan.md PO-6 for how the check-then-act race is closed). |
 
 ```json
-{ "errorCode": "OVER_MAX_PATHS", "message": "selection exceeds the maximum of 50 paths", "fieldName": "assetPaths" }
+{
+  "errors": [
+    { "errorCode": "OVER_MAX_PATHS", "message": "selection exceeds the maximum of 50 paths", "fieldName": "assetPaths" }
+  ],
+  "entity": "",
+  "messages": [],
+  "permissions": []
+}
 ```
 
 ---
 
 ## 2. Follow, cancel, and read the outcome
 
-**Not a new set of addresses.** Once accepted, the caller uses the **generic job-queue** addresses
-(D-003) — status, cancel, monitor — the same shapes every job-queue consumer (content import, bulk
-upload, bulk refresh) already exposes. This feature adds no parallel status/cancel/monitor endpoints
-under the assets API.
+**Not a new set of addresses, including for the active listing.** Once accepted, the caller uses
+the **generic job-queue** addresses (D-003) — status, cancel, monitor, and active — the same
+shapes every job-queue consumer (content import, bulk upload, bulk refresh) already exposes. This
+feature adds **no** parallel endpoints under the assets API for any of these.
+
+**Corrected 2026-09-19** — an earlier draft of this contract proposed a domain-scoped
+`GET /v1/assets/folders/_bulkdelete/active`, reasoning from content import's own `/active`
+endpoint (D-003). On inspection, content import's version exists to **transform** the generic
+result into a domain-specific view (`JobViewPaginatedResult`, via `importHelper.view(result)`) —
+it is not a bare passthrough. This feature has no such transformation need: the generic
+`JobPaginatedResult`'s `jobs[].id` / `jobs[].state` / `jobs[].parameters` already carries
+everything a client needs, field-for-field. Building a domain-scoped endpoint here would be
+unjustified duplication. Confirmed against the frontend half
+([PR #37612](https://github.com/dotCMS/core/pull/37612)), which was already written directly
+against the generic shape.
 
 | Action | Address (from `statusUrl` / the generic job API) | Notes |
 |---|---|---|
 | Status / outcome | `GET /api/v1/jobs/{jobId}/status` | See §4 for the outcome shape once terminal |
 | Cancel | `POST /api/v1/jobs/{jobId}/cancel` | Takes effect between top-level folders, never mid-subtree (FR-026) |
 | Monitor (live updates) | `GET /api/v1/jobs/{jobId}/monitor` | Server-sent progress; see §3 |
-| List active runs (domain-scoped) | `GET /api/v1/assets/folders/_bulkdelete/active` | Mirrors content import's domain-scoped `/active` (D-003). **Not filtered by submitter** (FR-005a) — any back-end user can read it. **Includes non-terminal states beyond "running"** — see the client-side warning in spec C-011; the same caveat applies here. |
+| List active runs | `GET /api/v1/jobs/folderBulkDelete/active` | The generic per-queue active listing (`JobQueueResource`), not a domain-scoped one. **Not filtered by submitter** (FR-005a) — any back-end user can read it. **Includes non-terminal states beyond "running"** — see the client-side warning in spec C-011; the same caveat applies here. Each job's `parameters` carries this run's submitted paths — see the shape note below. |
+
+**Parameter shape inside each listed job — read this before assuming `assetPaths`.** The generic
+listing exposes each run's `parameters` exactly as `FolderBulkDeleteHelper` stored them at
+`createJob` time: `{"userId": "...", "paths": [{"path": "//site/folder/"}, ...]}` — an array of
+objects under `paths`, each carrying its own `path` key, **not** a flat `assetPaths: string[]`.
+This is deliberate: `paths[].path` is where this feature's per-folder job parameters live going
+forward (a natural place to add more per-path fields later, e.g. `folderIdentifier`, without a
+breaking shape change — see PO-2). A client reading the active listing to mark busy folders must
+map `job.parameters.paths.map(p => p.path)`, not read `job.parameters.assetPaths` directly.
 
 ---
 
@@ -121,7 +158,7 @@ the pushed completion signal (§6).
     { "key": "//default/marketing/archive", "status": "FAILED",
       "reason": "PERMISSION_DENIED", "message": "user lacks PERMISSION_EDIT_PERMISSIONS" },
     { "key": "//default/marketing/2024-campaigns/q1", "status": "SKIPPED",
-      "reason": "ANCESTOR_REMOVED" }
+      "reason": "COVERED_BY_PARENT" }
   ]
 }
 ```
@@ -140,10 +177,10 @@ FR-018), reused plus four additions this feature contributes (FR-019):
 |---|---|---|
 | `PERMISSION_DENIED` | Caller lacks the required rights on this folder (FR-009, FR-009a) | reused |
 | `UNCLASSIFIED` | A cause the system could not distinguish — reported honestly rather than guessed (FR-018) | reused |
-| `NOT_FOUND` | Path no longer resolves to a folder — gone, a file, or malformed (FR-010) | **new** |
+| `PATH_NOT_FOUND` | Path no longer resolves to a folder — gone, a file, or malformed (FR-010) | **new** |
 | `PROTECTED_FOLDER` | System folder or a site root — never deleted (FR-011) | **new** |
-| `LOCKED` | Content in the subtree was locked by another author, blocking the delete (D-010) | **new** |
-| `ANCESTOR_REMOVED` | An ancestor in the same submission removed it first — always paired with `status: SKIPPED`, never `FAILED` (FR-013) | **new** |
+| `IN_USE` | Content in the subtree was locked by another author, blocking the delete (D-010) | **new** |
+| `COVERED_BY_PARENT` | An ancestor in the same submission removed it first — always paired with `status: SKIPPED`, never `FAILED` (FR-013) | **new** |
 
 `message` is diagnostic only — for logs, **never** displayed to the author (FR-017).
 
