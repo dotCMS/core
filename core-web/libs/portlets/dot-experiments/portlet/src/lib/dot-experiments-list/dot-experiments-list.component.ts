@@ -50,6 +50,7 @@ import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-
 import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
+    DotFilterBarComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
     DotUserFilterComponent,
@@ -81,6 +82,7 @@ import {
     ExperimentsListSchedulePeriod
 } from '../shared/models';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
+import { provideExperimentsFilterFacade } from '../store/dot-experiments-filter-facade';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 import { experimentsListCrumb, putCrumbOnTrail } from '../util/dot-experiments-breadcrumb.util';
@@ -111,6 +113,7 @@ import {
         ToolbarModule,
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
+        DotFilterBarComponent,
         DotExperimentListFilterComponent,
         DotExperimentScheduleFilterComponent,
         DotUserFilterComponent,
@@ -125,7 +128,10 @@ import {
         DotExperimentsListStore,
         DotExperimentsRouter,
         ConfirmationService,
-        DotExperimentsService
+        DotExperimentsService,
+        // Beside the store it reads, so the chips in this toolbar and the bar's own "Clear all"
+        // resolve the same instance — and the panel's second listing gets its own.
+        provideExperimentsFilterFacade()
     ],
     host: {
         class: 'flex flex-col h-full min-h-0 animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none',

@@ -53,42 +53,48 @@
                 }
             </p-iconField>
 
-            <dot-experiment-list-filter
-                [title]="'experiments.list.filter.status' | dm"
-                [emptyLabel]="'experiments.list.filter.all' | dm"
-                [options]="$statusFilterOptions()"
-                [selected]="store.selectedStatuses()"
-                (selectionChange)="onStatusesChange($event)"
-                data-testid="experiments-status-filter" />
+            <dot-filter-bar>
+                <dot-experiment-list-filter
+                    [title]="'experiments.list.filter.status' | dm"
+                    [emptyLabel]="'experiments.list.filter.all' | dm"
+                    [options]="$statusFilterOptions()"
+                    [selected]="store.selectedStatuses()"
+                    (selectionChange)="onStatusesChange($event)"
+                    data-filter-chip="status"
+                    data-testid="experiments-status-filter" />
 
-            <dot-experiment-list-filter
-                [title]="'experiments.list.filter.goal' | dm"
-                [emptyLabel]="'experiments.list.filter.all' | dm"
-                [options]="$goalFilterOptions()"
-                [selected]="store.selectedGoals()"
-                (selectionChange)="onGoalsChange($event)"
-                data-testid="experiments-goal-filter" />
+                <dot-experiment-list-filter
+                    [title]="'experiments.list.filter.goal' | dm"
+                    [emptyLabel]="'experiments.list.filter.all' | dm"
+                    [options]="$goalFilterOptions()"
+                    [selected]="store.selectedGoals()"
+                    (selectionChange)="onGoalsChange($event)"
+                    data-filter-chip="goal"
+                    data-testid="experiments-goal-filter" />
 
-            <dot-experiment-schedule-filter
-                [from]="store.scheduleFrom()"
-                [to]="store.scheduleTo()"
-                (selectionChange)="onScheduleChange($event)"
-                data-testid="experiments-schedule-filter" />
+                <dot-experiment-schedule-filter
+                    [from]="store.scheduleFrom()"
+                    [to]="store.scheduleTo()"
+                    (selectionChange)="onScheduleChange($event)"
+                    data-filter-chip="schedule"
+                    data-testid="experiments-schedule-filter" />
 
-            <dot-user-filter
-                titleKey="experiments.list.filter.created-by"
-                [selected]="store.selectedCreators()"
-                (selectionChange)="onCreatorsChange($event)"
-                data-testid="experiments-created-by-filter" />
+                <dot-user-filter
+                    titleKey="experiments.list.filter.created-by"
+                    [selected]="store.selectedCreators()"
+                    (selectionChange)="onCreatorsChange($event)"
+                    data-filter-chip="createdBy"
+                    data-testid="experiments-created-by-filter" />
 
-            @if (store.isScheduleRangeUnusable()) {
-                <small
-                    class="text-red-500"
-                    role="status"
-                    data-testid="experiments-schedule-range-error">
-                    {{ 'experiments.list.filter.schedule.invalid-range' | dm }}
-                </small>
-            }
+                @if (store.isScheduleRangeUnusable()) {
+                    <small
+                        class="text-red-500"
+                        role="status"
+                        data-testid="experiments-schedule-range-error">
+                        {{ 'experiments.list.filter.schedule.invalid-range' | dm }}
+                    </small>
+                }
+            </dot-filter-bar>
 
             <p-button
                 class="ml-auto"
