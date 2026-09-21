@@ -23,8 +23,22 @@ import {
  * close. A range also covers every window the issue asks for, and periods that are not "the last
  * N months". See User Story 2 in the spec.
  *
- * It cannot reuse `dot-field-filter` itself: that chip is driven by a `DotCMSContentTypeField` and
- * switches on the field's type, and an experiment is not a contentlet with a content type.
+ * It could reuse `dot-field-filter` from `@dotcms/ui`, which is what Content Drive renders: that
+ * chip reads and writes through an injected `DOT_FILTER_FACADE` precisely so it can serve any
+ * surface, and three already implement one. It is not reused here, and not because it cannot be:
+ *
+ * - its required input is a `DotCMSContentTypeField`, whose `variable`, `fieldType`, `dataType`
+ *   and `values` it switches on — an experiment is not a contentlet, so that field would have to
+ *   be fabricated for a property no content type declares;
+ * - its filter key is `us.` + that variable, the `userSearchable` prefix for a content-search
+ *   payload, and Content Drive serializes the whole bag into one `filters=k:v;k:v` parameter.
+ *   This listing's address is one plain parameter per filter, with the names #36823 defines and
+ *   #37007 will consume, so the server-side move is a change of where a value is applied rather
+ *   than a rename (FR-049).
+ *
+ * Adopting it for this one chip would leave the toolbar with two URL conventions at once. Moving
+ * all four chips over is a coherent change and a larger one than this issue; the control itself is
+ * already shared, being the same `p-datePicker` with the same panel flattening.
  *
  * No period is the absence of a range, not a range defaulted to today (FR-025): the shared chip
  * reads "active" from having selections, so a chip always holding one would claim a filter it is
