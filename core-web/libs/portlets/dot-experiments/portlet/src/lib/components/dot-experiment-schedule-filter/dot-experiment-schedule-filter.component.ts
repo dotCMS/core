@@ -47,6 +47,22 @@ export class DotExperimentScheduleFilterComponent {
 
     readonly #dotMessageService = inject(DotMessageService);
 
+    /**
+     * Flattens the inline picker's own panel chrome so it reads as one surface with the popover
+     * instead of a panel inside a panel — the picker draws its own border, rounding and shadow,
+     * and the popover already provides all three.
+     *
+     * The same treatment `dot-field-filter` applies in `@dotcms/ui`, deliberately copied rather
+     * than shared: it is two Tailwind overrides, and a styling token exported across libs for two
+     * consumers buys less than it costs. A third consumer is the moment to extract it.
+     *
+     * The width cap is not decoration either: the month and year grids are wider than the day
+     * grid, so without it the panel grows when one is opened and the popover jumps sideways.
+     */
+    protected readonly datePickerPt = {
+        panel: { class: '!border-0 !rounded-none !shadow-none !max-w-96' }
+    };
+
     protected readonly $title = computed<string>(() =>
         this.#dotMessageService.get('experiments.list.filter.schedule')
     );
