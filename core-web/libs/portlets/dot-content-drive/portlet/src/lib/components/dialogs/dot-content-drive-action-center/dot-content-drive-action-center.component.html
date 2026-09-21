@@ -34,8 +34,6 @@
                 data-testid="action-center">
                 @if ($selectedFolderCount() > 0) {
                     <!--
-                        `no-enter-motion` renders this notice statically; see the component's `styles`.
-
                         Full-bleed via `[pt]` rather than descendant selectors in `styleClass` —
                         the padding lives on `.p-message-content`, and pass-through targets that
                         section by name. See `ACTION_CENTER_FOLDER_NOTICE_PT` for why each rule is
@@ -43,7 +41,6 @@
                     -->
                     <p-message
                         severity="info"
-                        styleClass="no-enter-motion"
                         [pt]="folderNoticePt"
                         data-testid="folders-limited-message">
                         {{
@@ -469,29 +466,17 @@
                         the destroy system action will fire it (FR-010).
                     -->
                     @if ($isDeleteAction()) {
-                        <!--
-                            Shaped like `no-quick-actions` above, which renders without the growth
-                            this one showed: the Message carries nothing but `severity`, and the
-                            margin that used to sit on it lives on a wrapper. PrimeNG's enter
-                            animation expands the element's own box over 0.3s, so a Message that is
-                            also the flex item holding the layout animates the preview list down
-                            with it; a plain wrapper holds the space from the first frame.
-
-                            `no-enter-motion` goes through `styleClass`, as the folder notice does,
-                            rather than a static `class` — same opt-out, same route into the host
-                            binding PrimeNG composes its own classes through.
-                        -->
-                        <div class="m-4 shrink-0">
-                            <p-message
-                                severity="error"
-                                styleClass="no-enter-motion"
-                                data-testid="delete-warning">
-                                {{
-                                    'content-drive.action-center.delete.warning'
-                                        | dm: [$previewCount().toString()]
-                                }}
-                            </p-message>
-                        </div>
+                        <!-- `shrink-0` as on the sibling above: keeps the warning pinned over the
+                         table rather than squeezed away once the rows fill the column. -->
+                        <p-message
+                            class="m-4 shrink-0"
+                            severity="error"
+                            data-testid="delete-warning">
+                            {{
+                                'content-drive.action-center.delete.warning'
+                                    | dm: [$previewCount().toString()]
+                            }}
+                        </p-message>
                     }
 
                     <dot-content-drive-action-preview

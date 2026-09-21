@@ -158,17 +158,27 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
     styles: [
         `
             /*
-             * Opt out of PrimeNG Message's enter/leave animation, which has no API to disable:
-             * the host binds 'animate.enter' to a literal class and the theme runs
-             * 'grid-template-rows: 0fr -> 1fr' over 0.3s from it. Wherever a message is already
-             * on screen the instant its container is, that expansion reads as a late shove of
-             * whatever sits below — the action list for the folder notice, the preview table for
-             * the delete warning. ':host ::ng-deep' rather than a bare class so this does not
-             * depend on '_ngcontent' reaching the child's host element.
+             * No Message in this dialog animates in.
+             *
+             * PrimeNG gives its Message a 0.3s enter animation that expands the element's own box
+             * ('grid-template-rows: 0fr -> 1fr') and offers no input to turn it off — the host
+             * binds 'animate.enter' to a literal class name and the theme hangs the keyframes off
+             * it. Every message here appears in the same frame as the panel around it: the folder
+             * notice as the dialog opens, the delete and partial-match warnings as the preview
+             * replaces the action list, the empty-state notices as their section resolves. In all
+             * of them the expansion reads as a late shove of whatever sits below, after the reader
+             * has already started on it. None of them is a live alert arriving during a stable
+             * view, which is the only case the animation is for.
+             *
+             * Applied to every Message rather than opted into per element: a class on each was
+             * tried first and left two of them still animating — one that had not been given the
+             * class and one whose author had no reason to know the class existed. '!' because the
+             * rule is beating a themed animation on a third-party component; this is the whole
+             * reason the declaration exists.
              */
-            :host ::ng-deep p-message.no-enter-motion.p-message-enter-active,
-            :host ::ng-deep p-message.no-enter-motion.p-message-leave-active {
-                animation: none;
+            :host ::ng-deep .p-message-enter-active,
+            :host ::ng-deep .p-message-leave-active {
+                animation: none !important;
             }
         `
     ]

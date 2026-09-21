@@ -568,21 +568,6 @@ describe('DotContentDriveActionCenterComponent', () => {
                 'folder-1'
             ]);
         });
-
-        it('should render the notice statically, with no entrance animation', () => {
-            // The notice is present the moment the dialog opens, and PrimeNG's Message animates its
-            // own height from zero over 300ms with no way to opt out through the component — which
-            // read as the notice arriving late and shoving the action list down. `no-enter-motion` is
-            // what the component's styles hook onto to suppress it.
-            mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
-
-            spectator.detectChanges();
-
-            const notice = spectator.query('[data-testid="folders-limited-message"]');
-
-            expect(notice).toBeTruthy();
-            expect(notice?.classList.contains('no-enter-motion')).toBe(true);
-        });
     });
 
     describe('quick actions', () => {
@@ -2633,18 +2618,6 @@ describe('DotContentDriveActionCenterComponent', () => {
             // The single most important sentence in the feature: what makes this different from every
             // other bulk action is that it destroys things the author never selected.
             expect(warning?.textContent).toContain('content-drive.action-center.delete.warning');
-        });
-
-        it('should render without the enter animation', () => {
-            // The warning appears in the same frame as the preview list. PrimeNG animates a Message
-            // in over 0.3s by expanding `grid-template-rows` and offers no input to turn it off, so
-            // the warning grows after the list has already landed and shoves it down mid-read. The
-            // opt-out is a class the component's own styles cancel the animation on.
-            openQuickActionPreview('DELETE_FOLDER');
-
-            const warning = spectator.query('[data-testid="delete-warning"]');
-
-            expect(warning).toHaveClass('no-enter-motion');
         });
 
         it('should make NO claim about workflow', () => {
