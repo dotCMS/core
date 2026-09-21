@@ -469,8 +469,14 @@
                         the destroy system action will fire it (FR-010).
                     -->
                     @if ($isDeleteAction()) {
+                        <!--
+                            `no-enter-motion` for the same reason as the folder notice above: this
+                            warning appears in the same frame as the preview list, so PrimeNG's
+                            0.3s `grid-template-rows: 0fr -> 1fr` enter animation expands it late
+                            and shoves the list down after it has already been read.
+                        -->
                         <p-message
-                            class="m-4 shrink-0"
+                            class="no-enter-motion m-4 shrink-0"
                             severity="error"
                             data-testid="delete-warning">
                             {{

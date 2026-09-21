@@ -158,9 +158,13 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
     styles: [
         `
             /*
-             * Folder notice is present at open, so PrimeNG Message's hardcoded enter/leave height
-             * animation (no API opt-out) reads as a late shove of the action list — kill both via CSS
-             * on '.no-enter-motion'; ':host ::ng-deep' so we don't rely on '_ngcontent' piercing.
+             * Opt out of PrimeNG Message's enter/leave animation, which has no API to disable:
+             * the host binds 'animate.enter' to a literal class and the theme runs
+             * 'grid-template-rows: 0fr -> 1fr' over 0.3s from it. Wherever a message is already
+             * on screen the instant its container is, that expansion reads as a late shove of
+             * whatever sits below — the action list for the folder notice, the preview table for
+             * the delete warning. ':host ::ng-deep' rather than a bare class so this does not
+             * depend on '_ngcontent' reaching the child's host element.
              */
             :host ::ng-deep p-message.no-enter-motion.p-message-enter-active,
             :host ::ng-deep p-message.no-enter-motion.p-message-leave-active {

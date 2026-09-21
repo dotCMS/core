@@ -2635,6 +2635,18 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(warning?.textContent).toContain('content-drive.action-center.delete.warning');
         });
 
+        it('should render without the enter animation', () => {
+            // The warning appears in the same frame as the preview list. PrimeNG animates a Message
+            // in over 0.3s by expanding `grid-template-rows` and offers no input to turn it off, so
+            // the warning grows after the list has already landed and shoves it down mid-read. The
+            // opt-out is a class the component's own styles cancel the animation on.
+            openQuickActionPreview('DELETE_FOLDER');
+
+            const warning = spectator.query('[data-testid="delete-warning"]');
+
+            expect(warning).toHaveClass('no-enter-motion');
+        });
+
         it('should make NO claim about workflow', () => {
             // The issue text proposed saying no workflow action fires on the contents. That is false —
             // a content type declaring an action for the destroy system action will run it — so the copy
