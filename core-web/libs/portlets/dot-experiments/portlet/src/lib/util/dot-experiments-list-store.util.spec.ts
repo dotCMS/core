@@ -4,6 +4,7 @@ import {
     comparatorFor,
     parseViewState,
     QueryParamReader,
+    scheduleWindowLowerBound,
     toQueryParams
 } from './dot-experiments-list-store.util';
 
@@ -184,6 +185,7 @@ describe('page filter view state', () => {
         selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
         selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
         selectedCreators: [],
+        selectedSchedule: null,
         page: DEFAULT_EXPERIMENTS_LIST_PAGE,
         perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
         orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -310,6 +312,7 @@ describe('creator filter view state (#37307)', () => {
         selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
         selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
         selectedCreators: [],
+        selectedSchedule: null,
         page: DEFAULT_EXPERIMENTS_LIST_PAGE,
         perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
         orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -374,5 +377,159 @@ describe('creator filter view state (#37307)', () => {
         expect(
             parseViewState(reader(written as Record<string, string | string[]>)).selectedCreators
         ).toEqual(['dotcms.org.1', 'dotcms.org.2']);
+    });
+});
+
+describe('schedule filter view state (#37307)', () => {
+    const reader = (params: Record<string, string | string[]>): QueryParamReader => ({
+        get: (key) => {
+            const value = params[key];
+
+            return (Array.isArray(value) ? value[0] : value) ?? null;
+        },
+        getAll: (key) => {
+            const value = params[key];
+
+            return value == null ? [] : Array.isArray(value) ? value : [value];
+        }
+    });
+
+    const DEFAULTS: DotExperimentsListViewState = {
+        filter: '',
+        selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+        selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+        selectedCreators: [],
+        selectedSchedule: null,
+        page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+        perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+        orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+        direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+        selectedPageId: null,
+        selectedPageUrl: null,
+        languageId: null
+    };
+
+    describe('scheduleWindowLowerBound', () => {
+        /**
+         * FR-021. Months are not all the same length, so "one month ago" has to mean something
+         * specific on the days where the answer does not exist. `date-fns` clamps to the last day
+         * of the shorter month, and that is the rule this pins: 31 March minus a month is 28
+         * February, not 3 March. Pinned rather than left to the library so a swap of helper cannot
+         * quietly move the boundary by three days.
+         */
+        /**
+         * Asserted on local calendar parts rather than on an epoch instant, and that is not
+         * squeamishness about time zones: `subMonths` preserves the local wall clock, so when the
+         * month it lands in sits the other side of a daylight-saving change the resulting UTC
+         * instant moves by an hour. 31 March to 28 February crosses exactly that, so an epoch
+         * comparison fails by 3600000ms on a machine observing DST and passes in UTC. The rule
+         * being pinned is which *day* the bound lands on.
+         */
+        const localPartsOf = (epoch: number) => {
+            const date = new Date(epoch);
+
+            return {
+                year: date.getFullYear(),
+                month: date.getMonth(),
+                day: date.getDate(),
+                hours: date.getHours(),
+                minutes: date.getMinutes()
+            };
+        };
+
+        it('should clamp to the last day of a shorter month', () => {
+            const from = new Date(2026, 2, 31, 12, 0);
+
+            expect(localPartsOf(scheduleWindowLowerBound('1m', from))).toEqual({
+                year: 2026,
+                month: 1,
+                day: 28,
+                hours: 12,
+                minutes: 0
+            });
+        });
+
+        it('should land on the same day of the month when that day exists', () => {
+            const from = new Date(2026, 8, 21, 12, 0);
+
+            expect(localPartsOf(scheduleWindowLowerBound('3m', from))).toEqual({
+                year: 2026,
+                month: 5,
+                day: 21,
+                hours: 12,
+                minutes: 0
+            });
+        });
+
+        it('should reach back a year for the widest window, leap day included', () => {
+            // 29 February exists in 2028 and not in 2027, so the clamp applies backwards too.
+            const from = new Date(2028, 1, 29, 12, 0);
+
+            expect(localPartsOf(scheduleWindowLowerBound('12m', from))).toEqual({
+                year: 2027,
+                month: 1,
+                day: 28,
+                hours: 12,
+                minutes: 0
+            });
+        });
+
+        it('should keep the time of day, so the bound is an instant and not a date', () => {
+            // A window is "the last month from now", not "since the start of that day" — so an
+            // experiment scheduled this morning is inside the one-month window and one scheduled
+            // a month ago this afternoon is outside it.
+            const from = new Date(2026, 8, 21, 23, 30);
+            const bound = localPartsOf(scheduleWindowLowerBound('1m', from));
+
+            expect([bound.hours, bound.minutes]).toEqual([23, 30]);
+        });
+    });
+
+    describe('parseViewState', () => {
+        it('should read the window from ?schedule=', () => {
+            expect(parseViewState(reader({ schedule: '3m' })).selectedSchedule).toBe('3m');
+        });
+
+        it('should default to no constraint when the param is absent', () => {
+            expect(parseViewState(reader({})).selectedSchedule).toBeNull();
+        });
+
+        it('should drop a window the filter does not offer', () => {
+            // Unlike `created_by`, this value set is closed: five options and no custom range, so
+            // a value outside it is a broken link rather than a selection to preserve (FR-048).
+            expect(parseViewState(reader({ schedule: '2m' })).selectedSchedule).toBeNull();
+        });
+
+        it('should drop an absolute date, which is what an old running_from link carries', () => {
+            // FR-049a. The address deliberately does not adopt `running_from`; one arriving here
+            // must read as no constraint rather than as an unparsed window.
+            expect(parseViewState(reader({ schedule: '2026-06-21' })).selectedSchedule).toBeNull();
+        });
+    });
+
+    describe('toQueryParams', () => {
+        it('should write the selected window to schedule', () => {
+            expect(toQueryParams({ ...DEFAULTS, selectedSchedule: '6m' })['schedule']).toBe('6m');
+        });
+
+        it('should omit the param entirely while no window is in force', () => {
+            expect(toQueryParams(DEFAULTS)['schedule']).toBeNull();
+        });
+
+        it('should carry the window itself and never a resolved date', () => {
+            // FR-049a: a link carrying a lower bound cannot say which window was picked, so one
+            // shared this week and opened next week would match no option at all.
+            expect(
+                String(toQueryParams({ ...DEFAULTS, selectedSchedule: '3m' })['schedule'])
+            ).not.toMatch(/\d{4}-\d{2}/);
+        });
+    });
+
+    it('should round-trip a selection through the address unchanged', () => {
+        const written = toQueryParams({ ...DEFAULTS, selectedSchedule: '12m' });
+
+        expect(
+            parseViewState(reader(written as Record<string, string | string[]>)).selectedSchedule
+        ).toBe('12m');
     });
 });

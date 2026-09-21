@@ -160,6 +160,7 @@ const createStoreMock = () => ({
     goalCounts: vi.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
     selectedGoals: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
     selectedCreators: vi.fn().mockReturnValue([]),
+    selectedSchedule: vi.fn().mockReturnValue(null),
     filter: vi.fn().mockReturnValue(''),
     selectedPageId: vi.fn().mockReturnValue(null),
     selectedPageUrl: vi.fn().mockReturnValue(null),
@@ -1151,6 +1152,49 @@ describe('DotExperimentsListComponent', () => {
 
             expect(headers).toHaveLength(9);
             expect(loadingRow?.querySelectorAll('td')).toHaveLength(headers.length);
+        });
+    });
+
+    describe('the schedule filter (#37307)', () => {
+        it('should render the chip in the toolbar', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.query(byTestId('experiments-schedule-filter'))).not.toBeNull();
+        });
+
+        it('should dispatch the chosen window', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onScheduleChange('3m');
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.scheduleChanged('3m')
+            );
+        });
+
+        it('should dispatch the cleared constraint as null, not as an absent window', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onScheduleChange(null);
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.scheduleChanged(null)
+            );
+        });
+
+        it('should treat a window in force as an active filter', () => {
+            // Otherwise a window that matches nothing reaches the "this site has no experiments"
+            // state, which offers no way out, instead of "nothing matched", which does.
+            storeMock.selectedSchedule.mockReturnValue('1m');
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.component.$hasActiveFilters()).toBe(true);
+        });
+
+        it('should read as unfiltered while no window is in force', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.component.$hasActiveFilters()).toBe(false);
         });
     });
 

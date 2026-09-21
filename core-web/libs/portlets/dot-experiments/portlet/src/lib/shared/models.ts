@@ -59,6 +59,13 @@ export interface DotExperimentsListViewState {
      * name having been resolved. Carried in the address as `created_by` (#37307).
      */
     selectedCreators: string[];
+    /**
+     * Schedule window the list is narrowed to; `null` means no date constraint (#37307).
+     *
+     * The window token, not a resolved lower bound — see
+     * {@link EXPERIMENTS_LIST_SCHEDULE_WINDOWS}. Carried in the address as `schedule`.
+     */
+    selectedSchedule: ExperimentsListScheduleWindow | null;
     page: number;
     perPage: number;
     orderBy: string;
@@ -93,6 +100,14 @@ export interface DotExperimentsListPageChange {
     page: number;
     perPage: number;
 }
+
+/**
+ * Schedule windows the list can narrow to, as the address carries them.
+ *
+ * The token travels, never the lower bound it resolves to — see
+ * `EXPERIMENTS_LIST_SCHEDULE_WINDOWS` for why.
+ */
+export type ExperimentsListScheduleWindow = '1m' | '3m' | '6m' | '12m';
 
 /** Sort change emitted by the table header. */
 export interface DotExperimentsListSortChange {

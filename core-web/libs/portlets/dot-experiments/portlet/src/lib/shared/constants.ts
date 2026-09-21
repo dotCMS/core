@@ -6,7 +6,12 @@ import {
     GOALS_METADATA_MAP
 } from '@dotcms/dotcms-models';
 
-import { DotExperimentsListSortDirection, ExperimentRow, TagSeverity } from './models';
+import {
+    DotExperimentsListSortDirection,
+    ExperimentRow,
+    ExperimentsListScheduleWindow,
+    TagSeverity
+} from './models';
 
 export const DEFAULT_EXPERIMENTS_LIST_PAGE = 1;
 /**
@@ -49,6 +54,48 @@ export const DEFAULT_EXPERIMENTS_LIST_GOALS: GOAL_TYPES[] = [];
 
 /** Same as status and goal: nothing pre-selected, so the chip reads as unfiltered. */
 export const DEFAULT_EXPERIMENTS_LIST_CREATORS: string[] = [];
+
+/**
+ * Schedule windows the list can narrow to, as the address carries them.
+ *
+ * The token is what travels, never the date it resolves to. An absolute date cannot say which
+ * window was chosen — a link carrying a lower bound of the 21st, shared one week and opened the
+ * next, would match no option at all — so the address carries `3m` and the bound is computed when
+ * it is needed (FR-049a). That also means a saved link keeps meaning "the last three months"
+ * rather than freezing a range.
+ */
+export const EXPERIMENTS_LIST_SCHEDULE_WINDOWS = {
+    LAST_MONTH: '1m',
+    LAST_3_MONTHS: '3m',
+    LAST_6_MONTHS: '6m',
+    LAST_12_MONTHS: '12m'
+} as const satisfies Record<string, ExperimentsListScheduleWindow>;
+
+/** How many months back each window reaches. */
+export const SCHEDULE_WINDOW_MONTHS: Record<ExperimentsListScheduleWindow, number> = {
+    [EXPERIMENTS_LIST_SCHEDULE_WINDOWS.LAST_MONTH]: 1,
+    [EXPERIMENTS_LIST_SCHEDULE_WINDOWS.LAST_3_MONTHS]: 3,
+    [EXPERIMENTS_LIST_SCHEDULE_WINDOWS.LAST_6_MONTHS]: 6,
+    [EXPERIMENTS_LIST_SCHEDULE_WINDOWS.LAST_12_MONTHS]: 12
+};
+
+/** i18n keys of the window labels, in the order the filter lists them. */
+export const SCHEDULE_WINDOW_LABEL_KEYS = new Map<ExperimentsListScheduleWindow, string>([
+    [EXPERIMENTS_LIST_SCHEDULE_WINDOWS.LAST_MONTH, 'experiments.list.filter.schedule.1m'],
+    [EXPERIMENTS_LIST_SCHEDULE_WINDOWS.LAST_3_MONTHS, 'experiments.list.filter.schedule.3m'],
+    [EXPERIMENTS_LIST_SCHEDULE_WINDOWS.LAST_6_MONTHS, 'experiments.list.filter.schedule.6m'],
+    [EXPERIMENTS_LIST_SCHEDULE_WINDOWS.LAST_12_MONTHS, 'experiments.list.filter.schedule.12m']
+]);
+
+/**
+ * No window chosen, which is the default and applies no date constraint.
+ *
+ * `null` rather than an "Any schedule" member of the set above: the shared chip reads "active"
+ * from having a selection, so an `ANY` value ticked in the list would make the chip claim a filter
+ * it is not applying, and would allow the self-contradicting pair "Any schedule" plus a specific
+ * window (FR-025). "Any schedule" is the chip's empty *label*, not one of its options.
+ */
+export const DEFAULT_EXPERIMENTS_LIST_SCHEDULE: ExperimentsListScheduleWindow | null = null;
 
 /** i18n keys of the goal names, in the order the filter lists them. */
 export const GOAL_LABEL_KEYS = new Map<GOAL_TYPES, string>(

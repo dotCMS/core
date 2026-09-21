@@ -57,6 +57,7 @@ import {
 } from '@dotcms/ui';
 
 import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
+import { DotExperimentScheduleFilterComponent } from '../components/dot-experiment-schedule-filter/dot-experiment-schedule-filter.component';
 import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     GOAL_LABEL_KEYS,
@@ -76,7 +77,8 @@ import {
 import {
     DotExperimentsListSortDirection,
     ExperimentFilterOption,
-    ExperimentRow
+    ExperimentRow,
+    ExperimentsListScheduleWindow
 } from '../shared/models';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
@@ -110,6 +112,7 @@ import {
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
         DotExperimentListFilterComponent,
+        DotExperimentScheduleFilterComponent,
         DotUserFilterComponent,
         DotMessagePipe
     ],
@@ -322,7 +325,8 @@ export class DotExperimentsListComponent {
             this.store.filter().length > 0 ||
             this.store.selectedStatuses().length > 0 ||
             this.store.selectedGoals().length > 0 ||
-            this.store.selectedCreators().length > 0
+            this.store.selectedCreators().length > 0 ||
+            this.store.selectedSchedule() !== null
     );
 
     /**
@@ -546,6 +550,10 @@ export class DotExperimentsListComponent {
 
     onCreatorsChange(creatorIds: string[]): void {
         this.#dispatch.creatorsChanged(creatorIds);
+    }
+
+    onScheduleChange(window: ExperimentsListScheduleWindow | null): void {
+        this.#dispatch.scheduleChanged(window);
     }
 
     onGoalsChange(goals: string[]): void {

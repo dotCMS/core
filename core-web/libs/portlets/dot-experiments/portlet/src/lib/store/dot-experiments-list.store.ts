@@ -36,6 +36,7 @@ import {
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+    DEFAULT_EXPERIMENTS_LIST_SCHEDULE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
     OPT_IN_STATUSES,
     PAGE_LOOKUP_LANGUAGE_HEADROOM
@@ -44,6 +45,7 @@ import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/mo
 import {
     comparatorFor,
     distinctPageIds,
+    matchesScheduleWindow,
     emptyGoalCounts,
     emptyStatusCounts,
     fromRouteParams,
@@ -51,6 +53,7 @@ import {
     normalizePagePath,
     parseViewState,
     resolvedPageInfo,
+    scheduleWindowLowerBound,
     toQueryParams
 } from '../util/dot-experiments-list-store.util';
 import { resolvePagePath } from '../util/dot-experiments-list.util';
@@ -76,6 +79,7 @@ const initialState: DotExperimentsListState = {
     selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
     selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
     selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
+    selectedSchedule: DEFAULT_EXPERIMENTS_LIST_SCHEDULE,
     page: DEFAULT_EXPERIMENTS_LIST_PAGE,
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -301,11 +305,35 @@ export const DotExperimentsListStore = signalStore(
         });
 
         /**
+         * Narrowed to experiments scheduled to start within the chosen window (#37307).
+         *
+         * The bound is resolved here rather than stored, because the window is relative: what "the
+         * last month" means moves with the clock, and freezing a bound into state would make a
+         * long-lived tab answer yesterday's question.
+         *
+         * Sits after the counts snapshot for the same reason as the creator narrowing above
+         * (FR-027, FR-050).
+         */
+        const scheduleFilteredExperiments = computed<DotExperiment[]>(() => {
+            const selectedSchedule = store.selectedSchedule();
+
+            if (!selectedSchedule) {
+                return creatorFilteredExperiments();
+            }
+
+            const lowerBound = scheduleWindowLowerBound(selectedSchedule);
+
+            return creatorFilteredExperiments().filter((experiment) =>
+                matchesScheduleWindow(experiment, selectedSchedule, lowerBound)
+            );
+        });
+
+        /**
          * Last link of the narrowing chain, and the one everything downstream reads — sorting,
          * paging and `totalRecords`. Named separately from the narrowings above so that a filter
          * added later extends the chain rather than redefining what "filtered" means.
          */
-        const filteredExperiments = computed<DotExperiment[]>(() => creatorFilteredExperiments());
+        const filteredExperiments = computed<DotExperiment[]>(() => scheduleFilteredExperiments());
 
         const sortedExperiments = computed<DotExperiment[]>(() => {
             const experiments = filteredExperiments();
@@ -337,6 +365,7 @@ export const DotExperimentsListStore = signalStore(
             statusFilteredExperiments,
             goalFilteredExperiments,
             creatorFilteredExperiments,
+            scheduleFilteredExperiments,
             filteredExperiments,
             sortedExperiments,
             pagedExperiments,
@@ -409,6 +438,10 @@ export const DotExperimentsListStore = signalStore(
             selectedCreators: payload,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
+        on(dotExperimentsListPageEvents.scheduleChanged, ({ payload }) => ({
+            selectedSchedule: payload,
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE
+        })),
         on(dotExperimentsListPageEvents.pageChanged, ({ payload }) => ({
             page: payload.page,
             perPage: payload.perPage
@@ -434,6 +467,7 @@ export const DotExperimentsListStore = signalStore(
             selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
             selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
             selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
+            selectedSchedule: DEFAULT_EXPERIMENTS_LIST_SCHEDULE,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
             perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
             orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -472,6 +506,7 @@ export const DotExperimentsListStore = signalStore(
             selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
             selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
             selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
+            selectedSchedule: DEFAULT_EXPERIMENTS_LIST_SCHEDULE,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
             selectedPageId: null,
             selectedPageUrl: null,
@@ -782,6 +817,7 @@ export const DotExperimentsListStore = signalStore(
                     selectedStatuses: store.selectedStatuses(),
                     selectedGoals: store.selectedGoals(),
                     selectedCreators: store.selectedCreators(),
+                    selectedSchedule: store.selectedSchedule(),
                     page: store.page(),
                     perPage: store.perPage(),
                     selectedPageId: store.selectedPageId(),

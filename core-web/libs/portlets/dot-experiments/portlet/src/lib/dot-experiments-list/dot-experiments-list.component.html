@@ -69,6 +69,11 @@
                 (selectionChange)="onGoalsChange($event)"
                 data-testid="experiments-goal-filter" />
 
+            <dot-experiment-schedule-filter
+                [selected]="store.selectedSchedule()"
+                (selectionChange)="onScheduleChange($event)"
+                data-testid="experiments-schedule-filter" />
+
             <dot-user-filter
                 titleKey="experiments.list.filter.created-by"
                 [selected]="store.selectedCreators()"

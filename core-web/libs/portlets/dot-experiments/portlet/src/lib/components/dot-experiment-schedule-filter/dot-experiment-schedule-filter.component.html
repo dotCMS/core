@@ -1,0 +1,26 @@
+<dot-chip-filter
+    [title]="$title()"
+    [selections]="$selectedLabels()"
+    [emptyLabel]="$emptyLabel()"
+    (clicked)="popover.toggle($event)"
+    (removed)="onRemove()"
+    data-testid="experiment-schedule-filter-chip" />
+
+<p-popover #popover>
+    <p-listbox
+        [(ngModel)]="$selectedValue"
+        [ngModelOptions]="{ standalone: true }"
+        [options]="$options()"
+        [multiple]="false"
+        [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
+        [ariaLabel]="$title()"
+        optionLabel="label"
+        optionValue="value"
+        (onChange)="onChange($event.value)">
+        <ng-template let-option pTemplate="item">
+            <dot-filter-list-item
+                [label]="option.label"
+                [attr.data-testid]="option.testId" />
+        </ng-template>
+    </p-listbox>
+</p-popover>

@@ -37,7 +37,8 @@ import {
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
     PAGE_LOOKUP_LANGUAGE_HEADROOM
 } from '../shared/constants';
-import { DotExperimentsListViewState } from '../shared/models';
+import { DotExperimentsListViewState, ExperimentsListScheduleWindow } from '../shared/models';
+import { scheduleWindowLowerBound } from '../util/dot-experiments-list-store.util';
 
 const CURRENT_SITE_ID = 'site-1';
 const OTHER_SITE_ID = 'site-2';
@@ -134,6 +135,7 @@ const VIEW_STATE_DEFAULTS: DotExperimentsListViewState = {
     selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
     selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
     selectedCreators: [],
+    selectedSchedule: null,
     page: DEFAULT_EXPERIMENTS_LIST_PAGE,
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -1420,6 +1422,165 @@ describe('DotExperimentsListStore', () => {
         });
     });
 
+    describe('schedule filter (#37307)', () => {
+        const DAY = 24 * 60 * 60 * 1000;
+
+        /**
+         * The boundary is taken from the same helper the store uses, then stepped a day either
+         * side of it. Restating the arithmetic here would only test that two copies of it agree;
+         * what these assert is that the comparison is inclusive at the bound and exclusive a day
+         * before it.
+         */
+        const bound = (window: ExperimentsListScheduleWindow) => scheduleWindowLowerBound(window);
+
+        const scheduled = (id: string, startDate: number | null): DotExperiment =>
+            buildExperiment({
+                id,
+                pageId: 'page-1',
+                name: id,
+                scheduling: { startDate, endDate: null }
+            });
+
+        /** No `scheduling` object at all: a draft nobody has dated yet. */
+        const NO_SCHEDULE = buildExperiment({
+            id: 'no-schedule',
+            pageId: 'page-1',
+            name: 'no-schedule',
+            scheduling: null
+        });
+
+        /** A `scheduling` object carrying no start: the other shape of "not scheduled" (FR-022). */
+        const NO_START = scheduled('no-start', null);
+
+        const ids = () =>
+            store
+                .filteredExperiments()
+                .map(({ id }) => id)
+                .sort();
+
+        const loadScheduled = (experiments: DotExperiment[]) => {
+            getAllUnfiltered.mockReturnValue(of([...experiments, NO_SCHEDULE, NO_START]));
+            initStore();
+        };
+
+        it('should show every experiment while no window is chosen', () => {
+            loadScheduled([scheduled('old', bound('12m') - 500 * DAY)]);
+
+            expect(store.selectedSchedule()).toBeNull();
+            expect(ids()).toEqual(['no-schedule', 'no-start', 'old']);
+        });
+
+        it.each(['1m', '3m', '6m', '12m'] as ExperimentsListScheduleWindow[])(
+            'should keep a start one day inside the %s window and drop one a day outside',
+            (window) => {
+                loadScheduled([
+                    scheduled('inside', bound(window) + DAY),
+                    scheduled('outside', bound(window) - DAY)
+                ]);
+
+                dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged(window));
+
+                expect(ids()).toEqual(['inside']);
+            }
+        );
+
+        it('should include a start exactly on the boundary', () => {
+            // FR-020 says "at or after", so the bound itself is inside. An exclusive comparison
+            // would lose one experiment a day, silently, at the edge of every window.
+            //
+            // The clock is frozen for this one test, and the reason is a property of the design:
+            // the bound is resolved when the rows are filtered, not stored, so it moves a few
+            // milliseconds between building this fixture and reading it — enough to put a start
+            // that was *on* the bound just behind it. Every other test here steps a whole day
+            // either side and does not care.
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date(2026, 8, 21, 12, 0));
+
+            try {
+                loadScheduled([scheduled('on-the-bound', bound('3m'))]);
+
+                dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('3m'));
+
+                expect(ids()).toEqual(['on-the-bound']);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('should keep a future start in every window, since there is no upper bound', () => {
+            // FR-020. A scheduled-but-not-started experiment is the case a user filtering by
+            // "last month" most wants to see, so an upper bound at today would hide exactly it.
+            loadScheduled([scheduled('future', Date.now() + 90 * DAY)]);
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+
+            expect(ids()).toEqual(['future']);
+        });
+
+        it('should exclude both shapes of "not scheduled" while a window is in force', () => {
+            // FR-022, and the two shapes are not interchangeable: `scheduling` may be absent
+            // altogether, or present carrying a null `startDate`. Reading `startDate` off the
+            // first shape throws; treating the second as scheduled lets it through every window.
+            loadScheduled([scheduled('inside', bound('1m') + DAY)]);
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+
+            expect(ids()).not.toContain('no-schedule');
+            expect(ids()).not.toContain('no-start');
+            expect(ids()).toEqual(['inside']);
+        });
+
+        it('should bring the unscheduled back when the filter returns to no constraint', () => {
+            loadScheduled([scheduled('inside', bound('1m') + DAY)]);
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged(null));
+
+            expect(ids()).toEqual(['inside', 'no-schedule', 'no-start']);
+        });
+
+        it('should narrow together with the other filters (AND across filters)', () => {
+            loadScheduled([
+                scheduled('recent-draft', bound('1m') + DAY),
+                {
+                    ...scheduled('recent-running', bound('1m') + DAY),
+                    status: DotExperimentStatus.RUNNING
+                }
+            ]);
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+            );
+
+            expect(ids()).toEqual(['recent-running']);
+        });
+
+        it('should leave the status and goal counts untouched (FR-027, FR-050)', () => {
+            loadScheduled([scheduled('old', bound('12m') - 500 * DAY)]);
+
+            const statusCountsBefore = { ...store.statusCounts() };
+            const goalCountsBefore = { ...store.goalCounts() };
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+
+            // The counts describe the set the chips are offered against, snapshotted before any
+            // selection narrowing — so choosing a window must not move the numbers beside the
+            // statuses and goals the user has not chosen.
+            expect(store.statusCounts()).toEqual(statusCountsBefore);
+            expect(store.goalCounts()).toEqual(goalCountsBefore);
+        });
+
+        it('should return to the first page when the window changes', () => {
+            loadScheduled([scheduled('inside', bound('1m') + DAY)]);
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 20 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+    });
+
     describe('clearing every filter at once', () => {
         /**
          * The no-results state's way out is one intent, so it is one event. The point of the
@@ -1438,6 +1599,7 @@ describe('DotExperimentsListStore', () => {
                 dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
             );
             dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('3m'));
 
             dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
 
@@ -1445,6 +1607,7 @@ describe('DotExperimentsListStore', () => {
             expect(store.selectedStatuses()).toEqual([]);
             expect(store.selectedGoals()).toEqual([]);
             expect(store.selectedCreators()).toEqual([]);
+            expect(store.selectedSchedule()).toBeNull();
         });
 
         it('should return to the first page', () => {
@@ -1481,11 +1644,13 @@ describe('DotExperimentsListStore', () => {
             initStore();
 
             dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('3m'));
             dispatcher.dispatch(
                 dotExperimentsListPageEvents.scopedToPage({ pageId: PANEL_PAGE_ID, languageId: 1 })
             );
 
             expect(store.selectedCreators()).toEqual([]);
+            expect(store.selectedSchedule()).toBeNull();
         });
     });
 

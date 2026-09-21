@@ -1,3 +1,5 @@
+import { subMonths } from 'date-fns';
+
 import { Params } from '@angular/router';
 
 import {
@@ -17,9 +19,16 @@ import {
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
-    DEFAULT_EXPERIMENTS_LIST_STATUSES
+    DEFAULT_EXPERIMENTS_LIST_SCHEDULE,
+    DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    EXPERIMENTS_LIST_SCHEDULE_WINDOWS,
+    SCHEDULE_WINDOW_MONTHS
 } from '../shared/constants';
-import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/models';
+import {
+    DotExperimentPageInfo,
+    DotExperimentsListViewState,
+    ExperimentsListScheduleWindow
+} from '../shared/models';
 
 /**
  * Pure helpers behind the experiments list store: URL parsing on the way in, response shaping
@@ -56,6 +65,7 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
         selectedStatuses: parseStatuses(reader.getAll('status')),
         selectedGoals: parseGoals(reader.getAll('goal')),
         selectedCreators: parseCreators(reader.getAll('created_by')),
+        selectedSchedule: parseScheduleWindow(reader.get('schedule')),
         page: parsePositiveInteger(reader.get('page'), DEFAULT_EXPERIMENTS_LIST_PAGE),
         perPage: parsePositiveInteger(reader.get('per_page'), DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
         orderBy: reader.get('orderby') || DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -88,6 +98,70 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
  * a missing leading slash, and a trailing one. Case is left alone; dotCMS paths are not
  * case-insensitive, and lowercasing here would claim a match the backend would not make.
  */
+/**
+ * The instant a window reaches back to, as an epoch millisecond.
+ *
+ * Months are not all the same length, so "one month ago" has no answer on some days and the rule
+ * has to be chosen rather than inherited. `subMonths` **clamps**: 31 March minus one month is 28
+ * February, not 3 March. That is the behaviour wanted here — the alternative overflows into the
+ * following month and would widen the window by up to three days, on three days of the year, which
+ * is exactly the kind of boundary nobody would ever notice was wrong.
+ *
+ * The time of day is kept, so the bound is an instant and not a date: a window is "the last month
+ * from now", not "since the start of that day".
+ *
+ * What is kept is the **local wall clock**, which is worth knowing before comparing epoch
+ * milliseconds: when the month landed in sits the other side of a daylight-saving change, the
+ * resulting instant differs by an hour from the naive arithmetic. Harmless here — an hour either
+ * way on a window measured in months — but it is why the tests assert calendar parts rather than
+ * a timestamp.
+ */
+export function scheduleWindowLowerBound(
+    window: ExperimentsListScheduleWindow,
+    from: Date = new Date()
+): number {
+    return subMonths(from, SCHEDULE_WINDOW_MONTHS[window]).getTime();
+}
+
+/**
+ * Whether the experiment's scheduled start falls inside the window.
+ *
+ * No upper bound (FR-020): a start in the future matches every window. That is deliberate rather
+ * than an omission — an experiment scheduled but not yet running is the one a user asking about
+ * "the last month" most wants to see, and a ceiling at today would hide precisely it.
+ *
+ * Both shapes of "not scheduled" are excluded (FR-022), and they are not interchangeable:
+ * `scheduling` may be absent altogether, or present carrying a null `startDate`. Reading through
+ * the first shape without care throws; treating the second as scheduled lets it into every window.
+ */
+export function matchesScheduleWindow(
+    experiment: DotExperiment,
+    window: ExperimentsListScheduleWindow,
+    lowerBound: number
+): boolean {
+    const startDate = experiment.scheduling?.startDate;
+
+    return startDate != null && startDate >= lowerBound;
+}
+
+/**
+ * The window named by the address, or no constraint.
+ *
+ * A closed value set, unlike `created_by`: there are four windows and no custom range, so anything
+ * else is a broken or hand-edited link rather than a selection worth preserving. An absolute date
+ * lands here too — the address deliberately does not adopt `running_from` (FR-049a) — and reads as
+ * no constraint rather than as an unparsed window.
+ */
+export function parseScheduleWindow(
+    raw: string | null | undefined
+): ExperimentsListScheduleWindow | null {
+    const windows: readonly string[] = Object.values(EXPERIMENTS_LIST_SCHEDULE_WINDOWS);
+
+    return raw && windows.includes(raw)
+        ? (raw as ExperimentsListScheduleWindow)
+        : DEFAULT_EXPERIMENTS_LIST_SCHEDULE;
+}
+
 export function normalizePagePath(rawPath: string | null | undefined): string | null {
     const path = (rawPath ?? '').trim();
 
@@ -228,6 +302,8 @@ export function toQueryParams(
         pageId: view.selectedPageId || null,
         url: view.selectedPageUrl || null,
         created_by: view.selectedCreators.length ? view.selectedCreators : null,
+        // The window token, never the bound it resolves to (FR-049a).
+        schedule: view.selectedSchedule,
         // Written back so it survives filtering, sorting and paging: `writeUrl` merges, and the
         // back-link reads it from the address rather than from a value held only on entry.
         language_id: view.languageId ? String(view.languageId) : null
