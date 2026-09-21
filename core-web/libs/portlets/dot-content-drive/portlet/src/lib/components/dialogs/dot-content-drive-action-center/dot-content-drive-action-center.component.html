@@ -470,20 +470,28 @@
                     -->
                     @if ($isDeleteAction()) {
                         <!--
-                            `no-enter-motion` for the same reason as the folder notice above: this
-                            warning appears in the same frame as the preview list, so PrimeNG's
-                            0.3s `grid-template-rows: 0fr -> 1fr` enter animation expands it late
-                            and shoves the list down after it has already been read.
+                            Shaped like `no-quick-actions` above, which renders without the growth
+                            this one showed: the Message carries nothing but `severity`, and the
+                            margin that used to sit on it lives on a wrapper. PrimeNG's enter
+                            animation expands the element's own box over 0.3s, so a Message that is
+                            also the flex item holding the layout animates the preview list down
+                            with it; a plain wrapper holds the space from the first frame.
+
+                            `no-enter-motion` goes through `styleClass`, as the folder notice does,
+                            rather than a static `class` — same opt-out, same route into the host
+                            binding PrimeNG composes its own classes through.
                         -->
-                        <p-message
-                            class="no-enter-motion m-4 shrink-0"
-                            severity="error"
-                            data-testid="delete-warning">
-                            {{
-                                'content-drive.action-center.delete.warning'
-                                    | dm: [$previewCount().toString()]
-                            }}
-                        </p-message>
+                        <div class="m-4 shrink-0">
+                            <p-message
+                                severity="error"
+                                styleClass="no-enter-motion"
+                                data-testid="delete-warning">
+                                {{
+                                    'content-drive.action-center.delete.warning'
+                                        | dm: [$previewCount().toString()]
+                                }}
+                            </p-message>
+                        </div>
                     }
 
                     <dot-content-drive-action-preview
