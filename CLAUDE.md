@@ -122,6 +122,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Java Standards](docs/backend/JAVA_STANDARDS.md) — Coding patterns, immutables, exceptions, utilities
 - [When to Use Virtual Threads](docs/backend/VIRTUAL_THREADS.md) — Socket I/O yes, file I/O no; carrier pinning
 - [REST API Patterns](docs/backend/REST_API_PATTERNS.md) — JAX-RS, Swagger, @Schema rules
+- [Inference API](docs/backend/INFERENCE_API.md) — OpenAI-compatible `/api/inference/v1` family: chat completions, streaming, models, embeddings, images; bearer-only auth, per-site resolution, limits
 - [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) — Dependency management
 - [Configuration Patterns](docs/backend/CONFIGURATION_PATTERNS.md) — Config.getProperty() usage
 - [Database Patterns](docs/backend/DATABASE_PATTERNS.md) — DotConnect, transactions
@@ -142,7 +143,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) — **single source of truth**: syntax, signals, change detection, forms, icons
 - [Component Architecture](docs/frontend/COMPONENT_ARCHITECTURE.md) — Structure, file layout, data flow
 - [State Management](docs/frontend/STATE_MANAGEMENT.md) — NgRx Signal Store, rxMethod, patchState
-- [Styling Standards](docs/frontend/STYLING_STANDARDS.md) — Tailwind, PrimeNG theme, BEM, SCSS
+- [Styling Standards](docs/frontend/STYLING_STANDARDS.md) — Tailwind, PrimeNG theme, BEM, SCSS, **form markup** (global `.form` / `.field`, labels, hints/errors, accessible naming)
 - [TypeScript Standards](docs/frontend/TYPESCRIPT_STANDARDS.md) — Strict types, as const, `#` private
 - [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) — Writing tests: Spectator, Jest, byTestId
 - [Testing Review Rules](docs/frontend/TESTING_REVIEW_RULES.md) — Reviewing tests: violation checklist

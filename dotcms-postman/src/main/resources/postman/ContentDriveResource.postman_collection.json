@@ -1839,6 +1839,216 @@
       ]
     },
     {
+      "name": "Browse Scope Tests",
+      "item": [
+        {
+          "name": "No Scope - Behaves As It Does Today",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// The shape every caller outside Content Drive sends. Whatever it returns today it",
+                  "// must keep returning: the Asset Picker and six other callers reach this same listing",
+                  "// and none of them will ever send a scope.",
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns a listing, with no scope sent\", function () {",
+                  "    var body = pm.response.json();",
+                  "    pm.expect(body.entity).to.have.property('list');",
+                  "    pm.collectionVariables.set('noScopeCount', body.entity.list.length);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"maxResults\": 50\n}"
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/drive/search",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drive",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ALL At The Site Root - Same As Sending Nothing",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// At the site root these are the same request. ALL is what the drive's own flat view",
+                  "// asks for, and it must not mean anything different from the historic default.",
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Returns the same number of items as sending no scope\", function () {",
+                  "    var body = pm.response.json();",
+                  "    var noScope = Number(pm.collectionVariables.get('noScopeCount'));",
+                  "    pm.expect(body.entity.list.length).to.eql(noScope);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"browseScope\": \"ALL\",\n    \"maxResults\": 50\n}"
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/drive/search",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drive",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ROOT - Lists The Site Root Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// The view that did not exist before this feature: what sits AT the root, without the",
+                  "// contents of the folders below it.",
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Admits nothing that lives inside a folder\", function () {",
+                  "    var body = pm.response.json();",
+                  "    body.entity.list.forEach(function (item) {",
+                  "        // Folders themselves belong at the root; their CONTENT does not.",
+                  "        if (item.baseType) {",
+                  "            pm.expect(item.folder, JSON.stringify(item.title)).to.eql('SYSTEM_FOLDER');",
+                  "        }",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/\",\n    \"browseScope\": \"ROOT\",\n    \"maxResults\": 50\n}"
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/drive/search",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drive",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Scope With A Folder Path - Refused",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Refused rather than resolved by precedence. Picking one of two contradictory",
+                  "// statements would list content from somewhere the caller did not ask for, and the",
+                  "// caller would have no way to tell it happened.",
+                  "pm.test(\"Status code should be 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test(\"Says which scope and which path it refused\", function () {",
+                  "    var text = pm.response.text();",
+                  "    pm.expect(text).to.include('browseScope');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"assetPath\": \"//{{testSiteName}}/alpha-folder/\",\n    \"browseScope\": \"ROOT\",\n    \"maxResults\": 50\n}"
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/drive/search",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "drive",
+                "search"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Combined Tests",
       "item": [
         {

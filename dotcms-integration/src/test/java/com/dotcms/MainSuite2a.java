@@ -7,6 +7,20 @@ import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImpl
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
+import com.dotcms.enterprise.publishing.remote.handler.FolderHandlerTest;
+import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
+import com.dotcms.inference.rest.ChatCompletionsTest;
+import com.dotcms.inference.rest.InferenceAuthorizationTest;
+import com.dotcms.inference.rest.InferenceClientConformanceTest;
+import com.dotcms.inference.rest.InferenceEmbeddingsTest;
+import com.dotcms.inference.rest.InferenceFallbackTest;
+import com.dotcms.inference.rest.InferenceImagesTest;
+import com.dotcms.inference.rest.InferenceLoggingTest;
+import com.dotcms.inference.rest.InferenceModelValidationTest;
+import com.dotcms.inference.rest.InferenceModelsTest;
+import com.dotcms.inference.rest.InferenceSiteIsolationTest;
+import com.dotcms.inference.rest.InferenceSiteResolutionTest;
+import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
@@ -58,7 +72,19 @@ import org.junit.runners.Suite.SuiteClasses;
  */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-
+        ChatCompletionsTest.class,
+        ChatCompletionsStreamingTest.class,
+        InferenceAuthorizationTest.class,
+        InferenceClientConformanceTest.class,
+        InferenceEmbeddingsTest.class,
+        InferenceFallbackTest.class,
+        InferenceImagesTest.class,
+        InferenceLoggingTest.class,
+        InferenceModelsTest.class,
+        InferenceModelValidationTest.class,
+        InferenceSiteIsolationTest.class,
+        InferenceTestsAreRegisteredTest.class,
+        InferenceSiteResolutionTest.class,
         // Data-scanning tests run FIRST on purpose.
         // Integration tests accumulate content and never clean up, so anything
         // that walks the whole dataset (findAllContent) costs O(all content
@@ -116,7 +142,8 @@ import org.junit.runners.Suite.SuiteClasses;
         InterceptorHandlerTest.class,
         com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
         com.dotcms.rest.AuditPublishingResourceTest.class,
-        MaintenanceResourceIntegrationTest.class
+        MaintenanceResourceIntegrationTest.class,
+        FolderHandlerTest.class
 })
 public class MainSuite2a {
 

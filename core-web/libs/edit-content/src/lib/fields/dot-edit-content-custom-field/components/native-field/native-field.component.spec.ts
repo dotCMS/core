@@ -1,6 +1,7 @@
 import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { WINDOW } from '@dotcms/utils';
@@ -27,6 +28,7 @@ describe('NativeFieldComponent', () => {
             {
                 provide: DotEditContentStore,
                 useValue: {
+                    hasAttemptedSubmit: signal(false),
                     setFieldVisibility: vi.fn()
                 }
             }

@@ -226,6 +226,16 @@ export const CustomLaraPreset = definePreset(Lara, {
                 }
             }
         },
+        toast: {
+            root: {
+                // Lara draws a 6px severity-coloured stripe down the left edge
+                // (its own default is '0 0 0 6px'). Every toast in the app is a plain
+                // rectangle instead: severity is already carried by the background, the
+                // icon and the text colour, and the stripe only adds a second, louder
+                // way to say the same thing.
+                borderWidth: '0'
+            }
+        },
         toolbar: {
             root: {
                 borderRadius: '0',
