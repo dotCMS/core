@@ -180,35 +180,38 @@ and confirm they match the asset's own record.
 - **FR-009**: Where a property name could refer either to the referenced asset or to the binary
   file it carries, the API MUST give that name exactly one documented meaning, and MUST offer an
   unambiguous way to reach the other.
-- **FR-009a**: No property name may **silently** change what it returns. This requirement survives
-  the decision to break: where a value differs from what a name returns today, that name MUST be
-  removed rather than repurposed, so the client receives an explicit failure instead of different
-  data. The worked example is the asset description — removed from the asset-pointing field rather
-  than left in place answering with a new value.
+- **FR-009a**: No property name may **silently** change what it returns. Where a name would
+  otherwise answer differently, it MUST be made to answer as it does today; only where that is
+  impossible may it be removed instead, so the client gets an explicit failure rather than
+  different data. The worked example is the asset description: two meanings have always shared
+  that name — an asset-pointing field answered with the contentlet title, the content type's own
+  field holds what an editor typed — and **both are preserved**, selected by how the asset was
+  reached. Nothing is removed and no client rewrites a query.
 - **FR-010**: The delivered behavior MUST be covered by an automated API-level test that a
   customer-defined property on an extended asset type is readable through both an Image field and
   a File field.
 - **FR-011**: Reading N properties of one referenced asset MUST NOT cost N times the work of
   reading one; per-asset work MUST be performed once per asset per request.
-- **FR-012**: *(Superseded — see "Decision: the flat view is replaced, not kept alongside" below.)*
-  ~~Existing customer queries MUST keep working unchanged.~~ The flat asset view is **replaced**.
-  Two selections stop working, and both MUST fail **visibly** rather than return a different value:
-  - `description` on an asset-pointing field. It is the one property whose meaning differs between
-    the flat view (the contentlet title) and the content answering it (a stored description), so it
-    cannot be carried over without changing what a live query returns.
-  - An asset-pointing field aimed at content that is not an asset now resolves to nothing rather
-    than to the flat view.
+- **FR-012**: Existing customer queries MUST keep working unchanged. **All six** properties the
+  flat asset view exposed — `fileName`, `description`, `fileAsset`, `metaData`, `showOnMenu`,
+  `sortOrder` — MUST remain selectable **and** return exactly what they return today, on every
+  surface a client can narrow through. No selection that validates today may stop validating.
 
-  Every other property the flat view exposed — `fileName`, `fileAsset`, `metaData`, `showOnMenu`,
-  `sortOrder` — MUST remain selectable **and** return exactly what it returns today, on every
-  surface a client can narrow through.
-- **FR-012a**: *(No longer applicable.)* There is no surviving surface to mark as superseded. What
-  replaces it is documentation and release communication, not an in-schema deprecation.
-- **FR-012b**: *(No longer applicable.)* Retirement is not deferred; it happens in this feature.
-  The tracking item this requirement called for is therefore not opened.
-- **FR-012c**: The break MUST be announced ahead of the release and MUST ship with migration
-  guidance naming, for each removed selection, its replacement — `description` through a narrowing
-  clause on the concrete content type, where it returns the stored value rather than the title.
+  Two consequences of the change are not additive and MUST be documented rather than prevented:
+  - **`__typename`** on an asset-pointing field answered with the constant `DotFileasset` and now
+    answers with the concrete content type. This is inseparable from the capability: the same
+    resolution that makes `... on BannerImages` work is what `__typename` reports. Suppressing it
+    would mean reporting a type the value does not have.
+  - An asset-pointing field aimed at content that is **not** an asset resolves to nothing rather
+    than to the flat view. Forced, not chosen — see the decision section below.
+- **FR-012a**: *(No longer applicable.)* Nothing is superseded, so there is no surface to mark as
+  such. What ships instead is documentation and release communication.
+- **FR-012b**: *(No longer applicable.)* Nothing is retired, so nothing is deferred. The tracking
+  item this requirement called for is therefore not opened.
+- **FR-012c**: The two non-additive consequences MUST be announced ahead of the release and MUST
+  ship with migration guidance: what `__typename` returns now and who depends on it (notably
+  normalized client caches keyed on it), and that a type-kind change from object to interface
+  requires clients generating types from the schema to regenerate.
 - **FR-013**: This feature supersedes PR dotCMS/core#35363. That PR MUST be closed as superseded
   rather than merged, and the convenience it aimed at — reading an asset's binary properties
   without descending a level — MUST be re-raised as a second, separately tracked stage of issue
@@ -265,12 +268,15 @@ and confirm they match the asset's own record.
   of per-asset work as requesting one, measured as a constant rather than a per-property cost.
 - **SC-007**: The AI tagging workflow, which cannot read an asset's tags today, completes
   end-to-end.
-- **SC-008**: Of the six properties the flat asset view exposed, **five** are still selectable
-  after this feature ships and return the same values they returned before. The sixth,
-  `description`, fails explicitly rather than returning a different value.
-- **SC-009**: Every removed selection fails visibly. Zero selections keep working while returning
-  different data — measured by querying each removed name and confirming an error rather than a
-  value.
+- **SC-008**: **All six** properties the flat asset view exposed are still selectable after this
+  feature ships and return the same values they returned before, measured by executing a query
+  against each on both a DOTASSET-derived and a FILEASSET-derived asset. `description` is included
+  and returns the title through an asset-pointing field, the stored value when queried directly —
+  the same two answers it gave before.
+- **SC-009**: Zero selections keep working while returning different data. The only value that
+  changes is `__typename`, which reports the resolved content type rather than a constant; it is
+  announced rather than prevented, because holding it fixed would mean naming a type the value
+  does not have.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -280,13 +286,16 @@ and confirm they match the asset's own record.
   themselves are long-standing product surface.
 
 - **Backward-compatibility expectations**: Customers already query the six properties the flat
-  asset view exposes. **Five keep working and return the same values; one does not** (FR-012), and
-  an asset field aimed at non-asset content stops resolving. Both breaks are visible.
+  asset view exposes. **All six keep working and return the same values** (FR-012). No query has to
+  be rewritten.
 
-  This spec changed position twice. It first accepted breaking, then reversed to a non-breaking
-  design after consulting the accepted architecture decisions, and has now returned to breaking —
-  **as a product decision, not a technical one**. See "Decision: the flat view is replaced" and
-  ADR Alignment below.
+  This spec changed position three times, and the record is kept because the reasoning is the
+  useful part. It first accepted breaking, then reversed to a non-breaking design after consulting
+  the accepted architecture decisions, then returned to breaking as a product decision — and has
+  now arrived at a design that delivers the requested query shape **without** the break, once
+  `description` was made to answer according to how the asset was reached. What remains is the
+  `__typename` change, which no design can avoid. See "Decision: both meanings of `description`
+  are kept" and ADR Alignment below.
 
 ### ADR Alignment
 
@@ -303,73 +312,95 @@ both were consulted before this spec was finalized:
   supported-version floor and a confirmed zero-use window, and requires the deprecation to be
   marked **in the schema itself**, not only in code.
 
-**An exception to ADR-0022 IS requested, knowingly.** This feature does not expand, adopt, bake and
-retire — it retires now. The expand phase was designed, implemented and verified green (a companion
-field beside each asset field, breaking nothing), and was then set aside because it could not put
-the narrowing clauses in the same block as the flat properties. That ergonomic difference — one
-block instead of two — was judged by product to be worth the break.
+**No exception to ADR-0022 is required.** An earlier revision of this spec requested one,
+knowingly, on the grounds that the asset description had to be retired rather than carried through
+expand → adopt → bake → retire. That is no longer the case: nothing is retired. Every name the flat
+view published still resolves and still returns the same value, so there is no removal for the
+ADR's process to govern.
 
-The technical constraint is not negotiable and is worth recording, because it is what makes the
-compliant option unable to deliver the requested shape: a GraphQL field has exactly one type and a
-resolved value has exactly one runtime type, so the flat view and the asset itself — two
-descriptions of the same content — cannot occupy the same position. Keeping both means keeping them
-at different positions, which is precisely what the expand-phase design did.
+The constraint that forced the earlier position is worth recording, because it is real and it is
+what a later reader will expect to block this: a GraphQL field has exactly one type, and a resolved
+value has exactly one runtime type, so the flat view and the asset itself — two descriptions of the
+same content — cannot occupy the same position. What dissolved the conflict was noticing that only
+**one** name actually collided, `description`, and that its two meanings were *already* both
+shipping, selected by query path. Preserving that path-dependence costs one data fetcher and keeps
+every client query valid. See "Decision: both meanings of `description` are kept".
 
-What the exception preserves from the ADR's intent:
+What remains is not a field removal and is not what ADR-0022 governs:
 
-- The break is **visible**, never silent. ADR-0022's concern is a self-hosted customer who upgrades
-  on their own schedule and cannot tell that data changed; every removal here fails loudly
-  (FR-009a).
-- Five of the six properties are carried over unchanged, so the blast radius is one property plus
-  one edge case, not the whole surface.
-- FR-012c requires the announcement and migration guidance the ADR's process would otherwise have
-  provided through the bake window.
+- **`__typename`** changes value. It is a GraphQL meta-field, not a published dotCMS field, and its
+  rule is unchanged — it has always reported the runtime type. What changed is that the runtime
+  type is no longer a constant. It cannot be held fixed without reporting a type the value does not
+  have, which would break the narrowing clauses this feature exists to deliver.
+- **The kind of `DotFileasset`** changes from object to interface. Query text is unaffected;
+  clients that generate types from the schema must regenerate. This, rather than `__typename`, is
+  the item a supported-version floor speaks to.
 
-**Sign-off needed**: @fmontes as an author of ADR-0020, and @nollymar who approved the spec in its
-non-breaking form (PR #37537). Neither has agreed to this exception yet — it is recorded here as
-requested, not granted.
+Both are covered by FR-012c's announcement and migration guidance.
 
-### Decision: the flat view is replaced, not kept alongside
+**Sign-off**: @fmontes and @nollymar were asked to weigh an ADR-0022 exception against the earlier
+breaking design. That request is withdrawn — there is no longer an exception to grant. Their review
+is still wanted on the two items above.
 
-**This is a product decision, and it overrides what the rest of this section originally argued.**
-Recorded in full because the reasoning ran both ways and a later reader will otherwise assume the
-compliant option was never available.
+### Decision: both meanings of `description` are kept
 
-**What was built and set aside.** A non-breaking design was implemented and verified green: a
-companion field beside each asset field (`image` gaining `imageContent`), typed by the asset
-interface. Nothing broke, the spec needed no change, and no ADR exception was required. It was set
-aside for one reason — the narrowing clauses lived in a second block rather than beside the flat
-properties:
+Recorded in full because the reasoning ran three ways, and a later reader will otherwise assume
+either that the compliant option was never available or that the break was unavoidable.
+
+**The requested shape.** Narrowing clauses had to sit in the *same* block as the flat properties:
 
 ```
-imageContent { ... on Images { tags } }     # what the compliant option offered
+imageContent { ... on Images { tags } }             # the first, non-breaking design
 image        { fileName  ... on Images { tags } }   # what was asked for
 ```
 
-**Why the compliant option could not deliver the requested shape.** A GraphQL field has exactly one
-type, and a resolved value has exactly one runtime type. The flat view and the asset itself are two
-descriptions of the same content, so they cannot occupy the same position — keeping both means
-keeping them at different positions. That is a property of GraphQL, not of this implementation, and
-no amount of work removes it.
+Delivering the second means the asset field itself is the polymorphic position, typed by an
+interface. A GraphQL field has exactly one type and a resolved value has exactly one runtime type,
+so the flat view could not also live there — which is why this was believed to cost a break.
 
-**What the break actually costs**, measured rather than estimated:
+**Why it did not.** Of the six flat properties, five are plain values that the same fetchers answer
+identically once synthesized onto the concrete types. Only `description` collided, because the flat
+view derived it from the contentlet title while an asset content type's own `description` field
+holds what an editor typed.
 
-- **Five of the six properties survive unchanged** — `fileName`, `fileAsset`, `metaData`,
-  `showOnMenu`, `sortOrder`. They are synthesized onto DOTASSET-derived types using the very same
-  fetchers the flat view used, so they answer identically. Notably `fileName`, which was never a
-  stored value for that content.
-- **`description` does not.** It is the one property whose meaning differs: the flat view answered
-  with the contentlet title, while the content answering it stores something else. On a real
-  instance the flat view returned a value for 57 of 57 images while only 2 of those 57 have a
-  stored description. Carrying the name over would have returned different data **without
-  failing** — so it is removed instead, and fails loudly.
+The collision turned out to be already shipping. Measured on a running instance, `image
+{ description }` returned a value for 57 of 57 images, while only 2 of those 57 have a stored
+description — the flat view was answering with the title, and the content type's own field was
+answering with the stored value, under the same name, in the same schema. The two meanings were
+never reconciled; they were separated by which query reached the content.
+
+So the resolution is to conserve that separation rather than pick a winner: `description` is
+resolved by a fetcher that answers according to whether the asset was reached through an
+asset-pointing field or queried directly. Both contracts hold, and no client rewrites a query. Two
+implementation details make it work and both fail silently if got wrong, so they are locked by
+tests:
+
+- The concrete type's own `description` definition must be **replaced**, not filled in around.
+  Most asset types define one, and leaving it in place lets the stored value answer an
+  asset-pointing field — exactly the silent change FR-009a forbids.
+- The declared type must be read from the parent's **field definition**, not from its execution
+  step. graphql-java rewrites the step to the concrete type before running the sub-selection, so
+  by the time the fetcher runs the interface is already gone and every asset looks
+  directly-queried.
+
+**What still changes**, measured rather than estimated:
+
+- **All six properties survive unchanged** — `fileName`, `description`, `fileAsset`, `metaData`,
+  `showOnMenu`, `sortOrder`. Notably `fileName`, which was never a stored value for DOTASSET
+  content, and `description`, whose path-dependence is preserved exactly.
+- **`__typename`** answered with the constant `DotFileasset` and now answers with the concrete
+  content type. Inseparable from the capability: the resolution that makes `... on BannerImages`
+  work is what `__typename` reports. The clients this reaches are those keying a normalized cache
+  on it, or asserting it in snapshots.
 - **An asset field aimed at non-asset content** now resolves to nothing rather than to the flat
-  view. Forced: a contentlet outside the interface cannot be handed on, and doing so fails the
-  entire request with `UnresolvedTypeException` rather than just that field.
+  view. Forced: a contentlet outside the interface cannot be handed on, and handing it on raises
+  `UnresolvedTypeException`, which fails the **entire request** — one mis-pointed field taking
+  every other collection in the query down with it. Returning nothing for that field is the
+  containable outcome, and the data was already wrong.
 
-**What is preserved from the earlier position.** FR-009a survives intact and is the reason the two
-breaks take the shape they do: nothing may change value silently. A removal a client can see is
-acceptable; a name that keeps working and returns something else is not.
+**What is preserved from the earlier position.** FR-009a survives intact and is what drove the
+design to this shape: nothing may change value silently. The earlier spec concluded that the only
+way to honour it for `description` was removal; the path-aware resolver honours it without one.
 
 ### Depth of the type hierarchy
 

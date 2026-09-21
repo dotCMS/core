@@ -7,8 +7,10 @@ resolves to an **interface of the same name**, whose possible types are every co
 from the DOTASSET or FILEASSET base types. That is what makes a customer's own fields readable —
 they were unreachable at any depth before.
 
-Most queries need no change. Two do. Both fail **visibly**: you get a GraphQL validation error, not
-different data.
+**Your queries keep working.** All six properties are still selectable and still return the same
+values. Nothing was removed and nothing was renamed. Two things do change, neither of them a query
+you have to rewrite: what `__typename` reports, and the kind of `DotFileasset` for anyone
+generating types from the schema. Both are below.
 
 ---
 
@@ -35,42 +37,47 @@ A content type you create later is reachable immediately, with no administrative
 
 ---
 
-## Change 1 — `description`
+## Change 1 — `__typename`
 
-**This is the one that will break you.** It fails the whole request, not just the field: GraphQL
-rejects an unknown field at validation time, so you get `data: null`. In the JavaScript SDK that
-surfaces as a thrown `DotErrorPage`, not a missing value.
+**The one value that changes.** On an asset-pointing field it used to be the constant
+`"DotFileasset"`. It is now the concrete content type: `"Images"`, `"FileAsset"`,
+`"BannerImages"`, whatever the field actually points at.
 
-```graphql
-# before
-image { description }
+`__typename` did not change its rule — it has always reported the runtime type of the resolved
+value. What changed is that the runtime type is no longer a constant, because the field is now
+described by an interface. This is inseparable from the feature: the same resolution that makes
+`... on BannerImages { campaignName }` work is what `__typename` reports. Pinning it back to
+`"DotFileasset"` would mean naming a type the value does not have.
 
-# after
-image { ... on Images { description } }
-```
+Who this actually reaches:
 
-**Read the value it returns — it is probably not what you think.** On image-style content the old
-`description` never returned a stored description: it returned the contentlet's **title**, which
-for an asset is the file name. Measured on a real instance, the old field returned a value for
-57 of 57 images while only 2 of those 57 have a stored description.
-
-So the mechanical fix above changes what you get. Decide which you actually wanted:
-
-| You wanted | Select |
+| If you | Then |
 |---|---|
-| The file name, as before | `image { fileName }` — unchanged, still works |
-| The contentlet's title | `image { title }` |
-| The stored description | `image { ... on Images { description } }` — usually empty |
-
-If your front-end used `description` as alt text or a caption, it was showing the file name. The
-first row keeps that behaviour exactly.
+| Never select `__typename` under an asset field | Nothing to do |
+| Use Apollo Client, or any normalized cache | **Check this.** Normalized caches key entries on `__typename` + id, so cache keys for these objects change. Entries written by an older build will not be read back |
+| Assert `__typename` in snapshot tests | Update the expected value to the concrete type |
+| Branch on `__typename` in application code | Re-read the branch. It was comparing against a constant, so it was always taking the same path; now it discriminates, which is probably what you wanted |
 
 ---
 
-## Change 2 — an asset field pointing at content that is not an asset
+## Change 2 — if you generate types from the schema
+
+`DotFileasset` changes **kind**, from object to interface. Query text does not notice; code
+generators do. Apollo, Relay, graphql-codegen and similar toolchains produce different types for an
+interface than for an object, so **regenerate** against the new schema. A build against the old
+generated types will not match the runtime schema.
+
+This is about **your** toolchain, not the dotCMS SDK. The `@dotcms/*` packages do not generate
+types from the schema — they send the fragment text you write, so they are unaffected and no
+minimum SDK version changes because of this.
+
+---
+
+## Change 3 — an asset field pointing at content that is not an asset
 
 An Image or File field stores a bare identifier, and nothing prevents it from pointing at ordinary
-content. That used to resolve to the flat view; it now resolves to `null`.
+content — a Blog Post, say, put there by an import or a script. That used to resolve to the flat
+view, which happily answered with the Blog Post's name; it now resolves to `null`.
 
 This is forced rather than chosen: a contentlet outside the interface cannot be handed on, and
 handing it on raises `UnresolvedTypeException`, which fails the **entire request** — one
@@ -78,16 +85,17 @@ mis-pointed field taking every other collection in your query down with it. Retu
 that one field is the containable outcome.
 
 If you see a field that used to return data now returning `null`, check what it points at. It is a
-data problem, not a query problem.
+data problem, not a query problem, and it was a data problem before too — the old answer just
+looked valid.
 
 ---
 
 ## What does not change
 
-Five of the six original properties keep their names **and their exact values**:
+All six properties keep their names **and their exact values**:
 
 ```graphql
-image { fileName  fileAsset { size mime }  metaData { key value }  showOnMenu  sortOrder }
+image { fileName  description  fileAsset { size mime }  metaData { key value }  showOnMenu  sortOrder }
 ```
 
 Including the quirks. `fileName` on image-style content is still the contentlet name, synthesized
@@ -96,24 +104,34 @@ rather than stored, exactly as before.
 `... on DotFileasset { … }` also keeps working and keeps returning data. The interface deliberately
 kept that name, so clauses you already wrote stay valid.
 
----
+### `description`, and why it returns two different things
 
-## If you generate types from the schema
+This one is worth understanding, because it looks like a bug and is not — and because it behaved
+this way **before** this change too.
 
-`DotFileasset` changes **kind**, from object to interface. Query text does not notice; code
-generators do. Apollo, Relay and similar toolchains will produce different types for an interface
-than for an object, so **regenerate** against the new schema. A build against the old generated
-types will not match the runtime schema.
+```graphql
+image { description }                 # the contentlet TITLE, which for an asset is the file name
+ImagesCollection { description }      # the stored description, usually empty
+```
 
-This is why the release carries an updated minimum SDK version.
+Same asset, same field name, different values. Two meanings have always shared this name: the flat
+view derived `description` from the title, while an asset content type's own `description` field
+holds what an editor typed. Measured on a real instance, the first form returned a value for 57 of
+57 images while only 2 of those 57 have a stored description.
+
+Once the field is described by an interface, the concrete type's own definition would normally take
+over — which would have made `image { description }` silently start returning the stored value,
+usually empty. It does not: the value is selected by how the asset was reached, so both answers are
+exactly what they were.
+
+If your front-end used `description` as alt text or a caption, it was showing the file name, and it
+still is. If you want the stored one, query the asset through its own collection.
 
 ---
 
 ## A whole query, before and after
 
-A page listing banners, where each banner points at an image. This is the shape most clients have.
-
-**Before** — everything the old flat view offered:
+A page listing banners, where each banner points at an image.
 
 ```graphql
 query Banners {
@@ -129,26 +147,10 @@ query Banners {
 }
 ```
 
-**After** — the same query, minimally corrected. Only `description` moved:
+**This query is unchanged.** It validates and returns the same values it did before. That is the
+whole migration for a typical client: nothing.
 
-```graphql
-query Banners {
-  BannerCollection(limit: 10) {
-    title
-    image {
-      fileName
-      title                      # was `description`: same value, honest name
-      fileAsset { versionPath size mime width height }
-      metaData { key value }
-    }
-  }
-}
-```
-
-That is the whole migration for a typical client: one line. `description` returned the contentlet
-title, so `title` returns exactly what the page was already rendering.
-
-**After, using what is now available** — the same query taking advantage of the change:
+**Using what is now available** — the same query taking advantage of the change:
 
 ```graphql
 query Banners {
@@ -163,16 +165,12 @@ query Banners {
       __typename                       # which content type this actually is
 
       # properties defined on the customer's own asset types
-      ... on Images       { tags description }
+      ... on Images       { tags }
       ... on BannerImages { campaignName adSize }
     }
   }
 }
 ```
-
-Note `... on Images { description }` here returns the **stored** description, which is usually
-empty — a different value from the `title` above. Both are available; they were never the same
-thing.
 
 **A mixed collection**, where the same field points at different kinds of asset:
 
@@ -198,7 +196,8 @@ writing any clause at all.
 
 Three things to grep your codebase for:
 
-1. `description` immediately under an Image or File field selection — the breaking case.
+1. `__typename` under an Image or File field selection, and anything keyed on it — a normalized
+   cache, a snapshot, a switch.
 2. Generated GraphQL types referencing `DotFileasset` — regenerate them.
 3. Any Image or File field you know points at non-asset content.
 

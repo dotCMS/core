@@ -24,7 +24,7 @@ query text does not notice but client code generators do.
 | `metaData` | `[DotKeyValue]` | **carried over** | |
 | `showOnMenu` | `[String]` | **carried over** | |
 | `sortOrder` | Int | **carried over** | |
-| `description` | String | **removed** | The one property whose meaning differs: the flat view answered with the contentlet *title*, while the content answering it stores something else. Carrying the name over would have returned different data without failing. |
+| `description` | String | **kept, path-aware** | The one property whose meaning differs: the flat view answered with the contentlet *title*, while the content answering it stores something else. Both are preserved — `AssetDescriptionDataFetcher` answers according to whether the asset was reached through an asset-pointing field or queried directly, so neither reading changes. The concrete type's own definition is replaced rather than filled in around, or its stored value would answer the pointing field. |
 
 Plus every common content field — `identifier`, `inode`, `title`, `host`, `live`, `urlMap`,
 `baseType`, `folder`, `modDate`, `_map` and the rest — none of which was reachable before.
@@ -70,15 +70,24 @@ schema build, taking every other content type down with it.
 
 ---
 
-### The flat object type (removed)
+### The flat object type (unregistered)
 
-No longer registered as a schema type. Nothing references it once asset fields are interface-typed,
-so registering it would leave an orphan visible in introspection and reachable by nobody.
+The Java object type is no longer registered as a schema type. Nothing references it once asset
+fields are interface-typed, so registering it would leave an orphan visible in introspection and
+reachable by nobody.
+
+This is not a loss to any client. The name `DotFileasset` and all six of its properties survive on
+the interface that takes over that name, so both `image { fileName }` and
+`... on DotFileasset { fileName }` keep validating and keep returning the same values. What
+changes is the type's **kind**, from object to interface — invisible to query text, visible to a
+code generator.
 
 ---
 
 ## State transitions
 
-None. The flat view is replaced in one step rather than deprecated and retired over releases — a
-product decision, recorded in the spec's "Decision: the flat view is replaced" section, and the
-reason an exception to ADR-0022 is requested there.
+None, and none needed. Nothing is deprecated or retired, so there is no window to stage across
+releases: every name the flat view published still resolves and still returns the same value. An
+earlier revision replaced the flat view outright and requested an exception to ADR-0022 for it;
+that was withdrawn once `description` was made path-aware. See the spec's "Decision: both meanings
+of `description` are kept".

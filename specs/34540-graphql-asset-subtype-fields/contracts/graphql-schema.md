@@ -152,17 +152,32 @@ the old one fails rather than lying.
 
 | Guarantee | Requirement |
 |---|---|
-| Five of the six flat properties stay selectable and return the same values | FR-012, SC-008 |
-| Every removed selection fails **visibly**; none keeps working while returning different data | FR-009a, SC-009 |
-| The break ships with announcement and migration guidance | FR-012c |
+| **All six** flat properties stay selectable and return the same values | FR-012, SC-008 |
+| No selection that validates today stops validating | FR-012 |
+| Nothing keeps working while returning different data | FR-009a, SC-009 |
+| The two non-additive consequences ship with announcement and migration guidance | FR-012c |
 
-**What breaks**
+**Nothing is removed.** `description` included — it is resolved by a fetcher that answers
+according to how the asset was reached: the contentlet title through an asset-pointing field, the
+stored value when the content is queried directly. Both are what shipped before; the two meanings
+were already separated by query path, and that separation is conserved rather than resolved in
+favour of one.
 
-| Selection | Why it could not be carried over |
-|---|---|
-| `image { description }` | The flat view answered with the contentlet *title*; the content answering it stores something else. Measured on a real instance: populated for 57 of 57 images before, 2 of 57 after. Carrying the name over would have returned different data without failing. Reachable through a clause on the concrete type, where it returns the stored value. |
-| an asset field aimed at non-asset content | A contentlet outside the interface cannot be handed on; doing so fails the **whole request**. |
+**What changes**
 
-**Not a rollback-safe change.** Unlike an additive field, this replaces a type and removes a
-selection, so a client that has adopted the new shape breaks on rollback and one that has not
-breaks on deploy.
+| | Before | After |
+|---|---|---|
+| `__typename` on an asset-pointing field | the constant `DotFileasset` | the resolved content type |
+| kind of `DotFileasset` | object | interface |
+| an asset field aimed at non-asset content | resolved the flat view | resolves to nothing |
+
+`__typename` cannot be held fixed: the type resolution that makes narrowing work is what it
+reports, so pinning it would name a type the value does not have. The last row is forced — a
+contentlet outside the interface cannot be handed on, and doing so fails the **whole request**
+rather than that one field.
+
+**Not a rollback-safe change**, for one reason only: this adds a large new queryable surface —
+narrowing clauses, the asset's own identity, the flattened binary properties — and N-1 has none of
+it. A client that adopts the new shape and is then rolled back gets query-validation failures. A
+client that has **not** adopted it is unaffected in both directions, which is the half that no
+longer applies.
