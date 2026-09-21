@@ -14,7 +14,10 @@ const pageAsset = pageResponse.ok ? pageResponse.pageAsset : undefined;
 const { vanityUrl } = pageAsset ?? {};
 
 if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
-  return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
+  return Astro.redirect(
+    vanityUrl.forwardTo,
+    vanityUrl.permanentRedirect ? 301 : 302,
+  );
 }
 
 const title = pageAsset ? pageAsset.page.title : "Error";
