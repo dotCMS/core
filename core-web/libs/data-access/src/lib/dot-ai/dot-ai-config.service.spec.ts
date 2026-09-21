@@ -115,7 +115,7 @@ describe('DotAiConfigService', () => {
             spectator.service.getResolvedConfig().subscribe((r) => (result = r));
 
             flush({
-                configHost: 'demo.dotcms.com (falls back to system host)',
+                configHost: 'demo.dotcms.com',
                 settings: { temperature: '0.7' },
                 providerConfig: JSON.stringify({
                     chat: { provider: 'openrouter', apiKey: '*****', model: 'a,b,c' }
@@ -134,12 +134,12 @@ describe('DotAiConfigService', () => {
             spectator.service.getResolvedConfig().subscribe((r) => (result = r));
 
             flush({
-                configHost: 'demo.dotcms.com (falls back to system host)',
+                configHost: 'demo.dotcms.com',
                 settings: {},
                 providerConfig: '{}'
             });
 
-            expect(result.configHost).toBe('demo.dotcms.com (falls back to system host)');
+            expect(result.configHost).toBe('demo.dotcms.com');
         });
 
         it('should report isConfigured false when providerConfig is omitted', () => {

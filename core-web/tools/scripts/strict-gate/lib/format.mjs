@@ -114,15 +114,77 @@ export function formatGithub(report) {
         .join('\n');
 }
 
+/**
+ * What the run cost, paired with the diff size that produced it.
+ *
+ * Emitted on every markdown-formatted run, passing ones included. Note where it does NOT appear:
+ * `formatGithub` — the format this repository's CI invocation passes — never calls this, so the
+ * cost line reaches the run page only through `run.mjs`'s separate `GITHUB_STEP_SUMMARY` write,
+ * never stdout and never an annotation. Anyone reading the Maven log will not see it.
+ *
+ * The gate blocks, so its cost sits on the critical path of every frontend merge and the real
+ * distribution is worth knowing; a duration printed only when there are findings would sample the
+ * fast and slow cases unevenly, and it is the tail that matters. The diff size travels with it
+ * because a duration alone is not comparable between a one-file pull request and a forty-file one.
+ *
+ * One decimal place: the no-op case costs ~0.3s and rounding it to "0s" would make the cheapest
+ * and most common outcome invisible in the evidence.
+ */
+function costLine(report) {
+    // Guarded because this file's whole stance is that a plausible-looking wrong number is the
+    // dangerous failure mode, and `formatMarkdown` is exported: a partial `durationMs` object
+    // slips past buildReport's default (which only fires on undefined) and renders "NaNs".
+    const ms = report.durationMs?.total;
+    // Sub-second runs render in milliseconds. `toFixed(1)` turns anything under 50ms into "0.0s",
+    // and the cheapest case — a pull request touching no frontend file at all — measures ~175ms,
+    // within a factor of four of that cliff. Rounding the most common outcome to zero would make
+    // it invisible in exactly the evidence this line exists to provide.
+    const elapsed = !Number.isFinite(ms) ? '?s' : ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(1)}s`;
+    // Distinct paths, not (config -> file) assignments. `selectConfigs` claims a source under
+    // EVERY eligible config, so a project whose lib and spec configs both include a file yields
+    // two target entries for one changed file; summing `files.length` would report a one-file
+    // diff as two. Unmapped files count as well: they were changed, they just were not examined,
+    // and leaving them out understates the diff this duration came from.
+    const changed = new Set([
+        ...report.targets.flatMap((t) => t.files),
+        ...report.unmapped.map((u) => u.path)
+    ]).size;
+    // Deliberately not "Checked": `changed` includes unmapped files, which by definition were not
+    // examined, and the note below says so. Two adjacent lines asserting opposite things about the
+    // same file is worse than a plainer verb.
+    return `_${changed} changed file(s) across ${report.targets.length} project config(s), ${elapsed}._`;
+}
+
+/**
+ * Changed files no project claimed. They were NOT examined, and with the gate blocking, silence
+ * about them reads as a clean pass — the edge case the spec calls out by name. Naming them is not
+ * a failure signal; it is the difference between "nothing was wrong" and "nothing was looked at".
+ */
+function unmappedNote(report) {
+    if (report.unmapped.length === 0) return null;
+    const rows = report.unmapped.map((u) => `- \`${u.path}\` — ${u.reason}`).join('\n');
+    return [
+        `**${report.unmapped.length} changed file(s) were not examined** — no project configuration claims them:`,
+        '',
+        rows
+    ].join('\n');
+}
+
 /** Markdown for the job summary — what a human opening the run sees first. */
 export function formatMarkdown(report) {
     const total = ignoredCount(report);
+    // `costLine` already carries the project-config count, and it carries the file count too, so
+    // it is the more informative of the two places that used to state it.
+    const note = unmappedNote(report);
+
     if (report.exitCode === 0) {
         return [
             '## ✅ strict-gate: pass',
             '',
-            `No new strict-mode violations. ${total} pre-existing or dependency diagnostic(s) ignored, ` +
-                `across ${report.targets.length} project config(s).`
+            `No new strict-mode violations. ${total} pre-existing or dependency diagnostic(s) ignored.`,
+            '',
+            costLine(report),
+            ...(note ? ['', note] : [])
         ].join('\n');
     }
 
@@ -134,6 +196,9 @@ export function formatMarkdown(report) {
         `## ❌ strict-gate: ${report.findings.length} new strict-mode violation(s)`,
         '',
         `**Scope.** ${scopeRule(report.granularity)} ${total} diagnostic(s) from dependencies and untouched code were ignored — fix only what is listed.`,
+        '',
+        costLine(report),
+        ...(note ? ['', note] : []),
         '',
         '| File | Line | Code | Message |',
         '|---|---|---|---|',

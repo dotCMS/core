@@ -15,6 +15,7 @@ import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { AngularAssetPickerLauncher, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
@@ -99,6 +100,16 @@ export class DotExperimentsConfigurePageComponent {
     readonly store = inject(DotExperimentsConfigureStore);
 
     /** The page the experiment runs on, whether it was picked here or resolved from the URL. */
+    /**
+     * Whether the card is rendering inside the UVE panel (#37478).
+     *
+     * There the page is not a choice: it is the page open in the editor, and the panel is scoped
+     * to it. Letting it be changed here would point the experiment at a page the editor is not
+     * looking at, and leave the panel listing one page's experiments while configuring another's
+     * (FR-014, D12).
+     */
+    protected readonly $inPanel = !!inject(DotExperimentsPanelStore, { optional: true });
+
     protected readonly $selectedPage = computed<DotExperimentConfigurePage | null>(() =>
         this.store.selectedPage()
     );

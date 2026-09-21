@@ -1,8 +1,11 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import com.dotcms.contenttype.model.field.CheckboxField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -10,7 +13,9 @@ import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -29,6 +34,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
@@ -71,7 +77,42 @@ public class ContentletCheckInTest extends ContentletBaseTest{
       assertTrue("the contentlet title was saved", newCon.getTitle().equals(con.getTitle()));
      
       assertTrue("contentlet is not live", newCon.isWorking() && !newCon.hasLiveVersion());
-      
+
+  }
+
+  /**
+   * Method to Test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+   * When: A new Contentlet is checked in with a Checkbox field the user explicitly cleared, on a
+   *       Content Type whose field declares a default value of "true"
+   * Should: Keep the field empty -- an explicit clear must not be mistaken for "never submitted"
+   *         and overwritten with the Content Type's default value
+   *
+   * @see <a href="https://github.com/dotCMS/core/issues/35416">Issue #35416</a>
+   */
+  @Test
+  public void checkin_new_content_with_cleared_checkbox_does_not_apply_default_value()
+          throws Exception {
+
+      final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+      final Field checkboxField = new FieldDataGen()
+              .contentTypeId(contentType.id())
+              .type(CheckboxField.class)
+              .dataType(DataTypes.TEXT)
+              .values("|true")
+              .defaultValue("true")
+              .nextPersisted();
+
+      final Contentlet contentlet = new ContentletDataGen(contentType.id()).next();
+      // Clearing a checkbox sets a null, and ContentletHashMap#put drops the key from the map
+      // entirely -- the same state the edit form produces when the box is left unchecked.
+      contentlet.setProperty(checkboxField.variable(), null);
+
+      final Contentlet checkedIn = contentletAPI.checkin(contentlet, user, false);
+      final String persisted = checkedIn.getStringProperty(checkboxField.variable());
+
+      // Mirrors HTMLPageAsset#isShowOnMenu, which reads the raw value with contains("true")
+      assertFalse("A cleared checkbox must not be restored from the field's default value",
+              UtilMethods.isSet(persisted) && persisted.contains("true"));
   }
     
   /**

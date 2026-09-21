@@ -270,8 +270,13 @@ export interface DotAiEmbeddingsBuildResult {
 
 /** `providerConfig` parsed exactly once, by DotAiConfigService. */
 export interface DotAiResolvedConfig {
-    /** A display string from the server, e.g. "demo.dotcms.com (falls back to system host)". */
+    /** The site the configuration is read for, e.g. "demo.dotcms.com". */
     configHost: string;
+    /**
+     * The site has no dotAI configuration of its own, so what is shown came from the System
+     * Host. The server reports this separately from the hostname so the client can label it.
+     */
+    configHostInherited: boolean;
     settings: Record<string, string>;
     providerConfig: Record<string, unknown> | null;
     /** `chat.model` is a CSV fallback list whose first entry is the default. */

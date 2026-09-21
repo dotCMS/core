@@ -114,6 +114,52 @@ public class SamlProtocolHandlerTest {
     }
 
     @Test
+    public void buildSecrets_rejects_silent_regeneration_when_keypair_already_stored() {
+        // Clearing both fields on an existing config used to mint a new keypair and
+        // return 200, leaving the IdP with a stale SP certificate.
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("idpName", "Okta"),
+                Optional.of(existing)));
+    }
+
+    @Test
+    public void buildSecrets_regenerates_keypair_when_flag_set_and_does_not_store_flag() {
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("idpName", "Okta", SamlProtocolHandler.REGENERATE_KEYPAIR_KEY, true),
+                Optional.of(existing));
+
+        assertTrue(result.getSecrets().get("publicCert").getString().contains("BEGIN CERTIFICATE"));
+        assertNotEquals("stored-PEM", result.getSecrets().get("privateKey").getString());
+        assertFalse(result.getSecrets().containsKey(SamlProtocolHandler.REGENERATE_KEYPAIR_KEY));
+    }
+
+    @Test
+    public void buildSecrets_generates_keypair_when_existing_config_has_none() {
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withSecret("idpName", "Okta")
+                .build();
+
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("idpName", "Okta"),
+                Optional.of(existing));
+
+        assertTrue(result.getSecrets().get("publicCert").getString().contains("BEGIN CERTIFICATE"));
+    }
+
+    @Test
     public void maskedValues_passes_through_undeclared_keys_as_strings() {
         final AppSecrets secrets = AppSecrets.builder()
                 .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)

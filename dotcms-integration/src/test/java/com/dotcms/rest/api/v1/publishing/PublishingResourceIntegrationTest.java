@@ -25,6 +25,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
@@ -971,6 +972,97 @@ public class PublishingResourceIntegrationTest {
      * {@code saveBundleAssets} and stamps a future {@code publish_date} via
      * {@code publishBundleAssets} — without ever creating a publishing_queue_audit row.
      */
+    // =========================================================================
+    // DUE-VS-FUTURE QUEUE TIER (#37449). A queued bundle whose publish date is already due is
+    // reported as BUNDLE_REQUESTED (the first status PublisherQueueJob writes when it picks a
+    // bundle up), with createDate = publish date. Only a future publish date is SCHEDULED.
+    // Before the fix every queue-only bundle was SCHEDULED and createDate was the day the assets
+    // were added to the draft, so a bundle pushed "now" showed as Scheduled with a months-old date.
+    // =========================================================================
+
+    /**
+     * Creates a queue-only bundle whose publish date is {@code publishDate} and whose assets were
+     * added to the draft 60 days earlier (backdated {@code entered_date}).
+     */
+    private String createDueQueuedBundle(final String bundleName, final Date publishDate) throws Exception {
+        final String bundleId = createScheduledBundle(bundleName, 1, publishDate, null);
+        new DotConnect()
+                .setSQL("update publishing_queue set entered_date = ? where bundle_id = ?")
+                .addParam(new Date(System.currentTimeMillis() - 60L * 24L * 3_600_000L))
+                .addParam(bundleId)
+                .loadResult();
+        return bundleId;
+    }
+
+    /**
+     * Given: a bundle whose assets were added 60 days ago, pushed with publishDate = now
+     * When: listing without a status filter, before the job picks it up
+     * Then: status is BUNDLE_REQUESTED, createDate is the push time, no scheduledPublishDate.
+     */
+    @Test
+    public void test_dueQueuedBundle_reportedAsRequested_inList() throws Exception {
+        final Date pushTime = new Date();
+        final String bundleId = createDueQueuedBundle("due-list", pushTime);
+
+        final PublishingJobView job = findJob(callEndpoint(null, null), bundleId);
+
+        assertNotNull("Due queued bundle must be listed", job);
+        assertEquals("A due queued bundle is requested, not scheduled",
+                Status.BUNDLE_REQUESTED, job.status());
+        assertNull("A due bundle carries no scheduledPublishDate", job.scheduledPublishDate());
+        assertNull("statusUpdated stays null until the job picks the bundle up", job.statusUpdated());
+        assertTrue("createDate must be the push time, not the day the assets were added",
+                Math.abs(job.createDate().toEpochMilli() - pushTime.getTime()) < 5_000L);
+    }
+
+    /**
+     * Given: the same due queued bundle
+     * When: reading its detail
+     * Then: BUNDLE_REQUESTED, timestamps.createDate is the push time, no scheduledPublishDate.
+     */
+    @Test
+    public void test_dueQueuedBundle_reportedAsRequested_inDetail() throws Exception {
+        final Date pushTime = new Date();
+        final String bundleId = createDueQueuedBundle("due-detail", pushTime);
+
+        final PublishingJobDetailView detail = publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(), response, bundleId).getEntity();
+
+        assertEquals("Detail status of a due queued bundle is BUNDLE_REQUESTED",
+                Status.BUNDLE_REQUESTED, detail.status());
+        assertNull("Detail carries no scheduledPublishDate for a due bundle", detail.scheduledPublishDate());
+        assertTrue("Detail createDate must be the push time",
+                Math.abs(detail.timestamps().createDate().toEpochMilli() - pushTime.getTime()) < 5_000L);
+    }
+
+    /**
+     * Given: one due queued bundle and one future-dated queued bundle
+     * When: filtering by SCHEDULED, by BUNDLE_REQUESTED, and with no filter
+     * Then: SCHEDULED returns only the future one (with scheduledPublishDate), BUNDLE_REQUESTED
+     *       returns the due one and not the future one, no filter returns both.
+     */
+    @Test
+    public void test_statusFilter_splitsDueAndFuture() throws Exception {
+        final String dueId = createDueQueuedBundle("split-due", new Date());
+        final String futureId = createScheduledBundle("split-future", 1,
+                new Date(System.currentTimeMillis() + 3_600_000L), null);
+
+        final ResponseEntityPublishingJobsView scheduled = callEndpoint(null, "SCHEDULED");
+        final PublishingJobView futureJob = findJob(scheduled, futureId);
+        assertNotNull("SCHEDULED filter must return the future-dated bundle", futureJob);
+        assertNotNull("Future-dated bundle keeps its scheduledPublishDate", futureJob.scheduledPublishDate());
+        assertNull("SCHEDULED filter must not return the due bundle", findJob(scheduled, dueId));
+
+        final ResponseEntityPublishingJobsView requested = callEndpoint(null, "BUNDLE_REQUESTED");
+        assertNotNull("BUNDLE_REQUESTED filter must return the due bundle", findJob(requested, dueId));
+        assertNull("BUNDLE_REQUESTED filter must not return the future-dated bundle",
+                findJob(requested, futureId));
+
+        final ResponseEntityPublishingJobsView all = callEndpoint(null, null);
+        assertNotNull("Unfiltered list must return the due bundle", findJob(all, dueId));
+        assertNotNull("Unfiltered list must return the future-dated bundle", findJob(all, futureId));
+    }
+
     private String createScheduledBundle(final String bundleName, final int assetCount,
             final Date publishDate, final Environment environment) throws Exception {
 

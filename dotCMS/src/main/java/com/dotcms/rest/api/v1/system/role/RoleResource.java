@@ -34,7 +34,6 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -905,7 +904,7 @@ public class RoleResource implements Serializable {
 		final Map<String, Object> extraParams = new HashMap<>(
 				Map.of(UserPaginator.ROLES_PARAM, List.of(role),
 						UserAPI.FilteringParams.ORDER_DIRECTION_PARAM,
-						OrderDirection.DESC == orderDirection ? SQLUtil._DESC : SQLUtil._ASC));
+						UserAPI.FilteringParams.sqlDirection(orderDirection)));
 		if (UtilMethods.isSet(orderBy)) {
 			extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
 		}

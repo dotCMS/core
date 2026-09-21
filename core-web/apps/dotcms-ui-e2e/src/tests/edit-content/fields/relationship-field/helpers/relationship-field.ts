@@ -291,43 +291,19 @@ export class RelationshipField {
         await expect(handles).toHaveCount(0);
     }
 
-    // ─── Pagination ──────────────────────────────────────────────────
-
     /**
-     * Gets the pagination container locator.
-     */
-    getPagination(): Locator {
-        return this.page.getByTestId('relationship-table-pagination');
-    }
-
-    /**
-     * Asserts pagination controls are visible.
-     */
-    async expectPaginationVisible(): Promise<void> {
-        await expect(this.getPagination()).toBeVisible();
-    }
-
-    /**
-     * Asserts pagination controls are not visible.
+     * Asserts the related list carries no paginator (FR-021).
+     *
+     * Kept as an assertion rather than deleted with the feature: paging is what made drag-reorder
+     * unable to move a row between pages, so its absence is a requirement and not merely the
+     * current state.
+     *
+     * The Show all / Show less toggle that replaced it has no helper here on purpose: covering it
+     * end to end meant creating more than forty contentlets per run, which is expensive enough to
+     * destabilise the whole shard. It is covered in the component and store specs instead.
      */
     async expectPaginationHidden(): Promise<void> {
-        await expect(this.getPagination()).toBeHidden();
-    }
-
-    /**
-     * Clicks the "Next" page button in the main table pagination.
-     */
-    async clickNextPage(): Promise<void> {
-        const pagination = this.getPagination();
-        await pagination.locator('button').last().click();
-    }
-
-    /**
-     * Clicks the "Previous" page button in the main table pagination.
-     */
-    async clickPreviousPage(): Promise<void> {
-        const pagination = this.getPagination();
-        await pagination.locator('button').first().click();
+        await expect(this.page.getByTestId('relationship-table-pagination')).toHaveCount(0);
     }
 
     // ─── Disabled State ──────────────────────────────────────────────

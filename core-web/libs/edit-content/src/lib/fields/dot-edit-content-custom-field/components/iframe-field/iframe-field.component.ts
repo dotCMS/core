@@ -54,6 +54,10 @@ import { INPUT_TEXT_OPTIONS } from '../../../dot-edit-content-text-field/utils';
         DialogService
     ],
     host: {
+        // A Custom Field renders its Velocity inside an iframe, and ARIA cannot cross a document
+        // boundary — nothing in there can be named from out here. The region is named instead.
+        role: 'group',
+        '[attr.aria-labelledby]': "$field() ? 'label-' + $field().variable : null",
         '[class.no-label]': '!$showLabel()'
     }
 })

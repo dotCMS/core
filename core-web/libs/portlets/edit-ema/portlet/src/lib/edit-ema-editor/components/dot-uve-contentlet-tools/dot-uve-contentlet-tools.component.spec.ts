@@ -593,7 +593,10 @@ describe('DotUveContentletToolsComponent', () => {
                 expect(items[1].label).toBe('template2.vtl');
             });
 
-            it('should return undefined when no vtl files', () => {
+            // Was `toBeUndefined()`. The computed declares `MenuItem[]` and an
+            // undefined `[model]` made PrimeNG render an empty popup instead of
+            // the button being absent, so it now returns an empty array.
+            it('should return an empty array when no vtl files', () => {
                 const areaWithoutVtl = {
                     ...MOCK_CONTENTLET_AREA,
                     x: MOCK_CONTENTLET_AREA.x + 1, // Change position to make it different
@@ -610,7 +613,7 @@ describe('DotUveContentletToolsComponent', () => {
                 editorSelected.set(toSelected(areaWithoutVtl));
                 spectator.detectChanges();
 
-                expect(spectator.component.vtlMenuItems()).toBeUndefined();
+                expect(spectator.component.vtlMenuItems()).toEqual([]);
             });
         });
 
@@ -724,39 +727,6 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.component.hoverDragButtonTopOffset()).toBe(scrolledArea.height);
-            });
-        });
-
-        describe('dragPayload', () => {
-            it('should return valid drag payload when contentlet exists', () => {
-                const payload = spectator.component.dragPayload();
-                expect(payload).toEqual({
-                    container: MOCK_CONTENTLET_AREA.payload.container,
-                    contentlet: MOCK_CONTENTLET_AREA.payload.contentlet,
-                    showLabelImage: true,
-                    move: true
-                });
-            });
-
-            it('should return null values when contentlet does not exist', () => {
-                const areaWithoutContentlet = {
-                    ...MOCK_CONTENTLET_AREA,
-                    payload: {
-                        ...MOCK_CONTENTLET_AREA.payload,
-                        contentlet: undefined as unknown as ContentletPayload
-                    }
-                };
-                spectator.setInput('contentletArea', areaWithoutContentlet);
-                editorSelected.set(toSelected(areaWithoutContentlet));
-                spectator.detectChanges();
-
-                const payload = spectator.component.dragPayload();
-                expect(payload).toEqual({
-                    container: null,
-                    contentlet: null,
-                    showLabelImage: false,
-                    move: false
-                });
             });
         });
     });
@@ -893,90 +863,6 @@ describe('DotUveContentletToolsComponent', () => {
             expect(parsedItem.container).toEqual(MOCK_CONTENTLET_AREA.payload.container);
             expect(parsedItem.showLabelImage).toBe(true);
             expect(parsedItem.move).toBe(true);
-        });
-    });
-
-    describe('isSameContentlet', () => {
-        it('should return true when both identifier and uuid match', () => {
-            expect(
-                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, MOCK_CONTENTLET_AREA)
-            ).toBe(true);
-        });
-
-        it('should return false when same contentlet is in a different container', () => {
-            const differentContainer: ContentletArea = {
-                ...MOCK_CONTENTLET_AREA,
-                payload: {
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    container: {
-                        ...MOCK_CONTENTLET_AREA.payload.container,
-                        identifier: 'container-identifier-456',
-                        uuid: 'uuid-123'
-                    }
-                }
-            };
-
-            expect(
-                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, differentContainer)
-            ).toBe(false);
-        });
-
-        it('should return false when same contentlet is in a different instance of the same container type', () => {
-            const differentInstance: ContentletArea = {
-                ...MOCK_CONTENTLET_AREA,
-                payload: {
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    container: {
-                        ...MOCK_CONTENTLET_AREA.payload.container,
-                        identifier: 'container-identifier-123',
-                        uuid: 'uuid-456'
-                    }
-                }
-            };
-
-            expect(
-                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, differentInstance)
-            ).toBe(false);
-        });
-
-        it('should return false when uuid matches but identifier differs', () => {
-            const differentContentlet: ContentletArea = {
-                ...MOCK_CONTENTLET_AREA,
-                payload: {
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    contentlet: {
-                        ...MOCK_CONTENTLET_AREA.payload.contentlet,
-                        identifier: 'other-id'
-                    }
-                }
-            };
-
-            expect(
-                spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, differentContentlet)
-            ).toBe(false);
-        });
-
-        it('should return false for two different empty containers', () => {
-            const emptyContainer2: ContentletArea = {
-                ...MOCK_EMPTY_CONTENTLET_AREA,
-                payload: {
-                    ...MOCK_EMPTY_CONTENTLET_AREA.payload,
-                    container: {
-                        ...MOCK_EMPTY_CONTENTLET_AREA.payload.container,
-                        identifier: 'container-identifier-999',
-                        uuid: 'uuid-123'
-                    }
-                }
-            };
-
-            expect(
-                spectator.component.isSameContentlet(MOCK_EMPTY_CONTENTLET_AREA, emptyContainer2)
-            ).toBe(false);
-        });
-
-        it('should return false when either area is null', () => {
-            expect(spectator.component.isSameContentlet(null, MOCK_CONTENTLET_AREA)).toBe(false);
-            expect(spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, null)).toBe(false);
         });
     });
 
@@ -1195,6 +1081,175 @@ describe('DotUveContentletToolsComponent', () => {
                 expect(spectator.component.isContainerEmpty()).toBe(true);
                 expect(spectator.component['canEditContentlet']()).toBe(true);
             });
+        });
+    });
+
+    /**
+     * #37499. The `</>` button is gated on the HOVERED contentlet
+     * (`hasVtlFiles()`), but `vtlMenuItems()` preferred the SELECTED one — and a
+     * SET_BOUNDS re-anchor strips `vtlFiles` from the selected payload. So after
+     * any layout shift the button appeared and the menu opened empty.
+     *
+     * Both now read the hovered contentlet, which is the only contentlet the
+     * button can belong to.
+     */
+    describe('VTL menu follows the hovered contentlet', () => {
+        const areaWithVtlFiles = (
+            label: string,
+            vtlFiles: VTLFile[] | undefined
+        ): ContentletArea => ({
+            ...MOCK_CONTENTLET_AREA,
+            payload: {
+                ...MOCK_CONTENTLET_AREA.payload,
+                contentlet: {
+                    ...(MOCK_CONTENTLET_AREA.payload.contentlet as ContentletPayload),
+                    inode: `inode-${label}`,
+                    identifier: `identifier-${label}`
+                },
+                vtlFiles
+            }
+        });
+
+        it('lists the hovered contentlet files after a re-anchor stripped them from the selection', () => {
+            // What applyBoundsForSelection used to leave behind: same contentlet,
+            // no vtlFiles. Before the fix this emptied the menu.
+            editorSelected.set(toSelected(areaWithVtlFiles('a', undefined)));
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+
+            expect(spectator.component.vtlMenuItems().map((item) => item.label)).toEqual([
+                'template1.vtl',
+                'template2.vtl'
+            ]);
+        });
+
+        it('lists the hovered contentlet files when nothing is selected', () => {
+            editorSelected.set(null);
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+
+            expect(spectator.component.vtlMenuItems().map((item) => item.label)).toEqual([
+                'template1.vtl',
+                'template2.vtl'
+            ]);
+        });
+
+        it("lists the HOVERED contentlet's files while a different contentlet is selected", () => {
+            editorSelected.set(
+                toSelected(areaWithVtlFiles('b', [{ inode: 'vtl-b', name: 'other.vtl' }]))
+            );
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+
+            const labels = spectator.component.vtlMenuItems().map((item) => item.label);
+            expect(labels).toEqual(['template1.vtl', 'template2.vtl']);
+            expect(labels).not.toContain('other.vtl');
+        });
+
+        it('returns an empty array, never undefined, when the hovered contentlet has no VTL files', () => {
+            spectator.setInput('contentletArea', areaWithVtlFiles('c', undefined));
+            spectator.detectChanges();
+
+            expect(spectator.component.vtlMenuItems()).toEqual([]);
+        });
+
+        it('gives the collapsed actions menu the same VTL submenu as the full toolbar', () => {
+            editorSelected.set(toSelected(areaWithVtlFiles('a', undefined)));
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+
+            const vtlEntry = spectator.component
+                .actionsMenuItems()
+                .find((item) => item.icon === 'pi pi-code');
+
+            expect(vtlEntry?.items).toEqual(spectator.component.vtlMenuItems());
+        });
+    });
+
+    /**
+     * Opening a VTL promotes the hovered contentlet to selected, so the selection
+     * border follows the contentlet whose file you just opened. Promotion sits on
+     * the menu COMMAND rather than the button click, so a menu opened and
+     * dismissed leaves the selection untouched.
+     */
+    describe('choosing a VTL file promotes the hovered contentlet', () => {
+        it('promotes the hovered contentlet and still emits the file', () => {
+            const store = spectator.inject(UVEStore);
+            const emitted: VTLFile[] = [];
+            spectator.component.editVTL.subscribe((file: VTLFile) => emitted.push(file));
+
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+
+            spectator.component.vtlMenuItems()[0].command?.({} as never);
+
+            expect(store.setSelected).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    bounds: {
+                        x: MOCK_CONTENTLET_AREA.x,
+                        y: MOCK_CONTENTLET_AREA.y,
+                        width: MOCK_CONTENTLET_AREA.width,
+                        height: MOCK_CONTENTLET_AREA.height
+                    }
+                })
+            );
+            expect(emitted).toEqual([{ inode: 'vtl-inode-1', name: 'template1.vtl' }]);
+        });
+
+        /**
+         * Pins a consequence that is deliberate, not incidental.
+         *
+         * `editorEditPanelOpen` is state of its own and survives a selection
+         * change, and both side-panel tabs bind to `editorSelected` — so
+         * promoting while a panel is open on a DIFFERENT contentlet retargets
+         * that panel. Raised in review as a possible side effect.
+         *
+         * It is kept because it is not new: the SET_SELECTED_CONTENTLET handler
+         * already documents that one write "drives both the floating overlay and
+         * the side panel's data binding", so plain-clicking a contentlet does
+         * exactly the same thing. Promotion makes `</>` consistent with a click
+         * rather than introducing a new behaviour. Without it the editor would
+         * be left incoherent — VTL dialog on A, border and panel on B.
+         */
+        it('retargets the selection even when a panel is open on another contentlet', () => {
+            const store = spectator.inject(UVEStore);
+            const otherContentlet = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    contentlet: {
+                        ...(MOCK_CONTENTLET_AREA.payload.contentlet as ContentletPayload),
+                        identifier: 'panel-is-open-on-this-one',
+                        inode: 'other-inode'
+                    }
+                }
+            };
+
+            // Panel open on B…
+            editorSelected.set(toSelected(otherContentlet));
+            // …while A is hovered.
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+            (store.setSelected as ReturnType<typeof vi.fn>).mockClear();
+
+            spectator.component.vtlMenuItems()[0].command?.({} as never);
+
+            const promoted = (store.setSelected as ReturnType<typeof vi.fn>).mock.calls[0][0];
+            expect(promoted.payload.contentlet.identifier).toBe(
+                MOCK_CONTENTLET_AREA.payload.contentlet?.identifier
+            );
+            expect(promoted.payload.contentlet.identifier).not.toBe('panel-is-open-on-this-one');
+        });
+
+        it('does not promote merely because the menu was built', () => {
+            const store = spectator.inject(UVEStore);
+            (store.setSelected as ReturnType<typeof vi.fn>).mockClear();
+
+            spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
+            spectator.detectChanges();
+            spectator.component.vtlMenuItems();
+
+            expect(store.setSelected).not.toHaveBeenCalled();
         });
     });
 });

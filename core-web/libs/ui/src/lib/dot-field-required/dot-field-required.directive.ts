@@ -17,6 +17,11 @@ import { Field } from '@angular/forms/signals';
  *    that control carries `Validators.required`.
  * 3. **Signal forms** — `<label [dotFieldRequired]="field">`. Follows the field's own `required()`,
  *    so a conditionally-required field marks and unmarks itself as the condition changes.
+ * 4. **Boolean** — `<label [dotFieldRequired]="isRequired">`. For a caller that already knows the
+ *    answer and holds it as a plain boolean, which is the case whenever "required" comes from a
+ *    content type definition rather than from a form. Added for the new Edit Contentlet, where the
+ *    label is a component host and so cannot carry a conditionally-applied attribute: the flag has
+ *    to arrive as a value.
  *
  * `FormGroupDirective` is injected optionally: modes 1 and 3 have no `[formGroup]` above them, and
  * a hard injection made the bare form throw outside reactive forms.
@@ -36,7 +41,7 @@ export class DotFieldRequiredDirective {
      * Empty string rather than `undefined` as the default: the bare attribute binds no value, and
      * the alias makes `dotFieldRequired` both the selector and this input.
      */
-    readonly $field = input<Field<unknown> | ''>('', { alias: 'dotFieldRequired' });
+    readonly $field = input<Field<unknown> | boolean | ''>('', { alias: 'dotFieldRequired' });
 
     readonly #el = inject(ElementRef);
     readonly #renderer = inject(Renderer2);
@@ -49,6 +54,14 @@ export class DotFieldRequiredDirective {
 
         effect(() => {
             const field = this.$field();
+
+            // Checked before the truthiness test below, which would read `false` as "no value
+            // given" and leave the constructor's mark in place — the opposite of what was asked.
+            if (typeof field === 'boolean') {
+                this.#setRequired(field);
+
+                return;
+            }
 
             if (field) {
                 this.#setRequired(field().required());

@@ -36,7 +36,7 @@ dotCMS/core is a mixed-age codebase and must be treated as one, not as greenfiel
 ### III. Security by Default (NON-NEGOTIABLE)
 
 - No hardcoded secrets. Validate all input. Never log sensitive data.
-- Follow [Security Principles](docs/core/SECURITY_PRINCIPLES.md).
+- Follow [Security Principles](../../docs/core/SECURITY_PRINCIPLES.md).
 
 ### IV. Contract Correctness
 
@@ -44,7 +44,7 @@ dotCMS/core is a mixed-age codebase and must be treated as one, not as greenfiel
   auto-generated — description changes go in Java `@Operation`/`@Parameter` annotations and
   the regenerated yaml is committed alongside the Java change.
 - Be mindful of rollback-unsafe changes (DB schema, ES mapping, API contracts) — see
-  [Rollback-Unsafe Change Categories](docs/core/ROLLBACK_UNSAFE_CATEGORIES.md).
+  [Rollback-Unsafe Change Categories](../../docs/core/ROLLBACK_UNSAFE_CATEGORIES.md).
 
 ### V. Test-First / TDD (NON-NEGOTIABLE)
 

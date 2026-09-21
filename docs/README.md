@@ -16,6 +16,7 @@ Standards that apply to all development:
 Backend-specific patterns and standards:
 - **JAVA_STANDARDS.md** - Java development patterns and API usage
 - **MAVEN_BUILD_SYSTEM.md** - Dependency and plugin management
+- **[INFERENCE_API.md](backend/INFERENCE_API.md)** - OpenAI-compatible `/api/inference/v1` endpoint family: operations, bearer-only auth, site resolution, limits, errors
 
 ### `/docs/frontend/` - Angular/TypeScript Development
 Frontend-specific patterns and standards. **Start at the index: [frontend/README.md](frontend/README.md)** — it lists every doc and when to load it.

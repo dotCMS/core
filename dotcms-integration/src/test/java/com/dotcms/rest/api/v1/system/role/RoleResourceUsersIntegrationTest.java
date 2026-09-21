@@ -214,6 +214,42 @@ public class RoleResourceUsersIntegrationTest {
     }
 
     /**
+     * Regression guard for #37458, which teaches the shared user query to sort by the Users portlet fields:
+     * the members listing must honor {@code orderby} and {@code direction} while still returning only the
+     * role's direct grants, and its order without an orderBy must stay the historical full-name ascending.
+     * The emails are seeded in the opposite order of the names, so the {@code emailAddress} assertion only
+     * passes when the sort field is actually applied -- a name-based fallback fails it.
+     */
+    @Test
+    public void orderByFirstName_ordersMembersAndStaysRoleScoped() throws Exception {
+        final String unique = "rolesort" + System.currentTimeMillis();
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User first = track(new UserDataGen().firstName("Aaa" + unique)
+                .emailAddress(unique + "2@rolesort.dotcms.com").roles(role).nextPersisted());
+        final User last = track(new UserDataGen().firstName("Zzz" + unique)
+                .emailAddress(unique + "1@rolesort.dotcms.com").roles(role).nextPersisted());
+        final User outsider = track(new UserDataGen().firstName("Mmm" + unique)
+                .emailAddress(unique + "0@rolesort.dotcms.com").nextPersisted());
+
+        final List<String> descending = userIds(resource.loadUsersByRoleId(mockAdminRequest(),
+                new MockHttpResponse(), role.getId(), unique, 1, 40, "firstName", "DESC"));
+        assertEquals("firstName DESC must order the members", List.of(last.getUserId(), first.getUserId()),
+                descending);
+        assertFalse("a user outside the role must never be listed", descending.contains(outsider.getUserId()));
+
+        final List<String> byEmail = userIds(resource.loadUsersByRoleId(mockAdminRequest(),
+                new MockHttpResponse(), role.getId(), unique, 1, 40, "emailAddress", "ASC"));
+        assertEquals("emailAddress ASC must follow the email column, not the name",
+                List.of(last.getUserId(), first.getUserId()), byEmail);
+        assertFalse("a user outside the role must never be listed", byEmail.contains(outsider.getUserId()));
+
+        final List<String> byDefault = userIds(resource.loadUsersByRoleId(mockAdminRequest(),
+                new MockHttpResponse(), role.getId(), unique, 1, 40, null, "ASC"));
+        assertEquals("default order must stay full-name ascending", List.of(first.getUserId(), last.getUserId()),
+                byDefault);
+    }
+
+    /**
      * Pagination boundaries: pages split the result set, the total stays constant, and a
      * page past the end is empty.
      */

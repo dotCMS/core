@@ -8,6 +8,8 @@ import {
 import { MockComponent } from 'ng-mocks';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { signal } from '@angular/core';
+
 import { DotMessageService } from '@dotcms/data-access';
 import {
     DOT_PALETTE_PERSIST_PREFERENCES,
@@ -22,6 +24,9 @@ import { DotContentDriveNavigationService } from '../../../shared/services/dot-c
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
 const SELECTED_VARIABLE = 'Blog';
+
+// Real signal: the component reads it in a computed, and a vi.fn cannot invalidate one.
+const systemHostSelected = signal(false);
 
 describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
     let spectator: Spectator<DotContentDriveDialogContentTypeSelectorComponent>;
@@ -48,7 +53,8 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
                 path: vi.fn().mockReturnValue('/about-us/'),
                 selectedNode: vi
                     .fn()
-                    .mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } })
+                    .mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } }),
+                $systemHostSelected: systemHostSelected
             }),
             mockProvider(DotContentDriveNavigationService, {
                 createContent: vi.fn()

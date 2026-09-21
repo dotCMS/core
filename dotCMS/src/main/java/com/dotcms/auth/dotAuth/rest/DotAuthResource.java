@@ -265,8 +265,8 @@ public class DotAuthResource {
                     .map(headlessHelper::values).orElse(Map.of());
 
             return Response.ok(new ResponseEntityDotAuthConfigView(
-                    new DotAuthConfigView(hostId, ssoProtocol, ssoConfigured, ssoInherited,
-                            ssoValues, headlessValues))).build();
+                    new DotAuthConfigView(hostId, host.isSystemHost() ? null : host.getHostname(), ssoProtocol,
+                            ssoConfigured, ssoInherited, ssoValues, headlessValues))).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     String.format("Error loading dotAuth config for hostId `%s`", hostId), e);

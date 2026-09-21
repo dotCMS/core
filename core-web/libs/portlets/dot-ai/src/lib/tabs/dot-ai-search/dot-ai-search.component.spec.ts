@@ -263,7 +263,12 @@ describe('DotAiSearchComponent', () => {
         it('should share one set of edges between the field and the results', () => {
             // Chat and Image both centre their content in a `container mx-auto` column;
             // without it Search spanned the full pane and its field did not line up with
-            // the results underneath.
+            // the results underneath. Asserted with results on screen, since the empty states
+            // deliberately sit outside that column — see the next test.
+            storeMock.hasSearched.mockReturnValue(true);
+            storeMock.searchResults.mockReturnValue([result()]);
+            spectator = createComponent();
+
             const field = spectator.query(byTestId('dotai-search-input'))?.closest('.container');
             const results = spectator
                 .query(byTestId('dotai-search-scroll'))
@@ -271,6 +276,20 @@ describe('DotAiSearchComponent', () => {
 
             expect(field?.className).toContain('mx-auto');
             expect(results?.className).toContain('mx-auto');
+        });
+
+        it('should keep the empty states out of that column so they can centre', () => {
+            // dot-empty-container centres itself with `h-full`, and a percentage height needs
+            // a parent that has one. `container mx-auto` is auto-height, so nested there the
+            // state pinned itself to the top of an otherwise blank pane.
+            spectator = createComponent();
+
+            const scroll = spectator.query(byTestId('dotai-search-scroll'));
+            const empty = spectator.query(byTestId('dotai-search-empty-first-run'));
+
+            expect(empty).toBeTruthy();
+            expect(empty?.closest('.container')).toBeNull();
+            expect(empty?.parentElement).toBe(scroll);
         });
 
         it('should keep the meta line in the same column as the field', () => {

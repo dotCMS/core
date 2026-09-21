@@ -145,6 +145,29 @@ describe('DotFileFieldComponent', () => {
             return dialogService;
         };
 
+        /**
+         * AC-209 — this widget has no control a label can reach: the file input is display:none,
+         * and what is left are a dropzone and buttons. The widget names itself instead.
+         *
+         * `labelledBy` is an input rather than a value derived here, because this component also
+         * compiles into the dotcms-binary-field-builder bundle the legacy Dojo editor loads, where
+         * no such label exists. Left empty there, the attribute is simply absent rather than
+         * pointing at an id that is not on the page.
+         */
+        it('should expose itself as a group, named only when a label id is supplied', () => {
+            spectator.detectChanges();
+
+            expect(spectator.element.getAttribute('role')).toBe('group');
+            expect(spectator.element.getAttribute('aria-labelledby')).toBeNull();
+
+            spectator.setInput('labelledBy', 'label-' + IMAGE_FIELD_MOCK.variable);
+            spectator.detectChanges();
+
+            expect(spectator.element.getAttribute('aria-labelledby')).toBe(
+                'label-' + IMAGE_FIELD_MOCK.variable
+            );
+        });
+
         it('should store the AI image as a temp file for Binary fields', () => {
             setupWithField(BINARY_FIELD_MOCK);
 

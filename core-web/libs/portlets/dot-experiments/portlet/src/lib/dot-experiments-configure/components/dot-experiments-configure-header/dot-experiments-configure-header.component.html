@@ -57,10 +57,17 @@
     }
 
     @if ($hasMenuItems()) {
+        <!--
+            Sized square, like the back arrow above it. `[rounded]` only rounds the corners; a
+            button is made *circular* by being as wide as it is tall, and PrimeNG can only do that
+            when it knows the content is an icon — which it infers from its own `icon` input, not
+            from a projected `<span>`. Left alone the horizontal padding wins and the pill shows.
+        -->
         <p-button
             [text]="true"
             [rounded]="true"
             severity="secondary"
+            styleClass="w-9 h-9 min-w-9 p-0"
             (onClick)="actionsMenu.toggle($event)"
             [attr.aria-label]="'experiments.list.actions.menu' | dm"
             data-testid="experiments-configure-actions-btn">
@@ -70,7 +77,14 @@
         </p-button>
     }
 
-    <p-menu #actionsMenu [model]="$menuItems()" [popup]="true" appendTo="body" />
+    <!--
+        `hidden` on the host, not on the menu: `appendTo="body"` moves the *popup* out, but this
+        element stays in the flex row as a zero-width item and drags the row's `gap` with it,
+        pushing the kebab 7px in from the header's edge — where it stopped lining up with the
+        panel's own buttons above it. The popup is positioned against the button passed to
+        `toggle($event)`, so the host's display has nothing to do with where it opens.
+    -->
+    <p-menu #actionsMenu [model]="$menuItems()" [popup]="true" appendTo="body" class="hidden" />
 
     @if ($addToBundleAssetId(); as assetIdentifier) {
         <dot-add-to-bundle

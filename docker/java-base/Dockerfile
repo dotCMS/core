@@ -85,6 +85,51 @@ RUN rm -rf /root/.sdkman && \
     rm -rf /var/lib/apt/lists/*
 
 # ----------------------------------------------
+# libvips, built from source with the ImageMagick and OpenEXR delegates removed
+# ----------------------------------------------
+# Ubuntu 24.04's libvips42t64 hard-depends on libmagickcore-6.q16-7t64 and
+# libopenexr-3-1-30. Those two packages account for every ImageMagick/OpenEXR CVE
+# in the security report, and noble ships no fixed version of either, so no apt
+# upgrade clears them. dotCMS never calls ImageMagick itself - the dependency
+# exists only because libvips' magick delegate links it.
+#
+# Building libvips with -Dmagick=disabled -Dopenexr=disabled drops those
+# delegates (and therefore the packages) while keeping AVIF/HEIC, PDF (poppler),
+# SVG, GIF, WebP, JXL, JPEG2000, TIFF, PNG and JPEG. This mirrors what the image
+# does for tcnative: build once here, reuse downstream rather than recompiling.
+#
+# The delegate libraries libvips still needs are installed as build deps and
+# then marked manual by build-libvips.sh, so the apt-mark auto / autoremove below
+# prunes the whole build toolchain without dragging the runtime closure with it.
+#
+# This runs after the cleanup step, so the acceptance gate is the last thing to
+# touch the image and therefore verifies it after every apt operation. It needs
+# curl re-installed because the cleanup step above purges it.
+# The stale PGDG apt source is dropped before apt update. An earlier step adds it
+# for postgresql-client-18 and then purges gnupg, which leaves the repository
+# configured but its signing key unavailable; because that step also wipes
+# /var/lib/apt/lists/* there are no cached indexes to fall back on, so apt update
+# aborts with NO_PUBKEY. postgresql-client-18 is already installed and java-base
+# never needs that repository again.
+COPY build-libvips.sh verify-libvips.sh /usr/local/bin/
+RUN set -eux; \
+    BUILD_DEPS="meson ninja-build gcc g++ pkg-config gettext xz-utils binutils curl \
+libglib2.0-dev libspng-dev libjpeg-dev libtiff-dev libwebp-dev libheif-dev \
+libjxl-dev libopenjp2-7-dev libcgif-dev librsvg2-dev libcairo2-dev \
+libpoppler-glib-dev liblcms2-dev libexif-dev libfontconfig1-dev libpango1.0-dev \
+libarchive-dev libfftw3-dev libmatio-dev libopenslide-dev libcfitsio-dev \
+libhwy-dev libimagequant-dev zlib1g-dev"; \
+    rm -f /etc/apt/sources.list.d/pgdg.sources /etc/apt/sources.list.d/pgdg.list; \
+    apt update; \
+    apt install -y --no-install-recommends $BUILD_DEPS; \
+    bash /usr/local/bin/build-libvips.sh; \
+    apt-mark auto $BUILD_DEPS; \
+    apt autoremove -y; \
+    apt clean; \
+    rm -rf /var/lib/apt/lists/*; \
+    /usr/local/libvips/share/verify-libvips.sh
+
+# ----------------------------------------------
 # Stage 2:  Flatten everything to 1 layer
 # ----------------------------------------------
 FROM scratch

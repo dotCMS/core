@@ -1,0 +1,479 @@
+package com.dotcms.job.system.event;
+
+import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+/**
+ * Unit tests for {@link SystemEventsCursorTracker}, the pure cursor-advance logic behind the fix for
+ * system event loss in a cluster (issue #36827).
+ *
+ * <p>These are deliberately DB-free. The rules that make the fix correct — advance from the query
+ * start rather than from a post-processing clock read, seed without replaying the backlog, clamp a
+ * stale cursor, never move backwards — are the easiest things to get subtly wrong and the most
+ * expensive to diagnose in production, so they are pinned here where they run in milliseconds.
+ *
+ * <p>A poll is modelled as two calls: {@code beginPoll} computes the range to read, and
+ * {@code completePoll} produces the next cursor. The split is what makes "do not advance when the
+ * read fails" expressible — a caller that abandons the window simply never calls completePoll.
+ */
+public class SystemEventsCursorTest {
+
+    private static final long OVERLAP_WINDOW_MILLIS = TimeUnit.SECONDS.toMillis(120);
+    private static final long MAX_BACKLOG_MILLIS = TimeUnit.MINUTES.toMillis(60);
+
+    private SystemEventsCursorTracker tracker() {
+        return new SystemEventsCursorTracker(OVERLAP_WINDOW_MILLIS, MAX_BACKLOG_MILLIS);
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#completePoll(SystemEventsPollWindow)}
+     * Given Scenario: A poll begins at a known instant and processing takes time afterwards
+     * ExpectedResult: The new cursor is the instant the query STARTED, never a clock reading taken
+     * after processing finished. This is the defect in the original code: the mark was set to
+     * {@code new Date().getTime()} after the delegate returned, so it covered wall-clock time the
+     * query had never actually read.
+     */
+    @Test
+    public void test_cursor_advances_to_the_query_start_not_a_later_clock_reading() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long queryStart = 5_000L;
+
+        final SystemEventsPollWindow window = tracker.beginPoll(1_000L, queryStart);
+
+        assertEquals(queryStart, window.getQueryStartTime());
+        // completePoll must not consult the clock — the value is fixed when the poll began.
+        assertEquals(queryStart, tracker.completePoll(window));
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)}
+     * Given Scenario: No cursor row exists yet — either a genuinely new node, or (because server ids
+     * are regenerated on every JVM start, see #37291) a node that has just restarted
+     * ExpectedResult: The read floor reaches back by the seed lookback, so a restart recovers events
+     * published while it was down. The cursor itself still advances to "now".
+     *
+     * <p>An earlier version of this test asserted {@code readFloor >= now} — i.e. no lookback at all.
+     * That was an over-correction: the requirement is not to replay the <i>retained backlog</i>
+     * (up to 31 days), and reaching back one bounded window is a long way short of that. The
+     * assertion below is the corrected intent.
+     */
+    @Test
+    public void test_first_run_seeds_with_a_bounded_lookback() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long now = 1_000_000L;
+
+        final SystemEventsPollWindow window = tracker.beginPoll(null, now);
+
+        assertEquals("A seeding node reaches back exactly one lookback",
+                now - OVERLAP_WINDOW_MILLIS, window.getReadFloor());
+        assertEquals(now, tracker.completePoll(window));
+        assertFalse("Seeding is not a clamp", window.isClamped());
+    }
+
+    /**
+     * Method to test: the seed lookback is bounded, not the retained backlog
+     * Given Scenario: A seeding node with the default lookback
+     * ExpectedResult: It reaches back minutes, never the retention window. A node replaying 31 days
+     * of history is the failure this bound exists to prevent.
+     */
+    @Test
+    public void test_seed_lookback_is_far_short_of_the_retention_window() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long now = TimeUnit.DAYS.toMillis(40);
+
+        final long reachBack = now - tracker.beginPoll(null, now).getReadFloor();
+
+        assertTrue("The seed lookback must stay well inside the retention window",
+                reachBack < TimeUnit.HOURS.toMillis(1));
+    }
+
+    /**
+     * Method to test: a seed lookback of zero
+     * Given Scenario: An operator disables the lookback with SYSTEM_EVENTS_SEED_LOOKBACK_SECONDS=0
+     * ExpectedResult: The floor is "now" — the previous behaviour, still available for anyone who
+     * would rather a new node never re-read anything.
+     */
+    @Test
+    public void test_seed_lookback_can_be_disabled() {
+        final SystemEventsCursorTracker tracker = new SystemEventsCursorTracker(
+                () -> OVERLAP_WINDOW_MILLIS, () -> MAX_BACKLOG_MILLIS, () -> 50, () -> 0L);
+        final long now = 1_000_000L;
+
+        assertEquals(now, tracker.beginPoll(null, now).getReadFloor());
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)}
+     * Given Scenario: A steady-state poll with an existing cursor
+     * ExpectedResult: The read floor sits one overlap window behind the cursor, so an event that
+     * committed after its created timestamp is re-read rather than skipped forever
+     */
+    @Test
+    public void test_read_floor_sits_one_overlap_window_behind_the_cursor() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long cursor = 10_000_000L;
+
+        final SystemEventsPollWindow window = tracker.beginPoll(cursor, cursor + 5_000L);
+
+        assertEquals(cursor - OVERLAP_WINDOW_MILLIS, window.getReadFloor());
+        assertFalse(window.isClamped());
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)}
+     * Given Scenario: The node was down for three hours, so its persisted cursor is far older than
+     * the configured backlog clamp
+     * ExpectedResult: The cursor is clamped to the backlog bound, the window reports it was clamped,
+     * and the skipped span is exposed so the operator can be told exactly what was missed
+     */
+    @Test
+    public void test_stale_cursor_is_clamped_and_reports_the_skipped_span() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long now = TimeUnit.DAYS.toMillis(10);
+        final long staleCursor = now - TimeUnit.HOURS.toMillis(3);
+
+        final SystemEventsPollWindow window = tracker.beginPoll(staleCursor, now);
+
+        assertTrue("A cursor older than the backlog bound must be clamped", window.isClamped());
+        assertEquals(now - MAX_BACKLOG_MILLIS - OVERLAP_WINDOW_MILLIS, window.getReadFloor());
+        assertEquals("The skipped span must be reported, not silently swallowed",
+                (now - MAX_BACKLOG_MILLIS) - staleCursor, window.getSkippedSpanMillis());
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)}
+     * Given Scenario: The cursor is recent enough to sit inside the backlog bound
+     * ExpectedResult: No clamp, and no skipped span
+     */
+    @Test
+    public void test_recent_cursor_is_not_clamped() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long now = TimeUnit.DAYS.toMillis(10);
+        final long recentCursor = now - TimeUnit.MINUTES.toMillis(5);
+
+        final SystemEventsPollWindow window = tracker.beginPoll(recentCursor, now);
+
+        assertFalse(window.isClamped());
+        assertEquals(0L, window.getSkippedSpanMillis());
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)}
+     * Given Scenario: A poll is begun and then abandoned because the read threw
+     * ExpectedResult: The next poll computes the same range. Abandoning a window must leave no trace,
+     * so a failed read retries its range instead of skipping it — the original code advanced the mark
+     * regardless of whether the read succeeded.
+     */
+    @Test
+    public void test_abandoned_poll_does_not_advance_the_range() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long cursor = 10_000_000L;
+
+        final SystemEventsPollWindow abandoned = tracker.beginPoll(cursor, cursor + 5_000L);
+        // read throws here — completePoll is never called
+
+        final SystemEventsPollWindow retry = tracker.beginPoll(cursor, cursor + 10_000L);
+
+        assertEquals("A failed read must retry the same range, not skip it",
+                abandoned.getReadFloor(), retry.getReadFloor());
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#completePoll(SystemEventsPollWindow)}
+     * Given Scenario: This node's own clock jumps backwards, so the poll start is earlier than the
+     * stored cursor
+     * ExpectedResult: The cursor does not move backwards.
+     *
+     * <p>Scope note: this is about the LOCAL clock only. Cross-node skew is a separate matter and is
+     * <em>not</em> handled — see the cross-node tests at the end of this class. An earlier version of
+     * this comment claimed correctness did not depend on clock synchronisation at all, which
+     * overstated what this test shows.
+     */
+    @Test
+    public void test_cursor_never_moves_backwards_under_clock_skew() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long cursor = 10_000_000L;
+        final long skewedNow = cursor - TimeUnit.MINUTES.toMillis(1);
+
+        final SystemEventsPollWindow window = tracker.beginPoll(cursor, skewedNow);
+
+        assertTrue("The cursor must never regress on a backwards clock jump",
+                tracker.completePoll(window) >= cursor);
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#isAlreadyDelivered(String)} and
+     * {@link SystemEventsCursorTracker#markDelivered(String, long)}
+     * Given Scenario: The overlap window causes the same event to be read again on the next poll
+     * ExpectedResult: The second read is suppressed. The window is what makes late commits visible;
+     * without dedupe it would also make every event inside it be delivered repeatedly.
+     */
+    @Test
+    public void test_dedupe_suppresses_re_delivery_within_the_window() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long cursor = 10_000_000L;
+
+        assertFalse(tracker.isAlreadyDelivered("event-1"));
+        tracker.markDelivered("event-1", cursor);
+        assertTrue("An event already delivered must not be delivered again inside the window",
+                tracker.isAlreadyDelivered("event-1"));
+    }
+
+    /**
+     * Method to test: eviction of the dedupe set
+     * Given Scenario: Polls advance far enough that previously delivered events fall out of the
+     * overlap window
+     * ExpectedResult: Their ids are evicted. The set must stay bounded by the event rate over the
+     * window, never by total event volume — otherwise the fix leaks memory on a busy cluster.
+     */
+    @Test
+    public void test_dedupe_set_evicts_everything_older_than_the_window() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long cursor = 10_000_000L;
+
+        tracker.beginPoll(cursor, cursor);
+        tracker.markDelivered("old-event", cursor - TimeUnit.MINUTES.toMillis(30));
+        tracker.markDelivered("recent-event", cursor);
+
+        // A later poll: the floor moves past the old event, which can never be returned again.
+        final long muchLater = cursor + TimeUnit.MINUTES.toMillis(30);
+        tracker.beginPoll(muchLater, muchLater);
+
+        assertFalse("Ids older than the window must be evicted, or the set grows without bound",
+                tracker.isAlreadyDelivered("old-event"));
+        assertEquals("Only ids still inside the window are retained", 0, tracker.trackedEventCount());
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#isOutsideOverlapWindow(long, SystemEventsPollWindow)}
+     * Given Scenario: An event whose created stamp predates the entire overlap window — the one
+     * remaining way an event can still be lost after this fix
+     * ExpectedResult: The tracker reports it, so US4 can warn instead of the loss being silent. A
+     * bounded, observable residual is the point; a silent one is the bug.
+     */
+    @Test
+    public void test_event_older_than_the_window_is_reported_not_silently_ignored() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long cursor = 10_000_000L;
+        final SystemEventsPollWindow window = tracker.beginPoll(cursor, cursor);
+
+        assertTrue(tracker.isOutsideOverlapWindow(cursor - TimeUnit.MINUTES.toMillis(10), window));
+        assertFalse(tracker.isOutsideOverlapWindow(cursor - TimeUnit.SECONDS.toMillis(30), window));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // US4 - observability (AC-007). The residual limitation of this fix is that a transaction open
+    // longer than the overlap window can still lose its events. That is acceptable only because it is
+    // bounded, configurable and VISIBLE; a silent residual would be the original bug in miniature.
+    // ---------------------------------------------------------------------------------------------
+
+    private SystemEventsCursorTracker trackerWithLagThreshold(final int percent) {
+        return new SystemEventsCursorTracker(OVERLAP_WINDOW_MILLIS, MAX_BACKLOG_MILLIS, percent);
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#isCommitLagApproachingWindow(long, long)}
+     * Given Scenario: An event whose commit lag has reached the configured share of the overlap
+     * window — it was delivered, but only just
+     * ExpectedResult: Reported, so the operator learns the window is too small for this workload
+     * BEFORE events start being lost, rather than afterwards
+     */
+    @Test
+    public void test_commit_lag_approaching_the_window_is_reported() {
+        final SystemEventsCursorTracker tracker = trackerWithLagThreshold(50);
+        final long readAt = 10_000_000L;
+
+        // 70% of a 120s window = 84s of lag: delivered, but the margin is thin.
+        assertTrue(tracker.isCommitLagApproachingWindow(
+                readAt - TimeUnit.SECONDS.toMillis(84), readAt));
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#isCommitLagApproachingWindow(long, long)}
+     * Given Scenario: An event committed promptly, well inside the threshold
+     * ExpectedResult: Not reported. The signal has to stay quiet in normal operation or it will be
+     * ignored when it matters.
+     */
+    @Test
+    public void test_normal_commit_lag_is_not_reported() {
+        final SystemEventsCursorTracker tracker = trackerWithLagThreshold(50);
+        final long readAt = 10_000_000L;
+
+        assertFalse(tracker.isCommitLagApproachingWindow(
+                readAt - TimeUnit.SECONDS.toMillis(5), readAt));
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#isCommitLagApproachingWindow(long, long)}
+     * Given Scenario: The threshold is configured lower, so the warning fires earlier
+     * ExpectedResult: The same lag that was quiet at 50% is reported at 10%
+     */
+    @Test
+    public void test_lag_threshold_is_configurable() {
+        final long readAt = 10_000_000L;
+        final long lagOf20Seconds = readAt - TimeUnit.SECONDS.toMillis(20);
+
+        assertFalse(trackerWithLagThreshold(50).isCommitLagApproachingWindow(lagOf20Seconds, readAt));
+        assertTrue(trackerWithLagThreshold(10).isCommitLagApproachingWindow(lagOf20Seconds, readAt));
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#isCursorStale(long, long)}
+     * Given Scenario: The cursor has not been written for far longer than the poll interval, because
+     * the poller stopped or every read is failing
+     * ExpectedResult: Reported. Before this fix a stalled poller was indistinguishable from a quiet
+     * queue — both produced no output whatsoever.
+     */
+    @Test
+    public void test_stalled_poller_is_detectable_from_the_cursor_age() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long now = 10_000_000L;
+        final long pollIntervalMillis = TimeUnit.SECONDS.toMillis(5);
+
+        assertTrue("A cursor untouched for minutes means the poller is not running",
+                tracker.isCursorStale(now - TimeUnit.MINUTES.toMillis(5), now, pollIntervalMillis));
+        assertFalse("A cursor written one interval ago is healthy",
+                tracker.isCursorStale(now - pollIntervalMillis, now, pollIntervalMillis));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Commit-lag warnings must not fire on a backlog replay. A seed poll (no stored cursor) and a
+    // clamped poll (cursor older than the backlog bound) both read events that became visible long
+    // before this node looked. For those, "read time minus created time" measures how long ago the
+    // event happened, NOT how late its transaction committed -- so the warning both misdiagnoses the
+    // cause and gives the wrong remedy ("raise the overlap window"), once per replayed event.
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)} on a node with no
+     * stored cursor
+     * Given Scenario: A seeding poll, which reaches back one seed lookback and re-reads whatever is
+     * in that span
+     * ExpectedResult: The window declares itself a backlog replay, so callers can tell a first read
+     * of old events apart from a late commit.
+     */
+    @Test
+    public void test_a_seed_poll_is_marked_as_a_backlog_replay() {
+        final SystemEventsPollWindow window = tracker().beginPoll(null, 10_000_000L);
+
+        assertTrue("A seed poll re-reads events that are already old; that is a replay",
+                window.isBacklogReplay());
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)} with a cursor older
+     * than the backlog bound
+     * Given Scenario: A node that was down long enough for its cursor to be clamped
+     * ExpectedResult: The window declares itself a backlog replay. This is the worst case for the
+     * lag warning: up to a full backlog bound of events, every one of them old by definition.
+     */
+    @Test
+    public void test_a_clamped_poll_is_marked_as_a_backlog_replay() {
+        final long now = 10_000_000L;
+        final SystemEventsPollWindow window =
+                tracker().beginPoll(now - TimeUnit.HOURS.toMillis(5), now);
+
+        assertTrue("A clamped poll is a replay of a backlog", window.isBacklogReplay());
+        assertTrue("and it is still a clamp", window.isClamped());
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)} in steady state
+     * Given Scenario: An ordinary poll, one interval after the last one
+     * ExpectedResult: Not a replay. The lag warning has to keep working in the case it was built
+     * for, or suppressing it on replays would just be a way of switching it off.
+     */
+    @Test
+    public void test_a_normal_poll_is_not_a_backlog_replay() {
+        final long now = 10_000_000L;
+        final SystemEventsPollWindow window = tracker().beginPoll(now - 5_000L, now);
+
+        assertFalse(window.isBacklogReplay());
+    }
+
+    /**
+     * Method to test:
+     * {@link SystemEventsCursorTracker#isCommitLagApproachingWindow(long, long, boolean)}
+     * Given Scenario: An event 84 seconds old -- a lag that IS reported during a normal poll -- read
+     * during a backlog replay instead
+     * ExpectedResult: Not reported. On a replay the age is the event's own age, not the time its
+     * transaction took to commit, so the warning would name the wrong cause and prescribe raising a
+     * window that is not the problem. Both assertions are here on purpose: the same inputs must
+     * still warn on a normal poll.
+     */
+    @Test
+    public void test_commit_lag_is_not_warned_about_on_a_backlog_replay() {
+        final SystemEventsCursorTracker tracker = trackerWithLagThreshold(50);
+        final long readAt = 10_000_000L;
+        final long created = readAt - TimeUnit.SECONDS.toMillis(84);
+
+        assertTrue("Control: this lag is reported on a normal poll",
+                tracker.isCommitLagApproachingWindow(created, readAt, false));
+        assertFalse("The same lag on a replay is just the event's age, and must not be reported",
+                tracker.isCommitLagApproachingWindow(created, readAt, true));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Cross-node clock skew. These pin a LIMITATION rather than a fix: `created` comes from the
+    // authoring node's clock and the read floor from the reading node's, so skew is spent out of the
+    // overlap budget. Written because the class javadoc previously claimed correctness did not depend
+    // on clock synchronisation between nodes, which was not true -- and a prose-only correction can
+    // drift back out of date the same way. If someone later adds real skew tolerance, these fail and
+    // say so.
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)} against an event
+     * authored by a node whose clock is behind this one's
+     * Given Scenario: A peer running 3 minutes behind publishes an event, stamping {@code created}
+     * from its own clock; this node polls in steady state with the default 120s overlap window
+     * ExpectedResult: The event falls below the read floor and is never delivered -- not once, and
+     * not on any later poll either, because the floor only moves forward.
+     *
+     * <p>This is invisible in production: reconciliation compares a node against itself, and the
+     * skewed node observes its own events normally, so both nodes report 0% loss while cross-node
+     * delivery is entirely broken.
+     */
+    @Test
+    public void test_a_peer_skewed_beyond_the_overlap_window_is_invisible_to_this_node() {
+        final long readerNow = 10_000_000L;
+        final long peerSkew = TimeUnit.MINUTES.toMillis(3);
+        final long createdBySkewedPeer = readerNow - peerSkew;
+
+        final SystemEventsPollWindow window = tracker().beginPoll(readerNow, readerNow);
+
+        assertTrue("A peer skewed further than the overlap window publishes events this node can "
+                        + "never read; the window is the whole skew budget",
+                tracker().isOutsideOverlapWindow(createdBySkewedPeer, window));
+    }
+
+    /**
+     * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)} with skew inside the
+     * budget
+     * Given Scenario: The same peer, drifting 60 seconds rather than 3 minutes
+     * ExpectedResult: Delivered. The budget is real but finite -- which is the point: the effective
+     * tolerance for commit lag is the overlap window MINUS peer skew, so skew and lag compete for the
+     * same 120 seconds.
+     */
+    @Test
+    public void test_skew_inside_the_window_is_tolerated_but_spends_the_lag_budget() {
+        final long readerNow = 10_000_000L;
+        final long createdBySkewedPeer = readerNow - TimeUnit.SECONDS.toMillis(60);
+
+        final SystemEventsPollWindow window = tracker().beginPoll(readerNow, readerNow);
+
+        assertFalse("60s of skew is inside a 120s window",
+                tracker().isOutsideOverlapWindow(createdBySkewedPeer, window));
+
+        // ...but it has consumed half the window, so an event from that peer needs to commit within
+        // 60s rather than 120s to survive. Skew and commit lag are drawn from one budget.
+        final long alsoLaggedByAnother60s = createdBySkewedPeer - TimeUnit.SECONDS.toMillis(61);
+        assertTrue("Skew plus commit lag exceeding the window loses the event",
+                tracker().isOutsideOverlapWindow(alsoLaggedByAnother60s, window));
+    }
+}

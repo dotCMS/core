@@ -30,6 +30,7 @@ import {
     Variant,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { UVE_MODE } from '@dotcms/types';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -312,6 +313,8 @@ export class DotExperimentsConfigureVariantsComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #router = inject(Router);
+    /** Present only inside the UVE panel (#37478). */
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
 
     constructor() {
@@ -450,6 +453,12 @@ export class DotExperimentsConfigureVariantsComponent {
 
             return;
         }
+
+        // The one door out of the panel that really is a navigation: editing a variant means going
+        // to the editor on that variant. Suspending rather than closing is what makes the return
+        // land on this configuration instead of a fresh list — `close()` discards exactly the
+        // state the round trip needs (FR-021, FR-023, FR-025).
+        this.#panel?.suspendForVariant();
 
         this.#router.navigate(link.commands, { queryParams: link.queryParams });
     }

@@ -107,24 +107,12 @@ jobs:
     outputs:
       filename: ${{ steps.deploy-artifacts.outputs.filename }}
       url: ${{ steps.deploy-artifacts.outputs.url }}
-      pr_created: ${{ steps.create-pull-request.outcome == 'success' }}      
+      pr_created: ${{ steps.create-pull-request.outcome == 'success' }}
+      pull_request_url: ${{ steps.create-pull-request.outputs.pull-request-url }}
     steps:
       - name: 'Checkout repository'
-        if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: jfrog/setup-jfrog-cli@v4
-        env:
-          JF_URL: ${{ vars.ARTIFACTORY_URL }}
-          JF_USER: ${{ secrets.EE_REPO_USERNAME }}
-          JF_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}          
-                    
-      - name: 'JFrog CLI context'
-        run: |
-          echo "::group::JFrog CLI context"
-          jf rt ping
-          echo "::endgroup::"
-          
       - name: 'Download artifacts'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -140,36 +128,38 @@ jobs:
         id: deploy-artifacts
         working-directory: ${{ github.workspace }}/starter
         env:
-          ARTIFACTORY_URL: ${{ vars.ARTIFACTORY_URL }}
-          ARTIFACTORY_REPO: ${{ vars.ARTIFACTORY_REPO }}
-          GROUP_ID: com.dotcms
+          MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+          MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
+          MAVEN_S3_ENDPOINT: ${{ vars.MAVEN_S3_ENDPOINT }}
+          MAVEN_S3_REGION: ${{ vars.MAVEN_S3_REGION }}
+          MAVEN_S3_BUCKET: ${{ vars.MAVEN_S3_BUCKET }}
+          MAVEN_S3_PREFIX: ${{ vars.MAVEN_S3_PREFIX }}
+          MAVEN_S3_PUBLIC_URL: ${{ vars.MAVEN_S3_PUBLIC_URL }}
           ARTIFACT_ID: starter
-          PACKAGING: zip
           DRY_RUN_MODE: ${{ github.event.inputs.dry-run }}
         run: |
           echo "::group::Deploy Artifacts"
-          
-          if [[ $DRY_RUN_MODE == true ]]; then
-            DRY_RUN='--dry-run'
-          fi
-          
+
           FILENAME=$(ls -ltr | awk 'END {print $NF}')
           VERSION="${FILENAME%.*}"
           SOURCE="./${FILENAME}"
-          TARGET="${ARTIFACTORY_REPO}/com/dotcms/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${FILENAME}"
-          PROPS="groupId=${GROUP_ID};artifactId=${ARTIFACT_ID};version=${VERSION};packaging=${PACKAGING}"
-          URL="${ARTIFACTORY_URL}/artifactory/${TARGET}"
-          
+          DRY_RUN_ARG=""
+
+          if [[ "$DRY_RUN_MODE" == true ]]; then
+            DRY_RUN_ARG="--dry-run"
+          fi
+
           echo "FILENAME=${FILENAME}"
           echo "VERSION=${VERSION}"
-          echo "::notice::Uploading ${SOURCE} to ${TARGET} with props ${PROPS}"
-          jfrog rt u "${SOURCE}" ${TARGET} \
-            --target-props="${PROPS}" \
-            --flat=false \
-            $DRY_RUN
-          echo "filename=${FILENAME}" >> $GITHUB_OUTPUT
-          echo "url=${URL}" >> $GITHUB_OUTPUT  
-          echo "::notice::Artifact URL ${URL}"
+          echo "::notice::Uploading ${SOURCE} to com/dotcms/${ARTIFACT_ID}/${VERSION}/"
+
+          # shellcheck disable=SC2086
+          # Reason: DRY_RUN_ARG expands to the optional --dry-run flag
+          "$GITHUB_WORKSPACE/.github/scripts/publish-to-s3/publish.sh" file \
+            --source "${SOURCE}" \
+            --key "com/dotcms/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${FILENAME}" \
+            $DRY_RUN_ARG
+
           echo "::notice::Changelog: ${{ github.event.inputs.changelog }}"
           echo "::endgroup::"
 
@@ -195,7 +185,7 @@ jobs:
       - name: 'Create Pull Request'
         if: ${{ steps.update-pom.outcome == 'success' }}
         id: create-pull-request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ secrets.CI_MACHINE_TOKEN }}
           branch: ${{ steps.update-pom.outputs.auxiliary-branch }}
@@ -223,14 +213,14 @@ jobs:
           ARTIFACT_URL="${{ needs.deploy-artifacts.outputs.url }}"
           OLD_ASSETS="${{ github.event.inputs.old-assets }}"
           CHANGELOG="${{ github.event.inputs.changelog }}"
-          PULL_REQUEST_URL="${{ needs.update-pom.outputs.pull-request-url }}"
-          if [ "$STARTER_TYPE" == "empty" ]; then
+          PULL_REQUEST_URL="${{ needs.deploy-artifacts.outputs.pull_request_url }}"
+          if [ "$STARTER_TYPE" == "empty" ] && [ -n "$PULL_REQUEST_URL" ]; then
             PR_ALERT="> :exclamation:*Approvals required*:exclamation: *PR* ${PULL_REQUEST_URL}"
           fi          
           
           BASE_MESSAGE=$(cat <<-EOF
           > :large_green_circle: *Attention dotters:* a new Starter published!
-          > This automated script is happy to announce that a new *_${STARTER_TYPE} starter_* :package: \`${ARTIFACT_FILENAME}\` is now available on \`ARTIFACTORY\` :frog:!
+          > This automated script is happy to announce that a new *_${STARTER_TYPE} starter_* :package: \`${ARTIFACT_FILENAME}\` is now available on the \`dotCMS repository\`!
           >
           > :link: ${ARTIFACT_URL}
           > _Old assets included_: ${OLD_ASSETS}

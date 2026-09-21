@@ -30,6 +30,7 @@
         <micrometer.version>1.13.10</micrometer.version>
         <opensearch.version>3.3.0</opensearch.version>
         <langchain4j.version>1.15.1</langchain4j.version>
+        <netty.version>4.1.138.Final</netty.version>
         <commonmark.version>0.22.0</commonmark.version>
         <jsoup.version>1.21.1</jsoup.version>
     </properties>
@@ -100,37 +101,17 @@
                 <version>3.4.41</version>
             </dependency>
 
-            <!-- Netty: pin to 4.1.118.Final to resolve conflict between pgjdbc-ng (4.1.63)
-                 and langchain4j-azure-open-ai (4.1.118). Required for DefaultHeaders$ValueValidator. -->
+            <!-- Netty: import the 4.1.x BOM so every Netty module resolves to a single version.
+                 Left to transitive resolution the trees disagree - azure-core-http-netty brings
+                 4.1.118, reactor-netty brings 4.1.112, netty-codec-http2 brings 4.1.132 and the
+                 awssdk netty-nio-client brings 4.1.130 - which fails at runtime with
+                 NoSuchMethodError, most visibly in DefaultHeaders$ValueValidator. -->
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-buffer</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-resolver</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec</artifactId>
-                <version>4.1.118.Final</version>
-            </dependency>
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>4.1.118.Final</version>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
 
@@ -846,12 +827,6 @@
                 <version>7.4.1.jre8</version>
             </dependency>
 
-
-            <dependency>
-                <groupId>com.impossibl.pgjdbc-ng</groupId>
-                <artifactId>pgjdbc-ng</artifactId>
-                <version>0.8.9</version>
-            </dependency>
 
             <!--
              *****************************

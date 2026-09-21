@@ -13,6 +13,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { computed, signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
+import { Tooltip } from 'primeng/tooltip';
 
 import {
     DotCategoriesService,
@@ -58,6 +59,13 @@ const settleToolbarAnimation = async (spectator: Spectator<DotContentDriveToolba
     spectator.detectChanges();
 };
 
+/**
+ * The New button itself, not its PrimeNG host: `[disabled]` lands on the inner `<button>`, which is
+ * also the element a user would actually be unable to press.
+ */
+const addNewButton = (spectator: Spectator<DotContentDriveToolbarComponent>) =>
+    spectator.query(byTestId('add-new-button'))?.querySelector('button');
+
 /** The bar clears through the facade, so this is what the Clear all test asserts against. */
 const clearFiltersSpy = vi.fn();
 
@@ -67,12 +75,18 @@ describe('DotContentDriveToolbarComponent', () => {
 
     // Real signals so the component's computeds re-run when they change
     const isTreeExpandedSignal = signal(false);
+    const allSiteContentSelectedSignal = signal(false);
+    const systemHostSelectedSignal = signal(false);
+    // The toolbar reports a run by raising a status message rather than drawing it, so the spec owns
+    // the service it pushes through.
+    const messageServiceSpy = { add: vi.fn(), clear: vi.fn() };
     const filtersSignal = signal<DotContentDriveFilters>({});
     const selectedItemsSignal = signal<DotContentDriveItem[]>([]);
     const selectedNodeSignal = signal<
         { data?: { defaultBaseType?: string | null; permissions?: string[] } } | undefined
     >(undefined);
     const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    const activeRunCountSignal = signal<number>(0);
     // The field-filter chips read these through DOT_FIELD_FILTER_HOST, and the toolbar reads the
     // same pair off the store to render one chip per active field — so both point here.
     const userSearchableFieldsSignal = signal<DotCMSContentTypeField[]>([]);
@@ -133,11 +147,22 @@ describe('DotContentDriveToolbarComponent', () => {
                 setUserSearchableFields: vi.fn(),
                 addUserSearchableField: vi.fn(),
                 clearUserSearchableFilters: vi.fn(),
-                actionExecution: actionExecutionSignal,
+                // The toolbar reads the *presentation* signals: only runs the rows cannot
+                // speak for themselves, which today means an upload.
+                toolbarRun: actionExecutionSignal,
+                toolbarRunCount: activeRunCountSignal,
                 siteCanAddChildren: siteCanAddChildrenSignal,
+                $allSiteContentSelected: allSiteContentSelectedSignal,
+                $systemHostSelected: systemHostSelectedSignal,
                 // Mirrors the store's own computed so the toolbar tests still drive the gate
-                // through the two signals it derives from, not through a hardcoded answer.
+                // through the signals it derives from, not through a hardcoded answer.
                 $canAddChildren: computed(() => {
+                    // All site content lands on the site root, so the site answers for it — and
+                    // ahead of any node left over from before the tree selection was cleared.
+                    if (allSiteContentSelectedSignal()) {
+                        return siteCanAddChildrenSignal() !== false;
+                    }
+
                     const permissions = selectedNodeSignal()?.data?.permissions;
 
                     if (!permissions?.length) {
@@ -190,7 +215,7 @@ describe('DotContentDriveToolbarComponent', () => {
             },
             // Needed once a selection exists: that mounts the workflow-actions child, which injects
             // both of these.
-            mockProvider(MessageService, { add: vi.fn() }),
+            mockProvider(MessageService, messageServiceSpy),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: vi.fn(),
                 editPage: vi.fn()
@@ -206,6 +231,8 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     beforeEach(() => {
+        messageServiceSpy.add.mockClear();
+        messageServiceSpy.clear.mockClear();
         spectator = createComponent();
         store = spectator.inject(DotContentDriveStore, true);
         spectator.detectChanges();
@@ -213,11 +240,16 @@ describe('DotContentDriveToolbarComponent', () => {
 
     afterEach(() => {
         vi.clearAllMocks();
+        // `clearAllMocks` resets call history but leaves a `vi.spyOn` implementation in place, so
+        // a test that stubs `DotMessageService.get` to render real copy was leaking that stub into
+        // every test after it. Restoring puts the shared key-echoing mock back.
+        vi.restoreAllMocks();
         isTreeExpandedSignal.set(false);
         filtersSignal.set({});
         selectedItemsSignal.set([]);
         selectedNodeSignal.set(undefined);
         actionExecutionSignal.set(undefined);
+        activeRunCountSignal.set(0);
     });
 
     it('should render toolbar container', () => {
@@ -283,13 +315,23 @@ describe('DotContentDriveToolbarComponent', () => {
     });
 
     describe('chip row', () => {
+        // The full row exists in all site content, which is the only scope where the Show System
+        // Host chip has anything to decide. Asserted there rather than lowered to five chips,
+        // because what these guard is that every chip is present and correctly ordered when it
+        // applies, not how many happen to apply in the default state.
+        beforeEach(async () => {
+            allSiteContentSelectedSignal.set(true);
+            await settleToolbarAnimation(spectator);
+        });
+
+        afterEach(() => allSiteContentSelectedSignal.set(false));
+
         it('should render all six chips', () => {
             const chips = Array.from(spectator.element.querySelectorAll('[data-filter-chip]')).map(
                 (element) => element.getAttribute('data-filter-chip')
             );
 
             expect(chips).toEqual([
-                'sharedAssets',
                 'contentType',
                 'workflow',
                 'status',
@@ -315,7 +357,9 @@ describe('DotContentDriveToolbarComponent', () => {
                 spectator.element.querySelectorAll<HTMLElement>('[data-filter-chip]')
             );
 
-            expect(chips.length).toBe(6);
+            // Five since the System Host toggle moved out of this row and into the scope bar,
+            // where it sits beside the sentence describing what it does.
+            expect(chips.length).toBe(5);
             chips.forEach((chip) => {
                 const focusable = chip.matches('[tabindex]')
                     ? chip
@@ -673,7 +717,11 @@ describe('DotContentDriveToolbarComponent', () => {
             // Reopening mid-run gives a dialog with every row greyed out that then closes itself
             // when the run settles. Refusing to open it is the honest version of that state.
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            });
             await settleToolbarAnimation(spectator);
 
             const button = spectator
@@ -683,9 +731,44 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(button?.disabled).toBe(true);
         });
 
+        it('should stay disabled when several actions are running at once', async () => {
+            // `toolbarRun` names a run only when there is exactly one: with several it is
+            // deliberately undefined so the indicator falls back to a count rather than naming one
+            // arbitrarily. Gating on its truthiness therefore un-gated the button exactly when the
+            // most was happening — and this branch makes that reachable, because a backgrounded
+            // upload outlives its request and can sit alongside a second run.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(2);
+            actionExecutionSignal.set(undefined);
+            await settleToolbarAnimation(spectator);
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(true);
+        });
+
+        it('should still explain itself when several actions are running at once', async () => {
+            // The tooltip is the only thing that says why the button cannot be used, so it has to
+            // survive the same case rather than going quiet when there is more to explain.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(2);
+            actionExecutionSignal.set(undefined);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe(
+                'content-drive.action-center.busy'
+            );
+        });
+
         it('should explain why it is disabled while an action is running', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            });
             await settleToolbarAnimation(spectator);
 
             expect(spectator.component.$actionCenterTooltip()).toBe(
@@ -702,7 +785,11 @@ describe('DotContentDriveToolbarComponent', () => {
 
         it('should not open the dialog while an action is running', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            });
             await settleToolbarAnimation(spectator);
 
             // Guards the handler too: a disabled attribute alone would leave the store reachable.
@@ -713,10 +800,17 @@ describe('DotContentDriveToolbarComponent', () => {
 
         it('should become available again once the run settles', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            activeRunCountSignal.set(1);
+            actionExecutionSignal.set({
+                total: 3,
+                labelKey: 'content-drive.upload.indicator'
+            });
             await settleToolbarAnimation(spectator);
 
+            // A settled run leaves neither a name nor a count. Clearing only the name described a
+            // state the store cannot be in, and passed only while the gate read the name.
             actionExecutionSignal.set(undefined);
+            activeRunCountSignal.set(0);
             spectator.detectChanges();
 
             const button = spectator
@@ -724,69 +818,6 @@ describe('DotContentDriveToolbarComponent', () => {
                 ?.querySelector('button');
 
             expect(button?.disabled).toBe(false);
-        });
-    });
-
-    describe('running-action indicator', () => {
-        it('should stay hidden when nothing is running', () => {
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
-        });
-
-        it('should report the action and the number of items once a run starts', () => {
-            // The toolbar is the only place still reporting the run after the Action Center dialog is
-            // closed, which is the whole reason the indicator lives out here.
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
-            spectator.detectChanges();
-
-            const indicator = spectator.query(byTestId('action-execution-indicator'));
-
-            expect(indicator).toBeTruthy();
-            expect(spectator.component.$actionExecutionLabel()).toBe(
-                'content-drive.action-center.applying'
-            );
-        });
-
-        it('should not render markup carried by the action name', () => {
-            // Workflow action names come from the backend verbatim (`$selectedAction()?.name`), and
-            // the label is placed in the DOM as HTML so the message's own `<b>` renders. A name
-            // carrying markup must not become live DOM — an event-handler attribute least of all.
-            //
-            // The shared mock returns the bare key, which would make this pass without rendering
-            // anything; the real message has to be in play for the assertion to mean something.
-            const messageService = spectator.inject(DotMessageService);
-
-            vi.spyOn(messageService, 'get').mockImplementation((key: string, ...args: string[]) =>
-                key === 'content-drive.action-center.applying'
-                    ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
-                    : key
-            );
-
-            actionExecutionSignal.set({
-                actionName: '<img src=x onerror="window.__xss = true">',
-                total: 3
-            });
-            spectator.detectChanges();
-
-            const indicator = spectator.query(byTestId('action-execution-indicator'));
-
-            // Asserted structurally rather than by searching the markup for "onerror": once the name
-            // is escaped it renders as visible text that legitimately still contains that word.
-            expect(indicator?.querySelector('img')).toBeNull();
-            expect(indicator?.querySelector('[onerror]')).toBeNull();
-            // …and the name is still shown to the user, just as text.
-            expect(indicator?.textContent).toContain('<img src=x');
-        });
-
-        it('should disappear again once the run settles', () => {
-            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
-            spectator.detectChanges();
-
-            actionExecutionSignal.set(undefined);
-            spectator.detectChanges();
-
-            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
         });
     });
 
@@ -828,6 +859,46 @@ describe('DotContentDriveToolbarComponent', () => {
             await withPermissions(['READ', 'EDIT', 'CAN_ADD_CHILDREN']);
 
             expect(spectator.component.$canAddChildren()).toBe(true);
+        });
+
+        // All site content spans every folder in the site, which for a while was read as "there is
+        // nowhere to put anything" and closed the affordances. It now behaves as the site root
+        // does: content added here lands on the site, and the indicator names the site so the
+        // author can see where it went.
+        describe('in all site content', () => {
+            afterEach(() => allSiteContentSelectedSignal.set(false));
+
+            it('should allow creation where the site accepts children', async () => {
+                siteCanAddChildrenSignal.set(true);
+                allSiteContentSelectedSignal.set(true);
+                await settleToolbarAnimation(spectator);
+
+                expect(addNewButton(spectator)?.disabled).toBe(false);
+            });
+
+            it('should refuse creation where the site refuses children', async () => {
+                // A permission answer again, and about the site the content would land on. The
+                // scope stopped being a reason of its own.
+                siteCanAddChildrenSignal.set(false);
+                allSiteContentSelectedSignal.set(true);
+                await settleToolbarAnimation(spectator);
+
+                expect(addNewButton(spectator)?.disabled).toBe(true);
+            });
+
+            it('should blame permissions, since the scope is no longer a reason', async () => {
+                siteCanAddChildrenSignal.set(false);
+                allSiteContentSelectedSignal.set(true);
+                await settleToolbarAnimation(spectator);
+
+                // Read off the Tooltip directive rather than the component: the `read` overload
+                // takes a plain selector, not byTestId's DOMSelector.
+                const tooltip = spectator.query('[data-testid="add-new-tooltip"]', {
+                    read: Tooltip
+                });
+
+                expect(tooltip?.content).toBe('content-drive.add-new.no-add-children');
+            });
         });
 
         // The site root: the parent is the host, not a folder, so the tree's site node carries no
@@ -891,7 +962,48 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should carry no tooltip when creation is allowed', async () => {
             await withPermissions(['CAN_ADD_CHILDREN']);
 
-            expect(spectator.component.$addChildrenTooltip()).toBe('');
+            const tooltip = spectator.query('[data-testid="add-new-tooltip"]', { read: Tooltip });
+
+            expect(tooltip?.content).toBe('');
+        });
+    });
+
+    describe('the New menu on System Host', () => {
+        const folderEntry = () =>
+            spectator.component
+                .$items()
+                .find((item) => item.label === 'content-drive.add-new.context-menu.folder');
+
+        it('should not offer a new folder there', () => {
+            // System Host lists no folders: `listsFolders` returns false for that scope and the
+            // sidebar row opens no tree beneath it. A folder created there could never be shown
+            // again by this portlet, and the dialog could not even name where it would land -- the
+            // location is a reserved word, so pasting it after the hostname gave
+            // `//demo.dotcms.comSYSTEM_HOST/`.
+            systemHostSelectedSignal.set(true);
+            spectator.detectChanges();
+
+            expect(folderEntry()).toBeUndefined();
+        });
+
+        it('should still offer content types there', () => {
+            // The other half of the rule: System Host holds content, and adding some is the whole
+            // reason the scope accepts new items at all. Only the folder entry goes.
+            systemHostSelectedSignal.set(true);
+            spectator.detectChanges();
+
+            expect(
+                spectator.component
+                    .$items()
+                    .some((item) => item.label === 'content-drive.add-new.all-content-types')
+            ).toBe(true);
+        });
+
+        it('should offer a new folder everywhere else', () => {
+            systemHostSelectedSignal.set(false);
+            spectator.detectChanges();
+
+            expect(folderEntry()).toBeDefined();
         });
     });
 });

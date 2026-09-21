@@ -309,6 +309,57 @@ test.describe('Content Drive Keyboard', () => {
         await keyboard.expectSelectedCount(ROW_COUNT);
     });
 
+    /**
+     * Shift belongs to the selection, so no gesture carrying it opens anything.
+     *
+     * Found by QA on the shipped feature: a second click landing inside a Shift range, or a stray
+     * double, opened the item and navigated out of the listing — taking the half-built selection
+     * with it. The unit suite can assert the guard, but only a browser proves the modifier survives
+     * a real `dblclick`, which is the same class of gap the rest of this file exists for.
+     */
+    test('keeps a shift range instead of opening the row it lands on @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+        const listingUrl = adminPage.url();
+
+        await keyboard.clickRow(0);
+        await keyboard.expectSelectedCount(1);
+
+        await keyboard.shiftDoubleClickRow(ROW_COUNT - 1);
+
+        // Still in the listing: opening an item navigates away, so the URL is the assertion that
+        // catches the actual reported symptom rather than a proxy for it.
+        expect(adminPage.url()).toBe(listingUrl);
+        // And the range it was building survived, which is what the author loses when it opens.
+        await keyboard.expectSelectedCount(ROW_COUNT);
+    });
+
+    /**
+     * The title is the open affordance, so it swallows its click to stop the row selecting on the
+     * way out. A Shift click does not open, which leaves nothing for the swallow to protect — and
+     * running it anyway made the title a dead spot where the gesture neither opened the item nor
+     * extended the selection it belongs to. Caught in review on the first fix.
+     */
+    test('extends a range from the row title, which does not open under shift', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { keyboard } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+        const listingUrl = adminPage.url();
+
+        await keyboard.clickRow(0);
+        await keyboard.expectSelectedCount(1);
+
+        await keyboard.shiftClickRowTitle(ROW_COUNT - 1);
+
+        expect(adminPage.url()).toBe(listingUrl);
+        await keyboard.expectSelectedCount(ROW_COUNT);
+    });
+
     test('clears the selection with escape @critical', async ({
         adminPage,
         apiHelpers,

@@ -24,7 +24,7 @@ do
   dotcms:
     image: dotcms/dotcms:${version}
     environment:
-      CUSTOM_STARTER_URL: https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/${starter_date}/starter-${starter_date}.zip
+      CUSTOM_STARTER_URL: https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/${starter_date}/starter-${starter_date}.zip
 EOF
 done
 git checkout -q main

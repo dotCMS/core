@@ -139,12 +139,12 @@ jobs:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+      MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
 
-  # Release - release-specific operations (Artifactory only, skip one-time operations)
+  # Release - release-specific operations (S3 Maven repository only, skip one-time operations)
   release:
     name: Release
     needs: [ extract-version, initialize, build, deployment ]
@@ -161,8 +161,8 @@ jobs:
       java-version: ${{ github.event_name == 'workflow_dispatch' && inputs.java_version || vars.RELEASE_JAVA_VARIANT_VERSION }}
       artifact-suffix: ${{ github.event_name == 'workflow_dispatch' && inputs.artifact_suffix || vars.RELEASE_JAVA_VARIANT_SUFFIX }}
     secrets:
-      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+      MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}

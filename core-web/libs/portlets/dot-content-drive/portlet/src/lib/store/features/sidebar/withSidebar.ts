@@ -9,22 +9,31 @@ import {
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { Observable, of, pipe, switchMap, tap } from 'rxjs';
 
-import { inject } from '@angular/core';
+import { effect, EffectRef, inject, untracked } from '@angular/core';
 
 import { catchError } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
-import { SYSTEM_HOST } from '../../../shared/constants';
-import { DotContentDriveState } from '../../../shared/models';
+import {
+    DEFAULT_PAGE,
+    DEFAULT_PATH,
+    ROOT_PATH,
+    SYSTEM_HOST,
+    SYSTEM_HOST_PATH
+} from '../../../shared/constants';
+import { DotContentDriveState, FolderTreeHierarchyLevel } from '../../../shared/models';
 import {
     applyLoadMoreToHierarchy,
-    FolderTreeHierarchyLevel,
     getFolderHierarchyByPath,
     getFolderNodesByPath
 } from '../../../utils/functions';
-import { buildTreeFolderNodes, createSiteNode } from '../../../utils/tree-folder.utils';
+import {
+    buildTreeFolderNodes,
+    createSiteNode,
+    findNodeByPath
+} from '../../../utils/tree-folder.utils';
 
 interface WithSidebarState {
     sidebarLoading: boolean;
@@ -68,7 +77,17 @@ export function withSidebar() {
                         }
 
                         const siteNode = createSiteNode(currentSite);
-                        const urlFolderPath = store.path() || '';
+
+                        // Only a folder path names a place inside this site's hierarchy. The other
+                        // two locations do not: all site content is the absence of one, and System
+                        // Host is a host rather than a folder. Both were resolved as folder paths
+                        // anyway, so System Host was queried as `/SYSTEM_HOST/` — a folder nobody
+                        // has — and the empty result fell back to selecting the site row. That left
+                        // the site root and System Host both looking selected, and since the shell
+                        // syncs the location *from* the selected node, the site row then rewrote the
+                        // location back to the site root and bounced the user out of System Host.
+                        const location = store.path() || '';
+                        const urlFolderPath = location.startsWith(ROOT_PATH) ? location : '';
 
                         // Only the initial state used to set this, so every later cold load (a site
                         // change) left the previous site's tree on screen while its replacement was
@@ -117,7 +136,11 @@ export function withSidebar() {
                                     // nothing, and expanding it fetched them a second time — the
                                     // tree showed every root folder twice.
                                     folders: [{ ...siteNode, children: rootsWithLoadMore }],
-                                    selectedNode: selectedNode
+                                    // No location means all site content, which is not a place in
+                                    // the hierarchy. Preselecting the site row there would have the
+                                    // sidebar claiming the root is what you are looking at, and the
+                                    // root and the flat whole-site view are different things.
+                                    selectedNode: urlFolderPath ? selectedNode : undefined
                                 });
                             })
                         );
@@ -159,15 +182,36 @@ export function withSidebar() {
             },
 
             /**
-             * Selects the tree's root row, the one that stands for the site rather than a folder.
+             * Selects all site content: the whole current site at any depth, which is the one
+             * sidebar entry that names no place inside the hierarchy.
              *
-             * Used when a search spans the whole site, where no single folder is the selected one.
-             * A tree of plain folders has no such row, and then nothing is selected, which says the
-             * same thing.
+             * Clearing the selected node is half the job. Exactly one thing in the sidebar is ever
+             * selected, and the tree cannot represent this entry, so leaving a node selected would
+             * have the sidebar claiming the user is in two places at once.
+             *
+             * The location is cleared rather than set to the root: absent is what all site content
+             * looks like in the URL, which is also what links made before this feature carry.
              */
-            selectRootNode: () => {
+            selectAllSiteContent: () => {
                 patchState(store, {
-                    selectedNode: store.folders().find((folder) => !folder.data?.path)
+                    path: DEFAULT_PATH,
+                    selectedNode: undefined,
+                    pagination: { ...store.pagination(), page: 1, offset: 0 },
+                    pages: [DEFAULT_PAGE]
+                });
+            },
+
+            /**
+             * Selects System Host: shared content on its own, which belongs to no site and so has
+             * no place in the hierarchy either. Same shape as choosing all site content — one
+             * entry selected, the tree's own selection cleared.
+             */
+            selectSystemHost: () => {
+                patchState(store, {
+                    path: SYSTEM_HOST_PATH,
+                    selectedNode: undefined,
+                    pagination: { ...store.pagination(), page: 1, offset: 0 },
+                    pages: [DEFAULT_PAGE]
                 });
             },
 
@@ -183,9 +227,47 @@ export function withSidebar() {
             }
         })),
         withHooks((store) => {
+            let selectionSync: EffectRef | undefined;
+
             return {
                 onInit() {
                     store.loadFolders();
+
+                    // Keeps the tree's selection honest as the location moves.
+                    //
+                    // Folders reload on a site change, not on a Back, so returning to a folder
+                    // restored the URL and the listing while the tree showed nothing selected.
+                    // Everything else in the sidebar derives its selected state from the location
+                    // and was therefore already right; this is the one stored piece, so it has to
+                    // be pushed back in line rather than left holding whatever the previous
+                    // location put there.
+                    //
+                    // Reads `folders()` as well as `path()` on purpose: on a cold start the tree
+                    // is empty when the location is already known, and this has to run again once
+                    // the folders arrive.
+                    selectionSync = effect(() => {
+                        const path = store.path();
+                        const folders = store.folders();
+                        // The tree marks its site row with an empty path, while the site root as a
+                        // *location* is `/` — the same translation the shell makes in the other
+                        // direction. Looking `/` up literally matches no node, so without this the
+                        // sync read the site root as "nowhere" and cleared the selection every time
+                        // the user was standing on it.
+                        const match = path?.startsWith(ROOT_PATH)
+                            ? findNodeByPath(folders, path === ROOT_PATH ? '' : path)
+                            : undefined;
+
+                        // Only when it actually differs: a folder click already sets the node, and
+                        // rewriting the same one on every location change churns the tree.
+                        untracked(() => {
+                            if (store.selectedNode()?.data?.path !== match?.data?.path) {
+                                patchState(store, { selectedNode: match });
+                            }
+                        });
+                    });
+                },
+                onDestroy() {
+                    selectionSync?.destroy();
                 }
             };
         })

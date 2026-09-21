@@ -5,6 +5,7 @@ import { DotExperiment, DotExperimentStatus, GOAL_TYPES } from '@dotcms/dotcms-m
 
 import {
     DotExperimentsListPageChange,
+    DotExperimentsListPanelScope,
     DotExperimentsListSortChange,
     DotExperimentsListViewState
 } from '../shared/models';
@@ -52,6 +53,21 @@ export const dotExperimentsListPageEvents = eventGroup({
          * caller.
          */
         pageNarrowingCleared: type<void>(),
+
+        /**
+         * The panel is now about this page (#37478).
+         *
+         * Dispatched on open and again whenever the editor navigates to another page. It carries
+         * the language only as the return context the variant round trip needs — the language
+         * never narrows the list, because an experiment belongs to a page and not to a language
+         * version of one (FR-034, FR-034a, D10).
+         *
+         * Distinct from `hydratedFromUrl` on purpose even though both replace the whole view
+         * state: that one means "the address said so" and is the portlet's only writer, and
+         * collapsing them would put the panel's re-scope on the address-backed path this work
+         * exists to keep it off (FR-031).
+         */
+        scopedToPage: type<DotExperimentsListPanelScope>(),
 
         // Site
         siteChanged: type<string | null>(),

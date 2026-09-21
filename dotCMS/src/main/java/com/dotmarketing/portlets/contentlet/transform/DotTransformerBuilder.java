@@ -247,6 +247,20 @@ public class DotTransformerBuilder {
     }
 
     /**
+     * Opts into replacing WYSIWYG/TextArea/Story Block field values with a &lt;=150-character
+     * extracted plain-text preview (issue #37185). Additive -- chain it after any of this
+     * builder's other option methods (e.g. {@link #defaultOptions()}) without disturbing their
+     * options. Never added to {@link DotContentletTransformerImpl#defaultOptions} itself, so this
+     * remains strictly opt-in per call site.
+     *
+     * @return The {@link DotTransformerBuilder} instance.
+     */
+    public DotTransformerBuilder longTextPreview(){
+        optionsHolder.add(TransformOptions.LONG_TEXT_PREVIEW);
+        return this;
+    }
+
+    /**
      * This transformer provides a view for the History of a Contentlet. It exposes a minified map
      * of properties, just like the data you can see in the History tab in the Content Editor page.
      * As such, all the other Contentlet properties are removed by default.

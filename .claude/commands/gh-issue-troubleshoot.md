@@ -303,16 +303,20 @@ For each new test class created:
    - Imports `org.junit.platform.*` or `org.junit.jupiter.*` → **JUnit 5**
    - Imports `org.junit.Test` or `org.junit.runner.*` → **JUnit 4**
 
-2. **Pick the target suite file:**
+2. **Pick the target suite file** by reading
+   `docs/testing/INTEGRATION_TESTS.md` → "Registering Tests in a MainSuite (CI gate)".
+   Do not pick from a list hardcoded here: the set of suites grows over time, and the
+   selection rule depends on current CI timings, not on anything visible in the source.
 
    - **JUnit 5** → `dotcms-integration/src/test/java/com/dotcms/Junit5Suite1.java`
      - Add a `@SelectClasses` entry and the corresponding `import` statement.
 
-   - **JUnit 4** → one of `MainSuite1a`, `MainSuite1b`, `MainSuite2a`, `MainSuite2b`, `MainSuite3a`
-     (all in `dotcms-integration/src/test/java/com/dotcms/`).
-     - Read each suite file to count `@SuiteClasses` entries.
-     - Add the new class to the **suite with the fewest entries** to keep load balanced.
+   - **JUnit 4** → the suite the doc's rule selects. The current set is whatever
+     `.github/test-matrix.yml` lists as `test_class`, since that is what CI actually runs.
      - Add the corresponding `import` statement at the top of that suite file.
+     - Do **not** pick by counting `@SuiteClasses` entries. Entry count is not load:
+       `MainSuite2b` currently holds 302 entries against `MainSuite2a`'s 52, and the suites
+       are balanced on wall-clock CI time, which the doc explains how to measure.
 
 3. **Apply the suite edit** using Edit. Add:
    - The `import com.fully.qualified.NewTestClass;` line in alphabetical order with the other imports.

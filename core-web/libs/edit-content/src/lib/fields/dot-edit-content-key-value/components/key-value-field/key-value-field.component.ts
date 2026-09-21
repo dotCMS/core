@@ -22,6 +22,11 @@ export type DotKeyValueFieldValue = string | Record<string, string | null> | Dot
     selector: 'dot-key-value-field',
     imports: [DotKeyValueComponent],
     templateUrl: './key-value-field.component.html',
+    host: {
+        // No aria-required: ARIA defines it on radiogroup, not on a plain group.
+        role: 'group',
+        '[attr.aria-labelledby]': '$labelledBy() || null'
+    },
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         {
@@ -42,6 +47,15 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<DotKeyVa
      * It is used to display the error state in the component.
      */
     $hasError = input.required<boolean>({ alias: 'hasError' });
+
+    /**
+     * The id of the field's label, so this widget can name itself by it.
+     *
+     * Key/Value has no single control to hang `<label for>` on: the two visible boxes are for
+     * ADDING a pair, while the field's value is the list they build. The widget as a whole is the
+     * named thing, and `aria-labelledby` is how a non-labelable element gets that name.
+     */
+    $labelledBy = input<string>('', { alias: 'labelledBy' });
 
     constructor() {
         super();

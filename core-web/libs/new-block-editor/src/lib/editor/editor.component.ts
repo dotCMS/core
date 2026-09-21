@@ -217,13 +217,18 @@ function normalizeEditorContent(
                         class="editor-scroll-container relative overflow-y-auto overscroll-contain"
                         [class.editor-scroll-container--locked]="anyOverlayOpen()"
                         [style]="scrollContainerStyle()">
+                        <!--
+                            role / aria-multiline / aria-label are NOT here: ngx-tiptap mounts
+                            ProseMirror's contenteditable as a CHILD of this element, so this
+                            div never receives focus. Naming it left the element a screen reader
+                            actually lands on unnamed, and declared a second, nested
+                            role="textbox". Those three now ride on the contenteditable itself,
+                            via editorProps.attributes in buildEditor().
+                        -->
                         <div
                             tiptap
                             [editor]="ed"
                             class="prose max-w-none"
-                            role="textbox"
-                            aria-multiline="true"
-                            [attr.aria-label]="'dot.block.editor.editor.aria-label' | dm"
                             aria-haspopup="listbox"
                             aria-controls="slash-command-menu"
                             [attr.aria-expanded]="menuService.isOpen()"
@@ -306,6 +311,18 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
      * character limit, custom styles, count bar visibility, and custom remote extensions.
      */
     readonly field = input<DotCMSContentTypeField | undefined>(undefined);
+
+    /**
+     * The name announced for the editable surface.
+     *
+     * The field's own name when there is one: on a content type with several rich-text fields the
+     * generic string is identical for all of them, so a screen reader cannot tell which one is
+     * focused. Falls back to the translated generic label where the editor runs standalone, with
+     * no field behind it.
+     */
+    protected readonly $accessibleName = computed(
+        () => this.field()?.name || this.dotMessageService.get('dot.block.editor.editor.aria-label')
+    );
 
     /**
      * The DotCMS contentlet currently being edited.
@@ -446,6 +463,15 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
                 this.onTouched();
             },
             editorProps: {
+                // ProseMirror owns the contenteditable, and ngx-tiptap mounts it as a child of
+                // the host div — so this is the only way to put attributes on the element that
+                // actually takes focus. Binding them in the template puts them on the parent,
+                // which announces nothing.
+                attributes: {
+                    role: 'textbox',
+                    'aria-multiline': 'true',
+                    'aria-label': this.$accessibleName()
+                },
                 handleDrop: (view, event, slice, moved) =>
                     handleMediaDrop(
                         editor,

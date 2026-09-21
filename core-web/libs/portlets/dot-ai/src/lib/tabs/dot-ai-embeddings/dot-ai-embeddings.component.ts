@@ -1,28 +1,33 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, effect, inject, untracked } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { MessageModule } from 'primeng/message';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
-
-import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotSearchInputComponent } from '@dotcms/ui';
+import {
+    DotEmptyContainerComponent,
+    DotMessagePipe,
+    DotSearchInputComponent,
+    PrincipalConfiguration
+} from '@dotcms/ui';
+
+import { DotAiIndexCreateComponent } from './dot-ai-index-create/dot-ai-index-create.component';
+import { DotAiIndexRemoveContentComponent } from './dot-ai-index-remove-content/dot-ai-index-remove-content.component';
 
 import {
-    DotAiIndexCreateComponent,
-    DotAiIndexCreateResult
-} from './dot-ai-index-create/dot-ai-index-create.component';
-
-import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
-import { DotAiIndexBuildNotice } from '../../models/dot-ai-portlet.models';
+    DOT_AI_INDEX_OPERATION,
+    DotAiIndexNotice,
+    DotAiIndexOperation
+} from '../../models/dot-ai-portlet.models';
 import { DotAiStore } from '../../store/dot-ai.store';
+import { toEmptyStateConfig } from '../../utils/dot-ai-empty-state.utils';
 
 /**
  * Button treatment shared by both confirmations: a primary accept and an outlined cancel.
@@ -35,6 +40,47 @@ import { DotAiStore } from '../../store/dot-ai.store';
  * itself and the theme defines no `p-button-primary` to ask for — `p-button-secondary` exists
  * there, `p-button-primary` does not. Setting one would resolve to nothing.
  */
+/**
+ * The message key per operation and outcome.
+ *
+ * Spelled out rather than assembled from the operation name at call time: interpolated keys
+ * are invisible to a grep, so a copy audit reports them as orphaned and a cleanup deletes
+ * them, and a combination nobody defined renders its own key to the user instead of failing.
+ * `Record` makes TypeScript require every one.
+ */
+const NOTICE_MESSAGE_KEYS: Record<
+    DotAiIndexOperation,
+    Record<DotAiIndexNotice['outcome'], string>
+> = {
+    [DOT_AI_INDEX_OPERATION.BUILD]: {
+        ok: 'dotai.embeddings.build.ok',
+        empty: 'dotai.embeddings.build.empty',
+        failed: 'dotai.embeddings.build.failed'
+    },
+    [DOT_AI_INDEX_OPERATION.REMOVE_CONTENT]: {
+        ok: 'dotai.embeddings.remove-content.ok',
+        empty: 'dotai.embeddings.remove-content.empty',
+        failed: 'dotai.embeddings.remove-content.failed'
+    },
+    [DOT_AI_INDEX_OPERATION.DELETE_INDEX]: {
+        ok: 'dotai.embeddings.delete.ok',
+        empty: 'dotai.embeddings.delete.ok',
+        failed: 'dotai.embeddings.delete.failed'
+    },
+    [DOT_AI_INDEX_OPERATION.REBUILD_DB]: {
+        ok: 'dotai.embeddings.rebuild.ok',
+        empty: 'dotai.embeddings.rebuild.ok',
+        failed: 'dotai.embeddings.rebuild.failed'
+    }
+} as const;
+
+/** Toast severity per outcome, and the summary key that goes with it. */
+const NOTICE_SEVERITY: Record<DotAiIndexNotice['outcome'], 'success' | 'warn' | 'error'> = {
+    ok: 'success',
+    empty: 'warn',
+    failed: 'error'
+} as const;
+
 const CONFIRM_BUTTONS = {
     rejectButtonStyleClass: 'p-button-outlined'
 } as const;
@@ -52,17 +98,17 @@ const CONFIRM_BUTTONS = {
 @Component({
     selector: 'dot-ai-embeddings',
     imports: [
-        DotAiEmptyStateComponent,
+        DotEmptyContainerComponent,
         ToolbarModule,
-        MessageModule,
         TableModule,
         TagModule,
+        ToastModule,
         ButtonModule,
         ConfirmDialogModule,
         DotSearchInputComponent,
         DotMessagePipe
     ],
-    providers: [ConfirmationService, DialogService],
+    providers: [ConfirmationService, DialogService, MessageService],
     templateUrl: './dot-ai-embeddings.component.html',
     host: { class: 'block h-full' }
 })
@@ -70,10 +116,70 @@ export default class DotAiEmbeddingsComponent {
     protected readonly store = inject(DotAiStore);
 
     readonly #confirmationService = inject(ConfirmationService);
+    readonly #toast = inject(MessageService);
     readonly #dialogService = inject(DialogService);
     readonly #messageService = inject(DotMessageService);
 
     protected readonly statuses = DOT_AI_INDEX_STATUS;
+
+    /** Identity guard: each operation makes a fresh notice, so this toasts each one once. */
+    #toasted: DotAiIndexNotice | null = null;
+
+    constructor() {
+        // Every outcome is announced somewhere. A dialog that is still up owns anything the
+        // user has to act on, because those are corrections to a field it is still holding;
+        // everything else — successes, and failures whose dialog has gone — is a toast, which
+        // is what the rest of the admin does. Nothing renders a standing banner on the tab.
+        effect(() => {
+            const notice = this.store.indexNotice();
+            const owner = this.store.indexNoticeOwner();
+
+            if (!notice || notice === this.#toasted) {
+                return;
+            }
+
+            // A dialog renders only outcomes for the request it submitted, so ownership has to
+            // match the operation *and* the index. Suppressing on "a dialog is open" alone
+            // swallowed, say, a delete that failed while the build dialog happened to be up.
+            const ownedByDialog =
+                owner?.operation === notice.operation && owner.indexName === notice.indexName;
+
+            if (ownedByDialog && notice.outcome !== 'ok') {
+                // The dialog is showing it inline. Marked as reported all the same, so closing
+                // the dialog does not then toast the error the user has just read and dismissed.
+                this.#toasted = notice;
+
+                return;
+            }
+
+            this.#toasted = notice;
+            untracked(() => this.#toast.add(this.#toastFor(notice)));
+        });
+    }
+
+    /**
+     * Two different empty states behind one slot: an instance with no indexes at all, and a
+     * filter that matched none of the ones there are. Telling someone to create their first
+     * index when they have six and mistyped the filter is the wrong instruction.
+     */
+    protected readonly $emptyConfig = computed<PrincipalConfiguration>(() =>
+        this.store.indexFilter().trim()
+            ? toEmptyStateConfig(this.#messageService, {
+                  title: 'dotai.embeddings.no-matches',
+                  icon: 'filter_alt_off'
+              })
+            : toEmptyStateConfig(this.#messageService, {
+                  title: 'dotai.embeddings.empty.title',
+                  subtitle: 'dotai.embeddings.empty.sub',
+                  icon: 'database'
+              })
+    );
+
+    protected readonly forbiddenConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.index.admin-required',
+        subtitle: 'dotai.index.admin-required.sub',
+        icon: 'lock'
+    });
 
     /** Fixed layout plus full height keeps the empty state from collapsing the table. */
     protected readonly tablePt = {
@@ -81,50 +187,59 @@ export default class DotAiEmbeddingsComponent {
         wrapper: { class: 'h-full' }
     };
 
-    /** p-message severities for the three build outcomes. */
-    protected noticeSeverity(kind: DotAiIndexBuildNotice['kind']): 'success' | 'warn' | 'error' {
-        if (kind === 'built') {
-            return 'success';
-        }
-
-        return kind === 'empty' ? 'warn' : 'error';
+    /**
+     * Opens the build dialog and leaves the submit to it.
+     *
+     * `onClose` carries no form value any more — the dialog submits to the store itself, so a
+     * rejected Lucene query is corrected in the form that produced it rather than reported
+     * onto this tab after the modal has closed over the query. It is still subscribed, for
+     * the one thing this tab needs to know: whether the dialog is still there to do the
+     * reporting.
+     */
+    protected openCreateDialog(): void {
+        this.#dialogService.open(DotAiIndexCreateComponent, {
+            header: this.#messageService.get('dotai.index.create.header'),
+            width: '700px',
+            closable: true,
+            // Escape is handled by the dialog itself: PrimeNG binds its own listener once
+            // at open time and never rereads the flag, so it cannot be told to stand down
+            // while a request is in flight. See `watchIndexOperation`.
+            closeOnEscape: false,
+            draggable: false
+        });
     }
 
-    protected openCreateDialog(): void {
-        this.#dialogService
-            .open(DotAiIndexCreateComponent, {
-                header: this.#messageService.get('dotai.index.create.header'),
-                width: '700px',
-                closable: true,
-                closeOnEscape: true,
-                draggable: false,
-                data: { indexes: this.store.indexes().map((index) => index.name) }
-            })
-            // `DialogService.onClose` is `Observable<any>`, so the annotation here is what
-            // makes the "mode must not travel any further" invariant below a compiler rule
-            // rather than a convention.
-            .onClose.pipe(take(1))
-            .subscribe((result: DotAiIndexCreateResult | undefined) => {
-                if (!result) {
-                    return;
-                }
+    protected openRemoveContentDialog(): void {
+        this.#dialogService.open(DotAiIndexRemoveContentComponent, {
+            header: this.#messageService.get('dotai.embeddings.remove-content.header'),
+            width: '700px',
+            closable: true,
+            closeOnEscape: false,
+            draggable: false
+        });
+    }
 
-                // `mode` picks the branch and must not travel any further: it is a dialog
-                // concept, and EmbeddingsForm rejects the whole request with
-                // "Unrecognized field 'mode'" rather than ignoring it.
-                const { mode, ...form } = result;
+    /** The one place an outcome becomes words. Severity follows the outcome, not the action. */
+    #toastFor(notice: DotAiIndexNotice): {
+        severity: string;
+        summary: string;
+        detail: string;
+        life: number;
+    } {
+        const severity = NOTICE_SEVERITY[notice.outcome];
 
-                if (mode === 'delete') {
-                    this.store.deleteFromIndex({
-                        indexName: form.indexName,
-                        query: form.query
-                    });
-
-                    return;
-                }
-
-                this.store.buildIndex(form);
-            });
+        return {
+            severity,
+            summary: this.#messageService.get(`dotai.embeddings.toast.${severity}`),
+            // Every notice key takes the same two, in the same order: the index, then the
+            // count or the server's reason. Anything else and one mapper cannot serve them all.
+            detail: this.#messageService.get(
+                NOTICE_MESSAGE_KEYS[notice.operation][notice.outcome],
+                notice.indexName,
+                notice.detail ?? ''
+            ),
+            life: severity === 'success' ? 4000 : 8000
+        };
     }
 
     protected confirmDeleteIndex(index: DotAiIndex): void {

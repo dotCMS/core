@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -65,7 +65,6 @@ const ACCESS_ROWS: AccessRow[] = [
     ],
     templateUrl: './dot-users-profile-tab.component.html',
     styleUrl: './dot-users-profile-tab.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col gap-6' }
 })
 export class DotUsersProfileTabComponent {

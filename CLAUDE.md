@@ -69,6 +69,7 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 - **Security**: No hardcoded secrets, validate all input, never log sensitive data
 - **REST @Schema**: Must match actual return type — see [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)
 - **Integration test registration**: A new integration test class not added to a `MainSuite*`/`Junit5Suite*` `@SuiteClasses` list compiles fine but is **silently never run in CI** (green build, zero coverage) — it only runs locally via `-Dit.test=`. See [Integration Tests → Registering Tests in a MainSuite](docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate).
+- **Integration tests can silently run zero tests**: the Maven build cache may short-circuit failsafe (`Skipping plugin execution (cached): failsafe:integration-test`) — BUILD SUCCESS, `<completed>0</completed>`, exit 0. Pass `-Dmaven.build.cache.enabled=false`, prefer class-level over `-Dit.test=Class#method` selection, and confirm `Tests run: N` in `target/failsafe-reports/*.txt` rather than trusting the exit code. See [Integration Tests → The build cache can skip the tests entirely](docs/testing/INTEGRATION_TESTS.md#the-build-cache-can-skip-the-tests-entirely).
 - **Frontend**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular/TypeScript standards
 
 ### OpenAPI / Swagger
@@ -86,6 +87,7 @@ When editing ANY code, improve incrementally:
 - Replace legacy: `Logger.info()` not `System.out.println()`
 - Modern Angular: `@if` not `*ngIf`, `input()` not `@Input()`
 - Add missing annotations: `@Override`, `@Nullable`
+- Add missing Javadoc on any Java method you edit, human-readable not AI-oriented — see [Java Standards → Javadoc Requirements](docs/backend/JAVA_STANDARDS.md#javadoc-requirements-required)
 
 ## Spec-Driven Development (Spec-Kit)
 
@@ -120,6 +122,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Java Standards](docs/backend/JAVA_STANDARDS.md) — Coding patterns, immutables, exceptions, utilities
 - [When to Use Virtual Threads](docs/backend/VIRTUAL_THREADS.md) — Socket I/O yes, file I/O no; carrier pinning
 - [REST API Patterns](docs/backend/REST_API_PATTERNS.md) — JAX-RS, Swagger, @Schema rules
+- [Inference API](docs/backend/INFERENCE_API.md) — OpenAI-compatible `/api/inference/v1` family: chat completions, streaming, models, embeddings, images; bearer-only auth, per-site resolution, limits
 - [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) — Dependency management
 - [Configuration Patterns](docs/backend/CONFIGURATION_PATTERNS.md) — Config.getProperty() usage
 - [Database Patterns](docs/backend/DATABASE_PATTERNS.md) — DotConnect, transactions
@@ -133,13 +136,14 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
   - [Migration Test Plan](docs/backend/OPENSEARCH_MIGRATION_TEST_PLAN.md) — QA test plan for the migration phases
   - [Client Configuration](docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md) — `OS_*`/`ES_*` config property reference and fallback chain
   - [Migration Tester Guide](docs/backend/OPENSEARCH_MIGRATION_TESTER_GUIDE.md) — Getting-started guide for QA testers validating the migration
+- [System Events](docs/backend/SYSTEM_EVENTS.md) — Cross-node event queue: at-least-once delivery, consumer idempotency rules, payload deserialization
 
 ### Frontend Development (Angular/TypeScript)
 - **[docs/frontend/README.md](docs/frontend/README.md) — index of all frontend docs and when to load each. Start here if unsure.**
 - [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) — **single source of truth**: syntax, signals, change detection, forms, icons
 - [Component Architecture](docs/frontend/COMPONENT_ARCHITECTURE.md) — Structure, file layout, data flow
 - [State Management](docs/frontend/STATE_MANAGEMENT.md) — NgRx Signal Store, rxMethod, patchState
-- [Styling Standards](docs/frontend/STYLING_STANDARDS.md) — Tailwind, PrimeNG theme, BEM, SCSS
+- [Styling Standards](docs/frontend/STYLING_STANDARDS.md) — Tailwind, PrimeNG theme, BEM, SCSS, **form markup** (global `.form` / `.field`, labels, hints/errors, accessible naming)
 - [TypeScript Standards](docs/frontend/TYPESCRIPT_STANDARDS.md) — Strict types, as const, `#` private
 - [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) — Writing tests: Spectator, Jest, byTestId
 - [Testing Review Rules](docs/frontend/TESTING_REVIEW_RULES.md) — Reviewing tests: violation checklist
@@ -147,7 +151,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 
 ### Testing
 - [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — JUnit, integration patterns
-- [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — API testing, database setup
+- [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — Running/debugging tests, MainSuite registration, API testing, database setup
 - [E2E Tests](docs/testing/E2E_TESTS.md) — Playwright, user workflows
 
 ### Infrastructure

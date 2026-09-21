@@ -91,6 +91,21 @@ describe('DotUsersService', () => {
         req.flush({ entity: [], errors: [], messages: [], permissions: [], i18nMessagesMap: {} });
     });
 
+    it('should send includeRoles=true when opted in (#37236)', () => {
+        spectator.service.getUsersPaginated({ includeRoles: true }).subscribe();
+
+        const req = spectator.expectOne('/api/v1/users/filter?includeRoles=true', HttpMethod.GET);
+        req.flush({ entity: [], errors: [], messages: [], permissions: [], i18nMessagesMap: {} });
+    });
+
+    it('should OMIT includeRoles when the flag is false/undefined', () => {
+        spectator.service.getUsersPaginated({ includeRoles: false }).subscribe();
+
+        const req = spectator.expectOne('/api/v1/users/filter', HttpMethod.GET);
+        expect(req.request.params.has('includeRoles')).toBe(false);
+        req.flush({ entity: [], errors: [], messages: [], permissions: [], i18nMessagesMap: {} });
+    });
+
     it('should DELETE with replacementUserId when provided', () => {
         spectator.service.deleteUser('user-1', 'admin').subscribe();
 

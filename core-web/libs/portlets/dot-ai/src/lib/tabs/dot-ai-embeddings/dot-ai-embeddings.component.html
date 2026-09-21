@@ -9,8 +9,19 @@
 
         <ng-template pTemplate="end">
             <div class="flex items-center gap-2">
+                <!-- Beside New Index rather than on a row: the two are the same shape of
+                     operation, a Lucene query plus an index to scope it to. Hanging this one
+                     off a row implied it knew what was in that index, and nothing records the
+                     query that built one. -->
                 <p-button
-                    severity="danger"
+                    severity="secondary"
+                    [outlined]="true"
+                    [label]="'dotai.embeddings.remove-content.action' | dm"
+                    [disabled]="!store.indexes().length"
+                    (onClick)="openRemoveContentDialog()"
+                    data-testid="dotai-embeddings-remove-content" />
+                <p-button
+                    severity="secondary"
                     [outlined]="true"
                     [label]="'dotai.embeddings.rebuild' | dm"
                     (onClick)="confirmRebuild()"
@@ -24,41 +35,22 @@
         </ng-template>
     </p-toolbar>
 
-    @if (store.indexBuildNotice(); as notice) {
-        <!-- Build outcomes land here rather than in a modal: the dialog has already closed by
-             the time the answer arrives, and the shared error handler would render a malformed
-             query as "Unknown Error" with the index name lost. -->
-        <p-message
-            class="block shrink-0 px-4 pb-2"
-            [severity]="noticeSeverity(notice.kind)"
-            [closable]="true"
-            (onClose)="store.dismissBuildNotice()"
-            data-testid="dotai-embeddings-build-notice">
-            @switch (notice.kind) {
-                @case ('built') {
-                    {{ 'dotai.embeddings.build.ok' | dm: [notice.detail ?? '', notice.indexName] }}
-                }
-                @case ('empty') {
-                    {{ 'dotai.embeddings.build.empty' | dm: [notice.indexName] }}
-                }
-                @default {
-                    {{
-                        'dotai.embeddings.build.failed'
-                            | dm: [notice.indexName, notice.detail ?? '']
-                    }}
-                }
-            }
-        </p-message>
-    }
-
     <div class="min-h-0 flex-1 overflow-hidden">
         @if (store.indexesForbidden()) {
             <!-- indexCount requires CMS_ADMINISTRATOR_ROLE while portlet access does not, so
                  this is a normal state for a non-admin, not an error (FR-049, FR-050). -->
-            <dot-ai-empty-state
-                [title]="'dotai.index.admin-required' | dm"
-                [subtitle]="'dotai.index.admin-required.sub' | dm"
+            <dot-empty-container
+                [configuration]="forbiddenConfig"
+                [hideContactUsLink]="true"
                 data-testid="dotai-embeddings-forbidden" />
+        } @else if (!store.filteredIndexes().length) {
+            <!-- Instead of the table, not inside it: a `<td>` is sized by its own content, so
+                 an empty state nested there cannot centre in the pane however the host is
+                 styled. Replacing the table also drops a header row with nothing under it. -->
+            <dot-empty-container
+                [configuration]="$emptyConfig()"
+                [hideContactUsLink]="true"
+                data-testid="dotai-embeddings-empty" />
         } @else {
             <p-table
                 [value]="store.filteredIndexes()"
@@ -153,21 +145,15 @@
                         </td>
                     </tr>
                 </ng-template>
-
-                <ng-template pTemplate="emptymessage">
-                    <tr>
-                        <td colspan="6">
-                            <dot-ai-empty-state
-                                [title]="'dotai.embeddings.empty.title' | dm"
-                                [subtitle]="'dotai.embeddings.empty.sub' | dm"
-                                data-testid="dotai-embeddings-empty" />
-                        </td>
-                    </tr>
-                </ng-template>
             </p-table>
         }
     </div>
 </section>
+
+<!-- Every outcome lands here now, which is what the rest of the admin does. The tab used to
+     carry a standing banner for a successful build and say nothing at all for the three
+     destructive actions. -->
+<p-toast [breakpoints]="{ '640px': { width: '90vw' } }" />
 
 <!-- closeAriaLabel: PrimeNG's own hook. Without it the header's X is announced with no
      name at all, on both the delete and the rebuild confirmation. -->

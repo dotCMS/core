@@ -26,10 +26,11 @@ const ROLE_ID_UUID =
  * DWR code path. Swapping this iframe for a native Angular component
  * later is meant to be a drop-in.
  *
- * URL construction follows the same pattern as
- * `DotPermissionsIframeDialogComponent` in `@dotcms/ui`: only same-origin
- * relative paths built from a hard-coded prefix + `encodeURIComponent`d
- * role id are passed through `bypassSecurityTrustResourceUrl`.
+ * URL construction mirrors the shared `dot-jsp-iframe-dialog` in
+ * `@dotcms/ui`: only same-origin relative paths built from a
+ * hard-coded prefix + `encodeURIComponent`d role id are passed through
+ * `bypassSecurityTrustResourceUrl`. The UUID regex above adds a
+ * defense-in-depth check specific to this consumer.
  */
 @Component({
     selector: 'dot-role-permissions-iframe',

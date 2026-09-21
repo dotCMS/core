@@ -1,8 +1,14 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_NAME_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.dotcms.api.APIProvider;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -11,14 +17,20 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.image.focalpoint.FocalPointAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -212,5 +224,144 @@ public class DefaultTransformStrategyTest {
                 (Map<String, Serializable>) map.get(FILE_ASSET_META_KEY);
         assertEquals("focalPoint must default to 0.0 when absent from custom metadata",
                 "0.0", metaMap.get(FocalPointAPI.FOCAL_POINT));
+    }
+
+    // --- resolveModUserName (issue #37186, User Story 2: no repeated resolution within one row)
+
+    /**
+     * Invokes the private {@code resolveModUserName} method in isolation, mirroring
+     * {@link #invokeAddBinaries} above.
+     */
+    private String invokeResolveModUserName(final DefaultTransformStrategy strategy,
+            final Contentlet contentlet, final Map<String, Object> map) throws Exception {
+        final Method resolveModUserName = DefaultTransformStrategy.class.getDeclaredMethod(
+                "resolveModUserName", Contentlet.class, Map.class);
+        resolveModUserName.setAccessible(true);
+        return (String) resolveModUserName.invoke(strategy, contentlet, map);
+    }
+
+    private APIProvider toolBoxWithMockUserAPI(final UserAPI userAPI) throws Exception {
+        final APIProvider toolBox = Mockito.mock(APIProvider.class);
+        final java.lang.reflect.Field field = APIProvider.class.getDeclaredField("userAPI");
+        field.setAccessible(true);
+        field.set(toolBox, userAPI);
+        return toolBox;
+    }
+
+    /**
+     * When {@code addAuditProperties} already resolved modUser for this row (its value is
+     * already in the map under {@code MOD_USER_NAME_KEY}), {@code addVersionProperties} must
+     * reuse it rather than calling {@code loadUserById} a second time for the same id.
+     */
+    @Test
+    public void resolveModUserName_reusesAlreadyResolvedName_doesNotCallLoadUserByIdAgain()
+            throws Exception {
+        final UserAPI userAPI = Mockito.mock(UserAPI.class);
+        final DefaultTransformStrategy strategy =
+                new DefaultTransformStrategy(toolBoxWithMockUserAPI(userAPI));
+
+        final Contentlet contentlet = Mockito.mock(Contentlet.class);
+        Mockito.when(contentlet.getModUser()).thenReturn("user-1");
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(MOD_USER_NAME_KEY, "Ada Lovelace"); // already resolved by addAuditProperties
+
+        final String result = invokeResolveModUserName(strategy, contentlet, map);
+
+        assertEquals("Ada Lovelace", result);
+        verify(userAPI, never()).loadUserById(Mockito.anyString());
+    }
+
+    /**
+     * When nothing resolved modUser yet (e.g. COMMON_PROPS wasn't requested for this transform),
+     * {@code addVersionProperties} must still resolve it itself — exactly once.
+     */
+    @Test
+    public void resolveModUserName_notYetResolved_resolvesExactlyOnce() throws Exception {
+        final UserAPI userAPI = Mockito.mock(UserAPI.class);
+        final User user = Mockito.mock(User.class);
+        Mockito.when(user.getFullName()).thenReturn("Grace Hopper");
+        Mockito.when(userAPI.loadUserById("user-2")).thenReturn(user);
+
+        final DefaultTransformStrategy strategy =
+                new DefaultTransformStrategy(toolBoxWithMockUserAPI(userAPI));
+
+        final Contentlet contentlet = Mockito.mock(Contentlet.class);
+        Mockito.when(contentlet.getModUser()).thenReturn("user-2");
+
+        final Map<String, Object> map = new HashMap<>(); // nothing resolved it yet
+
+        final String result = invokeResolveModUserName(strategy, contentlet, map);
+
+        assertEquals("Grace Hopper", result);
+        verify(userAPI, times(1)).loadUserById("user-2");
+    }
+
+    // --- addAuditProperties orphan modUser (issue #37186, FR-004a) --------------------------
+    //
+    // Moved here per review from Fabrizzio: the dotcms-integration test that faked an orphan
+    // modUser via `alter table user_ disable trigger all` required superuser privileges on
+    // Postgres (table ownership only allows DISABLE TRIGGER USER), disabled referential
+    // integrity for the whole shared user_ table for the duration of the test, and left the
+    // contentlet pointing at a nonexistent mod_user for the rest of the suite even after the
+    // triggers were restored. The actual fix lives entirely in this class's
+    // `Try.of(...).getOrNull()` wrapper around `loadUserById`, which is fully covered here with
+    // a mocked UserAPI and no database at all.
+
+    /**
+     * Invokes the private {@code addAuditProperties} method in isolation, mirroring
+     * {@link #invokeResolveModUserName} above.
+     */
+    private void invokeAddAuditProperties(final DefaultTransformStrategy strategy,
+            final Contentlet contentlet, final Map<String, Object> map) throws Exception {
+        final Method addAuditProperties = DefaultTransformStrategy.class.getDeclaredMethod(
+                "addAuditProperties", Contentlet.class, Map.class);
+        addAuditProperties.setAccessible(true);
+        addAuditProperties.invoke(strategy, contentlet, map);
+    }
+
+    private APIProvider toolBoxWithMockUserAndIdentifierAPI(final UserAPI userAPI) throws Exception {
+        final APIProvider toolBox = Mockito.mock(APIProvider.class);
+        final java.lang.reflect.Field userField = APIProvider.class.getDeclaredField("userAPI");
+        userField.setAccessible(true);
+        userField.set(toolBox, userAPI);
+
+        final IdentifierAPI identifierAPI = Mockito.mock(IdentifierAPI.class);
+        Mockito.when(identifierAPI.find(Mockito.anyString())).thenReturn(null);
+        final java.lang.reflect.Field identifierField = APIProvider.class.getDeclaredField("identifierAPI");
+        identifierField.setAccessible(true);
+        identifierField.set(toolBox, identifierAPI);
+        return toolBox;
+    }
+
+    /**
+     * When {@code modUser} no longer resolves (e.g. a deleted/orphaned user id), {@code
+     * addAuditProperties} must degrade the {@code modUserName} field to the existing "N/A"
+     * fallback instead of letting {@code NoSuchUserException} escape and fail the whole
+     * transform — this is FR-004a. Replaces the deleted
+     * {@code test_getPaginatedContents_orphanModUser_doesNotFailWholeListing} DB-backed
+     * integration test.
+     */
+    @Test
+    public void addAuditProperties_orphanModUser_fallsBackToNotApplicable() throws Exception {
+        final UserAPI userAPI = Mockito.mock(UserAPI.class);
+        Mockito.when(userAPI.loadUserById("orphan-user-id"))
+                .thenThrow(new NoSuchUserException("orphan-user-id"));
+
+        final DefaultTransformStrategy strategy =
+                new DefaultTransformStrategy(toolBoxWithMockUserAndIdentifierAPI(userAPI));
+
+        final Contentlet contentlet = Mockito.mock(Contentlet.class);
+        Mockito.when(contentlet.getModUser()).thenReturn("orphan-user-id");
+        Mockito.when(contentlet.getOwner()).thenReturn("orphan-user-id");
+        Mockito.when(contentlet.isLive()).thenReturn(false);
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(MOD_USER_KEY, "orphan-user-id"); // present, as the listing path would have it
+
+        invokeAddAuditProperties(strategy, contentlet, map);
+
+        assertEquals("An orphaned modUser must degrade to N/A, not throw",
+                AbstractTransformStrategy.NOT_APPLICABLE, map.get(MOD_USER_NAME_KEY));
     }
 }

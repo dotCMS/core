@@ -6,12 +6,6 @@
             </h3>
             <div class="sub">{{ 'dotauth.config.oidc.connection.subtitle' | dm }}</div>
         </div>
-        <p-button
-            size="small"
-            [outlined]="true"
-            icon="pi pi-play"
-            [label]="'dotauth.action.test-connection' | dm"
-            (onClick)="discover.emit()" />
     </div>
     <div class="section-card-body">
         <!-- Discovery URL -->
@@ -33,6 +27,7 @@
                 <p-button
                     severity="secondary"
                     icon="pi pi-refresh"
+                    data-testid="discover"
                     [label]="'dotauth.action.discover' | dm"
                     [loading]="oidc().discoveryStatus === 'loading'"
                     (onClick)="discover.emit()" />
@@ -140,6 +135,25 @@
                     }
                 }
             </div>
+        </div>
+
+        <!-- Effective redirect URI: visible without expanding Advanced -->
+        <div class="field full">
+            <label>{{ 'dotauth.field.redirectUri' | dm }}</label>
+            <div class="flex items-center gap-2">
+                <code class="discovered-val min-w-0 flex-1" data-testid="redirect-uri">
+                    {{ redirectUri() }}
+                </code>
+                <dot-copy-button [copy]="redirectUri()" />
+            </div>
+            <small class="text-(--text-color-secondary)">
+                {{ 'dotauth.help.redirectUri' | dm }}
+                @if (isSystem() && !callbackUrl().trim()) {
+                    <span data-testid="redirect-uri-system-note">
+                        {{ 'dotauth.help.redirectUri.system' | dm }}
+                    </span>
+                }
+            </small>
         </div>
 
         <!-- Advanced toggle -->

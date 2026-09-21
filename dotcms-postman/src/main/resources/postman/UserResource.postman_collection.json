@@ -2124,6 +2124,777 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "SortSeed - Create A Young",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Fresh prefix per run: unique first names + emails, and the query filter for the sort requests",
+									"pm.collectionVariables.set('sortPrefix', 'srt' + Date.now());"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sort seed user a created\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const user = pm.response.json().entity.user;",
+									"    pm.expect(user.firstName).to.eql(pm.collectionVariables.get('sortPrefix') + 'A');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{sortPrefix}}-a\",\n  \"active\": true,\n  \"firstName\": \"{{sortPrefix}}A\",\n  \"lastName\": \"Young\",\n  \"email\": \"{{sortPrefix}}3@sort.dotcms.com\",\n  \"password\": [\"S\",\"o\",\"r\",\"t\",\"P\",\"a\",\"s\",\"s\",\"1\",\"2\",\"3\",\"!\"],\n  \"roles\": [\"DOTCMS_BACK_END_USER\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SortSeed - Create B Zed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sort seed user bz created\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const user = pm.response.json().entity.user;",
+									"    pm.expect(user.firstName).to.eql(pm.collectionVariables.get('sortPrefix') + 'B');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{sortPrefix}}-bz\",\n  \"active\": true,\n  \"firstName\": \"{{sortPrefix}}B\",\n  \"lastName\": \"Zed\",\n  \"email\": \"{{sortPrefix}}2@sort.dotcms.com\",\n  \"password\": [\"S\",\"o\",\"r\",\"t\",\"P\",\"a\",\"s\",\"s\",\"1\",\"2\",\"3\",\"!\"],\n  \"roles\": [\"DOTCMS_BACK_END_USER\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SortSeed - Create B Alpha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sort seed user ba created\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const user = pm.response.json().entity.user;",
+									"    pm.expect(user.firstName).to.eql(pm.collectionVariables.get('sortPrefix') + 'B');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{sortPrefix}}-ba\",\n  \"active\": true,\n  \"firstName\": \"{{sortPrefix}}B\",\n  \"lastName\": \"Alpha\",\n  \"email\": \"{{sortPrefix}}1@sort.dotcms.com\",\n  \"password\": [\"S\",\"o\",\"r\",\"t\",\"P\",\"a\",\"s\",\"s\",\"1\",\"2\",\"3\",\"!\"],\n  \"roles\": [\"DOTCMS_BACK_END_USER\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort - firstName ASC",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Returns the seeded users\", function () { pm.expect(entity.length).to.be.at.least(3); });",
+									"pm.test(\"firstName is monotonic ASC\", function () {",
+									"    const values = entity.map(u => u.firstName);",
+									"    for (let i = 1; i < values.length; i++) {",
+									"        pm.expect(String(values[i-1]).localeCompare(String(values[i])), `index ${i}: ${values[i-1]} vs ${values[i]}`).to.be.at.most(0);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?query={{sortPrefix}}&per_page=100&orderby=firstName&direction=ASC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "{{sortPrefix}}"
+								},
+								{
+									"key": "per_page",
+									"value": "100"
+								},
+								{
+									"key": "orderby",
+									"value": "firstName"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort - firstName DESC",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Returns the seeded users\", function () { pm.expect(entity.length).to.be.at.least(3); });",
+									"pm.test(\"firstName is monotonic DESC\", function () {",
+									"    const values = entity.map(u => u.firstName);",
+									"    for (let i = 1; i < values.length; i++) {",
+									"        pm.expect(String(values[i-1]).localeCompare(String(values[i])), `index ${i}: ${values[i-1]} vs ${values[i]}`).to.be.at.least(0);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?query={{sortPrefix}}&per_page=100&orderby=firstName&direction=DESC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "{{sortPrefix}}"
+								},
+								{
+									"key": "per_page",
+									"value": "100"
+								},
+								{
+									"key": "orderby",
+									"value": "firstName"
+								},
+								{
+									"key": "direction",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort - emailAddress ASC",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Returns the seeded users\", function () { pm.expect(entity.length).to.be.at.least(3); });",
+									"pm.test(\"emailAddress is monotonic ASC\", function () {",
+									"    const values = entity.map(u => u.emailAddress);",
+									"    for (let i = 1; i < values.length; i++) {",
+									"        pm.expect(String(values[i-1]).localeCompare(String(values[i])), `index ${i}: ${values[i-1]} vs ${values[i]}`).to.be.at.most(0);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?query={{sortPrefix}}&per_page=100&orderby=emailAddress&direction=ASC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "{{sortPrefix}}"
+								},
+								{
+									"key": "per_page",
+									"value": "100"
+								},
+								{
+									"key": "orderby",
+									"value": "emailAddress"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort - emailAddress DESC",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Returns the seeded users\", function () { pm.expect(entity.length).to.be.at.least(3); });",
+									"pm.test(\"emailAddress is monotonic DESC\", function () {",
+									"    const values = entity.map(u => u.emailAddress);",
+									"    for (let i = 1; i < values.length; i++) {",
+									"        pm.expect(String(values[i-1]).localeCompare(String(values[i])), `index ${i}: ${values[i-1]} vs ${values[i]}`).to.be.at.least(0);",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?query={{sortPrefix}}&per_page=100&orderby=emailAddress&direction=DESC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "{{sortPrefix}}"
+								},
+								{
+									"key": "per_page",
+									"value": "100"
+								},
+								{
+									"key": "orderby",
+									"value": "emailAddress"
+								},
+								{
+									"key": "direction",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort - lastLoginDate ASC",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"lastLoginDate non-null values are monotonic ASC, then only nulls\", function () {",
+									"    const values = entity.map(u => u.lastLoginDate);",
+									"    let seenNull = false;",
+									"    for (let i = 0; i < values.length; i++) {",
+									"        if (values[i] === null || values[i] === undefined) { seenNull = true; continue; }",
+									"        pm.expect(seenNull, `non-null value after a null at index ${i}`).to.be.false;",
+									"        if (i > 0 && values[i-1] !== null && values[i-1] !== undefined) {",
+									"            pm.expect(values[i-1] <= values[i], `index ${i}: ${values[i-1]} vs ${values[i]}`).to.be.true;",
+									"        }",
+									"    }",
+									"});",
+									"pm.test(\"At least one user has a recorded last login (admin does)\", function () {",
+									"    pm.expect(entity.some(u => u.lastLoginDate !== null && u.lastLoginDate !== undefined)).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?per_page=100&orderby=lastLoginDate&direction=ASC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "100"
+								},
+								{
+									"key": "orderby",
+									"value": "lastLoginDate"
+								},
+								{
+									"key": "direction",
+									"value": "ASC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort - lastLoginDate DESC",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"lastLoginDate non-null values are monotonic DESC, then only nulls\", function () {",
+									"    const values = entity.map(u => u.lastLoginDate);",
+									"    let seenNull = false;",
+									"    for (let i = 0; i < values.length; i++) {",
+									"        if (values[i] === null || values[i] === undefined) { seenNull = true; continue; }",
+									"        pm.expect(seenNull, `non-null value after a null at index ${i}`).to.be.false;",
+									"        if (i > 0 && values[i-1] !== null && values[i-1] !== undefined) {",
+									"            pm.expect(values[i-1] >= values[i], `index ${i}: ${values[i-1]} vs ${values[i]}`).to.be.true;",
+									"        }",
+									"    }",
+									"});",
+									"pm.test(\"At least one user has a recorded last login (admin does)\", function () {",
+									"    pm.expect(entity.some(u => u.lastLoginDate !== null && u.lastLoginDate !== undefined)).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?per_page=100&orderby=lastLoginDate&direction=DESC",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "per_page",
+									"value": "100"
+								},
+								{
+									"key": "orderby",
+									"value": "lastLoginDate"
+								},
+								{
+									"key": "direction",
+									"value": "DESC"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sort - mod_date desc returns 200",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 (direction not appended twice)\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"Returns the three seeded users\", function () { pm.expect(pm.response.json().entity.length).to.eql(3); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?query={{sortPrefix}}&per_page=100&orderby=mod_date desc",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "{{sortPrefix}}"
+								},
+								{
+									"key": "per_page",
+									"value": "100"
+								},
+								{
+									"key": "orderby",
+									"value": "mod_date desc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SortSeed - Delete A Young",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sort seed user a deleted\", function () { pm.response.to.have.status(200); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/{{sortPrefix}}-a",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"{{sortPrefix}}-a"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SortSeed - Delete B Zed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sort seed user bz deleted\", function () { pm.response.to.have.status(200); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/{{sortPrefix}}-bz",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"{{sortPrefix}}-bz"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SortSeed - Delete B Alpha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Sort seed user ba deleted\", function () { pm.response.to.have.status(200); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/{{sortPrefix}}-ba",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"{{sortPrefix}}-ba"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		}
@@ -2251,6 +3022,10 @@
 			"key": "adminHasSystemHost",
 			"value": "",
 			"type": "boolean"
+		},
+		{
+			"key": "sortPrefix",
+			"value": ""
 		}
 	]
 }

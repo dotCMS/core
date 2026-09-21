@@ -15,6 +15,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsResultsComponent } from './dot-experiments-results.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import { DotExperimentsResultsStore } from '../store/dot-experiments-results.store';
 
 const NOT_STARTED_COPY = 'This Experiment has not started collecting sessions yet.';
@@ -90,6 +91,8 @@ describe('DotExperimentsResultsComponent', () => {
         // dropping it takes away a real dependency rather than just swapping the store.
         componentProviders: [
             { provide: DotExperimentsResultsStore, useFactory: () => storeMock },
+            // Real: these tests assert where a door leads, and this is what decides.
+            DotExperimentsRouter,
             ConfirmationService
         ],
         providers: [
@@ -157,6 +160,7 @@ describe('DotExperimentsResultsComponent', () => {
             component: DotExperimentsResultsComponent,
             componentProviders: [
                 { provide: DotExperimentsResultsStore, useFactory: () => storeMock },
+                DotExperimentsRouter,
                 ConfirmationService
             ],
             providers: [

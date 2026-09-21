@@ -29,6 +29,7 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { UVE_MODE } from '@dotcms/types';
 import { DotCopyButtonComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -121,6 +122,8 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
     let weightsField: FieldTree<VariantWeightFormRow[]>;
     /** The one navigation the card makes: the variant round-trip's outbound leg (#37005). */
     let navigate: MockInstance;
+    /** Panel mode is the presence of this store; `null` is the portlet. */
+    let panelStore: { suspendForVariant: Mock } | null;
     /** How a refused open-in-editor reaches the user, instead of a half-formed URL. */
     let messagePush: MockInstance;
 
@@ -128,7 +131,10 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         component: DotExperimentsConfigureVariantsComponent,
         // `componentProviders` replaces the card's own `providers`, which is exactly the
         // `DialogService` the Add Variant dialog is opened through.
-        componentProviders: [{ provide: DialogService, useFactory: () => dialogServiceMock }],
+        componentProviders: [
+            { provide: DialogService, useFactory: () => dialogServiceMock },
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore }
+        ],
         providers: [
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
             { provide: DotMessageService, useValue: messageServiceMock },
@@ -243,6 +249,7 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        panelStore = null;
         dialogClosed = new Subject<DotExperimentsAddVariantDialogResult | undefined>();
         dialogServiceMock = { open: vi.fn().mockReturnValue({ onClose: dialogClosed }) };
         spectator = createComponent();
@@ -1378,6 +1385,28 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
 
             expect(shareOf(0)).toBe('46%');
             expect(shareOf(1)).toBe('46%');
+        });
+    });
+    /**
+     * The variant round trip, from inside the UVE panel (#37478).
+     *
+     * The one door that still *is* a navigation, and must be: editing a variant means going to the
+     * editor on that variant. What the panel adds is that it remembers where the editor was, so the
+     * return lands on the same configuration instead of a fresh list (FR-021, FR-023, FR-025).
+     */
+    describe('panel mode (#37478)', () => {
+        it('should suspend the panel before leaving for the variant', () => {
+            panelStore = { suspendForVariant: vi.fn() };
+            spectator = createComponent();
+            navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+            render();
+
+            clickButton('variant-edit-content-btn', rows()[1]);
+
+            expect(panelStore.suspendForVariant).toHaveBeenCalledTimes(1);
+            // Still leaves — suspending is what makes coming back land where they were, and
+            // `close()` would discard exactly the state the return needs.
+            expect(navigate).toHaveBeenCalled();
         });
     });
 });

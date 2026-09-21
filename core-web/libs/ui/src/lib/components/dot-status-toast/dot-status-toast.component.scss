@@ -1,0 +1,76 @@
+:host {
+    // PrimeNG ships unlayered, so its own rules outrank Tailwind utilities. These have to be
+    // written as CSS against its class names rather than as classes in the template.
+    //
+    // Values are set directly rather than as `var(--p-toast-*, fallback)`: the theme DEFINES those
+    // variables, so a fallback never applies and the rule silently has no effect. That is why the
+    // summary kept rendering at the theme's 14px while this file asked for something smaller.
+    ::ng-deep {
+        // Nothing here is clickable, so nothing here may take a click.
+        //
+        // The outlet is a fixed-position box at the bottom centre of the viewport, which is exactly
+        // where the listing's paginator is. Without this it sits over the page controls and
+        // swallows the click: the page never changes, and the listing is left showing one page
+        // while the paginator believes it is on another.
+        //
+        // Safe to blank the whole subtree rather than re-enabling it on the message, because this
+        // outlet has no controls at all -- the close button was removed, and a status is not
+        // something the reader acts on. It also means no hover-to-pause, which this toast does not
+        // want either: it is sticky and ends when the run it reports ends.
+        .p-toast,
+        .p-toast-message {
+            pointer-events: none;
+        }
+
+        // Sized to its content, not to a fixed 350px — a two-word outcome should not sit in a slab.
+        // It grows with the label instead of clipping it, up to a ceiling where it wraps, because
+        // what a run has to say is not the same length every time.
+        .p-toast-message {
+            width: fit-content;
+            max-width: min(28rem, calc(100vw - 2rem));
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .p-toast-message-content {
+            align-items: center;
+            gap: 0.625rem;
+            padding: 0.625rem 0.75rem;
+        }
+
+        // `min-width: 0` is what lets the text shrink inside the flex row. Without it the row
+        // refuses to give ground and the label overflows its own box — which read as the first
+        // characters being cut off rather than as the box being too small.
+        .p-toast-message-text {
+            flex: 0 1 auto;
+            min-width: 0;
+            margin: 0;
+        }
+
+        .p-toast-summary {
+            font-size: 0.8125rem;
+            font-weight: 500;
+            line-height: 1.3;
+            // Wraps rather than truncates. The line is short by design, but a caller can still
+            // hand it more than fits, and a status cut off mid-word says less than no status.
+            overflow-wrap: anywhere;
+        }
+
+        // PrimeNG renders its own close button unless the MESSAGE carries `closable: false`
+        // (its template reads `message?.closable !== false`; there is no input on the component to
+        // set it from here). Callers are told to pass it, and this makes the outlet safe when one
+        // forgets: a status is never something the reader has to dismiss, so the control must not
+        // appear whatever was raised. `display: none` also takes it out of the tab order and the
+        // accessibility tree, rather than leaving a control that can be reached but not seen.
+        .p-toast-close-button {
+            display: none;
+        }
+
+        .p-toast-message-icon {
+            display: inline-flex;
+            align-items: center;
+            font-size: 1rem;
+            flex: 0 0 auto;
+        }
+    }
+}

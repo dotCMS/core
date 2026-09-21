@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { DotLanguagesService } from '@dotcms/data-access';
@@ -15,6 +15,7 @@ import { DotEditContentJsonFieldComponent } from './dot-edit-content-json-field.
 
 import { AvailableLanguageMonaco } from '../../models/dot-edit-content-field.constant';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import { JSON_FIELD_MOCK } from '../../utils/mocks';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,7 +32,12 @@ export class MockFormComponent {
     contentlet: DotCMSContentlet;
     field: DotCMSContentTypeField;
 }
+/** Flipped by tests that need the required error to surface (#37464 gates it on save). */
+const submitAttempted = signal(false);
+
 describe('DotEditContentJsonFieldComponent', () => {
+    beforeEach(() => submitAttempted.set(false));
+
     let spectator: SpectatorHost<DotEditContentJsonFieldComponent, MockFormComponent>;
 
     const createHost = createHostFactory({
@@ -44,6 +50,7 @@ describe('DotEditContentJsonFieldComponent', () => {
             DotEditContentMonacoEditorControlComponent
         ],
         providers: [
+            { provide: DotEditContentStore, useValue: { hasAttemptedSubmit: submitAttempted } },
             { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
             provideHttpClient(),
             provideHttpClientTesting()
@@ -172,9 +179,12 @@ describe('DotEditContentJsonFieldComponent', () => {
             const formControl = spectator.component.formControl;
             formControl.setErrors({ required: true });
             formControl.markAsTouched();
+            // The error is gated on a save attempt now, not on touched (#37464), and the markup is
+            // the shared `.p-field-error`, not the old unstyled `.error-message`.
+            submitAttempted.set(true);
             spectator.detectChanges();
 
-            expect(spectator.query('.error-message')).toBeTruthy();
+            expect(spectator.query('.p-field-error')).toBeTruthy();
         });
     });
 

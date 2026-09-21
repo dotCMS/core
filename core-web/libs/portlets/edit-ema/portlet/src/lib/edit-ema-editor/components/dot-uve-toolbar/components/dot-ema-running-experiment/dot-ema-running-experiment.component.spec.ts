@@ -6,10 +6,11 @@ import {
 } from '@openng/spectator/vitest';
 
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, UrlTree } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotExperiment } from '@dotcms/dotcms-models';
 import { getRunningExperimentMock } from '@dotcms/utils-testing';
 
 import { DotEmaRunningExperimentComponent } from './dot-ema-running-experiment.component';
@@ -87,5 +88,53 @@ describe('DotEmaRunningExperimentComponent', () => {
         expect(href).toBe(
             `/edit-page/experiments/${runningExperiment.pageId}/${runningExperiment.id}/reports`
         );
+    });
+    /**
+     * #37478, FR-025c, D14. Being told which experiment is running must not cost the editor the
+     * page they are being told about. As an action the tag drops its destination entirely — a
+     * `routerLink` left in place would navigate on the same click that opens the panel.
+     */
+    describe('as an action (#37478)', () => {
+        beforeEach(() => {
+            spectator = createComponent({ detectChanges: false });
+            spectator.setInput('runningExperiment', runningExperiment);
+            spectator.setInput('asAction', true);
+            spectator.detectChanges();
+        });
+
+        it('should carry no destination', () => {
+            const tag = spectator.debugElement.query(
+                By.css('[data-testid="runningExperimentTag"]')
+            );
+
+            expect(tag?.injector.get(RouterLink, null)?.urlTree).toBeFalsy();
+        });
+
+        it('should report the experiment it is about', () => {
+            const seen: DotExperiment[] = [];
+            spectator.output<DotExperiment>('viewResults').subscribe((e) => seen.push(e));
+
+            spectator.click(byTestId('runningExperimentTag'));
+
+            expect(seen).toEqual([runningExperiment]);
+        });
+
+        it('should stay a destination when it is not an action', () => {
+            spectator.setInput('asAction', false);
+            spectator.detectChanges();
+
+            const tag = spectator.debugElement.query(
+                By.css('[data-testid="runningExperimentTag"]')
+            );
+            // `urlTree` is nullable on RouterLink, and the mock's experiment is optional. Both are
+            // present here — the assertion is about where the link points, so read them as such
+            // rather than letting a null slip through as a passing comparison.
+            const urlTree = tag.injector.get(RouterLink).urlTree;
+
+            expect(urlTree).not.toBeNull();
+            expect(spectator.inject(Router).serializeUrl(urlTree as UrlTree)).toBe(
+                `/edit-page/experiments/${runningExperiment?.pageId}/${runningExperiment?.id}/reports`
+            );
+        });
     });
 });

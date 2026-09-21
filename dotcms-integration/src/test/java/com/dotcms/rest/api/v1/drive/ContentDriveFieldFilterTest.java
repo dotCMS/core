@@ -818,4 +818,43 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
             fail("Expected a BadRequestException, got: " + e.getClass().getName());
         }
     }
+
+    /**
+     * FR-030 / SC-012: field filters must match every character of the Lucene reserved set
+     * literally, exactly as SC-010 requires for the search box.
+     *
+     * <p>Convergence finding (2026-09-15): {@link #testMalformedDateBoundIsSafe} and the reserved
+     * character coverage seeded in {@code ContentDriveLiteralTextSearchTest} each check one fixed
+     * string containing a handful of reserved characters — not the exhaustive, one-title-per-
+     * character sweep {@code ContentDriveLiteralTextSearchTest#everyReservedCharacterInATitle_}
+     * {@code isFoundBySearchingItVerbatim} performs for the search box. This is that sweep, on a
+     * Text field via {@code userSearchable} instead of on the title via {@code filters.text}.</p>
+     */
+    @Test
+    public void textFieldFilter_matchesEveryReservedCharacterLiterally()
+            throws DotDataException, DotSecurityException {
+        final char[] reserved = {
+                '\\', '+', '-', '!', '(', ')', ':', '^', '[', ']', '"', '{', '}', '~', '*', '?', '|',
+                '&', '/'
+        };
+        final StringBuilder failures = new StringBuilder();
+        for (final char c : reserved) {
+            final String value = "reservedfieldprobe" + System.nanoTime() + c + "marker";
+            final Contentlet probe = new ContentletDataGen(typeWithFields.id())
+                    .setProperty("title", "Reserved field probe " + c)
+                    .setProperty(TEXT_VAR, value)
+                    .folder(testFolder)
+                    .nextPersisted();
+
+            final Set<String> inodes = driveInodes(baseRequest()
+                    .userSearchable(Map.of(TEXT_VAR, value))
+                    .build());
+
+            if (!inodes.contains(probe.getInode())) {
+                failures.append("\n  - not found: field value containing '").append(c).append('\'');
+            }
+        }
+        assertTrue("Field-filter values containing reserved characters were not findable by their "
+                + "own text:" + failures, failures.length() == 0);
+    }
 }

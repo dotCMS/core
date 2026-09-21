@@ -1,7 +1,9 @@
 import { Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { DatePickerModule } from 'primeng/datepicker';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
@@ -27,6 +29,7 @@ interface RequestTokenDialogData {
     imports: [
         ReactiveFormsModule,
         ButtonModule,
+        DatePickerModule,
         InputTextModule,
         DotFieldRequiredDirective,
         DotMessagePipe
@@ -48,6 +51,14 @@ export class DotUsersRequestTokenDialogComponent {
         network: ['0.0.0.0/0']
     });
 
+    /**
+     * Lower-bound for the expires picker. Frozen at construction so
+     * the input stays interactable for the whole dialog lifetime —
+     * refreshing every render would recompute `Date.now()` at every
+     * validator tick, which is wasted work at this cadence.
+     */
+    protected readonly minDate = new Date();
+
     protected readonly $submitting = signal(false);
 
     /**
@@ -58,6 +69,35 @@ export class DotUsersRequestTokenDialogComponent {
      */
     protected readonly $canSubmit = computed(() => !this.$submitting() && !!this.#userId);
 
+    /**
+     * Flipped by `submit()` when the user clicks OK with an invalid
+     * form. Persists so the warning banner keeps updating until they
+     * fix the highlighted fields.
+     */
+    protected readonly $submitAttempted = signal(false);
+
+    /**
+     * Signal mirror of the form's validity status — reactive dep for
+     * `$formWarning` so the banner clears itself once the form becomes
+     * valid without needing another OK click.
+     */
+    readonly #$formStatus = toSignal(this.form.statusChanges, {
+        initialValue: this.form.status
+    });
+
+    /**
+     * i18n key for the footer warning banner. Matches the same pattern
+     * used by the main dialog: null hides, single generic key otherwise.
+     */
+    protected readonly $formWarning = computed(() => {
+        this.#$formStatus();
+        if (!this.$submitAttempted() || !this.form.invalid) {
+            return null;
+        }
+
+        return 'users.dialog.warning.form-errors';
+    });
+
     protected close(): void {
         this.#dialogRef.close();
     }
@@ -65,6 +105,8 @@ export class DotUsersRequestTokenDialogComponent {
     protected submit(): void {
         this.form.markAllAsTouched();
         if (this.form.invalid || !this.$canSubmit()) {
+            this.$submitAttempted.set(true);
+
             return;
         }
 

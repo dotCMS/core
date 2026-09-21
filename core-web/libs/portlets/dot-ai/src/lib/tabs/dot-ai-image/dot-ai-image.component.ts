@@ -9,10 +9,12 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotAiPromptInputComponent } from '@dotcms/ai-ui';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotAIImageOrientation } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotAiStore } from '../../store/dot-ai.store';
+import { toEmptyStateConfig } from '../../utils/dot-ai-empty-state.utils';
 
 /**
  * Image tab: describe an image, generate it, then decide what to do with it.
@@ -24,6 +26,7 @@ import { DotAiStore } from '../../store/dot-ai.store';
 @Component({
     selector: 'dot-ai-image',
     imports: [
+        DotEmptyContainerComponent,
         FormsModule,
         ButtonModule,
         SelectModule,
@@ -39,6 +42,14 @@ import { DotAiStore } from '../../store/dot-ai.store';
 })
 export default class DotAiImageComponent {
     protected readonly store = inject(DotAiStore);
+
+    readonly #messageService = inject(DotMessageService);
+
+    protected readonly emptyConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.image.empty.title',
+        subtitle: 'dotai.image.empty.sub',
+        icon: 'image'
+    });
 
     protected readonly $prompt = signal('');
 

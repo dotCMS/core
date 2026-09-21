@@ -55,6 +55,7 @@ export function withAiConfig() {
             /** The resolved config reassembled from state, for the Config Values screen. */
             resolvedConfig: computed<DotAiResolvedConfig>(() => ({
                 configHost: store.configHost(),
+                configHostInherited: store.configHostInherited(),
                 settings: store.settings(),
                 providerConfig: store.providerConfig(),
                 chatModels: store.chatModels(),
@@ -97,6 +98,7 @@ export function withAiConfig() {
                                         configLoadFailed: false,
                                         isConfigured: config.isConfigured,
                                         configHost: config.configHost,
+                                        configHostInherited: config.configHostInherited,
                                         settings: config.settings,
                                         chatModels: config.chatModels,
                                         redactionFailed: config.redactionFailed,

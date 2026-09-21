@@ -13,7 +13,9 @@ import org.junit.Test;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -534,6 +536,135 @@ public class RoleAPITest extends IntegrationTestBase {
             roleAPI.delete(roleOne);
             roleAPI.delete(rootRole);
         }
+    }
+
+    /**
+     * Testing {@link RoleAPI#save(Role)} — issue #37303: the children population must be
+     * idempotent. Saving a role (which internally re-populates the same instance several
+     * times) must return each child exactly once, on the first save and on every subsequent
+     * save, and a childless role must keep {@code roleChildren == null}.
+     */
+    @Test
+    public void test_save_childrenPopulationIsIdempotent_notDuplicated() throws Exception {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long now = System.currentTimeMillis();
+
+        final Role parent = new RoleDataGen().name("dupParent_" + now).nextPersisted();
+        final Role child = new RoleDataGen().name("dupChild_" + now).parent(parent.getId())
+                .nextPersisted();
+
+        // first save — mirrors the PUT flow: a copy of the cache-resident (populated) instance
+        Role saved = roleAPI.save(copyForSave(roleAPI.loadRoleById(parent.getId()), "pass-1"));
+        assertNotNull(saved.getRoleChildren());
+        assertEquals("save() must return each child exactly once (#37303)",
+                1, saved.getRoleChildren().size());
+        assertEquals(child.getId(), saved.getRoleChildren().get(0));
+
+        // second save — still exactly once (idempotent, not cumulative)
+        saved = roleAPI.save(copyForSave(roleAPI.loadRoleById(parent.getId()), "pass-2"));
+        assertNotNull(saved.getRoleChildren());
+        assertEquals("a second save must not accumulate more copies (#37303)",
+                1, saved.getRoleChildren().size());
+
+        // a fresh load agrees
+        final Role reloaded = roleAPI.loadRoleById(parent.getId());
+        assertNotNull(reloaded.getRoleChildren());
+        assertEquals(1, reloaded.getRoleChildren().size());
+
+        // a childless role keeps null children through a save (callers null-guard on this)
+        final Role loner = new RoleDataGen().name("dupLoner_" + now).nextPersisted();
+        final Role savedLoner =
+                roleAPI.save(copyForSave(roleAPI.loadRoleById(loner.getId()), "loner-pass"));
+        assertNull(savedLoner.getRoleChildren());
+    }
+
+    /**
+     * Issue #37303 AC-004: the DBFQN cascade in {@code RoleFactoryImpl.save} must visit each
+     * descendant exactly once per reparent (a subtree of N roles ⇒ N updates, not 4N).
+     *
+     * The cascade seeds its work queue directly from the reparented role's
+     * {@code getRoleChildren()} and performs exactly one {@code HibernateUtil.save} per
+     * enqueued id — so the size of that child list IS the direct-children re-save count.
+     * The pre-fix accumulation left that list holding each child four times (the same 4×
+     * the PUT response exposed), which is the instance {@code save()} returns. That returned
+     * instance is the one place the transient over-population is observable: a post-commit
+     * reload can't see it, because the commit-listener eviction rebuilds a clean list (which
+     * is exactly why a purely final-state test cannot count re-saves). So AC-004 is asserted
+     * here on the returned instance's seed list — each direct child present exactly once
+     * ⇒ enqueued once ⇒ saved once (N, not 4N). Depth (AC-005) is covered by walking the
+     * reloaded subtree and confirming no descendant was skipped.
+     *
+     * Note: the exact DBFQN ancestor-chain string on reparent is governed by
+     * {@code setFQNForDB} (walks parent pointers, untouched by this fix) and is out of scope
+     * for #37303 — see research.md §R7.
+     */
+    @Test
+    public void test_save_reparent_cascadeVisitsEachDescendantOnce_notPerDuplicate() throws Exception {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long now = System.currentTimeMillis();
+
+        // top has TWO direct children so the seed-list count is a real count (2, never 2×4),
+        // and childA has a grandchild so the cascade must still descend a level.
+        final Role target = new RoleDataGen().name("cascadeTarget_" + now).nextPersisted();
+        final Role top = new RoleDataGen().name("cascadeTop_" + now).nextPersisted();
+        final Role childA = new RoleDataGen().name("cascadeChildA_" + now).parent(top.getId())
+                .nextPersisted();
+        final Role childB = new RoleDataGen().name("cascadeChildB_" + now).parent(top.getId())
+                .nextPersisted();
+        final Role grandchild = new RoleDataGen().name("cascadeGrandchild_" + now)
+                .parent(childA.getId()).nextPersisted();
+
+        // reparent the top of the subtree under target — the PUT flow's save()
+        final Role copy = copyForSave(roleAPI.loadRoleById(top.getId()), "reparent");
+        copy.setParent(target.getId());
+        final Role saved = roleAPI.save(copy);
+
+        assertEquals(target.getId(), saved.getParent());
+
+        // AC-004: the returned instance's child list is exactly what seeds the cascade's
+        // one-save-per-id queue. Each direct child present exactly once — no duplicates —
+        // means each is re-saved once, not 4×. Pre-fix this list held 8 entries (childA and
+        // childB four times each); this assertion is what fails on the accumulate bug.
+        assertNotNull(saved.getRoleChildren());
+        assertEquals("cascade seed must list each direct child exactly once — one re-save "
+                        + "per descendant, not 4× (#37303 AC-004)",
+                2, saved.getRoleChildren().size());
+        final Set<String> distinctSeed = new HashSet<>(saved.getRoleChildren());
+        assertEquals("cascade seed must contain no duplicate ids (#37303 AC-004)",
+                2, distinctSeed.size());
+        assertTrue(distinctSeed.contains(childA.getId()));
+        assertTrue(distinctSeed.contains(childB.getId()));
+
+        // AC-005: the whole subtree is still reached, each level de-duplicated, none skipped.
+        final Role topReloaded = roleAPI.loadRoleById(top.getId());
+        assertEquals(target.getId(), topReloaded.getParent());
+        final Set<String> topChildren = new HashSet<>(topReloaded.getRoleChildren());
+        assertEquals(2, topReloaded.getRoleChildren().size());
+        assertTrue(topChildren.contains(childA.getId()));
+        assertTrue(topChildren.contains(childB.getId()));
+
+        final Role childAReloaded = roleAPI.loadRoleById(childA.getId());
+        assertEquals(top.getId(), childAReloaded.getParent());
+        assertEquals("grandchild level must still be reached, exactly once (#37303 AC-005)",
+                1, childAReloaded.getRoleChildren().size());
+        assertEquals(grandchild.getId(), childAReloaded.getRoleChildren().get(0));
+
+        // the deepest descendant survived the reparent with intact linkage
+        final Role grandchildReloaded = roleAPI.loadRoleById(grandchild.getId());
+        assertEquals(childA.getId(), grandchildReloaded.getParent());
+    }
+
+    /**
+     * Detached copy of a role, mirroring how {@code RoleHelper.updateRole} prepares the
+     * instance it hands to {@link RoleAPI#save(Role)} (the flow of #37303).
+     */
+    private Role copyForSave(final Role source, final String descriptionTag) throws Exception {
+        final Role copy = new Role();
+        org.apache.commons.beanutils.BeanUtils.copyProperties(copy, source);
+        copy.setDescription(descriptionTag);
+        return copy;
     }
 
 }

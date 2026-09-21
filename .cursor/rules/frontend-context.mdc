@@ -11,7 +11,7 @@ alwaysApply: false
 ## Stack
 - **Angular**: standalone, signals, `inject()`, `input()`/`output()`, `@if`/`@for`, PrimeNG + Tailwind CSS (Angular 22+). PrimeFlex is deprecated/removed.
 - **SDK**: `sdk-angular`, `sdk-react`, `sdk-client`, `sdk-types`, etc.
-- **Apps**: `dotcms-ui`, `content-drive-ui`, `edit-ema-ui`, portlets, libs.
+- **Apps** (`core-web/apps/`): `dotcms-ui`, `dotcms-ui-e2e`, `dotcms-block-editor`, `dotcms-binary-field-builder`, `dotcdn`, `mcp-server`, `ai-evals`. Portlets such as `edit-ema` are libs, under `core-web/libs/portlets/`.
 
 ## Nx commands (repo root or `core-web`)
 ```bash

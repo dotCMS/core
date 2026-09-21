@@ -45,6 +45,7 @@ import {
 /** A Story Block field with no field variables — keeps `buildEditor` on the fast path. */
 const PLAIN_BLOCK_FIELD = {
     variable: 'body',
+    name: 'Story Body',
     fieldVariables: []
 } as unknown as DotCMSContentTypeField;
 
@@ -191,6 +192,19 @@ describe('DotCMSEditorComponent — #36985 value-load gating', () => {
         //
         // BROKEN_BODY carries BOTH legacy triggers at once — root `chartCount` and absent
         // `indent` — so this single assertion covers AC-001 and AC-002 as well as AC-004.
+        /**
+         * AC-209 — the editable surface carries `role="textbox"` and a translated, generic
+         * aria-label. On a form with several rich-text fields that name is identical for all of
+         * them, so a screen reader cannot tell which field is focused. The field's own name is the
+         * accessible name; the generic string stays as the fallback for standalone use.
+         */
+        it('names the editable surface after the field rather than generically', async () => {
+            const fixture = await mountEditor();
+            const surface = fixture.nativeElement.querySelector('[role="textbox"]');
+
+            expect(surface.getAttribute('aria-label')).toBe(PLAIN_BLOCK_FIELD.name);
+        });
+
         it('keeps the NodeSelection on a legacy-shaped body', async () => {
             const fixture = await mountEditor(BROKEN_BODY);
             const editor = editorOf(fixture);

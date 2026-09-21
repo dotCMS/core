@@ -3,8 +3,8 @@ import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Component, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
@@ -24,6 +24,7 @@ import {
 } from './dot-edit-content-text-area.constants';
 
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
+import { DotEditContentStore } from '../../store/edit-content.store';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).monaco = monacoMock;
@@ -573,5 +574,93 @@ describe('DotEditContentTextAreaComponent', () => {
                 AvailableEditorTextArea.Monaco
             );
         });
+    });
+});
+
+/**
+ * T-11 / AC-211 — Text Area gains the hint and required-error slot.
+ *
+ * This is the ONLY new behaviour in either PR. Contrary to #37464's gap list — which names Category
+ * and File, both of which already have a slot — Text Area's template carries no
+ * `dot-card-field-footer` at all. A Text Area hint has never been visible, and an empty required
+ * Text Area blocks the save without saying why.
+ *
+ * So these fail today for a reason no other field's tests do: the element does not exist.
+ */
+describe('DotEditContentTextAreaComponent — hint and required error', () => {
+    let spectator: SpectatorHost<DotEditContentTextAreaComponent, MockFormComponent>;
+
+    const submitted = signal(false);
+
+    const createHost = createHostFactory({
+        component: DotEditContentTextAreaComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false,
+        componentMocks: [
+            DotLanguageVariableSelectorComponent,
+            DotEditContentMonacoEditorControlComponent
+        ],
+        providers: [
+            { provide: DotEditContentStore, useValue: { hasAttemptedSubmit: submitted } },
+            { provide: DotLanguagesService, useValue: new DotLanguagesServiceMock() },
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            { provide: DotMessageService, useValue: new MockDotMessageService({}) }
+        ]
+    });
+
+    const render = (field: DotCMSContentTypeField) => {
+        const control = new FormControl('', field.required ? [Validators.required] : []);
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-text-area [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({ [field.variable]: control }),
+                    field,
+                    contentlet: createFakeContentlet({ [field.variable]: '' })
+                }
+            }
+        );
+        spectator.detectChanges();
+
+        return control;
+    };
+
+    beforeEach(() => submitted.set(false));
+
+    it('should render its hint, which it never has today', () => {
+        render({ ...TEXT_AREA_FIELD_MOCK, hint: 'Keep it under 200 characters' });
+
+        expect(spectator.query('.p-field-hint')?.textContent.trim()).toBe(
+            'Keep it under 200 characters'
+        );
+    });
+
+    it('should show the required message after a save attempt', () => {
+        render({ ...TEXT_AREA_FIELD_MOCK, required: true });
+        submitted.set(true);
+        spectator.detectChanges();
+
+        expect(spectator.query('.p-field-error')).toBeTruthy();
+    });
+
+    it('should not show the required message on blur alone', () => {
+        const control = render({ ...TEXT_AREA_FIELD_MOCK, required: true });
+
+        control.markAsTouched();
+        spectator.detectChanges();
+
+        expect(spectator.query('.p-field-error')).toBeNull();
+    });
+
+    // createFakeBaseField() defaults hint to a faker sentence, so `hint: ''` has to be explicit.
+    it('should render neither when the field has no hint and no error', () => {
+        render({ ...TEXT_AREA_FIELD_MOCK, hint: '' });
+
+        expect(spectator.query('.p-field-hint')).toBeNull();
+        expect(spectator.query('.p-field-error')).toBeNull();
     });
 });

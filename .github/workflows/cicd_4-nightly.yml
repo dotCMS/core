@@ -209,8 +209,8 @@ jobs:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+      MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
       DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}

@@ -185,25 +185,36 @@ public class PublishingJobsHelper {
      */
     public PublishingJobView toScheduledJobView(final Map<String, Object> row) {
         final String filterKey = Objects.toString(row.get("filter_key"), null);
-        final Instant scheduledDate = toInstant(DateUtil.asDate(row.get("publish_date")));
+        final Instant publishDate = toInstant(DateUtil.asDate(row.get("publish_date")));
         final Instant enteredDate = toInstant(DateUtil.asDate(row.get("entered_date")));
+        final boolean due = isDue(publishDate);
 
         return PublishingJobView.builder()
                 .bundleId(Objects.toString(row.get("bundle_id"), null))
                 .bundleName(Objects.toString(row.get("bundle_name"), null))
-                .status(Status.SCHEDULED)
+                // Due but not yet picked up: the state the job is about to write. Future: scheduled.
+                .status(due ? Status.BUNDLE_REQUESTED : Status.SCHEDULED)
                 .filterName(resolveFilterNameByKey(filterKey))
                 .filterKey(filterKey)
                 .assetCount(NumberUtil.asInt(row.get("asset_count")))
                 // No audit history exists yet, so there is no per-asset preview to build.
                 .assetPreview(List.of())
                 .environmentCount(NumberUtil.asInt(row.get("environment_count")))
-                // createDate = when it entered the queue; the future run time goes in scheduledPublishDate.
-                .createDate(enteredDate != null ? enteredDate : scheduledDate)
+                // Due: createDate is the requested publish time (the push, for a "push now").
+                // Future: when the assets entered the queue; the run time goes in scheduledPublishDate.
+                .createDate(due ? publishDate : (enteredDate != null ? enteredDate : publishDate))
                 .statusUpdated(null)
                 .numTries(0)
-                .scheduledPublishDate(scheduledDate)
+                .scheduledPublishDate(due ? null : publishDate)
                 .build();
+    }
+
+    /**
+     * A queue-only bundle is due when its publish date is not in the future, judged by the JVM
+     * clock, the same one {@code PublisherQueueJob} uses to pick bundles up. Null counts as due.
+     */
+    private static boolean isDue(final Instant publishDate) {
+        return publishDate == null || !publishDate.isAfter(Instant.now());
     }
 
     /**
@@ -443,27 +454,28 @@ public class PublishingJobsHelper {
             return null;
         }
 
-        final Instant scheduledDate = toInstant(scheduledElements.get(0).getPublishDate());
+        final Instant publishDate = toInstant(scheduledElements.get(0).getPublishDate());
         final Instant enteredDate = scheduledElements.stream()
                 .map(PublishQueueElement::getEnteredDate)
                 .filter(java.util.Objects::nonNull)
                 .min(Date::compareTo)
                 .map(Date::toInstant)
-                .orElse(scheduledDate);
+                .orElse(publishDate);
+        final boolean due = isDue(publishDate);
 
         return PublishingJobDetailView.builder()
                 .bundleId(bundleId)
                 .bundleName(bundle.getName())
-                .status(Status.SCHEDULED)
+                .status(due ? Status.BUNDLE_REQUESTED : Status.SCHEDULED)
                 .filterName(resolveFilterName(bundle))
                 .filterKey(bundle.getFilterKey())
                 .assetCount(scheduledElements.size())
                 .environments(buildConfiguredEnvironmentDetails(bundleId))
                 .timestamps(TimestampsView.builder()
-                        .createDate(enteredDate)
+                        .createDate(due ? publishDate : enteredDate)
                         .build())
                 .numTries(0)
-                .scheduledPublishDate(scheduledDate)
+                .scheduledPublishDate(due ? null : publishDate)
                 .build();
     }
 

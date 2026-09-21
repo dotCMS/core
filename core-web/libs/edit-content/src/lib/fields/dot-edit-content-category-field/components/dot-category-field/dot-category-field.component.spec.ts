@@ -86,6 +86,24 @@ describe('DotCategoryFieldComponent', () => {
                 service = spectator.inject(CategoriesService, true);
             });
 
+            /**
+             * AC-209 — this widget's value is a collection, so there is no single control for
+             * `<label for>` to reach. The widget itself is the named thing, via aria-labelledby
+             * pointing at the field label. No aria-required: ARIA defines it on radiogroup, not on
+             * a plain group.
+             */
+            it('should expose itself as a group named by the field label', () => {
+                // `role` is a static host attribute, applied at creation; aria-labelledby is a
+                // binding and needs a change-detection pass, which this suite's setup does not run.
+                spectator.detectChanges();
+
+                expect(spectator.element.getAttribute('role')).toBe('group');
+                expect(spectator.element.getAttribute('aria-labelledby')).toBe(
+                    'label-' + CATEGORY_FIELD_MOCK.variable
+                );
+                expect(spectator.element.getAttribute('aria-required')).toBeNull();
+            });
+
             it('should render a button for selecting categories', () => {
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('show-dialog-btn'))).not.toBeNull();

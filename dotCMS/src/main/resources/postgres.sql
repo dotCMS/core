@@ -2462,6 +2462,16 @@ CREATE TABLE system_event (
 ALTER TABLE system_event ADD CONSTRAINT PK_system_event PRIMARY KEY (identifier);
 CREATE INDEX idx_system_event ON system_event (created);
 
+-- Per-node delivery cursor for the system_event queue (issue #36827). One row per server; the
+-- poller reads it instead of keeping an in-memory wall-clock mark, so events committed while a
+-- node was down are not lost. Additive only - nothing on system_event changes.
+CREATE TABLE system_event_cursor (
+    server_id       VARCHAR(36)  NOT NULL,
+    last_event_date BIGINT       NOT NULL,
+    mod_date        TIMESTAMPTZ  NOT NULL,
+    CONSTRAINT pk_system_event_cursor PRIMARY KEY (server_id)
+);
+
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
 

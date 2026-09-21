@@ -1,7 +1,7 @@
 # Release Phase Workflow
 #
 # This reusable workflow handles release-specific finalization operations:
-# - Deploying artifacts to Artifactory (Maven repository)
+# - Publishing Maven artifacts to the BunnyCDN S3-compatible repository
 # - Generating and uploading Javadocs to S3
 # - Triggering plugin repository updates
 # - Generating and uploading SBOM (Software Bill of Materials)
@@ -37,7 +37,7 @@ on:
         type: string
         default: ${{ github.run_id }}
       deploy_artifact:
-        description: 'Deploy artifact to Artifactory'
+        description: 'Publish Maven artifacts to the S3 repository'
         type: boolean
         default: true
       upload_javadocs:
@@ -63,12 +63,12 @@ on:
         type: string
         default: ''
     secrets:
-      EE_REPO_USERNAME:
+      MAVEN_BUNNY_RW_USERNAME:
         required: false
-        description: 'Artifactory username'
-      EE_REPO_PASSWORD:
+        description: 'BunnyCDN storage-zone name (S3 access key id)'
+      MAVEN_BUNNY_RW_PASSWORD:
         required: false
-        description: 'Artifactory password'
+        description: 'BunnyCDN storage-zone password (S3 secret key)'
       AWS_ACCESS_KEY_ID:
         required: false
         description: 'AWS access key ID'
@@ -80,7 +80,7 @@ on:
         description: 'CI machine token for GitHub API operations'
 
 jobs:
-  # Deploy release artifacts to Artifactory and S3
+  # Publish release artifacts to the S3 repository and upload Javadocs to S3
   release-artifacts:
     name: Release Artifacts
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
@@ -150,11 +150,6 @@ jobs:
           name: maven-repo${{ steps.java-suffix.outputs.suffix }}
           path: ~/.m2/repository
 
-      - name: Configure Maven Settings
-        uses: whelk-io/maven-settings-xml-action@v20
-        with:
-          servers: '[{ "id": "dotcms-libs-local", "username": "${{ secrets.EE_REPO_USERNAME }}", "password": "${{ secrets.EE_REPO_PASSWORD }}" }]'
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -163,7 +158,10 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
         if: inputs.upload_javadocs == true
 
-      - name: Deploy Release Artifacts to Artifactory
+      # Publish locally (install) instead of deploying. The maven-deploy-plugin
+      # no longer has an Artifactory target; the S3 publish step below uploads the
+      # artifacts from ~/.m2/repository, preserving the Maven layout.
+      - name: Install Release Artifacts
         run: |
           # Add changelist suffix for alternate Java versions
           CHANGELIST_ARG=""
@@ -179,8 +177,24 @@ jobs:
             -Dprod=true \
             -DskipTests=true \
             ${CHANGELIST_ARG} \
-            deploy
+            install
         if: inputs.deploy_artifact == true
+
+      - name: Publish Release Artifacts to S3
+        if: inputs.deploy_artifact == true
+        env:
+          MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+          MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
+          MAVEN_S3_ENDPOINT: ${{ vars.MAVEN_S3_ENDPOINT }}
+          MAVEN_S3_REGION: ${{ vars.MAVEN_S3_REGION }}
+          MAVEN_S3_BUCKET: ${{ vars.MAVEN_S3_BUCKET }}
+          MAVEN_S3_PREFIX: ${{ vars.MAVEN_S3_PREFIX }}
+          # Alternate Java variants append their changelist (e.g. -java25) to the version.
+          VERSION: ${{ inputs.release_version }}${{ steps.java-suffix.outputs.suffix }}
+        run: |
+          echo "::group::Publish Release Artifacts to S3"
+          ./.github/scripts/publish-to-s3/publish.sh maven --version "$VERSION"
+          echo "::endgroup::"
 
       - name: Generate and Upload Javadocs
         run: |
@@ -275,7 +289,7 @@ jobs:
           echo "::endgroup::"
 
   # Update GitHub labels for release tracking
-  # Only updates labels if release-artifacts (Artifactory/Javadocs) succeeded.
+  # Only updates labels if release-artifacts (S3/Javadocs) succeeded.
   # The calling workflow's dependency chain ensures deployment also succeeded.
   release-labeling:
     name: Release Labeling

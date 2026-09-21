@@ -8,6 +8,7 @@ import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CO
 import static com.dotmarketing.portlets.folders.business.FolderFactorySql.GET_CONTENT_TYPE_COUNT;
 
 import com.dotcms.browser.BrowserQuery;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.system.SimpleMapAppContext;
@@ -87,6 +88,17 @@ public class FolderFactoryImpl extends FolderFactory {
       "sort_order", "files_masks", "identifier", "default_file_type", "mod_date", "owner", "idate",
       "default_base_type"};
   private final FolderCache folderCache = CacheLocator.getFolderCache();
+
+  /**
+   * Every column upserted by {@link #upsertFolder(Folder)}. Any column added here must also be
+   * copied by {@code FolderHandler}'s update branch, or push publishing will silently drop it when
+   * the folder already exists on the receiver (see issue #37459). {@code FolderHandlerTest} guards
+   * that contract against this list.
+   */
+  @VisibleForTesting
+  public static String[] getUpsertExtraColumns() {
+    return UPSERT_EXTRA_COLUMNS.clone();
+  }
 
   @Override
   protected boolean exists(String folderIdOrInode) throws DotDataException {

@@ -3,6 +3,8 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { NEVER, of, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
+
 import { DotPermissionsService } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
 
@@ -137,5 +139,59 @@ describe('withSitePermissions', () => {
 
             expect(store.siteCanAddChildren()).toBeUndefined();
         });
+    });
+});
+
+describe('withSitePermissions — reading System Host', () => {
+    let spectator: SpectatorService<InstanceType<typeof sitePermissionsStoreMock>>;
+    let store: InstanceType<typeof sitePermissionsStoreMock>;
+
+    const canAddChildren = vi.fn();
+
+    const createService = createServiceFactory({
+        service: sitePermissionsStoreMock,
+        providers: [mockProvider(DotPermissionsService, { canAddChildren })]
+    });
+
+    beforeEach(() => {
+        canAddChildren.mockReset();
+    });
+
+    it('should treat a refusal as not readable', () => {
+        // The permissions resource checks READ before it answers and refuses outright when the
+        // caller does not hold it, so a 403 from this one call is the server saying the user
+        // cannot see the asset at all -- not merely that they cannot add to it.
+        canAddChildren.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 403 })));
+        spectator = createService();
+        store = spectator.service;
+
+        store.loadSystemHostPermissions();
+
+        expect(store.systemHostCanRead()).toBe(false);
+    });
+
+    it('should keep System Host readable when the lookup fails for any other reason', () => {
+        // A timeout or a 500 says nothing about permissions. Locking someone out of a scope
+        // because the network hiccuped is worse than showing them an entry the server will
+        // police anyway -- the listing enforces read permissions on its own.
+        canAddChildren.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+        spectator = createService();
+        store = spectator.service;
+
+        store.loadSystemHostPermissions();
+
+        expect(store.systemHostCanRead()).toBe(true);
+    });
+
+    it('should keep System Host readable when the lookup succeeds', () => {
+        canAddChildren.mockReturnValue(of(false));
+        spectator = createService();
+        store = spectator.service;
+
+        store.loadSystemHostPermissions();
+
+        // Answering the add question at all means the read check upstream of it passed.
+        expect(store.systemHostCanRead()).toBe(true);
+        expect(store.systemHostCanAddChildren()).toBe(false);
     });
 });

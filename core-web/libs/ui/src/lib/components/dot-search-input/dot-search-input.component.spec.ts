@@ -163,6 +163,23 @@ describe('DotSearchInputComponent', () => {
         });
     });
 
+    // `{}` is truthy, so a default of `{}` made PrimeNG's BaseComponent load a scoped stylesheet
+    // and register a theme-change listener for every consumer, including the ones (AssetPicker)
+    // that pass no override at all. `undefined` is the only default that actually skips that path.
+    describe('inputDt', () => {
+        it('should default to undefined rather than an empty object', () => {
+            expect(spectator.component.$inputDt()).toBeUndefined();
+        });
+
+        it('should pass through an explicit override', () => {
+            const dt = { border: { radius: '0' } };
+            spectator.setInput('inputDt', dt);
+            spectator.detectChanges();
+
+            expect(spectator.component.$inputDt()).toEqual(dt);
+        });
+    });
+
     describe('clear icon', () => {
         it('should be hidden while the input is empty', () => {
             expect(spectator.query(byTestId('search-icon-clear'))).toBeNull();
@@ -187,6 +204,28 @@ describe('DotSearchInputComponent', () => {
 
             expect(getInput().value).toBe('');
             expect(handler).toHaveBeenLastCalledWith('');
+        });
+    });
+
+    // Inside a `p-inputgroup` (Content Drive's search bar), PrimeNG raises the focused field to
+    // the icons' own z-index, and the rule lands because the group turns the icon field into a
+    // flex container — flex items honor z-index without positioning. The field comes later in
+    // the DOM, so once focused its opaque background painted the magnifier away the moment the
+    // user clicked in. The icons sit one step above through PT's inline style, which beats the
+    // injected stylesheet unconditionally; outside an input group the value changes nothing.
+    describe('icon stacking', () => {
+        it('should pin the magnifier above the field', () => {
+            const icon = spectator.query('.p-inputicon') as HTMLElement;
+
+            expect(icon.style.zIndex).toBe('2');
+        });
+
+        it('should pin the clear icon above the field too', () => {
+            type('blog');
+
+            const icon = spectator.query(byTestId('search-icon-clear')) as HTMLElement;
+
+            expect(icon.style.zIndex).toBe('2');
         });
     });
 

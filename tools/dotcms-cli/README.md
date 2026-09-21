@@ -14,7 +14,7 @@ npm install -g @dotcms/dotcli
 ```
 ### Manual JAR Download
 
-1. Download the CLI: The dotCMS CLI is delivered as an uber jar that can be downloaded from [here](https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/).
+1. Download the CLI: The dotCMS CLI is delivered as an uber jar that can be downloaded from [here](https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/dotcms-cli/).
  Once downloaded, you just need to run it with: 
 
 ```shell script

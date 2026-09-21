@@ -169,6 +169,25 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
             return internals.content;
         };
 
+        /**
+         * A new contentlet with an empty Story Block arrives as `null`. The guard at the top of
+         * setEditorJSONContent covers an uninitialised editor and string content, but not null:
+         * `typeof null === 'object'`, so execution fell through to `content.content` and threw
+         * `Cannot read properties of null (reading 'content')` during ngOnInit.
+         *
+         * That uncaught error aborts the change-detection pass partway through the field's
+         * template, which is why a required, empty Block Editor rendered no "required" message
+         * even though its control was INVALID and the save was correctly blocked.
+         */
+        it('accepts null content without throwing, as a new empty field sends', () => {
+            internals.editor = { schema: { nodes: { doc: {}, paragraph: {} } } };
+
+            expect(() =>
+                internals.setEditorJSONContent(null as unknown as JSONContent)
+            ).not.toThrow();
+            expect(internals.content).toBeNull();
+        });
+
         it('registers a remote block that the field allows', async () => {
             setAllowedBlocks(['heading1', 'customGallery']);
 

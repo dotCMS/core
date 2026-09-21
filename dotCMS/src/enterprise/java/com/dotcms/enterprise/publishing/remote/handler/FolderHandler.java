@@ -290,6 +290,8 @@ public class FolderHandler implements IHandler {
 					temp.setIDate(folder.getIDate());
 					temp.setFilesMasks(folder.getFilesMasks());
 					temp.setTitle(folder.getTitle());
+					temp.setShowOnMenu(folder.isShowOnMenu());
+					temp.setDefaultBaseType(folder.getDefaultBaseType());
 
 
                 	fAPI.save(temp, systemUser, false);

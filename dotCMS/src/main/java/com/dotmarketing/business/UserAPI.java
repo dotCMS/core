@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -475,6 +476,19 @@ public interface UserAPI {
 			this.orderDirection = builder.orderDirection;
 			this.includeAnonymousUser = builder.includeAnonymousUser;
 			this.includeDefaultUser = builder.includeDefaultUser;
+		}
+
+		/**
+		 * Maps a REST {@link OrderDirection} to the SQL direction token this class expects in
+		 * {@link Builder#orderDirection(String)} / {@link #ORDER_DIRECTION_PARAM}: {@link SQLUtil#_DESC} for
+		 * {@code DESC}, otherwise {@link SQLUtil#_ASC}. Shared by the resources that feed {@code UserPaginator}.
+		 *
+		 * @param direction The requested direction; {@code null} means ascending.
+		 *
+		 * @return The SQL direction token, leading space included.
+		 */
+		public static String sqlDirection(final OrderDirection direction) {
+			return OrderDirection.DESC == direction ? SQLUtil._DESC : SQLUtil._ASC;
 		}
 
 		/**

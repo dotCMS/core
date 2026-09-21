@@ -111,6 +111,26 @@ Logger.error(this, "Operation failed: " + error.getMessage(), error);
 // ❌ NEVER use: System.out.println(), printStackTrace(), System.err.println()
 ```
 
+### Javadoc Requirements (Required)
+- **New methods**: Every new Java method must have Javadoc.
+- **Edited methods**: If you edit an existing method that has no Javadoc, add it as part of that edit — don't leave it undocumented.
+- **Human-readable, not just AI-oriented**: Write for a human developer, not for an AI tool. Plain language, no restating the method signature, no jargon dump. If a person wouldn't find it clear on their own, rewrite it.
+- **Link dotCMS types**: When a parameter or return type is a dotCMS domain object (e.g. `com.dotmarketing.beans.Host`, `com.liferay.portal.model.User`), reference it with `{@link ClassName}` so IDEs can jump straight to its definition. This is already the convention throughout the codebase — see `HostAPI.search(...)`.
+
+```java
+/**
+ * Finds the entity matching the given id, for the given user.
+ *
+ * @param id the entity's identifier
+ * @param user the {@link User} requesting the lookup, used for permission checks
+ * @return the matching {@link MyEntity}
+ * @throws DotDataException if the entity cannot be found
+ */
+public MyEntity findById(String id, User user) throws DotDataException {
+    ...
+}
+```
+
 ### Immutable Objects (Critical Pattern)
 ```java
 @Value.Immutable
@@ -246,6 +266,22 @@ MyService service = CDIUtils.getBeanThrows(MyService.class);
 
 ## Build Integration Requirements
 
+### Maven Dependencies
+- Add dependency versions to `bom/application/pom.xml` **only** — never to `dotCMS/pom.xml`
+
+### Integration Testing
+```java
+// Integration tests for REST endpoints extend IntegrationTestBase (JUnit 4)
+public class MyResourceIntegrationTest extends IntegrationTestBase {
+
+    @Test
+    public void testEndpoint() {
+        // Test implementation
+    }
+}
+```
+See [Integration Tests](../testing/INTEGRATION_TESTS.md) for the full pattern, including the MainSuite registration gate.
+
 ### After Code Changes
 - **Immutable classes**: Run `./mvnw compile` after `@Value.Immutable` changes
 - **Fast iteration**: `./mvnw install -pl :dotcms-core --am -DskipTests` (the `--am` flag matters — see CLAUDE.md's Build & Test Commands: without it, the build can fail on missing in-project deps)
@@ -284,3 +320,9 @@ List<Class<?>> annotatedClasses = JandexClassMetadataScanner.findClassesWithAnno
     MyAnnotation.class, "com.dotcms.mypackage");
 // See: docs/backend/JANDEX_METADATA_SCANNING.md
 ```
+
+## Location Information
+- **Package Structure**: `com.dotcms.api`, `com.dotcms.business`, `com.dotcms.rest`, `com.dotcms.util`
+- **Legacy Packages**: `com.dotmarketing.*`
+- **Configuration**: Use `Config` class for all configuration access
+- **Exceptions**: Use dotCMS exception hierarchy (`DotDataException`, `DotSecurityException`, etc.)

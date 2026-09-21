@@ -303,11 +303,6 @@ jobs:
         id: setup-java
         uses: ./.github/actions/core-cicd/setup-java
 
-      - name: maven-settings-xml-action
-        uses: whelk-io/maven-settings-xml-action@v20
-        with:
-          servers: '[{ "id": "dotcms-libs-local", "username": "${{ secrets.EE_REPO_USERNAME }}", "password": "${{ secrets.EE_REPO_PASSWORD }}" }]'
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -315,15 +310,30 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy Release
+      - name: Install Release
         run: |
           ./mvnw -ntp \
             ${JVM_TEST_MAVEN_OPTS} \
             -Dprod=true \
             -DskipTests=true \
             -DskipITs=true \
-            deploy
+            install
         if: github.event.inputs.deploy_artifact == 'true'
+
+      - name: Publish Release Artifacts to S3
+        if: github.event.inputs.deploy_artifact == 'true'
+        env:
+          MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+          MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
+          MAVEN_S3_ENDPOINT: ${{ vars.MAVEN_S3_ENDPOINT }}
+          MAVEN_S3_REGION: ${{ vars.MAVEN_S3_REGION }}
+          MAVEN_S3_BUCKET: ${{ vars.MAVEN_S3_BUCKET }}
+          MAVEN_S3_PREFIX: ${{ vars.MAVEN_S3_PREFIX }}
+          VERSION: ${{ needs.prepare-release.outputs.release_version }}
+        run: |
+          echo "::group::Publish Release Artifacts to S3"
+          ./.github/scripts/publish-to-s3/publish.sh maven --version "$VERSION"
+          echo "::endgroup::"
 
       - name: Generate/Push Javadoc
         run: |

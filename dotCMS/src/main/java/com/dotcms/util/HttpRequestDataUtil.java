@@ -5,7 +5,7 @@ import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import io.netty.util.NetUtil;
+import com.google.common.net.InetAddresses;
 import org.apache.commons.lang.StringUtils;
 
 import javax.management.MBeanServer;
@@ -52,6 +52,9 @@ public class HttpRequestDataUtil {
 
 	public static final String DEFAULT_REMOTE_ADDRESS = "0.0.0.0";
 
+	/** Loopback address returned when the remote address cannot be parsed as an IP literal. */
+	private static final byte[] LOOPBACK_ADDRESS = {127, 0, 0, 1};
+
 	/**
 	 * Get the remote address, if the request is null will return 0.0.0.0.
 	 * @param request {@link HttpServletRequest}
@@ -78,9 +81,15 @@ public class HttpRequestDataUtil {
 	public static InetAddress getIpAddress(HttpServletRequest request)
 			throws UnknownHostException {
 		final String addr = request.getRemoteAddr();
-		final byte[] parsed = addr != null ? NetUtil.createByteArrayFromIpAddressString(addr) : null;
-		final byte[] remoteAddr = parsed != null ? parsed : new byte[]{127, 0, 0, 1};
-		return InetAddress.getByAddress(remoteAddr);
+		if (addr != null) {
+			try {
+				return InetAddresses.forString(addr);
+			} catch (final IllegalArgumentException e) {
+				Logger.debug(HttpRequestDataUtil.class,
+						() -> "Remote address is not a valid IP literal, falling back to loopback: " + addr);
+			}
+		}
+		return InetAddress.getByAddress(LOOPBACK_ADDRESS);
 	}
 
 	/**

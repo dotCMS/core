@@ -101,6 +101,9 @@ class OpenAiModelProviderStrategy implements ModelProviderStrategy {
                 .modelName(config.model());
         applyCommonConfig(config, builder::baseUrl, builder::maxRetries, builder::timeout);
         if (config.size() != null) builder.size(config.size());
+        // Only when a caller asked for one. Left unset the provider applies its own default, which
+        // is what the legacy image endpoint's URL-shaped response contract still relies on.
+        if (config.responseFormat() != null) builder.responseFormat(config.responseFormat());
         return builder.build();
     }
 

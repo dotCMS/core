@@ -1,8 +1,9 @@
 import { Events, injectDispatch } from '@ngrx/signals/events';
+import { of } from 'rxjs';
 
 import { Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -10,7 +11,11 @@ import { SkeletonModule } from 'primeng/skeleton';
 
 import { map } from 'rxjs/operators';
 
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotExperiment,
@@ -20,6 +25,7 @@ import {
     HealthStatusTypes,
     MINIMUM_SESSIONS_TO_SHOW_CHART
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
@@ -29,9 +35,9 @@ import { DotExperimentsResultsHeaderComponent } from './components/dot-experimen
 import { DotExperimentsResultsStatStripComponent } from './components/dot-experiments-results-stat-strip/dot-experiments-results-stat-strip.component';
 import { DotExperimentsResultsSummaryTableComponent } from './components/dot-experiments-results-summary-table/dot-experiments-results-summary-table.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     EXPERIMENT_ID_ROUTE_PARAM,
-    EXPERIMENTS_URL,
     LIST_TITLE_KEY,
     RESULTS_CONFIRM_DIALOG_KEY,
     RESULTS_TITLE_KEY,
@@ -83,7 +89,7 @@ const HEALTH_STATUS_ROUTE_DATA_KEY = 'healthStatus';
         DotExperimentsResultsSummaryTableComponent
     ],
     templateUrl: './dot-experiments-results.component.html',
-    providers: [DotExperimentsResultsStore, ConfirmationService],
+    providers: [DotExperimentsRouter, DotExperimentsResultsStore, ConfirmationService],
     host: {
         class: 'flex flex-col h-full min-h-0 overflow-hidden animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
     }
@@ -94,7 +100,9 @@ export class DotExperimentsResultsComponent {
     readonly CONFIRM_KEY = RESULTS_CONFIRM_DIALOG_KEY;
 
     readonly #route = inject(ActivatedRoute);
-    readonly #router = inject(Router);
+    /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #events = inject(Events);
     readonly #dispatch = injectDispatch(dotExperimentsResultsPageEvents);
     readonly #destroyRef = inject(DestroyRef);
@@ -110,10 +118,34 @@ export class DotExperimentsResultsComponent {
      * `paramMap`: the component is reused across experiments, and the resolver runs again on each
      * of them.
      */
-    readonly #healthStatus = toSignal(
+    readonly #routeHealthStatus = toSignal(
         this.#route.data.pipe(
             map((data) => data[HEALTH_STATUS_ROUTE_DATA_KEY] as HealthStatusTypes | undefined)
         )
+    );
+
+    /**
+     * Analytics health inside the panel, asked for rather than resolved.
+     *
+     * There is no route here to carry a resolver, so the screen asks the same question the
+     * portlet's `dotAnalyticsHealthCheckResolver` asks — one call to the same service, once per
+     * time results is opened, which is exactly what the resolver does per screen. Routing it
+     * through the panel instead would put a second copy of an install-level answer in a store
+     * that holds a destination.
+     */
+    readonly #panelHealthStatus = toSignal(
+        this.#panel ? inject(DotExperimentsService).healthCheck() : of(undefined)
+    );
+
+    /**
+     * Analytics health, from whichever of the two sources this screen has.
+     *
+     * The portlet's comes from a route resolver that re-runs per experiment; the panel's from the
+     * call above. Only one of them is ever set, so the order between them is a formality rather
+     * than a precedence.
+     */
+    readonly #healthStatus = computed<HealthStatusTypes | undefined>(
+        () => this.#panelHealthStatus() ?? this.#routeHealthStatus()
     );
 
     /** Anything but `OK` means the report cannot be trusted, so none of it is shown (AC22). */
@@ -216,9 +248,7 @@ export class DotExperimentsResultsComponent {
      * one page this experiment happens to run on.
      */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL], {
-            queryParams: listReturnParams(this.#route.snapshot.queryParams)
-        });
+        this.#experimentsRouter.toList();
     }
 
     /**

@@ -5,12 +5,13 @@ import { Component, computed, DestroyRef, inject, signal, viewChild } from '@ang
 import { ButtonModule } from 'primeng/button';
 
 import { DotAgentThinkingComponent, DotAiPromptInputComponent } from '@dotcms/ai-ui';
+import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AI_ANSWER_STATE } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe } from '@dotcms/ui';
 
-import { DotAiEmptyStateComponent } from '../../components/dot-ai-empty-state/dot-ai-empty-state.component';
 import { DotAiWorkspaceComponent } from '../../components/dot-ai-workspace/dot-ai-workspace.component';
 import { DotAiStore } from '../../store/dot-ai.store';
+import { toEmptyStateConfig } from '../../utils/dot-ai-empty-state.utils';
 
 /**
  * Chat tab: ask a question of the indexed content and watch the answer stream in.
@@ -28,7 +29,7 @@ import { DotAiStore } from '../../store/dot-ai.store';
 @Component({
     selector: 'dot-ai-chat',
     imports: [
-        DotAiEmptyStateComponent,
+        DotEmptyContainerComponent,
         ButtonModule,
         MarkdownModule,
         DotAgentThinkingComponent,
@@ -41,6 +42,18 @@ import { DotAiStore } from '../../store/dot-ai.store';
 })
 export default class DotAiChatComponent {
     protected readonly store = inject(DotAiStore);
+
+    readonly #messageService = inject(DotMessageService);
+
+    /**
+     * The subtitle deliberately does not promise sources: only the non-streaming mode returns
+     * them, and this tab streams.
+     */
+    protected readonly emptyConfig = toEmptyStateConfig(this.#messageService, {
+        title: 'dotai.chat.empty.title',
+        subtitle: 'dotai.chat.empty.sub',
+        icon: 'forum'
+    });
 
     constructor() {
         // FR-015: leaving Chat mid-answer must cancel it. The store's own onDestroy cannot do

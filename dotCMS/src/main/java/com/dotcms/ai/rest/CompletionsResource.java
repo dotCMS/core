@@ -193,9 +193,12 @@ public class CompletionsResource {
         final AppConfig appConfig = ConfigService.INSTANCE.config(host);
 
         final Map<String, Object> map = new HashMap<>();
-        map.put(AiKeys.CONFIG_HOST, host.getHostname() + " (falls back to system host)");
-
         final String providerConfig = appConfig.getProviderConfig();
+        final String requestedHost = host.getHostname();
+
+        map.put(AiKeys.CONFIG_HOST, requestedHost);
+        map.put(AiKeys.CONFIG_HOST_INHERITED, isInheritedConfig(requestedHost, appConfig));
+
         if (StringUtils.isNotBlank(providerConfig)) {
             map.put(AppKeys.PROVIDER_CONFIG.key, redactCredentials(providerConfig));
         }
@@ -207,6 +210,27 @@ public class CompletionsResource {
         map.put("settings", settings);
 
         return Response.ok(map).build();
+    }
+
+    /**
+     * Whether the configuration being reported came from the System Host rather than from the
+     * site it was asked for.
+     *
+     * {@link ConfigService#config(Host)} falls back to the System Host's secrets when a site
+     * has none of its own, keeping only the hostname it ended up using — so the two hostnames
+     * differing is what "inherited" means here.
+     *
+     * Gated on there being a configuration at all, because that same fallback reports the
+     * System Host whether or not the System Host had any secrets either. Without the gate, an
+     * instance with nothing configured anywhere claims to have inherited settings it never
+     * found.
+     *
+     * Reported as its own field rather than concatenated into the hostname so the client can
+     * label and translate it.
+     */
+    static boolean isInheritedConfig(final String requestedHost, final AppConfig appConfig) {
+        return StringUtils.isNotBlank(appConfig.getProviderConfig())
+                && !requestedHost.equalsIgnoreCase(appConfig.getHost());
     }
 
     @PUT

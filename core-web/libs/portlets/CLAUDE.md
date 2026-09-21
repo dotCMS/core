@@ -65,6 +65,8 @@ this.dialogService.open(MyFormComponent, { width: '700px', ... });
 
 **Modal dialogs (default)**: List component opens `DialogService.open(CreateComponent, ...)`. The dialog closes with the form value; the list component passes it to the store. This is the pattern used in `dot-tags` and should be the default for new portlets.
 
+**Dialogs whose submit can fail into the form (exception)**: when a submit can be rejected in a way that is *a correction to a field the dialog is still holding* — a Lucene or GraphQL query the server parses, say — `close(formValue)` loses the input at the moment the user needs it, and the error surfaces on the screen behind a modal that has already gone. Such a dialog keeps ownership of the submit: it calls the store itself, renders the failure inline, and closes only on success. Keep the request state local to the dialog rather than adding an in-flight flag to portlet state, and clear any unrendered outcome in the dialog's `DestroyRef.onDestroy` — PrimeNG's header X and the Escape key call `DynamicDialogRef.close` directly and never reach your own cancel handler. See `dot-ai`'s `dot-ai-index-create`. `close(formValue)` stays the default for every dialog whose submit cannot fail into the form.
+
 **Routed CRUD (rare)**: Separate route for create/edit pages. Use only when the form is too complex for a dialog (many tabs, nested data). See `dot-experiments` for this pattern.
 
 ## When the CRUD Pattern Is Not Enough

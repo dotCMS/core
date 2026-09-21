@@ -26,7 +26,6 @@ interface RoleBehaviorOption {
 
 @Component({
     selector: 'dot-auth-provisioning',
-    standalone: true,
     host: {
         class: 'dot-auth-provisioning'
     },

@@ -219,8 +219,15 @@ export class DotFormComponent {
 ```
 
 Template (`dot-form-component.component.html`):
+
+> `class="form"` is not optional decoration. Field layout, label typography and hint/error
+> colour all come from rules in `apps/dotcms-ui/src/style.css` that are scoped to `.form` —
+> without it they match nothing and the form renders unstyled, with no error and no warning.
+> See [Styling Standards → Form Fields](./STYLING_STANDARDS.md#form-fields); the example below
+> focuses on data flow, not on the field markup.
+
 ```html
-<form [formGroup]="formGroup" (ngSubmit)="onSubmit()">
+<form class="form" [formGroup]="formGroup" (ngSubmit)="onSubmit()">
   <dot-input-field
     label="Name"
     formControlName="name"

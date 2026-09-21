@@ -21,7 +21,8 @@ import {
 } from '@dotcms/data-access';
 import {
     DotExperimentExperimentResolver,
-    DotExperimentsConfigResolver
+    DotExperimentsConfigResolver,
+    DotExperimentsPanelStore
 } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     DotEnterpriseLicenseResolver,
@@ -44,6 +45,16 @@ export const dotEmaRoutes: Route[] = [
         providers: [
             // UVEStore and its direct dependencies (needed for store to persist across child routes)
             UVEStore,
+            /**
+             * Route level, not on the shell component — and that difference is the whole feature
+             * (#37478).
+             *
+             * The shell is destroyed and rebuilt when the editor leaves for a variant, so a store
+             * provided by the component dies with it, taking the panel's memory of which
+             * experiment and which screen the editor was on. The return then had nothing to return
+             * to. Same reason UVEStore is here, and #37005 found it first.
+             */
+            DotExperimentsPanelStore,
             DotPageApiService,
             DotActionUrlService,
             DotLanguagesService,

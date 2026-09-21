@@ -361,12 +361,12 @@ tools/dotcms-cli/cli/target/distributions/
 ```
 
 ### Manual JAR Download
-**Repository**: `https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/`
+**Repository**: `https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/dotcms-cli/`
 
 **Usage**:
 ```bash
 # Download and run
-wget https://repo.dotcms.com/artifactory/libs-snapshot-local/com/dotcms/dotcms-cli/latest/dotcms-cli.jar
+wget https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/dotcms-cli/latest/dotcms-cli.jar
 java -jar dotcms-cli.jar --help
 ```
 

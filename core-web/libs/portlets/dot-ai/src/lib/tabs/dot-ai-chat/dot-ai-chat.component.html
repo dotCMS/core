@@ -1,8 +1,10 @@
 <dot-ai-workspace stateKey="dotai-chat-splitter">
     <section class="flex h-full min-w-0 flex-col overflow-hidden">
+        <!-- Same as Search: the empty state is a direct child so its `h-full` has a parent
+             height to resolve against and it centres in the pane. -->
         <div #answer class="min-h-0 flex-1 overflow-y-auto p-4" data-testid="dotai-chat-answer">
-            <div class="container mx-auto">
-                @if (store.chatAnswer(); as current) {
+            @if (store.chatAnswer(); as current) {
+                <div class="container mx-auto">
                     <!-- One 70ch column for the whole answer, so the thinking indicator
                          starts exactly where the text will appear and nothing shifts
                          sideways when one replaces the other. The stopped note and the
@@ -47,15 +49,13 @@
                             </p>
                         }
                     </div>
-                } @else {
-                    <!-- The subtitle deliberately does not promise sources: only the
-                         non-streaming mode returns them, and this tab streams. -->
-                    <dot-ai-empty-state
-                        [title]="'dotai.chat.empty.title' | dm"
-                        [subtitle]="'dotai.chat.empty.sub' | dm"
-                        data-testid="dotai-chat-empty" />
-                }
-            </div>
+                </div>
+            } @else {
+                <dot-empty-container
+                    [configuration]="emptyConfig"
+                    [hideContactUsLink]="true"
+                    data-testid="dotai-chat-empty" />
+            }
         </div>
         <!-- Composer last in the DOM as well as visually, so focus order matches what you
              read: answer, then the box you type in. No border here — dot-ai-prompt-input

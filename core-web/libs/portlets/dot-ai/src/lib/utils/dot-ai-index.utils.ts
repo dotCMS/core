@@ -1,4 +1,4 @@
-import { DOT_AI_INDEX_STATUS, DotAiIndex, DotAiIndexStatus } from '@dotcms/dotcms-models';
+import { DotAiIndex } from '@dotcms/dotcms-models';
 
 /**
  * Internal cache index. It is real and shows in the Embeddings table, but it is not a
@@ -20,27 +20,58 @@ export function toIndexOptions(indexes: DotAiIndex[]): { label: string; value: s
 }
 
 /**
- * Build status per index, derived rather than read: `dot_embeddings` has no status column.
+ * A build that has been requested but has not reached `indexCount` yet.
  *
- * An index counts as building while its fragment count is still moving. `buildSeeds` carries
- * the indexes a build was just requested for, which is what lets the very first poll report
- * BUILDING instead of guessing from a delta that has not appeared yet.
+ * Embedding is asynchronous — `EmbeddingsRunner` writes one row per contentlet as it finishes —
+ * so for the first second or two after a build the index genuinely exists but has nothing in
+ * `dot_embeddings`, and `indexCount` does not return it. Standing in for it with a zeroed row
+ * is what puts it in the table immediately, rather than leaving the user to reload the page.
+ */
+function toPendingIndex(name: string): DotAiIndex {
+    return { name, fragments: 0, contents: 0, tokenTotal: 0, tokensPerChunk: 0, contentTypes: [] };
+}
+
+/**
+ * The server's list plus a placeholder row for every seeded build it has not caught up with.
+ *
+ * Ordered with the pending ones last so an in-flight build does not reshuffle the table.
+ */
+export function withPendingIndexes(indexes: DotAiIndex[], buildSeeds: Set<string>): DotAiIndex[] {
+    const listed = new Set(indexes.map((index) => index.name));
+    const pending = [...buildSeeds].filter((name) => !listed.has(name));
+
+    return pending.length ? [...indexes, ...pending.map(toPendingIndex)] : indexes;
+}
+
+/**
+ * The seeded builds that are still running.
+ *
+ * `dot_embeddings` has no status column, so this is derived: a build is finished when its
+ * index's fragment count stops moving. The seeds are what let the very first poll report a
+ * build instead of guessing from a delta that has not appeared yet.
+ *
+ * A seeded index the server has not listed yet has no `previousFragments` entry — the snapshot
+ * is taken from the server's own response, never from the placeholder rows — so it keeps
+ * building rather than settling off a fragment count of zero that never moves.
  *
  * Deliberately per index. The legacy portlet derived one portlet-wide flag, so starting a
  * build on one index made every row claim to be building.
  */
-export function deriveIndexStatuses(
+export function stillBuildingSeeds(
     indexes: DotAiIndex[],
     previousFragments: Record<string, number>,
     buildSeeds: Set<string>
-): Record<string, DotAiIndexStatus> {
-    return indexes.reduce<Record<string, DotAiIndexStatus>>((statuses, index) => {
-        const previous = previousFragments[index.name];
-        const moved = previous !== undefined && previous !== index.fragments;
-        const building = buildSeeds.has(index.name) && (previous === undefined || moved);
+): Set<string> {
+    const fragments = new Map(indexes.map((index) => [index.name, index.fragments]));
 
-        statuses[index.name] = building ? DOT_AI_INDEX_STATUS.BUILDING : DOT_AI_INDEX_STATUS.READY;
+    return new Set(
+        [...buildSeeds].filter((name) => {
+            const current = fragments.get(name);
+            const previous = previousFragments[name];
 
-        return statuses;
-    }, {});
+            // Unlisted, or never snapshotted: there is nothing to compare, so it cannot have
+            // settled. Otherwise it is building exactly while the count is moving.
+            return current === undefined || previous === undefined || previous !== current;
+        })
+    );
 }
