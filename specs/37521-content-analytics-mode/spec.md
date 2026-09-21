@@ -1,4 +1,4 @@
-# Feature Specification: Content Analytics Mode (Persist / Read Only)
+# Feature Specification: Content Analytics Persistence Mode (Persist / Read Only)
 
 **Feature Branch**: `37521-content-analytics-mode`
 
@@ -14,7 +14,7 @@
 
 ### Session 2026-09-14
 
-- Q: Should changing Analytics Mode be recorded in an audit/activity log? → A: No special audit trail — matches existing Content Analytics app config save behavior (no App config field in dotCMS currently gets a dedicated audit-log entry on save).
+- Q: Should changing Persistence Mode be recorded in an audit/activity log? → A: No special audit trail — matches existing Content Analytics app config save behavior (no App config field in dotCMS currently gets a dedicated audit-log entry on save).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -29,23 +29,23 @@ without anyone else's data being affected.
 complex cross-environment access model (epic #37349) with a single per-instance switch. Without
 this story there is no feature.
 
-**Independent Test**: On an instance already configured for Content Analytics, set Analytics
+**Independent Test**: On an instance already configured for Content Analytics, set Persistence
 Mode to "Read Only", perform a tracked action (e.g. view a page), and confirm no new event
 reaches the Content Analytics infrastructure while existing dashboard data for that
 tenant/project is still visible.
 
 **Acceptance Scenarios**:
 
-1. **Given** an instance configured for Content Analytics with Analytics Mode set to "Read &
-   Write", **When** an admin changes Analytics Mode to "Read Only" and saves, **Then** the
+1. **Given** an instance configured for Content Analytics with Persistence Mode set to "Read &
+   Write", **When** an admin changes Persistence Mode to "Read Only" and saves, **Then** the
    instance stops sending analytics events from that point forward.
-2. **Given** an instance with Analytics Mode set to "Read Only", **When** a site visitor
+2. **Given** an instance with Persistence Mode set to "Read Only", **When** a site visitor
    triggers a trackable action, **Then** no analytics event for that action is sent to the
    Content Analytics infrastructure.
-3. **Given** an instance with Analytics Mode set to "Read Only", **When** an admin changes
-   Analytics Mode back to "Read & Write" and saves, **Then** the instance resumes sending
+3. **Given** an instance with Persistence Mode set to "Read Only", **When** an admin changes
+   Persistence Mode back to "Read & Write" and saves, **Then** the instance resumes sending
    analytics events without requiring a restart.
-4. **Given** an instance with Analytics Mode set to "Read Only" whose content is consumed by a
+4. **Given** an instance with Persistence Mode set to "Read Only" whose content is consumed by a
    headless/SPA application through the Content Analytics SDK (not a server-rendered page),
    **When** that application triggers a tracked event, **Then** no event reaches the Content
    Analytics infrastructure — the same guarantee holds for SDK-driven traffic as for
@@ -56,7 +56,7 @@ tenant/project is still visible.
 ### User Story 2 - Existing customers keep working unchanged after upgrade (Priority: P2)
 
 A customer already has Content Analytics configured and events flowing today. After upgrading
-to the version that introduces Analytics Mode, nothing should change for them unless they
+to the version that introduces Persistence Mode, nothing should change for them unless they
 deliberately act.
 
 **Why this priority**: A silent behavior change on upgrade (events stopping without anyone
@@ -69,7 +69,7 @@ flowing, upgrade it, and confirm events continue flowing with no configuration c
 **Acceptance Scenarios**:
 
 1. **Given** an instance that had Content Analytics configured before this feature existed,
-   **When** the instance is upgraded, **Then** its Analytics Mode is "Read & Write" and it
+   **When** the instance is upgraded, **Then** its Persistence Mode is "Read & Write" and it
    continues sending events exactly as before.
 
 ---
@@ -87,7 +87,7 @@ and confirm existing data for the tenant/project renders normally.
 
 **Acceptance Scenarios**:
 
-1. **Given** an instance with Analytics Mode set to "Read Only", **When** an admin opens the
+1. **Given** an instance with Persistence Mode set to "Read Only", **When** an admin opens the
    Content Analytics dashboard, **Then** existing analytics data for that tenant/project
    displays exactly as it would on a "Read & Write" instance.
 
@@ -95,19 +95,19 @@ and confirm existing data for the tenant/project renders normally.
 
 ### Edge Cases
 
-- Switching Analytics Mode from "Read & Write" to "Read Only" does not delete, hide, or alter
+- Switching Persistence Mode from "Read & Write" to "Read Only" does not delete, hide, or alter
   any analytics events already persisted — it only stops new events going forward.
 - "From that point forward" means no analytics event generated after the mode switch is saved
   is submitted to the Content Analytics infrastructure — any event already queued or in flight
   at the moment of the switch is not retroactively recalled once submission has started, but no
   event generated after the switch is queued or sent.
-- An instance that has never had the Content Analytics app configured shows no Analytics Mode
+- An instance that has never had the Content Analytics app configured shows no Persistence Mode
   input and is unaffected by this feature.
 - Analytics data for a tenant + project is never split or labeled by which environment produced
   it — a "Read Only" instance and a "Read & Write" instance for the same tenant/project
   contribute to (or read) the exact same dataset, with no environment distinction anywhere.
 - An instance that the Platform Team has not enabled for Content Analytics access at all has no
-  Analytics Mode to set — that enablement gate is a precondition of this feature, not part of it.
+  Persistence Mode to set — that enablement gate is a precondition of this feature, not part of it.
 - An instance running an active Experiment (A/B test) that is switched to "Read Only" stops
   collecting new experiment result data for that instance, for the same reason it stops
   collecting any other analytics data — this is expected, not a defect.
@@ -116,18 +116,18 @@ and confirm existing data for the tenant/project renders normally.
 
 ### Functional Requirements
 
-- **FR-001**: System MUST provide an "Analytics Mode" input in the Content Analytics app
+- **FR-001**: System MUST provide a "Persistence Mode" input in the Content Analytics app
   configuration with exactly two selectable values: "Read & Write" and "Read Only".
-- **FR-002**: System MUST default Analytics Mode to "Read & Write" for every instance that had
+- **FR-002**: System MUST default Persistence Mode to "Read & Write" for every instance that had
   Content Analytics already configured before this feature existed, so no customer's event flow
   changes as a side effect of upgrading.
-- **FR-002a**: System MUST also default Analytics Mode to "Read & Write" when an admin
+- **FR-002a**: System MUST also default Persistence Mode to "Read & Write" when an admin
   configures the Content Analytics app for the first time on an instance that never had it
   configured before — new setups behave the same as upgraded ones; there is no scenario where
   an instance ends up "Read Only" without an admin deliberately choosing it.
-- **FR-003**: When Analytics Mode is "Read & Write", system MUST continue sending analytics
+- **FR-003**: When Persistence Mode is "Read & Write", system MUST continue sending analytics
   events to the Content Analytics infrastructure exactly as it does today.
-- **FR-004**: When Analytics Mode is "Read Only", system MUST NOT forward any event to the
+- **FR-004**: When Persistence Mode is "Read Only", system MUST NOT forward any event to the
   Content Analytics infrastructure's ingest endpoint. Every collection method — dotCMS's
   built-in page/impression/click tracking on server-rendered pages, and the headless/SPA SDK
   used by external applications — always submits events through this same dotCMS instance
@@ -136,7 +136,7 @@ and confirm existing data for the tenant/project renders normally.
   every collection method, with no separate client-side path left ungated. This is scoped
   strictly to Content Analytics ingest traffic — it does not affect any other, unrelated
   telemetry, health-check, or usage-reporting signal the instance emits.
-- **FR-005**: System MUST apply an Analytics Mode change without requiring the dotCMS instance
+- **FR-005**: System MUST apply a Persistence Mode change without requiring the dotCMS instance
   to be restarted. On a clustered instance, the change MUST propagate to every node using the
   same cluster-wide cache-invalidation mechanism every other Content Analytics app configuration
   field already relies on — no new propagation mechanism, and no special same-node-only
@@ -144,7 +144,7 @@ and confirm existing data for the tenant/project renders normally.
   received the change (matching that existing mechanism's normal propagation delay) is expected
   and acceptable; nodes are not expected to diverge beyond it.
 - **FR-006**: System MUST allow users to view existing analytics dashboards and reports
-  regardless of the instance's current Analytics Mode.
+  regardless of the instance's current Persistence Mode.
 - **FR-007**: System MUST NOT classify, distinguish, or filter analytics data by originating
   environment anywhere in the pipeline — all events for a given tenant and project are combined
   with no environment dimension, superseding the environment-selector approach previously
@@ -152,14 +152,14 @@ and confirm existing data for the tenant/project renders normally.
 - **FR-008**: System MUST accept analytics events without requiring an environment identifier —
   omitting it MUST NOT cause the event to be rejected, reversing the required-environment
   validation introduced under #37407.
-- **FR-009**: System MUST NOT require a dedicated audit/activity log entry for Analytics Mode
+- **FR-009**: System MUST NOT require a dedicated audit/activity log entry for Persistence Mode
   changes — it is saved like any other Content Analytics app configuration field, with no new
   audit trail introduced by this feature.
 
 ### Key Entities
 
 - **Instance Analytics Configuration**: A per-dotCMS-instance setting living in the Content
-  Analytics app configuration. Holds the Analytics Mode value ("Read & Write" or "Read Only").
+  Analytics app configuration. Holds the Persistence Mode value ("Read & Write" or "Read Only").
   Only meaningful on an instance the Platform Team has already enabled for Content Analytics
   access.
 - **Analytics Event**: A tracked user/content interaction submitted to the Content Analytics
@@ -208,7 +208,7 @@ and confirm existing data for the tenant/project renders normally.
 ## Assumptions
 
 - The Platform Team's existing mechanism for enabling which instances may access the Content
-  Analytics infrastructure at all is unchanged by this feature; Analytics Mode only governs
+  Analytics infrastructure at all is unchanged by this feature; Persistence Mode only governs
   persist-vs-read-only behavior on top of that existing gate.
 - "Content Analytics app" refers to the existing per-instance App/Integration configuration
   screen for Content Analytics — this feature adds a field to it, not a new settings page.
@@ -228,4 +228,4 @@ and confirm existing data for the tenant/project renders normally.
   an instance an admin has deliberately chosen not to persist analytics from cannot
   simultaneously produce live experiment measurements.
 - Users who can already edit the Content Analytics app configuration today are the same users
-  authorized to change Analytics Mode — no new permission model is introduced.
+  authorized to change Persistence Mode — no new permission model is introduced.
