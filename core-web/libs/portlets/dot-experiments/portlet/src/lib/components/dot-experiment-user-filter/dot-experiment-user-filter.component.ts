@@ -8,6 +8,7 @@ import {
     signal,
     untracked
 } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 
 import { PopoverModule } from 'primeng/popover';
 
@@ -73,11 +74,42 @@ export class DotExperimentUserFilterComponent {
 
     protected readonly DEBOUNCE_MS = SEARCH_DEBOUNCE_MS;
 
-    /** True while ids that arrived from the address are being turned into names. */
-    readonly $resolving = signal(false);
-
     /** Names for ids the chip has been asked to display, filled as they resolve. */
     readonly #namesById = signal<Record<string, string>>({});
+
+    /**
+     * Ids the chip has been asked to show but cannot yet name, or `undefined` when there are none.
+     *
+     * `undefined` rather than an empty array on purpose: that is what tells the resource below
+     * there is nothing to fetch, so a selection made by clicking — which arrives already
+     * labelled — never triggers a request.
+     */
+    readonly #unresolvedIds = computed<string[] | undefined>(() => {
+        const namesById = this.#namesById();
+        const unresolved = this.$selected().filter((userId) => !namesById[userId]);
+
+        return unresolved.length ? unresolved : undefined;
+    });
+
+    /**
+     * Turns ids that arrived from the address into names.
+     *
+     * A resource rather than an effect around `subscribe`, for two reasons that are correctness
+     * rather than taste. It **cancels** a resolution the moment the selection changes, where two
+     * overlapping subscriptions would race and let the older answer win; and its teardown is tied
+     * to the component, where a bare `subscribe` would outlive it if the chip were destroyed
+     * mid-flight.
+     *
+     * The accumulator above stays: a resource holds only its latest value, and a name once
+     * resolved should survive the next selection rather than be fetched again.
+     */
+    readonly #resolved = rxResource({
+        params: () => this.#unresolvedIds(),
+        stream: ({ params }) => this.#search.resolveNames(params)
+    });
+
+    /** True while ids from the address are still being turned into names. */
+    readonly $resolving = computed<boolean>(() => this.#resolved.isLoading());
 
     /**
      * Bound to the option list so a selected person stays ticked.
@@ -127,34 +159,21 @@ export class DotExperimentUserFilterComponent {
 
     constructor() {
         /**
-         * Resolves ids the chip cannot yet name.
+         * Folds each resolution into the accumulator.
          *
-         * Only ids arriving from the address need this: a person picked from the list came with a
-         * label. Hitting the service for a name already known would be a request per reload for
-         * nothing, so the service's cache — seeded by the very pages this chip loads — usually
-         * answers without going out at all.
+         * The resource decides *when* to fetch and what to cancel; this only records what came
+         * back. Writing to a signal read by the same resource's params would loop, hence the
+         * `untracked` — the guard is that a name just recorded leaves `#unresolvedIds` smaller,
+         * never larger, so the sequence terminates.
          */
         effect(() => {
-            const unresolved = this.$selected().filter(
-                (userId) => !untracked(this.#namesById)[userId]
-            );
+            const resolved = this.#resolved.value();
 
-            if (!unresolved.length) {
+            if (!resolved) {
                 return;
             }
 
-            untracked(() => {
-                this.$resolving.set(true);
-                this.#search.resolveNames(unresolved).subscribe({
-                    next: (resolved) => {
-                        this.#namesById.update((names) => ({ ...names, ...resolved }));
-                        this.$resolving.set(false);
-                    },
-                    // The service already falls back to the id per entry, so reaching here means
-                    // something unexpected. Stop saying "working" either way.
-                    error: () => this.$resolving.set(false)
-                });
-            });
+            untracked(() => this.#namesById.update((names) => ({ ...names, ...resolved })));
         });
     }
 
