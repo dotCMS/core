@@ -5,6 +5,7 @@ import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
 import com.dotcms.browser.ContentStatus;
+import com.dotcms.browser.SystemHostMode;
 import com.dotcms.browser.FieldSearchCriteria;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -162,11 +163,12 @@ public class ContentDriveHelper {
             .sortByDesc(sortDesc);
 
         // Determine if we're requesting from a specific folder or host root
-        if (folder.isSystemFolder()) {
+        final boolean atSiteRoot = folder.isSystemFolder();
+        if (atSiteRoot) {
             builder.withHostOrFolderId(host.getIdentifier())
-                 /// if we're setting a site-name directly, we care fore all subfolders
-                 /// Therefore, we should skip setting a folder path
-                .skipFolder(true);
+                 /// Whether the folder path is applied is what separates "the whole site" from
+                 /// "what sits at its root"; the system folder's path is already "/".
+                .skipFolder(skipsFolderConstraint(requestForm.browseScope(), atSiteRoot));
         } else {
             builder.withHostOrFolderId(folder.getInode())
                 // When a specific folder is selected, enable ignoreSiteForFolders to allow
@@ -174,7 +176,8 @@ public class ContentDriveHelper {
                 .ignoreSiteForFolders(true);
         }
         //This ensures that despite the site passed systemHost will be included too
-        builder.forceSystemHost(requestForm.includeSystemHost());
+        builder.systemHostMode(
+                systemHostModeFor(requestForm.browseScope(), requestForm.includeSystemHost()));
 
         // Enable Elasticsearch filtering for text search when filter is provided
         if (null != requestForm.filters() && UtilMethods.isSet(requestForm.filters().text())) {
@@ -267,6 +270,52 @@ public class ContentDriveHelper {
                 user.getUserId(), assetPath, browserQuery));
 
         return browserAPI.getPaginatedContents(browserQuery);
+    }
+
+    /**
+     * Whether the folder constraint is dropped, so the listing spans every depth of the site
+     * instead of the level it names.
+     * <p>
+     * <b>A request that names a folder is never recursive, whatever else it says.</b> That is the
+     * first line of this method and the reason it is written as a decision rather than inlined:
+     * the Asset Picker addresses folders by path and never names a scope, so making the
+     * all-site-content scope mean "always skip the folder" would silently turn every one of its
+     * folder requests into a listing of every descendant.
+     * <p>
+     * At the site root the folder to constrain by is the system folder, whose path is already
+     * {@code /}. So dropping the constraint gives the whole site, and keeping it gives what sits
+     * at the root — which is the entire difference between the two scopes.
+     *
+     * @param browseScope the requested scope, or null for today's behavior
+     * @param atSiteRoot  whether the resolved folder is the site's root
+     */
+    static boolean skipsFolderConstraint(final BrowseScope browseScope, final boolean atSiteRoot) {
+        if (!atSiteRoot) {
+            return false;
+        }
+        return null == browseScope || BrowseScope.ALL == browseScope;
+    }
+
+    /**
+     * Which host clause the listing emits.
+     * <p>
+     * The chip decides only where it has something to decide. The site-root scope excludes System
+     * Host and the System Host scope returns nothing else, so in both the scope already answers
+     * the question the chip asks, and a stale chip value carried on the request cannot override
+     * it. That is also why the chip is offered in one scope and disabled in the rest.
+     *
+     * @param browseScope       the requested scope, or null for today's behavior
+     * @param includeSystemHost what the "Show System Host" chip sent
+     */
+    static SystemHostMode systemHostModeFor(final BrowseScope browseScope,
+            final boolean includeSystemHost) {
+        if (BrowseScope.SYSTEM_HOST == browseScope) {
+            return SystemHostMode.ONLY;
+        }
+        if (BrowseScope.ROOT == browseScope) {
+            return SystemHostMode.EXCLUDE;
+        }
+        return includeSystemHost ? SystemHostMode.INCLUDE : SystemHostMode.EXCLUDE;
     }
 
     /**

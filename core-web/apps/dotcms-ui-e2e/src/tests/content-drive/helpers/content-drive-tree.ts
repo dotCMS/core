@@ -88,6 +88,27 @@ export class ContentDriveTree {
     }
 
     /**
+     * How many rows inside the hierarchy read as selected.
+     *
+     * The two standalone entries reuse `p-tree-node-content` and `p-tree-node-selected` so they are
+     * styled like the tree they sit around, which means a document-wide count of the class answers
+     * the wrong question. Scoped to the tree, this is the assertion that the sidebar is not
+     * claiming the user is in two places at once.
+     */
+    async expectNothingSelected() {
+        // `hierarchy-scroll`, not `sidebar`: this class's root is the whole panel, and the two
+        // standalone entries deliberately reuse `p-tree-node-content` / `p-tree-node-selected` so
+        // they match the rows they sit around. Counting from the panel would therefore count the
+        // selected System Host button as a selected tree row, and the assertion would pass or fail
+        // for the wrong reason. That wrapper holds the hierarchy and nothing else.
+        await expect(
+            this.root
+                .getByTestId('hierarchy-scroll')
+                .locator('.p-tree-node-content.p-tree-node-selected')
+        ).toHaveCount(0, { timeout: 10000 });
+    }
+
+    /**
      * The state-aware folder icon the shared tree renders on a folder row (#37362).
      *
      * Its `data-expanded` attribute is the assertion surface rather than the glyph class, so a

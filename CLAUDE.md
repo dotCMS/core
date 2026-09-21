@@ -122,6 +122,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Java Standards](docs/backend/JAVA_STANDARDS.md) — Coding patterns, immutables, exceptions, utilities
 - [When to Use Virtual Threads](docs/backend/VIRTUAL_THREADS.md) — Socket I/O yes, file I/O no; carrier pinning
 - [REST API Patterns](docs/backend/REST_API_PATTERNS.md) — JAX-RS, Swagger, @Schema rules
+- [Inference API](docs/backend/INFERENCE_API.md) — OpenAI-compatible `/api/inference/v1` family: chat completions, streaming, models, embeddings, images; bearer-only auth, per-site resolution, limits
 - [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) — Dependency management
 - [Configuration Patterns](docs/backend/CONFIGURATION_PATTERNS.md) — Config.getProperty() usage
 - [Database Patterns](docs/backend/DATABASE_PATTERNS.md) — DotConnect, transactions

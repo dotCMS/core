@@ -142,7 +142,7 @@ describe('withActionExecution', () => {
             // `objectContaining`: a run now also carries its id, operation and targets. The two
             // fields the indicator reads are what this pins.
             expect(store.actionExecution()).toEqual(
-                expect.objectContaining({ actionName: 'Lock', total: 2 })
+                expect.objectContaining({ operation: 'lock-id', total: 2 })
             );
         });
 
@@ -181,7 +181,7 @@ describe('withActionExecution', () => {
 
             expect(fireDefaultAction).toHaveBeenCalledTimes(1);
             expect(store.actionExecution()).toEqual(
-                expect.objectContaining({ actionName: 'Lock', total: 1 })
+                expect.objectContaining({ operation: 'lock-id', total: 1 })
             );
         });
 
@@ -626,7 +626,6 @@ describe('withActionExecution', () => {
             build();
             const runId = store.startExternalRun({
                 operation: 'upload:1',
-                actionName: 'Upload',
                 total: 1,
                 targets: [] as string[]
             });
@@ -728,7 +727,7 @@ describe('withActionExecution', () => {
             // Was a real hazard when there was one slot to wipe. Keying runs by id removes it by
             // construction, so this now guards the property rather than the workaround.
             expect(store.actionExecution()).toEqual(
-                expect.objectContaining({ actionName: 'Lock', total: 1 })
+                expect.objectContaining({ operation: 'lock-id', total: 1 })
             );
         });
 
