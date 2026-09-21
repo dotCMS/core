@@ -19779,6 +19779,116 @@
 					}
 				}
 			]
+		},
+		{
+			"name": "History comments with no workflow task (#37584)",
+			"item": [
+				{
+					"name": "Resolve the current Site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Current Site resolved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const site = pm.response.json().entity;",
+									"    pm.expect(site.identifier).to.be.a('string').and.not.empty;",
+									"    pm.collectionVariables.set(\"noTaskContentId\", site.identifier);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/currentSite",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"currentSite"
+							]
+						},
+						"description": "A Site can never have a workflow task: workflow actions are prohibited on the Host Content Type. That makes it the cheapest fixture for the no-task branch."
+					},
+					"response": []
+				},
+				{
+					"name": "History comments for a contentlet with no workflow task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Returns 200, not a 500 carrying an NPE\", function () {",
+									"    // Before #37584 findTaskByContentlet's null went straight into",
+									"    // getCommentsAndChangeHistory, which dereferenced it. The editor surfaced that",
+									"    // as a blocking \"Unknown Error\" modal on every load of a Site.",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"The timeline is empty, and no Java exception leaks into the body\", function () {",
+									"    const body = pm.response.json();",
+									"    pm.expect(body.entity).to.be.an('array').that.is.empty;",
+									"    pm.expect(JSON.stringify(body)).to.not.include('Cannot invoke');",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/tasks/history/comments/{{noTaskContentId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"tasks",
+								"history",
+								"comments",
+								"{{noTaskContentId}}"
+							]
+						},
+						"description": "Regression coverage for https://github.com/dotCMS/core/issues/37584. The new Edit Content editor calls this endpoint from its sidebar on every load."
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -19844,6 +19954,10 @@
 	"variable": [
 		{
 			"key": "identifier",
+			"value": ""
+		},
+		{
+			"key": "noTaskContentId",
 			"value": ""
 		}
 	]
