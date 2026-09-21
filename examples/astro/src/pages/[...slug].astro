@@ -13,6 +13,9 @@ if (!pageResponse.ok && pageResponse.error.httpError?.status === 404) {
   return Astro.redirect("/404");
 }
 
+// Set on a failed fetch, and also on a page that loaded but whose content query
+// came back with GraphQL errors. Matches the blog pages.
+const error = pageResponse.error;
 const pageAsset = pageResponse.ok ? pageResponse.pageAsset : undefined;
 const { vanityUrl } = pageAsset ?? {};
 
@@ -29,11 +32,11 @@ const title = pageAsset ? pageAsset.page.title : "Error";
 {
   (
     <Layout title={title}>
-      {pageResponse.ok ? (
+      {error ? (
+        <Error error={error} />
+      ) : pageResponse.ok ? (
         <DotCMSPage client:only="react" pageResponse={pageResponse} />
-      ) : (
-        <Error error={pageResponse.error} />
-      )}
+      ) : null}
     </Layout>
   )
 }
