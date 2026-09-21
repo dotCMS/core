@@ -17,17 +17,27 @@ Names, meanings and defaults are untouched, so every URL that works today produc
 | Parameter | Shape | Default (omitted when) |
 |---|---|---|
 | `created_by` | repeatable, one user id per entry | empty selection |
-| schedule window | single value from the closed set of four named windows | no constraint |
+| `schedule_from` | a local calendar date, `YYYY-MM-DD` | no lower bound |
+| `schedule_to` | a local calendar date, `YYYY-MM-DD` | no upper bound |
 
 `created_by` takes the name #36823 defines and #37007 will consume, so the eventual move to
 server-side filtering changes where the value is applied and not what it is called (FR-049).
 
-The schedule parameter deliberately does **not** adopt `running_from`/`running_to` (FR-049a).
-Those carry absolute ISO dates; this filter offers five relative windows and no custom range, so an
-absolute date in the address could not say which window was chosen — a link shared one week and
-opened the next would match no option. The address therefore carries the window itself, and the
-conversion to an absolute lower bound happens when the request is built. That conversion is
-#37007's to make; the address does not change when it lands.
+The two schedule parameters are independent: either may appear without the other, which is what an
+open bound looks like and also what the calendar produces while the second end is still being
+picked. Both bounds are inclusive and cover whole local days (FR-021).
+
+They are deliberately **not** named `running_from`/`running_to`, which #36823 defines, even though
+the shape now matches (FR-049a). Those compare the **running window** — actual runs, or the
+scheduled window for an experiment that never ran — while these compare the **scheduled start**.
+For an experiment that has already run the two answer different questions, so sharing the names
+would assert an equivalence that does not hold, and a link written by one and read by the other
+would silently filter on something else. #37007 settles the comparison first (FR-052a) and renames
+only if it settles in #36823's favour.
+
+The dates are local calendar dates rather than instants, because that is what a period picked on a
+calendar means: the link reopens on the days that were chosen. The consequence, accepted, is that
+the same link read in another time zone selects that reader's days.
 
 Note that the server-side contract does not exist yet: the endpoint still accepts only `pageId`,
 `name` and `status`. These names are adopted from a specification, not from a built API.
@@ -44,9 +54,12 @@ Note that the server-side contract does not exist yet: the endpoint still accept
 - **Transient interface state is excluded** (FR-045a). The search box inside the Created By popover
   narrows the option list rather than the data; routing it would also rewrite the address on every
   settled keystroke while the popover is open.
-- **Unrecognised values are dropped, with one exception** (FR-048). An unknown window value is
-  discarded, matching the rule `status` and `goal` already follow. An unrecognised creator id is
-  **retained** — it is not necessarily invalid, it simply matches no experiment.
+- **Unrecognised values are dropped, with one exception** (FR-048). A schedule bound that is not a
+  date is discarded, matching the rule `status` and `goal` already follow. An unrecognised creator
+  id is **retained** — it is not necessarily invalid, it simply matches no experiment.
+- **An inverted range is reported, not applied** (FR-021a). Two parseable dates whose end precedes
+  its start match nothing by construction, so applying them would read as a site with no
+  experiments scheduled then. Only the address can produce one.
 - **Changing either filter resets to the first page** (FR-041).
 - **A page size outside the offered set is still honoured** (FR-044), so an address bookmarked
   under the old 10/25/50 options is not broken.

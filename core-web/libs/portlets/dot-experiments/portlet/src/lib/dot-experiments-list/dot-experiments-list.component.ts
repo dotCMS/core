@@ -78,7 +78,7 @@ import {
     DotExperimentsListSortDirection,
     ExperimentFilterOption,
     ExperimentRow,
-    ExperimentsListScheduleWindow
+    ExperimentsListSchedulePeriod
 } from '../shared/models';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
@@ -326,7 +326,8 @@ export class DotExperimentsListComponent {
             this.store.selectedStatuses().length > 0 ||
             this.store.selectedGoals().length > 0 ||
             this.store.selectedCreators().length > 0 ||
-            this.store.selectedSchedule() !== null
+            this.store.scheduleFrom() !== null ||
+            this.store.scheduleTo() !== null
     );
 
     /**
@@ -552,8 +553,8 @@ export class DotExperimentsListComponent {
         this.#dispatch.creatorsChanged(creatorIds);
     }
 
-    onScheduleChange(window: ExperimentsListScheduleWindow | null): void {
-        this.#dispatch.scheduleChanged(window);
+    onScheduleChange(period: ExperimentsListSchedulePeriod): void {
+        this.#dispatch.scheduleChanged(period);
     }
 
     onGoalsChange(goals: string[]): void {

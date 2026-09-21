@@ -37,8 +37,7 @@ import {
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
     PAGE_LOOKUP_LANGUAGE_HEADROOM
 } from '../shared/constants';
-import { DotExperimentsListViewState, ExperimentsListScheduleWindow } from '../shared/models';
-import { scheduleWindowLowerBound } from '../util/dot-experiments-list-store.util';
+import { DotExperimentsListViewState } from '../shared/models';
 
 const CURRENT_SITE_ID = 'site-1';
 const OTHER_SITE_ID = 'site-2';
@@ -135,7 +134,8 @@ const VIEW_STATE_DEFAULTS: DotExperimentsListViewState = {
     selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
     selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
     selectedCreators: [],
-    selectedSchedule: null,
+    scheduleFrom: null,
+    scheduleTo: null,
     page: DEFAULT_EXPERIMENTS_LIST_PAGE,
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -1423,15 +1423,9 @@ describe('DotExperimentsListStore', () => {
     });
 
     describe('schedule filter (#37307)', () => {
-        const DAY = 24 * 60 * 60 * 1000;
-
-        /**
-         * The boundary is taken from the same helper the store uses, then stepped a day either
-         * side of it. Restating the arithmetic here would only test that two copies of it agree;
-         * what these assert is that the comparison is inclusive at the bound and exclusive a day
-         * before it.
-         */
-        const bound = (window: ExperimentsListScheduleWindow) => scheduleWindowLowerBound(window);
+        /** Epoch of a local calendar day at a given hour, which is what the payload carries. */
+        const instantOn = (year: number, month: number, day: number, hour = 12) =>
+            new Date(year, month - 1, day, hour).getTime();
 
         const scheduled = (id: string, startDate: number | null): DotExperiment =>
             buildExperiment({
@@ -1463,119 +1457,171 @@ describe('DotExperimentsListStore', () => {
             initStore();
         };
 
-        it('should show every experiment while no window is chosen', () => {
-            loadScheduled([scheduled('old', bound('12m') - 500 * DAY)]);
+        const pick = (from: string | null, to: string | null) =>
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged({ from, to }));
 
-            expect(store.selectedSchedule()).toBeNull();
+        it('should show every experiment while no period is picked', () => {
+            loadScheduled([scheduled('old', instantOn(2020, 1, 1))]);
+
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
             expect(ids()).toEqual(['no-schedule', 'no-start', 'old']);
         });
 
-        it.each(['1m', '3m', '6m', '12m'] as ExperimentsListScheduleWindow[])(
-            'should keep a start one day inside the %s window and drop one a day outside',
-            (window) => {
-                loadScheduled([
-                    scheduled('inside', bound(window) + DAY),
-                    scheduled('outside', bound(window) - DAY)
-                ]);
+        /**
+         * FR-020, FR-021. Both bounds inclusive and covering whole days, which is the difference
+         * between a filter picked as dates and the instants it compares: a start at nine in the
+         * morning on the closing day is inside the period, and midnight on the day after is not.
+         */
+        it('should include an experiment scheduled on either bound', () => {
+            loadScheduled([
+                scheduled('on-from', instantOn(2026, 6, 1, 9)),
+                scheduled('on-to', instantOn(2026, 6, 30, 23)),
+                scheduled('day-before', instantOn(2026, 5, 31, 23)),
+                scheduled('day-after', instantOn(2026, 7, 1, 0))
+            ]);
 
-                dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged(window));
+            pick('2026-06-01', '2026-06-30');
 
-                expect(ids()).toEqual(['inside']);
-            }
-        );
-
-        it('should include a start exactly on the boundary', () => {
-            // FR-020 says "at or after", so the bound itself is inside. An exclusive comparison
-            // would lose one experiment a day, silently, at the edge of every window.
-            //
-            // The clock is frozen for this one test, and the reason is a property of the design:
-            // the bound is resolved when the rows are filtered, not stored, so it moves a few
-            // milliseconds between building this fixture and reading it — enough to put a start
-            // that was *on* the bound just behind it. Every other test here steps a whole day
-            // either side and does not care.
-            vi.useFakeTimers();
-            vi.setSystemTime(new Date(2026, 8, 21, 12, 0));
-
-            try {
-                loadScheduled([scheduled('on-the-bound', bound('3m'))]);
-
-                dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('3m'));
-
-                expect(ids()).toEqual(['on-the-bound']);
-            } finally {
-                vi.useRealTimers();
-            }
+            expect(ids()).toEqual(['on-from', 'on-to']);
         });
 
-        it('should keep a future start in every window, since there is no upper bound', () => {
-            // FR-020. A scheduled-but-not-started experiment is the case a user filtering by
-            // "last month" most wants to see, so an upper bound at today would hide exactly it.
-            loadScheduled([scheduled('future', Date.now() + 90 * DAY)]);
+        it('should match a period of a single day at any hour of it', () => {
+            // The case that fails outright if the bounds are taken as midnight-to-midnight.
+            loadScheduled([
+                scheduled('early', instantOn(2026, 6, 15, 0)),
+                scheduled('late', instantOn(2026, 6, 15, 23)),
+                scheduled('next-day', instantOn(2026, 6, 16, 0))
+            ]);
 
-            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+            pick('2026-06-15', '2026-06-15');
 
-            expect(ids()).toEqual(['future']);
+            expect(ids()).toEqual(['early', 'late']);
         });
 
-        it('should exclude both shapes of "not scheduled" while a window is in force', () => {
+        /**
+         * FR-020. An open upper bound is what the calendar produces after the first click, and it
+         * is a useful filter on its own — an experiment scheduled but not yet started is the one a
+         * user asking "what is coming" most wants to see.
+         */
+        it('should constrain only one side when a bound is left open', () => {
+            loadScheduled([
+                scheduled('before', instantOn(2026, 5, 1)),
+                scheduled('after', instantOn(2026, 7, 1)),
+                scheduled('far-future', instantOn(2030, 1, 1))
+            ]);
+
+            pick('2026-06-01', null);
+
+            expect(ids()).toEqual(['after', 'far-future']);
+        });
+
+        it('should constrain only the upper side when the lower bound is open', () => {
+            loadScheduled([
+                scheduled('before', instantOn(2026, 5, 1)),
+                scheduled('after', instantOn(2026, 7, 1))
+            ]);
+
+            pick(null, '2026-06-01');
+
+            expect(ids()).toEqual(['before']);
+        });
+
+        it('should exclude both shapes of "not scheduled" while a period is in force', () => {
             // FR-022, and the two shapes are not interchangeable: `scheduling` may be absent
             // altogether, or present carrying a null `startDate`. Reading `startDate` off the
-            // first shape throws; treating the second as scheduled lets it through every window.
-            loadScheduled([scheduled('inside', bound('1m') + DAY)]);
+            // first shape throws; treating the second as scheduled lets it through every period.
+            loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
 
-            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+            pick('2026-06-01', '2026-06-30');
 
             expect(ids()).not.toContain('no-schedule');
             expect(ids()).not.toContain('no-start');
             expect(ids()).toEqual(['inside']);
         });
 
-        it('should bring the unscheduled back when the filter returns to no constraint', () => {
-            loadScheduled([scheduled('inside', bound('1m') + DAY)]);
+        it('should bring the unscheduled back when the period is cleared', () => {
+            loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
 
-            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
-            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged(null));
+            pick('2026-06-01', '2026-06-30');
+            pick(null, null);
 
             expect(ids()).toEqual(['inside', 'no-schedule', 'no-start']);
         });
 
+        describe('an inverted range (FR-021a)', () => {
+            it('should report itself as unusable', () => {
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-30', '2026-06-01');
+
+                expect(store.isScheduleRangeUnusable()).toBe(true);
+            });
+
+            it('should not be applied, so the table is not silently emptied', () => {
+                // It matches nothing by construction. Applied, the screen would read as a site
+                // with no experiments scheduled then, and the reason would be invisible.
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-30', '2026-06-01');
+
+                expect(ids()).toEqual(['inside', 'no-schedule', 'no-start']);
+            });
+
+            it('should report a usable period as usable', () => {
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-01', '2026-06-30');
+
+                expect(store.isScheduleRangeUnusable()).toBe(false);
+            });
+
+            it('should not call a single bound inverted', () => {
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-30', null);
+
+                expect(store.isScheduleRangeUnusable()).toBe(false);
+            });
+        });
+
         it('should narrow together with the other filters (AND across filters)', () => {
             loadScheduled([
-                scheduled('recent-draft', bound('1m') + DAY),
+                scheduled('june-draft', instantOn(2026, 6, 15)),
                 {
-                    ...scheduled('recent-running', bound('1m') + DAY),
+                    ...scheduled('june-running', instantOn(2026, 6, 15)),
                     status: DotExperimentStatus.RUNNING
                 }
             ]);
 
-            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+            pick('2026-06-01', '2026-06-30');
             dispatcher.dispatch(
                 dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
             );
 
-            expect(ids()).toEqual(['recent-running']);
+            expect(ids()).toEqual(['june-running']);
         });
 
         it('should leave the status and goal counts untouched (FR-027, FR-050)', () => {
-            loadScheduled([scheduled('old', bound('12m') - 500 * DAY)]);
+            loadScheduled([scheduled('old', instantOn(2020, 1, 1))]);
 
             const statusCountsBefore = { ...store.statusCounts() };
             const goalCountsBefore = { ...store.goalCounts() };
 
-            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+            pick('2026-06-01', '2026-06-30');
 
             // The counts describe the set the chips are offered against, snapshotted before any
-            // selection narrowing — so choosing a window must not move the numbers beside the
+            // selection narrowing — so picking a period must not move the numbers beside the
             // statuses and goals the user has not chosen.
             expect(store.statusCounts()).toEqual(statusCountsBefore);
             expect(store.goalCounts()).toEqual(goalCountsBefore);
         });
 
-        it('should return to the first page when the window changes', () => {
-            loadScheduled([scheduled('inside', bound('1m') + DAY)]);
+        it('should return to the first page when the period changes', () => {
+            loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
 
             dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 20 }));
-            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('1m'));
+            pick('2026-06-01', '2026-06-30');
 
             expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
         });
@@ -1599,7 +1645,12 @@ describe('DotExperimentsListStore', () => {
                 dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
             );
             dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
-            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('3m'));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scheduleChanged({
+                    from: '2026-06-01',
+                    to: '2026-06-30'
+                })
+            );
 
             dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
 
@@ -1607,7 +1658,8 @@ describe('DotExperimentsListStore', () => {
             expect(store.selectedStatuses()).toEqual([]);
             expect(store.selectedGoals()).toEqual([]);
             expect(store.selectedCreators()).toEqual([]);
-            expect(store.selectedSchedule()).toBeNull();
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
         });
 
         it('should return to the first page', () => {
@@ -1644,13 +1696,19 @@ describe('DotExperimentsListStore', () => {
             initStore();
 
             dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
-            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged('3m'));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scheduleChanged({
+                    from: '2026-06-01',
+                    to: '2026-06-30'
+                })
+            );
             dispatcher.dispatch(
                 dotExperimentsListPageEvents.scopedToPage({ pageId: PANEL_PAGE_ID, languageId: 1 })
             );
 
             expect(store.selectedCreators()).toEqual([]);
-            expect(store.selectedSchedule()).toBeNull();
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
         });
     });
 

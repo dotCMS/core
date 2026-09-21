@@ -60,12 +60,13 @@ export interface DotExperimentsListViewState {
      */
     selectedCreators: string[];
     /**
-     * Schedule window the list is narrowed to; `null` means no date constraint (#37307).
+     * Lower bound of the scheduled-start period; `null` for no lower bound (#37307).
      *
-     * The window token, not a resolved lower bound — see
-     * {@link EXPERIMENTS_LIST_SCHEDULE_WINDOWS}. Carried in the address as `schedule`.
+     * A local calendar date, carried in the address as `schedule_from`.
      */
-    selectedSchedule: ExperimentsListScheduleWindow | null;
+    scheduleFrom: string | null;
+    /** Upper bound of the same period; `null` for no upper bound. Address: `schedule_to`. */
+    scheduleTo: string | null;
     page: number;
     perPage: number;
     orderBy: string;
@@ -102,12 +103,20 @@ export interface DotExperimentsListPageChange {
 }
 
 /**
- * Schedule windows the list can narrow to, as the address carries them.
+ * The period the list narrows its scheduled starts to, as the address carries it.
  *
- * The token travels, never the lower bound it resolves to — see
- * `EXPERIMENTS_LIST_SCHEDULE_WINDOWS` for why.
+ * Two independent bounds rather than a nullable pair, mirroring the two query parameters one for
+ * one: either may be absent, and an absent bound constrains nothing on that side. Neither present
+ * is no filter at all (FR-019, FR-020).
+ *
+ * Local calendar dates in `SCHEDULE_BOUND_FORMAT`, not instants — see that constant.
  */
-export type ExperimentsListScheduleWindow = '1m' | '3m' | '6m' | '12m';
+export interface ExperimentsListSchedulePeriod {
+    /** Inclusive, from the first instant of its day; `null` for an open lower bound. */
+    from: string | null;
+    /** Inclusive, to the last instant of its day; `null` for an open upper bound. */
+    to: string | null;
+}
 
 /** Sort change emitted by the table header. */
 export interface DotExperimentsListSortChange {

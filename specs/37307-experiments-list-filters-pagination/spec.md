@@ -24,8 +24,8 @@ them is blocked: the one external dependency, #37304, has shipped.
 
 1. **Created By filter** — narrow the list to experiments created by one or more chosen people.
    The people come from the whole user directory, not just from the creators present in the list.
-2. **Schedule time filter** — narrow the list to experiments whose scheduled start falls inside a
-   chosen window. Single-select, five fixed options, lower bound only.
+2. **Schedule date filter** — narrow the list to experiments whose scheduled start falls inside a
+   chosen date range, picked on a calendar. One range at a time; either bound may be left open.
 3. **Created By column** — show the creator's name in the table. Depends on
    [#37304](https://github.com/dotCMS/core/issues/37304), which adds the name to the API payload and
    **has shipped**; the column is no longer blocked. The two filters never were: creator matching
@@ -135,37 +135,50 @@ observing which rows survive, with the other three parts absent.
 
 ---
 
-### User Story 2 - Find the experiments scheduled to start recently (Priority: P1)
+### User Story 2 - Find the experiments scheduled to start in a given period (Priority: P1)
 
-An editor wants the experiments that have been put on the calendar lately — the last quarter, say —
-without reading every row's schedule. They pick a window from a chip and the table narrows to
-experiments whose start date falls at or after the start of that window, including ones scheduled
-to start next week. Experiments with no schedule at all drop out, because "scheduled in the last 3
-months" is not a claim an unscheduled draft can satisfy. Picking a different window replaces the
-first; returning to "Any schedule" restores everything.
+An editor wants the experiments put on the calendar for a particular stretch of time — last
+quarter, the fortnight around a launch, everything from the start of the month onwards — without
+reading every row's schedule. They open a chip, pick the period on a calendar, and the table
+narrows to experiments whose start date falls inside it. Experiments with no schedule at all drop
+out, because "scheduled between these dates" is not a claim an unscheduled draft can satisfy.
+Picking a new period replaces the previous one; clearing the chip restores everything.
 
 **Why this priority**: Also unblocked, also demo feedback, and it is what makes a long list
 navigable in time. Independent of US1.
 
-**Independent Test**: Ship the time chip alone. Fully testable by choosing windows against
-experiments with start dates on either side of each boundary.
+**Independent Test**: Ship the date chip alone. Fully testable by picking ranges against
+experiments with start dates on either side of each bound.
+
+**Date range and not relative windows — a deliberate divergence from the issue.** #37307 asks for
+five fixed options (no constraint, and the last 1, 3, 6 and 12 months), and this spec specified
+them until the point where Content Drive's own date filtering was examined. Content Drive filters
+dates with an absolute from-to range on a calendar (`dot-field-filter`, in `@dotcms/ui`), which the
+asset picker and the relationship field also use. This feature exists to stop two listing screens
+in one admin disagreeing about how a listing behaves, so shipping a second, different way to filter
+by date would have created the very divergence US4 exists to close. The range is also strictly more
+expressive: every window the issue asks for is a range a user can pick, and periods that are not
+"the last N months" become reachable. The cost is accepted and recorded in FR-049a: a shared link
+now freezes the period rather than continuing to mean "the last three months".
 
 **Acceptance Scenarios**:
 
-1. **Given** the listing, **When** the time chip is opened, **Then** exactly five options are
-   offered: Any schedule, and the last 1, 3, 6 and 12 months.
-2. **Given** no choice has been made, **Then** the chip applies no date constraint and reads as
+1. **Given** the listing, **When** the date chip is opened, **Then** a calendar in range mode is
+   shown, with no period pre-selected.
+2. **Given** no period has been picked, **Then** the chip applies no date constraint and reads as
    unfiltered.
-3. **Given** "last 3 months" is chosen, **When** "last 12 months" is then chosen, **Then** only
-   the 12-month window applies — the two never both apply.
-4. **Given** "last 3 months" is chosen, **Then** an experiment whose start is one day inside the
-   window is shown and one whose start is one day outside it is not.
-5. **Given** "last 3 months" is chosen, **Then** an experiment scheduled to start next month is
-   shown, because the window has no upper bound.
-6. **Given** "last 3 months" is chosen, **Then** an experiment with no schedule is not shown.
-7. **Given** "Any schedule" is chosen, **Then** experiments with no schedule are shown again.
-8. **Given** a window is chosen together with a search term, a status, a goal and a creator,
+3. **Given** a period is in force, **When** another is picked, **Then** only the second applies —
+   the two never both apply.
+4. **Given** a period from 1 June to 30 June, **Then** an experiment scheduled to start on either
+   of those two days is shown, and one scheduled for 31 May or 1 July is not.
+5. **Given** only a start bound is picked, **Then** every experiment scheduled on or after it is
+   shown, including one scheduled to start next year — an open upper bound constrains nothing.
+6. **Given** a period is in force, **Then** an experiment with no schedule is not shown.
+7. **Given** the chip is cleared, **Then** experiments with no schedule are shown again.
+8. **Given** a period is picked together with a search term, a status, a goal and a creator,
    **Then** the table shows only experiments satisfying all of them.
+9. **Given** an address carrying an end date earlier than its start date, **Then** the listing
+   reports the range as unusable rather than showing an empty table with no reason for it.
 
 ---
 
@@ -236,16 +249,21 @@ fewer rows than one page.
   today, so the creator selection behaves like them.
 - **An experiment has a schedule object but no start date within it.** The schedule can be absent
   *or* present with an empty start. Both are "unscheduled" for the purposes of the time filter.
-- **A window is chosen and left in force across midnight, or across a month boundary.** The window
-  is anchored to "now", so its lower bound moves as the clock moves; a row can therefore leave the
-  filtered set without the user touching anything.
-- **"Last month" against months of different lengths.** Subtracting one month from the 31st lands
-  on a shorter month; the anchor has to be defined rather than left to chance. See FR-021.
+- **A period is picked and left in force across midnight.** Nothing moves: the bounds are absolute
+  dates, so a listing left open keeps showing the same rows. This is the case relative windows got
+  wrong and is why the edge is listed rather than dropped.
+- **A period of exactly one day.** The filter is picked as dates and compared against instants, so
+  the bounds have to cover whole days or a single-day period matches only what is scheduled for
+  midnight. See FR-021.
+- **A period whose end precedes its start.** Unreachable through the calendar, reachable through
+  the address. It matches nothing by construction, so it has to be reported rather than applied —
+  otherwise it reads as a site with no experiments. See FR-021a.
 - **The user directory search matches nothing.** The option list says so, distinctly from a
   directory that failed to load.
-- **The address names an unknown user id, or a window value that is not one of the five.** Both are
-  hand-editable. Unknown values are dropped rather than trusted, which is the rule the existing
-  status and goal parameters already follow.
+- **The address names an unknown user id, or a schedule bound that is not a date.** Both are
+  hand-editable. Unusable values are dropped rather than trusted, which is the rule the existing
+  status and goal parameters already follow; an unknown user id is kept, because any string can be
+  a real id.
 - **Every filter is cleared from the empty state.** The clear-filters action has to clear the two
   new filters as well, or it leaves the list still narrowed while claiming to have widened it.
 - **A creator selection is in force and every experiment of that creator is deleted from the list
@@ -345,34 +363,42 @@ fewer rows than one page.
   Goal chips already use rather than introducing a chip-specific one. The design prototype reads
   "All Users"; the shared label is preferred so the three chips agree.
 
-### Schedule time filter
+### Schedule date filter
 
-- **FR-017**: The listing MUST offer a schedule time filter as a chip, offering exactly five
-  options: no constraint, and the last 1, 3, 6 and 12 months.
-- **FR-018**: The filter MUST be single-select: choosing an option replaces any previous choice,
-  and two windows can never be in force at once. No existing chip in the portlet's chip family is
-  single-select, so this is a new mode.
-- **FR-019**: No constraint MUST be the default state, and in that state the filter MUST read as
+- **FR-017**: The listing MUST offer a schedule date filter as a chip whose popover holds a
+  calendar in **range** mode, so a period is picked by selecting its two ends. It MUST NOT offer a
+  list of relative windows; see the divergence note in User Story 2 for why the issue's five
+  options were not built.
+- **FR-018**: One period MUST be in force at a time: picking a new one replaces the previous, and
+  two periods can never both apply. This follows from the value being a single range rather than
+  from a rule the chip has to enforce.
+- **FR-019**: No period MUST be the default state, and in that state the filter MUST read as
   unfiltered and MUST apply no date constraint.
-- **FR-020**: With a window in force, an experiment MUST match when its scheduled start is at or
-  after the window's lower bound. There MUST be no upper bound, so an experiment scheduled to start
-  in the future matches every window.
-- **FR-021**: The lower bound MUST be computed by subtracting the option's month count from the
-  current instant, and the rule for months of unequal length MUST be stated in the implementation
-  and asserted by a test, so the boundary is a decision rather than an accident.
-- **FR-022**: An experiment with no scheduled start MUST be excluded whenever a window is in force,
-  and MUST reappear when the filter returns to no constraint. Both shapes count as having no
-  scheduled start: no schedule at all, and a schedule carrying no start date.
+- **FR-020**: With a period in force, an experiment MUST match when its scheduled start falls
+  within it, **both bounds inclusive**. Either bound MAY be left open, and an open bound MUST
+  constrain nothing on that side — so a start bound alone means "on or after", which is what the
+  calendar produces while the second end is still being chosen, and is useful in its own right.
+- **FR-021**: The bounds MUST cover whole local days: the start bound from the first instant of its
+  day and the end bound to the last. The filter is picked as dates while the data it compares is an
+  instant, so without this a period of a single day would match only experiments scheduled for
+  exactly midnight.
+- **FR-021a**: A period whose end precedes its start MUST NOT be applied as a filter. It MUST be
+  reported to the user instead, because an inverted range matches nothing by construction and would
+  otherwise read as "this site has no experiments scheduled then". Only an address can produce one
+  — the calendar cannot — so this is about a hand-edited or stale link.
+- **FR-022**: An experiment with no scheduled start MUST be excluded whenever either bound is in
+  force, and MUST reappear when the filter is cleared. Both shapes count as having no scheduled
+  start: no schedule at all, and a schedule carrying no start date.
 - **FR-023**: The filter MUST compose with every other active filter as a conjunction (as FR-007).
-- **FR-024**: Clearing the filter MUST return it to no constraint and restore the rows the window
+- **FR-024**: Clearing the filter MUST return it to no constraint and restore the rows the period
   was hiding.
-- **FR-025**: The default state MUST be represented as "nothing selected" rather than as a selected
-  "Any schedule" option, so that the chip reads as neutral while unfiltered and cannot enter the
-  self-contradicting state of "Any schedule" ticked alongside a specific window. The words "Any
-  schedule" MUST still be shown as the chip's unfiltered label. (Rationale: the shared chip derives
-  "active" from having selections, and its own documentation argues against an "All" row for
-  exactly this reason.)
-- **FR-026**: The five option labels MUST come from the message catalogue.
+- **FR-025**: The default state MUST be the **absence of a range**, so the chip reads as neutral
+  while unfiltered, exactly as the Status and Goal chips do while nothing is ticked. The chip's
+  unfiltered label MUST still read as the catalogue's "any schedule" copy. (Rationale: the shared
+  chip derives "active" from having selections, so a chip that always held a range — today's, say —
+  would claim a filter it is not applying.)
+- **FR-026**: Every string the chip shows MUST come from the message catalogue: its title, its
+  unfiltered label, the two bound labels, the clear affordance and the invalid-range message.
 - **FR-027**: The filter MUST NOT change the Status or Goal chip counts (see FR-050).
 
 ### Created By column
@@ -475,19 +501,29 @@ fewer rows than one page.
   — always write every parameter — is deliberately not adopted, because it would change all ten
   existing parameters and the deep links #37005 built on them.
 - **FR-048**: Values in the address that are not recognised MUST be dropped rather than applied —
-  an unknown window value, and a malformed creator entry — matching the rule the Status and Goal
-  parameters already follow. An unrecognised creator id is not necessarily invalid, so it MUST be
+  an unparseable schedule bound, and a malformed creator entry — matching the rule the Status and
+  Goal parameters already follow. An unrecognised creator id is not necessarily invalid, so it MUST be
   retained and simply match no experiment.
 - **FR-049**: The creator parameter MUST be named `created_by`, matching the name #36823 defines
   and #37007 will consume, so the move to server-side filtering is a change of where the value is
   applied and not a rename.
-- **FR-049a**: The schedule parameter MUST **not** adopt `running_from`/`running_to`, and this is
-  deliberate rather than an oversight. Those carry absolute ISO dates; this filter offers five
-  **relative** windows and no custom range. An absolute date in the address cannot say which window
-  was chosen — a link shared one week and opened the next would match no option — so the address
-  MUST carry the chosen window itself, and the conversion to an absolute lower bound MUST happen
-  when the request is built. #37007 performs that conversion; nothing about the address changes
-  when it lands.
+- **FR-049a**: The period MUST travel as two parameters carrying local calendar dates, and they
+  MUST be named `schedule_from` and `schedule_to`. Either MAY appear without the other, matching
+  FR-020's open bounds.
+
+  They are deliberately **not** named `running_from`/`running_to`, which #36823 defines, even
+  though the shape now matches. Those compare the **running window** while these compare the
+  **scheduled start** (FR-052a), so sharing their names would assert an equivalence that does not
+  hold; a link written by one and read by the other would silently answer a different question.
+  #37007 MUST settle the comparison first and rename only if it settles in #36823's favour.
+
+  Two consequences of an absolute range are accepted rather than unnoticed. A shared link now
+  freezes the period instead of continuing to mean "the last three months" — which is the
+  trade-off taken knowingly in exchange for matching how the rest of the admin filters dates, and
+  is also what makes such a link reproducible. And the dates are **local calendar dates**, not
+  instants, so the same link read in another time zone selects that reader's days; that is what a
+  date picked on a calendar means, and carrying an instant instead would make the calendar show a
+  different day than the one that was chosen.
 - **FR-049b**: Both parameters MUST be recorded in the plan alongside the existing ten.
 - **FR-050**: Neither new filter may change the Status or Goal option counts. Those counts are
   computed from the set narrowed by site, search and page-scope only — deliberately before the
@@ -507,10 +543,13 @@ fewer rows than one page.
   `running_from`/`running_to` compare the **running window** — actual runs, or the scheduled window
   when the experiment never ran — with both bounds inclusive. For an experiment that has already
   run the two answer different questions. Whichever wins, the change MUST be a deliberate decision
-  recorded there, because it is visible to anyone who had the filter applied before the swap.
-- **FR-053**: Every new user-facing string — chip titles, the five window labels, the column header,
-  the option list's empty and failure copy — MUST come from the message catalogue. No literal
-  English in templates or components.
+  recorded there, because it is visible to anyone who had the filter applied before the swap. Now
+  that both sides are absolute ranges the difference is easy to miss — the parameter names are the
+  only thing keeping them apart, which is why FR-049a refuses to share them.
+- **FR-053**: Every new user-facing string — chip titles, the date chip's unfiltered label, bound
+  labels, clear affordance and invalid-range message, the column header, and the option list's
+  empty and failure copy — MUST come from the message catalogue. No literal English in templates or
+  components.
 
 ### Key Entities
 
@@ -523,11 +562,13 @@ fewer rows than one page.
 - **Directory person (option)**: an id and a display label, fetched a page at a time and searched
   by the server. Carries no count. Selected people are held as ids, which is what the address
   stores.
-- **Schedule window**: one of five values — none, and 1, 3, 6 or 12 months — resolving to a single
-  lower bound relative to now. At most one is in force.
+- **Schedule period**: a pair of local calendar dates, either of which may be absent, bounding the
+  scheduled start the filter compares. At most one period is in force. A period with neither bound
+  is no filter at all; one whose end precedes its start is unusable and is reported rather than
+  applied.
 - **Listing view state**: the existing bag of search term, status selection, goal selection, page,
   page size, sort field, sort direction and page scope, extended by the creator selection and the
-  chosen window. It is what the address serialises and what every narrowing reads.
+  schedule period. It is what the address serialises and what every narrowing reads.
 
 ---
 
@@ -542,9 +583,12 @@ fewer rows than one page.
   per keystroke.
 - **SC-004**: Scrolling to the end of the directory issues no further requests: the request count
   stops increasing once the last page has been received.
-- **SC-005**: For each of the four windows, an experiment one day inside the boundary is listed and
-  one day outside it is not; an experiment scheduled to start in the future is listed under all
-  four; an unscheduled experiment is listed under none of them and under no constraint is listed.
+- **SC-005**: For a picked period, an experiment scheduled on either bound is listed and one
+  scheduled a day outside either bound is not; with only a start bound, an experiment scheduled far
+  in the future is listed; an unscheduled experiment is listed under no period and is listed again
+  once the chip is cleared.
+- **SC-005a**: An address whose end bound precedes its start bound reports the range as unusable,
+  and never renders as an empty table with no explanation.
 - **SC-006**: Any combination of the five narrowings — search, Status, Goal, Created By, schedule —
   yields exactly the experiments satisfying all of them, verified for at least one combination of
   all five at once.
@@ -622,13 +666,16 @@ fewer rows than one page.
 3. **The creator filter matches ids, not names.** Taken from the issue, and the reason the filters
    are not blocked by #37304. It also means a creator selection is meaningful before any name is
    available.
-4. **Windows are anchored to "now" at evaluation time**, not to when the option was chosen, so a
-   long-open listing's boundary drifts with the clock. This is the simplest reading of "the last 3
-   months" and matches how such filters read elsewhere; it is called out because it makes the
-   filtered set time-dependent.
-5. **"Any schedule" is modelled as no selection**, per FR-025, rather than as a selected option.
-   This is a deliberate choice made against the shared chip's own documented reasoning; it is
-   visible to the user only as a neutral chip while unfiltered, which is how Status and Goal read.
+4. **The period is absolute and therefore frozen.** A picked range does not drift with the clock,
+   so a listing left open overnight keeps showing the same rows and a shared link keeps selecting
+   the same days. That is the opposite of the relative windows the issue asked for, and it is the
+   trade-off FR-049a takes knowingly: reproducibility and consistency with how the rest of the
+   admin filters dates, in exchange for a link that no longer means "the last three months" when
+   it is opened later.
+5. **The bounds are local calendar dates, not instants**, per FR-049a. A range picked on a calendar
+   means the reader's own days; carrying an instant instead would make the calendar reopen on a
+   different day than the one chosen. The consequence is that the same link read in another time
+   zone selects that reader's days, which is the intended reading of a date rather than a defect.
 6. **A creator selection survives a site switch**, like the search term, status and goal selections
    do, and unlike the page scope. Assumed rather than specified in the issue.
 7. **The user directory endpoint is used as-is.** No backend work is in scope: the endpoint already
@@ -672,12 +719,16 @@ the prototype alongside this spec is not surprised by the differences.
     Rejected in FR-016a in favour of the behaviour the Status and Goal chips already have, so the
     three chips in one toolbar read alike; a badge on one of them is a new affordance for no
     functional gain.
-15. **The prototype's time filter offers a selectable "Any schedule" row.** FR-025 deliberately
-    diverges, modelling the default as no selection, so the chip reads neutral while unfiltered and
-    cannot reach the contradictory state of "Any schedule" ticked beside a specific window.
+15. **The issue and the prototype ask for five relative windows; this ships a date range.** The
+    divergence is deliberate and is argued in User Story 2: Content Drive filters dates with an
+    absolute from-to calendar range, and a second screen in the same admin filtering dates a
+    different way would create exactly the inconsistency US4 exists to close. The range also
+    covers every window the issue asks for, plus periods that are not "the last N months".
+    **This needs the issue corrected**, which happens through the coordinator; it is not an
+    implementation liberty taken quietly.
 16. **The prototype's window labels read "Scheduled in last 3 months"** — no "the" — **and its
-    active chip drops the "Scheduled in " prefix.** The issue writes "Scheduled in the last month".
-    The exact catalogue strings are a plan-phase decision; the five options and their meanings are
+    active chip drops the "Scheduled in " prefix.** Moot now that the options are gone: what the
+    chip shows is the picked period. Recorded because the option labels and their meanings were
     not.
 17. **The prototype draws a round initials avatar beside the creator's name.** Treated as a design
     note rather than a requirement; the issue asks only for the name, truncated with the full value

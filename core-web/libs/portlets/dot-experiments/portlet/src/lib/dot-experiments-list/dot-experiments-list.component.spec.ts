@@ -160,7 +160,9 @@ const createStoreMock = () => ({
     goalCounts: vi.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
     selectedGoals: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
     selectedCreators: vi.fn().mockReturnValue([]),
-    selectedSchedule: vi.fn().mockReturnValue(null),
+    scheduleFrom: vi.fn().mockReturnValue(null),
+    scheduleTo: vi.fn().mockReturnValue(null),
+    isScheduleRangeUnusable: vi.fn().mockReturnValue(false),
     filter: vi.fn().mockReturnValue(''),
     selectedPageId: vi.fn().mockReturnValue(null),
     selectedPageUrl: vi.fn().mockReturnValue(null),
@@ -1156,45 +1158,72 @@ describe('DotExperimentsListComponent', () => {
     });
 
     describe('the schedule filter (#37307)', () => {
+        const PERIOD = { from: '2026-06-01', to: '2026-06-30' };
+
         it('should render the chip in the toolbar', () => {
             renderRowWith(DotExperimentStatus.DRAFT);
 
             expect(spectator.query(byTestId('experiments-schedule-filter'))).not.toBeNull();
         });
 
-        it('should dispatch the chosen window', () => {
+        it('should dispatch the picked period', () => {
             renderRowWith(DotExperimentStatus.DRAFT);
 
-            spectator.component.onScheduleChange('3m');
+            spectator.component.onScheduleChange(PERIOD);
 
             expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListPageEvents.scheduleChanged('3m')
+                dotExperimentsListPageEvents.scheduleChanged(PERIOD)
             );
         });
 
-        it('should dispatch the cleared constraint as null, not as an absent window', () => {
+        it('should dispatch a cleared period as two open bounds', () => {
             renderRowWith(DotExperimentStatus.DRAFT);
 
-            spectator.component.onScheduleChange(null);
+            spectator.component.onScheduleChange({ from: null, to: null });
 
             expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListPageEvents.scheduleChanged(null)
+                dotExperimentsListPageEvents.scheduleChanged({ from: null, to: null })
             );
         });
 
-        it('should treat a window in force as an active filter', () => {
-            // Otherwise a window that matches nothing reaches the "this site has no experiments"
+        it.each([
+            ['both bounds', '2026-06-01', '2026-06-30'],
+            ['only a lower bound', '2026-06-01', null],
+            ['only an upper bound', null, '2026-06-30']
+        ])('should treat %s as an active filter', (_label, from, to) => {
+            // Otherwise a period that matches nothing reaches the "this site has no experiments"
             // state, which offers no way out, instead of "nothing matched", which does.
-            storeMock.selectedSchedule.mockReturnValue('1m');
+            storeMock.scheduleFrom.mockReturnValue(from);
+            storeMock.scheduleTo.mockReturnValue(to);
             renderRowWith(DotExperimentStatus.DRAFT);
 
             expect(spectator.component.$hasActiveFilters()).toBe(true);
         });
 
-        it('should read as unfiltered while no window is in force', () => {
+        it('should read as unfiltered while no period is in force', () => {
             renderRowWith(DotExperimentStatus.DRAFT);
 
             expect(spectator.component.$hasActiveFilters()).toBe(false);
+        });
+
+        /**
+         * FR-021a. Reported in the toolbar rather than inside the chip's popover, because only an
+         * address can produce an inverted range: the user arrives with the chip closed and no
+         * reason to open it. A message behind a click is not a report.
+         */
+        it('should say so in the toolbar when the address inverts the range', () => {
+            storeMock.isScheduleRangeUnusable.mockReturnValue(true);
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(
+                spectator.query(byTestId('experiments-schedule-range-error'))?.textContent
+            ).toContain('experiments.list.filter.schedule.invalid-range');
+        });
+
+        it('should show no range error while the period is usable', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.query(byTestId('experiments-schedule-range-error'))).toBeNull();
         });
     });
 

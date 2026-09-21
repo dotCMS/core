@@ -36,16 +36,20 @@ import {
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
-    DEFAULT_EXPERIMENTS_LIST_SCHEDULE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
     OPT_IN_STATUSES,
     PAGE_LOOKUP_LANGUAGE_HEADROOM
 } from '../shared/constants';
-import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/models';
+import {
+    DotExperimentPageInfo,
+    DotExperimentsListViewState,
+    ExperimentsListSchedulePeriod
+} from '../shared/models';
 import {
     comparatorFor,
     distinctPageIds,
-    matchesScheduleWindow,
+    isScheduleRangeInverted,
+    matchesSchedulePeriod,
     emptyGoalCounts,
     emptyStatusCounts,
     fromRouteParams,
@@ -53,7 +57,7 @@ import {
     normalizePagePath,
     parseViewState,
     resolvedPageInfo,
-    scheduleWindowLowerBound,
+    scheduleBoundsOf,
     toQueryParams
 } from '../util/dot-experiments-list-store.util';
 import { resolvePagePath } from '../util/dot-experiments-list.util';
@@ -79,7 +83,8 @@ const initialState: DotExperimentsListState = {
     selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
     selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
     selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
-    selectedSchedule: DEFAULT_EXPERIMENTS_LIST_SCHEDULE,
+    scheduleFrom: null,
+    scheduleTo: null,
     page: DEFAULT_EXPERIMENTS_LIST_PAGE,
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -304,27 +309,42 @@ export const DotExperimentsListStore = signalStore(
             );
         });
 
+        /** The period as one value, since both bounds are always read together. */
+        const schedulePeriod = computed<ExperimentsListSchedulePeriod>(() => ({
+            from: store.scheduleFrom(),
+            to: store.scheduleTo()
+        }));
+
         /**
-         * Narrowed to experiments scheduled to start within the chosen window (#37307).
+         * A period naming two real dates in the wrong order, which only the address can produce.
          *
-         * The bound is resolved here rather than stored, because the window is relative: what "the
-         * last month" means moves with the clock, and freezing a bound into state would make a
-         * long-lived tab answer yesterday's question.
+         * Exposed rather than swallowed: it matches nothing by construction, so applying it would
+         * empty the table and read as a site with no experiments scheduled then. The narrowing
+         * below therefore leaves the rows alone and the screen says why (FR-021a).
+         */
+        const isScheduleRangeUnusable = computed<boolean>(() =>
+            isScheduleRangeInverted(schedulePeriod())
+        );
+
+        /**
+         * Narrowed to experiments scheduled to start inside the chosen period (#37307).
+         *
+         * The instants are resolved here rather than stored, because the period is held as
+         * calendar dates and what those mean in milliseconds depends on the reader's zone — which
+         * is the point of storing dates (FR-049a).
          *
          * Sits after the counts snapshot for the same reason as the creator narrowing above
          * (FR-027, FR-050).
          */
         const scheduleFilteredExperiments = computed<DotExperiment[]>(() => {
-            const selectedSchedule = store.selectedSchedule();
+            const bounds = scheduleBoundsOf(schedulePeriod());
 
-            if (!selectedSchedule) {
+            if (!bounds) {
                 return creatorFilteredExperiments();
             }
 
-            const lowerBound = scheduleWindowLowerBound(selectedSchedule);
-
             return creatorFilteredExperiments().filter((experiment) =>
-                matchesScheduleWindow(experiment, selectedSchedule, lowerBound)
+                matchesSchedulePeriod(experiment, bounds)
             );
         });
 
@@ -366,6 +386,7 @@ export const DotExperimentsListStore = signalStore(
             goalFilteredExperiments,
             creatorFilteredExperiments,
             scheduleFilteredExperiments,
+            isScheduleRangeUnusable,
             filteredExperiments,
             sortedExperiments,
             pagedExperiments,
@@ -439,7 +460,8 @@ export const DotExperimentsListStore = signalStore(
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
         on(dotExperimentsListPageEvents.scheduleChanged, ({ payload }) => ({
-            selectedSchedule: payload,
+            scheduleFrom: payload.from,
+            scheduleTo: payload.to,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
         on(dotExperimentsListPageEvents.pageChanged, ({ payload }) => ({
@@ -467,7 +489,8 @@ export const DotExperimentsListStore = signalStore(
             selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
             selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
             selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
-            selectedSchedule: DEFAULT_EXPERIMENTS_LIST_SCHEDULE,
+            scheduleFrom: null,
+            scheduleTo: null,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
             perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
             orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -506,7 +529,8 @@ export const DotExperimentsListStore = signalStore(
             selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
             selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
             selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
-            selectedSchedule: DEFAULT_EXPERIMENTS_LIST_SCHEDULE,
+            scheduleFrom: null,
+            scheduleTo: null,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
             selectedPageId: null,
             selectedPageUrl: null,
@@ -817,7 +841,8 @@ export const DotExperimentsListStore = signalStore(
                     selectedStatuses: store.selectedStatuses(),
                     selectedGoals: store.selectedGoals(),
                     selectedCreators: store.selectedCreators(),
-                    selectedSchedule: store.selectedSchedule(),
+                    scheduleFrom: store.scheduleFrom(),
+                    scheduleTo: store.scheduleTo(),
                     page: store.page(),
                     perPage: store.perPage(),
                     selectedPageId: store.selectedPageId(),

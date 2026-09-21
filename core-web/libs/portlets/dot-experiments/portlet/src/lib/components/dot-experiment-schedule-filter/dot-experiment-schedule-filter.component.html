@@ -7,20 +7,15 @@
     data-testid="experiment-schedule-filter-chip" />
 
 <p-popover #popover>
-    <p-listbox
-        [(ngModel)]="$selectedValue"
+    <p-datePicker
+        selectionMode="range"
+        [ngModel]="$range()"
+        (ngModelChange)="onRangeChange($event)"
         [ngModelOptions]="{ standalone: true }"
-        [options]="$options()"
-        [multiple]="false"
-        [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-        [ariaLabel]="$title()"
-        optionLabel="label"
-        optionValue="value"
-        (onChange)="onChange($event.value)">
-        <ng-template let-option pTemplate="item">
-            <dot-filter-list-item
-                [label]="option.label"
-                [attr.data-testid]="option.testId" />
-        </ng-template>
-    </p-listbox>
+        [showButtonBar]="true"
+        [readonlyInput]="true"
+        [inline]="true"
+        dateFormat="yy-mm-dd"
+        [attr.aria-label]="$title()"
+        data-testid="experiment-schedule-filter-calendar" />
 </p-popover>

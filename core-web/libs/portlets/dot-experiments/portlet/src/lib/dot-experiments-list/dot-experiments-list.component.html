@@ -70,7 +70,8 @@
                 data-testid="experiments-goal-filter" />
 
             <dot-experiment-schedule-filter
-                [selected]="store.selectedSchedule()"
+                [from]="store.scheduleFrom()"
+                [to]="store.scheduleTo()"
                 (selectionChange)="onScheduleChange($event)"
                 data-testid="experiments-schedule-filter" />
 
@@ -79,6 +80,15 @@
                 [selected]="store.selectedCreators()"
                 (selectionChange)="onCreatorsChange($event)"
                 data-testid="experiments-created-by-filter" />
+
+            @if (store.isScheduleRangeUnusable()) {
+                <small
+                    class="text-red-500"
+                    role="status"
+                    data-testid="experiments-schedule-range-error">
+                    {{ 'experiments.list.filter.schedule.invalid-range' | dm }}
+                </small>
+            }
 
             <p-button
                 class="ml-auto"

@@ -1,4 +1,4 @@
-import { subMonths } from 'date-fns';
+import { endOfDay, format, isValid, parse, startOfDay } from 'date-fns';
 
 import { Params } from '@angular/router';
 
@@ -19,15 +19,13 @@ import {
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
-    DEFAULT_EXPERIMENTS_LIST_SCHEDULE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
-    EXPERIMENTS_LIST_SCHEDULE_WINDOWS,
-    SCHEDULE_WINDOW_MONTHS
+    SCHEDULE_BOUND_FORMAT
 } from '../shared/constants';
 import {
     DotExperimentPageInfo,
     DotExperimentsListViewState,
-    ExperimentsListScheduleWindow
+    ExperimentsListSchedulePeriod
 } from '../shared/models';
 
 /**
@@ -65,7 +63,8 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
         selectedStatuses: parseStatuses(reader.getAll('status')),
         selectedGoals: parseGoals(reader.getAll('goal')),
         selectedCreators: parseCreators(reader.getAll('created_by')),
-        selectedSchedule: parseScheduleWindow(reader.get('schedule')),
+        scheduleFrom: normalizeScheduleBound(reader.get('schedule_from')),
+        scheduleTo: normalizeScheduleBound(reader.get('schedule_to')),
         page: parsePositiveInteger(reader.get('page'), DEFAULT_EXPERIMENTS_LIST_PAGE),
         perPage: parsePositiveInteger(reader.get('per_page'), DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
         orderBy: reader.get('orderby') || DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -98,68 +97,108 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
  * a missing leading slash, and a trailing one. Case is left alone; dotCMS paths are not
  * case-insensitive, and lowercasing here would claim a match the backend would not make.
  */
-/**
- * The instant a window reaches back to, as an epoch millisecond.
- *
- * Months are not all the same length, so "one month ago" has no answer on some days and the rule
- * has to be chosen rather than inherited. `subMonths` **clamps**: 31 March minus one month is 28
- * February, not 3 March. That is the behaviour wanted here — the alternative overflows into the
- * following month and would widen the window by up to three days, on three days of the year, which
- * is exactly the kind of boundary nobody would ever notice was wrong.
- *
- * The time of day is kept, so the bound is an instant and not a date: a window is "the last month
- * from now", not "since the start of that day".
- *
- * What is kept is the **local wall clock**, which is worth knowing before comparing epoch
- * milliseconds: when the month landed in sits the other side of a daylight-saving change, the
- * resulting instant differs by an hour from the naive arithmetic. Harmless here — an hour either
- * way on a window measured in months — but it is why the tests assert calendar parts rather than
- * a timestamp.
- */
-export function scheduleWindowLowerBound(
-    window: ExperimentsListScheduleWindow,
-    from: Date = new Date()
-): number {
-    return subMonths(from, SCHEDULE_WINDOW_MONTHS[window]).getTime();
+/** Inclusive instant bounds of a schedule period. `Infinity` on a side the period leaves open. */
+export interface ScheduleBounds {
+    min: number;
+    max: number;
 }
 
 /**
- * Whether the experiment's scheduled start falls inside the window.
+ * The period's bounds as instants, or `null` when it constrains nothing.
  *
- * No upper bound (FR-020): a start in the future matches every window. That is deliberate rather
- * than an omission — an experiment scheduled but not yet running is the one a user asking about
- * "the last month" most wants to see, and a ceiling at today would hide precisely it.
+ * Whole local days (FR-021): the lower bound opens at the first instant of its day and the upper
+ * closes at the last. The filter is picked as dates while the data it compares is an instant, so
+ * without this a period of a single day would match only what is scheduled for exactly midnight.
+ *
+ * An open side is `±Infinity` rather than a missing field, so the comparison downstream has no
+ * branches: every start is either inside the pair or outside it.
+ *
+ * Returns `null` for a period with neither bound, and also for one whose end precedes its start —
+ * the caller has to ask {@link isScheduleRangeInverted} about that case and report it, because
+ * applying an impossible period would read as a site with no experiments (FR-021a).
+ */
+export function scheduleBoundsOf(period: ExperimentsListSchedulePeriod): ScheduleBounds | null {
+    const from = parseScheduleBound(period.from);
+    const to = parseScheduleBound(period.to);
+
+    if (!from && !to) {
+        return null;
+    }
+
+    const bounds = {
+        min: from ? startOfDay(from).getTime() : -Infinity,
+        max: to ? endOfDay(to).getTime() : Infinity
+    };
+
+    return bounds.min > bounds.max ? null : bounds;
+}
+
+/**
+ * Whether the period names two real dates in the wrong order.
+ *
+ * Only an address can produce one — picking a range on a calendar cannot — so this is about a
+ * hand-edited or stale link. Kept separate from {@link scheduleBoundsOf} because the two answers
+ * go to different places: the narrowing needs to know not to filter, and the user needs to be told
+ * why nothing changed.
+ */
+export function isScheduleRangeInverted(period: ExperimentsListSchedulePeriod): boolean {
+    const from = parseScheduleBound(period.from);
+    const to = parseScheduleBound(period.to);
+
+    return !!from && !!to && startOfDay(from).getTime() > endOfDay(to).getTime();
+}
+
+/**
+ * Whether the experiment's scheduled start falls inside the period.
  *
  * Both shapes of "not scheduled" are excluded (FR-022), and they are not interchangeable:
  * `scheduling` may be absent altogether, or present carrying a null `startDate`. Reading through
- * the first shape without care throws; treating the second as scheduled lets it into every window.
+ * the first shape without care throws; treating the second as scheduled lets it into every period.
  */
-export function matchesScheduleWindow(
+export function matchesSchedulePeriod(
     experiment: DotExperiment,
-    window: ExperimentsListScheduleWindow,
-    lowerBound: number
+    bounds: ScheduleBounds
 ): boolean {
     const startDate = experiment.scheduling?.startDate;
 
-    return startDate != null && startDate >= lowerBound;
+    return startDate != null && startDate >= bounds.min && startDate <= bounds.max;
 }
 
 /**
- * The window named by the address, or no constraint.
+ * One schedule bound as a local `Date` at midnight, or `null` when it is absent or unusable.
  *
- * A closed value set, unlike `created_by`: there are four windows and no custom range, so anything
- * else is a broken or hand-edited link rather than a selection worth preserving. An absolute date
- * lands here too — the address deliberately does not adopt `running_from` (FR-049a) — and reads as
- * no constraint rather than as an unparsed window.
+ * Strict about the format rather than handing the string to `new Date()`: that parses far too much
+ * — `2026-6-1`, `June 2026`, an ISO instant — and each of those would silently mean a different day
+ * than the address appears to name. Anything but `SCHEDULE_BOUND_FORMAT` is dropped, which is the
+ * rule `status` and `goal` already follow (FR-048).
  */
-export function parseScheduleWindow(
-    raw: string | null | undefined
-): ExperimentsListScheduleWindow | null {
-    const windows: readonly string[] = Object.values(EXPERIMENTS_LIST_SCHEDULE_WINDOWS);
+export function parseScheduleBound(raw: string | null | undefined): Date | null {
+    if (!raw) {
+        return null;
+    }
 
-    return raw && windows.includes(raw)
-        ? (raw as ExperimentsListScheduleWindow)
-        : DEFAULT_EXPERIMENTS_LIST_SCHEDULE;
+    const parsed = parse(raw, SCHEDULE_BOUND_FORMAT, new Date());
+
+    // `parse` is lenient about overflow — `2026-02-31` rolls into March — so the round trip is
+    // what proves the address named the day it appears to.
+    return isValid(parsed) && format(parsed, SCHEDULE_BOUND_FORMAT) === raw ? parsed : null;
+}
+
+/** A `Date` as the address carries it. */
+export function formatScheduleBound(date: Date): string {
+    return format(date, SCHEDULE_BOUND_FORMAT);
+}
+
+/**
+ * A bound as the view state holds it: still a string, but one the address could have written.
+ *
+ * Round-tripping through a `Date` is what drops the unusable values, so nothing downstream has to
+ * ask whether a bound it was handed is really a date.
+ */
+function normalizeScheduleBound(raw: string | null | undefined): string | null {
+    const parsed = parseScheduleBound(raw);
+
+    return parsed ? formatScheduleBound(parsed) : null;
 }
 
 export function normalizePagePath(rawPath: string | null | undefined): string | null {
@@ -302,8 +341,9 @@ export function toQueryParams(
         pageId: view.selectedPageId || null,
         url: view.selectedPageUrl || null,
         created_by: view.selectedCreators.length ? view.selectedCreators : null,
-        // The window token, never the bound it resolves to (FR-049a).
-        schedule: view.selectedSchedule,
+        // Two independent bounds, each omitted when the period leaves that side open (FR-049a).
+        schedule_from: view.scheduleFrom || null,
+        schedule_to: view.scheduleTo || null,
         // Written back so it survives filtering, sorting and paging: `writeUrl` merges, and the
         // back-link reads it from the address rather than from a value held only on entry.
         language_id: view.languageId ? String(view.languageId) : null

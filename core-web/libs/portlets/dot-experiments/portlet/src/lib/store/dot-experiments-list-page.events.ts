@@ -8,7 +8,7 @@ import {
     DotExperimentsListPanelScope,
     DotExperimentsListSortChange,
     DotExperimentsListViewState,
-    ExperimentsListScheduleWindow
+    ExperimentsListSchedulePeriod
 } from '../shared/models';
 
 /**
@@ -41,8 +41,13 @@ export const dotExperimentsListPageEvents = eventGroup({
         goalsChanged: type<GOAL_TYPES[]>(),
         /** Ids of the users whose experiments the list narrows to; empty clears the filter. */
         creatorsChanged: type<string[]>(),
-        /** Schedule window the list narrows to; `null` clears the constraint. */
-        scheduleChanged: type<ExperimentsListScheduleWindow | null>(),
+        /**
+         * Period the list narrows scheduled starts to. Both bounds `null` clears the constraint.
+         *
+         * One event carrying both bounds, not one per bound: the calendar hands over a range, and
+         * two events would put a half-applied period on screen between them.
+         */
+        scheduleChanged: type<ExperimentsListSchedulePeriod>(),
         pageChanged: type<DotExperimentsListPageChange>(),
         sortChanged: type<DotExperimentsListSortChange>(),
         hydratedFromUrl: type<DotExperimentsListViewState>(),

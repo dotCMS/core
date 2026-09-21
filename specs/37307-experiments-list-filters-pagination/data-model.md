@@ -25,25 +25,31 @@ the backend are not released as one unit and the column must tolerate a backend 
 (FR-031). Against a current backend the field is always populated.
 
 Existing fields this feature reads: `scheduling: RangeOfDateAndTime | null`, whose
-`startDate: number | null` is an epoch. **Both** shapes mean "unscheduled" for the window filter —
+`startDate: number | null` is an epoch. **Both** shapes mean "unscheduled" for the date filter —
 a null `scheduling`, and a `scheduling` whose `startDate` is null (FR-022).
 
-## Schedule window
+## Schedule period
 
-A closed set of five values, one of which is the absence of a constraint.
+Two independent bounds, each a local calendar date (`yyyy-MM-dd`) or absent. Not the five relative
+windows #37307 asks for — see the divergence argued in the spec's User Story 2.
 
-| Value | Lower bound | In the address |
+| State | Bounds compared | In the address |
 |---|---|---|
-| none (default) | no constraint | absent |
-| last 1 month | `subMonths(now, 1)` | present |
-| last 3 months | `subMonths(now, 3)` | present |
-| last 6 months | `subMonths(now, 6)` | present |
-| last 12 months | `subMonths(now, 12)` | present |
+| neither bound (default) | no constraint | both absent |
+| both bounds | `startOfDay(from) <= startDate <= endOfDay(to)` | both present |
+| lower only | `startDate >= startOfDay(from)` | `schedule_to` absent |
+| upper only | `startDate <= endOfDay(to)` | `schedule_from` absent |
+| end before start | nothing compared; reported instead | both present |
 
-Rules: at most one is in force (FR-018); the comparison is `startDate >= lowerBound` with no upper
-bound, so future starts match every window (FR-020); the bound is recomputed at evaluation time, so
-it drifts with the clock (spec assumption 4); `subMonths` clamps to the last valid day of a shorter
-month, which is the FR-021 decision. Unrecognised values in the address are dropped (FR-048).
+Rules: one period at a time, which follows from the value being a single range rather than from a
+rule to enforce (FR-018); both bounds inclusive and covering **whole local days**, because the
+filter is picked as dates while the data is an instant (FR-021); an open side constrains nothing,
+which is also the state the calendar passes through after the first click (FR-020); a bound that is
+not a date in this exact format is dropped (FR-048); an inverted range is **not applied** and is
+reported in the toolbar, since applying it would empty the table with no visible reason (FR-021a).
+
+Dates rather than instants so the calendar reopens on the days that were picked; the consequence,
+accepted, is that the same link read in another zone selects that reader's days (FR-049a).
 
 ## Directory person (chip option)
 
@@ -62,7 +68,7 @@ option list, so a person selected on page 1 stays labelled after a search resets
 | Existing | `filter`, `selectedStatuses`, `selectedGoals`, `page`, `perPage`, `orderBy`, `direction`, `selectedPageId`, `selectedPageUrl`, `languageId` |
 |---|---|
 | **Added** | `selectedCreators: string[]` — user ids, empty means no constraint. Carried in the address as `created_by` (FR-049) |
-| **Added** | `selectedScheduleWindow` — one of the five values, default = none. Carried in the address as the window token itself, never as an absolute date (FR-049a) |
+| **Added** | `scheduleFrom: string \| null`, `scheduleTo: string \| null` — local calendar dates, both null means no constraint. Carried in the address as `schedule_from` and `schedule_to`, deliberately not as `running_from`/`running_to` (FR-049a) |
 
 Every field in this bag is a query parameter (FR-045). Transient interface state is deliberately
 **not** here: the search text inside the Created By popover narrows the option list rather than the
@@ -100,7 +106,7 @@ screen. Each new event resets `page` to its default in the reducer, exactly as `
 | Event | Effect |
 |---|---|
 | creators changed | `selectedCreators` replaced, `page` reset |
-| schedule window changed | `selectedScheduleWindow` replaced, `page` reset |
+| schedule period changed | `scheduleFrom` and `scheduleTo` both replaced, `page` reset — one event carrying both bounds, so no half-applied period is ever on screen |
 | hydrated from URL | both fields replaced from the parsed address |
 | site changed | both survive, like search, status and goal; only paging and page scope reset (spec edge case) |
 | page narrowing cleared / clear filters | both cleared |
