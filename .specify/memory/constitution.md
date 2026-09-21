@@ -85,6 +85,29 @@ ADRs are binding architectural context and live **only** in the private reposito
   `/speckit-*` skill may **propose** an ADR (title + rationale, recorded under "Proposed
   ADRs" in the plan), but must never write an ADR file in this repo or that one.
 
+## Reporting to the Developer
+
+Spec and task identifiers (`FR-032`, `T064`, `C-006a`) are addresses, not explanations. There are
+hundreds of them across `spec.md` and `tasks.md`, and no developer holds them in their head.
+
+- Every finding, status line, and summary MUST say what the item **requires**, in ordinary words:
+  "prove that choosing ten files uploads ten files", not "T065".
+- Attach an identifier in parentheses only where the developer needs it to act on that item
+  themselves (ticking it off, quoting it in a PR review). If a list of pending items reads as a
+  column of codes, rewrite it.
+- **Opaque handles are worse, never better.** Commit hashes, branch SHAs and CI run ids name
+  something the developer cannot read off the token. Say what changed and what it does; add the
+  handle only when they need to go look at that exact object.
+- **ADRs are cited *and* explained.** The number is a genuine address and worth keeping, but it is
+  never the argument by itself: "ADR-0018 makes the database authoritative for folder and host, so
+  the scope belongs in the SQL builder", not "per ADR-0018". A reader who has not memorised the
+  index must still be able to follow the reasoning.
+- Source code references are the opposite, and are encouraged: file paths, class and method names,
+  config keys, field names, and line numbers are specific and directly checkable.
+
+This governs in-session output, not the spec artifacts: `spec.md` and `tasks.md` keep their IDs, and
+the convergence findings table keeps its `Source` column. What changes is the prose around them.
+
 ## Governance
 
 - This constitution supersedes ad-hoc practices for spec-driven work. All specs, plans, and
@@ -94,7 +117,10 @@ ADRs are binding architectural context and live **only** in the private reposito
   table, or the plan is rejected.
 - Amendments: keep this file and root `CLAUDE.md` in sync; bump the version below.
 
-**Version**: 1.1.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-07-03
+**Version**: 1.2.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-09-21
 
 <!-- 1.1.0: Principle V strengthened to Test-First / TDD (NON-NEGOTIABLE) with the 3-gate rule. -->
+<!-- 1.2.0: Added "Reporting to the Developer" — explain what an item requires, do not cite bare IDs.
+     Covers spec/task IDs, opaque handles (commit hashes, run ids), and ADRs, which are cited and
+     then explained. -->
 
