@@ -710,10 +710,19 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', true);
             spectator.detectChanges();
 
-            expect(spectator.query('.p-paginator-next')).toBeTruthy();
-            expect(spectator.component.$ptConfig().paginator.class).toContain(
+            expect(spectator.component.$ptConfig().pcPaginator.root.class).toContain(
                 'pointer-events-none'
             );
+            // Real DOM assertions, not just the computed pt object: issue #37212 QA follow-up #2
+            // found that `paginator` is not a section PrimeNG's `p-table` recognizes for its
+            // paginator sub-component (the real key is `pcPaginator`), so an earlier version of
+            // this lockout never reached the rendered DOM even though the computed object above
+            // looked correct -- CI stayed green because nothing here checked the actual button.
+            const nextBtn = spectator.query('.p-paginator-next') as HTMLButtonElement;
+            const prevBtn = spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            expect(nextBtn).toBeTruthy();
+            expect(prevBtn.disabled).toBe(true);
+            expect(nextBtn.disabled).toBe(true);
         });
 
         it('should leave the paginator usable once loading finishes', () => {
@@ -722,32 +731,76 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('loading', false);
             spectator.detectChanges();
 
-            expect(spectator.component.$ptConfig().paginator.class).toBe('');
+            expect(spectator.component.$ptConfig().pcPaginator.root.class).toBe('');
+            const prevBtn = spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            expect(prevBtn.disabled).toBe(false);
         });
 
         it('should take the paginator out of play as soon as a click is accepted, before loading catches up', () => {
-            // Issue #37212 QA follow-up: `$ptConfig` used to react only to `$loading()`, which still
-            // reads `false` for at least one microtask after a click is accepted (see `onPage`'s
-            // `#pageChangeAccepted` doc comment). A real second mouse click landing in that gap is
-            // not stopped by CSS yet, so it reaches PrimeNG's own paginator button, which mutates its
-            // internal current-page pointer synchronously regardless of what `onPage` does with the
-            // event -- `onPage`'s guard blocks the resulting duplicate request, but the paginator's
-            // Previous/Next disabled state is left desynced from the page actually on screen (this
-            // is the failure Rafael's QA pass reported: only one control looked disabled, and the
-            // other navigated to the wrong page). Gating `$ptConfig` on `#pageChangeAccepted` too
-            // closes the gap at the DOM level instead of trying to correct it after the fact.
+            // Issue #37212 QA follow-up #1: `$ptConfig` used to react only to `$loading()`, which
+            // still reads `false` for at least one microtask after a click is accepted (see
+            // `onPage`'s `#pageChangeAccepted` doc comment). A real second mouse click landing in
+            // that gap is not stopped by CSS yet, so it reaches PrimeNG's own paginator button,
+            // which mutates its internal current-page pointer synchronously regardless of what
+            // `onPage` does with the event -- `onPage`'s guard blocks the resulting duplicate
+            // request, but the paginator's Previous/Next disabled state is left desynced from the
+            // page actually on screen (this is the failure Rafael's QA pass reported: only one
+            // control looked disabled, and the other navigated to the wrong page). Gating
+            // `$ptConfig` on `#pageChangeAccepted` too closes the gap at the DOM level instead of
+            // trying to correct it after the fact.
             spectator.setInput('items', manyItems);
             spectator.setInput('totalItems', 100);
             spectator.setInput('loading', false);
             spectator.detectChanges();
 
             spectator.component.onPage({ first: 20, rows: 20 });
+            spectator.detectChanges();
 
             // `loading` is still `false` here -- the caller's store has not round-tripped yet.
             expect(spectator.component.$loading()).toBe(false);
-            expect(spectator.component.$ptConfig().paginator.class).toContain(
+            expect(spectator.component.$ptConfig().pcPaginator.root.class).toContain(
                 'pointer-events-none'
             );
+            const prevBtn = spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            const nextBtn = spectator.query('.p-paginator-next') as HTMLButtonElement;
+            expect(prevBtn.disabled).toBe(true);
+            expect(nextBtn.disabled).toBe(true);
+        });
+
+        it('should ignore a real click on Previous while a page is loading, via PrimeNG DOM events, not just the programmatic onPage() call', () => {
+            // Issue #37212 QA follow-up #2, Rafael's exact repro: click Next, then click Previous
+            // while the page is still loading. Dispatches real clicks on the rendered PrimeNG
+            // buttons (`.click()`), which exercises PrimeNG's own `changePage`/`onPageChange` chain
+            // end to end -- calling `onPage()` directly, as the other tests in this suite do, never
+            // reaches PrimeNG's internal button state at all, which is exactly why this class of
+            // bug shipped green.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('offset', 0);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
+
+            const nextBtn = () => spectator.query('.p-paginator-next') as HTMLButtonElement;
+            const prevBtn = () => spectator.query('.p-paginator-prev') as HTMLButtonElement;
+
+            spectator.click(nextBtn());
+            spectator.detectChanges();
+            expect(paginateSpy).toHaveBeenCalledTimes(1);
+
+            // The caller's store round-trips: offset advances, loading flips true, as the real
+            // shell does synchronously inside `onPaginate`.
+            spectator.setInput('offset', 20);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            expect(prevBtn().disabled).toBe(true);
+            expect(nextBtn().disabled).toBe(true);
+
+            spectator.click(prevBtn());
+            spectator.detectChanges();
+
+            expect(paginateSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should not fetch languages when the locale column is hidden', () => {

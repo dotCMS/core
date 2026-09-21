@@ -603,29 +603,48 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     readonly $ptConfig = computed(() => {
         const extras = this.$sizedExtraColumns();
 
+        // Take the paginator out of play while a search is in flight, so the controls cannot be
+        // clicked into queueing more searches.
+        //
+        // Reacts to `#pageChangeAccepted`, not just `$loading()`: that flag closes the same
+        // microtask gap `onPage` guards against (see its doc comment) -- without it here too, the
+        // lockout only starts once `$loading()` catches up, leaving that same gap open at the DOM
+        // level. A second real mouse click landing in that window reaches PrimeNG's own paginator
+        // button, which mutates its internal current-page state (`_first`) synchronously on click
+        // regardless of what `onPage` does with the event. `onPage`'s guard blocks the resulting
+        // duplicate request, but PrimeNG's internal page pointer is left desynced from `$offset()`
+        // -- `onFirstChange` cannot correct it in that case because it resets `first` back to a
+        // value Angular already considers unchanged, so the correction never reaches the child
+        // paginator (found in review, issue #37212 QA follow-up #1: Previous/Next disabled state
+        // stops matching which page is actually displayed after a fast click on the other control).
+        const locked = this.$loading() || this.#pageChangeAccepted();
+
         return {
-            // Take the paginator out of play while a search is in flight, so the controls cannot be
-            // clicked into queueing more searches. `pointer-events-none` covers the rows-per-page
-            // dropdown too, which triggers a fetch of its own.
+            // `p-table`'s own pt section for its paginator sub-component is `pcPaginator`, not
+            // `paginator` -- an unrecognized section key is silently ignored, so an earlier version
+            // of this lockout (`paginator: { class: ... }`) never reached the DOM at all: the
+            // computed object looked right in isolation, but the rendered `.p-paginator` carried
+            // neither the class nor a disabled button (issue #37212 QA follow-up #2, confirmed
+            // against `primeng/fesm2022/primeng-table.mjs`'s own `[pt]="ptm('pcPaginator')"`).
             //
-            // Also reacts to `#pageChangeAccepted`, not just `$loading()`: that flag closes the same
-            // microtask gap `onPage` guards against (see its doc comment), but until this line also
-            // read it, the CSS lockout only started once `$loading()` caught up -- leaving that same
-            // gap open at the DOM level. A second real mouse click landing in that window is not
-            // stopped by pointer-events yet, so it reaches PrimeNG's own paginator button, which
-            // mutates its internal current-page state (`_first`) synchronously on click regardless of
-            // what `onPage` does with the event. `onPage`'s guard blocks the resulting duplicate
-            // request, but PrimeNG's internal page pointer is left desynced from `$offset()` --
-            // `onFirstChange` cannot correct it in that case because it resets `first` back to a
-            // value Angular already considers unchanged, so the correction never reaches the child
-            // paginator (found in review, issue #37212 QA follow-up: Previous/Next disabled state
-            // stops matching which page is actually displayed after a fast click on the other
-            // control). Gating on `#pageChangeAccepted` too closes the gap at its source instead.
-            paginator: {
-                class:
-                    this.$loading() || this.#pageChangeAccepted()
-                        ? 'pointer-events-none opacity-60'
-                        : ''
+            // `root` (not a bare top-level `class`) targets the paginator's own host element --
+            // every PrimeNG v21 component's pt object is itself a map of named sections, and `root`
+            // is the section for the component's own top-level node. `pointer-events-none` there
+            // still protects the rows-per-page dropdown (a plain CSS lockout is good enough for it,
+            // and it is a more complex nested component to risk a `disabled` pass-through into).
+            //
+            // `prev`/`next` set a real `disabled` on the actual buttons, which is stronger than the
+            // CSS-only lockout for two reasons `pointer-events-none` cannot cover on its own:
+            // keyboard activation (Enter/Space still reaches a `pointer-events: none` button) and
+            // assistive tech (a screen reader still announces it as enabled). Verified against the
+            // installed PrimeNG 21.1.3: `Paginator`'s `prev`/`next` buttons bind
+            // `[pBind]="ptm('prev'/'next')"` alongside their own `[disabled]="isFirstPage() ||
+            // empty()"` -- `pBind`'s effect (from the shared `Bind` directive) writes the DOM
+            // property after the template's own binding runs, so it wins.
+            pcPaginator: {
+                root: { class: locked ? 'pointer-events-none opacity-60' : '' },
+                prev: { disabled: locked || undefined },
+                next: { disabled: locked || undefined }
             },
             table: {
                 style: {
