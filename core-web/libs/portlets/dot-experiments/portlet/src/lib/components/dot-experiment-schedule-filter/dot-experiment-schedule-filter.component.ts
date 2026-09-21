@@ -87,16 +87,14 @@ export class DotExperimentScheduleFilterComponent {
     });
 
     /**
-     * Bound two-way to the calendar, which speaks `Date` while the address speaks days.
+     * Bound to the calendar, which speaks `Date` while the address speaks days.
      *
      * Re-seeds from the applied period whenever the parent changes it (URL hydration,
-     * back/forward), while staying writable by the calendar. An unusable bound arrives as `null`
-     * and simply leaves that end unselected.
+     * back/forward), while staying writable by the calendar.
      */
-    protected readonly $range = linkedSignal<(Date | null)[]>(() => [
-        parseScheduleBound(this.$from()),
-        parseScheduleBound(this.$to())
-    ]);
+    protected readonly $range = linkedSignal<Date[] | null>(() =>
+        toCalendarRange(parseScheduleBound(this.$from()), parseScheduleBound(this.$to()))
+    );
 
     /**
      * The calendar's range changed.
@@ -107,7 +105,7 @@ export class DotExperimentScheduleFilterComponent {
      */
     onRangeChange(dates: (Date | null)[] | null): void {
         const [from, to] = dates ?? [];
-        this.$range.set([from ?? null, to ?? null]);
+        this.$range.set(toCalendarRange(from ?? null, to ?? null));
 
         this.selectionChange.emit({
             from: from ? formatScheduleBound(from) : null,
@@ -118,4 +116,29 @@ export class DotExperimentScheduleFilterComponent {
     onRemove(): void {
         this.onRangeChange(null);
     }
+}
+
+/**
+ * The calendar's own model for a period.
+ *
+ * `null` when empty, and **not** `[null, null]`: PrimeNG's range branch tests `value.length` — two
+ * nulls pass that — and then reads `value[0].getTime()`, so a two-null array throws on the very
+ * first click and the picker never selects anything. This is not defensive padding; it is the
+ * shape the component contract requires, and it cost a browser session to find because a unit test
+ * asserting the model's shape asserts our assumption rather than PrimeNG's.
+ *
+ * A half-picked period is a one-element array, which is also what the picker produces itself after
+ * the first click.
+ *
+ * An open **lower** bound cannot be drawn at all — range mode has no way to express "up to this
+ * day, from anywhere" — so the calendar renders unselected while the chip still names the bound
+ * and the filter still applies. Only an address can reach that state; picking on the calendar
+ * always sets the lower bound first.
+ */
+function toCalendarRange(from: Date | null, to: Date | null): Date[] | null {
+    if (!from) {
+        return null;
+    }
+
+    return to ? [from, to] : [from];
 }

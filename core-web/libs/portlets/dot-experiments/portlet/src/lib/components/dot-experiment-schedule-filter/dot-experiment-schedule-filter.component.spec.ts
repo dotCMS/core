@@ -37,14 +37,6 @@ describe('DotExperimentScheduleFilterComponent', () => {
     const chipText = () =>
         spectator.query(byTestId('experiment-schedule-filter-chip'))?.textContent;
 
-    /** Opens the popover, which is where the calendar and the error live. */
-    const open = (): void => {
-        spectator.click(
-            spectator.query(byTestId('experiment-schedule-filter-chip')) as HTMLElement
-        );
-        spectator.detectChanges();
-    };
-
     const setPeriod = (from: string | null, to: string | null): void => {
         spectator.setInput('from', from);
         spectator.setInput('to', to);
@@ -90,27 +82,55 @@ describe('DotExperimentScheduleFilterComponent', () => {
         });
     });
 
-    describe('the calendar', () => {
-        it('should open on the period in force', () => {
+    /**
+     * These assert PrimeNG's **contract**, not our convenience, and they exist because the first
+     * version of this component got it wrong in a way no unit test could have caught: the model
+     * was seeded `[null, null]`, PrimeNG's range branch tested `value.length`, passed, then read
+     * `value[0].getTime()` and threw on the first click. The calendar selected nothing and the
+     * filter silently did not work. Found in a browser, pinned here.
+     */
+    describe('the calendar model', () => {
+        const range = () => spectator.component['$range']();
+
+        it('should be null while no period is in force, never a pair of nulls', () => {
+            expect(range()).toBeNull();
+        });
+
+        it('should be a pair when a whole period is in force', () => {
             setPeriod('2026-06-01', '2026-06-30');
-            open();
 
-            expect(spectator.component['$range']().map((date) => date?.getDate())).toEqual([1, 30]);
+            expect(range()?.map((date) => date.getDate())).toEqual([1, 30]);
         });
 
-        it('should leave an end unselected when its bound is absent', () => {
+        it('should be a one-element array for a half-picked period', () => {
+            // Which is what the picker itself produces after the first click, so feeding it back
+            // anything else puts it in a state it cannot continue from.
             setPeriod('2026-06-01', null);
-            open();
 
-            expect(spectator.component['$range']()[1]).toBeNull();
+            expect(range()).toHaveLength(1);
+            expect(range()?.[0].getDate()).toBe(1);
         });
 
-        it('should leave an end unselected when its bound is not a date', () => {
-            // A hand-edited address. The calendar has nothing to select rather than a wrong day.
+        it('should be null when the lower bound is not a date', () => {
+            // A hand-edited address. Nothing to select beats a wrong day.
             setPeriod('not-a-date', '2026-06-30');
-            open();
 
-            expect(spectator.component['$range']()[0]).toBeNull();
+            expect(range()).toBeNull();
+        });
+
+        it('should be null when only an upper bound is set', () => {
+            // Range mode cannot draw "up to this day, from anywhere". The chip still names the
+            // bound and the filter still applies; only the calendar cannot depict it.
+            setPeriod(null, '2026-06-30');
+
+            expect(range()).toBeNull();
+        });
+
+        it('should go back to null once the period is cleared', () => {
+            setPeriod('2026-06-01', '2026-06-30');
+            spectator.component.onRangeChange(null);
+
+            expect(range()).toBeNull();
         });
     });
 
