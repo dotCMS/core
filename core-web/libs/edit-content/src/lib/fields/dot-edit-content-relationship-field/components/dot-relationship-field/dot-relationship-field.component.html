@@ -235,10 +235,24 @@
                     class="border-t border-t-(--p-datatable-border-color) px-4 py-3">
                     <!-- The count belongs on "Show all" and not on "Show less": expanding is the
                          decision that needs a number — how much is hidden — while collapsing always
-                         returns to the same first page. -->
+                         returns to the same first page.
+
+                         A text button rather than a bare one, matching the Key/Value field: hover
+                         and focus come from the theme instead of being hand-rolled here. `text`
+                         and not `link`, because this preset gives the link variant one colour for
+                         rest, hover and active, so it would not react to the pointer at all.
+
+                         The icon and the label are plain projected content on purpose. The
+                         `pButtonIcon` / `pButtonLabel` directives are a package — the button reads
+                         `isIconOnly` as `iconSignal && !labelSignal`, so marking only the icon
+                         collapses it to a fixed 2.75rem and wraps the label inside 44px — and
+                         nothing here needs them: the icon is a Material Symbols ligature rather
+                         than a class, and the icon/label gap is the button root's own token. -->
                     <button
                         type="button"
-                        class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-sm font-normal text-primary-500 hover:underline"
+                        [text]="true"
+                        pButton
+                        size="small"
                         [attr.aria-expanded]="showingAll"
                         data-testid="relationship-show-all"
                         (click)="store.toggleShowAll()">

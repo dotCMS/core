@@ -87,13 +87,35 @@
                                 The count belongs on "Show all" and not on "Show less":
                                 expanding is the decision that needs a number — how much is
                                 hidden — while collapsing always returns to the same first page.
-                                Matches `dot-relationship-field`.
+                                Matches `dot-relationship-field`, which carries the same control.
+
+                                A text button rather than a bare one, so hover and focus come from
+                                the theme and it matches Clear All beside it. `text` and not `link`:
+                                this preset gives the link variant the same colour for rest, hover
+                                and active, so that variant would react to the pointer not at all.
+
+                                Both halves are plain projected content, with no `pButtonIcon` /
+                                `pButtonLabel` on them, exactly as Clear All projects its own
+                                label. The two directives are a package: the button reads
+                                `isIconOnly` as `iconSignal && !labelSignal`, so marking only the
+                                icon collapses it to `p-button-icon-only`'s fixed 2.75rem and wraps
+                                the label inside 44px. Marking both instead would work, but
+                                `pButtonLabel` carries `button.label.fontWeight` (600) and would
+                                leave this heavier than the Clear All next to it.
+
+                                Nothing is lost by leaving them off: the icon is a Material Symbols
+                                ligature rather than a class — `[icon]` could not express it either
+                                way — and the gap between icon and label is the button root's own
+                                `gap` token.
                             -->
                             <button
                                 (click)="toggleShowAll()"
                                 [attr.aria-expanded]="$showingAll()"
-                                class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-sm font-normal text-primary-500 hover:underline"
+                                [text]="true"
+                                class="shrink-0"
                                 data-testId="dot-key-value-show-all"
+                                pButton
+                                size="small"
                                 type="button">
                                 <span
                                     class="material-symbols-outlined text-base!"
