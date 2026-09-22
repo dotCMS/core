@@ -174,6 +174,9 @@ public class MigrationReadinessService {
      * contradict the "nothing to reconcile yet" verdict a technician reads next to it. An OpenSearch copy
      * that exists while the Elasticsearch one does not — or a count drift between two existing copies —
      * is still unexpected in Phase 0 and stays reported.
+     *
+     * <p>Phase 3 is the mirror image: Elasticsearch no longer receives writes, so an Elasticsearch copy
+     * that is missing, or measurably behind OpenSearch, is expected and not counted.</p>
      */
     private static boolean needsAttentionIn(final MigrationPhase phase, final MirrorStatus status) {
         if (!status.needsAttention()) {
@@ -181,16 +184,31 @@ public class MigrationReadinessService {
         }
         final boolean expectedMissingCounterpart =
                 phase.isMigrationNotStarted() && status.es().exists() && !status.os().exists();
-        // The mirror image at the other end of the migration: past Phase 3 Elasticsearch is
-        // decommissioned, so its copy being gone is the expected steady state, not something to
-        // reconcile. Without this, a fully healthy Phase 3 install reports outOfSyncCount = 2
-        // forever and the field stops being usable as a health gauge in the phase it matters most.
-        // The absent Elasticsearch copy is still reported — by safeToRollback and the summary's
-        // downgrade warning, which are the fields that own that fact, and which remain untouched
-        // here because they are derived from blocksRollback rather than from this count.
-        final boolean expectedMissingEsCopy =
-                phase.isMigrationComplete() && status.os().exists() && !status.es().exists();
-        return !expectedMissingCounterpart && !expectedMissingEsCopy;
+        // The mirror image at the other end of the migration: past Phase 3 Elasticsearch receives no
+        // more writes, so its copy either being gone or lagging behind OpenSearch is the expected
+        // steady state, not something to reconcile. The lag is the common case: the switchover keeps
+        // the active Elasticsearch pointers, so while that cluster is still reachable its index is
+        // measured, frozen at cutover, and every edit made since leaves it further behind. Without
+        // this, a fully healthy Phase 3 install reports outOfSyncCount = 2 forever and the field stops
+        // being usable as a health gauge in the phase it matters most. Both states are still
+        // reported — by safeToRollback and the summary's downgrade warning, which are the fields that
+        // own that fact, and which remain untouched here because they are derived from blocksRollback
+        // rather than from this count. Elasticsearch AHEAD of OpenSearch, or an unmeasurable count
+        // on either side, is not expected and stays counted.
+        final boolean expectedFrozenEsCopy = phase.isMigrationComplete() && status.os().exists()
+                && (!status.es().exists() || esBehindMeasurably(status));
+        return !expectedMissingCounterpart && !expectedFrozenEsCopy;
+    }
+
+    /**
+     * Whether both counts were measured and Elasticsearch holds fewer documents than OpenSearch.
+     * A {@code -1} (unmeasurable) on either side is never read as "behind": it is an unknown, and the
+     * drift verdict already treats it as needing attention.
+     */
+    private static boolean esBehindMeasurably(final MirrorStatus status) {
+        final long esCount = status.es().docCount();
+        final long osCount = status.os().docCount();
+        return esCount >= 0 && osCount >= 0 && esCount < osCount;
     }
 
     /**

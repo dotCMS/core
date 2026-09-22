@@ -79,8 +79,9 @@ public class ESSearchProxyTest extends IntegrationTestBase {
      * Phase 3 must fail this deprecated path loudly, with the specific exception type that survives
      * Velocity.
      *
-     * <p>The Phase 3 reindex switchover deletes the legacy Elasticsearch index pointers, so from then
-     * on esSearch resolves no index at all. It used to carry that null into the ES client and die
+     * <p>With no Elasticsearch index pointer registered — an installation that never had one, or one
+     * whose pointers an older build purged at the Phase 3 switchover — esSearch resolves no index at
+     * all. It used to carry that null into the ES client and die
      * there with a NullPointerException — which Velocity's method-exception handler converts into a
      * null return outside EDIT mode, so a template's {@code #set} assigned nothing and the page
      * rendered its own unresolved source into the response body (issue #37635). DotStateException is

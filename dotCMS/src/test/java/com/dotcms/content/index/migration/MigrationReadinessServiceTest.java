@@ -288,6 +288,49 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertTrue(r.verdict().summary().contains("WARNING"));
     }
 
+    /**
+     * The common Phase 3 state: the switchover keeps the Elasticsearch pointers, so while that cluster
+     * is reachable its copy is measured — frozen at cutover, and behind OpenSearch as soon as anything
+     * is edited. That lag is expected and must not be counted as out of sync; it is still what makes a
+     * downgrade unsafe, so the rollback verdict and the summary warning keep reporting it.
+     */
+    @Test
+    public void phase3_frozenElasticsearchCopyBehindOpenSearch_isNotCountedAsOutOfSync() {
+        setPhase(PHASE_3);
+        stubContent(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, 8, true, 10),
+                cc(IndexKind.CONTENT_LIVE, "live_1", true, 4, true, 5)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertTrue(r.verdict().blockers().isEmpty());
+        assertTrue(r.verdict().safeToAdvance());
+        assertEquals("a frozen Elasticsearch copy is the Phase 3 steady state",
+                0, r.verdict().outOfSyncCount());
+        assertFalse("a downgrade would hide what was written since cutover",
+                r.verdict().safeToRollback());
+        assertTrue(r.verdict().summary().contains("WARNING"));
+    }
+
+    /**
+     * Only the expected direction is excused. Elasticsearch ahead of OpenSearch means OpenSearch — the
+     * only engine serving reads in Phase 3 — is missing documents, and an unmeasurable count is an
+     * unknown rather than a lag; both stay counted.
+     */
+    @Test
+    public void phase3_openSearchBehindOrUnmeasurable_isStillCountedAsOutOfSync() {
+        setPhase(PHASE_3);
+        stubContent(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, 10, true, 8),
+                cc(IndexKind.CONTENT_LIVE, "live_1", true, -1, true, 5)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertEquals(2, r.verdict().outOfSyncCount());
+    }
+
     /** The same state with the OpenSearch copy gone — that one blocks. */
     @Test
     public void phase3_missingOpenSearchCopy_blocks() {

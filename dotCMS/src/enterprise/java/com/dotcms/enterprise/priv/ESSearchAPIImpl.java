@@ -225,19 +225,22 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 			return null;
 		}
 
-		// The legacy Elasticsearch pointers are deleted when the Phase 3 reindex switches over, so
-		// past that point this deprecated path resolves no index at all. Left unchecked it reaches
-		// SearchRequest as a null index name and dies there with a NullPointerException — which
-		// Velocity's method-exception handler turns into a null return outside EDIT mode, so #set
-		// assigns nothing and the template renders its own unresolved source into the response body
-		// (issue #37635). Fail with DotStateException instead: that is the one exception type the
+		// The Phase 3 switchover keeps the active Elasticsearch pointers, so on a current build this
+		// deprecated path still resolves an index: the Elasticsearch copy frozen at cutover, whose
+		// results miss everything written since. The pointers are gone only on an installation that
+		// reindexed at Phase 3 on an older build that purged them, or one that never had an
+		// Elasticsearch index to begin with; there this path resolves no index at all. Left unchecked
+		// it reaches SearchRequest as a null index name and dies there with a NullPointerException —
+		// which Velocity's method-exception handler turns into a null return outside EDIT mode, so
+		// #set assigns nothing and the template renders its own unresolved source into the response
+		// body (issue #37635). Fail with DotStateException instead: that is the one exception type the
 		// handler rethrows, so the failure surfaces rather than printing Velocity onto the page.
 		if (!UtilMethods.isSet(indexToHit)) {
 			throw new DotStateException(String.format(
 					"No active Elasticsearch %s content index is registered, so the deprecated "
-							+ "esSearch()/esRaw() path has nothing to query. This is expected once "
-							+ "the OpenSearch migration reaches its final phase, which removes the "
-							+ "Elasticsearch index pointers. Migrate this call to the "
+							+ "esSearch()/esRaw() path has nothing to query. This can happen once "
+							+ "the OpenSearch migration reaches its final phase, where Elasticsearch "
+							+ "is no longer maintained. Migrate this call to the "
 							+ "vendor-neutral $estool.search()/$estool.raw() (or SearchAPI), which "
 							+ "resolves the index for the current migration phase.",
 					live ? "live" : "working"));
