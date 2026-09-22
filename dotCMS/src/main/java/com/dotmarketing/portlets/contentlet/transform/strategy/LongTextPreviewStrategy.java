@@ -54,8 +54,8 @@ import java.util.stream.Stream;
  * {@code Contentlet#buildName}'s field-selection rules in parallel, and each review round found a
  * case the copy had drifted from (a Story Block title source, a {@code buildName} fallback to a
  * WYSIWYG/TextArea field with no title-prefixed field at all). Instead, before any field is
- * previewed, this strategy snapshots each in-scope field's own raw value (the Story Block
- * {@code <var>_raw} companion for a Story Block field, since that -- not the parsed view structure
+ * previewed, this strategy snapshots each in-scope field's own raw value (for a Story Block field,
+ * read off the {@link Contentlet} itself, since that -- not the parsed view structure
  * {@code STORY_BLOCK_VIEW} already wrote under the field's own key -- is what {@code getTitle()}
  * actually returns for that field). If the original {@code "title"} value matches one of those raw
  * values exactly, or matches the first 250 characters of one (the length {@code buildName} itself
@@ -119,7 +119,7 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
 
         final Object originalTitle = map.get(TITTLE_KEY);
         final Map<String, String> rawValuesByVariable =
-                captureRawFieldValues(wysiwygFields, textAreaFields, storyBlockFields, map);
+                captureRawFieldValues(source, wysiwygFields, textAreaFields, storyBlockFields, map);
 
         applyPreview(wysiwygFields, map, LongTextPreviewStrategy::extractHtmlPreview);
         applyPreview(textAreaFields, map, LongTextPreviewStrategy::extractHtmlPreview);
@@ -133,15 +133,16 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
     /**
      * Snapshots each in-scope field's own raw value -- exactly what {@link Contentlet#getTitle()}
      * would read for that field -- before {@link #applyPreview} overwrites it with a preview. A
-     * Story Block field's raw value is its {@code <var>_raw} companion (the untouched JSON schema),
-     * not the parsed view structure {@code STORY_BLOCK_VIEW} already wrote under the field's own
-     * key by the time this strategy runs. The field literally named {@code "title"} is skipped --
-     * {@link #applyPreview} trims that key directly since it IS the field's own key, so it needs no
-     * further handling.
+     * Story Block field's raw value is read off the {@link Contentlet} itself, the same place
+     * {@code getTitle()} reads it from: by the time this strategy runs, the row map holds the parsed
+     * view structure {@code STORY_BLOCK_VIEW} wrote under the field's own key, and the
+     * {@code <var>_raw} companion only exists for contentlets loaded from their JSON column. The
+     * field literally named {@code "title"} is skipped -- {@link #applyPreview} trims that key
+     * directly since it IS the field's own key, so it needs no further handling.
      */
-    private Map<String, String> captureRawFieldValues(final List<Field> wysiwygFields,
-            final List<Field> textAreaFields, final List<Field> storyBlockFields,
-            final Map<String, Object> map) {
+    private Map<String, String> captureRawFieldValues(final Contentlet source,
+            final List<Field> wysiwygFields, final List<Field> textAreaFields,
+            final List<Field> storyBlockFields, final Map<String, Object> map) {
         final Map<String, String> rawValues = new LinkedHashMap<>();
         Stream.concat(wysiwygFields.stream(), textAreaFields.stream())
                 .filter(field -> !TITTLE_KEY.equals(field.variable()))
@@ -154,9 +155,9 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
         storyBlockFields.stream()
                 .filter(field -> !TITTLE_KEY.equals(field.variable()))
                 .forEach(field -> {
-                    final Object raw = map.get(field.variable() + "_raw");
-                    if (raw instanceof String) {
-                        rawValues.put(field.variable(), (String) raw);
+                    final Object raw = source.get(field.variable());
+                    if (raw != null) {
+                        rawValues.put(field.variable(), raw.toString());
                     }
                 });
         return rawValues;

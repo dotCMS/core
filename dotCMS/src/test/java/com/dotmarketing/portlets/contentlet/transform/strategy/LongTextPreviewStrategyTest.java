@@ -373,8 +373,8 @@ public class LongTextPreviewStrategyTest {
      * Block field, {@code Contentlet#getTitle()} returns that field's raw JSON schema verbatim into
      * the {@code "title"} key -- the exact payload bloat this strategy exists to remove for Story
      * Block fields. The redesigned matching (compare {@code "title"}'s original value against each
-     * in-scope field's raw value -- the {@code _raw} companion for a Story Block field, since that,
-     * not the parsed view structure, is what {@code getTitle()} actually returns) finds this case
+     * in-scope field's raw value -- read off the {@code Contentlet} for a Story Block field, since
+     * that, not the parsed view structure, is what {@code getTitle()} actually returns) finds this case
      * without needing to know the field's variable is title-prefixed at all.
      */
     @Test
@@ -396,7 +396,7 @@ public class LongTextPreviewStrategyTest {
         // "titleStory" starts as the parsed Story Block structure StoryBlockViewStrategy produced;
         // its "_raw" companion and "title" both start as the same raw JSON -- "_raw" written
         // upstream for Block Editor reference resolution, "title" as COMMON_PROPS's independent
-        // copy from getTitle() (which reads the field's OWN raw value, matching "_raw" exactly).
+        // copy from getTitle() (which reads the field's OWN raw value off the Contentlet).
         map.put("titleStory", storyBlockDoc);
         map.put("titleStory_raw", rawJson);
         map.put("title", rawJson);
