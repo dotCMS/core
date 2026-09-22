@@ -1,10 +1,12 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
 
 import { DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
+import { useIsAnalyticsActive } from '../../hooks/useIsAnalyticsActive';
+import { useResolvedDevMode } from '../../hooks/useIsDevMode';
 
 interface DotCMSPageProviderProps {
     page: DotCMSPageAsset | undefined;
@@ -21,6 +23,11 @@ interface DotCMSPageProviderProps {
  * Client boundary that provides the DotCMS page context to the layout tree.
  * Keeping this separate from DotCMSLayoutBody allows the layout to remain
  * a server component while only the context provider runs on the client.
+ *
+ * Development mode and the Analytics-active flag are resolved here, once per layout tree,
+ * and shared through the context. Resolving them per contentlet meant one
+ * `dotcms:analytics:ready` window listener and one UVE-state lookup for every piece of
+ * content on the page.
  */
 export function DotCMSPageProvider({
     page,
@@ -29,10 +36,20 @@ export function DotCMSPageProvider({
     slots,
     children
 }: DotCMSPageProviderProps) {
-    return (
-        <DotCMSPageContext.Provider
-            value={{ pageAsset: page, userComponents: components, mode, slots }}>
-            {children}
-        </DotCMSPageContext.Provider>
+    const isDevMode = useResolvedDevMode(mode);
+    const isAnalyticsActive = useIsAnalyticsActive();
+
+    const value = useMemo(
+        () => ({
+            pageAsset: page,
+            userComponents: components,
+            mode,
+            slots,
+            isDevMode,
+            isAnalyticsActive
+        }),
+        [page, components, mode, slots, isDevMode, isAnalyticsActive]
     );
+
+    return <DotCMSPageContext.Provider value={value}>{children}</DotCMSPageContext.Provider>;
 }

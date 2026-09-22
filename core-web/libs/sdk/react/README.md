@@ -308,22 +308,69 @@ The layout renders the pre-rendered slot node for a contentlet if one exists, ot
 
 #### Component Mapping
 
-The `DotCMSLayoutBody` component uses a `components` prop to map content type variable names to React components. This allows you to render different components for different content types. Example:
+The `DotCMSLayoutBody` component uses a `components` prop to map content type variable names to React components. This allows you to render different components for different content types.
 
-```typescript
-const DYNAMIC_COMPONENTS = {
-    Blog: MyBlogCard,
-    Product: DotCMSProductComponent
+**Load the mapped components dynamically.** A static map makes every component reachable from the client entry, so a visitor downloads all of them on every route — even the ones that page never renders. Wrapping each in a dynamic import gives each component its own chunk, fetched only when a page actually contains that content type.
+
+In Next.js, use `next/dynamic`:
+
+```tsx
+import dynamic from 'next/dynamic';
+
+import { CustomNoComponent } from './Empty';
+
+export const pageComponents = {
+    Blog: dynamic(() => import('./MyBlogCard')),
+    Product: dynamic(() => import('./DotCMSProductComponent')),
+    // The fallback for unmapped content types stays eager: it should render without
+    // waiting on a network round-trip, and it is small.
+    CustomNoComponent
 };
 ```
 
+Anywhere else — Astro, Vite, plain React — use `React.lazy`:
+
+```tsx
+import { lazy } from 'react';
+
+export const pageComponents = {
+    Blog: lazy(() => import('./MyBlogCard')),
+    Product: lazy(() => import('./DotCMSProductComponent'))
+};
+```
+
+`next/dynamic` brings its own Suspense boundary. `React.lazy` does not, but you do not need to add one: `DotCMSLayoutBody` wraps every contentlet in a Suspense boundary, so a lazy component can be mapped directly.
+
 -   Keys (e.g., `Blog`, `Product`): Match your [content type variable names](https://dev.dotcms.com/docs/content-types#VariableNames) in dotCMS
--   Values: Dynamic imports of your React components that render each content type
--   Supports lazy loading through dynamic imports
--   Components must be standalone or declared in a module
+-   Values: any React component type — including the result of `next/dynamic` or `React.lazy`
 
 > [!TIP]
 > Always use the exact content type variable name from dotCMS as the key. You can find this in the Content Types section of your dotCMS admin panel.
+
+> [!WARNING]
+> Avoid re-exporting your content-type components from a barrel (`export * from './Banner'`). Anything importing that barrel makes every component statically reachable, which puts them all back in the initial bundle no matter how the map loads them.
+
+#### Migrating an existing app to dynamic mapping
+
+Earlier versions of our examples showed a static component map, so an app built from them ships **every** mapped component on **every** route. If you have dozens of content types, that is the single biggest thing you can fix — and upgrading the SDK does not fix it for you, because the map lives in your code.
+
+Measured on the Next.js example with 135 mapped content types, one realistic component each:
+
+| Component map | Initial route JS | Mapped components in the initial bundle |
+| --- | --- | --- |
+| Static imports | 892.7 KB raw / 250.4 KB gzip | **135 of 135** |
+| `next/dynamic` | 792.6 KB raw / 238.1 KB gzip | **0 of 135** |
+
+Every mapped component leaves the initial route and is fetched only when a page contains that content type. How much weight that removes depends on your components: the 100 KB above is what 135 modest ones cost, and real component libraries are usually heavier.
+
+To migrate:
+
+1. Wrap each entry in the map with `next/dynamic` (or `React.lazy` outside Next.js). Keep the unmatched-type fallback eager.
+2. Delete any barrel that re-exports your content-type components, and import them directly where you need them elsewhere. A single `export * from './Banner'` re-exports every component from one module and undoes the whole change.
+3. Do the same for the `customRenderers` map you pass to `DotCMSBlockEditorRenderer` if it maps more than a handful of components.
+4. Rebuild and confirm. The quickest check is to map a component no page uses, give it a unique string, and grep the production client chunks for that string — it should appear only in its own chunk. `examples/scripts/check-initial-bundle.mjs` in this repository does exactly that for the Next.js and Astro examples and can be pointed at your build.
+
+`next/dynamic` keeps server rendering on by default, so this does not change what the crawler sees.
 
 
 ### DotCMSEditableText

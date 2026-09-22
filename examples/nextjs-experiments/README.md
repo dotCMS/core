@@ -411,6 +411,7 @@ export function Page({ pageContent }: PageProps) {
 > - `redirectFn: replace` (from Next.js's `useRouter`) lets experiments perform client-side redirects when a variant requires navigating to a different URL.
 > - The `experimentsConfig.apiKey` guard means the wrapping only happens when `NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY` is set — with no key, the page renders normally without experiments.
 > - Render the resulting `DotCMSLayoutBodyComponent` (not the raw `DotCMSLayoutBody`) so the experiments wrapping actually takes effect.
+> - `pageComponents` comes from `src/components/content-types/index.ts`, where each Content Type is mapped through `next/dynamic` so it is fetched only when a page actually contains it. Wrapping with `withExperiments` does not change that — keep the map dynamic. See the [Next.js example README](../nextjs/README.md#content-type-to-react-component-mapping) for the reasoning.
 
 ## Experiments (headless)
 

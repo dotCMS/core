@@ -1,44 +1,81 @@
 const preserveDirectives = require('rollup-plugin-preserve-directives').default;
+const postcss = require('rollup-plugin-postcss');
 const path = require('path');
-const fs = require('fs');
 
 /**
- * Rollup plugin that patches the output package.json to add the react-server
- * export condition, pointing to the server-safe entry that excludes TinyMCE
- * and other client-only modules.
+ * Swap @nx/rollup's inlined postcss plugin for `rollup-plugin-postcss`.
+ *
+ * @nx/rollup 23 replaced the `createFilter` from `@rollup/pluginutils` with a hand-rolled
+ * picomatch matcher, and `picomatch('**\/*.css')` returns false for the absolute module ids
+ * rollup actually passes in. The result is that no CSS is ever transformed: rollup receives
+ * the raw stylesheet, tries to parse it as JavaScript, and the build dies on the first line
+ * of Column.module.css with "Expression expected". Without this, `nx build sdk-react` cannot
+ * complete at all.
+ *
+ * `rollup-plugin-postcss` is the plugin Nx inlined in the first place and is already a
+ * dependency of this workspace. Options mirror what withNx passes: styles are injected by
+ * JS (extract: false) and `.module.css` files are treated as CSS modules.
  */
-function patchPackageJsonPlugin(outputDir) {
-    return {
-        name: 'patch-package-json',
-        writeBundle() {
-            const pkgPath = path.join(outputDir, 'package.json');
-            if (!fs.existsSync(pkgPath)) return;
-            const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf-8'));
-            const mainExport = pkg.exports && pkg.exports['.'];
+function replaceBrokenPostcssPlugin(plugins, options) {
+    const index = plugins.findIndex((plugin) => plugin && plugin.name === 'postcss');
 
-            if (mainExport && typeof mainExport === 'object' && !Array.isArray(mainExport)) {
-                pkg.exports['.'] = {
-                    'react-server': './index.server.esm.js',
-                    ...mainExport
-                };
-                fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-            } else if (typeof mainExport === 'string') {
-                pkg.exports['.'] = {
-                    'react-server': './index.server.esm.js',
-                    import: mainExport
-                };
-                fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-            } else {
-                console.warn(
-                    '[patchPackageJsonPlugin] Unrecognized exports["."] shape — react-server condition was NOT added. ' +
-                        'SSR builds may pull in TinyMCE. Check the generated package.json exports field.'
-                );
-            }
-        }
-    };
+    if (index === -1) {
+        console.warn(
+            '[rollup.config.js] No postcss plugin found in the Nx plugin list — CSS handling ' +
+                'was left untouched. If the build fails parsing a .css file, this is why.'
+        );
+
+        return plugins;
+    }
+
+    const patched = [...plugins];
+    patched[index] = postcss({
+        inject: injectStyleInline,
+        extract: options.extractCss,
+        autoModules: true
+    });
+
+    return patched;
 }
 
-module.exports = (options) => {
+/**
+ * Emit the style-injection code inline instead of importing `style-inject`.
+ *
+ * With `preserveModules`, the default `inject: true` leaves each stylesheet chunk importing
+ * `style-inject` from the workspace's node_modules. Rollup then copies that dependency to
+ * `dist/libs/sdk/react/node_modules/.pnpm/...` and rewrites the import to point there — which
+ * works locally but not once published, because npm always strips `node_modules` from the
+ * tarball. Consumers would install a package whose CSS chunks import a file that does not
+ * exist.
+ *
+ * Injecting inline keeps the stylesheet chunks self-contained. The guard makes it a no-op
+ * during SSR (no `document`), and idempotent if two copies of the package end up on one page
+ * — which the dual-package hazard makes possible now that `import` resolves to real ESM.
+ *
+ * The guard compares stylesheet *content*, not a derived key. An earlier version keyed on
+ * `css.length`, which silently skipped injection for any second stylesheet that happened to
+ * be the same byte length as one already on the page.
+ *
+ * @param {string} cssVariableName identifier holding the stylesheet text
+ * @returns {string} code appended to the stylesheet module
+ */
+function injectStyleInline(cssVariableName) {
+    return `
+(function () {
+    if (typeof document === 'undefined') return;
+    var existing = document.head.querySelectorAll('style[data-dotcms-style]');
+    for (var i = 0; i < existing.length; i++) {
+        if (existing[i].textContent === ${cssVariableName}) return;
+    }
+    var style = document.createElement('style');
+    style.setAttribute('data-dotcms-style', '');
+    style.appendChild(document.createTextNode(${cssVariableName}));
+    document.head.appendChild(style);
+})();
+`;
+}
+
+module.exports = (options, nxOptions) => {
     if (!options) return {};
 
     // Add server entry point alongside the default entry
@@ -66,14 +103,13 @@ module.exports = (options) => {
         options.output.preserveModulesRoot = 'src';
     }
 
-    // Determine output directory for package.json patching
-    const outputDir = Array.isArray(options.output) ? options.output[0]?.dir : options.output?.dir;
-
-    // Append preserveDirectives and package.json patcher as the last plugins
+    // Keep 'use client' directives, and swap out the broken postcss plugin.
     options.plugins = [
-        ...(Array.isArray(options.plugins) ? options.plugins : []),
-        preserveDirectives(),
-        ...(outputDir ? [patchPackageJsonPlugin(outputDir)] : [])
+        ...replaceBrokenPostcssPlugin(
+            Array.isArray(options.plugins) ? options.plugins : [],
+            nxOptions ?? {}
+        ),
+        preserveDirectives()
     ];
 
     // Suppress MODULE_LEVEL_DIRECTIVE warnings from rollup, composing with any existing handler
