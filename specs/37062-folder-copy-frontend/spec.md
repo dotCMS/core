@@ -22,7 +22,7 @@ half of fixing that.
 
 **This specification covers the client only.** The server half is specified in
 `specs/37062-folder-copy-backend/spec.md`. The two meet at that document's *Contract Consumed by the
-Client* (C-001 … C-012), restated here from the consumer's side in §Contract Consumed. Nothing about
+Client* (C-001 … C-011), restated here from the consumer's side in §Contract Consumed. Nothing about
 server behaviour is re-specified here.
 
 **The operation duplicates a folder in place.** The copy lands beside the original, in the same
@@ -36,14 +36,16 @@ for bulk delete.
 uploaded into, dragged onto and copied again. The elaborate marking machinery bulk folder delete
 needs, making a doomed folder inert everywhere it appears and keeping that true across reloads and
 authors, has no purpose here and is deliberately absent (backend D-016). What this client does while
-a run is in flight is show progress; what it does when the run ends is report what was made.
+a run is in flight is show progress; what it does when the run ends is report what happened.
 
-**The one thing this feature must get right that its siblings do not.** A duplicate's name is chosen
-by the server, not by the author, and it is not predictable: duplicating `campaign` gives
-`campaign_copy`, duplicating it again gives a further derived name. An author who duplicates six
-folders and is told only "6 succeeded" has to go hunting through the listing to find out what was
-made. The report must name the folders that were created (C-006), and that obligation shapes more of
-this document than the progress indicator does.
+**The duplicate's name is chosen by the server, and the report does not restate it.** Duplicating
+`campaign` gives `campaign_copy`. An earlier draft of this specification required the report to
+name each folder it created, on the reasoning that the author could not otherwise find what was
+made. The developer's position, taken on 2026-09-22, is that the suffix is well enough known for
+that to be unnecessary, and the server half now publishes the naming rule with its endpoint instead
+of adding a field to a contract three features share (backend FR-009a, D-008). The consequence for
+this half is that the report speaks in terms of **the folders the author selected**, saying which
+of them were copied, rather than in terms of the folders that came out.
 
 Throughout this document, **selecting rows** means picking folders in the Content Drive listing. A
 **run** is one submitted copy, identified by a handle the server returns. **Duplicate** is used for
@@ -95,31 +97,28 @@ appear and the author was never blocked while it happened.
 
 ---
 
-### User Story 2 - The author is told what was created (Priority: P1)
+### User Story 2 - The author is told what actually happened (Priority: P1)
 
-When a run ends, the author is told how many folders were duplicated, **what each duplicate is
-called**, and which folders were not copied and why.
+When a run ends, the author is told how many of their selected folders were duplicated and which
+were not, each with a reason they can act on.
 
-**Why this priority**: P1 and the story that distinguishes this feature from its siblings. The
-server names each duplicate rather than the author naming it, and those names are not predictable
-from the source. A report that gives only counts leaves the author to search the listing for what
-changed, which is the task the feature was supposed to do for them.
+**Why this priority**: P1. Partial failure is the normal case over a multi-select, and a run that
+reports only a count leaves the author unable to tell which folders they still have to deal with.
+The report is also the only place a refusal ever surfaces, because the action deliberately submits
+folders the client cannot prove are permitted.
 
-**Independent Test**: Duplicate a folder that has already been duplicated once, alongside a folder
-the author may not copy; confirm the report names the new folder exactly as it was created and names
-the refused folder with a reason.
+**Independent Test**: Duplicate three folders of which one is refused; confirm the report states two
+succeeded, names the refused folder, and gives a reason in the product's own words.
 
 **Acceptance Scenarios**:
 
 1. **Given** a run ends, **When** the report appears, **Then** it uses the server's counts of
    duplicated and failed folders, never the size of the author's selection.
-2. **Given** a folder was duplicated, **When** the report is read, **Then** the name the duplicate
-   was given is shown, so the author can find it without searching.
-3. **Given** a folder could not be duplicated, **When** the report is read, **Then** that folder is
+2. **Given** a folder could not be duplicated, **When** the report is read, **Then** that folder is
    named along with the reason, in the product's own words.
-4. **Given** more failures than the report can show at once, **When** it is read, **Then** it names
+3. **Given** more failures than the report can show at once, **When** it is read, **Then** it names
    the first few, counts the rest, and leads to the full list rather than ending in a bare count.
-5. **Given** a run that duplicated nothing because every folder was refused, **When** the report
+4. **Given** a run that duplicated nothing because every folder was refused, **When** the report
    appears, **Then** it does not read as a success.
 
 ---
@@ -165,7 +164,8 @@ confirm the outcome including the duplicates' names is still reachable.
 1. **Given** a run is in flight, **When** the author closes the dialog that started it or navigates
    within the portlet, **Then** the run continues and is unaffected.
 2. **Given** a run ended while the author was elsewhere, **When** they return, **Then** they can
-   determine the full outcome, including what was created, without having watched it.
+   determine the full outcome, including which of their folders were copied, without having watched
+   it.
 3. **Given** a run is in flight, **When** the author leaves the portlet entirely, **Then** nothing
    cancels it.
 
@@ -275,9 +275,13 @@ them.
   carries the folder's own rights rather than its parent's, so the client can check one of the two
   at most. The gate is a courtesy that removes obviously futile submissions, not a prediction
   (backend FR-012c).
-- **FR-006**: The client MUST respect the maximum number of folders one submission may carry,
-  reading that limit from the server rather than holding its own copy, and MUST explain a refusal
-  caused by it in terms of the limit.
+- **FR-006**: Where a submission is refused for carrying more folders than the configured maximum,
+  the client MUST explain the refusal in terms of that limit, using the number the server reports
+  with the refusal. The client MUST NOT hold its own copy of the maximum, and MUST NOT gate the
+  action on it before submitting: the limit is not exposed ahead of time and the client learns it
+  by being refused. An earlier draft required reading the limit up front, which the server half has
+  no contract item to satisfy; exposing it would be a new capability rather than a wording change,
+  and is not worth one message.
 
 #### Committing
 
@@ -304,7 +308,7 @@ them.
 - **FR-014**: The client MUST NOT mark, disable or otherwise make inert any folder while a run is
   working on it. A folder being duplicated stays fully usable: selectable, openable, a valid drop
   target, and available to another action. This is a deliberate difference from bulk folder delete
-  and MUST NOT be "fixed" by copying that feature's marking across (backend C-012).
+  and MUST NOT be "fixed" by copying that feature's marking across (backend C-011).
 - **FR-015**: The client MUST NOT read the listing of in-flight runs, and MUST NOT restore any
   in-flight state on load. There is nothing to restore: no folder's appearance depends on whether a
   run is working on it.
@@ -322,9 +326,10 @@ them.
   author refreshing or polling anything.
 - **FR-019**: The report MUST use the **server's** counts of duplicated, failed and skipped folders,
   never the size of the author's selection.
-- **FR-020**: For every folder that was duplicated, the report MUST show **the name the duplicate
-  was given**. The author did not choose it, cannot predict it, and cannot otherwise tell which new
-  folder came from which source. A report of counts alone does not satisfy this requirement.
+- **FR-020**: The report MUST identify folders by **the path the author selected**, not by the name
+  the duplicate was given, which the outcome does not carry (backend FR-009a). Where the interface
+  tells an author what to look for, it MUST describe the naming rule rather than claim a specific
+  name it has not been told.
 - **FR-021**: Every folder that was not duplicated MUST be identifiable from the report, with its
   reason. Folders MUST NOT be summarised away into a count alone.
 - **FR-022**: Where there are more entries than the report can show at once, it MUST name the first
@@ -343,7 +348,7 @@ them.
 - **FR-026**: A clean run, a partial run and a cancelled run MUST read differently, and a cancelled
   run MUST NOT read as a fault. Cancellation copy MUST state that the folders not reached were not
   copied and that no partial duplicate was left behind, which is what the server guarantees (backend
-  C-008). Wording taken from #37062's description, which says a partial copy is left at the
+  C-007). Wording taken from #37062's description, which says a partial copy is left at the
   destination, is **wrong** for this design and MUST NOT be used.
 - **FR-027**: An outcome MUST be reported once, by whichever part of the interface is responsible
   for presenting it, not once per surface that knows about the run.
@@ -371,17 +376,17 @@ them.
 - **Folder selection**: the folders an author chose in the listing and asked to duplicate.
 - **Run**: one submitted copy, identified by the handle the server returns, with a state the client
   can observe and an outcome it can read.
-- **Per-folder outcome**: one record per submitted folder: the source, whether it was duplicated,
-  failed or skipped, the name of the duplicate on success, and a reason on failure.
-- **Run report**: what the author is shown when a run ends: the server's counts, the names of what
-  was created, and the folders that did not succeed with their reasons.
+- **Per-folder outcome**: one record per submitted folder: the source path, whether it was
+  duplicated, failed or skipped, and a reason on failure.
+- **Run report**: what the author is shown when a run ends: the server's counts, and the folders
+  that did not succeed with their reasons.
 
 ---
 
 ## Contract Consumed *(mandatory: the boundary with the server half)*
 
 Restated from `specs/37062-folder-copy-backend/spec.md` §Contract Consumed by the Client (C-001 …
-C-012), from this side.
+C-011), from this side.
 
 - **One call, one handle** (C-001, C-002). The client sends the selected folder paths as one
   ordinary request and is answered immediately with a handle and a ready-made address for following
@@ -394,25 +399,23 @@ C-012), from this side.
 - **A stable, enumerated set of failure reasons** (C-005), each mapped to client copy (FR-023). A
   subset of bulk delete's set: copy has no "something inside is in use" and no "an ancestor already
   removed it".
-- **The name each duplicate was given, per successful path** (C-006). This is the addition copy
-  makes to the shared outcome shape, and FR-020 depends on it entirely. Without it this client
-  cannot tell the author what was created, and no client-side derivation substitutes: the naming
-  rule appends repeatedly, so the name depends on what already existed at the moment the copy ran.
-- **Progress, and an honest statement of what it counts** (C-007). Completed top-level folders,
+- **Progress, and an honest statement of what it counts** (C-006). Completed top-level folders,
   nothing finer. This is why FR-012 requires an indeterminate indicator.
-- **A way to cancel, with this operation's guarantee** (C-008). Each folder is left either fully
+- **A way to cancel, with this operation's guarantee** (C-007). Each folder is left either fully
   duplicated or not created at all, so cancellation copy says the remainder was not copied rather
   than warning about partial results. **This client does not expose cancellation in this version**
   (D-005); the requirement on the wording binds whoever surfaces it.
-- **A readable terminal state and outcome** (C-009). Counts plus per-folder records, each success
-  carrying its duplicate's name and each failure its reason. FR-020 and FR-021 depend on the records
-  being present rather than summarised.
-- **A pushed completion signal carrying the outcome, plus a durable record of the same** (C-010).
+- **A readable terminal state and outcome** (C-008). Counts plus per-folder records, each failure
+  carrying its reason, and **nothing added to the shared shape**: a successful record names the
+  path that was submitted, not the name the duplicate was given. FR-020 and FR-021 rest on the
+  records being present rather than summarised, and FR-020 on their being keyed by the submitted
+  path.
+- **A pushed completion signal carrying the outcome, plus a durable record of the same** (C-009).
   FR-018 and FR-028 rest on this. The client does not poll for completion and does not build a jobs
   screen.
-- **The signal is emitted after the copies are complete** (C-011). FR-029 and FR-030 refresh on it
+- **The signal is emitted after the copies are complete** (C-010). FR-029 and FR-030 refresh on it
   and depend on that ordering, which the client cannot observe for itself.
-- **Nothing is announced and nothing needs marking** (C-012). A folder being copied stays usable
+- **Nothing is announced and nothing needs marking** (C-011). A folder being copied stays usable
   throughout, which is what lets FR-014 and FR-015 remove the largest part of the sibling feature's
   client work.
 
@@ -441,7 +444,7 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
 - **SC-007**: A folder being duplicated remains fully usable throughout the run in 100% of cases:
   zero folders are marked, disabled or made undroppable by this feature.
 - **SC-008**: An author who was absent when a run ended can determine the full outcome, including
-  the names of what was created, without having watched it.
+  which of their selected folders were copied, without having watched it.
 - **SC-009**: After a run ends, both the listing and the sidebar tree show the new folders without a
   reload, in 100% of cases where the author is viewing the parent they landed in.
 - **SC-010**: The author is never told a duplication succeeded when it did not, nor that it failed
@@ -496,7 +499,8 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
 - **Copying files in a mixed selection as part of the same run.** Files are copied through the
   existing content path; reconciling two runs into one report is not attempted here (FR-004).
 - **Renaming a duplicate at creation time, or letting the author choose its name.** The server
-  derives it; this feature reports it (FR-020). Renaming afterwards is the existing folder edit.
+  derives it by a published rule, and the outcome does not restate it (FR-020). Renaming afterwards
+  is the existing folder edit.
 - **The other folder actions in the right-click menu.** Unchanged.
 
 ---
@@ -510,10 +514,10 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
   specs and that wording is stale and MUST NOT be copied**), what is covered end to end (Playwright,
   extending the existing Content Drive suite), and how the pushed completion signal is exercised,
   which no unit test of a single component reaches.
-- **Where the duplicate's name is surfaced in the report** (FR-020). This is the requirement most
-  likely to be lost in implementation, because every sibling feature's report is built from counts
-  and reasons alone and this one needs a third column. The plan MUST name the component that renders
-  it and confirm the field is read from the per-folder record rather than derived.
+- **How the interface describes where a duplicate went** (FR-020). The report names the folder the
+  author selected, not the copy that was made, so the plan MUST settle what the interface says to an
+  author looking for the result: describing the naming rule is allowed, asserting a specific name is
+  not, since the client is never told it.
 - **The reason-to-copy mapping is a cross-half dependency.** Every reason the server can emit needs
   client copy before either half is implemented, and the mapping is shared with delete and move.
   The plan MUST name where it lives, and MUST record that copy uses a subset rather than adding
@@ -584,7 +588,7 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
 - **D-007: The single-folder action uses the same asynchronous submission as the bulk one**
   *(FR-003, backend D-010)*. There is no synchronous single-folder endpoint to call. One submission
   path means one outcome shape, one error mapping and one set of copy.
-- **D-008: Progress renders as an indeterminate indicator** *(FR-012, C-007)*. Not a client
+- **D-008: Progress renders as an indeterminate indicator** *(FR-012, C-006)*. Not a client
   preference: the server counts completed top-level folders and nothing finer, so a bar would sit
   unchanged for the whole of the folder that matters and read as a hung feature.
 
@@ -596,6 +600,7 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
 the requirement it governs.
 
 What remains genuinely undecided is not a specification question and is listed under §Planning
-Obligations: where the duplicate's name is surfaced, which surface presents the outcome, how the two
+Obligations: how the interface describes where a duplicate went, which surface presents the outcome,
+how the two
 surfaces refresh on completion, and what a folder is matched by. All are sized at the plan phase and
 none changes what this document requires.

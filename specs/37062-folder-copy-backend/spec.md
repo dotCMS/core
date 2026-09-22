@@ -100,16 +100,15 @@ at once, and that five new folders exist beside the originals when the run repor
 ### User Story 2 - The duplicate is named so it never collides (Priority: P1)
 
 A duplicate lands beside its original, so its name always collides by construction. The server
-derives a free name rather than refusing, and reports the name it chose so the author can find what
-it made.
+derives a free name by the rule the shipped copy already applies, rather than refusing.
 
 **Why this priority**: P1 because it is not an edge case here. Under duplicate-in-place **every
 single copy collides**, so the naming rule is the operation's normal path rather than a rare
-branch. An author who cannot tell which of two similarly named folders is the new one has not been
-given a working feature.
+branch. A rule that refused, or that overwrote, would make the feature unusable rather than
+imperfect.
 
 **Independent Test**: Duplicate the same folder three times; confirm three new folders exist, all
-named distinctly, and that each run's outcome reports the name it produced.
+named distinctly, and that no existing folder was disturbed to make room for any of them.
 
 **Acceptance Scenarios**:
 
@@ -118,9 +117,7 @@ named distinctly, and that each run's outcome reports the name it produced.
 2. **Given** a folder that has already been duplicated, **When** it is duplicated again, **Then** a
    second copy is created under a further derived name, and neither the original nor the first copy
    is disturbed.
-3. **Given** a successful per-path outcome, **When** it is read, **Then** it carries the name the
-   duplicate was given, not only the source path.
-4. **Given** any duplication, **When** it completes, **Then** no existing folder has been renamed,
+3. **Given** any duplication, **When** it completes, **Then** no existing folder has been renamed,
    replaced or overwritten to make room for the copy.
 
 ---
@@ -290,10 +287,13 @@ per-path outcome is still readable and a durable notification was addressed to t
 - **FR-009**: The duplicate MUST be given a name that is free within that parent, derived by the
   rule the shipped copy already applies. The system MUST NOT refuse a duplication because the
   source's name is taken: under this feature it always is.
-- **FR-009a**: A successful per-path outcome MUST report **the name the duplicate was given**, not
-  only the source path. Without it an author who duplicated several folders cannot tell which new
-  folder corresponds to which source, and the derived names are not predictable from the source
-  name alone once a folder has been duplicated before.
+- **FR-009a**: The naming rule MUST be stated in the published API description, so a caller can work
+  out what a duplicate will be called. The outcome MUST NOT be required to carry the chosen name:
+  the suffix the rule appends is well known, and adding a field to the shared per-item contract to
+  restate it is not worth the coupling. One consequence belongs in that description rather than
+  being discovered: the rule appends to the name it finds rather than counting, so a second
+  duplicate of the same folder carries the suffix twice. The name follows from the rule and from
+  what is already in the parent, not from the source name alone.
 - **FR-010**: Repeated duplication of the same folder MUST keep producing new folders under further
   derived names, and the system MUST NOT overwrite, merge into, or rename an existing folder to
   make room. That the derived names grow longer with each duplication is known, visible behaviour
@@ -428,8 +428,8 @@ per-path outcome is still readable and a durable notification was addressed to t
 - **Run**: one accepted submission, identified by a handle, with an observable state and an
   outcome.
 - **Per-path outcome**: one record per submitted path, carrying the path, a three-valued status,
-  the name of the duplicate on success, and a machine-readable reason plus diagnostic message on
-  failure.
+  and a machine-readable reason plus diagnostic message on failure. Exactly the shared shape, with
+  nothing added.
 - **Duplicate**: the folder the run created, living in the same parent as its source under a
   derived name.
 
@@ -453,22 +453,22 @@ per-path outcome is still readable and a durable notification was addressed to t
   The server's message is diagnostic and is never displayed. Copy's set is a **subset** of the one
   delete needs: no rights on the folder, no rights to add to its parent, the folder no longer
   resolves, the folder is protected, and a general fallback.
-- **C-006**: **The name each duplicate was given, per successful path** (FR-009a). This is the one
-  addition copy makes to the shared outcome shape, and the client depends on it: the author needs
-  to be told what was created, and the name is not derivable from the source path.
-- **C-007**: **Progress, and an honest statement of what it counts** (FR-027, FR-029). It counts
+- **C-006**: **Progress, and an honest statement of what it counts** (FR-027, FR-029). It counts
   completed top-level folders and nothing finer, so the client must not render a proportion.
-- **C-008**: **A way to cancel, with this operation's guarantee and not the one #37062 describes**
+- **C-007**: **A way to cancel, with this operation's guarantee and not the one #37062 describes**
   (FR-026, FR-030, FR-031). Each folder is left either fully duplicated or not created at all. Any
   wording stating that a partial copy is left behind is wrong under this specification.
-- **C-009**: **A readable terminal state and outcome** (FR-019): counts plus per-path records, each
-  failure carrying its reason and each success carrying its duplicate's name.
-- **C-010**: **A pushed completion signal carrying the outcome, plus a durable record of the same**
+- **C-008**: **A readable terminal state and outcome** (FR-019): counts plus per-path records, each
+  failure carrying its reason. **Nothing is added to the shared shape**: a successful record names
+  the path that was submitted, not the name the duplicate was given (FR-009a). The naming rule is
+  published with the endpoint instead, so a client that wants to tell an author what to look for
+  states the rule rather than reading a field.
+- **C-009**: **A pushed completion signal carrying the outcome, plus a durable record of the same**
   (FR-035, FR-036, FR-039). The client renders the push while the author is present and follows the
   durable record afterwards; it does not poll for completion and does not build a jobs screen.
-- **C-011**: **The signal is emitted after the copies are complete**, so a listing refreshed on it
+- **C-010**: **The signal is emitted after the copies are complete**, so a listing refreshed on it
   shows the new folders rather than racing them.
-- **C-012**: **Nothing is announced to other authors, and nothing needs marking** (FR-040). A
+- **C-011**: **Nothing is announced to other authors, and nothing needs marking** (FR-040). A
   folder being copied stays fully usable: it can be opened, uploaded into and dragged onto while a
   run works on it, and neither the source nor any other folder is made inert. A client written
   against bulk delete's contract must not carry its marking machinery here.
@@ -489,8 +489,8 @@ abandonment behaviour, and the durable record's lifetime.
   selected folders hold, and zero submissions fail for having taken too long to answer.
 - **SC-003**: 100% of accepted paths produce exactly one outcome record: succeeded with a name,
   failed with a reason, or skipped. Zero are silently dropped.
-- **SC-004**: 100% of successful duplications are findable from the outcome alone, without the
-  author searching the listing for what changed.
+- **SC-004**: 100% of successful duplications are reported against the path that was submitted, so
+  an author can tell which of the folders they selected were copied and which were not.
 - **SC-005**: Zero duplicates exist that hold only part of their source's contents, across
   cancellation, failure and process death.
 - **SC-006**: A folder being duplicated remains fully usable throughout the run, in 100% of cases.
@@ -534,7 +534,7 @@ abandonment behaviour, and the durable record's lifetime.
   analogue of that finding**, and a reader moving between the two documents should not carry it
   across.
 - **The self-target and descendant-target guards are not in the API.** They live in
-  `BrowserAjax.copyFolder` (`BrowserAjax.java:963-970`), not in `FolderAPI.copy`, so any caller
+  `BrowserAjax.copyFolder` (`BrowserAjax.java:960-967`), not in `FolderAPI.copy`, so any caller
   going directly to the API can copy a folder into its own descendant. Under duplicate-in-place
   neither case is expressible, because the target is always the source's existing parent, so **this
   feature does not need the guards and does not add them**. The gap remains for folder move
@@ -542,8 +542,9 @@ abandonment behaviour, and the durable record's lifetime.
   silently. Worth knowing why it matters: the walk re-reads each folder's children level by level,
   so copying into a descendant can pick up folders the copy is itself creating.
 - **Backward-compatibility expectations**: the Site Browser copy is untouched (FR-006). The
-  per-item outcome contract is shared with shipped features and MUST be extended additively, so the
-  duplicate's name (C-006) is a new field rather than a changed one.
+  per-item outcome contract is shared with shipped features and is consumed here **unchanged**:
+  this feature adds no field to it and renames none, which is a large part of why its client half
+  is cheap and why it cannot drift from bulk delete or move.
 - **Known related decisions**: the job-queue framework and the shared batch outcome contract landed
   with #37131 and #37166 and are consumed here unchanged. That framework holds **no durable
   per-item state**, which for copy is sharper than for delete because of FR-034. Bulk folder delete
@@ -614,9 +615,15 @@ abandonment behaviour, and the durable record's lifetime.
   criterion would fail **every** copy, since the source's name is always taken in its own parent.
   The shipped rule appends a suffix until the name is free, and that is what this feature uses. The
   cost is accepted and recorded rather than hidden: names grow with each duplication, so a folder
-  duplicated three times yields progressively longer derived names. The mitigation is FR-009a,
-  reporting the chosen name, rather than a change to the rule, because the rule is shared with the
-  Site Browser.
+  duplicated three times yields progressively longer derived names. The rule is left alone because
+  it is shared with the Site Browser and changing it would change what those authors have seen for
+  years. **The outcome does not restate the chosen name either** (FR-009a): an earlier draft
+  required it, on the reasoning that the author could not otherwise find what was made. The
+  developer's position, taken on 2026-09-22, is that the suffix is well enough known for that to be
+  unnecessary, and publishing the rule with the endpoint is the cheaper answer than adding a field
+  to a contract three features share. The trade is stated so it can be revisited: the rule appends
+  to the name it finds, so the name follows from the rule plus what is already in the parent, not
+  from the source name alone.
 - **D-009: Copy duplicates content the acting user cannot read, and this feature does not change
   that.** *(Developer decision, 2026-09-21.)* The walk beneath the two entry checks runs as the
   system user (FR-012b). The developer accepted it deliberately: the duplicate receives the
@@ -655,7 +662,7 @@ abandonment behaviour, and the durable record's lifetime.
   default is actively wrong, and the plan must choose between disabling automatic re-queue for this
   queue and accepting duplicated duplicates with the consequence documented.
 - **D-016: Nothing is marked, blocked or announced.** *(Developer decision, 2026-09-21; FR-040,
-  C-012.)* Bulk delete makes a folder inert everywhere it appears while a run works on it, keeps
+  C-011.)* Bulk delete makes a folder inert everywhere it appears while a run works on it, keeps
   that true across reloads and authors, and broadcasts a folder's entry into and exit from a
   delete. All of it exists because a folder being deleted is about to stop existing. Nothing about
   a folder being copied makes it unsafe to open, upload into or drag onto, so this feature carries
@@ -683,9 +690,10 @@ abandonment behaviour, and the durable record's lifetime.
   for every folder it lists, and which one travels in the submission, in the run's parameters and
   in the outcome need not be the same choice. Both plans MUST agree, and this half MUST state what
   the outcome is keyed by.
-- **Where the duplicate's name is carried** (FR-009a, C-006). It is the one field copy adds to a
-  shared contract, so the plan MUST say how it is added additively and confirm that bulk upload and
-  bulk refresh are unaffected.
+- **Where the naming rule is published** (FR-009a). The outcome does not carry the chosen name, so
+  the endpoint's description is the only place a caller can learn what a duplicate will be called.
+  The plan MUST say where that text lives and MUST cover the repeated-duplication case, since the
+  rule appends rather than counts.
 - **Whether the naming asymmetry between the two API overloads is evened up.** Only the
   site-parented overload validates the folder name, and duplicate-in-place puts both on the hot
   path. Progressive enhancement suggests correcting it; the plan MUST decide rather than inherit.
@@ -712,8 +720,8 @@ is corrected. All three are sized at the plan phase and none changes what this d
 - The job-queue framework's capabilities are as bulk upload and bulk refresh use them today:
   enqueue with parameters, progress reporting, cancellation, a terminal result harvested once, and
   no durable per-item state.
-- The shared per-item outcome contract can be extended additively with the duplicate's name without
-  disturbing its existing consumers.
+- The shared per-item outcome contract is used exactly as it stands. This feature adds no field to
+  it, so it cannot disturb bulk upload, bulk refresh, bulk delete or move.
 - `FolderAPI.copy` remains the single place folder copying happens, and this feature calls it
   rather than reimplementing the walk.
 - Folder rights arrive with the folders the client already lists, so the client's courtesy gate
