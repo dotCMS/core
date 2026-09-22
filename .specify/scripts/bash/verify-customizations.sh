@@ -339,6 +339,66 @@ check_shipped_skills_all_reviewed() {
     echo "all $reviewed shipped skills in this release have a row with a verdict"
 }
 
+# T041 — FR-006. Timestamp numbering is collision-free by construction, so the
+# branch-aware patch is retired rather than re-applied. Two things must hold, and the
+# second is the one that keeps SC-007's count of upstream-owned files we modify at one.
+check_numbering_is_collision_free() {
+    local opts="$REPO_ROOT/.specify/init-options.json"
+    local script="$REPO_ROOT/.specify/scripts/bash/create-new-feature.sh"
+    local failures=0 numbering
+    numbering=$(jq -r '.feature_numbering // empty' "$opts" 2>/dev/null)
+    if [ "$numbering" != "timestamp" ]; then
+        echo "feature_numbering is '${numbering:-unset}', not 'timestamp' — sequential numbering in this repo derives its next number from the issue-numbered spec directories and produces a value that looks like a GitHub issue number and is not one"
+        failures=$((failures + 1))
+    fi
+    # Patch #5 retired: the branch scan it added must be gone, not partially re-applied.
+    if grep -q 'get_highest_from_branches' "$script" 2>/dev/null; then
+        echo "create-new-feature.sh still carries get_highest_from_branches — the branch-aware patch was re-applied, which raises the count of upstream-owned files we modify back to two"
+        failures=$((failures + 1))
+    fi
+    # Strongest available statement, when a reference checkout of the release is at hand.
+    # Optional by design: a developer verifying a year from now will not have one.
+    if [ -n "${SPECKIT_UPSTREAM_DIR:-}" ] && [ -f "$SPECKIT_UPSTREAM_DIR/scripts/bash/create-new-feature.sh" ]; then
+        if ! diff -q "$script" "$SPECKIT_UPSTREAM_DIR/scripts/bash/create-new-feature.sh" >/dev/null 2>&1; then
+            echo "create-new-feature.sh differs from the release source at $SPECKIT_UPSTREAM_DIR"
+            diff "$script" "$SPECKIT_UPSTREAM_DIR/scripts/bash/create-new-feature.sh" | head -10
+            failures=$((failures + 1))
+        else
+            echo "byte-identical to the release source as well"
+        fi
+    fi
+    [ "$failures" -eq 0 ] || return 1
+    echo "numbering is timestamp and create-new-feature.sh carries no local patch"
+}
+
+# T045 — the numbering setting only reaches the flow through whoever reads it.
+# create-new-feature.sh does NOT read init-options.json; it only accepts --timestamp.
+# The shipped /speckit-specify honours feature_numbering itself, but our fix skill
+# delegates to the script, so it has to pass the flag or the fix flow silently keeps
+# numbering sequentially — collisions intact, with nothing to show for the setting.
+check_fix_flow_honours_numbering() {
+    local skill="$REPO_ROOT/.claude/skills/speckit-specify-fix/SKILL.md"
+    local numbering
+    numbering=$(jq -r '.feature_numbering // empty' "$REPO_ROOT/.specify/init-options.json" 2>/dev/null)
+    if [ ! -f "$skill" ]; then
+        echo "$skill does not exist"
+        return 1
+    fi
+    if [ "$numbering" != "timestamp" ]; then
+        echo "feature_numbering is '${numbering:-unset}'; this check covers the timestamp setting only"
+        return 1
+    fi
+    if ! grep -qF 'feature_numbering' "$skill"; then
+        echo "the fix skill never consults feature_numbering, so it delegates to create-new-feature.sh with whatever the script defaults to — sequential — and the setting has no effect on the fix flow"
+        return 1
+    fi
+    if ! grep -qF -- '--timestamp' "$skill"; then
+        echo "the fix skill mentions feature_numbering but never passes --timestamp, which is the only way create-new-feature.sh can honour it"
+        return 1
+    fi
+    echo "the fix flow reads feature_numbering and passes --timestamp, so both spec flows number the same way"
+}
+
 # >>> CHECKS END (new check functions are inserted above this line)
 
 # ---------------------------------------------------------------------------
@@ -356,6 +416,8 @@ run_all_checks() {
     check net-new-survived        "FR-010, FR-011"        "files upstream never ships survived --force" check_net_new_customizations_survived
     check preexisting-feature-dir "FR-016a, SC-009"       "a pre-upgrade spec directory still resolves, read-only" check_preexisting_feature_dir_resolves
     check shipped-skills-reviewed "FR-013, FR-013a, SC-005" "every shipped skill has a reviewed diff on record" check_shipped_skills_all_reviewed
+    check numbering-collision-free "FR-006, SC-004, SC-007" "timestamp numbering, branch-aware patch retired" check_numbering_is_collision_free
+    check fix-flow-numbering      "FR-006, FR-019, SC-004" "the fix flow numbers the same way as the feature flow" check_fix_flow_honours_numbering
     # >>> RUNNER END (new check invocations are inserted above this line)
 }
 
