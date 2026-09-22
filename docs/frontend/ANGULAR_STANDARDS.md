@@ -26,6 +26,78 @@ Before creating a new component, verify a suitable one does not already exist:
 
 This is the norm, not a suggestion. A new component that duplicates an existing one is a defect, not a feature.
 
+### Implementing from a design
+
+**Designs here are prototypes, not pixel specs.** A mockup, screenshot, or Figma frame communicates
+intent: what the screen is for, what it contains, how it is laid out, what the user can do. It is not
+a rendering target. Most of ours are built outside the product's theme, so reproducing one literally
+means hand-rolling elements the workspace already ships and re-deriving colors, spacing, and
+typography the theme already decides.
+
+So a design is an input to this rule, not an exception from it. Read it for intent, then build that
+intent out of `libs/ui`, PrimeNG, Tailwind, and the theme. Where the prototype and the theme disagree
+on appearance, **the theme wins**.
+
+Before writing any markup, go through the design element by element:
+
+1. **Inventory it.** Every distinct element: buttons, inputs, tables, dialogs, tabs, tags, menus,
+   empty states, and the page shell itself.
+2. **Name the source for each, ours first.** Three places, in this order:
+   - **`libs/ui` (`@dotcms/ui`)** is the shared library. `core-web/libs/ui/src/index.ts` is its public
+     barrel and there is no Storybook, so that file plus the component folder it points at is the
+     catalogue: grep it before concluding something does not exist.
+   - **The feature libs** own their domain pieces (`libs/edit-content`, `libs/portlets`,
+     `libs/template-builder`, `libs/block-editor`, `libs/ai-ui`, and the rest). A design for a screen
+     in one of those areas is most likely built out of components already sitting next to it.
+   - **PrimeNG** is the base layer under both. The `primeng` MCP server (`search`, `get_component`,
+     `validate_usage`) answers what it ships and what props it takes, so "I did not know it existed"
+     is not a reason to hand-roll one.
+
+   Where a dotCMS component wraps a PrimeNG one, **use ours**. The wrapper exists because we needed
+   consistent behavior, labels, or state handling on top of the primitive, and dropping to raw
+   PrimeNG beside it puts that difference back into the product. `<dot-contentlet-status-badge>` over
+   a hand-configured `p-tag` is the standing example (see
+   [Styling Standards](./STYLING_STANDARDS.md#tags-vs-chips)).
+3. **Post the mapping, and stop if anything is unmatched.** Before touching a file, say it in the
+   conversation: one line per design element, naming the component and where it comes from. This is a
+   working artifact, not a file — nothing about it is committed.
+
+   ```
+   Design element        →  Component                      Source
+   ─────────────────────────────────────────────────────────────────────
+   Header + actions      →  <dot-filter-bar>               libs/ui
+   Status pill           →  <dot-contentlet-status-badge>  libs/ui
+   Locale label          →  p-tag severity="info"          PrimeNG
+   File list             →  p-table                        PrimeNG
+   Bulk-action toolbar   →  no match                       would be new
+   ```
+
+   Always post it. **Stop and wait for the developer** when either of these is true:
+
+   - an element matched nothing, so building it means adding a new component
+   - the design conflicts with an existing component's *behavior* or structure, not just its look
+
+   Otherwise carry straight on to the markup. A clean mapping needs no sign-off; an unmatched element
+   is where duplicates are born, and confirming one costs a message instead of a review cycle. The
+   developer usually knows about the component you failed to find.
+
+   **The unmatched rows then go in the PR description**, with what was built instead and why nothing
+   fit. That is where the rule above already expects a new component to be justified, and it is the
+   half of the mapping worth keeping: which component a matched element used is obvious from the
+   markup once it exists, whereas the decision to add a new one is not recoverable from the diff.
+   The matched rows stay in the conversation and are not carried anywhere.
+
+Visual difference alone never justifies a new component, and it is the difference you should expect,
+since the prototype was not drawn against the theme. A gap between the two is a theming question (a
+`severity`, a size prop, or a token in `theme.config.ts`) long before it is a new component, and most
+often it is nothing at all: the themed component is the correct result and the prototype was
+approximating it. Do not chase a prototype's exact spacing, radius, shade, or font size with local
+CSS.
+
+What does deserve a conversation is a conflict in *behavior* or in information architecture: the
+prototype implies an interaction, a state, or a structure that no existing component supports. Raise
+that with design rather than quietly building a second component to satisfy it.
+
 ## Angular Best Practices
 - Always use standalone components over `NgModules`
 - Do NOT set `standalone: true` inside the `@Component`, `@Directive` and `@Pipe` decorators (it is implied by default)

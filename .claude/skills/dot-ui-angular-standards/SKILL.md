@@ -3,13 +3,15 @@ name: dot-ui-angular-standards
 description: >
   dotCMS Angular coding standards for the core-web Nx workspace. Use this skill for ANY frontend work
   under core-web/ — writing or editing a component, service, store, directive, pipe, guard, template,
-  SCSS file, or Jest spec; reviewing a frontend diff; scaffolding new UI; or answering "how do we do X
+  SCSS file, or Jest spec; reviewing a frontend diff; scaffolding new UI; building a UI from a shared
+  design, mockup, screenshot, wireframe, or Figma frame; or answering "how do we do X
   in Angular in this repo". Also trigger whenever any of these appear: `standalone: true`,
   `changeDetection`, `ChangeDetectionStrategy`, `ng new`/`ng generate`/`ng serve`/`ng build`/`ng test`,
   `angular.json`, Karma, `@ngneat/spectator`, `npm run`/`yarn` inside core-web, inline `template:` or
   `styles:` in a decorator, `*ngIf`/`*ngFor`, `ngClass`/`ngStyle`, `@Input()`/`@Output()` decorators,
   `@HostBinding`/`@HostListener`, `destroy$`/`takeUntil`, constructor injection, `dot-icon`, PrimeIcons,
-  or "add an icon". This skill OVERRIDES the vendored `angular-developer` skill's generic Angular and
+  "add an icon", or an attached/linked design asked to be built ("build this", "implement this design",
+  a Figma URL, a UI screenshot) even when the message names no file and contains no code. This skill OVERRIDES the vendored `angular-developer` skill's generic Angular and
   Angular CLI guidance whenever the work is inside this repository.
 owner: "@dotcms/falcon"
 status: experimental
@@ -116,6 +118,24 @@ Before creating a new component, in this order:
 2. Check PrimeNG.
 3. Only then create a new component — and say in the PR why neither of the above fit.
 
+**Designs here are prototypes, not pixel specs.** A mockup, screenshot, or Figma frame communicates
+intent, not a rendering target, and most are drawn outside the product's theme. Read it for intent,
+then build that intent out of `libs/ui`, PrimeNG, Tailwind, and the theme: name the existing component
+behind each element before writing markup, and build only what is genuinely left over. Look in that
+order: `libs/ui` (its public barrel is `core-web/libs/ui/src/index.ts`, and there is no Storybook),
+then the feature lib for that area, then PrimeNG via its MCP server (`search`, `get_component`,
+`validate_usage`). Where one of ours wraps a PrimeNG primitive, use ours.
+
+**Post that mapping in the conversation before you write markup** — one line per design element,
+naming the component and its source, nothing committed — and **stop for the developer** when an
+element matched nothing, or when the design conflicts with an existing component's behavior rather
+than just its appearance. A clean mapping does not need sign-off; an unmatched element is where a
+duplicate gets born, and the developer usually knows the component you failed to find. Carry the
+unmatched rows into the PR description with what was built instead; the matched rows go nowhere. **Where the prototype and the theme disagree on appearance, the theme wins**: do not
+chase a prototype's exact spacing, radius, shade, or font size with local CSS. A conflict in
+*behavior* or structure is the one worth raising with design. Full procedure:
+[ANGULAR_STANDARDS.md → Implementing from a design](../../../docs/frontend/ANGULAR_STANDARDS.md#implementing-from-a-design).
+
 ### 7. Every component that renders data handles all four states
 
 **loading**, **empty**, **error**, **loaded** — explicitly. Never leave a blank render path. If a
@@ -169,6 +189,10 @@ copy of them:
 - [ ] No `standalone: true` and no `changeDetection` added
 - [ ] Any `Eager` component you touched is still `Eager`
 - [ ] Three files exist for each new component; no inline template or styles
+- [ ] Anything built from a design traces element by element to `libs/ui` or PrimeNG, with each leftover justified
+- [ ] That mapping was posted before the markup, and any unmatched element was confirmed with the developer rather than just built
+- [ ] Every unmatched element reached the PR description with what was built instead and why nothing fit
+- [ ] No local CSS added to make a themed component match a prototype
 - [ ] Loading, empty, error, and loaded paths all render something
 - [ ] Every stream is torn down with `takeUntilDestroyed(destroyRef)`; every failure path is handled
 - [ ] Specs use `@openng/spectator`, `byTestId`, and `setInput()`
