@@ -53,6 +53,9 @@ public class ContentAnalyticsUtil {
 
     public static final String CONTENT_ANALYTICS_APP_KEY = "dotContentAnalytics-config";
 
+    /** App-secret key under which the site authentication token is stored. */
+    public static final String SITE_AUTH_KEY = "siteAuth";
+
     /** App-secret key under which the HMAC bearer token minted by the save flow is stored. */
     public static final String BEARER_TOKEN_KEY = "bearerToken";
 
