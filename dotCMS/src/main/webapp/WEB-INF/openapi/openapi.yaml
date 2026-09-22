@@ -14754,8 +14754,37 @@ paths:
           description: default response
       tags:
       - Portlets
+  /v1/portlet/_catalog:
+    get:
+      description: "Every portlet that can be added to a section, with the same inclusion\
+        \ rules as the legacy Roles & Tools tool picker: portlets excluded from layouts\
+        \ are omitted, and the old Languages tool is omitted while FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET\
+        \ is on. Sorted by title ignoring letter case. Each row carries the id, the\
+        \ localized title and an isCustom flag that is true only for tools an admin\
+        \ created through New Tool. Requires an authenticated back-end user with access\
+        \ to the tools or tools-beta portlet, or the CMS Administrator role."
+      operationId: getToolsCatalog
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityToolCatalogView"
+          description: Catalog retrieved
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds neither the tools nor the tools-beta portlet and is not a CMS\
+            \ Administrator"
+      summary: List the tools that can be placed in a navigation section
+      tags:
+      - Portlets
   /v1/portlet/custom:
     post:
+      description: "Creates a custom content tool that lists the given base types\
+        \ and/or content types. Requires an authenticated back-end user with access\
+        \ to the roles, tools or tools-beta portlet, or the CMS Administrator role."
       operationId: saveNew
       requestBody:
         content:
@@ -14763,14 +14792,31 @@ paths:
             schema:
               $ref: "#/components/schemas/CustomPortletForm"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
+          description: Created; the entity carries the stored portlet id under "portlet"
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Validation failure (missing name or view mode, unknown content\
+            \ type, ...)"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
+            \ Administrator"
+      summary: Create a custom content tool
       tags:
       - Portlets
     put:
+      description: "Replaces the name, base types, content types and data view mode\
+        \ of an existing custom content tool. Requires an authenticated back-end user\
+        \ with access to the roles, tools or tools-beta portlet, or the CMS Administrator\
+        \ role."
       operationId: updatePortlet
       requestBody:
         content:
@@ -14778,28 +14824,92 @@ paths:
             schema:
               $ref: "#/components/schemas/CustomPortletForm"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
+          description: Updated; the entity carries the stored portlet id under "portlet"
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
+            \ Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: No portlet has the given id
+      summary: Update a custom content tool
       tags:
       - Portlets
   /v1/portlet/custom/{portletId}:
     delete:
+      description: "Removes the custom content tool and takes it out of every navigation\
+        \ section that contained it. Refuses, with 404 and no change, any id that\
+        \ is not a custom content tool: tools shipped with the product cannot be removed\
+        \ this way. Requires an authenticated back-end user with access to the roles,\
+        \ tools or tools-beta portlet, or the CMS Administrator role."
       operationId: deleteCustomPortlet
       parameters:
-      - in: path
+      - description: "Stored id of the custom tool, c_ prefix included"
+        in: path
         name: portletId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
+          description: Deleted; the entity carries a confirmation under "message"
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
+            \ Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: "No portlet has this id, or it is a tool shipped with the product"
+      summary: Delete a custom content tool
+      tags:
+      - Portlets
+    get:
+      description: "Returns the editable configuration of a custom content tool: id,\
+        \ name, base types, content types and data view mode. Requires an authenticated\
+        \ back-end user with access to the tools or tools-beta portlet, or the CMS\
+        \ Administrator role."
+      operationId: getCustomTool
+      parameters:
+      - description: "Stored id of the custom tool, c_ prefix included"
+        in: path
+        name: portletId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCustomToolView"
+          description: Custom tool found
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds neither the tools nor the tools-beta portlet and is not a CMS\
+            \ Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: "No portlet has this id, or it is a tool shipped with the product\
+            \ and has no custom configuration"
+      summary: Read one custom content tool's configuration
       tags:
       - Portlets
   /v1/portlet/custom/{portletId}/_addtolayout/{layoutId}:
@@ -27484,6 +27594,36 @@ components:
           type: string
         portletName:
           type: string
+    CustomToolView:
+      type: object
+      description: Editable configuration of a custom content tool
+      properties:
+        baseTypes:
+          type: array
+          description: "Base type names as stored (CONTENT, WIDGET, PERSONA, FILEASSET,\
+            \ HTMLPAGE, VANITY_URL, DOTASSET, FORM, KEY_VALUE); empty when none"
+          items:
+            type: string
+            description: "Base type names as stored (CONTENT, WIDGET, PERSONA, FILEASSET,\
+              \ HTMLPAGE, VANITY_URL, DOTASSET, FORM, KEY_VALUE); empty when none"
+        contentTypes:
+          type: array
+          description: Content type variable names; empty when none
+          items:
+            type: string
+            description: Content type variable names; empty when none
+        dataViewMode:
+          type: string
+          description: "list or card, as stored"
+          example: card
+        portletId:
+          type: string
+          description: Stored id including the c_ prefix
+          example: c_press-releases
+        portletName:
+          type: string
+          description: Display name of the tool
+          example: Press Releases
     DateField:
       type: object
       allOf:
@@ -33615,6 +33755,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityCustomToolView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CustomToolView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityDefaultWorkflowActionsView:
       type: object
       properties:
@@ -35969,6 +36132,31 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/ThreadSystemInfoView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityToolCatalogView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolCatalogEntryView"
         errors:
           type: array
           items:
@@ -39417,6 +39605,24 @@ components:
           example: 2026-01-15T10:31:22Z
       required:
       - createDate
+    ToolCatalogEntryView:
+      type: object
+      description: One tool that can be placed in a navigation section
+      properties:
+        id:
+          type: string
+          description: "Portlet id, e.g. roles or c_press-releases"
+          example: c_press-releases
+        isCustom:
+          type: boolean
+          description: "True only for tools created through New Tool: registered in\
+            \ the database and not declared in the product's portlet id registry.\
+            \ False for every shipped tool, Language Variables included"
+        title:
+          type: string
+          description: "Title in the caller's language; falls back to the registered\
+            \ name, then to the id"
+          example: Press Releases
     TotalSession:
       type: object
       properties:

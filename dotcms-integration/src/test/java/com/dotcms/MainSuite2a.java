@@ -117,7 +117,8 @@ import org.junit.runners.Suite.SuiteClasses;
         InterceptorHandlerTest.class,
         com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
         com.dotcms.rest.AuditPublishingResourceTest.class,
-        MaintenanceResourceIntegrationTest.class
+        MaintenanceResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class
 })
 public class MainSuite2a {
 
