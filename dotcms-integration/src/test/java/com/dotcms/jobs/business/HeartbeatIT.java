@@ -51,7 +51,7 @@ public class HeartbeatIT extends com.dotcms.Junit5WeldBaseTest {
     }
 
     @AfterAll
-    void cleanUp() {
+    static void cleanUp() {
         clearJobs();
     }
 
