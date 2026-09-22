@@ -227,9 +227,11 @@ Keep implementation out of it. *"Returns the users granted this role, with their
 in the spec; *`RoleResource#loadUsersByRoleId`* does not. The bar: a reviewer should be able to
 disagree with the spec without reading any code.
 
-Name the directory for the **GitHub issue number** — `37070-roles-users-endpoint`, not Spec-Kit's
-default zero-padded `001-` — so the branch matches the issue everyone else is reading
-(`create-new-feature.sh --help` for `--number` / `--short-name`).
+Name the directory for the **GitHub issue number** — `37070-roles-users-endpoint` — so the branch
+matches the issue everyone else is reading (`create-new-feature.sh --help` for `--number` /
+`--short-name`). Skip the `--number` and you get a timestamp instead
+(`20260922-100416-roles-users-endpoint`): collision-free, but it tells a reviewer nothing. The
+timestamp is the fallback, not the convention.
 
 **Stop here.** Open PR 1 with the spec alone and get it **approved** (§3). Everything below
 happens after that — you don't need to wait for it to merge.
@@ -537,9 +539,10 @@ and it never creates, edits, or commits an ADR.
 | Run seems hung after `/speckit-implement` | It's parked at a `[GATE]` waiting on you | Read the last message; approve the tests or say what to change |
 | ADR section says no ADRs found, always | No `gh` access to the private `platform-adrs` | `gh auth status`, then request access in `#eng-adrs` |
 | `git add tasks.md` does nothing | Gitignored by design (§8) | Nothing to fix — it's a process artifact |
-| "Feature directory already exists" | Number collision with an unmerged branch | Rerun with `--number N`, or `--timestamp` for a collision-free name |
+| "Feature directory already exists" | Two features created in the same second, or the same `--number` passed twice | Rerun — the timestamp moves. Numbering has been `timestamp` since the v1.0.9 upgrade, so a collision needs two creations inside one second |
 | Implementation ignores the test order | `[GATE]` tasks were edited out of `tasks.md` | Regenerate with `/speckit-tasks`; never delete gate tasks |
-| Plan skipped the ADR step | The `before_plan` hook didn't fire | Run `.specify/scripts/bash/adr-context.sh` yourself and fill in the ADR Alignment section |
+| Plan skipped the ADR step | The `before_plan` hook didn't fire | Run `.specify/scripts/bash/adr-context.sh` yourself and fill in the ADR Alignment section. Since v1.0.9 a malformed `.specify/extensions.yml` is reported instead of skipped silently, so check the command's output for a parser error |
+| A `/speckit-*` command stopped asking for the dotCMS sections | A regeneration dropped a customization — it fails by absence, so nothing errors | Run `.specify/scripts/bash/verify-customizations.sh`; it names which one and which requirement it belongs to |
 | Commands can't find the feature after you branch again | `.specify/feature.json` is missing or stale | `export SPECIFY_FEATURE_DIRECTORY=specs/<your-dir>` — the pointer is local and untracked, never committed |
 | Reviewer says the spec is too vague to approve | The spec is doing implementation, or the criteria aren't measurable | Rewrite the acceptance criteria as observable outcomes; `/speckit-clarify` helps |
 | `/speckit-converge` keeps appending tasks and never reports `converged` | A finding you've decided not to act on (usually `unrequested`) is re-derived from the code every run | Tick its task `[X]` to record the decision. The gate is *no new* actionable findings — see §9 |

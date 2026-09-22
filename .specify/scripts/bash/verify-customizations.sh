@@ -399,6 +399,63 @@ check_fix_flow_honours_numbering() {
     echo "the fix flow reads feature_numbering and passes --timestamp, so both spec flows number the same way"
 }
 
+# T047 — FR-020/FR-021/SC-006. A reader must be able to learn, from CUSTOMIZATIONS.md
+# alone, which version we are on and what a future upgrade has to re-apply — and every
+# statement they read must match the tree.
+check_customizations_describes_this_tree() {
+    local doc="$REPO_ROOT/.specify/CUSTOMIZATIONS.md"
+    local opts="$REPO_ROOT/.specify/init-options.json"
+    if [ ! -f "$doc" ]; then
+        echo "$doc does not exist"
+        return 1
+    fi
+    local failures=0 version
+    version=$(jq -r '.speckit_version // empty' "$opts" 2>/dev/null)
+
+    # 1. It names the version the tree actually records.
+    if ! grep -qF "$version" "$doc"; then
+        echo "the document never names $version, the version the tree records"
+        failures=$((failures + 1))
+    fi
+
+    # 2. Superseded-version mentions are history, not claims about the present.
+    #    A blanket ban on the string would forbid the sentence explaining what we
+    #    upgraded FROM, which is exactly what the next upgrader needs. So the check
+    #    targets present-tense claims instead: a line may mention 0.12.4 freely, but
+    #    not while asserting that it is what we are on.
+    #    Tense is the discriminator, so the present-tense marker must not be sitting
+    #    inside a past-tense sentence: "it was previously pinned to v0.12.4" is the
+    #    clearest way to write the history and must not be forbidden.
+    local stale
+    stale=$(grep -nE '0\.12\.4' "$doc" \
+        | grep -iE 'pinned to|we are on|currently|is pinned' \
+        | grep -ivE 'was |were |previously|used to|until the upgrade|before the upgrade' || true)
+    if [ -n "$stale" ]; then
+        echo "0.12.4 is still presented as the current state rather than as history:"
+        echo "$stale"
+        failures=$((failures + 1))
+    fi
+
+    # 3. The re-apply table no longer carries a row for the retired patch.
+    if grep -qE '^\|.*create-new-feature\.sh.*\|' "$doc"; then
+        echo "the re-apply table still has a create-new-feature.sh row, but patch #5 was retired"
+        failures=$((failures + 1))
+    fi
+
+    # 4. The net-new custom skills are counted as three, not two.
+    if grep -qiE 'two (net-new )?custom skills|adds (two|2) customizations' "$doc"; then
+        echo "the document still enumerates two net-new custom skills; there are three"
+        failures=$((failures + 1))
+    fi
+    if ! grep -qiE 'three (net-new )?(custom )?skills' "$doc"; then
+        echo "the document never states that there are three net-new custom skills"
+        failures=$((failures + 1))
+    fi
+
+    [ "$failures" -eq 0 ] || return 1
+    echo "the document names $version, treats 0.12.4 as history, drops the retired patch row, and counts three net-new skills"
+}
+
 # >>> CHECKS END (new check functions are inserted above this line)
 
 # ---------------------------------------------------------------------------
@@ -418,6 +475,7 @@ run_all_checks() {
     check shipped-skills-reviewed "FR-013, FR-013a, SC-005" "every shipped skill has a reviewed diff on record" check_shipped_skills_all_reviewed
     check numbering-collision-free "FR-006, SC-004, SC-007" "timestamp numbering, branch-aware patch retired" check_numbering_is_collision_free
     check fix-flow-numbering      "FR-006, FR-019, SC-004" "the fix flow numbers the same way as the feature flow" check_fix_flow_honours_numbering
+    check customizations-current  "FR-020, FR-021, SC-006" "CUSTOMIZATIONS.md describes the tree that exists" check_customizations_describes_this_tree
     # >>> RUNNER END (new check invocations are inserted above this line)
 }
 
