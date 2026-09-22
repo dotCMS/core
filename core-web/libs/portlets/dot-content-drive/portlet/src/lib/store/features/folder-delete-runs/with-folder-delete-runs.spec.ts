@@ -13,6 +13,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotContentDriveItem,
+    DotFolderBulkDeleteCompletedEvent,
     DotFolderDeleteActiveRun,
     DotFolderDeleteAnnouncementEvent
 } from '@dotcms/dotcms-models';
@@ -112,6 +113,8 @@ describe('withFolderDeleteRuns', () => {
      */
     let startedEvents: Subject<DotFolderDeleteAnnouncementEvent>;
     let finishedEvents: Subject<DotFolderDeleteAnnouncementEvent>;
+    /** The run itself ending — submitter-scoped, unlike the two per-folder announcements. */
+    let completedEvents: Subject<DotFolderBulkDeleteCompletedEvent>;
 
     const createService = createServiceFactory({
         service: store,
@@ -119,10 +122,20 @@ describe('withFolderDeleteRuns', () => {
             mockProvider(DotFolderBulkDeleteService, { readActiveRuns }),
             mockProvider(DotHttpErrorManagerService, { handle }),
             mockProvider(DotEventsSocket, {
-                on: (type: DotSystemEventType) =>
-                    type === DotSystemEventType.FOLDER_DELETE_STARTED
-                        ? startedEvents.asObservable()
-                        : finishedEvents.asObservable()
+                // Routed by type rather than "started or everything else": a catch-all put the
+                // completion event on the FINISHED handler, which would have made this feature look
+                // like it cleared the run when it was really clearing one folder by a job id.
+                on: (type: DotSystemEventType) => {
+                    if (type === DotSystemEventType.FOLDER_DELETE_STARTED) {
+                        return startedEvents.asObservable();
+                    }
+
+                    if (type === DotSystemEventType.BULK_FOLDER_DELETE_COMPLETED) {
+                        return completedEvents.asObservable();
+                    }
+
+                    return finishedEvents.asObservable();
+                }
             })
         ]
     });
@@ -136,6 +149,7 @@ describe('withFolderDeleteRuns', () => {
     const build = (active: DotFolderDeleteActiveRun[] = []) => {
         startedEvents = new Subject<DotFolderDeleteAnnouncementEvent>();
         finishedEvents = new Subject<DotFolderDeleteAnnouncementEvent>();
+        completedEvents = new Subject<DotFolderBulkDeleteCompletedEvent>();
         readActiveRuns.mockReturnValue(of(active));
         spectator = createService();
         instance = spectator.service;
@@ -237,6 +251,54 @@ describe('withFolderDeleteRuns', () => {
             instance.clearRun('r1');
 
             expect(instance.inFlightFolderPaths()).toEqual([REF_B]);
+        });
+
+        /**
+         * **The submitter's only way out, and the one this feature shipped without.**
+         *
+         * Both per-folder announcements are pushed with `EXCLUDE_OWNER`, so whoever started the run
+         * never hears their own folders leave it. After a reload the outcome path cannot help
+         * either: it correlates against a jobId map the reload threw away, so it returns before
+         * clearing anything. That left a heavy folder marked from the load-time listing inert until
+         * the author reloaded a second time — the folder FR-021 says must not stay that way.
+         */
+        it('should clear the run when the completion event arrives, after a reload lost it', () => {
+            // A fresh page: the listing established the marks, and nothing here ever submitted the
+            // run or tracked its job id.
+            build([run('r1', [PATH_A, PATH_B])]);
+            expect(instance.inFlightFolderPaths().sort()).toEqual([REF_A, REF_B].sort());
+
+            completedEvents.next({ jobId: 'r1', state: 'SUCCESS' });
+
+            expect(instance.inFlightFolderPaths()).toEqual([]);
+        });
+
+        it('should clear the run on completion whatever state it finished in', () => {
+            // The mark says "something is working on this folder", and nothing is, either way.
+            // Whether the outcome is worth reporting is a different question, answered elsewhere.
+            build([run('r1', [PATH_A])]);
+
+            completedEvents.next({ jobId: 'r1', state: 'FAILED' });
+
+            expect(instance.inFlightFolderPaths()).toEqual([]);
+        });
+
+        it('should leave other runs alone when one completes', () => {
+            build([run('r1', [PATH_A]), run('r2', [PATH_B])]);
+
+            completedEvents.next({ jobId: 'r1', state: 'SUCCESS' });
+
+            expect(instance.inFlightFolderPaths()).toEqual([REF_B]);
+        });
+
+        it('should ignore a completion carrying no job id', () => {
+            // Nothing to clear by, and clearing everything would unmark folders other runs are
+            // still working on.
+            build([run('r1', [PATH_A])]);
+
+            completedEvents.next({ state: 'SUCCESS' } as DotFolderBulkDeleteCompletedEvent);
+
+            expect(instance.inFlightFolderPaths()).toEqual([REF_A]);
         });
 
         it('should not double-count a folder announced twice', () => {
