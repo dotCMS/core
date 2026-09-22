@@ -20,7 +20,7 @@ import { DotContentDriveState, DotContentDriveStatus } from './models';
  * Override only what the test is actually about:
  *
  * ```ts
- * const state = buildContentDriveState({ items: [folderRow('//demo/old-a/')] });
+ * const state = buildContentDriveState({ items: [folderRow('/old-a/')] });
  * ```
  *
  * **Two fields differ from the store's own `initialState`.** That object seeds `currentSite` and

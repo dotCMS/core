@@ -16,9 +16,11 @@ import {
     DotFolderDeleteActiveRun,
     DotFolderDeleteAnnouncementEvent
 } from '@dotcms/dotcms-models';
+import { SYSTEM_HOST_ID } from '@dotcms/ui';
 
 import { withFolderDeleteRuns } from './with-folder-delete-runs';
 
+import { SYSTEM_HOST_PATH } from '../../../shared/constants';
 import { buildContentDriveState } from '../../../shared/content-drive-state.fixture';
 import { DotContentDriveState, DotContentDriveStatus } from '../../../shared/models';
 
@@ -31,8 +33,30 @@ import { DotContentDriveState, DotContentDriveStatus } from '../../../shared/mod
  * reload, open a second tab, or hand the screen to a colleague inside it.
  */
 describe('withFolderDeleteRuns', () => {
+    const HOSTNAME = 'demo.dotcms.com';
+
+    /**
+     * **The same two folders, in the three spellings this feature has to reconcile.**
+     *
+     * This is the trap the feature shipped into: a run names its folders the way the *server* does,
+     * site-qualified and with a trailing slash, while a *listing row* carries a bare path from the
+     * site root. An earlier version of this spec gave the rows the server's spelling, so both sides
+     * of the comparison matched here and neither did in the browser — the suite was green while no
+     * folder was ever marked for anyone.
+     *
+     * Keep these distinct. A row fixture that starts with `//` means this spec has stopped testing
+     * the thing that broke.
+     */
     const PATH_A = '//demo.dotcms.com/old-a/';
     const PATH_B = '//demo.dotcms.com/old-b/';
+
+    /** As a listing row carries them. */
+    const ROW_A = '/old-a/';
+    const ROW_B = '/old-b/';
+
+    /** As the feature stores and compares them: lower-cased, no trailing slash. */
+    const REF_A = '//demo.dotcms.com/old-a';
+    const REF_B = '//demo.dotcms.com/old-b';
 
     /** A folder row as the listing holds it — both keys, because neither is reliably present. */
     const folderRow = (path: string, inode: string, identifier: string) =>
@@ -44,7 +68,9 @@ describe('withFolderDeleteRuns', () => {
         }) as unknown as DotContentDriveItem;
 
     const initialState = buildContentDriveState({
-        items: [folderRow(PATH_A, 'inode-a', 'id-a'), folderRow(PATH_B, 'inode-b', 'id-b')],
+        // The browsed site, because that is what turns a row's bare path into the ref a run names.
+        currentSite: { aliases: '', archived: false, hostname: HOSTNAME, identifier: 'site-id' },
+        items: [folderRow(ROW_A, 'inode-a', 'id-a'), folderRow(ROW_B, 'inode-b', 'id-b')],
         status: DotContentDriveStatus.LOADED
     });
 
@@ -125,7 +151,7 @@ describe('withFolderDeleteRuns', () => {
         it('should mark the folders every in-flight run is working on', () => {
             build([run('r1', [PATH_A])]);
 
-            expect(instance.inFlightFolderPaths()).toEqual([PATH_A]);
+            expect(instance.inFlightFolderPaths()).toEqual([REF_A]);
         });
 
         it('should cover runs started by ANY author, not only this client', () => {
@@ -133,7 +159,7 @@ describe('withFolderDeleteRuns', () => {
             // else is deleting must not be presented as usable either (FR-020).
             build([run('someone-elses', [PATH_A]), run('mine', [PATH_B])]);
 
-            expect(instance.inFlightFolderPaths().sort()).toEqual([PATH_A, PATH_B].sort());
+            expect(instance.inFlightFolderPaths().sort()).toEqual([REF_A, REF_B].sort());
         });
 
         it('should mark nothing when no run is in flight', () => {
@@ -168,7 +194,7 @@ describe('withFolderDeleteRuns', () => {
             // announcements would mark that folder indefinitely with nothing to correct it, so the
             // load-time read is what recovers it (FR-020b, CR-12).
             build([run('r1', [PATH_A])]);
-            expect(instance.inFlightFolderPaths()).toEqual([PATH_A]);
+            expect(instance.inFlightFolderPaths()).toEqual([REF_A]);
 
             readActiveRuns.mockReturnValue(of([]));
             instance.establishInFlightFolders();
@@ -183,7 +209,7 @@ describe('withFolderDeleteRuns', () => {
 
             startedEvents.next({ jobId: 'later', path: PATH_A });
 
-            expect(instance.inFlightFolderPaths()).toEqual([PATH_A]);
+            expect(instance.inFlightFolderPaths()).toEqual([REF_A]);
         });
 
         it('should clear a folder when its run announces that it finished', () => {
@@ -202,7 +228,7 @@ describe('withFolderDeleteRuns', () => {
 
             instance.clearInFlightFolder({ jobId: 'r1', path: PATH_A });
 
-            expect(instance.inFlightFolderPaths()).toEqual([PATH_B]);
+            expect(instance.inFlightFolderPaths()).toEqual([REF_B]);
         });
 
         it('should let one run end without clearing another run’s folders', () => {
@@ -210,7 +236,7 @@ describe('withFolderDeleteRuns', () => {
 
             instance.clearRun('r1');
 
-            expect(instance.inFlightFolderPaths()).toEqual([PATH_B]);
+            expect(instance.inFlightFolderPaths()).toEqual([REF_B]);
         });
 
         it('should not double-count a folder announced twice', () => {
@@ -218,7 +244,7 @@ describe('withFolderDeleteRuns', () => {
 
             startedEvents.next({ jobId: 'r1', path: PATH_A });
 
-            expect(instance.inFlightFolderPaths()).toEqual([PATH_A]);
+            expect(instance.inFlightFolderPaths()).toEqual([REF_A]);
         });
     });
 
@@ -248,6 +274,69 @@ describe('withFolderDeleteRuns', () => {
                 'inode-a',
                 'inode-b'
             ]);
+        });
+
+        it('should match a run whose spelling differs only in case or a trailing slash', () => {
+            // dotCMS resolves asset paths through a unique index over the lower-cased full path per
+            // host, so these two strings name ONE folder. Comparing them literally would mark it in
+            // one session and not in another depending on how the path was typed.
+            build([run('r1', ['//DEMO.dotcms.com/Old-A'])]);
+
+            expect(instance.inFlightFolderKeys().sort()).toEqual(['id-a', 'inode-a']);
+        });
+
+        it('should not match a same-named folder on a different site', () => {
+            // The bare row path `/old-a/` exists on every site. Resolving it without the browsed
+            // site's hostname would mark this site's folder because another site's is being
+            // deleted — a folder presented as doomed that nothing is touching.
+            build([run('r1', ['//other.dotcms.com/old-a/'])]);
+
+            expect(instance.inFlightFolderKeys()).toEqual([]);
+        });
+    });
+
+    describe('resolving rows while browsing System Host', () => {
+        /**
+         * System Host belongs to no site, so its rows cannot be qualified with whatever hostname
+         * the site switcher happens to show — that produced `//demo.dotcms.comSYSTEM_HOST` in an
+         * earlier version of the sibling helper, a reference to nothing.
+         */
+        const systemHostState = buildContentDriveState({
+            currentSite: {
+                aliases: '',
+                archived: false,
+                hostname: HOSTNAME,
+                identifier: 'site-id'
+            },
+            path: SYSTEM_HOST_PATH,
+            items: [folderRow(ROW_A, 'inode-a', 'id-a')],
+            status: DotContentDriveStatus.LOADED
+        });
+
+        const systemHostStore = signalStore(
+            { providedIn: 'root' },
+            withState(systemHostState),
+            withBusyRowsStub(),
+            withFolderDeleteRuns()
+        );
+
+        const createSystemHostService = createServiceFactory({
+            service: systemHostStore,
+            providers: [
+                mockProvider(DotFolderBulkDeleteService, { readActiveRuns }),
+                mockProvider(DotHttpErrorManagerService, { handle }),
+                mockProvider(DotEventsSocket, {
+                    on: () => new Subject<DotFolderDeleteAnnouncementEvent>().asObservable()
+                })
+            ]
+        });
+
+        it("should resolve rows against System Host, not the switcher's site", () => {
+            readActiveRuns.mockReturnValue(of([run('r1', [`//${SYSTEM_HOST_ID}${ROW_A}`])]));
+            const systemHostInstance = createSystemHostService().service;
+            systemHostInstance.establishInFlightFolders();
+
+            expect(systemHostInstance.inFlightFolderKeys().sort()).toEqual(['id-a', 'inode-a']);
         });
     });
 });

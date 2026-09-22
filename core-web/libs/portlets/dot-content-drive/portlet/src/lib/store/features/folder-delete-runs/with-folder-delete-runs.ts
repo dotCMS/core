@@ -21,11 +21,33 @@ import {
 } from '@dotcms/data-access';
 import { DotContentDriveItem, DotFolderDeleteAnnouncementEvent } from '@dotcms/dotcms-models';
 
+import { SYSTEM_HOST, SYSTEM_HOST_PATH } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
-import { isFolder } from '../../../utils/functions';
+import { isFolder, normalizeFolderRef, toFolderRef } from '../../../utils/functions';
 
 /**
- * Resolves folder paths to the keys the listing and the tree mark by.
+ * The site a listed row belongs to, as a hostname.
+ *
+ * Chosen the way {@link browsedFolderRef} chooses it, and for the same reason: System Host belongs
+ * to no site, so pairing its reserved location value with whatever hostname the switcher happens to
+ * show names a place that does not exist. Every row in a listing is on the browsed site, so one
+ * hostname answers for all of them.
+ */
+const rowHostnameOf = (
+    location: string | undefined,
+    siteHostname: string | undefined
+): string | undefined => (location === SYSTEM_HOST_PATH ? SYSTEM_HOST.hostname : siteHostname);
+
+/**
+ * Resolves in-flight folder references to the keys the listing and the tree mark by.
+ *
+ * **The two sides do not speak the same path**, which is the whole reason this goes through
+ * {@link toFolderRef}. A run names its folders the way the server does — site-qualified
+ * `//demo.dotcms.com/old-a/` — while a listed row carries a bare path from the site root, `/old-a/`.
+ * Compared as given they never match, so nothing is ever marked and the feature silently does
+ * nothing. `toFolderRef` also lower-cases and drops the trailing slash, because dotCMS resolves
+ * asset paths through a unique index over the lower-cased full path per host: two spellings of one
+ * folder really are one folder, and comparing them literally would miss half of them.
  *
  * Against the rows **currently shown**, not the whole in-flight set: a folder nothing is rendering
  * needs no marking, and this keeps the work bounded by the page rather than by how much is being
@@ -34,10 +56,14 @@ import { isFolder } from '../../../utils/functions';
  * Each match contributes **both** `inode` and `identifier`, because the search service only
  * backfills one from the other when the API returned none.
  */
-const resolveRowKeys = (paths: Set<string>, items: DotContentDriveItem[]): string[] =>
-    paths.size
+const resolveRowKeys = (
+    refs: Set<string>,
+    items: DotContentDriveItem[],
+    hostname: string | undefined
+): string[] =>
+    refs.size
         ? items
-              .filter((item) => isFolder(item) && paths.has(item.path))
+              .filter((item) => isFolder(item) && refs.has(toFolderRef(hostname, item.path)))
               .flatMap((item) => [item.inode, item.identifier])
               .filter((key): key is string => !!key)
         : [];
@@ -98,66 +124,73 @@ export function withFolderDeleteRuns() {
             folderDeleteRuns: {},
             folderDeleteRunsEstablished: false
         }),
-        withComputed((store) => ({
-            /** Every folder path any in-flight run is working on, deduplicated. */
-            inFlightFolderPaths: computed<string[]>(() => [
-                ...new Set(Object.values(store.folderDeleteRuns()).flat())
-            ]),
+        withComputed((store) => {
+            /** Every folder any in-flight run is working on, as canonical refs. */
+            const inFlightRefs = computed<Set<string>>(
+                () => new Set(Object.values(store.folderDeleteRuns()).flat())
+            );
+
             /**
-             * Those paths resolved to the keys the listing and the tree mark by.
+             * Those refs resolved to the keys the listing and the tree mark by.
              *
-             * Resolved against the rows **currently shown**, not against the whole in-flight set:
-             * a folder nothing is rendering needs no marking, and this keeps the work bounded by
-             * the page rather than by how much is being deleted across the instance.
-             *
-             * Each match contributes **both** `inode` and `identifier`, because the search service
-             * only backfills one from the other when the API returned none — so neither is
-             * reliably the key a given row carries.
+             * Named once and reused by `allBusyRows` below: a second derivation of the same thing
+             * is a second chance to drift, and the drift reads as a folder inert in one surface and
+             * usable in the other.
              */
-            inFlightFolderKeys: computed<string[]>(() =>
+            const inFlightFolderKeys = computed<string[]>(() =>
                 resolveRowKeys(
-                    new Set(Object.values(store.folderDeleteRuns()).flat()),
-                    store.items()
+                    inFlightRefs(),
+                    store.items(),
+                    rowHostnameOf(store.path(), store.currentSite()?.hostname)
                 )
-            ),
-            /**
-             * Every row key that should render as busy, from **both** sources.
-             *
-             * `busyRows` covers runs this client fired, of any kind; the server-derived half covers
-             * folder deletes the server knows about, this client's and other authors' alike.
-             *
-             * Merged here, once, so the listing and the sidebar tree read the same answer. Two
-             * derivations would drift, and the drift reads as a folder inert in one surface and
-             * usable in the other — worse than marking neither, because it teaches the author that
-             * the marking cannot be trusted (FR-014).
-             */
-            allBusyRows: computed<string[]>(() => [
-                ...new Set([
-                    ...store.busyRows(),
-                    ...resolveRowKeys(
-                        new Set(Object.values(store.folderDeleteRuns()).flat()),
-                        store.items()
-                    )
+            );
+
+            return {
+                /** Every folder any in-flight run is working on, deduplicated. */
+                inFlightFolderPaths: computed<string[]>(() => [...inFlightRefs()]),
+                inFlightFolderKeys,
+                /**
+                 * Every row key that should render as busy, from **both** sources.
+                 *
+                 * `busyRows` covers runs this client fired, of any kind; the server-derived half
+                 * covers folder deletes the server knows about, this client's and other authors'
+                 * alike.
+                 *
+                 * Merged here, once, so the listing and the sidebar tree read the same answer. Two
+                 * derivations would drift, and the drift reads as a folder inert in one surface and
+                 * usable in the other — worse than marking neither, because it teaches the author
+                 * that the marking cannot be trusted (FR-014).
+                 */
+                allBusyRows: computed<string[]>(() => [
+                    ...new Set([...store.busyRows(), ...inFlightFolderKeys()])
                 ])
-            ])
-        })),
+            };
+        }),
         withMethods(
             (
                 store,
                 folderBulkDeleteService = inject(DotFolderBulkDeleteService),
                 destroyRef = inject(DestroyRef)
             ) => {
-                /** Adds a folder under the run responsible for it, without duplicating it. */
+                /**
+                 * Adds a folder under the run responsible for it, without duplicating it.
+                 *
+                 * Stored as a canonical ref rather than as the server spelled it, so everything
+                 * downstream — the row match, and the removal below — compares like with like. The
+                 * listing and the announcements are two separate server messages about the same
+                 * folder, and nothing guarantees they agree on case or a trailing slash.
+                 */
                 const markInFlight = (jobId: string, path: string): void => {
                     const runs = store.folderDeleteRuns();
                     const paths = runs[jobId] ?? [];
+                    const ref = normalizeFolderRef(path);
 
-                    if (paths.includes(path)) {
+                    if (paths.includes(ref)) {
                         return;
                     }
 
                     patchState(store, {
-                        folderDeleteRuns: { ...runs, [jobId]: [...paths, path] }
+                        folderDeleteRuns: { ...runs, [jobId]: [...paths, ref] }
                     });
                 };
 
@@ -183,7 +216,7 @@ export function withFolderDeleteRuns() {
                                 patchState(store, {
                                     folderDeleteRuns: runs.reduce<Record<string, string[]>>(
                                         (acc, run) => {
-                                            acc[run.id] = run.paths;
+                                            acc[run.id] = run.paths.map(normalizeFolderRef);
 
                                             return acc;
                                         },
@@ -215,7 +248,8 @@ export function withFolderDeleteRuns() {
                             return;
                         }
 
-                        const remaining = paths.filter((path) => path !== event.path);
+                        const ref = normalizeFolderRef(event.path);
+                        const remaining = paths.filter((path) => path !== ref);
                         const next = { ...runs };
 
                         if (remaining.length) {
