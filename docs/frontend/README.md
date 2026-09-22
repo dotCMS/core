@@ -20,6 +20,7 @@
 | [TESTING_PERFORMANCE.md](./TESTING_PERFORMANCE.md) | Suite **run time**: `pnpm test:profile`, the five-phase breakdown, which Vitest options are measured regressions, `isolate` policy |
 | [BREADCRUMBS.md](./BREADCRUMBS.md) | GlobalStore breadcrumbs: `addNewBreadcrumb`, `setBreadcrumbs`, `id`/`url` for tabs, duplicate prevention |
 | [KEYBOARD_SHORTCUTS.md](./KEYBOARD_SHORTCUTS.md) | Shortcut registry: per-combination last-in-wins, bubble phase, adding one, selection semantics, event-synthesis testing hazards |
+| [PNPM_GLOBAL_STORE.md](./PNPM_GLOBAL_STORE.md) | Optional per-developer store layout for multiple worktrees: ~2.1 GB → ~2.2 MB per checkout, the trust-boundary limit, why undeclared imports break and how to correct them |
 
 ## Picking between the two testing docs
 

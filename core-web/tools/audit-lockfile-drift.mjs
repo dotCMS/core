@@ -10,9 +10,17 @@
  * diff comes out large and almost entirely semantically empty, which is exactly the shape in which
  * a real change goes unnoticed in review.
  *
- * pnpm's lockfile separates the two cleanly, so this audit does too:
- *   packages:   keyed `name@version`          -> RESOLVED VERSIONS. Drift here is a finding.
- *   snapshots:  keyed with peer suffixes      -> the graph. Churn here is expected and ignored.
+ * pnpm's lockfile separates the two cleanly, and this audit checks BOTH:
+ *   packages:   keyed `name@version`     -> resolved versions. Any drift outside the correction
+ *                                           set is a finding.
+ *   snapshots:  keyed with peer suffixes -> the dependency graph. Churn is expected here, but not
+ *                                           unexamined: every new key must trace to a corrected
+ *                                           package or a dependent of one.
+ *
+ * An earlier version audited versions only, and reported "clean" on a +75/-21 diff — because a
+ * package extension adds edges and peer-suffixed snapshot keys without moving a single version.
+ * That is precisely the change this tool exists to catch, so a version-only check is not enough.
+ * (Raised in review on #37654.)
  *
  * See specs/37573-pnpm-global-virtual-store/ (task T029, FR-014).
  *
@@ -120,6 +128,34 @@ function main() {
     const after = resolvedVersions(readFileSync(LOCKFILE, 'utf8'));
     const allowed = existsSync(WORKSPACE) ? correctedPackages(readFileSync(WORKSPACE, 'utf8')) : new Set();
 
+    // ---- Axis 2: dependency edges and peer-resolution snapshots -----------------------------
+    // Raised in review on #37654 and correct: a package extension adds edges and new
+    // peer-suffixed `snapshots:` keys WITHOUT moving any version, so a version-only audit reports
+    // "clean" on exactly the change it was written to catch. Every changed snapshot key must trace
+    // to a corrected package or to something that depends on one.
+    const snapshotKeys = (text) => {
+        const keys = new Set();
+        let inSnapshots = false;
+        for (const line of text.split('\n')) {
+            if (/^[a-zA-Z]/.test(line)) {
+                inSnapshots = line.startsWith('snapshots:');
+                continue;
+            }
+            if (!inSnapshots) continue;
+            const match = line.match(/^ {2}'?(.+?)'?:$/);
+            if (match) keys.add(match[1]);
+        }
+
+        return keys;
+    };
+
+    const beforeSnapshots = snapshotKeys(baseLock);
+    const afterSnapshots = snapshotKeys(readFileSync(LOCKFILE, 'utf8'));
+    const changedSnapshots = [...afterSnapshots].filter((k) => !beforeSnapshots.has(k));
+    const untraceable = changedSnapshots.filter(
+        (key) => ![...allowed].some((pkg) => key.includes(pkg))
+    );
+
     const drift = [];
     const names = new Set([...before.keys(), ...after.keys()]);
 
@@ -139,8 +175,8 @@ function main() {
     const unexpected = drift.filter((d) => !d.expected);
 
     if (asJson) {
-        console.log(JSON.stringify({ base, corrected: [...allowed], drift }, null, 2));
-        process.exit(unexpected.length > 0 ? 1 : 0);
+        console.log(JSON.stringify({ base, corrected: [...allowed], drift, changedSnapshots: changedSnapshots.length, untraceable }, null, 2));
+        process.exit(unexpected.length > 0 || untraceable.length > 0 ? 1 : 0);
     }
 
     for (const d of drift.filter((x) => x.expected)) {
@@ -156,14 +192,22 @@ function main() {
             `${drift.length - unexpected.length} expected change(s), ${unexpected.length} unexpected.`
     );
 
-    if (unexpected.length === 0) {
+    console.log(
+        `\nAxis 2 — dependency edges / peer snapshots: ${changedSnapshots.length} new snapshot key(s), ` +
+            `${untraceable.length} not traceable to a corrected package.`
+    );
+
+    for (const key of untraceable.slice(0, 20)) console.error(`UNTRACED ${key}`);
+    if (untraceable.length > 20) console.error(`… and ${untraceable.length - 20} more`);
+
+    if (unexpected.length === 0 && untraceable.length === 0) {
         console.log(
-            'No resolved version moved outside the correction set. Peer-suffixed key churn in the\n' +
-                '`snapshots:` section is expected and deliberately not audited here.'
+            '\nNo resolved version moved outside the correction set, and every new peer-suffixed\n' +
+                'snapshot key traces to a corrected package or a dependent of one.'
         );
     }
 
-    process.exit(unexpected.length > 0 ? 1 : 0);
+    process.exit(unexpected.length > 0 || untraceable.length > 0 ? 1 : 0);
 }
 
 main();
