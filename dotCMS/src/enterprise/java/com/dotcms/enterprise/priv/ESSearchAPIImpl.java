@@ -225,6 +225,24 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 			return null;
 		}
 
+		// The legacy Elasticsearch pointers are deleted when the Phase 3 reindex switches over, so
+		// past that point this deprecated path resolves no index at all. Left unchecked it reaches
+		// SearchRequest as a null index name and dies there with a NullPointerException — which
+		// Velocity's method-exception handler turns into a null return outside EDIT mode, so #set
+		// assigns nothing and the template renders its own unresolved source into the response body
+		// (issue #37635). Fail with DotStateException instead: that is the one exception type the
+		// handler rethrows, so the failure surfaces rather than printing Velocity onto the page.
+		if (!UtilMethods.isSet(indexToHit)) {
+			throw new DotStateException(String.format(
+					"No active Elasticsearch %s content index is registered, so the deprecated "
+							+ "esSearch()/esRaw() path has nothing to query. This is expected once "
+							+ "the OpenSearch migration reaches its final phase, which removes the "
+							+ "Elasticsearch index pointers. Migrate this call to the "
+							+ "vendor-neutral $estool.search()/$estool.raw() (or SearchAPI), which "
+							+ "resolves the index for the current migration phase.",
+					live ? "live" : "working"));
+		}
+
         List<Role> roles = new ArrayList<>();
 		if (user == null && !respectFrontendRoles) {
 			throw new DotSecurityException("You must specify a user if you are not respecting frontend roles");

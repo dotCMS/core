@@ -6,7 +6,9 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.IndexStats;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.dotcms.content.index.migration.MirrorStatus.Verdict;
@@ -21,6 +23,7 @@ import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -28,10 +31,20 @@ import java.util.function.Supplier;
  * content indices (working and live) against their {@code .os} counterparts across both engines,
  * mirroring {@link SiteSearchMirrorReconciler} but for the content store. Never mutates anything.
  *
- * <h4>How the counts are read (phase-independently)</h4>
- * <p>{@code IndiciesInfo} always holds the cluster-prefixed, <em>un-tagged</em> Elasticsearch name for
- * working/live (its backing {@code indicies} table owns only the ES rows — {@code index_version IS
- * NULL}); the OpenSearch counterpart is that name with the {@code .os} tag.</p>
+ * <h4>Where the active index names come from</h4>
+ * <p>Both engines' physical names are derived from a single <em>un-tagged</em>, cluster-prefixed name
+ * per slot: that name IS the Elasticsearch index, and its OpenSearch counterpart is the same name with
+ * the {@code .os} tag. Which store that name is read from is phase-dependent, and must be:</p>
+ * <ul>
+ *   <li><b>Phases 0/1/2</b> — {@code IndiciesInfo}, whose backing {@code indicies} rows
+ *       ({@code index_version IS NULL}) are the Elasticsearch pointers and the migration source.</li>
+ *   <li><b>Phase 3</b> — {@code VersionedIndices}, with the {@code .os} tag stripped back off.
+ *       Elasticsearch is decommissioned by then and the Phase 3 reindex switchover deletes those
+ *       legacy rows outright, so reading {@code IndiciesInfo} here yields no name at all: every slot
+ *       is skipped, the report comes back empty, and an empty report reads downstream as "nothing is
+ *       out of sync" — a green verdict asserted over zero measurements (issue #37635). The OpenSearch
+ *       store is the only surviving pointer, so it is the one that must be asked.</li>
+ * </ul>
  *
  * <p><strong>Existence</strong> comes from each engine leaf's {@code getIndicesStats()} — one call per
  * engine covering the whole index set, so both slots are decided from a single snapshot. Those stats
@@ -59,6 +72,7 @@ public class ContentIndexMirrorReconciler {
     private final ContentletIndexOperations esOps;
     private final ContentletIndexOperations osOps;
     private final Supplier<IndiciesInfo> indiciesSupplier;
+    private final Supplier<Optional<VersionedIndices>> versionedIndicesSupplier;
     private final Supplier<DatabaseCounts> databaseCountsSupplier;
 
     public ContentIndexMirrorReconciler() {
@@ -66,6 +80,7 @@ public class ContentIndexMirrorReconciler {
                 new ContentletIndexOperationsES(),
                 CDIUtils.getBeanThrows(ContentletIndexOperationsOS.class),
                 ContentIndexMirrorReconciler::loadIndiciesQuietly,
+                ContentIndexMirrorReconciler::loadVersionedIndicesQuietly,
                 ContentIndexMirrorReconciler::loadDatabaseCountsQuietly);
     }
 
@@ -73,12 +88,14 @@ public class ContentIndexMirrorReconciler {
     ContentIndexMirrorReconciler(final IndexAPI esImpl, final IndexAPI osImpl,
             final ContentletIndexOperations esOps, final ContentletIndexOperations osOps,
             final Supplier<IndiciesInfo> indiciesSupplier,
+            final Supplier<Optional<VersionedIndices>> versionedIndicesSupplier,
             final Supplier<DatabaseCounts> databaseCountsSupplier) {
         this.esImpl = esImpl;
         this.osImpl = osImpl;
         this.esOps = esOps;
         this.osOps = osOps;
         this.indiciesSupplier = indiciesSupplier;
+        this.versionedIndicesSupplier = versionedIndicesSupplier;
         this.databaseCountsSupplier = databaseCountsSupplier;
     }
 
@@ -94,19 +111,46 @@ public class ContentIndexMirrorReconciler {
 
     /** Per-index mirror status for the active working and live content indices. */
     public List<MirrorStatus> statuses() {
-        final IndiciesInfo info = indiciesSupplier.get();
-        if (info == null) {
+        final ActivePointers pointers = activePointers();
+        if (pointers == null) {
             return List.of();
         }
         final Map<String, IndexStats> esStats = esImpl.getIndicesStats();
         final Map<String, IndexStats> osStats = osImpl.getIndicesStats();
         final DatabaseCounts dbCounts = databaseCountsSupplier.get();
         final List<MirrorStatus> out = new ArrayList<>(2);
-        addStatus(out, IndexKind.CONTENT_WORKING, info.getWorking(), esStats, osStats,
+        addStatus(out, IndexKind.CONTENT_WORKING, pointers.working(), esStats, osStats,
                 dbCounts == null ? null : dbCounts.working());
-        addStatus(out, IndexKind.CONTENT_LIVE, info.getLive(), esStats, osStats,
+        addStatus(out, IndexKind.CONTENT_LIVE, pointers.live(), esStats, osStats,
                 dbCounts == null ? null : dbCounts.live());
         return out;
+    }
+
+    /**
+     * The active working/live names in their <em>un-tagged</em>, cluster-prefixed form — the shape
+     * {@link #addStatus} derives both engines' physical names from. {@code null} when the store that
+     * owns them could not be read at all; either field may still be {@code null} on its own when only
+     * that slot is unset.
+     */
+    private record ActivePointers(String working, String live) {}
+
+    /**
+     * Reads the active pointers from whichever store owns them in this phase — see the class javadoc.
+     * In Phase 3 the {@code .os} tag is stripped off so callers always receive the un-tagged form,
+     * which keeps every name-derivation rule below phase-independent.
+     */
+    private ActivePointers activePointers() {
+        if (IndexConfigHelper.isMigrationComplete()) {
+            final Optional<VersionedIndices> versioned = versionedIndicesSupplier.get();
+            if (versioned.isEmpty()) {
+                return null;
+            }
+            return new ActivePointers(
+                    versioned.get().working().map(IndexTag::strip).orElse(null),
+                    versioned.get().live().map(IndexTag::strip).orElse(null));
+        }
+        final IndiciesInfo info = indiciesSupplier.get();
+        return info == null ? null : new ActivePointers(info.getWorking(), info.getLive());
     }
 
     private void addStatus(final List<MirrorStatus> out, final IndexKind kind, final String rawName,
@@ -285,5 +329,18 @@ public class ContentIndexMirrorReconciler {
                 .onFailure(e -> Logger.warn(ContentIndexMirrorReconciler.class,
                         "Could not load content indices for migration readiness: " + e.getMessage()))
                 .getOrNull();
+    }
+
+    /**
+     * The OpenSearch index store — the Phase 3 source of the active pointers. An empty Optional means
+     * "could not be read or holds nothing", which {@link #activePointers()} reports as no pointers at
+     * all rather than as an empty-but-successful reading.
+     */
+    private static Optional<VersionedIndices> loadVersionedIndicesQuietly() {
+        return Try.of(() -> APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices())
+                .onFailure(e -> Logger.warn(ContentIndexMirrorReconciler.class,
+                        "Could not load the OpenSearch index store for migration readiness: "
+                                + e.getMessage()))
+                .getOrElse(Optional.empty());
     }
 }

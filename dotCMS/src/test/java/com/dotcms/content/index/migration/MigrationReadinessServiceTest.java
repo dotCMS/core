@@ -216,6 +216,69 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertEquals(List.of("OpenSearch"), r.phase().writeEngines());
     }
 
+    /**
+     * Phase 3 with nothing measured must not read as healthy. After a Phase 3 full reindex the legacy
+     * Elasticsearch pointers are deleted, and a reconciler that cannot resolve the active content pair
+     * emits no rows at all — on which every field of the verdict would otherwise assert a clean bill of
+     * health: {@code outOfSyncCount} reads 0 because nothing was counted, and both booleans read safe
+     * because no row could contradict them (issue #37635). The rollback verdict is the dangerous one:
+     * a downgrade routes reads back to the engine whose pointers are gone.
+     */
+    @Test
+    public void phase3_nothingMeasured_isNotReportedAsHealthy() {
+        setPhase(PHASE_3);
+        when(content.statuses()).thenReturn(List.of());
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertTrue(r.content().isEmpty());
+        assertFalse(r.verdict().safeToAdvance());
+        assertFalse(r.verdict().safeToRollback());
+        assertEquals(2, r.verdict().blockers().size()); // one per unresolved slot
+        // outOfSyncCount is still 0 here — it counts drift among existing rows, of which there are
+        // none. What must not happen is that 0 reading as an all-clear on its own, so the summary has
+        // to say outright that nothing was measured.
+        assertEquals(0, r.verdict().outOfSyncCount());
+        assertTrue(r.verdict().summary().contains("measured nothing"));
+    }
+
+    /**
+     * Phase 3 measures the mandatory pair against OpenSearch, not Elasticsearch: past the final phase
+     * Elasticsearch is decommissioned, so a missing Elasticsearch copy is the expected state and must
+     * not be reported as a blocker — while a missing OpenSearch copy is now the fatal one.
+     */
+    @Test
+    public void phase3_openSearchIsTheMandatoryEngine() {
+        setPhase(PHASE_3);
+        when(content.statuses()).thenReturn(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", false, 0, true, 10),
+                cc(IndexKind.CONTENT_LIVE, "live_1", false, 0, true, 5)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertTrue("an absent Elasticsearch copy is expected in Phase 3",
+                r.verdict().blockers().isEmpty());
+        assertTrue(r.verdict().safeToAdvance());
+    }
+
+    /** The same state with the OpenSearch copy gone — that one blocks. */
+    @Test
+    public void phase3_missingOpenSearchCopy_blocks() {
+        setPhase(PHASE_3);
+        when(content.statuses()).thenReturn(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", false, 0, false, 0),
+                cc(IndexKind.CONTENT_LIVE, "live_1", false, 0, true, 5)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToAdvance());
+        assertEquals(1, r.verdict().blockers().size());
+        assertTrue(r.verdict().blockers().get(0).contains("no OpenSearch copy"));
+    }
+
     /** Content is keyed by slot (WORKING/LIVE); Site Search stays an ordered list. */
     @Test
     public void content_keyedBySlot_siteSearchAsList() {
