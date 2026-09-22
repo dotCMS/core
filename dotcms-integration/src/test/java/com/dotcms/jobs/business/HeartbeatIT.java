@@ -36,8 +36,9 @@ import org.junit.jupiter.api.Test;
  * advances {@code job.updated_at} independent of the reported progress value, and without firing a
  * client-visible {@link com.dotcms.jobs.business.api.events.JobProgressUpdatedEvent}.
  * <p>
- * <b>Expected to FAIL until T010</b> — {@code ProgressTracker} has no {@code heartbeat()} method on
- * {@code main} yet. This is the Foundational-phase Red evidence for task T005.
+ * <b>Started as T005's Foundational-phase Red evidence</b> — written before {@code ProgressTracker}
+ * had a {@code heartbeat()} method on {@code main}; T010 added it, and this test now exercises the
+ * real implementation rather than proving its absence.
  */
 @EnableWeld
 public class HeartbeatIT extends com.dotcms.Junit5WeldBaseTest {
@@ -127,10 +128,18 @@ public class HeartbeatIT extends com.dotcms.Junit5WeldBaseTest {
                 "test setup error: fewer than 2 heartbeats were actually sent");
     }
 
-    static class HeartbeatOnlyJobProcessor implements JobProcessor {
+    public static class HeartbeatOnlyJobProcessor implements JobProcessor {
 
         static final java.util.concurrent.atomic.AtomicInteger heartbeatsSent =
                 new java.util.concurrent.atomic.AtomicInteger(0);
+
+        public HeartbeatOnlyJobProcessor() {
+            // Do nothing - JobProcessorFactory instantiates this reflectively, from a different
+            // package (com.dotcms.jobs.business.api), so both the class and this constructor must
+            // be public: JobProcessorFactory#createInstance calls getDeclaredConstructor().newInstance()
+            // with no setAccessible(true), which throws IllegalAccessException across packages
+            // otherwise (see JobQueueHelperIntegrationTest.DemoJobProcessor for the same pattern).
+        }
 
         @Override
         public void process(final Job job) {

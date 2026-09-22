@@ -39,9 +39,9 @@ import org.junit.jupiter.api.Test;
  * <p>
  * <b>Why the abandonment threshold is lowered by {@code Config.setProperty} here but that same
  * trick was rejected for {@code FolderBulkDeleteResumeIT}.</b> Two different consumers read this
- * property, with two different caching behaviors: {@code AbandonedJobDetectorConfigProducer}
- * caches it in a {@code static final} field at class-load time, so a runtime override only works
- * for whichever test happens to load that class first — which is why the resume test backdates a
+ * property, with two different caching behaviors: {@code AbandonedJobDetectorConfigProducer} caches
+ * it in a {@code static final} field at class-load time, so a runtime override only works for
+ * whichever test happens to load that class first — which is why the resume test backdates a
  * timestamp instead. {@code FolderBulkDeleteProcessor}'s own heartbeat-interval computation (T071)
  * must read {@code Config.getIntProperty(...)} fresh on every {@code process(Job)} call — no
  * caching of its own — specifically so a test can control it reliably. This test exercises that
@@ -52,9 +52,9 @@ import org.junit.jupiter.api.Test;
  * proving the heartbeat fires more than once mid-delete needs a delete that genuinely runs longer
  * than that — a large content count, not an artificial delay hook (none exists for
  * {@code FolderAPI.delete}, and adding one only for this test would test the hook, not the real
- * call). Matches this suite's own accepted cost for "expensive but real" tests elsewhere
- * (the cancellation and overlap-guard tests' own "big folder" technique), just with a bigger
- * folder and a longer budget.
+ * call). Matches this suite's own accepted cost for "expensive but real" tests elsewhere (the
+ * cancellation and overlap-guard tests' own "big folder" technique), just with a bigger folder and
+ * a longer budget.
  */
 @EnableWeld
 public class FolderBulkDeleteHeartbeatIT extends Junit5WeldBaseTest {
@@ -93,15 +93,15 @@ public class FolderBulkDeleteHeartbeatIT extends Junit5WeldBaseTest {
     }
 
     /**
-     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}, via the real queue
-     * Given Scenario: A single folder heavy enough that its own delete call outlasts one derived
-     * heartbeat interval (20 seconds at the lowest configurable threshold)
-     * ExpectedResult: {@code job.updatedAt()} — read fresh on every poll, the same cache-safe path
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}, via the real queue Given
+     * Scenario: A single folder heavy enough that its own delete call outlasts one derived
+     * heartbeat interval (20 seconds at the lowest configurable threshold) ExpectedResult:
+     * {@code job.updatedAt()} — read fresh on every poll, the same cache-safe path
      * {@code HeartbeatIT} already established — advances more than once while the job is still
      * {@code RUNNING}, and {@code job.progress()} never leaves {@code 0.0} while running: a
      * single-folder run has nothing to report progress on until that one folder finishes, so any
-     * mid-delete movement could only come from the heartbeat mistakenly driving progress instead
-     * of just liveness — exactly the distinction FR-024a and FR-024/FR-025 draw between the two
+     * mid-delete movement could only come from the heartbeat mistakenly driving progress instead of
+     * just liveness — exactly the distinction FR-024a and FR-024/FR-025 draw between the two
      * signals. The run must still reach {@code SUCCESS}, never {@code ABANDONED}.
      */
     @Test
