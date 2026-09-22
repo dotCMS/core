@@ -1,0 +1,130 @@
+name: 'Nightly: pnpm global virtual store'
+
+# The global virtual store is a per-developer opt-in (see specs/37573-pnpm-global-virtual-store),
+# so it is the one configuration NO pull request ever exercises. Without this job, the first
+# developer to pull a dependency bump discovers the breakage on their own machine, with nothing
+# telling them it is not their fault.
+#
+# It is a DETECTOR, not a gate: never runs on pull requests, never blocks a merge. The cost of
+# that choice is accepted deliberately — whoever broke it has already merged, so a red run needs
+# triage rather than a revert in flight.
+#
+# Scope covers every check the user stories promise, because a guard narrower than the promise
+# degrades into false assurance. This was raised in review on #37654: an earlier draft ran only
+# the production build, and during implementation the production build was green while the entire
+# Vitest suite failed to load. A build-only detector would have reported success.
+#
+# The FR-010 dev-server check is the one deliberate exclusion: it needs a browser, and a
+# resolution regression fails the build first.
+
+on:
+  schedule:
+    # 04:30 UTC — after the product nightly, before European working hours.
+    - cron: '30 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: pnpm-global-store-nightly
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  global-store-build:
+    name: Build + test under the global virtual store
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: core-web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      # Reads the pnpm version from core-web/package.json (devEngines.packageManager, falling back
+      # to packageManager) and restores the pnpm store cache keyed on the lockfile, exactly as the
+      # main pipeline does. install: false — this job runs the install itself, with the store
+      # setting already applied.
+      - name: Set up pnpm
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          working-directory: core-web
+          install: false
+          cache: true
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version-file: core-web/.nvmrc
+
+      # The same mechanism a developer uses. Not an approximation of it: a job that exercised some
+      # other path would not be evidence about what developers actually run.
+      - name: Opt this runner into the global virtual store
+        run: |
+          pnpm config set --global virtualStoreType global
+          echo "virtualStoreType=$(pnpm config get virtualStoreType)"
+          echo "store path=$(pnpm store path)"
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # FR-016: the pipeline caches the package store and never the installed directory. The global
+      # virtual store materialises under <store>/links/, and whether pnpm/setup's cache covers that
+      # subtree is NOT assumed here — it is reported so the answer is observable. Getting it wrong
+      # costs this one job a full download nightly and cannot affect any other job.
+      - name: Report store layout and cache coverage
+        run: |
+          STORE="$(pnpm store path)"
+          echo "store:            $STORE"
+          echo "node_modules:     $(du -sh node_modules | cut -f1)"
+          if [ -d "$STORE/links" ]; then
+            echo "links/ inside the cached store path: YES ($(du -sh "$STORE/links" | cut -f1))"
+          else
+            echo "links/ inside the cached store path: NO — the virtual store lands elsewhere;"
+            echo "  this job will re-download every night until the cache path is widened."
+          fi
+
+      # Every check below skips the Nx cache. A cached run replays recorded output and reports
+      # success without executing anything, which would make this detector detect nothing.
+      - name: Production build (FR-007)
+        run: pnpm nx build dotcms-ui --configuration=production --skip-nx-cache
+
+      # FR-008: asserted by FILE COUNT, never by the build's exit status. These are recursive copies
+      # out of inputs that are symlinks pointing outside the workspace root; a copy that matches
+      # nothing still exits 0 and would ship an editor with no assets.
+      - name: Assert shipped editor assets (FR-008)
+        run: pnpm exec node tools/assert-dist-assets.mjs
+
+      # FR-009. The reason this job is not build-only: the Vitest module graph resolves a different
+      # set of packages than the production bundle, and broke independently of it.
+      - name: Workspace tests (FR-009)
+        run: pnpm nx run-many -t test --skip-nx-cache --parallel=2
+
+      - name: Project graph inference (FR-011)
+        run: pnpm nx show projects
+
+      # FR-005: reports a newly added dependency with an undeclared import before a developer hits
+      # it. Informational — a finding here is not necessarily a break, so it must not fail the job.
+      - name: Undeclared-import scans (FR-005)
+        continue-on-error: true
+        run: |
+          echo "--- test-layer graph (packages Vitest inlines) ---"
+          pnpm exec node tools/scan-inlined-imports.mjs || true
+          echo
+          echo "--- whole installed tree (cross-check; expect noise) ---"
+          pnpm exec node tools/scan-undeclared-imports.mjs || true
+
+      - name: Explain a failure
+        if: failure()
+        run: |
+          echo "::error title=Global virtual store is broken::A change has reintroduced an"\
+               "undeclared import, or moved a corrected package past the version its"\
+               "packageExtensions entry was written for."
+          echo "Corrections live in core-web/pnpm-workspace.yaml under packageExtensions."
+          echo "Each entry is keyed by exact version ON PURPOSE: when a package moves past it the"
+          echo "correction stops applying, and this job is what surfaces that."
+          echo "Reproduce locally: pnpm config set --global virtualStoreType global"
+          echo "                   rm -rf core-web/node_modules && pnpm install --frozen-lockfile"
+          echo "Background: https://github.com/dotCMS/core/issues/37573"

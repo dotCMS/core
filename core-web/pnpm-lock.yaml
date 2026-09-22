@@ -169,7 +169,7 @@ overrides:
   http-cache-semantics: 4.1.1
   pdfjs-dist: 4.2.67
 
-packageExtensionsChecksum: sha256-0RkRBCq3RzuhEGTHS9qnEi292RF3d0bTG5ew0C7H/Sg=
+packageExtensionsChecksum: sha256-+DbTVkO0XQfz5JsasI3boU4lJuRFDrpy3LvgXWxb0MQ=
 
 importers:
 
@@ -237,7 +237,7 @@ importers:
         version: 0.27.0
       '@material/mwc-button':
         specifier: 0.27.0
-        version: 0.27.0
+        version: 0.27.0(@material/mwc-base@0.27.0)
       '@material/mwc-checkbox':
         specifier: 0.27.0
         version: 0.27.0
@@ -255,7 +255,7 @@ importers:
         version: 0.27.0
       '@material/mwc-icon-button':
         specifier: 0.27.0
-        version: 0.27.0
+        version: 0.27.0(@material/mwc-base@0.27.0)
       '@material/mwc-list':
         specifier: 0.27.0
         version: 0.27.0
@@ -4068,6 +4068,8 @@ packages:
   '@material/mwc-button@0.27.0':
     resolution: {integrity: sha512-t5m2zfE93RNKHMjdsU67X6csFzuSG08VJKKvXVQ+BriGE3xBgzY5nZdmZXomFpaWjDENPAlyS4ppCFm6o+DILw==, tarball: https://registry.npmjs.org/@material/mwc-button/-/mwc-button-0.27.0.tgz}
     deprecated: MWC beta is longer supported. Please upgrade to @material/web
+    peerDependencies:
+      '@material/mwc-base': ^0.27.0
 
   '@material/mwc-checkbox@0.27.0':
     resolution: {integrity: sha512-EY0iYZLwo8qaqMwR5da4fdn0xI0BZNAvKTcwoubYWpDDHlGxDcqwvjp/40ChGo3Q/zv8/4/A0Qp7cwapI82EkA==, tarball: https://registry.npmjs.org/@material/mwc-checkbox/-/mwc-checkbox-0.27.0.tgz}
@@ -4088,6 +4090,8 @@ packages:
   '@material/mwc-icon-button@0.27.0':
     resolution: {integrity: sha512-wReiPa1UkLaCSPtpkAs1OGKEBtvqPnz9kzuY+RvN5ZQnpo3Uh7n3plHV4y/stsUBfrWtBCcOgYnCdNRaR/r2nQ==, tarball: https://registry.npmjs.org/@material/mwc-icon-button/-/mwc-icon-button-0.27.0.tgz}
     deprecated: MWC beta is longer supported. Please upgrade to @material/web
+    peerDependencies:
+      '@material/mwc-base': ^0.27.0
 
   '@material/mwc-icon@0.27.0':
     resolution: {integrity: sha512-Sul44I37M9Ewynn0A9DjkEBrmll2VtNbth6Pxj7I1A/EAwEfaCrPvryyGqfIu1T2hTsRcaojzQx6QjF+B5QW9A==, tarball: https://registry.npmjs.org/@material/mwc-icon/-/mwc-icon-0.27.0.tgz}
@@ -19336,8 +19340,9 @@ snapshots:
       lit: 2.8.0
       tslib: 2.3.0
 
-  '@material/mwc-button@0.27.0':
+  '@material/mwc-button@0.27.0(@material/mwc-base@0.27.0)':
     dependencies:
+      '@material/mwc-base': 0.27.0
       '@material/mwc-icon': 0.27.0
       '@material/mwc-ripple': 0.27.0
       lit: 2.8.0
@@ -19363,7 +19368,7 @@ snapshots:
       '@material/dialog': 14.0.0-canary.53b3cad2f.0
       '@material/dom': 14.0.0-canary.53b3cad2f.0
       '@material/mwc-base': 0.27.0
-      '@material/mwc-button': 0.27.0
+      '@material/mwc-button': 0.27.0(@material/mwc-base@0.27.0)
       blocking-elements: 0.1.1
       lit: 2.8.0
       tslib: 2.3.0
@@ -19376,8 +19381,9 @@ snapshots:
       lit: 2.8.0
       tslib: 2.3.0
 
-  '@material/mwc-icon-button@0.27.0':
+  '@material/mwc-icon-button@0.27.0(@material/mwc-base@0.27.0)':
     dependencies:
+      '@material/mwc-base': 0.27.0
       '@material/mwc-ripple': 0.27.0
       lit: 2.8.0
       tslib: 2.3.0
