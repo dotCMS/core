@@ -4,7 +4,7 @@ import {
   input,
   OnDestroy,
   OnInit,
-  signal,
+  signal
 } from '@angular/core';
 
 import { BannerCarousel } from '../../types/contentlet.model';

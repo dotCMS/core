@@ -123,7 +123,19 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         }
 
         final Host site = toolBox.hostAPI.find(contentlet.getHost(), APILocator.systemUser(), true);
-        map.put(HOST_NAME, site != null ? site.getHostname() : NOT_APPLICABLE);
+        //`hostName` is a derived convenience property: the name of the Site this Contentlet lives
+        //on. The Host Content Type declares a real field with that same variable ("Site Key"), and
+        //a custom type may too, so writing the derived value would destroy the stored one - every
+        //Site lives on the System Host, so every Site would report "System Host". Same reasoning as
+        //the URL_FIELD guard below. HOST_KEY needs no guard: "host" is a reserved field variable.
+        if (declaresField(type, HOST_NAME)) {
+            //The stored field wins, but the key still has to be there: this map has always carried
+            //a non-null hostName, so a declared-but-unset field falls back to the sentinel rather
+            //than dropping the key and handing callers a null.
+            map.putIfAbsent(HOST_NAME, NOT_APPLICABLE);
+        } else {
+            map.put(HOST_NAME, site != null ? site.getHostname() : NOT_APPLICABLE);
+        }
         map.put(HOST_KEY, site != null ? site.getIdentifier() : NOT_APPLICABLE);
 
         final String urlMap = toolBox.contentletAPI
@@ -145,6 +157,29 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put(DISABLED_WYSIWYG_KEY, contentlet.getDisabledWysiwyg());
 
         this.addAuditProperties(contentlet, map);
+    }
+
+    /**
+     * Tells whether a Content Type declares a field of its own whose variable is the given name.
+     * <p>
+     * The Contentlet map is a single flat namespace holding both stored field values and derived
+     * properties computed at read time, so the two can collide. {@link com.dotcms.contenttype.business.FieldFactoryImpl#RESERVED_FIELD_VARS}
+     * keeps most derived keys safe by refusing them as field variables, but {@code hostName} is not
+     * on that list — and the Host Content Type declares one, the required Text field labelled "Site
+     * Key". When a Content Type owns the variable, its stored value must win.
+     * <p>
+     * Deliberately iterates {@link ContentType#fields()} rather than calling
+     * {@link ContentType#fieldMap()}: the latter collects into a Guava {@code ImmutableMap}, which
+     * throws on a field whose variable is {@code null} — legal in the database.
+     *
+     * @param type          The {@link ContentType} to inspect. A {@code null} type declares nothing.
+     * @param fieldVariable The field variable to look for.
+     *
+     * @return {@code true} if the Content Type declares a field with that variable.
+     */
+    public static boolean declaresField(final ContentType type, final String fieldVariable) {
+        return null != type && type.fields().stream()
+                .anyMatch(field -> null != field && fieldVariable.equals(field.variable()));
     }
 
     /**

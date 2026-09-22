@@ -120,7 +120,8 @@ export class DotKeyValueTableHeaderRowComponent {
     }
 
     /**
-     * Turns a pasted `KEY=VALUE` block into pairs, the way Vercel's env editor does.
+     * Turns a pasted block into pairs — a `KEY=VALUE` env block, the way Vercel's env
+     * editor does, or a JSON object.
      *
      * Only intercepts when the text actually parses to pairs, so pasting a plain key
      * still behaves like a paste. Keys already in the list are reported rather than

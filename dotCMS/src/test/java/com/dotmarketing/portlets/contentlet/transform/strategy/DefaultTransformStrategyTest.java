@@ -1,10 +1,12 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.HOST_NAME;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_KEY;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_NAME_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -27,6 +29,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -363,5 +366,75 @@ public class DefaultTransformStrategyTest {
 
         assertEquals("An orphaned modUser must degrade to N/A, not throw",
                 AbstractTransformStrategy.NOT_APPLICABLE, map.get(MOD_USER_NAME_KEY));
+    }
+
+    /**
+     * Builds a mocked Content Type whose {@code fields()} return the given field variables. A
+     * {@code null} entry produces a field with a {@code null} variable, which is legal in the
+     * database and is why the collision check cannot go through {@code ContentType.fieldMap()}.
+     */
+    private ContentType mockContentTypeWithFieldVariables(final String... variables) {
+        final List<Field> fields = new ArrayList<>();
+        for (final String variable : variables) {
+            final Field field = Mockito.mock(Field.class);
+            Mockito.when(field.variable()).thenReturn(variable);
+            fields.add(field);
+        }
+        final ContentType contentType = Mockito.mock(ContentType.class);
+        Mockito.when(contentType.fields()).thenReturn(fields);
+        return contentType;
+    }
+
+    /**
+     * The Host Content Type declares its own {@code hostName} field — the required Text field
+     * labelled "Site Key". The transform must detect that collision so the stored value is kept
+     * instead of being replaced by the derived name of the parent Site. Regression coverage for
+     * <a href="https://github.com/dotCMS/core/issues/37584">#37584</a>.
+     */
+    @Test
+    public void declaresField_whenTypeDeclaresTheVariable_returnsTrue() {
+        final ContentType hostLikeType =
+                mockContentTypeWithFieldVariables("hostName", "aliases", "isDefault");
+
+        assertTrue("A Content Type declaring 'hostName' must be reported as a collision",
+                DefaultTransformStrategy.declaresField(hostLikeType, HOST_NAME));
+    }
+
+    /**
+     * The overwhelmingly common case: a Content Type with no {@code hostName} field, for which
+     * {@code hostName} stays a derived property holding the name of the Site the Contentlet
+     * lives on. This is the behavior that must NOT change.
+     */
+    @Test
+    public void declaresField_whenTypeDoesNotDeclareTheVariable_returnsFalse() {
+        final ContentType blogLikeType =
+                mockContentTypeWithFieldVariables("title", "body", "author");
+
+        assertFalse("A Content Type without a 'hostName' field must not be reported as a collision",
+                DefaultTransformStrategy.declaresField(blogLikeType, HOST_NAME));
+    }
+
+    /**
+     * {@code addCommonProperties} already tolerates a null Content Type for its other
+     * properties, so the check must too — and must fall through to writing the derived value.
+     */
+    @Test
+    public void declaresField_whenContentTypeIsNull_returnsFalse() {
+        assertFalse("A null Content Type declares nothing and must not throw",
+                DefaultTransformStrategy.declaresField(null, HOST_NAME));
+    }
+
+    /**
+     * A field with a null variable must be skipped rather than blow up. This is exactly the case
+     * that makes {@code ContentType.fieldMap()} unusable here: it collects into a Guava
+     * {@code ImmutableMap}, which rejects null keys with a {@code NullPointerException}.
+     */
+    @Test
+    public void declaresField_whenAFieldHasANullVariable_doesNotThrow() {
+        final ContentType typeWithNullVariable =
+                mockContentTypeWithFieldVariables("title", null, "body");
+
+        assertFalse("A field with a null variable must be skipped, not throw",
+                DefaultTransformStrategy.declaresField(typeWithNullVariable, HOST_NAME));
     }
 }

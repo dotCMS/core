@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FileField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
@@ -1024,6 +1025,165 @@ public class ContentletTransformerTest extends IntegrationTestBase {
         Assert.assertFalse(keyValueField.get("origin").toString().contains("&#58;"));
         Assert.assertFalse(keyValueField.get("origin").toString().contains("&#44;"));
 
+    }
+
+    /**
+     * Given Scenario: A Site is hydrated through the same options the new Edit Content editor's
+     * endpoint uses ({@code GET /api/v1/content/{id}} → {@code contentResourceOptions}).
+     * <p>
+     * Expected Result: {@code hostName} holds the Site's OWN name. It is a real field on the Host
+     * Content Type — the required Text field labelled "Site Key" — and must not be replaced by the
+     * derived name of the Site the contentlet lives on. Every Site lives on the System Host, so
+     * before the fix for <a href="https://github.com/dotCMS/core/issues/37584">#37584</a> this
+     * returned the literal "System Host" for every Site.
+     */
+    @Test
+    public void Test_Transform_Site_Keeps_Its_Own_HostName() {
+
+        final Host newSite = new SiteDataGen().nextPersisted();
+
+        final Map<String, Object> map = new DotTransformerBuilder()
+                .contentResourceOptions(false)
+                .content(newSite).build().toMaps().get(0);
+
+        assertEquals("A Site's hostName must be its own name, not the parent Site's",
+                newSite.getHostname(), map.get(Contentlet.HOST_NAME));
+        assertEquals("hostName and title must agree for a Site",
+                map.get(Contentlet.TITTLE_KEY), map.get(Contentlet.HOST_NAME));
+        Assert.assertNotEquals("The derived parent-Site name must not leak into the Site Key field",
+                Host.SYSTEM_HOST_SITENAME, map.get(Contentlet.HOST_NAME));
+
+        // The parent reference itself is untouched: a Site still lives on the System Host.
+        assertEquals(Host.SYSTEM_HOST, map.get(Contentlet.HOST_KEY));
+    }
+
+    /**
+     * Given Scenario: The System Host itself is hydrated through the editor's options.
+     * <p>
+     * Expected Result: its {@code hostName} is "System Host" — which is the correct answer here,
+     * because that IS its own name. This is the case that made #37584 look plausible: the System
+     * Host was the one Site the broken derived value happened to get right, and the fix must not
+     * regress it.
+     */
+    @Test
+    public void Test_Transform_System_Host_Still_Reports_Its_Own_Name()
+            throws DotDataException, DotSecurityException {
+
+        final Host systemHost = APILocator.getHostAPI().findSystemHost();
+
+        final Map<String, Object> map = new DotTransformerBuilder()
+                .contentResourceOptions(false)
+                .content(systemHost).build().toMaps().get(0);
+
+        assertEquals("The System Host's hostName is its own name",
+                systemHost.getHostname(), map.get(Contentlet.HOST_NAME));
+        assertEquals(Host.SYSTEM_HOST_SITENAME, map.get(Contentlet.HOST_NAME));
+    }
+
+    /**
+     * Given Scenario: A Site is read through the new Edit Content editor's path
+     * ({@code contentResourceOptions}) and the values it hands back are fed straight into a Site
+     * save — the round trip a save from that editor performs — changing only an unrelated field.
+     * <p>
+     * Expected Result: the save goes through WITHOUT the {@code forceExecution} escape hatch.
+     * {@code HostAPIImpl.save} refuses any save whose incoming {@code hostName} differs from the
+     * stored one, so before the fix for
+     * <a href="https://github.com/dotCMS/core/issues/37584">#37584</a> this round trip carried
+     * "System Host" back into the save and tripped that guard with an
+     * {@link IllegalArgumentException}. This is AC-003 of the issue: what the editor reads back
+     * must be safe to save.
+     */
+    @Test
+    public void Test_Site_Read_Through_Editor_Path_Saves_Without_ForceExecution()
+            throws DotDataException, DotSecurityException {
+
+        final Host newSite = new SiteDataGen().nextPersisted();
+        final String originalName = newSite.getHostname();
+        final User systemUser = APILocator.systemUser();
+
+        final Map<String, Object> editorView = new DotTransformerBuilder()
+                .contentResourceOptions(false)
+                .content(newSite).build().toMaps().get(0);
+
+        final Contentlet stored = APILocator.getContentletAPI()
+                .find(newSite.getInode(), systemUser, false);
+        // Guards against a vacuous pass: the check in HostAPIImpl.save only fires when the stored
+        // Site carries a hostName to compare the incoming one against.
+        assertEquals("The stored Site must carry its name for this round trip to mean anything",
+                originalName, stored.get(Host.HOST_NAME_KEY));
+
+        final Host toSave = new Host(stored);
+        // Exactly what the editor posts back: the hostName it was served, untouched by the user.
+        toSave.setHostname((String) editorView.get(Contentlet.HOST_NAME));
+        toSave.setProperty("description", "Edited without touching the Site Key");
+
+        final Host saved = APILocator.getHostAPI().save(toSave, systemUser, false);
+
+        assertEquals("A Site read through the editor path must save without forceExecution, "
+                        + "and without its name changing",
+                originalName, saved.getHostname());
+    }
+
+    /**
+     * Given Scenario: A custom Content Type declares its own {@code hostName} field but a
+     * Contentlet of that type leaves it unset, and is hydrated through the editor's options.
+     * <p>
+     * Expected Result: the key is still present, carrying the {@code N/A} sentinel. The transform
+     * map has always guaranteed a non-null {@code hostName}, so the collision guard must not turn
+     * a declared-but-empty field into a missing key — raised in review on
+     * <a href="https://github.com/dotCMS/core/pull/37589">#37589</a>.
+     */
+    @Test
+    public void Test_Transform_Declared_But_Unset_HostName_Falls_Back_To_Sentinel() {
+
+        final ContentType customType = new ContentTypeDataGen()
+                // FieldDataGen seeds a defaultValue by default; null it out so the field really is
+                // unset on the contentlet, which is the case under test.
+                .field(new FieldDataGen().name("Site Key").velocityVarName(Contentlet.HOST_NAME)
+                        .type(TextField.class).defaultValue(null).next())
+                .field(new FieldDataGen().name("Title").velocityVarName("title")
+                        .type(TextField.class).next())
+                .nextPersisted();
+
+        final Contentlet contentlet = new ContentletDataGen(customType.id())
+                .setProperty("title", "declared-but-unset-" + System.currentTimeMillis())
+                .host(site)
+                .nextPersisted();
+
+        final Map<String, Object> map = new DotTransformerBuilder()
+                .contentResourceOptions(false)
+                .content(contentlet).build().toMaps().get(0);
+
+        assertTrue("A declared but unset hostName must not drop the key",
+                map.containsKey(Contentlet.HOST_NAME));
+        // AbstractTransformStrategy.NOT_APPLICABLE is package-private; assert its value rather
+        // than widening its visibility for a test.
+        assertEquals("An unset declared field falls back to the sentinel, not to the Site name",
+                "N/A", map.get(Contentlet.HOST_NAME));
+    }
+
+    /**
+     * Given Scenario: An ordinary contentlet — whose Content Type does NOT declare a
+     * {@code hostName} field — is hydrated through the same options.
+     * <p>
+     * Expected Result: {@code hostName} is still the name of the Site the contentlet lives on.
+     * This is the regression guard for #37584: the fix must narrow the derived property only where
+     * a real field would be overwritten, and leave every other Content Type exactly as it was.
+     */
+    @Test
+    public void Test_Transform_Regular_Content_Still_Reports_Its_Parent_Site_Name() {
+
+        final ContentType newsLikeContentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet news = TestDataUtils.getNewsContent(true, langId,
+                newsLikeContentType.id(), site);
+
+        final Map<String, Object> map = new DotTransformerBuilder()
+                .contentResourceOptions(false)
+                .content(news).build().toMaps().get(0);
+
+        assertEquals("A regular contentlet's hostName must be the Site it lives on",
+                site.getHostname(), map.get(Contentlet.HOST_NAME));
+        assertEquals(site.getIdentifier(), map.get(Contentlet.HOST_KEY));
     }
 
     /**

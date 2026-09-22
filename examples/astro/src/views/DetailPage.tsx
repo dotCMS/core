@@ -23,12 +23,12 @@ export function DetailPage({
   );
 
   const { pageAsset, content } =
-    useEditableDotCMSPage<DotCMSCustomDetailPageResponse>(pageResponse);
-  const { urlContentMap, layout } = pageAsset;
+    useEditableDotCMSPage<DotCMSCustomDetailPageResponse>(pageResponse) ?? {};
+  const { urlContentMap, layout } = pageAsset ?? {};
   const { blogContent } = urlContentMap || {};
 
-  const showHeader = layout.header && content;
-  const showFooter = layout.footer && content;
+  const showHeader = layout?.header && content;
+  const showFooter = layout?.footer && content;
   const isEditMode = useIsEditMode();
 
   useEffect(() => {

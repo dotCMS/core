@@ -15,7 +15,7 @@ export function BlogListingPage({
   pageResponse: DotCMSCustomPageResponse;
 }) {
   const { content } =
-    useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse);
+    useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse) ?? {};
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredBlogs, setFilteredBlogs] = useState<any[]>([]);
   const debouncedSearchQuery = useDebounce(searchQuery, 500);

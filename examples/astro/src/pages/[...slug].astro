@@ -9,18 +9,21 @@ const params = Astro.params;
 
 const pageResponse = await getDotCMSPage(params?.slug ?? "");
 
-if ("error" in pageResponse) {
-  const { error } = pageResponse;
-  if (error.status === 404) {
-    return Astro.redirect("/404", 404);
-  }
+if (!pageResponse.ok && pageResponse.error.httpError?.status === 404) {
+  return Astro.redirect("/404");
 }
 
-const pageAsset = "pageAsset" in pageResponse ? pageResponse.pageAsset : undefined;
+// Set on a failed fetch, and also on a page that loaded but whose content query
+// came back with GraphQL errors. Matches the blog pages.
+const error = pageResponse.error;
+const pageAsset = pageResponse.ok ? pageResponse.pageAsset : undefined;
 const { vanityUrl } = pageAsset ?? {};
 
 if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
-  return Astro.redirect(vanityUrl.forwardTo, vanityUrl.response);
+  return Astro.redirect(
+    vanityUrl.forwardTo,
+    vanityUrl.permanentRedirect ? 301 : 302,
+  );
 }
 
 const title = pageAsset ? pageAsset.page.title : "Error";
@@ -29,11 +32,11 @@ const title = pageAsset ? pageAsset.page.title : "Error";
 {
   (
     <Layout title={title}>
-      {"error" in pageResponse ? (
-        <Error error={pageResponse.error} />
-      ) : (
+      {error ? (
+        <Error error={error} />
+      ) : pageResponse.ok ? (
         <DotCMSPage client:only="react" pageResponse={pageResponse} />
-      )}
+      ) : null}
     </Layout>
   )
 }
