@@ -9,11 +9,19 @@ import {
 /**
  * Category field round-trip (issue #37670).
  *
- * The category resolver is the one that reshapes rather than casts: the contentlet stores an
- * array of objects and the form control wants an array of their keys. It is also the field the
- * issue cites as the motivating example for per-type typing — `categories` is required on
- * `ContentTypeCategoryField` and was optional on the flat interface, and the committed mock for
- * it never carried the property at all.
+ * `categories` is required on `ContentTypeCategoryField` and was optional on the flat interface,
+ * and the committed mock for it never carried the property at all — this proves the field still
+ * builds, renders and survives a save with the tightened type in place.
+ *
+ * **It does not cover the reshape.** The category resolver turns an array of stored objects into
+ * an array of their keys, and reaching that branch needs a seeded category tree plus a selection,
+ * which this spec does not set up: `createFakePayloadCategoryField` points `values` at a random
+ * uuid, so there is no tree to pick from and the saved value stays empty. The reshape is pinned
+ * through the full two-stage path in
+ * `dot-edit-content-form-resolutions.characterization.spec.ts` ("reshapes a stored category array
+ * into the keys the control holds"). Seeding a tree here — via `/api/v1/categories` and a
+ * `values` pointing at the created inode — would let this spec cover it end to end, and is worth
+ * its own issue.
  */
 let contentType: ContentType | null = null;
 let contentTypeVariable: string;
@@ -54,10 +62,9 @@ test('the category field renders and the form saves with it present @critical', 
     await formPage.save();
     await page.reload();
 
-    // The field still renders after the round trip. Selecting a value needs a category tree
-    // seeded in the instance, which this spec deliberately does not assume — what it protects
-    // is that the resolver returns a shape the control accepts rather than throwing, which is
-    // where the reshape from stored objects to keys would fail.
+    // The field still renders after the round trip, on a contentlet saved with no category
+    // selected. That is the empty-value path through the resolver, not the reshape — see the
+    // note at the top of this file.
     await expect(categoryField).toBeVisible({ timeout: 20000 });
     await expect(page.getByTestId('title')).toHaveValue('Category round trip');
 });

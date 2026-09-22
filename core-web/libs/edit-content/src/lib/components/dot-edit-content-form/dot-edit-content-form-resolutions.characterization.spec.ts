@@ -1,19 +1,36 @@
 import { describe, expect, it } from 'vitest';
 
-import { DotCMSContentlet, DotCMSContentTypeField, DotCMSFieldTypes } from '@dotcms/dotcms-models';
 import {
+    DotCMSContentlet,
+    DotCMSContentTypeField,
+    DotCMSFieldType,
+    DotCMSFieldTypes
+} from '@dotcms/dotcms-models';
+import {
+    createFakeBinaryField,
     createFakeBlockEditorField,
     createFakeCategoryField,
     createFakeCheckboxField,
+    createFakeColumnBreakField,
+    createFakeColumnField,
+    createFakeConstantField,
     createFakeContentlet,
+    createFakeCustomField,
     createFakeDateField,
     createFakeDateTimeField,
+    createFakeFileField,
+    createFakeHiddenField,
     createFakeHostFolderField,
+    createFakeImageField,
     createFakeJSONField,
     createFakeKeyValueField,
+    createFakeLineDividerField,
     createFakeMultiSelectField,
     createFakeRadioField,
+    createFakeRelationshipField,
+    createFakeRowField,
     createFakeSelectField,
+    createFakeTabDividerField,
     createFakeTagField,
     createFakeTextAreaField,
     createFakeTextField,
@@ -109,6 +126,18 @@ describe('contentlet → form value, composed', () => {
         expect(compose(category, createFakeContentlet({ cat: [] }))).toEqual([]);
     });
 
+    it('reshapes a stored category array into the keys the control holds', () => {
+        // The one resolver that reshapes rather than casts, and the branch the category round
+        // trip is meant to protect: the contentlet stores category objects, the control wants
+        // their keys. The empty-array case above stops short of it, and the isolated resolver
+        // test in dot-edit-content-form-resolutions.spec.ts does not run the cast stage after
+        // it — this pins the two stages together, which is what this file is for.
+        const category = createFakeCategoryField({ variable: 'cat' });
+        const stored = [{ k1: 'Value 1' }, { k2: 'Value 2' }];
+
+        expect(compose(category, createFakeContentlet({ cat: stored }))).toEqual(['k1', 'k2']);
+    });
+
     it('casts a select/radio value by its dataType', () => {
         const select = createFakeSelectField({ variable: 's' });
         expect(compose(select, createFakeContentlet({ s: 'a' }))).toBe('a');
@@ -175,19 +204,56 @@ const throughPath = (field: DotCMSContentTypeField, value: unknown): unknown =>
         } as DotCMSContentTypeField
     );
 
+/**
+ * A complete, valid field per type, for the sweeps below.
+ *
+ * These cases used to build each field as a `{ fieldType, dataType }` literal cast to the union,
+ * which defeats what this change is for (contract C-4): the literal is missing every base
+ * property, carries a `dataType` no arm may pair with that `fieldType`, and would notice nothing
+ * if an arm grew a required property. `Record<DotCMSFieldType, …>` also makes the compiler demand
+ * an entry per type, so a field type added later cannot quietly drop out of the sweep.
+ */
+const FIELD_BY_TYPE: Record<DotCMSFieldType, DotCMSContentTypeField> = {
+    [DotCMSFieldTypes.ROW]: createFakeRowField(),
+    [DotCMSFieldTypes.COLUMN]: createFakeColumnField(),
+    [DotCMSFieldTypes.TAB_DIVIDER]: createFakeTabDividerField(),
+    [DotCMSFieldTypes.LINE_DIVIDER]: createFakeLineDividerField(),
+    [DotCMSFieldTypes.COLUMN_BREAK]: createFakeColumnBreakField(),
+    [DotCMSFieldTypes.BINARY]: createFakeBinaryField(),
+    [DotCMSFieldTypes.BLOCK_EDITOR]: createFakeBlockEditorField(),
+    [DotCMSFieldTypes.CATEGORY]: createFakeCategoryField(),
+    [DotCMSFieldTypes.CHECKBOX]: createFakeCheckboxField(),
+    [DotCMSFieldTypes.CONSTANT]: createFakeConstantField(),
+    [DotCMSFieldTypes.CUSTOM_FIELD]: createFakeCustomField(),
+    [DotCMSFieldTypes.DATE]: createFakeDateField(),
+    [DotCMSFieldTypes.DATE_AND_TIME]: createFakeDateTimeField(),
+    [DotCMSFieldTypes.FILE]: createFakeFileField(),
+    [DotCMSFieldTypes.HIDDEN]: createFakeHiddenField(),
+    [DotCMSFieldTypes.IMAGE]: createFakeImageField(),
+    [DotCMSFieldTypes.JSON]: createFakeJSONField(),
+    [DotCMSFieldTypes.KEY_VALUE]: createFakeKeyValueField(),
+    [DotCMSFieldTypes.MULTI_SELECT]: createFakeMultiSelectField(),
+    [DotCMSFieldTypes.RADIO]: createFakeRadioField(),
+    [DotCMSFieldTypes.RELATIONSHIP]: createFakeRelationshipField(),
+    [DotCMSFieldTypes.SELECT]: createFakeSelectField(),
+    [DotCMSFieldTypes.HOST_FOLDER]: createFakeHostFolderField(),
+    [DotCMSFieldTypes.TAG]: createFakeTagField(),
+    [DotCMSFieldTypes.TEXT]: createFakeTextField(),
+    [DotCMSFieldTypes.TEXTAREA]: createFakeTextAreaField(),
+    [DotCMSFieldTypes.TIME]: createFakeTimeField(),
+    [DotCMSFieldTypes.WYSIWYG]: createFakeWYSIWYGField()
+};
+
 describe('resolveFieldValue — edge cases', () => {
     it('returns null for an absent value on every field type', () => {
         for (const fieldType of Object.values(DotCMSFieldTypes)) {
-            const field = { fieldType, dataType: 'TEXT' } as unknown as DotCMSContentTypeField;
-
-            expect(throughPath(field, undefined)).not.toBeUndefined();
+            expect(throughPath(FIELD_BY_TYPE[fieldType], undefined)).not.toBeUndefined();
         }
     });
 
     it('converts a calendar value to a timestamp the control can consume', () => {
         for (const fieldType of CALENDAR_FIELD_TYPES) {
-            const field = { fieldType, dataType: 'DATE' } as unknown as DotCMSContentTypeField;
-            const result = throughPath(field, '2021-09-01T18:00:00.000Z');
+            const result = throughPath(FIELD_BY_TYPE[fieldType], '2021-09-01T18:00:00.000Z');
 
             // A number, not the ISO string: the resolver normalises before the cast. The old
             // isolated test asserted the opposite, because the resolver never ran in it.
@@ -197,9 +263,7 @@ describe('resolveFieldValue — edge cases', () => {
 
     it('splits a flattened value and trims each entry', () => {
         for (const fieldType of FLATTENED_FIELD_TYPES) {
-            const field = { fieldType, dataType: 'TEXT' } as unknown as DotCMSContentTypeField;
-
-            expect(throughPath(field, 'a, b ,c')).toEqual(['a', 'b', 'c']);
+            expect(throughPath(FIELD_BY_TYPE[fieldType], 'a, b ,c')).toEqual(['a', 'b', 'c']);
         }
     });
 
@@ -208,10 +272,9 @@ describe('resolveFieldValue — edge cases', () => {
         // reshapes stored objects into an array of keys before the cast stage is reached, so
         // "untouched" is true of the cast and not of the transformation.
         for (const fieldType of [DotCMSFieldTypes.BLOCK_EDITOR, DotCMSFieldTypes.KEY_VALUE]) {
-            const field = { fieldType, dataType: 'TEXT' } as unknown as DotCMSContentTypeField;
             const value = { nested: true };
 
-            expect(throughPath(field, value)).toEqual(value);
+            expect(throughPath(FIELD_BY_TYPE[fieldType], value)).toEqual(value);
         }
     });
 
@@ -229,21 +292,16 @@ describe('resolveFieldValue — edge cases', () => {
      * a future fix has a test to flip. Worth its own issue.
      */
     it('throws on a non-string flattened value — known, pre-existing', () => {
-        const field = {
-            fieldType: DotCMSFieldTypes.TAG,
-            dataType: 'TEXT'
-        } as unknown as DotCMSContentTypeField;
+        const field = FIELD_BY_TYPE[DotCMSFieldTypes.TAG];
 
         expect(() => throughPath(field, ['already', 'an', 'array'])).toThrow(TypeError);
     });
 
     it('never throws on a string or absent value, whatever the field type', () => {
         for (const fieldType of Object.values(DotCMSFieldTypes)) {
-            const field = { fieldType, dataType: 'TEXT' } as unknown as DotCMSContentTypeField;
-
             // Non-string values are excluded deliberately — see the known defect above.
             for (const value of [undefined, null, '', 'now', 'a,b']) {
-                expect(() => throughPath(field, value)).not.toThrow();
+                expect(() => throughPath(FIELD_BY_TYPE[fieldType], value)).not.toThrow();
             }
         }
     });

@@ -23,7 +23,7 @@ import { RelationshipFieldService } from './relationship-field.service';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
-import { SelectionMode, TableColumn } from '../models/relationship.models';
+import { RelationshipDescriptor, SelectionMode, TableColumn } from '../models/relationship.models';
 
 /**
  * Rows revealed per step.
@@ -37,6 +37,12 @@ export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
     field: ContentTypeRelationshipField | null;
+    /**
+     * The validated relationship settings, published by `RelationshipFieldService.prepareField`.
+     * Null until the field loads; read this rather than `field.relationships`, which is raw
+     * server JSON that nothing has checked yet.
+     */
+    relationships: RelationshipDescriptor | null;
     selectionMode: SelectionMode | null;
     contentType: DotCMSContentType | null;
     isNewEditorEnabled: boolean;
@@ -70,6 +76,7 @@ const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
     field: null,
+    relationships: null,
     columns: [],
     selectionMode: null,
     contentType: null,
@@ -227,6 +234,7 @@ export const RelationshipFieldStore = signalStore(
                                                 status: ComponentStatus.LOADED,
                                                 contentType: newState.contentType,
                                                 isNewEditorEnabled: newState.isNewEditorEnabled,
+                                                relationships: newState.relationships,
                                                 selectionMode: newState.selectionMode,
                                                 columns: newState.columns,
                                                 data: newState.data,

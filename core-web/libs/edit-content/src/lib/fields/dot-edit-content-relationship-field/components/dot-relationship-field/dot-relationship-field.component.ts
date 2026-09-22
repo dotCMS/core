@@ -424,9 +424,12 @@ export class DotRelationshipFieldComponent
         }
 
         const contentType = this.store.contentType();
+        const relationships = this.store.relationships();
 
-        // Don't open dialog if contentType or its ID is null (invalid field data)
-        if (!contentType?.id) {
+        // Don't open dialog if contentType or its ID is null (invalid field data), nor without
+        // the relationship descriptor: `prepareField` publishes both together, so either being
+        // absent means the field never loaded and there is nothing to pick against.
+        if (!contentType?.id || !relationships) {
             return;
         }
 
@@ -471,10 +474,13 @@ export class DotRelationshipFieldComponent
                 // does not return — another locale, a later page, an index that has not caught up
                 // (ADR-0018) — is still related when the editor confirms.
                 selected: this.store.data(),
-                cardinality: this.$field().relationships.cardinality,
+                // From the store, not the field: `prepareField` is what validated these, and the
+                // guard above means a field whose `relationships` the server left unusable never
+                // gets this far.
+                cardinality: relationships.cardinality,
                 parentContentTypeId: this.$field().contentTypeId,
                 fieldVariable: this.$field().variable,
-                isParentField: this.$field().relationships.isParentField,
+                isParentField: relationships.isParentField,
                 currentContentIdentifier: contentlet?.identifier ?? null,
                 contentletContext: {
                     languageId:
@@ -537,7 +543,8 @@ export class DotRelationshipFieldComponent
      */
     async showCreateNewContentDialog(): Promise<void> {
         const contentType = this.store.contentType();
-        if (this.$isDisabled() || !contentType) {
+        const relationships = this.store.relationships();
+        if (this.$isDisabled() || !contentType || !relationships) {
             return;
         }
 
@@ -551,10 +558,10 @@ export class DotRelationshipFieldComponent
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
-                // `?? true` kept deliberately: the type says `isParentField` is always
-                // present, but this value comes from the server and a content type carrying a
-                // field type the model does not describe can still reach here (FR-013).
-                isParent: this.$field().relationships.isParentField ?? true
+                // The descriptor `prepareField` published, which already applied the parent-side
+                // default for a payload that omitted the flag. This used to re-apply `?? true`
+                // over the raw field, in a second place, from data nothing had checked.
+                isParent: relationships.isParentField
             },
             onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship

@@ -725,7 +725,7 @@ describe('KEY_VALUE resolution', () => {
     const resolve = (contentlet: unknown, variable = 'keyValue') =>
         resolutionValue[DotCMSFieldTypes.KEY_VALUE](
             contentlet as DotCMSContentlet,
-            createFakeKeyValueField({ variable, defaultValue: null }),
+            createFakeKeyValueField({ variable, defaultValue: undefined }),
             undefined,
             false
         );
