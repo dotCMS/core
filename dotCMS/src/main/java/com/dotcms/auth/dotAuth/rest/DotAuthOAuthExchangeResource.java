@@ -12,6 +12,7 @@ import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -368,10 +369,21 @@ public class DotAuthOAuthExchangeResource implements Serializable {
 
             final User user;
             try {
-                // The userinfo map here IS the signature-verified id_token claim set, so it
-                // doubles as the authoritative source for the email_verified trust decision.
+                // The userinfo map here IS the signature-verified id_token claim set.
                 user = oauthHelper.resolveOrProvisionUser(provider, null, claims, claims, effectiveConfig, /* frontEndLogin */ true);
             } catch (final DotRuntimeException e) {
+                if (e instanceof DuplicateUserException) {
+                    // A user with this email or id exists but could not be matched to the
+                    // identity. Name the cause without echoing the email, which the message
+                    // embeds; the detail goes to the security log (#37691).
+                    SecurityLogger.logInfo(DotAuthOAuthExchangeResource.class,
+                            "OAuth exchange rejected (duplicate user): " + sanitizeForLog(e.getMessage())
+                                    + " — request from " + request.getRemoteAddr());
+                    return withCors(Response.status(Response.Status.CONFLICT), corsOrigin)
+                            .entity(new ResponseEntityView<>("A dotCMS account with this identity already "
+                                    + "exists and could not be linked to it"))
+                            .build();
+                }
                 if (e.getMessage() != null
                         && (e.getMessage().contains("is not active")
                                 || e.getMessage().contains("Auto-provisioning is disabled"))) {

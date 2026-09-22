@@ -174,11 +174,12 @@ public class OAuthHelper {
     }
 
     /**
-     * Variant that also accepts the verified id_token claim set (OIDC). Those claims —
-     * not the unsigned userinfo response — are authoritative for deciding whether the
-     * asserted email may be trusted to match an existing dotCMS account. Browser-flow
-     * callers must enforce that the userinfo subject equals the id_token subject before
-     * calling this; the exchange flow passes the verified claims as {@code userInfo}.
+     * Variant that also accepts the verified id_token claim set (OIDC). Those claims, not
+     * the unsigned userinfo response, decide whether an IdP with no subject-style claim can
+     * fall back to a verified email as the user's stable identity. Browser-flow callers must
+     * enforce that the userinfo subject equals the id_token subject before calling this; the
+     * exchange flow passes the verified claims as {@code userInfo}. Existing accounts are
+     * matched the way SAML matches them; see {@link #resolveUser}.
      */
     public User resolveOrProvisionUser(final OAuthProvider provider,
                                        final String accessToken,
@@ -228,7 +229,7 @@ public class OAuthHelper {
                 : (config != null ? config.issuerUrl : null);
         final String externalId = namespacedSubject(provider, effectiveSubject, effectiveIssuer, hashUserId);
 
-        User user = resolveUser(email, emailVerified, externalId, provider, effectiveSubject, effectiveIssuer);
+        User user = resolveUser(email, externalId, provider, effectiveSubject, effectiveIssuer);
 
         if (user == null) {
             if (config != null && !config.autoProvision) {
@@ -255,29 +256,40 @@ public class OAuthHelper {
                 .getOrElse(user);
     }
 
+    /**
+     * Finds the dotCMS user for an OAuth/OIDC identity in the same order SAML uses
+     * ({@code SAMLHelper.resolveUser}): the issuer-namespaced subject first, then the email
+     * claim. The email is trusted without an {@code email_verified} claim, the same way SAML
+     * trusts the email in a signed assertion: it comes from an IdP an administrator
+     * configured, in a token whose signature and audience were already verified. Requiring
+     * {@code email_verified} broke linking for IdPs that never put it in the ID token, such
+     * as Okta custom authorization servers (#37691).
+     *
+     * <p>The trade-off matches SAML's: an IdP that lets users set their own email address
+     * can link into any dotCMS account with that address. Each email link is recorded in
+     * the security log.</p>
+     *
+     * @return the matching user, or {@code null} when neither the subject nor the email match
+     */
     private User resolveUser(final String email,
-                             final boolean emailVerified,
                              final String externalId,
                              final OAuthProvider provider,
                              final String subject,
                              final String issuer) {
-        // Email may only match an EXISTING account when the IdP asserts it is verified.
-        // Otherwise an IdP (or a user-editable profile) could claim an arbitrary address
-        // and take over an account it doesn't own — the issuer-namespaced subject is the
-        // trustworthy identity key, so an unverified email falls through to it instead.
-        if (emailVerified && UtilMethods.isSet(email)) {
+        if (UtilMethods.isSet(externalId)) {
+            for (final String candidate : externalIdCandidates(externalId, provider, subject, issuer)) {
+                final User u = Try.of(() -> APILocator.getUserAPI().loadUserById(candidate)).getOrNull();
+                if (u != null) {
+                    return u;
+                }
+            }
+        }
+        if (UtilMethods.isSet(email)) {
             final User u = Try.of(() -> APILocator.getUserAPI().loadByUserByEmail(email, APILocator.systemUser(), false))
                     .getOrNull();
             if (u != null) {
-                return u;
-            }
-        }
-        if (!UtilMethods.isSet(externalId)) {
-            return null;
-        }
-        for (final String candidate : externalIdCandidates(externalId, provider, subject, issuer)) {
-            final User u = Try.of(() -> APILocator.getUserAPI().loadUserById(candidate)).getOrNull();
-            if (u != null) {
+                SecurityLogger.logInfo(OAuthHelper.class, "OAuth identity from issuer '" + issuer
+                        + "' linked to existing user " + u.getUserId() + " by email");
                 return u;
             }
         }
