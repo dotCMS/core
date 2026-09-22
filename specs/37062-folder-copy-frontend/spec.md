@@ -65,8 +65,15 @@ author. A folder is never identified by a path to somewhere else, only by its ow
 
 - Q: The action duplicates in place rather than copying to a chosen location. Is it labelled "Copy"? → A: No. It is labelled as a duplication. "Copy" sets up an expectation of choosing a destination, or of a paste step that never comes, and the label is the only thing standing between the author and that expectation. See FR-002 and D-002.
 - Q: Does duplicating require a confirmation, as deleting does? → A: No. Deleting confirms because it is permanent and recursive; duplicating creates something the author can simply delete. The bulk action still passes through the existing preview step every bulk action uses, because that is where the author sees what will be acted on and presses the button, but it carries no warning language. The single-folder action runs directly.
-- Q: The author selects six folders and may duplicate only four. Does the action submit four or six? → A: Six. The client does not filter a selection by its own reading of rights; the two the server refuses come back as per-folder permission failures. The action is withheld only when the author can duplicate none of them. This follows the position bulk delete reached, for the same reason: silently shrinking what the author asked for is worse than reporting the refusal.
-- Q: Does a running duplication block other Content Drive actions? → A: No. It follows the existing guard unchanged, which refuses a repeat of the same operation on the same items and nothing wider. Unrelated actions and duplications of other folders run alongside it. Unlike delete, overlapping duplications are not refused by the server either, because two duplications of the same folder cannot harm each other (backend FR-033).
+- Q: The author selects six folders and may duplicate only four. Does the action submit four or six? → A: Six. *(**Superseded 2026-09-22**, see the next session. The answer is now four, and the count says four. The reasoning below was borrowed from bulk delete without noticing that it rests on delete being destructive, which duplication is not.)* The client does not filter a selection by its own reading of rights; the two the server refuses come back as per-folder permission failures. The action is withheld only when the author can duplicate none of them. This follows the position bulk delete reached, for the same reason: silently shrinking what the author asked for is worse than reporting the refusal.
+- Q: Does a running duplication block other Content Drive actions? → A: No. *(Unchanged.)* It follows the existing guard unchanged, which refuses a repeat of the same operation on the same items and nothing wider. Unrelated actions and duplications of other folders run alongside it. Unlike delete, overlapping duplications are not refused by the server either, because two duplications of the same folder cannot harm each other (backend FR-033).
+
+### Session 2026-09-22
+
+- Q: The action center already works out which items an action applies to and acts only on those. Should duplication follow that, or submit the whole selection? → A: Follow it. The action acts on the folders the author may duplicate and states how many of the selection that is. Bulk delete's opposite position rests on delete being destructive, and that reasoning does not carry to an operation that destroys nothing. The count is what keeps the narrowing honest. Supersedes the third answer in the previous session. See FR-005a and D-006.
+- Q: If the author cannot add children to the folder they are browsing, can they duplicate anything in it? → A: No, and the action is not offered at all. Every duplicate in the selection lands in that folder, so every one would be refused. This became checkable only once the destination was dropped: the target parent is now the folder Content Drive already has open, along with its rights. See FR-005 and D-006a.
+- Q: With a search or filter applied the selection can span several parents. Does the add-children gate still apply? → A: No. There is no single folder being browsed, so there is nothing to check against, and the server's per-folder refusals report it instead. See FR-005b.
+- Q: Nothing appears in the listing while a duplication runs, because the new folders do not exist yet. How is the author kept informed? → A: The same way bulk upload does it, which has the same problem and solved it already: no rows to mark, so a background status and a completion report carry the whole story. What that looks like is a plan question, not a specification one. See FR-012 and the reporting requirements.
 
 ---
 
@@ -212,18 +219,23 @@ else.
 that fails is informative rather than broken. It is still worth doing: offering an action that can
 only fail teaches authors to distrust the interface.
 
-**Independent Test**: With an author who may duplicate none of the selected folders, confirm the
-action is unavailable; with one who may duplicate some, confirm it is offered and acts on all of
-them.
+**Independent Test**: As an author who cannot add children to the folder being browsed, confirm the
+action is not offered at all; as one who may duplicate four of six selected folders, confirm it is
+offered, says it will act on four, and acts on four.
 
 **Acceptance Scenarios**:
 
-1. **Given** a selection where the author may duplicate none of the folders, **When** the action
-   list opens, **Then** the action is not available.
-2. **Given** a selection where the author may duplicate some, **When** the action is used, **Then**
-   every selected folder is submitted and the refusals come back per folder.
-3. **Given** a folder whose rights the client cannot determine, **When** the action list opens,
-   **Then** the action remains available and the server's refusal is what reports it.
+1. **Given** an author who cannot add children to the folder being browsed, **When** the action list
+   opens, **Then** the action is not available, whatever is selected.
+2. **Given** a selection where the author may duplicate some of the folders, **When** the action is
+   used, **Then** it acts on those and states how many of the selection that is, so the narrowing is
+   visible before it happens rather than reported afterwards.
+3. **Given** a folder whose rights the client cannot determine, **When** the action is used,
+   **Then** that folder is submitted rather than withheld, and the server's refusal is what reports
+   it.
+4. **Given** a search or filter is applied so the selection spans several parents, **When** the
+   action list opens, **Then** the action is offered and the add-children gate is not applied,
+   because there is no single folder to apply it against.
 
 ---
 
@@ -231,8 +243,15 @@ them.
 
 - **The selection mixes folders and files.** The action acts on the folders and says so; the files
   are not part of this run.
-- **The selection mixes folders the author may duplicate with folders they may not.** All are
-  submitted; the refused ones come back as per-folder permission failures.
+- **The selection mixes folders the author may duplicate with folders they may not.** The action
+  acts on the ones they may and says how many that is, in the count it already shows. Folders whose
+  rights the client cannot determine are submitted rather than withheld, and the server refuses
+  those per folder.
+- **The author cannot add children to the folder they are browsing.** The action is not offered at
+  all, because every duplicate in the selection would land there and every one would be refused.
+- **A search or filter is applied, so the selection spans several parents.** There is no single
+  folder being browsed, so the add-children gate does not apply and the server's per-folder refusals
+  are what report it.
 - **A parent and its own child are both selected.** Only the parent is duplicated; the child comes
   back as skipped, because the parent's duplicate already contains it. The report must present this
   as covered rather than as a failure, and the wording must not say the parent removed the child,
@@ -272,18 +291,32 @@ them.
 - **FR-004**: The action MUST act on the folders in the selection only. A selection containing files
   as well MUST still offer it, acting on the folders, and MUST state how many items it will act on
   rather than implying it covers the whole selection.
-- **FR-005**: The action MUST be unavailable when the author is known to have no right to duplicate
-  **any** of the selected folders, judged from the rights carried with the folders in the listing.
-  This is the whole-selection case only.
-- **FR-005a**: The client MUST NOT drop folders from a submission based on its own reading of
-  rights. A selection the author may only partly duplicate MUST be submitted whole and the refusals
-  reported per folder, rather than quietly omitted.
-- **FR-005b**: Where the author's rights over a folder are unknown, the action MUST remain available
-  and the server's per-folder refusal MUST be what reports it. The client MUST NOT guess a refusal.
-  The rights the operation needs are reading the folder and adding to its **parent**, and the row
-  carries the folder's own rights rather than its parent's, so the client can check one of the two
-  at most. The gate is a courtesy that removes obviously futile submissions, not a prediction
-  (backend FR-012c).
+- **FR-005**: The action MUST be unavailable outright when the author cannot add children to **the
+  folder they are browsing**, because that is where every duplicate in the selection would land.
+  This is one check for the whole selection rather than one per folder, and it is a check the client
+  can actually make: duplicating in place means the target parent is the folder currently open in
+  the listing, which Content Drive already holds along with its rights. Offering an action that can
+  only fail for every folder in the selection is the case worth preventing outright.
+- **FR-005a**: The action MUST act only on the folders in the selection the author may duplicate,
+  and MUST state how many of the selection that is (FR-004). It follows the eligibility behaviour
+  the other multi-selection actions already have rather than inventing a second one.
+
+**This reverses an earlier draft**, which required the selection to be submitted whole so the
+server's refusals could be reported per folder. That position is bulk delete's, and it was taken
+there because silently shrinking a **destructive** action is worse than reporting a refusal: an
+author who believes six folders were deleted and finds four is in a different situation from one who
+believes six were duplicated. Duplication destroys nothing, so the argument does not carry over, and
+consistency with the other actions in the same menu is worth more. The filtering is **never
+silent**: the count in FR-004 is what keeps it honest, and an action reading "4 of 6" tells the
+author as much as a report of two refusals would, sooner.
+- **FR-005b**: Where the selection spans more than one parent, which a search or a filter makes
+  possible, the client MUST NOT gate on FR-005 and MUST leave the refusals to the server. There is
+  no single folder being browsed in that case, so there is nothing to check add-children against,
+  and a gate built on the wrong parent is worse than no gate.
+- **FR-005c**: Where the author's rights over an individual folder are unknown, the action MUST
+  remain available for it and the server's per-folder refusal MUST be what reports it. The client
+  MUST NOT guess a refusal. Filtering under FR-005a acts on rights the client **has**, never on
+  their absence, and the per-folder outcome remains the only authority (backend FR-012c).
 - **FR-006**: Where a submission is refused for carrying more folders than the configured maximum,
   the client MUST explain the refusal in terms of that limit, using the number the server reports
   with the refusal. The client MUST NOT hold its own copy of the maximum, and MUST NOT gate the
@@ -308,6 +341,12 @@ them.
 
 #### While a run is in flight
 
+- **FR-011a**: While a run is in flight there is **nothing in the listing to point at**, because the
+  folders it is creating do not exist yet and the ones it is reading are unchanged. This is bulk
+  upload's situation rather than bulk delete's, and it MUST be handled the way upload already
+  handles it: a background status while the work runs, and a report when it ends. There is no row to
+  mark and no row to grey out, so the interface MUST NOT invent one. How that status is presented is
+  a plan decision, not a requirement of this document.
 - **FR-012**: Progress MUST be visible while a run is in flight, and MUST be rendered as an
   **indeterminate** indicator rather than as a proportion. The server counts completed top-level
   folders and nothing finer, so a proportion would invent precision that does not exist and would
@@ -599,12 +638,21 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
 - **D-005: Cancellation is not exposed in this version.** The server provides it and the contract
   fixes its wording; the surface for it is expected to be the background task manager (#33331),
   where bulk upload's stop also lives. A known asymmetry rather than an oversight.
-- **D-006: The selection is submitted whole, not pre-filtered** *(clarification 2026-09-21,
-  FR-005a)*. Following the position bulk delete reached, and for the same reason: shrinking what the
-  author asked for behind their back is worse than reporting the refusal, and the client's reading
-  of rights is the less reliable of the two. It matters slightly less here, because duplication
-  refuses less often, and slightly more, because the client can only see one of the two rights
-  involved.
+- **D-006: The selection is filtered to what the author may duplicate, and the count says so**
+  *(developer decision, 2026-09-22; FR-004, FR-005a)*. An earlier draft submitted the selection
+  whole and let the server refuse, which is bulk delete's position. That position rests on delete
+  being destructive: shrinking a destructive action behind the author's back leaves them believing
+  folders are gone that are not. Duplication destroys nothing, so the argument does not transfer,
+  and behaving like every other action in the same menu is worth more than matching a sibling whose
+  reason does not apply. The filtering is kept honest by the count rather than by a later report.
+- **D-006a: Add-children on the folder being browsed gates the whole action** *(developer decision,
+  2026-09-22; FR-005)*. This became checkable only because of duplicate-in-place. While a
+  destination was still in the design the target parent was unknown to the client, and an earlier
+  draft therefore recorded that the client could see at most one of the two rights the operation
+  needs. With the duplicate landing in the folder the author is standing in, the client holds that
+  folder and its rights, so the second check is available for free and the action can be withheld
+  before anything is submitted. The exception is a selection spanning several parents, which a
+  search or filter allows and which leaves no single folder to check (FR-005b).
 - **D-007: The single-folder action uses the same asynchronous submission as the bulk one**
   *(FR-003, backend D-010)*. There is no synchronous single-folder endpoint to call. One submission
   path means one outcome shape, one error mapping and one set of copy.

@@ -334,9 +334,13 @@ per-folder outcome is still readable and a durable notification was addressed to
   to read, and because a reader who assumes the two entry checks govern the whole operation will be
   wrong about what the feature does.
 - **FR-012c**: The contract MUST NOT imply that a client-side permission check can predict the
-  outcome. The client can see a folder's own rights but not its parent's, so a gate built on what
-  the listing carries is a courtesy that reduces obviously futile submissions, never a guarantee.
-  The per-folder outcome is the only authority.
+  outcome, and the server MUST enforce both rights regardless of what the client checked. Under
+  duplicate-in-place the client is better placed than bulk delete's, because the target parent is
+  the folder it is already browsing, so it can see the add-children right as well as each folder's
+  own. That makes its gate a good filter rather than a guess, and it is still not a guarantee:
+  rights can change between the check and the run, a selection reached through a search can span
+  parents the client never resolved, and a folder's own rights may be unknown to the listing. The
+  per-folder outcome remains the only authority.
 - **FR-013**: A submitted path that does not resolve to a folder, whether the folder is gone, the
   path names a file, or the path is malformed, MUST be recorded as that entry's own failure,
   distinguishable from a permission refusal.
