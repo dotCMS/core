@@ -12,6 +12,7 @@ devDependencies.
 It is a coincidence, not a design guarantee. A third copied asset, or one the bundler
 inlines instead of copying, would break it. See research.md R6.
 """
+
 from __future__ import annotations
 
 import json
@@ -29,7 +30,9 @@ EXPECTED_COPIED_FROM_NODE_MODULES = {
 
 
 def _copied_asset_inputs() -> set[str]:
-    assets = json.loads(PROJECT_JSON.read_text())["targets"]["build"]["options"]["assets"]
+    assets = json.loads(PROJECT_JSON.read_text())["targets"]["build"]["options"][
+        "assets"
+    ]
     return {
         a["input"]
         for a in assets
@@ -53,5 +56,7 @@ def test_each_copied_asset_is_declared_somewhere(package):
     """A copied asset that is in no manifest at all would be invisible to both sources."""
     name = package.removeprefix("node_modules/")
     manifest = json.loads((REPO_ROOT / "core-web" / "package.json").read_text())
-    declared = set(manifest.get("dependencies", {})) | set(manifest.get("devDependencies", {}))
+    declared = set(manifest.get("dependencies", {})) | set(
+        manifest.get("devDependencies", {})
+    )
     assert name in declared, f"{name} is copied into the build but declared nowhere"

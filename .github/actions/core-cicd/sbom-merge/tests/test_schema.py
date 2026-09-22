@@ -1,4 +1,5 @@
 """US3 — the published document must stay readable by existing consumers (FR-006, SC-005)."""
+
 from __future__ import annotations
 
 import pytest
@@ -14,15 +15,15 @@ def validator():
     return _validator()
 
 
-def test_merged_document_validates_against_the_schema(validator, image_doc, frontend_doc):
+def test_merged_document_validates_against_the_schema(
+    validator, image_doc, frontend_doc
+):
     """SC-005 — a document that does not validate is not publishable, no matter how
     complete its inventory is."""
     merged = merge(image_doc, frontend_doc)
     errors = sorted(validator.iter_errors(merged), key=lambda e: e.path)
 
-    assert not errors, "\n".join(
-        f"{list(e.path)}: {e.message}" for e in errors[:5]
-    )
+    assert not errors, "\n".join(f"{list(e.path)}: {e.message}" for e in errors[:5])
 
 
 def test_degraded_document_also_validates(validator, image_doc):
@@ -41,7 +42,9 @@ def test_spec_version_is_held_at_the_published_value(image_doc, frontend_doc):
     assert merged["bomFormat"] == "CycloneDX"
 
 
-def test_the_validator_actually_rejects_an_invalid_document(validator, image_doc, frontend_doc):
+def test_the_validator_actually_rejects_an_invalid_document(
+    validator, image_doc, frontend_doc
+):
     """Guards the three tests above.
 
     A misconfigured validator — unresolved $refs, a schema that failed to load — reports

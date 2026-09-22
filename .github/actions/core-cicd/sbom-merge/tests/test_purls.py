@@ -1,4 +1,5 @@
 """US1 — FR-003 / SC-004: package URLs are the CVE-correlation handle."""
+
 from __future__ import annotations
 
 import re
@@ -14,7 +15,8 @@ def test_every_npm_component_carries_a_purl(image_doc, frontend_doc):
     merged = merge(image_doc, frontend_doc)
 
     npm_like = [
-        c for c in merged["components"]
+        c
+        for c in merged["components"]
         if NPM_PURL.match(c.get("purl") or "") or _looks_like_npm(c)
     ]
     assert npm_like, "fixture problem: no npm components present"

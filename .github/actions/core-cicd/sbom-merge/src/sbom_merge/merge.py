@@ -8,6 +8,7 @@ dotCMS ships tinymce three times — 6.8.3 from core-web's tree, 6.8.6 copied in
 7.2.1 vendored under the legacy webapp for the Dojo editor. A name-keyed dedupe collapses those
 into one and misreports the CVE surface for two different editors.
 """
+
 from __future__ import annotations
 
 from typing import Iterable
@@ -81,7 +82,9 @@ def _merge_components(
     for component in kept:
         by_identity.setdefault(_identity(component), []).append(component)
 
-    sources: dict[int, list[str]] = {id(component): [SOURCE_IMAGE] for component in kept}
+    sources: dict[int, list[str]] = {
+        id(component): [SOURCE_IMAGE] for component in kept
+    }
 
     seen_in_frontend: set[tuple] = set()
 
@@ -140,8 +143,7 @@ def _fill_missing_fields(target: dict, other: dict) -> None:
 
 def _with_sources(component: dict, sources: list[str]) -> dict:
     existing = [
-        p for p in component.get("properties", [])
-        if p.get("name") != SOURCE_PROPERTY
+        p for p in component.get("properties", []) if p.get("name") != SOURCE_PROPERTY
     ]
     component["properties"] = existing + [
         {"name": SOURCE_PROPERTY, "value": source} for source in sources
@@ -167,7 +169,10 @@ def _assign_unique_refs(components: list[dict]) -> list[dict]:
         ref = next((c for c in candidates if c and c not in used), None)
 
         if ref is None:
-            base = component.get("purl") or f"{component.get('name')}@{component.get('version')}"
+            base = (
+                component.get("purl")
+                or f"{component.get('name')}@{component.get('version')}"
+            )
             suffix = 2
             while f"{base}#{suffix}" in used:
                 suffix += 1
@@ -179,7 +184,9 @@ def _assign_unique_refs(components: list[dict]) -> list[dict]:
     return components
 
 
-def _merge_metadata(image_meta: dict, frontend_meta: dict, *, frontend_covered: bool) -> dict:
+def _merge_metadata(
+    image_meta: dict, frontend_meta: dict, *, frontend_covered: bool
+) -> dict:
     """Rule 6: one coherent header describing one product release.
 
     The image document's metadata describes the released artifact, so it is the base. The
@@ -194,8 +201,7 @@ def _merge_metadata(image_meta: dict, frontend_meta: dict, *, frontend_covered: 
         metadata["tools"] = tools
 
     properties = [
-        p for p in metadata.get("properties", [])
-        if p.get("name") != COVERAGE_PROPERTY
+        p for p in metadata.get("properties", []) if p.get("name") != COVERAGE_PROPERTY
     ]
     properties.append(
         {"name": COVERAGE_PROPERTY, "value": "true" if frontend_covered else "false"}
@@ -217,8 +223,8 @@ def _combined_tools(image_tools, frontend_tools):
         return image_tools + frontend_tools
     if isinstance(image_tools, dict) and isinstance(frontend_tools, dict):
         combined = dict(image_tools)
-        combined["components"] = (
-            image_tools.get("components", []) + frontend_tools.get("components", [])
+        combined["components"] = image_tools.get("components", []) + frontend_tools.get(
+            "components", []
         )
         return combined
     return image_tools if image_tools is not None else frontend_tools

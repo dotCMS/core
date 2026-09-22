@@ -1,4 +1,5 @@
 """US1 — reconciliation rule 5: bom-ref uniqueness."""
+
 from __future__ import annotations
 
 from collections import Counter
@@ -20,7 +21,9 @@ def test_bom_ref_collision_rewrites_rather_than_drops(image_doc, frontend_doc):
     """Rule 5 — the resolution for a collision is to rewrite a ref, never to drop a
     component. Two DIFFERENT components sharing a bom-ref must both survive."""
     collided = dict(image_doc)
-    clashing = [dict(c, **{"bom-ref": "shared-ref"}) for c in image_doc["components"][:1]]
+    clashing = [
+        dict(c, **{"bom-ref": "shared-ref"}) for c in image_doc["components"][:1]
+    ]
     collided["components"] = clashing + image_doc["components"][1:]
 
     frontend_clashing = dict(frontend_doc)

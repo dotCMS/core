@@ -1,4 +1,5 @@
 """US1 — reconciliation rules 3 and 4, and the SC-009 invariant."""
+
 from __future__ import annotations
 
 from conftest import names_versions
@@ -16,9 +17,16 @@ def test_image_only_components_are_retained(image_doc, frontend_doc):
     merged = merge(image_doc, frontend_doc)
     merged_nv = names_versions(merged)
 
-    for name, version in [("tinymce", "7.2.1"), ("dojo", "1.17.2"), ("dijit", "1.17.2"),
-                          ("dojox", "1.17.2"), ("edit-content-bridge", "1.0.0")]:
-        assert (name, version) in merged_nv, f"{name}@{version} is image-only and was dropped"
+    for name, version in [
+        ("tinymce", "7.2.1"),
+        ("dojo", "1.17.2"),
+        ("dijit", "1.17.2"),
+        ("dojox", "1.17.2"),
+        ("edit-content-bridge", "1.0.0"),
+    ]:
+        assert (name, version) in merged_nv, (
+            f"{name}@{version} is image-only and was dropped"
+        )
 
 
 def test_frontend_only_components_are_added(image_doc, frontend_doc):
@@ -48,12 +56,24 @@ def test_non_npm_components_pass_through_untouched(image_doc, frontend_doc):
     merged = merge(image_doc, frontend_doc)
 
     for ecosystem in ("pkg:maven/", "pkg:deb/"):
-        before = [c for c in image_doc["components"] if (c.get("purl") or "").startswith(ecosystem)]
-        after = [c for c in merged["components"] if (c.get("purl") or "").startswith(ecosystem)]
-        assert len(after) == len(before), f"{ecosystem} count changed: {len(before)} -> {len(after)}"
+        before = [
+            c
+            for c in image_doc["components"]
+            if (c.get("purl") or "").startswith(ecosystem)
+        ]
+        after = [
+            c
+            for c in merged["components"]
+            if (c.get("purl") or "").startswith(ecosystem)
+        ]
+        assert len(after) == len(before), (
+            f"{ecosystem} count changed: {len(before)} -> {len(after)}"
+        )
 
 
-def test_duplicate_entries_within_the_image_document_are_preserved(image_doc, frontend_doc):
+def test_duplicate_entries_within_the_image_document_are_preserved(
+    image_doc, frontend_doc
+):
     """Rule 7 / SC-006 — reconciliation happens BETWEEN sources, never within one.
 
     Syft legitimately emits the same purl twice when it finds the same jar at two paths in
@@ -68,15 +88,25 @@ def test_duplicate_entries_within_the_image_document_are_preserved(image_doc, fr
     merged = merge(image_doc, frontend_doc)
 
     for ecosystem in ("pkg:maven/", "pkg:deb/"):
-        before = [c for c in image_doc["components"] if (c.get("purl") or "").startswith(ecosystem)]
-        after = [c for c in merged["components"] if (c.get("purl") or "").startswith(ecosystem)]
+        before = [
+            c
+            for c in image_doc["components"]
+            if (c.get("purl") or "").startswith(ecosystem)
+        ]
+        after = [
+            c
+            for c in merged["components"]
+            if (c.get("purl") or "").startswith(ecosystem)
+        ]
         assert len(after) == len(before), (
             f"{ecosystem}: {len(before)} -> {len(after)}; intra-source duplicates were collapsed"
         )
 
     duplicated_purls = {
-        c["purl"] for c in image_doc["components"]
-        if c.get("purl") and sum(1 for o in image_doc["components"] if o.get("purl") == c["purl"]) > 1
+        c["purl"]
+        for c in image_doc["components"]
+        if c.get("purl")
+        and sum(1 for o in image_doc["components"] if o.get("purl") == c["purl"]) > 1
     }
     assert duplicated_purls, "fixture problem: no intra-source duplicate to assert on"
 

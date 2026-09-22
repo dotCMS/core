@@ -11,6 +11,7 @@ What IS testable here, and what actually protects the story:
   - a component whose licence is unknown stays in the document;
   - the generation step is not configured in the one way that silently zeroes licences.
 """
+
 from __future__ import annotations
 
 import re
@@ -23,7 +24,11 @@ from sbom_merge.merge import merge
 
 ACTION_YML = (
     Path(__file__).resolve().parents[5]
-    / ".github" / "actions" / "legacy-release" / "sbom-generator" / "action.yml"
+    / ".github"
+    / "actions"
+    / "legacy-release"
+    / "sbom-generator"
+    / "action.yml"
 )
 
 
@@ -65,10 +70,14 @@ def test_merge_preserves_every_licence_it_was_given(image_doc, licensed_frontend
 
     for key, licences in before.items():
         assert key in after, f"{key} lost its licence entirely"
-        assert after[key] == licences, f"{key} licence changed: {licences} -> {after[key]}"
+        assert after[key] == licences, (
+            f"{key} licence changed: {licences} -> {after[key]}"
+        )
 
 
-def test_licence_from_frontend_fills_a_gap_in_the_image_scan(image_doc, licensed_frontend_doc):
+def test_licence_from_frontend_fills_a_gap_in_the_image_scan(
+    image_doc, licensed_frontend_doc
+):
     """The image scan often knows a package exists without resolving its licence. When both
     sources describe the same component, the merge must take the licence rather than keep
     the emptier entry — that is half the point of merging instead of publishing two files."""
@@ -80,10 +89,13 @@ def test_licence_from_frontend_fills_a_gap_in_the_image_scan(image_doc, licensed
 
     merged = merge(image_with_gap, licensed_frontend_doc)
     entry = next(
-        c for c in merged["components"]
+        c
+        for c in merged["components"]
         if (c["name"], c["version"]) == (unlicensed["name"], unlicensed["version"])
     )
-    assert entry.get("licenses"), "the frontend licence did not fill the image scan's gap"
+    assert entry.get("licenses"), (
+        "the frontend licence did not fill the image scan's gap"
+    )
 
 
 def test_component_without_a_licence_is_still_present(licensed_frontend_doc, image_doc):
@@ -100,8 +112,12 @@ def test_component_without_a_licence_is_still_present(licensed_frontend_doc, ima
     for component in unlicensed:
         key = (component["name"], component["version"])
         assert key in present, f"{key} was dropped for having no licence"
-        entry = next(c for c in merged["components"] if (c["name"], c["version"]) == key)
-        assert entry.get("purl"), f"{key} survived but lost its purl, so it cannot be looked up"
+        entry = next(
+            c for c in merged["components"] if (c["name"], c["version"]) == key
+        )
+        assert entry.get("purl"), (
+            f"{key} survived but lost its purl, so it cannot be looked up"
+        )
 
 
 def test_generation_step_does_not_use_lockfile_only():
@@ -123,7 +139,9 @@ def test_generation_step_populates_the_store_before_generating():
     fetch = scripts.find("pnpm fetch")
     sbom = scripts.find("pnpm sbom")
 
-    assert fetch != -1, "no `pnpm fetch` step: the store will be empty and licences will be missing"
+    assert fetch != -1, (
+        "no `pnpm fetch` step: the store will be empty and licences will be missing"
+    )
     assert sbom != -1, "no `pnpm sbom` step"
     assert fetch < sbom, "`pnpm fetch` must run before `pnpm sbom`"
 

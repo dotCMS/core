@@ -2,6 +2,7 @@
 
 The governing rule: components are keyed on (name, version), never on name alone.
 """
+
 from __future__ import annotations
 
 from conftest import names_versions
@@ -26,7 +27,9 @@ def test_same_name_different_versions_all_retained(image_doc, frontend_doc):
     these and misreports the CVE surface for two different editors.
     """
     merged = merge(image_doc, frontend_doc)
-    tinymce_versions = {c["version"] for c in merged["components"] if c["name"] == "tinymce"}
+    tinymce_versions = {
+        c["version"] for c in merged["components"] if c["name"] == "tinymce"
+    }
 
     assert tinymce_versions == {"6.8.3", "6.8.6", "7.2.1"}, (
         f"expected all three tinymce copies, got {sorted(tinymce_versions)}"
@@ -40,12 +43,16 @@ def test_multiple_versions_within_one_source_retained(frontend_doc, image_doc):
     within a source is as wrong as deduplicating across sources.
     """
     merged = merge(image_doc, frontend_doc)
-    tslib_versions = {c["version"] for c in merged["components"] if c["name"] == "tslib"}
+    tslib_versions = {
+        c["version"] for c in merged["components"] if c["name"] == "tslib"
+    }
 
     assert tslib_versions == {"1.14.1", "2.3.0", "2.8.1"}
 
 
-def test_exact_duplicate_appears_once_with_both_sources_recorded(image_doc, frontend_doc):
+def test_exact_duplicate_appears_once_with_both_sources_recorded(
+    image_doc, frontend_doc
+):
     """Rule 2 / FR-014 — same name AND version from both sources collapses to one entry,
     but the fact that both found it must survive."""
     # tinymce@6.8.3 exists only in the frontend fixture; inject it into the image side so
@@ -56,7 +63,11 @@ def test_exact_duplicate_appears_once_with_both_sources_recorded(image_doc, fron
     ]
 
     merged = merge(collided, frontend_doc)
-    entries = [c for c in merged["components"] if (c["name"], c["version"]) == ("tinymce", "6.8.3")]
+    entries = [
+        c
+        for c in merged["components"]
+        if (c["name"], c["version"]) == ("tinymce", "6.8.3")
+    ]
 
     assert len(entries) == 1, f"expected exactly one entry, got {len(entries)}"
     assert _sources_of(entries[0]) >= {"image", "frontend"}, (

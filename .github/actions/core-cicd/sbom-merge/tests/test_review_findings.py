@@ -3,6 +3,7 @@
 Grouped in one file because they share a theme: each is a case where the safety net had a
 hole rather than the happy path being wrong.
 """
+
 from __future__ import annotations
 
 import json
@@ -18,6 +19,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 # --- Non-object JSON must not crash the process -----------------------------------------
 
+
 @pytest.mark.parametrize("payload", ["[]", "null", '"a string"', "42"])
 def test_non_object_json_exits_with_the_documented_code(tmp_path, payload):
     """Valid JSON that is not an object used to reach `.get()` and raise AttributeError,
@@ -26,14 +28,23 @@ def test_non_object_json_exits_with_the_documented_code(tmp_path, payload):
     broken = tmp_path / "broken.json"
     broken.write_text(payload)
 
-    assert main([
-        "--image", str(broken),
-        "--frontend", str(FIXTURES / "pnpm-sample.json"),
-        "--output", str(tmp_path / "out.json"),
-    ]) == EXIT_INVALID_INPUT
+    assert (
+        main(
+            [
+                "--image",
+                str(broken),
+                "--frontend",
+                str(FIXTURES / "pnpm-sample.json"),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == EXIT_INVALID_INPUT
+    )
 
 
 # --- A corrupt frontend must degrade, not take the release down -------------------------
+
 
 def test_malformed_frontend_degrades_rather_than_aborting(tmp_path, capsys):
     """`pnpm sbom > file` creates the file before the command runs, so a mid-stream failure
@@ -42,11 +53,19 @@ def test_malformed_frontend_degrades_rather_than_aborting(tmp_path, capsys):
     partial = tmp_path / "partial.json"
     partial.write_text('{"bomFormat": "CycloneDX", "specVersion": "1.6", "compo')
 
-    assert main([
-        "--image", str(FIXTURES / "syft-sample.json"),
-        "--frontend", str(partial),
-        "--output", str(tmp_path / "out.json"),
-    ]) == EXIT_OK
+    assert (
+        main(
+            [
+                "--image",
+                str(FIXTURES / "syft-sample.json"),
+                "--frontend",
+                str(partial),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == EXIT_OK
+    )
 
     captured = capsys.readouterr()
     assert f"{COVERAGE_MARKER}false" in captured.out
@@ -61,15 +80,24 @@ def test_malformed_frontend_still_fails_when_asked_to(tmp_path):
     partial = tmp_path / "partial.json"
     partial.write_text("{oh no")
 
-    assert main([
-        "--image", str(FIXTURES / "syft-sample.json"),
-        "--frontend", str(partial),
-        "--output", str(tmp_path / "out.json"),
-        "--fail-on-missing-frontend",
-    ]) == EXIT_INVALID_INPUT
+    assert (
+        main(
+            [
+                "--image",
+                str(FIXTURES / "syft-sample.json"),
+                "--frontend",
+                str(partial),
+                "--output",
+                str(tmp_path / "out.json"),
+                "--fail-on-missing-frontend",
+            ]
+        )
+        == EXIT_INVALID_INPUT
+    )
 
 
 # --- The loss guard has to count, not just check membership -----------------------------
+
 
 def test_loss_guard_detects_a_dropped_duplicate(image_doc, frontend_doc):
     """SC-009's guard keyed on a SET of (name, version), so losing one of two identical
@@ -106,6 +134,7 @@ def test_loss_guard_detects_a_dropped_duplicate(image_doc, frontend_doc):
 
 # --- Intra-source duplicates collapse on the frontend side too --------------------------
 
+
 def test_duplicates_within_the_frontend_document_are_preserved(image_doc, frontend_doc):
     """The stated rule is that reconciliation happens BETWEEN sources, never within one.
     That was enforced for the image side but not the frontend side, where a second component
@@ -114,13 +143,18 @@ def test_duplicates_within_the_frontend_document_are_preserved(image_doc, fronte
     A pnpm lockfile lists each name@version once, so this has no practical impact today —
     but a rule enforced on one side only is not the rule the model claims."""
     doubled = dict(frontend_doc)
-    doubled["components"] = frontend_doc["components"] + [dict(frontend_doc["components"][0])]
+    doubled["components"] = frontend_doc["components"] + [
+        dict(frontend_doc["components"][0])
+    ]
 
     merged = merge(image_doc, doubled)
 
     target = frontend_doc["components"][0]
     count = sum(
-        1 for c in merged["components"]
+        1
+        for c in merged["components"]
         if (c["name"], c["version"]) == (target["name"], target["version"])
     )
-    assert count == 2, f"intra-frontend duplicate collapsed: expected 2 entries, got {count}"
+    assert count == 2, (
+        f"intra-frontend duplicate collapsed: expected 2 entries, got {count}"
+    )

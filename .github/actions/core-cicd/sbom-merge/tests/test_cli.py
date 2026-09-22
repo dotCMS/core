@@ -2,6 +2,7 @@
 
 Contract: specs/37575-core-web-npm-sbom/contracts/sbom-merge-cli.md
 """
+
 from __future__ import annotations
 
 import json
@@ -20,11 +21,16 @@ from sbom_merge.cli import (
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
-def _argv(tmp_path: Path, *, image="syft-sample.json", frontend="pnpm-sample.json", extra=()):
+def _argv(
+    tmp_path: Path, *, image="syft-sample.json", frontend="pnpm-sample.json", extra=()
+):
     return [
-        "--image", str(FIXTURES / image) if image else "/nonexistent-image.json",
-        "--frontend", str(FIXTURES / frontend) if frontend else "/nonexistent-frontend.json",
-        "--output", str(tmp_path / "merged.json"),
+        "--image",
+        str(FIXTURES / image) if image else "/nonexistent-image.json",
+        "--frontend",
+        str(FIXTURES / frontend) if frontend else "/nonexistent-frontend.json",
+        "--output",
+        str(tmp_path / "merged.json"),
         *extra,
     ]
 
@@ -51,9 +57,10 @@ def test_missing_frontend_degrades_rather_than_failing(tmp_path, capsys):
 
 
 def test_fail_on_missing_frontend_turns_degradation_into_an_error(tmp_path):
-    assert main(
-        _argv(tmp_path, frontend=None, extra=("--fail-on-missing-frontend",))
-    ) == EXIT_INVALID_INPUT
+    assert (
+        main(_argv(tmp_path, frontend=None, extra=("--fail-on-missing-frontend",)))
+        == EXIT_INVALID_INPUT
+    )
 
 
 def test_missing_image_is_an_error_not_a_degradation(tmp_path):
@@ -66,11 +73,19 @@ def test_malformed_input_is_rejected(tmp_path, bad):
     broken = tmp_path / "broken.json"
     broken.write_text(bad)
 
-    assert main([
-        "--image", str(broken),
-        "--frontend", str(FIXTURES / "pnpm-sample.json"),
-        "--output", str(tmp_path / "out.json"),
-    ]) == EXIT_INVALID_INPUT
+    assert (
+        main(
+            [
+                "--image",
+                str(broken),
+                "--frontend",
+                str(FIXTURES / "pnpm-sample.json"),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == EXIT_INVALID_INPUT
+    )
 
 
 def test_mismatched_spec_version_is_rejected(tmp_path):
@@ -81,11 +96,19 @@ def test_mismatched_spec_version_is_rejected(tmp_path):
     wrong = tmp_path / "wrong.json"
     wrong.write_text(json.dumps(doc))
 
-    assert main([
-        "--image", str(FIXTURES / "syft-sample.json"),
-        "--frontend", str(wrong),
-        "--output", str(tmp_path / "out.json"),
-    ]) == EXIT_INVALID_INPUT
+    assert (
+        main(
+            [
+                "--image",
+                str(FIXTURES / "syft-sample.json"),
+                "--frontend",
+                str(wrong),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == EXIT_INVALID_INPUT
+    )
 
 
 def test_output_is_byte_identical_across_runs(tmp_path):
@@ -93,11 +116,19 @@ def test_output_is_byte_identical_across_runs(tmp_path):
     first, second = tmp_path / "a.json", tmp_path / "b.json"
 
     for out in (first, second):
-        assert main([
-            "--image", str(FIXTURES / "syft-sample.json"),
-            "--frontend", str(FIXTURES / "pnpm-sample.json"),
-            "--output", str(out),
-        ]) == EXIT_OK
+        assert (
+            main(
+                [
+                    "--image",
+                    str(FIXTURES / "syft-sample.json"),
+                    "--frontend",
+                    str(FIXTURES / "pnpm-sample.json"),
+                    "--output",
+                    str(out),
+                ]
+            )
+            == EXIT_OK
+        )
 
     assert first.read_bytes() == second.read_bytes()
 
@@ -109,11 +140,19 @@ def test_empty_frontend_document_is_treated_as_absent(tmp_path, capsys):
     empty = tmp_path / "empty.json"
     empty.write_text("")
 
-    assert main([
-        "--image", str(FIXTURES / "syft-sample.json"),
-        "--frontend", str(empty),
-        "--output", str(tmp_path / "out.json"),
-    ]) == EXIT_OK
+    assert (
+        main(
+            [
+                "--image",
+                str(FIXTURES / "syft-sample.json"),
+                "--frontend",
+                str(empty),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
+        == EXIT_OK
+    )
     assert f"{COVERAGE_MARKER}false" in capsys.readouterr().out
 
 
@@ -124,14 +163,24 @@ def test_schema_invalid_output_is_not_written(tmp_path):
     "the merge produced something unpublishable".
     """
     doc = json.loads((FIXTURES / "syft-sample.json").read_text())
-    doc.setdefault("metadata", {}).setdefault("component", {})["type"] = "not-a-real-type"
+    doc.setdefault("metadata", {}).setdefault("component", {})["type"] = (
+        "not-a-real-type"
+    )
     broken = tmp_path / "broken-meta.json"
     broken.write_text(json.dumps(doc))
 
     out = tmp_path / "out.json"
-    assert main([
-        "--image", str(broken),
-        "--frontend", str(FIXTURES / "pnpm-sample.json"),
-        "--output", str(out),
-    ]) == EXIT_SCHEMA_INVALID
+    assert (
+        main(
+            [
+                "--image",
+                str(broken),
+                "--frontend",
+                str(FIXTURES / "pnpm-sample.json"),
+                "--output",
+                str(out),
+            ]
+        )
+        == EXIT_SCHEMA_INVALID
+    )
     assert not out.exists(), "an unpublishable document was written anyway"

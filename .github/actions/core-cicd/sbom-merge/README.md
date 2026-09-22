@@ -66,6 +66,9 @@ The inventory is generated with `pnpm fetch` followed by `pnpm sbom --prod`. Bot
 ## Tests
 
 ```bash
+uv check --fix  # lint
+uv format 
+uv audit  # check for known security vulns in dependencies
 uv run pytest
 ```
 

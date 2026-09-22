@@ -3,6 +3,7 @@
 Argument surface and exit codes are fixed by
 specs/37575-core-web-npm-sbom/contracts/sbom-merge-cli.md.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -32,9 +33,15 @@ def build_parser() -> argparse.ArgumentParser:
         prog="sbom-merge",
         description="Merge a frontend npm CycloneDX inventory into a Syft image-scan SBOM.",
     )
-    parser.add_argument("--image", required=True, help="CycloneDX JSON from the Syft image scan")
-    parser.add_argument("--frontend", required=True, help="CycloneDX JSON from `pnpm sbom`")
-    parser.add_argument("--output", required=True, help="Destination for the merged document")
+    parser.add_argument(
+        "--image", required=True, help="CycloneDX JSON from the Syft image scan"
+    )
+    parser.add_argument(
+        "--frontend", required=True, help="CycloneDX JSON from `pnpm sbom`"
+    )
+    parser.add_argument(
+        "--output", required=True, help="Destination for the merged document"
+    )
     parser.add_argument(
         "--fail-on-missing-frontend",
         action="store_true",
@@ -85,8 +92,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     if invalid:
         # SC-005: never publish a document that does not validate. Writing it and letting a
         # downstream consumer discover the problem turns one failure into several.
-        print("error: merged document does not validate against CycloneDX "
-              f"{SPEC_VERSION}:", file=sys.stderr)
+        print(
+            "error: merged document does not validate against CycloneDX "
+            f"{SPEC_VERSION}:",
+            file=sys.stderr,
+        )
         for problem in invalid:
             print(f"  {problem}", file=sys.stderr)
         return EXIT_SCHEMA_INVALID
@@ -166,7 +176,9 @@ def _validate(doc: object, path: Path) -> dict:
     # or `null`, which used to reach .get() and raise AttributeError past the _InputError
     # handler — a traceback and exit 1, outside the documented contract.
     if not isinstance(doc, dict):
-        raise _UnreadableError(f"{path} is not a JSON object (got {type(doc).__name__})")
+        raise _UnreadableError(
+            f"{path} is not a JSON object (got {type(doc).__name__})"
+        )
     if doc.get("bomFormat") != "CycloneDX":
         raise _InputError(f"{path} is not a CycloneDX document")
     if doc.get("specVersion") != SPEC_VERSION:
@@ -189,17 +201,16 @@ def _components_lost(image_doc: dict, frontend_doc: dict | None, merged: dict) -
     both sources collapses to one entry by design (rule 2), while two entries within one
     source must both survive (rule 7).
     """
+
     def counts(doc: dict | None) -> Counter:
         return Counter(
-            (c.get("name"), c.get("version"))
-            for c in (doc or {}).get("components", [])
+            (c.get("name"), c.get("version")) for c in (doc or {}).get("components", [])
         )
 
     image, frontend, out = counts(image_doc), counts(frontend_doc), counts(merged)
 
     expected = {
-        key: max(image[key], frontend[key])
-        for key in set(image) | set(frontend)
+        key: max(image[key], frontend[key]) for key in set(image) | set(frontend)
     }
     return {key for key, n in expected.items() if out[key] < n}
 

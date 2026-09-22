@@ -1,4 +1,5 @@
 """US3 — reconciliation rule 6: one document, one subject (FR-015)."""
+
 from __future__ import annotations
 
 from sbom_merge.merge import COVERAGE_PROPERTY, merge
@@ -43,6 +44,10 @@ def test_both_generators_are_named_in_the_tools(image_doc, frontend_doc):
     frontend_tools = str(frontend_doc["metadata"].get("tools", "")).lower()
 
     if "syft" in image_tools:
-        assert "syft" in rendered, "the image scanner is no longer named in the merged metadata"
+        assert "syft" in rendered, (
+            "the image scanner is no longer named in the merged metadata"
+        )
     if "pnpm" in frontend_tools:
-        assert "pnpm" in rendered, "the frontend generator is no longer named in the merged metadata"
+        assert "pnpm" in rendered, (
+            "the frontend generator is no longer named in the merged metadata"
+        )

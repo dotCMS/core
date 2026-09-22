@@ -15,6 +15,7 @@ Every JSON fixture here is REAL captured data, not hand-written:
 This matters: invented fixtures would not have caught the tinymce three-copy case or the
 monaco-editor devDependency case, both of which contradicted the spec's first draft.
 """
+
 from __future__ import annotations
 
 import json

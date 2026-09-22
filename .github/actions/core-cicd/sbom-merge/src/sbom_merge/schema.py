@@ -3,6 +3,7 @@
 The schemas are vendored rather than fetched: a release must not depend on network access
 to an external schema host, and a silently-skipped validation is worse than none.
 """
+
 from __future__ import annotations
 
 import json
@@ -10,6 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from jsonschema import Draft7Validator
+from jsonschema.protocols import Validator
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT7
 
@@ -21,14 +23,15 @@ REFERENCED = ("spdx.schema.json", "jsf-0.82.schema.json")
 
 
 @lru_cache(maxsize=1)
-def validator() -> Draft7Validator:
+def validator() -> Validator:
     schema = json.loads((SCHEMAS / SPEC_SCHEMA).read_text())
     registry = Registry().with_resources(
         [
             (
                 name,
                 Resource.from_contents(
-                    json.loads((SCHEMAS / name).read_text()), default_specification=DRAFT7
+                    json.loads((SCHEMAS / name).read_text()),
+                    default_specification=DRAFT7,
                 ),
             )
             for name in REFERENCED
