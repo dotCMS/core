@@ -81,6 +81,7 @@
 
                 <dot-user-filter
                     titleKey="experiments.list.filter.created-by"
+                    emptyLabelKey="experiments.list.filter.all"
                     [selected]="store.selectedCreators()"
                     (selectionChange)="onCreatorsChange($event)"
                     (loadFailed)="onDirectoryError($event)"

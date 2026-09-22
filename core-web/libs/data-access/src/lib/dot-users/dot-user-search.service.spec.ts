@@ -5,7 +5,8 @@ import { TestBed } from '@angular/core/testing';
 import {
     dotUserDisplayName,
     DotUserSearchRow,
-    DotUserSearchService
+    DotUserSearchService,
+    MAX_RESOLVE_PAGES
 } from './dot-user-search.service';
 
 /**
@@ -90,6 +91,88 @@ describe('DotUserSearchService', () => {
                 .flush('nope', { status: 500, statusText: 'Server Error' });
 
             expect(errored).toBe(true);
+        });
+    });
+
+    describe('an exact id that is not on the first page', () => {
+        /**
+         * `query` matches ids as a **substring**, so asking for `dotcms.org.1` also returns
+         * `dotcms.org.10`, `.11`, `.100` and so on. One page of twenty was the original mitigation,
+         * and it is not a guarantee: past twenty near-misses the exact id falls off the page and a
+         * previously-selected real person renders as a raw id after a reload — the failure routing
+         * through the directory search exists to avoid, reached another way.
+         */
+        it('should keep paging until it finds the exact id', () => {
+            let resolved: Record<string, string> | undefined;
+            service.resolveNames(['dotcms.org.1']).subscribe((names) => (resolved = names));
+
+            // Page one: twenty ids that merely contain the searched one.
+            const first = httpMock.expectOne((r) => r.url === '/api/v1/users/filter');
+            first.flush({
+                entity: Array.from({ length: 20 }, (_, i) => ({
+                    userId: `dotcms.org.1${i}`,
+                    fullName: `Near miss ${i}`
+                })),
+                pagination: { currentPage: 1, perPage: 20, totalEntries: 21 }
+            });
+
+            const second = httpMock.expectOne((r) => r.url === '/api/v1/users/filter');
+            expect(second.request.params.get('page')).toBe('2');
+            second.flush({
+                entity: [{ userId: 'dotcms.org.1', fullName: 'Jane Doe' }],
+                pagination: { currentPage: 2, perPage: 20, totalEntries: 21 }
+            });
+
+            expect(resolved).toEqual({ 'dotcms.org.1': 'Jane Doe' });
+        });
+
+        it('should stop once the directory is exhausted rather than paging for ever', () => {
+            let resolved: Record<string, string> | undefined;
+            service.resolveNames(['nobody']).subscribe((names) => (resolved = names));
+
+            const only = httpMock.expectOne((r) => r.url === '/api/v1/users/filter');
+            only.flush({
+                entity: [{ userId: 'nobody-else', fullName: 'Someone' }],
+                pagination: { currentPage: 1, perPage: 20, totalEntries: 1 }
+            });
+
+            // One page held everything there was, so there is no second request to make.
+            httpMock.verify();
+            expect(resolved).toEqual({ nobody: 'nobody' });
+        });
+
+        it('should give up after a bounded number of pages', () => {
+            // A pathological query could otherwise walk a directory of any size. The id is worth
+            // one bounded search, not an unbounded one — it still renders, just as itself.
+            let resolved: Record<string, string> | undefined;
+            service.resolveNames(['haystack']).subscribe((names) => (resolved = names));
+
+            for (let page = 1; page <= MAX_RESOLVE_PAGES; page++) {
+                const req = httpMock.expectOne((r) => r.url === '/api/v1/users/filter');
+                expect(req.request.params.get('page')).toBe(String(page));
+                req.flush({
+                    entity: Array.from({ length: 20 }, (_, i) => ({
+                        userId: `haystack-${page}-${i}`,
+                        fullName: 'Near miss'
+                    })),
+                    pagination: { currentPage: page, perPage: 20, totalEntries: 10_000 }
+                });
+            }
+
+            httpMock.verify();
+            expect(resolved).toEqual({ haystack: 'haystack' });
+        });
+
+        it('should order the search so paging is stable', () => {
+            // Without an explicit order the endpoint's is unspecified, and a set that shifts
+            // between two requests can show a row twice and never show another at all.
+            service.resolveNames(['dotcms.org.1']).subscribe();
+
+            const req = httpMock.expectOne((r) => r.url === '/api/v1/users/filter');
+
+            expect(req.request.params.get('orderby')).toBe('userId');
+            expect(req.request.params.get('direction')).toBe('ASC');
+            req.flush({ entity: [], pagination: { currentPage: 1, perPage: 20, totalEntries: 0 } });
         });
     });
 

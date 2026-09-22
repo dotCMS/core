@@ -3,7 +3,7 @@ import { from, Observable, of } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, mergeMap, tap, toArray } from 'rxjs/operators';
+import { catchError, map, mergeMap, switchMap, tap, toArray } from 'rxjs/operators';
 
 import { DotCMSAPIResponse } from '@dotcms/dotcms-models';
 
@@ -22,18 +22,29 @@ export interface DotUserSearchParams {
     /** 1-based. The endpoint declares a default of 0 but coerces `page <= 0` to the first page. */
     page: number;
     perPage: number;
+    /** Sent only when given. Without one the endpoint's order is unspecified. */
+    orderBy?: string;
+    direction?: 'ASC' | 'DESC';
 }
 
 const USERS_FILTER_URL = '/api/v1/users/filter';
 
-/**
- * Rows fetched when resolving one id.
- *
- * Not 1: `query` matches ids as a substring, so asking for `dotcms.org.1` returns every longer id
- * containing it — and nothing guarantees the exact one comes first. This is the window the exact
- * match is looked for in.
- */
+/** Rows fetched per page while hunting one exact id. */
 const EXACT_MATCH_WINDOW = 20;
+
+/**
+ * Pages walked at most before giving up on one id.
+ *
+ * `query` matches ids as a substring, so asking for `dotcms.org.1` returns every longer id
+ * containing it and nothing guarantees the exact one comes first. A single page of twenty was the
+ * original mitigation and it is not a guarantee: past twenty near-misses the exact id falls off
+ * the page and a real person renders as a raw id after a reload.
+ *
+ * So the search pages. It is still bounded, because the alternative is letting one pathological id
+ * walk a directory of any size on every page load — and an unresolved id is a cosmetic loss, not a
+ * broken filter: matching is by id and needs no label.
+ */
+export const MAX_RESOLVE_PAGES = 5;
 
 /** In-flight resolutions allowed at once. See the note in `resolveNames`. */
 const RESOLVE_CONCURRENCY = 3;
@@ -82,12 +93,22 @@ export class DotUserSearchService {
     searchPage({
         filter,
         page,
-        perPage
+        perPage,
+        orderBy,
+        direction
     }: DotUserSearchParams): Observable<DotCMSAPIResponse<DotUserSearchRow[]>> {
-        const params = new HttpParams()
+        let params = new HttpParams()
             .set('query', filter ?? '')
             .set('page', String(page))
             .set('per_page', String(perPage));
+
+        if (orderBy) {
+            params = params.set('orderby', orderBy);
+        }
+
+        if (direction) {
+            params = params.set('direction', direction);
+        }
 
         return this.#http
             .get<DotCMSAPIResponse<DotUserSearchRow[]>>(USERS_FILTER_URL, { params })
@@ -114,21 +135,12 @@ export class DotUserSearchService {
         return from(unknown)
             .pipe(
                 // Bounded, not `forkJoin`. There is no bulk-by-ids parameter, so this is one
-                // request per id by necessity — but firing all of them at once turns a selection
+                // search per id by necessity — but firing all of them at once turns a selection
                 // of fifteen people into fifteen simultaneous connections on page load. A short
                 // queue costs a little latency and spares the browser and the server the burst.
                 mergeMap(
                     (userId) =>
-                        this.searchPage({
-                            filter: userId,
-                            page: 1,
-                            perPage: EXACT_MATCH_WINDOW
-                        }).pipe(
-                            map((response) => nameOf(userId, response?.entity ?? [])),
-                            // A failed lookup is not a failed filter: matching is by id and
-                            // needs no label, so fall back to the id rather than failing the
-                            // whole resolution.
-                            catchError(() => of(userId)),
+                        this.#resolveOne(userId).pipe(
                             tap((name) => this.#nameById.set(userId, name))
                         ),
                     RESOLVE_CONCURRENCY
@@ -138,6 +150,44 @@ export class DotUserSearchService {
                 toArray(),
                 map(() => this.#fromCache(userIds))
             );
+    }
+
+    /**
+     * The display name of one id, paging until the exact match is found or the search is spent.
+     *
+     * Ordered explicitly: without one the endpoint's order is unspecified, and a set that shifts
+     * between two requests can serve a row twice and never serve another at all — which for a hunt
+     * that pages is the difference between finding the id and silently missing it.
+     *
+     * Every exit returns the id itself rather than failing. A failed request, an exhausted
+     * directory, a spent page budget and a row with no name are all the same outcome to a caller:
+     * no label. The filter still matches, because matching is by id.
+     */
+    #resolveOne(userId: string, page = 1): Observable<string> {
+        return this.searchPage({
+            filter: userId,
+            page,
+            perPage: EXACT_MATCH_WINDOW,
+            orderBy: 'userId',
+            direction: 'ASC'
+        }).pipe(
+            switchMap((response) => {
+                const rows = response?.entity ?? [];
+                const exact = rows.find((row) => row.userId === userId);
+
+                if (exact) {
+                    return of(dotUserDisplayName(exact));
+                }
+
+                const served = page * EXACT_MATCH_WINDOW;
+                const total = response?.pagination?.totalEntries ?? 0;
+
+                return page >= MAX_RESOLVE_PAGES || served >= total
+                    ? of(userId)
+                    : this.#resolveOne(userId, page + 1);
+            }),
+            catchError(() => of(userId))
+        );
     }
 
     /**
@@ -161,19 +211,6 @@ export class DotUserSearchService {
             return resolved;
         }, {});
     }
-}
-
-/**
- * The display name of the row whose id matches **exactly**, or the id itself.
- *
- * The exact match matters: `query` matches ids as a substring, so asking for `dotcms.org.1` also
- * returns `dotcms.org.10` and `dotcms.org.11`. Taking the first row would label the wrong person,
- * and the list is not ordered in any way that makes the first row the right one.
- */
-function nameOf(userId: string, rows: DotUserSearchRow[]): string {
-    const exact = rows.find((row) => row.userId === userId);
-
-    return exact ? dotUserDisplayName(exact) : userId;
 }
 
 /**
