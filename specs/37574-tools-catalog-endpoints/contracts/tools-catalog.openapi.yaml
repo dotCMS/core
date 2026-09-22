@@ -1,0 +1,244 @@
+# Contract: /api/v1/portlet additions and gate changes for #37574
+#
+# This file states the intended contract for review. The committed source of truth is the
+# generated dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml, produced from the Java
+# annotations by `./mvnw compile -pl :dotcms-core --am -DskipTests`.
+#
+# Conventions: every response is wrapped in the dotCMS envelope
+# { entity, errors, i18nMessagesMap, messages, permissions }. A missing or insufficient portlet
+# grant answers 401 (never 403), matching every portlet-gated endpoint in the product.
+
+openapi: 3.0.1
+info:
+  title: dotCMS Portlets — tools catalog and custom tool (#37574)
+  version: "1"
+tags:
+  - name: Portlets
+
+paths:
+  /v1/portlet/_catalog:
+    get:
+      tags: [Portlets]
+      operationId: getToolsCatalog
+      summary: List the tools that can be placed in a navigation section
+      description: >
+        Every portlet that can be added to a section, with the same inclusion rules as the legacy
+        Roles & Tools tool picker: portlets listed in `portlets.excluded.from.layout` are omitted,
+        and the old Languages tool is omitted while
+        FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET is on. Sorted by title ignoring letter
+        case. Requires an authenticated back-end user with access to the `tools` or `tools-beta`
+        portlet, or the CMS Administrator role.
+      responses:
+        "200":
+          description: Catalog retrieved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityToolCatalogView"
+              example:
+                entity:
+                  - { id: "c_press-releases", title: "Press Releases", isCustom: true }
+                  - { id: "roles", title: "Roles & Tools", isCustom: false }
+                  - { id: "tools-beta", title: "Tools (Beta)", isCustom: false }
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                permissions: []
+        "401":
+          description: >
+            Unauthorized — no authenticated back-end user, or the caller holds neither `tools`
+            nor `tools-beta` and is not a CMS Administrator. No tool data is returned.
+
+  /v1/portlet/custom/{portletId}:
+    parameters:
+      - name: portletId
+        in: path
+        required: true
+        description: The stored id of the custom content tool, including its `c_` prefix.
+        schema: { type: string }
+    get:
+      tags: [Portlets]
+      operationId: getCustomTool
+      summary: Read one custom content tool's configuration
+      description: >
+        Returns the editable configuration of a custom content tool. Requires an authenticated
+        back-end user with access to the `tools` or `tools-beta` portlet, or the CMS
+        Administrator role.
+      responses:
+        "200":
+          description: Custom tool found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCustomToolView"
+              example:
+                entity:
+                  portletId: "c_press-releases"
+                  portletName: "Press Releases"
+                  baseTypes: ["CONTENT"]
+                  contentTypes: ["pressRelease", "newsItem"]
+                  dataViewMode: "card"
+                errors: []
+                i18nMessagesMap: {}
+                messages: []
+                permissions: []
+        "401":
+          description: Unauthorized — see the catalog endpoint.
+        "404":
+          description: >
+            No portlet has this id, or the portlet is not a custom content tool (a tool shipped
+            with the product, Language Variables included). Body: the standard error envelope
+            (`errors[0].errorCode` = `custom.content.portlet.not.found`).
+    delete:
+      tags: [Portlets]
+      operationId: deleteCustomPortlet
+      summary: Delete a custom content tool (existing endpoint, changed)
+      description: >
+        Removes the custom content tool and takes it out of every section that contained it;
+        open admin sessions are notified. CHANGED — gate widened: requires an authenticated
+        back-end user with access to `roles`, `tools` or `tools-beta`, or the CMS Administrator
+        role. CHANGED — target narrowed: an id that is not a custom content tool is refused with
+        404 and nothing is changed. Request and success response are unchanged.
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              example:
+                entity: { message: "c_press-releases deleted" }
+        "401":
+          description: Unauthorized — see above.
+        "404":
+          description: >
+            No portlet has this id, or it is a tool shipped with the product. Body: the standard
+            error envelope (`errors[0].errorCode` = `custom.content.portlet.not.found`).
+
+  /v1/portlet/custom:
+    post:
+      tags: [Portlets]
+      operationId: saveNew
+      summary: Create a custom content tool (existing endpoint, gate changed)
+      description: >
+        CHANGED — gate widened to `roles`, `tools` or `tools-beta`, or CMS Administrator.
+        Request body and responses unchanged.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomPortletForm"
+      responses:
+        "200":
+          description: Created; entity carries the stored portlet id
+          content:
+            application/json:
+              example:
+                entity: { portlet: "c_press-releases" }
+        "400": { description: Validation failure (unchanged) }
+        "401": { description: Unauthorized — see above }
+    put:
+      tags: [Portlets]
+      operationId: updatePortlet
+      summary: Update a custom content tool (existing endpoint, gate changed)
+      description: >
+        CHANGED — gate widened to `roles`, `tools` or `tools-beta`, or CMS Administrator.
+        Request body and responses unchanged.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomPortletForm"
+      responses:
+        "200":
+          description: Updated; entity carries the stored portlet id
+        "401": { description: Unauthorized — see above }
+        "404": { description: Portlet does not exist (unchanged) }
+
+  /v1/portlet/custom/{portletId}/_addtolayout/{layoutId}:
+    put:
+      tags: [Portlets]
+      operationId: addContentPortletToLayout
+      summary: Add a tool to a section the caller holds (existing endpoint, UNCHANGED)
+      description: >
+        Keeps its Roles-only gate (FR-009a). Listed here only to record that it is deliberately
+        not widened.
+      responses:
+        "200": { description: Unchanged }
+        "401": { description: Unchanged — Roles portlet required }
+
+components:
+  schemas:
+    ToolCatalogEntryView:
+      type: object
+      description: One tool that can be placed in a navigation section
+      required: [id, title, isCustom]
+      properties:
+        id:
+          type: string
+          description: Portlet id, e.g. `roles` or `c_press-releases`
+        title:
+          type: string
+          description: >
+            Title in the caller's language; falls back to the registered name, then to the id.
+            Never the raw translation key.
+        isCustom:
+          type: boolean
+          description: >
+            True only for tools created through New Tool: registered in the database and not
+            declared in the product's portlet id registry. False for every shipped tool,
+            Language Variables included.
+
+    ResponseEntityToolCatalogView:
+      type: object
+      description: dotCMS envelope around the catalog list
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolCatalogEntryView"
+        errors: { type: array, items: { type: object } }
+        i18nMessagesMap: { type: object }
+        messages: { type: array, items: { type: object } }
+        permissions: { type: array, items: { type: string } }
+
+    CustomToolView:
+      type: object
+      description: Editable configuration of a custom content tool
+      required: [portletId, portletName, baseTypes, contentTypes, dataViewMode]
+      properties:
+        portletId:
+          type: string
+          description: Stored id including the `c_` prefix
+        portletName:
+          type: string
+        baseTypes:
+          type: array
+          items: { type: string }
+          description: Base type names as stored (CONTENT, WIDGET, PERSONA, FILEASSET, HTMLPAGE, VANITY_URL, DOTASSET, FORM, KEY_VALUE); empty when none
+        contentTypes:
+          type: array
+          items: { type: string }
+          description: Content type variable names; empty when none
+        dataViewMode:
+          type: string
+          description: "`list` or `card`, as stored"
+
+    ResponseEntityCustomToolView:
+      type: object
+      description: dotCMS envelope around one custom tool
+      properties:
+        entity:
+          $ref: "#/components/schemas/CustomToolView"
+        errors: { type: array, items: { type: object } }
+        i18nMessagesMap: { type: object }
+        messages: { type: array, items: { type: object } }
+        permissions: { type: array, items: { type: string } }
+
+    CustomPortletForm:
+      type: object
+      description: Existing write form (unchanged). Base and content types are comma-separated text.
+      properties:
+        portletId: { type: string }
+        portletName: { type: string }
+        baseTypes: { type: string, example: "CONTENT,PERSONA" }
+        contentTypes: { type: string, example: "pressRelease,newsItem" }
+        dataViewMode: { type: string, example: "list" }
