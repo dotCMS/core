@@ -1,4 +1,4 @@
-# Feature Specification: Content Drive folder copy (frontend)
+# Feature Specification: Content Drive folder duplication (frontend)
 
 **Feature Branch**: `37062-content-drive-folder-copy`
 
@@ -16,40 +16,46 @@
 
 An author has a campaign folder they want to reuse as the starting point for next quarter's work.
 Today Content Drive cannot help them: folders are selectable in the listing and appear in the
-right-click menu, but there is **no copy action anywhere**, for one folder or for many. The only
-folder copy in the product lives in the old Site Browser. This specification covers the browser-side
-half of fixing that.
+right-click menu, but there is **no way to duplicate one anywhere**, for a single folder or for
+many. The only folder copy in the product lives in the old Site Browser. This specification covers
+the browser-side half of fixing that.
 
 **This specification covers the client only.** The server half is specified in
 `specs/37062-folder-copy-backend/spec.md`. The two meet at that document's *Contract Consumed by the
 Client* (C-001 … C-011), restated here from the consumer's side in §Contract Consumed. Nothing about
 server behaviour is re-specified here.
 
-**The operation duplicates a folder in place.** The copy lands beside the original, in the same
+**The operation duplicates a folder in place.** The duplicate lands beside the original, in the same
 parent, under a name the server derives so it does not collide. **The author does not choose where
-it goes**, so this feature has no destination picker and no configuration step. That is a
-deliberate narrowing of #37062's description, taken by the developer and recorded in the backend
-half as its D-005, and it is the reason this specification is a fraction of the size of its sibling
-for bulk delete.
+it goes**, so this feature has no destination picker and no configuration step. That is a deliberate
+narrowing of #37062's description, taken by the developer and recorded in the backend half as its
+D-005, and it is the reason this specification is a fraction of the size of its sibling for bulk
+delete.
 
-**Nothing is blocked while a copy runs.** A folder being copied is still a folder: it can be opened,
-uploaded into, dragged onto and copied again. The elaborate marking machinery bulk folder delete
-needs, making a doomed folder inert everywhere it appears and keeping that true across reloads and
-authors, has no purpose here and is deliberately absent (backend D-016). What this client does while
-a run is in flight is show progress; what it does when the run ends is report what happened.
+**Nothing is blocked while a duplication runs.** A folder being duplicated is still a folder: it can
+be opened, uploaded into, dragged onto and duplicated again. The elaborate marking machinery bulk
+folder delete needs, making a doomed folder inert everywhere it appears and keeping that true across
+reloads and authors, has no purpose here and is deliberately absent (backend D-016). What this
+client does while a run is in flight is show progress; what it does when the run ends is report what
+happened.
 
 **The duplicate's name is chosen by the server, and the report does not restate it.** Duplicating
-`campaign` gives `campaign_copy`. An earlier draft of this specification required the report to
-name each folder it created, on the reasoning that the author could not otherwise find what was
-made. The developer's position, taken on 2026-09-22, is that the suffix is well enough known for
-that to be unnecessary, and the server half now publishes the naming rule with its endpoint instead
-of adding a field to a contract three features share (backend FR-009a, D-008). The consequence for
-this half is that the report speaks in terms of **the folders the author selected**, saying which
-of them were copied, rather than in terms of the folders that came out.
+`campaign` gives `campaign_copy`. An earlier draft of this specification required the report to name
+each folder it created, on the reasoning that the author could not otherwise find what was made. The
+developer's position, taken on 2026-09-22, is that the suffix is well enough known for that to be
+unnecessary, and the server half now publishes the naming rule with its endpoint instead of adding a
+field to a contract three features share (backend FR-009a, D-008). The consequence for this half is
+that the report speaks in terms of **the folders the author selected**, saying which of them were
+duplicated, rather than in terms of the folders that came out.
 
 Throughout this document, **selecting rows** means picking folders in the Content Drive listing. A
-**run** is one submitted copy, identified by a handle the server returns. **Duplicate** is used for
+**run** is one submitted duplication, identified by a handle the server returns. **Duplicate** is
 the folder the run creates.
+
+The operation is a **duplication** throughout, never a "copy", because "copy" invites the question
+of where to and there is no answer. The word "copy" survives in two senses only, and neither is the
+operation: the existing Site Browser feature, and **client copy**, meaning the wording shown to an
+author. A folder is never identified by a path to somewhere else, only by its own.
 
 ---
 
@@ -59,23 +65,24 @@ the folder the run creates.
 
 - Q: The action duplicates in place rather than copying to a chosen location. Is it labelled "Copy"? → A: No. It is labelled as a duplication. "Copy" sets up an expectation of choosing a destination, or of a paste step that never comes, and the label is the only thing standing between the author and that expectation. See FR-002 and D-002.
 - Q: Does duplicating require a confirmation, as deleting does? → A: No. Deleting confirms because it is permanent and recursive; duplicating creates something the author can simply delete. The bulk action still passes through the existing preview step every bulk action uses, because that is where the author sees what will be acted on and presses the button, but it carries no warning language. The single-folder action runs directly.
-- Q: The author selects six folders and may copy only four. Does the action submit four or six? → A: Six. The client does not filter a selection by its own reading of rights; the two the server refuses come back as per-folder permission failures. The action is withheld only when the author can copy none of them. This follows the position bulk delete reached, for the same reason: silently shrinking what the author asked for is worse than reporting the refusal.
-- Q: Does a running copy block other Content Drive actions? → A: No. It follows the existing guard unchanged, which refuses a repeat of the same operation on the same items and nothing wider. Unrelated actions and copies of other folders run alongside it. Unlike delete, overlapping copies are not refused by the server either, because two copies of the same folder cannot harm each other (backend FR-033).
+- Q: The author selects six folders and may duplicate only four. Does the action submit four or six? → A: Six. The client does not filter a selection by its own reading of rights; the two the server refuses come back as per-folder permission failures. The action is withheld only when the author can duplicate none of them. This follows the position bulk delete reached, for the same reason: silently shrinking what the author asked for is worse than reporting the refusal.
+- Q: Does a running duplication block other Content Drive actions? → A: No. It follows the existing guard unchanged, which refuses a repeat of the same operation on the same items and nothing wider. Unrelated actions and duplications of other folders run alongside it. Unlike delete, overlapping duplications are not refused by the server either, because two duplications of the same folder cannot harm each other (backend FR-033).
 
 ---
 
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
-  Written as author-visible behaviour in the Content Drive interface. Each is verifiable in the
-  browser against a server honouring §Contract Consumed, with no knowledge of how the server
-  implements it.
+Written as author-visible behaviour in the Content Drive interface. Each is verifiable in the
+browser against a server honouring §Contract Consumed, with no knowledge of how the server
+implements it.
 -->
 
 ### User Story 1 - Several folders are duplicated in one action (Priority: P1)
 
 An author selects several folders in the listing and chooses to duplicate them. The action is
-submitted, the dialog closes at once, and the author carries on working while the copies are made.
+submitted, the dialog closes at once, and the author carries on working while the duplicates are
+made.
 
 **Why this priority**: This is the feature. Delivered alone it is a complete, usable capability.
 
@@ -90,7 +97,7 @@ appear and the author was never blocked while it happened.
    they are shown what will be acted on and no destination is asked for.
 3. **Given** the author commits, **When** the submission is accepted, **Then** the dialog closes
    immediately and the rest of the portlet stays usable.
-4. **Given** a run is in flight, **When** the author looks at the folders being copied, **Then**
+4. **Given** a run is in flight, **When** the author looks at the folders being duplicated, **Then**
    they behave as ordinary folders: openable, selectable, and valid drop targets.
 5. **Given** the author dismisses before committing, **When** the dialog closes, **Then** nothing is
    submitted and the selection is untouched.
@@ -153,8 +160,8 @@ An author duplicates a large folder, navigates away, and comes back. What was ma
 discoverable.
 
 **Why this priority**: P2 because the operation itself succeeds regardless. It matters more here
-than for a delete: an author who cannot find out whether a copy happened, and resubmits, gets a
-second duplicate rather than a harmless no-op (backend FR-034).
+than for a delete: an author who cannot find out whether a duplication happened, and resubmits, gets
+a second duplicate rather than a harmless no-op (backend FR-034).
 
 **Independent Test**: Submit a run, navigate away from the portlet, return after it completes, and
 confirm the outcome including the duplicates' names is still reachable.
@@ -164,8 +171,8 @@ confirm the outcome including the duplicates' names is still reachable.
 1. **Given** a run is in flight, **When** the author closes the dialog that started it or navigates
    within the portlet, **Then** the run continues and is unaffected.
 2. **Given** a run ended while the author was elsewhere, **When** they return, **Then** they can
-   determine the full outcome, including which of their folders were copied, without having watched
-   it.
+   determine the full outcome, including which of their folders were duplicated, without having
+   watched it.
 3. **Given** a run is in flight, **When** the author leaves the portlet entirely, **Then** nothing
    cancels it.
 
@@ -176,8 +183,8 @@ confirm the outcome including the duplicates' names is still reachable.
 The duplicates appear in the listing and in the sidebar tree when the run finishes, without the
 author reloading.
 
-**Why this priority**: P2 because the author can reload. Without it the feature looks broken:
-the report says six folders were created and the screen shows none of them.
+**Why this priority**: P2 because the author can reload. Without it the feature looks broken: the
+report says six folders were created and the screen shows none of them.
 
 **Independent Test**: Duplicate a folder visible in both the listing and the sidebar tree; confirm
 both show the new folder once the run ends, with no reload.
@@ -198,7 +205,8 @@ both show the new folder once the run ends, with no reload.
 
 ### User Story 6 - The author is not offered a duplicate that can only fail (Priority: P3)
 
-The action is withheld where the author is known to have no right to it, and offered everywhere else.
+The action is withheld where the author is known to have no right to it, and offered everywhere
+else.
 
 **Why this priority**: P3 because the per-folder outcome reports refusals honestly, so a submission
 that fails is informative rather than broken. It is still worth doing: offering an action that can
@@ -238,7 +246,7 @@ them.
 - **The server reports a folder as duplicated whose source the listing no longer shows** (deleted by
   someone else in between). The outcome is still reported for it.
 - **A run is cancelled from elsewhere.** The report presents it as cancelled, not as a fault, and
-  states that the folders not reached were not copied.
+  states that the folders not reached were not duplicated.
 - **The report names a duplicate whose parent the author cannot currently see.** The name is still
   reported; the client does not suppress an outcome because the folder is off-screen.
 - **A failure reason the client does not recognise.** The folder is still named and reported as
@@ -278,10 +286,10 @@ them.
 - **FR-006**: Where a submission is refused for carrying more folders than the configured maximum,
   the client MUST explain the refusal in terms of that limit, using the number the server reports
   with the refusal. The client MUST NOT hold its own copy of the maximum, and MUST NOT gate the
-  action on it before submitting: the limit is not exposed ahead of time and the client learns it
-  by being refused. An earlier draft required reading the limit up front, which the server half has
-  no contract item to satisfy; exposing it would be a new capability rather than a wording change,
-  and is not worth one message.
+  action on it before submitting: the limit is not exposed ahead of time and the client learns it by
+  being refused. An earlier draft required reading the limit up front, which the server half has no
+  contract item to satisfy; exposing it would be a new capability rather than a wording change, and
+  is not worth one message.
 
 #### Committing
 
@@ -313,8 +321,9 @@ them.
   in-flight state on load. There is nothing to restore: no folder's appearance depends on whether a
   run is working on it.
 - **FR-016**: The action MUST join the guard the existing actions already follow, which refuses a
-  repeat of the **same operation on the same items** and nothing wider. A copy running on one set of
-  folders MUST NOT prevent an unrelated action, nor a copy of different folders, from starting.
+  repeat of the **same operation on the same items** and nothing wider. A duplication running on one
+  set of folders MUST NOT prevent an unrelated action, nor a duplication of different folders, from
+  starting.
 - **FR-017**: The client MUST NOT attempt to detect or refuse overlapping runs. Unlike bulk delete,
   the server does not refuse them either, because two copies of the same folder cannot interfere
   (backend FR-033). No submission refusal for overlap exists, and the client MUST NOT carry copy for
@@ -339,8 +348,8 @@ them.
 - **FR-023**: Each machine-readable reason the server can return MUST map to copy written in the
   product's own words. At minimum: no rights on the folder, no rights to add to its parent, the
   folder no longer exists, the folder is protected, and a general fallback. This set is a **subset**
-  of the one bulk delete needs, and reasons that operation carries which copy cannot produce MUST
-  NOT be written for this feature.
+  of the one bulk delete needs, and reasons that operation carries which duplication cannot produce
+  MUST NOT be written for this feature.
 - **FR-024**: The server's diagnostic message MUST NOT be shown to the author. It is written for a
   log.
 - **FR-025**: A reason the client does not recognise MUST still name the folder and report it as
@@ -374,8 +383,8 @@ them.
 ### Key Entities
 
 - **Folder selection**: the folders an author chose in the listing and asked to duplicate.
-- **Run**: one submitted copy, identified by the handle the server returns, with a state the client
-  can observe and an outcome it can read.
+- **Run**: one submitted duplication, identified by the handle the server returns, with a state the
+  client can observe and an outcome it can read.
 - **Per-folder outcome**: one record per submitted folder: the source path, whether it was
   duplicated, failed or skipped, and a reason on failure.
 - **Run report**: what the author is shown when a run ends: the server's counts, and the folders
@@ -397,25 +406,24 @@ C-011), from this side.
   FR-033 rests on this. **There is no overlap refusal**, because the server carries no overlap
   guard, which is why FR-017 forbids writing copy for one.
 - **A stable, enumerated set of failure reasons** (C-005), each mapped to client copy (FR-023). A
-  subset of bulk delete's set: copy has no "something inside is in use" and no "an ancestor already
-  removed it".
+  subset of bulk delete's set: duplication has no "something inside is in use" and no "an ancestor
+  already removed it".
 - **Progress, and an honest statement of what it counts** (C-006). Completed top-level folders,
   nothing finer. This is why FR-012 requires an indeterminate indicator.
 - **A way to cancel, with this operation's guarantee** (C-007). Each folder is left either fully
-  duplicated or not created at all, so cancellation copy says the remainder was not copied rather
-  than warning about partial results. **This client does not expose cancellation in this version**
-  (D-005); the requirement on the wording binds whoever surfaces it.
+  duplicated or not created at all, so cancellation copy says the remainder was not duplicated
+  rather than warning about partial results. **This client does not expose cancellation in this
+  version** (D-005); the requirement on the wording binds whoever surfaces it.
 - **A readable terminal state and outcome** (C-008). Counts plus per-folder records, each failure
-  carrying its reason, and **nothing added to the shared shape**: a successful record names the
-  path that was submitted, not the name the duplicate was given. FR-020 and FR-021 rest on the
-  records being present rather than summarised, and FR-020 on their being keyed by the submitted
-  path.
+  carrying its reason, and **nothing added to the shared shape**: a successful record names the path
+  that was submitted, not the name the duplicate was given. FR-020 and FR-021 rest on the records
+  being present rather than summarised, and FR-020 on their being keyed by the submitted path.
 - **A pushed completion signal carrying the outcome, plus a durable record of the same** (C-009).
   FR-018 and FR-028 rest on this. The client does not poll for completion and does not build a jobs
   screen.
 - **The signal is emitted after the copies are complete** (C-010). FR-029 and FR-030 refresh on it
   and depend on that ordering, which the client cannot observe for itself.
-- **Nothing is announced and nothing needs marking** (C-011). A folder being copied stays usable
+- **Nothing is announced and nothing needs marking** (C-011). A folder being duplicated stays usable
   throughout, which is what lets FR-014 and FR-015 remove the largest part of the sibling feature's
   client work.
 
@@ -444,7 +452,7 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
 - **SC-007**: A folder being duplicated remains fully usable throughout the run in 100% of cases:
   zero folders are marked, disabled or made undroppable by this feature.
 - **SC-008**: An author who was absent when a run ended can determine the full outcome, including
-  which of their selected folders were copied, without having watched it.
+  which of their selected folders were duplicated, without having watched it.
 - **SC-009**: After a run ends, both the listing and the sidebar tree show the new folders without a
   reload, in 100% of cases where the author is viewing the parent they landed in.
 - **SC-010**: The author is never told a duplication succeeded when it did not, nor that it failed
@@ -489,7 +497,7 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
   `specs/37062-folder-copy-backend/spec.md`.
 - **Copying a folder to a chosen destination**, and the destination picker #33468 describes. Removed
   by the backend half's D-005; it belongs to folder move (#37165).
-- **Marking, blocking or announcing a folder while it is being copied** (FR-014, FR-015). Bulk
+- **Marking, blocking or announcing a folder while it is being duplicated** (FR-014, FR-015). Bulk
   folder delete's entire in-flight machinery has no analogue here and is deliberately not built.
 - **Cancelling a run from this client** (D-005 below). The server provides cancellation and the
   contract fixes its wording; surfacing it is expected to arrive with the background task manager
@@ -515,13 +523,13 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
   extending the existing Content Drive suite), and how the pushed completion signal is exercised,
   which no unit test of a single component reaches.
 - **How the interface describes where a duplicate went** (FR-020). The report names the folder the
-  author selected, not the copy that was made, so the plan MUST settle what the interface says to an
-  author looking for the result: describing the naming rule is allowed, asserting a specific name is
-  not, since the client is never told it.
+  author selected, not the duplicate that was made, so the plan MUST settle what the interface says
+  to an author looking for the result: describing the naming rule is allowed, asserting a specific
+  name is not, since the client is never told it.
 - **The reason-to-copy mapping is a cross-half dependency.** Every reason the server can emit needs
-  client copy before either half is implemented, and the mapping is shared with delete and move.
-  The plan MUST name where it lives, and MUST record that copy uses a subset rather than adding
-  reasons of its own.
+  client copy before either half is implemented, and the mapping is shared with delete and move. The
+  plan MUST name where it lives, and MUST record that copy uses a subset rather than adding reasons
+  of its own.
 - **The action's label and its commit copy** (FR-002, FR-009). This is a microcopy decision with a
   functional consequence, since the label is what sets the author's expectation about a destination.
   The plan MUST treat it as a deliverable with an owner, not as a string to be filled in during
@@ -574,8 +582,8 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
   duplicating large folders by accident.
 - **D-004: Nothing is marked while a run is in flight** *(FR-014, FR-015, backend D-016)*. This is
   the largest reduction relative to bulk folder delete, which needs a doomed folder to look unusable
-  everywhere it appears and to stay that way across reloads and authors. A folder being copied is
-  safe to use, so none of that applies. Recorded explicitly so that a reviewer familiar with the
+  everywhere it appears and to stay that way across reloads and authors. A folder being duplicated
+  is safe to use, so none of that applies. Recorded explicitly so that a reviewer familiar with the
   sibling specification reads the absence as a decision rather than an omission.
 - **D-005: Cancellation is not exposed in this version.** The server provides it and the contract
   fixes its wording; the surface for it is expected to be the background task manager (#33331),
@@ -583,8 +591,9 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
 - **D-006: The selection is submitted whole, not pre-filtered** *(clarification 2026-09-21,
   FR-005a)*. Following the position bulk delete reached, and for the same reason: shrinking what the
   author asked for behind their back is worse than reporting the refusal, and the client's reading
-  of rights is the less reliable of the two. It matters slightly less here, because copy refuses
-  less often, and slightly more, because the client can only see one of the two rights involved.
+  of rights is the less reliable of the two. It matters slightly less here, because duplication
+  refuses less often, and slightly more, because the client can only see one of the two rights
+  involved.
 - **D-007: The single-folder action uses the same asynchronous submission as the bulk one**
   *(FR-003, backend D-010)*. There is no synchronous single-folder endpoint to call. One submission
   path means one outcome shape, one error mapping and one set of copy.
@@ -601,6 +610,5 @@ the requirement it governs.
 
 What remains genuinely undecided is not a specification question and is listed under §Planning
 Obligations: how the interface describes where a duplicate went, which surface presents the outcome,
-how the two
-surfaces refresh on completion, and what a folder is matched by. All are sized at the plan phase and
-none changes what this document requires.
+how the two surfaces refresh on completion, and what a folder is matched by. All are sized at the
+plan phase and none changes what this document requires.
