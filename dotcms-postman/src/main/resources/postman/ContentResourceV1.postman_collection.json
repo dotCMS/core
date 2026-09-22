@@ -4050,6 +4050,116 @@
           }
         }
       ]
+    },
+    {
+      "name": "Site Key reflects the Site's own hostName (#37584)",
+      "item": [
+        {
+          "name": "Resolve the current Site",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Current Site resolved\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const site = pm.response.json().entity;",
+                  "    pm.expect(site.identifier).to.be.a('string').and.not.empty;",
+                  "    pm.expect(site.hostname).to.be.a('string').and.not.empty;",
+                  "    pm.collectionVariables.set(\"siteKeyTestSiteId\", site.identifier);",
+                  "    pm.collectionVariables.set(\"siteKeyTestSiteName\", site.hostname);",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/site/currentSite",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "site",
+                "currentSite"
+              ]
+            },
+            "description": "Resolves the Site used by the next request. The Site API has always reported the correct name under `hostname`, so it is the reference value the content endpoint has to agree with."
+          },
+          "response": []
+        },
+        {
+          "name": "GET content by Site id returns the Site's own hostName",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"hostName is the Site's own name, not the parent Site's\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const entity = pm.response.json().entity;",
+                  "    const expected = pm.collectionVariables.get(\"siteKeyTestSiteName\");",
+                  "",
+                  "    // `hostName` is a real field on the Host Content Type - the required Text",
+                  "    // field labelled \"Site Key\". Before #37584 the transform overwrote it with",
+                  "    // the name of the Site the contentlet lives on; every Site lives on the",
+                  "    // System Host, so every Site reported the literal \"System Host\".",
+                  "    pm.expect(entity.hostName).to.eql(expected);",
+                  "    pm.expect(entity.hostName).to.not.eql(\"System Host\");",
+                  "});",
+                  "",
+                  "pm.test(\"hostName and title agree\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity.hostName).to.eql(entity.title);",
+                  "});",
+                  "",
+                  "pm.test(\"the legacy lowercase alias, when present, agrees with hostName\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    // The 2012 `hostname` alias is deliberately left alone by the fix, so it may",
+                  "    // be absent. What must never happen again is the two disagreeing.",
+                  "    if (entity.hostname !== undefined) {",
+                  "        pm.expect(entity.hostname).to.eql(entity.hostName);",
+                  "    }",
+                  "});",
+                  "",
+                  "pm.test(\"the parent Site reference itself is untouched\", function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity.host).to.eql(\"SYSTEM_HOST\");",
+                  "});",
+                  ""
+                ],
+                "type": "text/javascript",
+                "packages": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/{{siteKeyTestSiteId}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "{{siteKeyTestSiteId}}"
+              ]
+            },
+            "description": "The endpoint the new Edit Content editor calls to populate its form. Regression coverage for https://github.com/dotCMS/core/issues/37584."
+          },
+          "response": []
+        }
+      ]
     }
   ],
   "auth": {
@@ -4168,6 +4278,16 @@
     },
     {
       "key": "kvOrderContentId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "siteKeyTestSiteId",
+      "value": "",
+      "type": "default"
+    },
+    {
+      "key": "siteKeyTestSiteName",
       "value": "",
       "type": "default"
     }
