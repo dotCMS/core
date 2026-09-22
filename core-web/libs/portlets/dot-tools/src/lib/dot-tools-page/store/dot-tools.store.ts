@@ -6,11 +6,11 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY, Observable, forkJoin } from 'rxjs';
+import { EMPTY, Observable, forkJoin, throwError } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, take, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
@@ -43,6 +43,11 @@ const initialState: DotToolsState = {
     status: 'init'
 };
 
+/** Server truth is the source of `tabOrder`; the read never guarantees order. */
+function sortByTabOrder(sections: DotToolsSection[]): DotToolsSection[] {
+    return [...sections].sort((a, b) => a.tabOrder - b.tabOrder);
+}
+
 export const DotToolsStore = signalStore(
     withState<DotToolsState>(initialState),
     withComputed((store) => {
@@ -65,9 +70,9 @@ export const DotToolsStore = signalStore(
         });
 
         // Tools resolved for the selected section, in the stored `portletIds`
-        // order. Any id the catalog has not fetched yet is skipped rather than
-        // rendered as a broken row — the design assumes the catalog is loaded
-        // in parallel with sections and the two arrive together.
+        // order. If the catalog hasn't loaded yet we fall back to the
+        // portletTitles the section itself carries — /v1/layouts sends the
+        // localized title for each tool inline so this list can always render.
         const selectedSectionTools = computed<DotToolsCatalogEntry[]>(() => {
             const section = selectedSection();
             if (!section) {
@@ -76,9 +81,18 @@ export const DotToolsStore = signalStore(
 
             const lookup = catalogById();
 
-            return section.portletIds
-                .map((id) => lookup.get(id))
-                .filter((entry): entry is DotToolsCatalogEntry => entry !== undefined);
+            return section.portletIds.map((id, index) => {
+                const catalogEntry = lookup.get(id);
+                if (catalogEntry) {
+                    return catalogEntry;
+                }
+
+                return {
+                    id,
+                    title: section.portletTitles[index] ?? id,
+                    isCustom: false
+                };
+            });
         });
 
         // Client-side filter over the catalog, case-insensitive on title.
@@ -97,25 +111,17 @@ export const DotToolsStore = signalStore(
 
         const hasMoreCatalog = computed(() => filteredCatalog().length > store.catalogLimit());
 
-        // Portlet ids checked in the Available Tools list — the intersection of
-        // the selected section's ids with the catalog. Rendered as a Set so the
-        // row template can O(1) test membership.
         const selectedSectionToolIds = computed<Set<string>>(() => {
             const section = selectedSection();
 
             return new Set(section?.portletIds ?? []);
         });
 
-        // For the tool-delete confirmation body: how many sections reference
-        // this tool. Client-derived; no backend endpoint needed.
         const toolSectionCount = computed(
             () => (toolId: string) =>
                 store.sections().filter((section) => section.portletIds.includes(toolId)).length
         );
 
-        // View-state helpers. Kept in the store so the template stays a plain
-        // reader — no `status === 'loading' && sections.length === 0` inline
-        // checks scattered across the page component.
         const showLoading = computed(
             () => store.status() === 'loading' && store.sections().length === 0
         );
@@ -158,7 +164,7 @@ export const DotToolsStore = signalStore(
                     })
                 )
                 .subscribe(({ sections, catalog }) => {
-                    const ordered = [...sections].sort((a, b) => a.tabOrder - b.tabOrder);
+                    const ordered = sortByTabOrder(sections);
                     patchState(store, {
                         sections: ordered,
                         catalog,
@@ -168,9 +174,10 @@ export const DotToolsStore = signalStore(
                 });
         }
 
-        // Wraps a mutating call: sets loading, catches error → loaded, calls
-        // the caller's success handler with the API result. Keeps the store
-        // methods below focused on the shape of the patch, not the plumbing.
+        // Fire-and-forget mutations route errors through the global handler.
+        // Used for the operations that can only fail with generic server
+        // errors — the write path where a specific error needs inline
+        // handling (section create/update) returns an Observable instead.
         function runMutation<T>(source$: Observable<T>, onSuccess: (result: T) => void) {
             patchState(store, { status: 'loading' });
             source$
@@ -186,16 +193,23 @@ export const DotToolsStore = signalStore(
                 .subscribe((result) => onSuccess(result));
         }
 
+        function commitSectionList(sections: DotToolsSection[]) {
+            const ordered = sortByTabOrder(sections);
+            const selectedStillExists = ordered.some(
+                (section) => section.id === store.selectedSectionId()
+            );
+            patchState(store, {
+                sections: ordered,
+                selectedSectionId: selectedStillExists
+                    ? store.selectedSectionId()
+                    : (ordered[0]?.id ?? null),
+                status: 'loaded'
+            });
+        }
+
         function replaceSectionTools(sectionId: string, portletIds: string[]) {
-            runMutation(toolsService.setSectionTools(sectionId, portletIds), () => {
-                patchState(store, {
-                    sections: store
-                        .sections()
-                        .map((section) =>
-                            section.id === sectionId ? { ...section, portletIds } : section
-                        ),
-                    status: 'loaded'
-                });
+            runMutation(toolsService.setSectionTools(sectionId, portletIds), (sections) => {
+                commitSectionList(sections);
             });
         }
 
@@ -222,53 +236,70 @@ export const DotToolsStore = signalStore(
                 });
             },
 
-            createSection(form: DotToolsSectionForm) {
-                runMutation(toolsService.createSection(form), (created) => {
-                    const nextTabOrder = store.sections().length;
-                    const section: DotToolsSection = { ...created, tabOrder: nextTabOrder };
-                    patchState(store, {
-                        sections: [...store.sections(), section],
-                        selectedSectionId: section.id,
-                        status: 'loaded'
-                    });
-                });
+            /**
+             * Returns an observable so the section dialog can render duplicate-name
+             * (400) inline instead of the global error toast. The store still
+             * commits state on success; errors reset status to loaded and re-throw.
+             */
+            createSection(form: DotToolsSectionForm): Observable<DotToolsSection> {
+                patchState(store, { status: 'loading' });
+
+                return toolsService.createSection(form).pipe(
+                    take(1),
+                    tap((created) => {
+                        patchState(store, {
+                            sections: [...store.sections(), created],
+                            selectedSectionId: created.id,
+                            status: 'loaded'
+                        });
+                    }),
+                    catchError((error) => {
+                        patchState(store, { status: 'loaded' });
+
+                        return throwError(() => error);
+                    })
+                );
             },
 
-            updateSection(id: string, form: DotToolsSectionForm) {
-                runMutation(toolsService.updateSection(id, form), (updated) => {
-                    patchState(store, {
-                        sections: store
-                            .sections()
-                            .map((section) =>
-                                section.id === id
-                                    ? { ...section, name: updated.name, icon: updated.icon }
-                                    : section
-                            ),
-                        status: 'loaded'
-                    });
-                });
+            updateSection(id: string, form: DotToolsSectionForm): Observable<DotToolsSection> {
+                patchState(store, { status: 'loading' });
+
+                return toolsService.updateSection(id, form).pipe(
+                    take(1),
+                    tap((updated) => {
+                        patchState(store, {
+                            sections: store
+                                .sections()
+                                .map((section) =>
+                                    section.id === id
+                                        ? { ...section, name: updated.name, icon: updated.icon }
+                                        : section
+                                ),
+                            status: 'loaded'
+                        });
+                    }),
+                    catchError((error) => {
+                        patchState(store, { status: 'loaded' });
+
+                        return throwError(() => error);
+                    })
+                );
             },
 
             deleteSection(id: string) {
-                runMutation(toolsService.deleteSection(id), () => {
-                    const rest = store.sections().filter((section) => section.id !== id);
-                    const nextSelectedId =
-                        store.selectedSectionId() === id
-                            ? (rest[0]?.id ?? null)
-                            : store.selectedSectionId();
-                    patchState(store, {
-                        sections: rest,
-                        selectedSectionId: nextSelectedId,
-                        status: 'loaded'
-                    });
+                runMutation(toolsService.deleteSection(id), (sections) => {
+                    commitSectionList(sections);
                 });
             },
 
             reorderSections(orderedIds: string[]) {
+                // Optimistic patch — the server returns the full list on success
+                // and commitSectionList replaces state, so any client drift is
+                // corrected then.
                 const bySection = new Map(
                     store.sections().map((section) => [section.id, section] as const)
                 );
-                const reordered = orderedIds
+                const optimistic = orderedIds
                     .map((id, index) => {
                         const section = bySection.get(id);
 
@@ -276,11 +307,10 @@ export const DotToolsStore = signalStore(
                     })
                     .filter((section): section is DotToolsSection => section !== null);
 
-                // Optimistic patch first — the API confirmation just resets status.
-                patchState(store, { sections: reordered });
+                patchState(store, { sections: optimistic });
 
-                runMutation(toolsService.reorderSections(orderedIds), () => {
-                    patchState(store, { status: 'loaded' });
+                runMutation(toolsService.reorderSections(orderedIds), (sections) => {
+                    commitSectionList(sections);
                 });
             },
 
@@ -338,13 +368,22 @@ export const DotToolsStore = signalStore(
                 runMutation(toolsService.deleteCustomTool(id), () => {
                     patchState(store, {
                         catalog: store.catalog().filter((entry) => entry.id !== id),
-                        // The tool disappears from every section that referenced
-                        // it — mirrors what DELETE /v1/portlet/portletId/{id}
-                        // does today on the backend.
-                        sections: store.sections().map((section) => ({
-                            ...section,
-                            portletIds: section.portletIds.filter((portletId) => portletId !== id)
-                        })),
+                        sections: store.sections().map((section) => {
+                            const dropAt = section.portletIds.indexOf(id);
+                            if (dropAt === -1) {
+                                return section;
+                            }
+
+                            return {
+                                ...section,
+                                portletIds: section.portletIds.filter(
+                                    (portletId) => portletId !== id
+                                ),
+                                portletTitles: section.portletTitles.filter(
+                                    (_title, index) => index !== dropAt
+                                )
+                            };
+                        }),
                         status: 'loaded'
                     });
                 });

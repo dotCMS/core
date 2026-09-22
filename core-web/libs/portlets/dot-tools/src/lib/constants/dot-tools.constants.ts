@@ -1,5 +1,7 @@
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
+import { DotToolsDataViewMode } from '../models/dot-tools.models';
+
 /**
  * Catalog pagination. Kept here so the store's slice count, the "Load N more"
  * button label and any future test stay in agreement.
@@ -61,10 +63,10 @@ export const DOT_TOOLS_BASE_TYPES: ReadonlyArray<{
 ];
 
 export const DOT_TOOLS_DATA_VIEW_MODES: ReadonlyArray<{
-    id: 'List' | 'Card';
+    id: DotToolsDataViewMode;
     label: string;
     icon: string;
 }> = [
-    { id: 'List', label: 'List', icon: 'list' },
-    { id: 'Card', label: 'Card', icon: 'grid_view' }
+    { id: 'list', label: 'List', icon: 'list' },
+    { id: 'card', label: 'Card', icon: 'grid_view' }
 ];

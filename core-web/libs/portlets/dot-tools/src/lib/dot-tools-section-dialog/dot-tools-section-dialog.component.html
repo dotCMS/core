@@ -11,13 +11,18 @@
             id="tools-section-name"
             formControlName="name"
             [placeholder]="'tools.section-dialog.name.placeholder' | dm"
-            [class.ng-invalid]="$nameShowsError()"
-            [class.ng-dirty]="$nameShowsError()"
+            [class.ng-invalid]="$nameShowsError() || !!$submitError()"
+            [class.ng-dirty]="$nameShowsError() || !!$submitError()"
+            (input)="onNameInput()"
             data-testid="tools-section-name-input"
             class="w-full" />
         @if ($nameShowsError()) {
             <small class="text-red-600" data-testid="tools-section-name-error">
                 {{ 'tools.form.error.name-required' | dm }}
+            </small>
+        } @else if ($submitError(); as message) {
+            <small class="text-red-600" data-testid="tools-section-submit-error">
+                {{ message }}
             </small>
         }
     </div>
@@ -72,11 +77,13 @@
         <p-button
             [label]="'tools.form.cancel' | dm"
             [text]="true"
+            [disabled]="$submitting()"
             (onClick)="onCancel()"
             data-testid="tools-section-cancel-btn" />
         <p-button
             [label]="(isEdit ? 'tools.form.save' : 'tools.form.create') | dm"
             type="submit"
+            [loading]="$submitting()"
             data-testid="tools-section-save-btn" />
     </div>
 </form>

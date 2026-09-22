@@ -33,7 +33,7 @@ const MOCK_PREFILL: DotToolsCustomToolConfig = {
     portletName: 'Press Releases',
     baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
     contentTypes: ['Blog'],
-    dataViewMode: 'Card'
+    dataViewMode: 'card'
 };
 
 describe('DotToolsToolDialogComponent', () => {

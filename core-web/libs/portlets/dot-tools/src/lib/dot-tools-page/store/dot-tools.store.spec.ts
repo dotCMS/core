@@ -10,15 +10,23 @@ import { DotToolsCatalogEntry, DotToolsSection } from '../../models/dot-tools.mo
 import { DotToolsService } from '../../services/dot-tools.service';
 
 const MOCK_SECTIONS: DotToolsSection[] = [
-    { id: 'site', name: 'Site', icon: 'language', tabOrder: 0, portletIds: ['pages', 'browser'] },
+    {
+        id: 'site',
+        name: 'Site',
+        icon: 'language',
+        tabOrder: 0,
+        portletIds: ['pages', 'browser'],
+        portletTitles: ['Pages', 'Browser']
+    },
     {
         id: 'content',
         name: 'Content',
         icon: 'article',
         tabOrder: 1,
-        portletIds: ['blogs', 'events', 'c_press-releases']
+        portletIds: ['blogs', 'events', 'c_press-releases'],
+        portletTitles: ['Blogs', 'Events', 'Press Releases']
     },
-    { id: 'empty', name: 'Empty', icon: 'folder', tabOrder: 2, portletIds: [] }
+    { id: 'empty', name: 'Empty', icon: 'folder', tabOrder: 2, portletIds: [], portletTitles: [] }
 ];
 
 const MOCK_CATALOG: DotToolsCatalogEntry[] = [
@@ -47,7 +55,8 @@ describe('DotToolsStore', () => {
                         name: 'New Section',
                         icon: 'widgets',
                         tabOrder: 99,
-                        portletIds: []
+                        portletIds: [],
+                        portletTitles: []
                     })
                 ),
                 updateSection: jest.fn().mockReturnValue(
@@ -56,12 +65,15 @@ describe('DotToolsStore', () => {
                         name: 'Renamed Site',
                         icon: 'public',
                         tabOrder: 0,
-                        portletIds: ['pages', 'browser']
+                        portletIds: ['pages', 'browser'],
+                        portletTitles: ['Pages', 'Browser']
                     })
                 ),
-                deleteSection: jest.fn().mockReturnValue(of(undefined)),
-                reorderSections: jest.fn().mockReturnValue(of(undefined)),
-                setSectionTools: jest.fn().mockReturnValue(of(undefined)),
+                // Delete, reorder, and setSectionTools now return the full
+                // section list per the spec on PR #37645.
+                deleteSection: jest.fn().mockReturnValue(of(MOCK_SECTIONS)),
+                reorderSections: jest.fn().mockReturnValue(of(MOCK_SECTIONS)),
+                setSectionTools: jest.fn().mockReturnValue(of(MOCK_SECTIONS)),
                 createCustomTool: jest.fn().mockReturnValue(
                     of<DotToolsCatalogEntry>({
                         id: 'c_new-tool',
