@@ -294,10 +294,17 @@ offered, says it will act on four, and acts on four.
   rather than implying it covers the whole selection.
 - **FR-005**: The action MUST be unavailable outright when the author cannot add children to **the
   folder they are browsing**, because that is where every duplicate in the selection would land.
-  This is one check for the whole selection rather than one per folder, and it is a check the client
-  can actually make: duplicating in place means the target parent is the folder currently open in
-  the listing, which Content Drive already holds along with its rights. Offering an action that can
-  only fail for every folder in the selection is the case worth preventing outright.
+  This is one check for the whole selection rather than one per folder. It MUST reuse the portlet's
+  **existing** answer to that question rather than computing a fourth copy of it: the store already
+  derives whether the browsed folder accepts new children, and the New menu, the Upload button and
+  the drop zone all gate on it. That computed value already handles the cases this requirement
+  would otherwise have to restate: System Host, all-site-content, and a tree node with no
+  permissions of its own, which is the site root and falls back to the site's own rights.
+
+  Duplication MUST also inherit that value's **permissive** treatment of unknowns, which reads a
+  lookup still in flight, and an instance too old to report the field, as allowed. Starting disabled
+  would flicker the affordance off and on in the common case, and the server refuses the write
+  regardless. Consistent with FR-005c: the client never manufactures a refusal.
 - **FR-005a**: The action MUST act only on the folders in the selection the author may duplicate,
   and MUST state how many of the selection that is (FR-004). It follows the eligibility behaviour
   the other multi-selection actions already have rather than inventing a second one.
@@ -316,10 +323,12 @@ offered, says it will act on four, and acts on four.
   consistency with the other actions in the same menu is worth more. The filtering is **never
   silent**: the count in FR-004 is what keeps it honest, and an action reading "4 of 6" tells the
   author as much as a report of two refusals would, sooner.
-- **FR-005b**: Where the selection spans more than one parent, which a search or a filter makes
-  possible, the client MUST NOT gate on FR-005 and MUST leave the refusals to the server. There is
-  no single folder being browsed in that case, so there is nothing to check add-children against,
-  and a gate built on the wrong parent is worse than no gate.
+- **FR-005b**: Where the selection spans more than one parent, which a search or the all-site-content
+  view makes possible, the gate MUST NOT be applied against a folder that is not the destination.
+  The portlet's existing computation already covers this: selecting all site content clears the tree
+  selection and the answer falls back to the site's own rights, deliberately asked before any node
+  left over from earlier. Duplication MUST NOT reimplement that ordering, and MUST leave anything it
+  cannot resolve to the server's per-folder refusals.
 - **FR-005c**: Where the author's rights over an individual folder are unknown, the action MUST
   remain available for it and the server's per-folder refusal MUST be what reports it. The client
   MUST NOT guess a refusal. Filtering under FR-005a acts on rights the client **has**, never on
@@ -532,6 +541,13 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
   feature consumes the job-following primitive that ticket owns and MUST NOT build a second one. If
   #37062 lands before #37166, it builds that primitive to #37166's stated requirements and the
   siblings reuse it unchanged.
+
+  **Part of it is already in the workspace**, which the plan should check before writing anything:
+  the shared job vocabulary and batch-outcome types exist in the models library, are written to be
+  free of any one feature's shapes, and already name this ticket as a consumer, stating that a
+  result's key carries a folder path here and a file name for an upload. What does **not** yet exist
+  is a service or store that follows a run using them. So the types are settled and the behaviour is
+  not, and this half should extend rather than redefine.
 - **The Action Center already has a destination picker, and this feature does not use it.** A
   destination picker component exists for contentlet bulk move. Duplicate-in-place has no
   destination, so it is not reused here. It remains the right starting point for folder move

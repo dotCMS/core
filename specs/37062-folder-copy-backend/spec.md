@@ -422,14 +422,28 @@ per-folder outcome is still readable and a durable notification was addressed to
   parent, cannot interfere: neither destroys anything, and the naming rule gives each duplicate a
   distinct name. **This is a deliberate omission of a requirement bulk delete carries** (its
   FR-029), recorded so its absence reads as a decision rather than an oversight.
-- **FR-034**: The system MUST state its position on re-running a duplication, and the position MUST
-  NOT be borrowed from delete. **Copy is not idempotent**: a folder that was duplicated successfully
-  has nothing about it that would make a second attempt a no-op, so a re-queued or resubmitted run
-  produces a second duplicate. Because the framework holds no durable per-item state, a run that is
-  abandoned and automatically re-queued restarts from the first path and duplicates again everything
-  the first attempt completed. Whether automatic re-queue is therefore disabled for this queue, or
-  accepted with the consequence documented, MUST be settled at the plan phase and MUST NOT be left
-  to the framework's default by omission.
+- **FR-034**: The system MUST record, in the processor itself, that **duplication is not
+  idempotent** and that a re-queued run duplicates again everything the first attempt completed. A
+  folder that was duplicated successfully leaves nothing that makes a second attempt a no-op, and
+  the framework holds no durable per-item state, so an interrupted run restarts from the first
+  folder. Each re-run produces a further set of duplicates under further derived names.
+
+  **This is accepted, not prevented, and the reason is that it cannot be prevented from here.** An
+  earlier draft of this document asked the plan to choose between disabling automatic re-queue for
+  this queue and accepting the consequence. The first option does not exist: `@NoRetryPolicy`
+  governs retry after a *failure*, while the abandoned-job sweep re-queues a stalled run
+  unconditionally, without consulting the retry policy at all. Marking the processor no-retry would
+  therefore not prevent a second attempt; it would only leave that attempt unprepared for one. Bulk
+  upload reached this exact conclusion for the same reason and records it on
+  `BulkUploadProcessor`, which is the precedent to follow rather than re-derive.
+
+  **Where duplication differs from upload, and it is worse.** An interrupted upload re-creating a
+  file asset is stopped by the unique index on the lower-cased path, so the second create is
+  rejected and only the report is wrong. Duplication has no such backstop: the naming rule simply
+  derives the next free name, so a re-run creates a genuinely new folder rather than colliding with
+  the first attempt's. The spec therefore does not promise a defence it does not have, and the
+  obligation on the plan is to state the behaviour in the endpoint's published description so an
+  author who sees two sets of duplicates knows why.
 
 #### Telling the author
 
@@ -462,9 +476,11 @@ per-folder outcome is still readable and a durable notification was addressed to
 
 - **Submission**: the folder paths an author asked to duplicate, accepted as one unit.
 - **Run**: one accepted submission, identified by a handle, with an observable state and an outcome.
-- **Per-folder outcome**: one record per submitted path, carrying the path, a three-valued status,
-  and a machine-readable reason plus diagnostic message on failure. Exactly the shared shape, with
-  nothing added.
+- **Per-folder outcome**: one record per submitted folder, carrying an identifying key, a
+  three-valued status, and a machine-readable reason plus diagnostic message on failure. Exactly
+  the shared shape, with nothing added: the shipped record carries a **key**, a status and an
+  optional reason and message, and no field for a path, so the folder's path travels as that key
+  the way an uploaded file's name does.
 - **Duplicate**: the folder the run created, living in the same parent as its source under a derived
   name.
 
@@ -491,6 +507,16 @@ per-folder outcome is still readable and a durable notification was addressed to
   same submission already covers it** (FR-016). The second skip reason needs wording of its own,
   because delete's equivalent says the ancestor removed the folder and here the folder is still
   there, untouched and usable.
+
+  **Two facts about the shipped enum that bear on this and were checked rather than assumed.** It
+  carries seven values today, aimed at bulk upload: over the size limit, disallowed file type, name
+  collision, folder filter mismatch, permission denied, staged content unavailable, and
+  unclassified. Only permission denied is one duplication emits, so "the folder no longer resolves",
+  "the folder is protected" and the ancestor skip are all **additions**, not reuses. And the type is
+  named for *failures* while the ancestor case attaches to a **skipped** item, whose shipped
+  documentation currently says a skip means the run was cancelled before reaching it. Adding a
+  second meaning to skipped is a change to a shared vocabulary, not a local one, so it goes through
+  both halves and through whoever owns bulk upload.
 - **C-006**: **Progress, and an honest statement of what it counts** (FR-027, FR-029). It counts
   completed top-level folders and nothing finer, so the client must not render a proportion.
 - **C-007**: **A way to cancel, with this operation's guarantee and not the one #37062 describes**
@@ -691,13 +717,22 @@ abandonment behaviour, and the durable record's lifetime.
 - **D-014: Behaviour on locked or in-use content is today's behaviour.** Copy reads its sources and
   does not need to destroy or modify them, so it has no analogue of the lock failure delete reports
   per folder. Recorded so its absence from the failure-reason set is deliberate.
-- **D-015: Copy is not idempotent, and the position on retry is settled at the plan phase.**
-  *(FR-034.)* A successful duplication leaves nothing that makes a second attempt a no-op, so an
-  automatically re-queued run duplicates again everything the first attempt completed. Bulk delete
-  faces the same absence of durable per-item state and is unharmed by it, because a delete that
-  already happened simply fails to resolve the second time. Copy is the sibling where the framework
-  default is actively wrong, and the plan must choose between disabling automatic re-queue for this
-  queue and accepting duplicated duplicates with the consequence documented.
+- **D-015: Duplication is not idempotent, a re-queued run duplicates again, and this is accepted
+  because it cannot be prevented from here.** *(FR-034; corrected 2026-09-22 after checking the
+  framework.)* A successful duplication leaves nothing that makes a second attempt a no-op, so an
+  automatically re-queued run repeats everything the first attempt completed. Bulk delete faces the
+  same absence of durable per-item state and is unharmed, because a delete that already happened
+  simply fails to resolve the second time.
+
+  **An earlier draft asked the plan to choose between disabling automatic re-queue and accepting
+  the consequence. That choice was not real.** `@NoRetryPolicy` governs retry after a failure; the
+  abandoned-job sweep calls `putJobBackInQueue` on a stalled run without consulting the retry
+  policy, so no annotation on the processor prevents a second attempt. Bulk upload records exactly
+  this on `BulkUploadProcessor` and deliberately does not mark itself no-retry, on the reasoning
+  that doing so would only leave the inevitable second attempt unprepared for itself. Duplication
+  follows that precedent, and is worse off than upload in one respect worth stating: upload's
+  second attempt is blocked by the unique index on a file asset's lower-cased path, while the
+  naming rule here simply derives the next free name, so a re-run genuinely creates more folders.
 - **D-016: Nothing is marked, blocked or announced.** *(Developer decision, 2026-09-21; FR-040,
   C-011.)* Bulk delete makes a folder inert everywhere it appears while a run works on it, keeps
   that true across reloads and authors, and broadcasts a folder's entry into and exit from a delete.
@@ -732,9 +767,12 @@ abandonment behaviour, and the durable record's lifetime.
   distinct names, and cancellation mid-run leaving no partial duplicate. #37062's list additionally
   names a subtree large enough to exercise more than one chunk; under D-012 that case no longer
   applies and **must not be written**.
-- **The retry position** (FR-034, D-015). The plan MUST settle whether automatic re-queue is
-  disabled for this queue or accepted, and MUST NOT leave it to the framework default by omission.
-  This is the plan obligation with the most user-visible consequence in the document.
+- **Saying that a re-queued run duplicates again** (FR-034, D-015). No longer a choice, because the
+  abandonment sweep re-queues regardless of the retry policy, so the obligation is to state the
+  behaviour rather than to pick one. The plan MUST say where it is stated in the endpoint's
+  published description, and MUST carry the same note on the processor class that
+  `BulkUploadProcessor` carries, so the next person to read it does not assume `@NoRetryPolicy`
+  would have helped.
 - **How a folder is matched between a run and a row.** The client has both a path and an identifier
   for every folder it lists, and which one travels in the submission, in the run's parameters and in
   the outcome need not be the same choice. Both plans MUST agree, and this half MUST state what the
