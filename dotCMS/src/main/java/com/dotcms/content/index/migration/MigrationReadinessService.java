@@ -96,6 +96,13 @@ public class MigrationReadinessService {
             safeToAdvance = blockers.isEmpty();
             summary = safeToAdvance
                     ? "Phase 3 (OpenSearch only) — the final phase, nothing to advance to. "
+                        // Phase 3 counts what it depends on — the OpenSearch copy against the
+                        // database — so a non-zero count here is actionable; say so next to it.
+                        + (outOfSync.isEmpty() ? ""
+                            : String.format("%s %s an OpenSearch copy that is missing, could not be "
+                                    + "measured, or holds materially less than the database; run a "
+                                    + "full reindex. ", plural(outOfSync.size(), "index", "indices"),
+                                    outOfSync.size() == 1 ? "has" : "have"))
                         + (esBehindAnywhere
                             ? "WARNING: OpenSearch holds content Elasticsearch does not; a downgrade "
                                     + "would hide it until a full reindex."
@@ -175,40 +182,50 @@ public class MigrationReadinessService {
      * that exists while the Elasticsearch one does not — or a count drift between two existing copies —
      * is still unexpected in Phase 0 and stays reported.
      *
-     * <p>Phase 3 is the mirror image: Elasticsearch no longer receives writes, so an Elasticsearch copy
-     * that is missing, or measurably behind OpenSearch, is expected and not counted.</p>
+     * <p>Phase 3 is judged differently altogether — see {@link #needsAttentionInFinalPhase}.</p>
      */
     private static boolean needsAttentionIn(final MigrationPhase phase, final MirrorStatus status) {
+        if (phase.isMigrationComplete()) {
+            return needsAttentionInFinalPhase(status);
+        }
         if (!status.needsAttention()) {
             return false;
         }
         final boolean expectedMissingCounterpart =
                 phase.isMigrationNotStarted() && status.es().exists() && !status.os().exists();
-        // The mirror image at the other end of the migration: past Phase 3 Elasticsearch receives no
-        // more writes, so its copy either being gone or lagging behind OpenSearch is the expected
-        // steady state, not something to reconcile. The lag is the common case: the switchover keeps
-        // the active Elasticsearch pointers, so while that cluster is still reachable its index is
-        // measured, frozen at cutover, and every edit made since leaves it further behind. Without
-        // this, a fully healthy Phase 3 install reports outOfSyncCount = 2 forever and the field stops
-        // being usable as a health gauge in the phase it matters most. Both states are still
-        // reported — by safeToRollback and the summary's downgrade warning, which are the fields that
-        // own that fact, and which remain untouched here because they are derived from blocksRollback
-        // rather than from this count. Elasticsearch AHEAD of OpenSearch, or an unmeasurable count
-        // on either side, is not expected and stays counted.
-        final boolean expectedFrozenEsCopy = phase.isMigrationComplete() && status.os().exists()
-                && (!status.es().exists() || esBehindMeasurably(status));
-        return !expectedMissingCounterpart && !expectedFrozenEsCopy;
+        return !expectedMissingCounterpart;
     }
 
     /**
-     * Whether both counts were measured and Elasticsearch holds fewer documents than OpenSearch.
-     * A {@code -1} (unmeasurable) on either side is never read as "behind": it is an unknown, and the
-     * drift verdict already treats it as needing attention.
+     * Phase 3 health, measured against the database rather than against Elasticsearch.
+     *
+     * <p>Past the final phase Elasticsearch receives no more writes. The switchover keeps its active
+     * pointers, so while that cluster is reachable its copy is still measured — frozen at cutover, and
+     * drifting from OpenSearch in <em>both</em> directions from then on: behind after every new
+     * contentlet, ahead after every delete or unpublish. Comparing the two engines therefore cannot
+     * tell a healthy install from one whose OpenSearch copy lost documents, and counting that drift
+     * would pin a healthy install at a non-zero {@code outOfSyncCount} forever. So neither direction
+     * of Elasticsearch drift — nor an Elasticsearch copy that is gone — is counted here. The gap is
+     * still reported by {@code safeToRollback} and the summary's downgrade warning, which derive from
+     * {@link #blocksRollback} and own that fact.</p>
+     *
+     * <p>What is counted is what Phase 3 actually depends on: an OpenSearch copy that is missing,
+     * whose size could not be measured, or that holds materially less than the database says it
+     * should ({@link MirrorStatus#INCOMPLETE_INDEXED_THRESHOLD}) — a reindex that never finished, which
+     * the engine-to-engine comparison would have missed whenever the frozen copy happened to match
+     * it. An unmeasurable Elasticsearch count also stays counted: it is an unknown, not a lag. Rows
+     * with no database denominator (Site Search) are judged on the first two conditions alone.</p>
      */
-    private static boolean esBehindMeasurably(final MirrorStatus status) {
-        final long esCount = status.es().docCount();
-        final long osCount = status.os().docCount();
-        return esCount >= 0 && osCount >= 0 && esCount < osCount;
+    private static boolean needsAttentionInFinalPhase(final MirrorStatus status) {
+        if (!status.os().exists() || status.os().docCount() < 0) {
+            return true;
+        }
+        if (status.es().exists() && status.es().docCount() < 0) {
+            return true;
+        }
+        final Double osIndexedPercent = status.osIndexedPercent();
+        return osIndexedPercent != null
+                && osIndexedPercent < MirrorStatus.INCOMPLETE_INDEXED_THRESHOLD;
     }
 
     /**

@@ -307,14 +307,6 @@ public class ContentIndexMirrorReconciler {
     }
 
     /**
-     * Indexed percentage below which an existing index is called out as incomplete in the recommendation. Not a
-     * tight bound on purpose: the denominator is an order-of-magnitude measure (see
-     * {@code MirrorStatus#indexedPercentOf}), so this is meant to catch "3% of the content", not a handful of
-     * documents.
-     */
-    private static final double INCOMPLETE_INDEXED_THRESHOLD = 95.0;
-
-    /**
      * A sentence appended to the recommendation when an engine holds materially less content than the
      * database says it should.
      *
@@ -333,7 +325,7 @@ public class ContentIndexMirrorReconciler {
             return "";
         }
         final double indexedPercent = count * 100.0 / databaseDocCount;
-        if (indexedPercent >= INCOMPLETE_INDEXED_THRESHOLD) {
+        if (indexedPercent >= MirrorStatus.INCOMPLETE_INDEXED_THRESHOLD) {
             return "";
         }
         return String.format(" NOTE: the %s copy holds %d of the %d contentlets the database has "

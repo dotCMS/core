@@ -314,21 +314,74 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
     }
 
     /**
-     * Only the expected direction is excused. Elasticsearch ahead of OpenSearch means OpenSearch — the
-     * only engine serving reads in Phase 3 — is missing documents, and an unmeasurable count is an
-     * unknown rather than a lag; both stay counted.
+     * The other direction is just as expected: content deleted or unpublished after cutover leaves the
+     * frozen Elasticsearch copy holding MORE documents than OpenSearch. Comparing the two engines cannot
+     * tell that apart from OpenSearch losing documents, so in Phase 3 neither direction is counted — the
+     * database comparison below is what catches an incomplete OpenSearch copy.
      */
     @Test
-    public void phase3_openSearchBehindOrUnmeasurable_isStillCountedAsOutOfSync() {
+    public void phase3_frozenElasticsearchCopyAheadOfOpenSearch_isNotCountedAsOutOfSync() {
         setPhase(PHASE_3);
         stubContent(List.of(
                 cc(IndexKind.CONTENT_WORKING, "working_1", true, 10, true, 8),
-                cc(IndexKind.CONTENT_LIVE, "live_1", true, -1, true, 5)));
+                cc(IndexKind.CONTENT_LIVE, "live_1", true, 6, true, 5)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertEquals("deletions after cutover are the Phase 3 steady state",
+                0, r.verdict().outOfSyncCount());
+    }
+
+    /** An unmeasurable count on either engine is an unknown, not a lag, and stays counted. */
+    @Test
+    public void phase3_unmeasurableCount_isStillCountedAsOutOfSync() {
+        setPhase(PHASE_3);
+        stubContent(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, -1, true, 8),
+                cc(IndexKind.CONTENT_LIVE, "live_1", true, 5, true, -1)));
         when(siteSearch.statuses()).thenReturn(List.of());
 
         final MigrationReadiness r = service.evaluate();
 
         assertEquals(2, r.verdict().outOfSyncCount());
+    }
+
+    /**
+     * With Elasticsearch frozen, the database is what OpenSearch is measured against in Phase 3: a copy
+     * holding well under what the database says it should (a reindex that never finished) is counted —
+     * even when the frozen Elasticsearch copy happens to match it, so the two engines alone read in sync.
+     */
+    @Test
+    public void phase3_openSearchIncompleteAgainstDatabase_isCountedAsOutOfSync() {
+        setPhase(PHASE_3);
+        stubContent(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, 50, true, 50, 100L),
+                cc(IndexKind.CONTENT_LIVE, "live_1", false, 0, true, 40, 100L)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertEquals(2, r.verdict().outOfSyncCount());
+        assertTrue("the summary says what the count means and what to do",
+                r.verdict().summary().contains("run a full reindex"));
+    }
+
+    /**
+     * The database comparison uses the same tolerance as the report's "incomplete" note, so a copy that
+     * holds nearly everything — a handful of documents short while indexing catches up — is not counted.
+     */
+    @Test
+    public void phase3_openSearchNearlyCompleteAgainstDatabase_isNotCounted() {
+        setPhase(PHASE_3);
+        stubContent(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, 80, true, 99, 100L),
+                cc(IndexKind.CONTENT_LIVE, "live_1", true, 80, true, 100, 100L)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertEquals(0, r.verdict().outOfSyncCount());
     }
 
     /** The same state with the OpenSearch copy gone — that one blocks. */
@@ -471,9 +524,16 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
 
     private static MirrorStatus cc(final IndexKind kind, final String name, final boolean esExists,
             final long esCount, final boolean osExists, final long osCount) {
+        return cc(kind, name, esExists, esCount, osExists, osCount, null);
+    }
+
+    private static MirrorStatus cc(final IndexKind kind, final String name, final boolean esExists,
+            final long esCount, final boolean osExists, final long osCount,
+            final Long databaseDocCount) {
         return new MirrorStatus(name, kind,
                 new MirrorStatus.EngineCopy(esExists, esCount, "cluster_x." + name),
                 new MirrorStatus.EngineCopy(osExists, osCount, "cluster_x." + name + ".os"),
-                MirrorStatus.verdictFor(esExists, osExists, esCount, osCount), "advice");
+                MirrorStatus.verdictFor(esExists, osExists, esCount, osCount), "advice",
+                databaseDocCount);
     }
 }

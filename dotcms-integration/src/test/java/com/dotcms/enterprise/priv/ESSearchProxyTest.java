@@ -56,8 +56,8 @@ public class ESSearchProxyTest extends IntegrationTestBase {
     /**
      * esSearch is an ES-only legacy API: ESSearchProxy delegates straight to the ES
      * RestHighLevelClient and returns an org.elasticsearch SearchResponse, so it has no OpenSearch
-     * routing path. Under Phase 3 (OS-only, ES decommissioned) the ES store holds no active index,
-     * so there is nothing for it to query — that phase is asserted separately by
+     * routing path. Under Phase 3 (OS-only) Elasticsearch no longer receives writes, so the path
+     * refuses to run rather than answer from the index frozen at cutover — asserted separately by
      * {@link #test_esSearch_phase3_failsLoudlyInsteadOfReturningNothing()}. Re-routing esSearch
      * through the neutral search path is a pending product decision (#35784), so the assertions
      * below are gated to the phases where ES still serves reads (0/1/2).
@@ -79,14 +79,16 @@ public class ESSearchProxyTest extends IntegrationTestBase {
      * Phase 3 must fail this deprecated path loudly, with the specific exception type that survives
      * Velocity.
      *
-     * <p>With no Elasticsearch index pointer registered — an installation that never had one, or one
-     * whose pointers an older build purged at the Phase 3 switchover — esSearch resolves no index at
-     * all. It used to carry that null into the ES client and die
-     * there with a NullPointerException — which Velocity's method-exception handler converts into a
-     * null return outside EDIT mode, so a template's {@code #set} assigned nothing and the page
-     * rendered its own unresolved source into the response body (issue #37635). DotStateException is
-     * the one type that handler rethrows, so asserting the type here is asserting the visible
-     * behaviour: an error, not a page with Velocity printed on it.</p>
+     * <p>Past the final phase Elasticsearch receives no more writes. The switchover keeps its active
+     * pointers, so without a phase check this path would answer from the index frozen at cutover —
+     * results that look valid but miss everything written since — and where no pointer was ever
+     * registered it used to carry a null into the ES client and die with a NullPointerException, which
+     * Velocity's method-exception handler converts into a null return outside EDIT mode, so a
+     * template's {@code #set} assigned nothing and the page rendered its own unresolved source
+     * (issue #37635). It now fails on the phase itself, whatever the index store holds.
+     * DotStateException is one of the few types that handler rethrows, so asserting the type here is
+     * asserting the visible behaviour: an error, not stale results and not Velocity printed on the
+     * page.</p>
      */
     @Test
     public void test_esSearch_phase3_failsLoudlyInsteadOfReturningNothing() {
