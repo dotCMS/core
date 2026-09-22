@@ -390,6 +390,7 @@ public class LongTextPreviewStrategyTest {
         storyBlockDoc.put("type", "doc");
         storyBlockDoc.put("content", List.of(paragraph));
         final String rawJson = "{\"type\":\"doc\",\"content\":[/* the full, untruncated schema */]}";
+        Mockito.when(contentlet.get("titleStory")).thenReturn(rawJson);
 
         final Map<String, Object> map = new HashMap<>();
         // "titleStory" starts as the parsed Story Block structure StoryBlockViewStrategy produced;
@@ -412,6 +413,39 @@ public class LongTextPreviewStrategyTest {
                 titlePreview.contains("untruncated schema"));
         assertFalse("The _raw companion must still be removed",
                 map.containsKey("titleStory_raw"));
+    }
+
+    /**
+     * The {@code <var>_raw} companion is only written when the contentlet is loaded from its JSON
+     * column ({@code ContentletJsonAPIImpl}); a contentlet loaded from legacy columns has none. The
+     * title match must still find a Story Block title source by reading the field's raw value off
+     * the {@link Contentlet} itself -- the same place {@link Contentlet#getTitle()} reads it from.
+     */
+    @Test
+    public void transform_titleDerivedFromStoryBlockField_withoutRawCompanion_stillTrimsTitleKey()
+            throws Exception {
+        final Field titleSourceField = mockField(StoryBlockField.class, "titleStory");
+        final ContentType contentType = mockContentType(List.of(), List.of(), List.of(titleSourceField));
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> textNode = Map.of("type", "text", "text", "Launch announcement");
+        final Map<String, Object> paragraph = Map.of("type", "paragraph", "content", List.of(textNode));
+        final LinkedHashMap<String, Object> storyBlockDoc = new LinkedHashMap<>();
+        storyBlockDoc.put("type", "doc");
+        storyBlockDoc.put("content", List.of(paragraph));
+        final String rawJson = "{\"type\":\"doc\",\"content\":[/* the full, untruncated schema */]}";
+        Mockito.when(contentlet.get("titleStory")).thenReturn(rawJson);
+
+        final Map<String, Object> map = new HashMap<>();
+        // No "titleStory_raw" key: legacy column-loaded contentlet.
+        map.put("titleStory", storyBlockDoc);
+        map.put("title", rawJson);
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String fieldPreview = (String) map.get("titleStory");
+        assertEquals("The 'title' key must match the field's own already-extracted preview",
+                fieldPreview, map.get("title"));
     }
 
     /**
