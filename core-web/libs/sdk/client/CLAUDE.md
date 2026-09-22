@@ -220,8 +220,8 @@ This client SDK serves as the foundation for:
 
 ### Dependencies
 - **Runtime**: `consola` for logging
-- **Development**: `@dotcms/types` for TypeScript definitions
-- **Peer Dependencies**: Framework-specific SDKs extend this client
+- **Peer**: `@dotcms/types` — despite the name it is not type-only. The built `.js` imports runtime enums and the error classes (`UVE_MODE`, `DotHttpError`, `DotErrorPage`) from it, so a consumer who does not install it fails on first import. Declared with the `"0.0.0"` sentinel, like every cross-SDK dependency: the value is a slot marker, and the SDK release workflow overwrites it with the exact release version at publish. The `declared-deps` spec in `sdk-bundle-budgets` fails the build if a shipped `@dotcms/*` import is left undeclared.
+- **Consumers**: framework-specific SDKs extend this client
 
 ## Common Development Tasks
 
