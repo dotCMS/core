@@ -212,8 +212,9 @@ both show the new folder once the run ends, with no reload.
 
 ### User Story 6 - The author is not offered a duplicate that can only fail (Priority: P3)
 
-The action is withheld where the author is known to have no right to it, and offered everywhere
-else.
+The action is withheld in the one case where nothing in the selection could succeed, and offered
+everywhere else, narrowing itself to the folders the author may duplicate rather than refusing
+because some of them are out of reach.
 
 **Why this priority**: P3 because the per-folder outcome reports refusals honestly, so a submission
 that fails is informative rather than broken. It is still worth doing: offering an action that can
@@ -301,14 +302,20 @@ offered, says it will act on four, and acts on four.
   and MUST state how many of the selection that is (FR-004). It follows the eligibility behaviour
   the other multi-selection actions already have rather than inventing a second one.
 
-**This reverses an earlier draft**, which required the selection to be submitted whole so the
-server's refusals could be reported per folder. That position is bulk delete's, and it was taken
-there because silently shrinking a **destructive** action is worse than reporting a refusal: an
-author who believes six folders were deleted and finds four is in a different situation from one who
-believes six were duplicated. Duplication destroys nothing, so the argument does not carry over, and
-consistency with the other actions in the same menu is worth more. The filtering is **never
-silent**: the count in FR-004 is what keeps it honest, and an action reading "4 of 6" tells the
-author as much as a report of two refusals would, sooner.
+  **A folder the author cannot duplicate MUST NOT block the ones they can.** The action MUST remain
+  available, and MUST NOT be disabled, refused or turned into an error, because some of the selection
+  is ineligible. It narrows to the eligible folders and runs. The only whole-selection stop is FR-005,
+  where the author cannot add children to the folder every duplicate would land in and therefore
+  nothing in the selection could succeed.
+
+  **This reverses an earlier draft**, which required the selection to be submitted whole so the
+  server's refusals could be reported per folder. That position is bulk delete's, and it was taken
+  there because silently shrinking a **destructive** action is worse than reporting a refusal: an
+  author who believes six folders were deleted and finds four is in a different situation from one who
+  believes six were duplicated. Duplication destroys nothing, so the argument does not carry over, and
+  consistency with the other actions in the same menu is worth more. The filtering is **never
+  silent**: the count in FR-004 is what keeps it honest, and an action reading "4 of 6" tells the
+  author as much as a report of two refusals would, sooner.
 - **FR-005b**: Where the selection spans more than one parent, which a search or a filter makes
   possible, the client MUST NOT gate on FR-005 and MUST leave the refusals to the server. There is
   no single folder being browsed in that case, so there is nothing to check add-children against,

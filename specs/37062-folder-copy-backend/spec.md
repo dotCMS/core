@@ -353,20 +353,20 @@ per-folder outcome is still readable and a durable notification was addressed to
   ancestor in the same submission already covers it, and MUST be distinguishable from a folder
   skipped because a cancellation stopped the run before reaching it.
 
-**Why skipped rather than duplicated**, since the two folders land in different places and an
-earlier draft of this document treated that as reason enough to do both. Acting on both is
-**order-dependent**, and there is no ordering that is correct. Duplicating the descendant first
-creates its duplicate inside the original ancestor, so the ancestor's duplicate, made afterwards,
-contains the descendant *and* the descendant's duplicate. Duplicating the ancestor first produces an
-ancestor duplicate containing only the descendant. Same submission, two different results depending
-on the order the run happens to process the selection. A specification that permits both has to pick
-an order and defend it; skipping the descendant removes the question. The author also gets what they
-almost certainly meant, which is the subtree duplicated once.
+  **Why skipped rather than duplicated**, since the two folders land in different places and an
+  earlier draft of this document treated that as reason enough to do both. Acting on both is
+  **order-dependent**, and there is no ordering that is correct. Duplicating the descendant first
+  creates its duplicate inside the original ancestor, so the ancestor's duplicate, made afterwards,
+  contains the descendant *and* the descendant's duplicate. Duplicating the ancestor first produces an
+  ancestor duplicate containing only the descendant. Same submission, two different results depending
+  on the order the run happens to process the selection. A specification that permits both has to pick
+  an order and defend it; skipping the descendant removes the question. The author also gets what they
+  almost certainly meant, which is the subtree duplicated once.
 
-This aligns with bulk delete, which also skips a descendant covered by a selected ancestor, though
-the two reach it differently: delete's descendant no longer exists by the time the run reaches it,
-while this one still does and is deliberately left alone. The wording shown to an author must
-therefore say the ancestor **covers** it, not that the ancestor removed it.
+  This aligns with bulk delete, which also skips a descendant covered by a selected ancestor, though
+  the two reach it differently: delete's descendant no longer exists by the time the run reaches it,
+  while this one still does and is deliberately left alone. The wording shown to an author must
+  therefore say the ancestor **covers** it, not that the ancestor removed it.
 - **FR-017**: Every folder in the run MUST produce exactly one outcome record.
 - **FR-018**: The outcome MUST use the shared per-item contract already in use by bulk upload and
   bulk refresh, extended additively if at all.
