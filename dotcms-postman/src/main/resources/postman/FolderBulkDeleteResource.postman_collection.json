@@ -1,174 +1,261 @@
 {
- "info": {
-  "_postman_id": "594eced8-54ac-4d2b-a41c-d0e0194391a8",
-  "name": "FolderBulkDeleteResource",
-  "description": "Postman collection for POST /api/v1/assets/folders/_bulkdelete (#37063).\n\nRequests added under T018 (US1 tests). Covers the happy path and the two 400 refusals reachable at US1 scope; the 403 (NOT_ENTITLED) and 409 (OVERLAPPING_RUN) refusals belong to later stories and are added there. This collection is what actually verifies the exception-mapper wiring end to end - BulkUploadRefusedExceptionMapper's own history records a real refusal-status bug that helper-level integration tests alone missed and only Postman caught.\n\nContract: specs/37063-bulk-folder-delete-backend/contracts/bulk-delete-api.md",
-  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
- },
- "auth": {
-  "type": "bearer",
-  "bearer": [
-   {
-    "key": "token",
-    "value": "{{jwt}}",
-    "type": "string"
-   }
-  ]
- },
- "variable": [
-  { "key": "jwt", "value": "" },
-  { "key": "hostname", "value": "" },
-  { "key": "hostIdentifier", "value": "" },
-  { "key": "folderPath", "value": "" }
- ],
- "item": [
-  {
-   "name": "Setup",
-   "item": [
+  "info": {
+    "_postman_id": "594eced8-54ac-4d2b-a41c-d0e0194391a8",
+    "name": "FolderBulkDeleteResource",
+    "description": "Postman collection for POST /api/v1/assets/folders/_bulkdelete (#37063).\n\nRequests added under T018 (US1 tests). Covers the happy path and the two 400 refusals reachable at US1 scope; the 403 (NOT_ENTITLED) and 409 (OVERLAPPING_RUN) refusals belong to later stories and are added there. This collection is what actually verifies the exception-mapper wiring end to end - BulkUploadRefusedExceptionMapper's own history records a real refusal-status bug that helper-level integration tests alone missed and only Postman caught.\n\nContract: specs/37063-bulk-folder-delete-backend/contracts/bulk-delete-api.md",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
     {
-     "name": "Get default site",
-     "event": [
-      {
-       "listen": "test",
-       "script": {
-        "type": "text/javascript",
-        "exec": [
-         "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n\n    const entity = pm.response.json().entity;\n    pm.collectionVariables.set(\"hostname\", entity.hostname);\n    pm.collectionVariables.set(\"hostIdentifier\", entity.identifier);\n});"
-        ]
-       }
-      }
-     ],
-     "request": {
-      "method": "GET",
-      "header": [],
-      "url": {
-       "raw": "{{serverURL}}/api/v1/site/defaultSite",
-       "host": ["{{serverURL}}"],
-       "path": ["api", "v1", "site", "defaultSite"]
-      }
-     },
-     "response": []
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Get default site",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n\n    const entity = pm.response.json().entity;\n    pm.collectionVariables.set(\"hostname\", entity.hostname);\n    pm.collectionVariables.set(\"hostIdentifier\", entity.identifier);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/site/defaultSite",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "site",
+                "defaultSite"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create test folder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {\n    pm.response.to.have.status(200);\n});\n\nvar jsonData = pm.response.json();\npm.test(\"Test folder created\", function () {\n    pm.expect(jsonData.entity[0].name).to.eql('bulk-delete-test');\n});\npm.collectionVariables.set(\"folderPath\", \"//\" + pm.collectionVariables.get(\"hostname\") + \"/bulk-delete-test/\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "\n    [\"/bulk-delete-test/\"]\n",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/folder/createfolders/{{hostname}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "folder",
+                "createfolders",
+                "{{hostname}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
     },
     {
-     "name": "Create test folder",
-     "event": [
-      {
-       "listen": "test",
-       "script": {
-        "type": "text/javascript",
-        "exec": [
-         "pm.test(\"Status code should be 200\", function () {\n    pm.response.to.have.status(200);\n});\n\nvar jsonData = pm.response.json();\npm.test(\"Test folder created\", function () {\n    pm.expect(jsonData.entity[0].name).to.eql('bulk-delete-test');\n});\npm.collectionVariables.set(\"folderPath\", \"//\" + pm.collectionVariables.get(\"hostname\") + \"/bulk-delete-test/\");"
-        ]
-       }
-      }
-     ],
-     "request": {
-      "method": "POST",
-      "header": [{ "key": "Content-Type", "value": "application/json" }],
-      "body": {
-       "mode": "raw",
-       "raw": "\n    [\"/bulk-delete-test/\"]\n",
-       "options": { "raw": { "language": "json" } }
+      "name": "Accepts a selection and answers 202 with a handle",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('202 Accepted', function () { pm.response.to.have.status(202); });\n\npm.test('Response carries jobId, statusUrl, submitted', function () {\n    const entity = pm.response.json().entity;\n\n    pm.expect(entity.jobId).to.be.a('string').and.not.empty;\n    pm.expect(entity.statusUrl).to.eql('/api/v1/jobs/' + entity.jobId + '/status');\n    pm.expect(entity.submitted).to.eql(1);\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"assetPaths\": [\"{{folderPath}}\"]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/assets/folders/_bulkdelete",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "folders",
+            "_bulkdelete"
+          ]
+        },
+        "description": "FR-001, FR-002, FR-003 - answers immediately with a handle, before any folder is deleted."
       },
-      "url": {
-       "raw": "{{serverURL}}/api/v1/folder/createfolders/{{hostname}}",
-       "host": ["{{serverURL}}"],
-       "path": ["api", "v1", "folder", "createfolders", "{{hostname}}"]
+      "response": []
+    },
+    {
+      "name": "Refuses an empty selection",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is EMPTY_SELECTION', function () {\n    const body = pm.response.json();\n    const error = body.errors && body.errors[0];\n    pm.expect(error.errorCode).to.eql('EMPTY_SELECTION');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assetPaths\": []\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/assets/folders/_bulkdelete",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "folders",
+            "_bulkdelete"
+          ]
+        },
+        "description": "FR-004 - an empty submission is refused before a job is created, distinguishable by errorCode from an over-the-maximum refusal (also 400) per the CR-02 gap raised on the issue."
+      },
+      "response": []
+    },
+    {
+      "name": "Refuses a selection over the configured maximum",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is OVER_MAX_PATHS, distinct from EMPTY_SELECTION', function () {\n    const body = pm.response.json();\n    const error = body.errors && body.errors[0];\n    pm.expect(error.errorCode).to.eql('OVER_MAX_PATHS');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n    pm.expect(error.message).to.include('50');\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assetPaths\": [\"//default/not-real-0/\",\"//default/not-real-1/\",\"//default/not-real-2/\",\"//default/not-real-3/\",\"//default/not-real-4/\",\"//default/not-real-5/\",\"//default/not-real-6/\",\"//default/not-real-7/\",\"//default/not-real-8/\",\"//default/not-real-9/\",\"//default/not-real-10/\",\"//default/not-real-11/\",\"//default/not-real-12/\",\"//default/not-real-13/\",\"//default/not-real-14/\",\"//default/not-real-15/\",\"//default/not-real-16/\",\"//default/not-real-17/\",\"//default/not-real-18/\",\"//default/not-real-19/\",\"//default/not-real-20/\",\"//default/not-real-21/\",\"//default/not-real-22/\",\"//default/not-real-23/\",\"//default/not-real-24/\",\"//default/not-real-25/\",\"//default/not-real-26/\",\"//default/not-real-27/\",\"//default/not-real-28/\",\"//default/not-real-29/\",\"//default/not-real-30/\",\"//default/not-real-31/\",\"//default/not-real-32/\",\"//default/not-real-33/\",\"//default/not-real-34/\",\"//default/not-real-35/\",\"//default/not-real-36/\",\"//default/not-real-37/\",\"//default/not-real-38/\",\"//default/not-real-39/\",\"//default/not-real-40/\",\"//default/not-real-41/\",\"//default/not-real-42/\",\"//default/not-real-43/\",\"//default/not-real-44/\",\"//default/not-real-45/\",\"//default/not-real-46/\",\"//default/not-real-47/\",\"//default/not-real-48/\",\"//default/not-real-49/\",\"//default/not-real-50/\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{serverURL}}/api/v1/assets/folders/_bulkdelete",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "folders",
+            "_bulkdelete"
+          ]
+        },
+        "description": "FR-004, FR-007 - 51 paths against the default ceiling of 50 (contracts §5). Refused before resolving any path, so nonexistent folder names are fine here."
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt}}",
+        "type": "string"
       }
-     },
-     "response": []
-    }
-   ]
+    ]
   },
-  {
-   "name": "Accepts a selection and answers 202 with a handle",
-   "event": [
+  "variable": [
     {
-     "listen": "test",
-     "script": {
-      "type": "text/javascript",
-      "exec": [
-       "pm.test('202 Accepted', function () { pm.response.to.have.status(202); });\n\npm.test('Response carries jobId, statusUrl, submitted', function () {\n    const body = pm.response.json();\n    pm.expect(body.jobId).to.be.a('string').and.not.empty;\n    pm.expect(body.statusUrl).to.eql('/api/v1/jobs/' + body.jobId + '/status');\n    pm.expect(body.submitted).to.eql(1);\n});"
-      ]
-     }
-    }
-   ],
-   "request": {
-    "method": "POST",
-    "header": [{ "key": "Content-Type", "value": "application/json" }],
-    "body": {
-     "mode": "raw",
-     "raw": "{\n  \"assetPaths\": [\"{{folderPath}}\"]\n}",
-     "options": { "raw": { "language": "json" } }
+      "key": "jwt",
+      "value": ""
     },
-    "url": {
-     "raw": "{{serverURL}}/api/v1/assets/folders/_bulkdelete",
-     "host": ["{{serverURL}}"],
-     "path": ["api", "v1", "assets", "folders", "_bulkdelete"]
-    },
-    "description": "FR-001, FR-002, FR-003 - answers immediately with a handle, before any folder is deleted."
-   },
-   "response": []
-  },
-  {
-   "name": "Refuses an empty selection",
-   "event": [
     {
-     "listen": "test",
-     "script": {
-      "type": "text/javascript",
-      "exec": [
-       "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is EMPTY_SELECTION', function () {\n    const body = pm.response.json();\n    const error = body.errors && body.errors[0];\n    pm.expect(error.errorCode).to.eql('EMPTY_SELECTION');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n});"
-      ]
-     }
-    }
-   ],
-   "request": {
-    "method": "POST",
-    "header": [{ "key": "Content-Type", "value": "application/json" }],
-    "body": {
-     "mode": "raw",
-     "raw": "{\n  \"assetPaths\": []\n}",
-     "options": { "raw": { "language": "json" } }
+      "key": "hostname",
+      "value": ""
     },
-    "url": {
-     "raw": "{{serverURL}}/api/v1/assets/folders/_bulkdelete",
-     "host": ["{{serverURL}}"],
-     "path": ["api", "v1", "assets", "folders", "_bulkdelete"]
-    },
-    "description": "FR-004 - an empty submission is refused before a job is created, distinguishable by errorCode from an over-the-maximum refusal (also 400) per the CR-02 gap raised on the issue."
-   },
-   "response": []
-  },
-  {
-   "name": "Refuses a selection over the configured maximum",
-   "event": [
     {
-     "listen": "test",
-     "script": {
-      "type": "text/javascript",
-      "exec": [
-       "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is OVER_MAX_PATHS, distinct from EMPTY_SELECTION', function () {\n    const body = pm.response.json();\n    const error = body.errors && body.errors[0];\n    pm.expect(error.errorCode).to.eql('OVER_MAX_PATHS');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n    pm.expect(error.message).to.include('50');\n});"
-      ]
-     }
+      "key": "hostIdentifier",
+      "value": ""
+    },
+    {
+      "key": "folderPath",
+      "value": ""
     }
-   ],
-   "request": {
-    "method": "POST",
-    "header": [{ "key": "Content-Type", "value": "application/json" }],
-    "body": {
-     "mode": "raw",
-     "raw": "{\n  \"assetPaths\": [\"//default/not-real-0/\",\"//default/not-real-1/\",\"//default/not-real-2/\",\"//default/not-real-3/\",\"//default/not-real-4/\",\"//default/not-real-5/\",\"//default/not-real-6/\",\"//default/not-real-7/\",\"//default/not-real-8/\",\"//default/not-real-9/\",\"//default/not-real-10/\",\"//default/not-real-11/\",\"//default/not-real-12/\",\"//default/not-real-13/\",\"//default/not-real-14/\",\"//default/not-real-15/\",\"//default/not-real-16/\",\"//default/not-real-17/\",\"//default/not-real-18/\",\"//default/not-real-19/\",\"//default/not-real-20/\",\"//default/not-real-21/\",\"//default/not-real-22/\",\"//default/not-real-23/\",\"//default/not-real-24/\",\"//default/not-real-25/\",\"//default/not-real-26/\",\"//default/not-real-27/\",\"//default/not-real-28/\",\"//default/not-real-29/\",\"//default/not-real-30/\",\"//default/not-real-31/\",\"//default/not-real-32/\",\"//default/not-real-33/\",\"//default/not-real-34/\",\"//default/not-real-35/\",\"//default/not-real-36/\",\"//default/not-real-37/\",\"//default/not-real-38/\",\"//default/not-real-39/\",\"//default/not-real-40/\",\"//default/not-real-41/\",\"//default/not-real-42/\",\"//default/not-real-43/\",\"//default/not-real-44/\",\"//default/not-real-45/\",\"//default/not-real-46/\",\"//default/not-real-47/\",\"//default/not-real-48/\",\"//default/not-real-49/\",\"//default/not-real-50/\"]\n}",
-     "options": { "raw": { "language": "json" } }
-    },
-    "url": {
-     "raw": "{{serverURL}}/api/v1/assets/folders/_bulkdelete",
-     "host": ["{{serverURL}}"],
-     "path": ["api", "v1", "assets", "folders", "_bulkdelete"]
-    },
-    "description": "FR-004, FR-007 - 51 paths against the default ceiling of 50 (contracts §5). Refused before resolving any path, so nonexistent folder names are fine here."
-   },
-   "response": []
-  }
- ]
+  ]
 }
