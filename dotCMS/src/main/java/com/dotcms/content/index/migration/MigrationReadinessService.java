@@ -2,12 +2,14 @@ package com.dotcms.content.index.migration;
 
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.ContentMirrors;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -57,7 +59,8 @@ public class MigrationReadinessService {
     /** Builds the readiness report for the current phase. */
     public MigrationReadiness evaluate() {
         final MigrationPhase phase = MigrationPhase.current();
-        final List<MirrorStatus> content = new ArrayList<>(contentReconciler.statuses());
+        final ContentMirrors contentMirrors = contentReconciler.mirrors();
+        final List<MirrorStatus> content = new ArrayList<>(contentMirrors.statuses());
         final List<MirrorStatus> siteSearch = new ArrayList<>(siteSearchReconciler.statuses());
 
         final List<MirrorStatus> all = new ArrayList<>(content.size() + siteSearch.size());
@@ -75,7 +78,8 @@ public class MigrationReadinessService {
         // nothing to report on — a hard no-go, independent of the sync check, which would otherwise
         // pass vacuously when there are no active indices at all. Site Search is an open set that may
         // legitimately be empty, so it is not required here.
-        final List<String> missingContent = requiredContentBlockers(content, phase);
+        final List<String> missingContent =
+                requiredContentBlockers(content, phase, contentMirrors.unreadableReason());
 
         final boolean safeToAdvance;
         final String summary;
@@ -177,7 +181,16 @@ public class MigrationReadinessService {
         }
         final boolean expectedMissingCounterpart =
                 phase.isMigrationNotStarted() && status.es().exists() && !status.os().exists();
-        return !expectedMissingCounterpart;
+        // The mirror image at the other end of the migration: past Phase 3 Elasticsearch is
+        // decommissioned, so its copy being gone is the expected steady state, not something to
+        // reconcile. Without this, a fully healthy Phase 3 install reports outOfSyncCount = 2
+        // forever and the field stops being usable as a health gauge in the phase it matters most.
+        // The absent Elasticsearch copy is still reported — by safeToRollback and the summary's
+        // downgrade warning, which are the fields that own that fact, and which remain untouched
+        // here because they are derived from blocksRollback rather than from this count.
+        final boolean expectedMissingEsCopy =
+                phase.isMigrationComplete() && status.os().exists() && !status.es().exists();
+        return !expectedMissingCounterpart && !expectedMissingEsCopy;
     }
 
     /**
@@ -209,9 +222,19 @@ public class MigrationReadinessService {
      * from it would be asserted over zero measurements (issues #36360 and #37635).</p>
      */
     private static List<String> requiredContentBlockers(final List<MirrorStatus> content,
-            final MigrationPhase phase) {
+            final MigrationPhase phase, final Optional<String> unreadableReason) {
         final boolean openSearchOwnsContent = phase.isMigrationComplete();
         final String engine = openSearchOwnsContent ? "OpenSearch" : "Elasticsearch";
+        // A store that could not be read is NOT a store with no indices. Both leave the report with
+        // no rows, but the operator action is the opposite — fix the read, do not reindex — and the
+        // per-slot messages below would confidently prescribe the wrong one (issue #37635).
+        if (unreadableReason.isPresent()) {
+            return List.of(String.format("The active content indices could not be determined: %s. "
+                    + "Nothing below was measured, so no conclusion in this report is supported by "
+                    + "data. Resolve the read failure and re-run this check — do NOT reindex on the "
+                    + "strength of this reading; it is not known whether the indices are missing.",
+                    unreadableReason.get()));
+        }
         final List<String> out = new ArrayList<>(2);
         for (final IndexKind kind : List.of(IndexKind.CONTENT_WORKING, IndexKind.CONTENT_LIVE)) {
             final String slot = contentSlot(kind);

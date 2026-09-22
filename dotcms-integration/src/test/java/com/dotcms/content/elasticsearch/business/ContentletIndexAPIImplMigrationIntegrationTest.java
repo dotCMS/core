@@ -1099,19 +1099,23 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
      *                 {@code reindex_live}/{@code reindex_working} pair (all NULL version),
      *                 alongside the promoted OS {@code .os} (version 3.X) {@code live}/{@code working}
      *                 pair — and an unrelated {@code site_search} pointer (also NULL version).
-     * When : {@link VersionedIndicesAPI#removeLegacyIndices()} runs (the cleanup step the
+     * When : {@link VersionedIndicesAPI#removeLegacyReindexIndices()} runs (the cleanup step the
      *        Phase-3 switchover now invokes).
-     * Then : the four legacy ES content rows are gone; the {@code site_search} row is preserved
-     *        (it is NOT part of the content-index migration); and the OS rows are preserved
-     *        (they carry a non-NULL version). The expected end state is the two OS rows only.
+     * Then : the two transient ES reindex rows are gone, and everything else survives — the active ES
+     *        {@code live}/{@code working} pair, the {@code site_search} pointer (not part of the
+     *        content-index migration) and the OS rows (non-NULL version).
+     *
+     * <p>The surviving ES pair is the point, not an oversight: it is the only record of which
+     * Elasticsearch index holds the pre-migration content, and that index outlives the migration
+     * because deletion in this phase routes to OpenSearch only. Purging it would strand the index
+     * for good and force a rollback to rebuild from scratch (issue #37635).</p>
      *
      * <p>Asserts against the specific seeded names rather than table totals so the result is
-     * independent of whatever rows the running instance already holds. The blanket delete also
-     * removes the live instance's real ES content rows; {@code @After} restores them via
-     * {@code IndiciesAPI.point(savedEsInfo)}.</p>
+     * independent of whatever rows the running instance already holds. {@code @After} restores the
+     * instance's real ES/OS state either way.</p>
      */
     @Test
-    public void test_phase3_removeLegacyIndices_purgesEsRowsPreservesSiteSearchAndOs()
+    public void test_phase3_removeLegacyReindexIndices_purgesEsRowsPreservesSiteSearchAndOs()
             throws DotDataException {
         setPhase(3);
 
@@ -1141,18 +1145,20 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
             insertIndiciesRow(osWorking,   "working",         VersionedIndices.OPENSEARCH_3X);
             insertIndiciesRow(osLive,      "live",            VersionedIndices.OPENSEARCH_3X);
 
-            final int removed = APILocator.getVersionedIndicesAPI().removeLegacyIndices();
+            final int removed = APILocator.getVersionedIndicesAPI().removeLegacyReindexIndices();
 
-            assertTrue("Cleanup must remove at least our 4 seeded ES content rows",
-                    removed >= 4);
-            assertEquals("Legacy ES content rows (NULL version) must be purged",
-                    0L, countIndiciesRows(esWorking, esLive, esReindexWk, esReindexLv));
+            assertTrue("Cleanup must remove at least our 2 seeded ES reindex rows", removed >= 2);
+            assertEquals("Transient ES reindex rows (NULL version) must be purged",
+                    0L, countIndiciesRows(esReindexWk, esReindexLv));
+            assertEquals("The active ES live/working pair must SURVIVE — it is the only record of "
+                            + "which Elasticsearch index holds the pre-migration content",
+                    2L, countIndiciesRows(esWorking, esLive));
             assertEquals("site_search row must be preserved (not part of content migration)",
                     1L, countIndiciesRows(esSiteSrch));
             assertEquals("OS rows (version 3.X) must be preserved",
                     2L, countIndiciesRows(osWorking, osLive));
 
-            Logger.info(this, "✅ Phase 3 cleanup purged orphan ES rows, kept site_search + OS");
+            Logger.info(this, "✅ Phase 3 cleanup purged the ES reindex slots and kept everything else");
         } finally {
             for (final String name : seeded) {
                 Try.run(() -> new DotConnect()
@@ -1166,23 +1172,25 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
      * Given Scenario: Phase 3 after a full reindex. The OpenSearch store points at the newly promoted
      *        working/live pair (both indices exist on the cluster); the legacy Elasticsearch pointers
      *        still name the previous generation, as they do right up to the switchover.
-     * When : {@link VersionedIndicesAPI#removeLegacyIndices()} runs — the cleanup step the Phase 3
+     * When : {@link VersionedIndicesAPI#removeLegacyReindexIndices()} runs — the cleanup step the Phase 3
      *        switchover performs immediately after promoting the OpenSearch slots.
      * Then : the migration-readiness report is still populated. Both slots must be reported, named by
      *        the logical name, with the OpenSearch copy present and no blockers.
      *
-     * <p>This is the regression that issue #37635 asks for. The reconciler used to resolve the active
-     * names through {@code IndiciesInfo} in every phase; the purge empties that store, so afterwards
-     * both slots were skipped and the report came back with an empty {@code content} map — on which
-     * {@code outOfSyncCount} read 0 (nothing counted) and both verdicts read safe (no row could
-     * contradict them). The assertion that matters is therefore the <em>after</em> one: the
-     * <em>before</em> block only establishes that the report was populated to begin with, so a
-     * regression shows up as "went blind at the purge" rather than "was never populated".</p>
+     * <p>This is the regression that issue #37635 asks for. The cleanup used to take the active
+     * Elasticsearch pointers with it, and the reconciler resolved every phase through them, so
+     * afterwards both slots were skipped and the report came back with an empty {@code content} map —
+     * on which {@code outOfSyncCount} read 0 (nothing counted) and both verdicts read safe (no row
+     * could contradict them). Both halves are now fixed: the cleanup keeps those pointers, and the
+     * reconciler reads each engine's name from its own store. The assertion that matters is the
+     * <em>after</em> one; the <em>before</em> block only establishes that the report was populated to
+     * begin with, so a regression reads as "went blind at the cleanup" rather than "was never
+     * populated".</p>
      *
      * <p>Driven by the switchover's own cleanup call rather than by a real full reindex: it is the
      * exact step that produces the state, it needs no reindex to complete under the Phase 3 index
      * resolution gap, and it keeps the test deterministic — the same reasoning as
-     * {@link #test_phase3_removeLegacyIndices_purgesEsRowsPreservesSiteSearchAndOs()}.</p>
+     * {@link #test_phase3_removeLegacyReindexIndices_purgesEsRowsPreservesSiteSearchAndOs()}.</p>
      */
     @Test
     public void test_phase3_readinessReportSurvivesTheLegacyPointerPurge() throws Exception {
@@ -1217,7 +1225,7 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
             assertEquals("precondition: the report is populated before the purge",
                     2, before.content().size());
 
-            APILocator.getVersionedIndicesAPI().removeLegacyIndices();
+            APILocator.getVersionedIndicesAPI().removeLegacyReindexIndices();
 
             final MigrationReadiness after = new MigrationReadinessService().evaluate();
 

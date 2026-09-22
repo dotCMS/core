@@ -8,10 +8,12 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.ContentMirrors;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.dotcms.content.index.migration.MirrorStatus.Verdict;
 import com.dotmarketing.util.Config;
 import java.util.List;
+import java.util.Optional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,13 +42,27 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         content = mock(ContentIndexMirrorReconciler.class);
         // Default to a healthy WORKING/LIVE pair so the mandatory-content precondition is satisfied;
         // tests that exercise missing content override this explicitly.
-        when(content.statuses()).thenReturn(healthyContentPair());
+        stubContent(healthyContentPair());
         service = new MigrationReadinessService(siteSearch, content, () -> "cluster_x");
     }
 
     @After
     public void tearDown() {
         Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, previousPhase);
+    }
+
+    /**
+     * Stubs the content reconciler's contract. The service reads {@code mirrors()}, not
+     * {@code statuses()}, because an empty list alone cannot say whether the store was read and held
+     * nothing or could not be read at all — see {@link ContentMirrors}.
+     */
+    private void stubContent(final List<MirrorStatus> statuses) {
+        when(content.mirrors()).thenReturn(new ContentMirrors(statuses, Optional.empty()));
+    }
+
+    /** Stubs the reconciler reporting that the index store could not be read at all. */
+    private void stubContentUnreadable(final String reason) {
+        when(content.mirrors()).thenReturn(new ContentMirrors(List.of(), Optional.of(reason)));
     }
 
     private static void setPhase(final int ordinal) {
@@ -150,7 +166,7 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
     @Test
     public void phase0_missingOsCounterparts_notCountedAsOutOfSync() {
         setPhase(PHASE_0);
-        when(content.statuses()).thenReturn(List.of(
+        stubContent(List.of(
                 cc(IndexKind.CONTENT_WORKING, "working_1", true, 10, false, 0),
                 cc(IndexKind.CONTENT_LIVE, "live_1", true, 5, false, 0)));
         when(siteSearch.statuses()).thenReturn(List.of(ss("a", true, 100, false, 0)));
@@ -227,7 +243,7 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
     @Test
     public void phase3_nothingMeasured_isNotReportedAsHealthy() {
         setPhase(PHASE_3);
-        when(content.statuses()).thenReturn(List.of());
+        stubContent(List.of());
         when(siteSearch.statuses()).thenReturn(List.of());
 
         final MigrationReadiness r = service.evaluate();
@@ -251,7 +267,7 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
     @Test
     public void phase3_openSearchIsTheMandatoryEngine() {
         setPhase(PHASE_3);
-        when(content.statuses()).thenReturn(List.of(
+        stubContent(List.of(
                 cc(IndexKind.CONTENT_WORKING, "working_1", false, 0, true, 10),
                 cc(IndexKind.CONTENT_LIVE, "live_1", false, 0, true, 5)));
         when(siteSearch.statuses()).thenReturn(List.of());
@@ -261,13 +277,22 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertTrue("an absent Elasticsearch copy is expected in Phase 3",
                 r.verdict().blockers().isEmpty());
         assertTrue(r.verdict().safeToAdvance());
+        // ...and it is not counted either: a decommissioned Elasticsearch is the steady state here,
+        // so counting it would pin a healthy install at outOfSyncCount = 2 forever and make the
+        // field useless as a health gauge. The absent copy is still reported, by the two fields that
+        // own that fact — the rollback verdict and the summary's downgrade warning.
+        assertEquals("a healthy Phase 3 install has nothing out of sync",
+                0, r.verdict().outOfSyncCount());
+        assertFalse("a downgrade is still unsafe: Elasticsearch has no copy to read from",
+                r.verdict().safeToRollback());
+        assertTrue(r.verdict().summary().contains("WARNING"));
     }
 
     /** The same state with the OpenSearch copy gone — that one blocks. */
     @Test
     public void phase3_missingOpenSearchCopy_blocks() {
         setPhase(PHASE_3);
-        when(content.statuses()).thenReturn(List.of(
+        stubContent(List.of(
                 cc(IndexKind.CONTENT_WORKING, "working_1", false, 0, false, 0),
                 cc(IndexKind.CONTENT_LIVE, "live_1", false, 0, true, 5)));
         when(siteSearch.statuses()).thenReturn(List.of());
@@ -279,11 +304,48 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         assertTrue(r.verdict().blockers().get(0).contains("no OpenSearch copy"));
     }
 
+    /**
+     * A store that could not be read is not a store with no indices. Both leave the report with no
+     * rows, but the operator action is the opposite — fix the read versus reindex — so the blocker
+     * must name the read failure and must not prescribe a reindex on evidence it does not have.
+     */
+    @Test
+    public void unreadableStore_saysSo_ratherThanPrescribingAReindex() {
+        setPhase(PHASE_2);
+        stubContentUnreadable("the Elasticsearch index store could not be read: connection refused");
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToAdvance());
+        assertFalse(r.verdict().safeToRollback());
+        assertEquals("one blocker for the read failure, not one per unresolved slot",
+                1, r.verdict().blockers().size());
+        final String blocker = r.verdict().blockers().get(0);
+        assertTrue("names the underlying failure", blocker.contains("connection refused"));
+        assertTrue("warns against acting on it", blocker.contains("do NOT reindex"));
+    }
+
+    /** The same shape in the final phase: still one read-failure blocker, still not green. */
+    @Test
+    public void phase3_unreadableStore_isNotGreen() {
+        setPhase(PHASE_3);
+        stubContentUnreadable("the OpenSearch index store could not be read: timeout");
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToAdvance());
+        assertFalse(r.verdict().safeToRollback());
+        assertEquals(1, r.verdict().blockers().size());
+        assertTrue(r.verdict().blockers().get(0).contains("timeout"));
+    }
+
     /** Content is keyed by slot (WORKING/LIVE); Site Search stays an ordered list. */
     @Test
     public void content_keyedBySlot_siteSearchAsList() {
         setPhase(PHASE_2);
-        when(content.statuses()).thenReturn(List.of(
+        stubContent(List.of(
                 cc(IndexKind.CONTENT_WORKING, "working_1", 10),
                 cc(IndexKind.CONTENT_LIVE, "live_1", 5)));
         when(siteSearch.statuses()).thenReturn(List.of(ss("sitesearch_a", true, 3, true, 3)));
@@ -301,7 +363,7 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
     @Test
     public void dualWrite_noContentIndices_blocksAdvance() {
         setPhase(PHASE_1);
-        when(content.statuses()).thenReturn(List.of());
+        stubContent(List.of());
         when(siteSearch.statuses()).thenReturn(List.of(ss("a", true, 100, true, 100)));
 
         final MigrationReadiness r = service.evaluate();
@@ -316,7 +378,7 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
     @Test
     public void phase0_noContentIndices_blocksAdvance() {
         setPhase(PHASE_0);
-        when(content.statuses()).thenReturn(List.of());
+        stubContent(List.of());
         when(siteSearch.statuses()).thenReturn(List.of());
 
         final MigrationReadiness r = service.evaluate();
@@ -329,7 +391,7 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
     @Test
     public void dualWrite_oneContentSlotMissing_blocksAdvance() {
         setPhase(PHASE_2);
-        when(content.statuses()).thenReturn(List.of(cc(IndexKind.CONTENT_WORKING, "working_1", 10)));
+        stubContent(List.of(cc(IndexKind.CONTENT_WORKING, "working_1", 10)));
         when(siteSearch.statuses()).thenReturn(List.of());
 
         final MigrationReadiness r = service.evaluate();
@@ -343,7 +405,7 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
     @Test
     public void dualWrite_contentEsCopyMissing_singleBlockerNoDuplicate() {
         setPhase(PHASE_2);
-        when(content.statuses()).thenReturn(List.of(
+        stubContent(List.of(
                 cc(IndexKind.CONTENT_WORKING, "working_1", true, 10, true, 10),
                 cc(IndexKind.CONTENT_LIVE, "live_1", false, 0, true, 5))); // ES copy gone
         when(siteSearch.statuses()).thenReturn(List.of());
