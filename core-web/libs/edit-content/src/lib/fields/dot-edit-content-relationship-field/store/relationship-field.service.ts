@@ -5,7 +5,7 @@ import { Injectable, inject } from '@angular/core';
 import { map, switchMap } from 'rxjs/operators';
 
 import { DotFieldService, DotContentTypeService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeRelationshipField, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { getRelationshipFromContentlet } from '../../../utils/relationshipFromContentlet';
 import { DEFAULT_RELATIONSHIP_COLUMNS } from '../dot-edit-content-relationship-field.constants';
@@ -64,7 +64,7 @@ export class RelationshipFieldService {
      * });
      * ```
      */
-    prepareField(params: { field: DotCMSContentTypeField; contentlet: DotCMSContentlet }) {
+    prepareField(params: { field: ContentTypeRelationshipField; contentlet: DotCMSContentlet }) {
         const { field, contentlet } = params;
 
         return of({ field, contentlet }).pipe(

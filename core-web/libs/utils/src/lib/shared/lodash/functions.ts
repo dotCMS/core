@@ -71,7 +71,7 @@ export function isEqual(first: any, second: any): boolean {
         for (let i = 0; i < fKeys.length; i++) {
             if (first[fKeys[i]] && second[fKeys[i]]) {
                 if (first[fKeys[i]] === second[fKeys[i]]) {
-                    continue; // eslint-disable-line
+                    continue;
                 }
 
                 if (

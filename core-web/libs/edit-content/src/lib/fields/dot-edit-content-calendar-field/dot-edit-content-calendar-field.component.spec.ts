@@ -12,6 +12,8 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
+    DotCMSFieldType,
+    DotCMSFieldTypes,
     DotSystemTimezone
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
@@ -20,7 +22,6 @@ import { DotCalendarFieldComponent } from './components/calendar-field/calendar-
 import * as calendarUtils from './components/calendar-field/calendar-field.util';
 import { DotEditContentCalendarFieldComponent } from './dot-edit-content-calendar-field.component';
 
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../utils/mocks';
 
@@ -78,7 +79,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
     // picker footer, so its coverage moved to calendar-field.component.spec.ts ('Picker footer —
     // timezone'). What remains here is the guarantee that nothing renders under the input.
     describe('Calendar field timezone placement', () => {
-        it.each([FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME, FIELD_TYPES.DATE])(
+        it.each([DotCMSFieldTypes.DATE_AND_TIME, DotCMSFieldTypes.TIME, DotCMSFieldTypes.DATE])(
             'should NOT render a timezone line under the input for a %s field',
             (fieldType) => {
                 const field = { ...DATE_FIELD_MOCK, fieldType };
@@ -139,7 +140,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         it('should render the hint under the input, and no timezone line, when a timezone is present', () => {
             const fieldWithHint = {
                 ...DATE_FIELD_MOCK,
-                fieldType: FIELD_TYPES.DATE_AND_TIME,
+                fieldType: DotCMSFieldTypes.DATE_AND_TIME,
                 hint: 'Pick the go-live date'
             };
 
@@ -175,7 +176,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         it('should show the required error AND keep the hint, error first', () => {
             const fieldWithHint = {
                 ...DATE_FIELD_MOCK,
-                fieldType: FIELD_TYPES.DATE_AND_TIME,
+                fieldType: DotCMSFieldTypes.DATE_AND_TIME,
                 required: true,
                 hint: 'Pick the go-live date'
             };
@@ -226,7 +227,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         it('should NOT route the hint into the label tooltip when a timezone is present', () => {
             const fieldWithHint = {
                 ...DATE_FIELD_MOCK,
-                fieldType: FIELD_TYPES.DATE_AND_TIME,
+                fieldType: DotCMSFieldTypes.DATE_AND_TIME,
                 hint: 'Pick the go-live date'
             };
 
@@ -408,7 +409,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
     describe('Field type configurations', () => {
         it('should configure DATE_AND_TIME field correctly', () => {
-            const dateTimeField = { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE_AND_TIME };
+            const dateTimeField = { ...DATE_FIELD_MOCK, fieldType: DotCMSFieldTypes.DATE_AND_TIME };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
@@ -436,7 +437,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should configure DATE field correctly', () => {
-            const dateField = { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE };
+            const dateField = { ...DATE_FIELD_MOCK, fieldType: DotCMSFieldTypes.DATE };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
@@ -464,7 +465,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should configure TIME field correctly', () => {
-            const timeField = { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME };
+            const timeField = { ...DATE_FIELD_MOCK, fieldType: DotCMSFieldTypes.TIME };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
@@ -493,7 +494,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
     });
 
     describe('Picker presentation (issue #36156)', () => {
-        const buildHost = (fieldType: FIELD_TYPES) => {
+        const buildHost = (fieldType: DotCMSFieldType) => {
             const field = { ...DATE_FIELD_MOCK, fieldType };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
@@ -517,9 +518,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
         };
 
         const FIELD_TYPES_UNDER_TEST = [
-            ['Date', FIELD_TYPES.DATE],
-            ['Date/Time', FIELD_TYPES.DATE_AND_TIME],
-            ['Time', FIELD_TYPES.TIME]
+            ['Date', DotCMSFieldTypes.DATE],
+            ['Date/Time', DotCMSFieldTypes.DATE_AND_TIME],
+            ['Time', DotCMSFieldTypes.TIME]
         ] as const;
 
         it.each(FIELD_TYPES_UNDER_TEST)(
@@ -668,7 +669,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
             expect(calendarUtils.processExistingValue).toHaveBeenCalledWith(
                 existingValue,
-                DATE_FIELD_MOCK.fieldType as FIELD_TYPES,
+                DATE_FIELD_MOCK.fieldType,
                 MOCK_TIMEZONE
             );
         });
@@ -707,7 +708,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
 
             expect(calendarUtils.processExistingValue).toHaveBeenCalledWith(
                 existingValue,
-                DATE_FIELD_MOCK.fieldType as FIELD_TYPES,
+                DATE_FIELD_MOCK.fieldType,
                 MOCK_TIMEZONE
             );
         });
@@ -737,7 +738,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should handle calendar change for DATE field', () => {
-            const dateField = { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.DATE };
+            const dateField = { ...DATE_FIELD_MOCK, fieldType: DotCMSFieldTypes.DATE };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
@@ -766,7 +767,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         });
 
         it('should handle calendar change for TIME field', () => {
-            const timeField = { ...DATE_FIELD_MOCK, fieldType: FIELD_TYPES.TIME };
+            const timeField = { ...DATE_FIELD_MOCK, fieldType: DotCMSFieldTypes.TIME };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
@@ -812,7 +813,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         // below covers the real one.
 
         it('should clear the parent form value via onClear (X icon path) for an expire date field', () => {
-            const field = { ...fieldWithoutDefault, fieldType: FIELD_TYPES.DATE_AND_TIME };
+            const field = { ...fieldWithoutDefault, fieldType: DotCMSFieldTypes.DATE_AND_TIME };
             spectator = createHost(
                 `<form [formGroup]="formGroup">
                     <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />

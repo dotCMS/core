@@ -68,8 +68,16 @@ export const dotcmsContentTypeBasicMock = {
     metadata: {}
 } as unknown as DotCMSContentType;
 
+/**
+ * A minimal row field, used as the neutral filler in the layout fixtures below.
+ *
+ * It is a ROW rather than "no type in particular": `EMPTY_SYSTEM_FIELD` is a template without
+ * discriminants, and a content type field must be one concrete kind — see issue #37670.
+ */
 export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {
-    ...EMPTY_SYSTEM_FIELD
+    ...EMPTY_SYSTEM_FIELD,
+    clazz: DotCMSClazzes.ROW,
+    fieldType: DotCMSFieldTypes.ROW
 };
 
 export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
@@ -79,19 +87,12 @@ export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
         },
         columns: [
             {
-                columnDivider: {
-                    ...dotcmsContentTypeFieldBasicMock,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
-                },
+                columnDivider: createFakeColumnField(),
                 fields: [
                     {
                         ...dotcmsContentTypeFieldBasicMock
                     },
-                    {
-                        ...dotcmsContentTypeFieldBasicMock,
-                        clazz: 'contenttype.column.break',
-                        name: 'Column'
-                    },
+                    createFakeColumnBreakField({ name: 'Column' }),
                     {
                         ...dotcmsContentTypeFieldBasicMock
                     }
@@ -108,10 +109,7 @@ export const fieldsBrokenWithColumns: DotCMSContentTypeLayoutRow[] = [
         },
         columns: [
             {
-                columnDivider: {
-                    ...dotcmsContentTypeFieldBasicMock,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
-                },
+                columnDivider: createFakeColumnField(),
                 fields: [
                     {
                         ...dotcmsContentTypeFieldBasicMock
@@ -119,10 +117,7 @@ export const fieldsBrokenWithColumns: DotCMSContentTypeLayoutRow[] = [
                 ]
             },
             {
-                columnDivider: {
-                    ...dotcmsContentTypeFieldBasicMock,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
-                },
+                columnDivider: createFakeColumnField(),
                 fields: [
                     {
                         ...dotcmsContentTypeFieldBasicMock

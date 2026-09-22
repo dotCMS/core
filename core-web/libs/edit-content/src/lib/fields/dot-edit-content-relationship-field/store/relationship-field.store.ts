@@ -13,7 +13,7 @@ import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
-    DotCMSContentTypeField,
+    ContentTypeRelationshipField,
     DotLanguage,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
@@ -36,7 +36,7 @@ export const RELATED_PAGE_SIZE = 40;
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
-    field: DotCMSContentTypeField | null;
+    field: ContentTypeRelationshipField | null;
     selectionMode: SelectionMode | null;
     contentType: DotCMSContentType | null;
     isNewEditorEnabled: boolean;
@@ -160,7 +160,7 @@ export const RelationshipFieldStore = signalStore(
              * @param {string} params.contentTypeId - The ID of the content type to load.
              */
             initialize: rxMethod<{
-                field: DotCMSContentTypeField;
+                field: ContentTypeRelationshipField;
                 contentlet: DotCMSContentlet;
                 targetLanguageId?: number;
                 targetLanguage?: DotLanguage;

@@ -104,33 +104,18 @@ export default defineConfig(() => ({
         environment: 'jsdom',
         environmentOptions: { jsdom: { url: 'http://localhost/' } },
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+        // Type-level tests. See TYPECHECK in tools/generate-vite-configs.mjs for why this is
+        // per project and why source errors are ignored.
+        typecheck: {
+            enabled: true,
+            only: false,
+            ignoreSourceErrors: true,
+            tsconfig: './tsconfig.spec.json',
+            include: ['{src,tests}/**/*.test-d.{ts,mts,cts,tsx}']
+        },
         server: {
             deps: {
-                inline: [
-                    /[\\/](libs|apps)[\\/]/,
-                    /zone\.js/,
-                    /@primeuix/,
-                    /@analogjs\/vite-plugin-angular/,
-                    /@angular\/animations/,
-                    /@angular\/cdk/,
-                    /@angular\/common/,
-                    /@angular\/core/,
-                    /@angular\/elements/,
-                    /@angular\/forms/,
-                    /@angular\/platform-browser/,
-                    /@angular\/platform-browser-dynamic/,
-                    /@angular\/router/,
-                    /@materia-ui\/ngx-monaco-editor/,
-                    /@ngrx\/component-store/,
-                    /@ngrx\/signals/,
-                    /@openng\/spectator/,
-                    /@tinymce\/tinymce-angular/,
-                    /ng-mocks/,
-                    /ng2-dragula/,
-                    /ngx-markdown/,
-                    /ngx-tiptap/,
-                    /primeng/
-                ]
+                inline: [/[\\/](libs|apps)[\\/]/, /zone\.js/, /@primeuix/, /@analogjs\/vite-plugin-angular/, /@angular\/animations/, /@angular\/cdk/, /@angular\/common/, /@angular\/core/, /@angular\/elements/, /@angular\/forms/, /@angular\/platform-browser/, /@angular\/platform-browser-dynamic/, /@angular\/router/, /@materia-ui\/ngx-monaco-editor/, /@ngrx\/component-store/, /@ngrx\/signals/, /@openng\/spectator/, /@tinymce\/tinymce-angular/, /ng-mocks/, /ng2-dragula/, /ngx-markdown/, /ngx-tiptap/, /primeng/]
             }
         },
         // 'github-actions' is GATED, not dropped: an explicit reporters array replaces
@@ -139,15 +124,8 @@ export default defineConfig(() => ({
         // every local run, where nothing parses them. junit stays unconditional; CI
         // consumes those XML files (generates_test_results in .github/test-matrix.yml).
         reporters: process.env.GITHUB_ACTIONS
-            ? [
-                  'default',
-                  'github-actions',
-                  ['junit', { outputFile: '../../target/core-web-reports/dotcms-models.xml' }]
-              ]
-            : [
-                  'default',
-                  ['junit', { outputFile: '../../target/core-web-reports/dotcms-models.xml' }]
-              ],
+            ? ['default', 'github-actions', ['junit', { outputFile: '../../target/core-web-reports/dotcms-models.xml' }]]
+            : ['default', ['junit', { outputFile: '../../target/core-web-reports/dotcms-models.xml' }]],
         coverage: {
             reportsDirectory: '../../coverage/libs/dotcms-models',
             reporter: ['html', 'lcov', 'text'],

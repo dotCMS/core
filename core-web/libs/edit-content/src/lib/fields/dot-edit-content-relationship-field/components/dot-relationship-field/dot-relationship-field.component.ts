@@ -28,8 +28,9 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ContentTypeRelationshipField,
     DotCMSContentlet,
-    DotCMSContentTypeField,
+    DotCMSFieldTypes,
     DotLanguage,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
@@ -43,7 +44,6 @@ import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { AddRelationshipsComponent } from './../add-relationships/add-relationships.component';
 
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
-import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
@@ -191,7 +191,7 @@ export class DotRelationshipFieldComponent
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeRelationshipField>({ alias: 'field' });
 
     /**
      * DotCMS Contentlet
@@ -471,10 +471,10 @@ export class DotRelationshipFieldComponent
                 // does not return — another locale, a later page, an index that has not caught up
                 // (ADR-0018) — is still related when the editor confirms.
                 selected: this.store.data(),
-                cardinality: this.$field().relationships?.cardinality,
+                cardinality: this.$field().relationships.cardinality,
                 parentContentTypeId: this.$field().contentTypeId,
                 fieldVariable: this.$field().variable,
-                isParentField: this.$field().relationships?.isParentField,
+                isParentField: this.$field().relationships.isParentField,
                 currentContentIdentifier: contentlet?.identifier ?? null,
                 contentletContext: {
                     languageId:
@@ -551,7 +551,10 @@ export class DotRelationshipFieldComponent
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
-                isParent: this.$field().relationships?.isParentField ?? true
+                // `?? true` kept deliberately: the type says `isParentField` is always
+                // present, but this value comes from the server and a content type carrying a
+                // field type the model does not describe can still reach here (FR-013).
+                isParent: this.$field().relationships.isParentField ?? true
             },
             onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship
@@ -668,7 +671,7 @@ export class DotRelationshipFieldComponent
      * @param contentlet - The contentlet to initialize the store with.
      */
     readonly initialize = signalMethod<{
-        field: DotCMSContentTypeField;
+        field: ContentTypeRelationshipField;
         contentlet: DotCMSContentlet;
         targetLanguageId?: number;
         targetLanguage?: DotLanguage;
@@ -683,6 +686,6 @@ export class DotRelationshipFieldComponent
     readonly #hasHostFolderField = computed(() => {
         const fields = this.#editContentStore.contentType()?.fields ?? [];
 
-        return fields.some((f) => f.fieldType === FIELD_TYPES.HOST_FOLDER);
+        return fields.some((f) => f.fieldType === DotCMSFieldTypes.HOST_FOLDER);
     });
 }
