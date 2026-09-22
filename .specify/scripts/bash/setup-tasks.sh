@@ -23,9 +23,7 @@ SCRIPT_DIR="$(CDPATH="" cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
 # Get feature paths
-_paths_output=$(get_feature_paths) || { echo "ERROR: Failed to resolve feature paths" >&2; exit 1; }
-eval "$_paths_output"
-unset _paths_output
+get_feature_paths || { echo "ERROR: Failed to resolve feature paths" >&2; exit 1; }
 
 # Validate required files
 if [[ ! -f "$IMPL_PLAN" ]]; then
