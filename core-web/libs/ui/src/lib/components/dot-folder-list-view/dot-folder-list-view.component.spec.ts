@@ -747,15 +747,24 @@ describe('DotFolderListViewComponent', () => {
             expect(nextBtn.disabled).toBe(false);
         });
 
-        it('should leave PrimeNG in control of Previous at the first page once unlocked', () => {
-            // The regression this pins: `disabled: locked || undefined` still wrote a `disabled`
-            // key (value `undefined`) into the pt object when unlocked. `Bind`'s effect iterates
-            // every present key, including ones whose value is `undefined`, and clears the DOM
-            // attribute for it -- for a boolean-reflected property like `disabled`, clearing the
-            // attribute forces the property to `false` regardless of what PrimeNG's own
-            // `[disabled]="isFirstPage() || empty()"` binding had just set. At offset 0 (the first
-            // page), that meant Previous stayed clickable even though PrimeNG itself considers the
-            // control disabled there.
+        it('should disable Previous at the first page once unlocked', () => {
+            // Two regressions this pins, in sequence. First (QA follow-up #3): `disabled: locked ||
+            // undefined` still wrote a `disabled` key (value `undefined`) into the pt object when
+            // unlocked. `Bind`'s effect iterates every present key, including ones whose value is
+            // `undefined`, and clears the DOM attribute for it -- forcing the property to `false`
+            // regardless of what PrimeNG's own `[disabled]="isFirstPage() || empty()"` binding had
+            // just set, so Previous stayed clickable at offset 0.
+            //
+            // The fix for that (omit the key entirely when unlocked, leaving PrimeNG's own binding
+            // in sole control) carried a second regression (QA follow-up #4, see the dedicated
+            // transition test below): Angular's template binding only re-writes a property when its
+            // own evaluated boolean differs from the value it last recorded, so once `pBind` forced
+            // `disabled = true` while locked, unlocking anywhere `isFirstPage()` was already `false`
+            // both before and after (any page but the first) left Previous stuck disabled forever.
+            //
+            // `prev`/`next` now compute the boundary themselves on every render, locked or not, so
+            // there is exactly one writer of `disabled` and it is never omitted -- this test just
+            // confirms the boundary computation itself is still correct after that change.
             spectator.setInput('items', manyItems);
             spectator.setInput('totalItems', 100);
             spectator.setInput('offset', 0);
@@ -764,6 +773,33 @@ describe('DotFolderListViewComponent', () => {
 
             const prevBtn = spectator.query('.p-paginator-prev') as HTMLButtonElement;
             expect(prevBtn.disabled).toBe(true);
+        });
+
+        it('should release Previous/Next after a loading transition that leaves the page unchanged', () => {
+            // Issue #37212 QA follow-up #4: a real `loading: true -> false` transition at the SAME
+            // offset (the common case -- offset updates together with `loading` turning true, so by
+            // the time it turns back off the offset has already been sitting at its new value for
+            // the whole request) used to leave Previous/Next stuck disabled on every page but the
+            // first, because nothing but `pBind`'s own forced write was mutating the property and
+            // omitting the key on unlock relied on PrimeNG's own binding to notice a change that, at
+            // a mid-list page, never happened. Computing the boundary ourselves on every render
+            // means `pBind` is exercised on the unlock render too, so this releases correctly.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('offset', 20);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const prevBtn = () => spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            const nextBtn = () => spectator.query('.p-paginator-next') as HTMLButtonElement;
+            expect(prevBtn().disabled).toBe(true);
+            expect(nextBtn().disabled).toBe(true);
+
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(prevBtn().disabled).toBe(false);
+            expect(nextBtn().disabled).toBe(false);
         });
 
         it('should take the paginator out of play as soon as a click is accepted, before loading catches up', () => {
