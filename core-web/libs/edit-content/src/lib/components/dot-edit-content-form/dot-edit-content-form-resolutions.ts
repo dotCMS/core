@@ -22,7 +22,9 @@ import { getRelationshipFromContentlet } from '../../utils/relationshipFromConte
  * @returns {*} The resolved value for the field.
  */
 export type FnResolutionValue<T> = (
-    contentlet: DotCMSContentlet,
+    // Null for new content — nothing has been saved yet, so every resolver either guards on this
+    // or reaches for the field's default value.
+    contentlet: DotCMSContentlet | null,
     field: DotCMSContentTypeField,
     queryParams?: EditContentQueryParams,
     isManualTranslation?: boolean
