@@ -120,18 +120,31 @@ describe('DotEditContentFormResolutions', () => {
     // not be re-applied — otherwise the box re-checks itself and a save writes the default back.
     // See https://github.com/dotCMS/core/issues/35416
     describe('selectionResolutionFn', () => {
-        const selectionField: DotCMSContentTypeField = {
-            ...mockField,
-            variable: 'showOnMenu',
-            defaultValue: 'true'
-        };
+        const CLAZZ_BY_FIELD_TYPE = {
+            [FIELD_TYPES.CHECKBOX]: DotCMSClazzes.CHECKBOX,
+            [FIELD_TYPES.MULTI_SELECT]: DotCMSClazzes.MULTI_SELECT
+        } as const;
 
         describe.each([FIELD_TYPES.CHECKBOX, FIELD_TYPES.MULTI_SELECT])('%s', (fieldType) => {
+            // Built per field type rather than shared: the resolver ignores fieldType/clazz today,
+            // but a fixture that claims to be a Checkbox while carrying TEXT metadata would start
+            // lying the moment this moves behind getFinalCastedValue, which dispatches on fieldType.
+            const selectionField: DotCMSContentTypeField = {
+                ...mockField,
+                variable: 'showOnMenu',
+                defaultValue: 'true',
+                fieldType,
+                clazz: CLAZZ_BY_FIELD_TYPE[fieldType]
+            };
+
             // null, not '': getFinalCastedValue flattens these types with split(','), and ''
             // would become [''] — length 1, which Validators.required accepts.
             it('should return null when the key is absent on a saved contentlet', () => {
                 const contentlet = createFakeContentlet({ identifier: 'saved-123' });
                 delete contentlet[selectionField.variable];
+                // createFakeContentlet does not set this key, so the delete is defensive —
+                // assert it so the test fails loudly if the fake ever grows one.
+                expect(contentlet[selectionField.variable]).toBeUndefined();
 
                 const result = resolutionValue[fieldType](contentlet, selectionField);
 
@@ -544,6 +557,17 @@ describe('DotEditContentFormResolutions', () => {
             defaultFieldTypes.forEach((fieldType) => {
                 expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.TEXTAREA]);
             });
+        });
+
+        // Keeps the table above self-checking: without this, removing CHECKBOX and MULTI_SELECT
+        // from the default list leaves only a comment recording where they went.
+        it('should route CHECKBOX and MULTI_SELECT to their own shared resolver', () => {
+            expect(resolutionValue[FIELD_TYPES.CHECKBOX]).toBe(
+                resolutionValue[FIELD_TYPES.MULTI_SELECT]
+            );
+            expect(resolutionValue[FIELD_TYPES.CHECKBOX]).not.toBe(
+                resolutionValue[FIELD_TYPES.TEXTAREA]
+            );
         });
 
         describe('blockEditorResolutionFn', () => {
