@@ -233,9 +233,10 @@ them.
   are not part of this run.
 - **The selection mixes folders the author may duplicate with folders they may not.** All are
   submitted; the refused ones come back as per-folder permission failures.
-- **A parent and its own child are both selected.** Both are duplicated, and the report shows two
-  successes. This is correct and must not be presented as an anomaly, unlike bulk delete where the
-  child is reported as skipped because the parent already removed it.
+- **A parent and its own child are both selected.** Only the parent is duplicated; the child comes
+  back as skipped, because the parent's duplicate already contains it. The report must present this
+  as covered rather than as a failure, and the wording must not say the parent removed the child,
+  which is bulk delete's reason and is untrue here: the child is still there, untouched.
 - **The author duplicates the same folder twice in a row.** Both succeed, with different derived
   names. The report names each one, which is the only way the author can tell them apart.
 - **The author is browsing the parent the duplicates land in while the run works.** New rows appear
@@ -341,15 +342,23 @@ them.
   name it has not been told.
 - **FR-021**: Every folder that was not duplicated MUST be identifiable from the report, with its
   reason. Folders MUST NOT be summarised away into a count alone.
+- **FR-021a**: A **skipped** folder MUST read as not attempted rather than failed, and the two
+  reasons a folder is skipped MUST be told apart: the run was cancelled before reaching it, or an
+  ancestor in the same submission already covers it. These are different facts and one message
+  cannot serve both. The second is not an error at all and MUST NOT be presented as one: the author
+  selected a parent and its child, and got what they asked for once.
 - **FR-022**: Where there are more entries than the report can show at once, it MUST name the first
   few and acknowledge the remainder as a count, and that remainder MUST be reachable rather than a
   dead end. How many are named before the overflow begins is a design choice for planning; that the
   overflow leads somewhere is the requirement.
 - **FR-023**: Each machine-readable reason the server can return MUST map to copy written in the
-  product's own words. At minimum: no rights on the folder, no rights to add to its parent, the
-  folder no longer exists, the folder is protected, and a general fallback. This set is a **subset**
-  of the one bulk delete needs, and reasons that operation carries which duplication cannot produce
-  MUST NOT be written for this feature.
+  product's own words. Failures, at minimum: no rights on the folder, no rights to add to its
+  parent, the folder no longer exists, the folder is protected, and a general fallback. Skips: the
+  run was cancelled before reaching the folder, and an ancestor in the same submission already
+  covers it. Reasons bulk delete carries which duplication cannot produce MUST NOT be written for
+  this feature. The ancestor skip **is** shared with delete in shape but not in wording: delete says
+  the ancestor removed the folder, and here the folder is untouched, so its copy MUST say the
+  ancestor covers it.
 - **FR-024**: The server's diagnostic message MUST NOT be shown to the author. It is written for a
   log.
 - **FR-025**: A reason the client does not recognise MUST still name the folder and report it as
@@ -405,9 +414,10 @@ C-011), from this side.
 - **Distinguishable refusals** (C-004): nothing submitted, over the maximum, and not entitled.
   FR-033 rests on this. **There is no overlap refusal**, because the server carries no overlap
   guard, which is why FR-017 forbids writing copy for one.
-- **A stable, enumerated set of failure reasons** (C-005), each mapped to client copy (FR-023). A
-  subset of bulk delete's set: duplication has no "something inside is in use" and no "an ancestor
-  already removed it".
+- **A stable, enumerated set of failure and skip reasons** (C-005), each mapped to client copy
+  (FR-023). Nearly a subset of bulk delete's: duplication has no "something inside is in use". It
+  does carry an ancestor skip, but the folder is still there afterwards, so the wording says the
+  ancestor covers it rather than removed it.
 - **Progress, and an honest statement of what it counts** (C-006). Completed top-level folders,
   nothing finer. This is why FR-012 requires an indeterminate indicator.
 - **A way to cancel, with this operation's guarantee** (C-007). Each folder is left either fully
@@ -528,8 +538,9 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
   name is not, since the client is never told it.
 - **The reason-to-copy mapping is a cross-half dependency.** Every reason the server can emit needs
   client copy before either half is implemented, and the mapping is shared with delete and move. The
-  plan MUST name where it lives, and MUST record that copy uses a subset rather than adding reasons
-  of its own.
+  plan MUST name where it lives. Duplication adds no failure reason of its own, but it does need the
+  ancestor skip worded for an operation that leaves the folder in place, so the plan MUST settle
+  whether the shared value is reworded to cover both operations or a second value is added.
 - **The action's label and its commit copy** (FR-002, FR-009). This is a microcopy decision with a
   functional consequence, since the label is what sets the author's expectation about a destination.
   The plan MUST treat it as a deliverable with an owner, not as a string to be filled in during

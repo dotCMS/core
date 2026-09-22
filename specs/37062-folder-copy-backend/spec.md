@@ -225,12 +225,10 @@ per-folder outcome is still readable and a durable notification was addressed to
 
 ### Edge Cases
 
-- **A selected folder is an ancestor of another selected folder.** Both are duplicated independently
-  and neither interferes with the other. The ancestor's duplicate contains a copy of the descendant,
-  and the descendant's own duplicate is created beside the descendant inside the original ancestor.
-  This produces two duplicates of the descendant's contents, which is what was asked for, and is not
-  reported as an anomaly. See FR-016. **Delete behaves oppositely here** and its spec records the
-  descendant as skipped; copying must not inherit that wording.
+- **A selected folder is an ancestor of another selected folder.** The descendant is **skipped**:
+  duplicating the ancestor already carries it, so acting on it again produces clutter the author did
+  not ask for. It is also the only way to make the run deterministic, which is the stronger reason.
+  See FR-016.
 - **The same path appears twice in one submission.** Deduplicated before the run, so the author gets
   one duplicate rather than two, and the outcome reports the path once (FR-015).
 - **An empty path list, or one over the configured maximum.** Refused at submission, before a job
@@ -346,11 +344,25 @@ per-folder outcome is still readable and a durable notification was addressed to
   reason saying it is protected, and the rest of the selection MUST still run.
 - **FR-015**: The same folder named twice in one submission MUST be collapsed before the run, so one
   submission of the same folder twice produces one duplicate and one outcome record.
-- **FR-016**: When one selected folder is an ancestor of another selected folder, both MUST be
-  duplicated independently and both MUST be reported as successes. Neither is skipped, and the
-  resulting two duplicates of the descendant's contents are the correct outcome of what was
-  submitted. This MUST NOT reuse bulk delete's ancestor wording, where the descendant is reported as
-  skipped because the ancestor already removed it.
+- **FR-016**: When one selected folder is an ancestor of another selected folder, only the ancestor
+  MUST be duplicated. The descendant MUST be recorded as **skipped**, with a reason saying an
+  ancestor in the same submission already covers it, and MUST be distinguishable from a folder
+  skipped because a cancellation stopped the run before reaching it.
+
+**Why skipped rather than duplicated**, since the two folders land in different places and an
+earlier draft of this document treated that as reason enough to do both. Acting on both is
+**order-dependent**, and there is no ordering that is correct. Duplicating the descendant first
+creates its duplicate inside the original ancestor, so the ancestor's duplicate, made afterwards,
+contains the descendant *and* the descendant's duplicate. Duplicating the ancestor first produces an
+ancestor duplicate containing only the descendant. Same submission, two different results depending
+on the order the run happens to process the selection. A specification that permits both has to pick
+an order and defend it; skipping the descendant removes the question. The author also gets what they
+almost certainly meant, which is the subtree duplicated once.
+
+This aligns with bulk delete, which also skips a descendant covered by a selected ancestor, though
+the two reach it differently: delete's descendant no longer exists by the time the run reaches it,
+while this one still does and is deliberately left alone. The wording shown to an author must
+therefore say the ancestor **covers** it, not that the ancestor removed it.
 - **FR-017**: Every folder in the run MUST produce exactly one outcome record.
 - **FR-018**: The outcome MUST use the shared per-item contract already in use by bulk upload and
   bulk refresh, extended additively if at all.
@@ -361,10 +373,13 @@ per-folder outcome is still readable and a durable notification was addressed to
   display.
 - **FR-021**: Reasons MUST be derived from facts the system established, never guessed from the
   shape of an exception.
-- **FR-022**: Any new failure reason this feature needs MUST be agreed with the client half before
-  either is implemented, and MUST be added to the shared set additively. Copy needs **fewer** new
-  reasons than delete: it has no analogue of "something inside is in use" and no analogue of "an
-  ancestor in the same submission removed it first".
+- **FR-022**: Any new failure or skip reason this feature needs MUST be agreed with the client half
+  before either is implemented, and MUST be added to the shared set additively. Duplication needs
+  fewer reasons than delete, with one exception: it has no analogue of "something inside is in use",
+  but it **does** need a skip reason for a folder an ancestor in the same submission already covers
+  (FR-016). Delete's equivalent says the ancestor removed it, which is not true here, so either the
+  shared value is worded to cover both or a second value is added. That choice binds both halves and
+  belongs in the plan, not in implementation.
 
 #### The transaction boundary
 
@@ -465,10 +480,13 @@ per-folder outcome is still readable and a durable notification was addressed to
   maximum, and not entitled (FR-004, FR-005). **There is no overlap refusal**, because there is no
   overlap guard (FR-033). A client written against bulk delete's contract must not carry copy for a
   refusal this operation cannot produce.
-- **C-005**: **A stable, enumerated set of failure reasons**, each mapped to client copy (FR-020).
-  The server's message is diagnostic and is never displayed. Copy's set is a **subset** of the one
-  delete needs: no rights on the folder, no rights to add to its parent, the folder no longer
-  resolves, the folder is protected, and a general fallback.
+- **C-005**: **A stable, enumerated set of failure and skip reasons**, each mapped to client copy
+  (FR-020). The server's message is diagnostic and is never displayed. Failures: no rights on the
+  folder, no rights to add to its parent, the folder no longer resolves, the folder is protected,
+  and a general fallback. Skips: the run was cancelled before reaching it, and **an ancestor in the
+  same submission already covers it** (FR-016). The second skip reason needs wording of its own,
+  because delete's equivalent says the ancestor removed the folder and here the folder is still
+  there, untouched and usable.
 - **C-006**: **Progress, and an honest statement of what it counts** (FR-027, FR-029). It counts
   completed top-level folders and nothing finer, so the client must not render a proportion.
 - **C-007**: **A way to cancel, with this operation's guarantee and not the one #37062 describes**
@@ -684,6 +702,17 @@ abandonment behaviour, and the durable record's lifetime.
   of that machinery: no marking, no reading the in-flight run listing, no announcements. The author
   gets a completion signal and a report. This is the single largest reduction in scope relative to
   the sibling feature and is why the client half is substantially smaller than bulk delete's.
+- **D-017: A selected folder inside another selected folder is skipped, as it is for delete.**
+  *(Developer decision, 2026-09-22; FR-016.)* An earlier draft of this document duplicated both, on
+  the reasoning that the two duplicates land in different places so neither is redundant. That was
+  wrong, and not for the reason first raised. The redundancy argument is real but soft: the author
+  gets an extra folder they did not want. The argument that settles it is that acting on both is
+  **order-dependent**, because duplicating the descendant first leaves its duplicate sitting inside
+  the ancestor, which the ancestor's duplicate then picks up. The run would produce different
+  results depending on the order it happened to process the selection, and no ordering is defensible
+  over the other. Skipping the descendant removes the question and matches what the author meant.
+  The skip reason needs its own wording (C-005): delete's says the ancestor removed the folder, and
+  here the folder is still there.
 
 ---
 
@@ -694,9 +723,11 @@ abandonment behaviour, and the durable record's lifetime.
   tests: a happy path over several folders, a mixed partial failure, a source the author cannot
   read, a parent the author cannot add to, an unresolvable path, a protected path, a folder at a
   site root and a nested folder, duplicate paths in one submission, an ancestor and its descendant
-  both selected, repeated duplication of the same folder producing distinct names, and cancellation
-  mid-run leaving no partial duplicate. #37062's list additionally names a subtree large enough to
-  exercise more than one chunk; under D-012 that case no longer applies and **must not be written**.
+  both selected (the descendant skipped, the ancestor duplicated once, and the result the same
+  whichever order the two were submitted in), repeated duplication of the same folder producing
+  distinct names, and cancellation mid-run leaving no partial duplicate. #37062's list additionally
+  names a subtree large enough to exercise more than one chunk; under D-012 that case no longer
+  applies and **must not be written**.
 - **The retry position** (FR-034, D-015). The plan MUST settle whether automatic re-queue is
   disabled for this queue or accepted, and MUST NOT leave it to the framework default by omission.
   This is the plan obligation with the most user-visible consequence in the document.
