@@ -127,13 +127,15 @@ describe('DotEditContentFormResolutions', () => {
         };
 
         describe.each([FIELD_TYPES.CHECKBOX, FIELD_TYPES.MULTI_SELECT])('%s', (fieldType) => {
-            it('should return an empty value when the key is absent on a saved contentlet', () => {
+            // null, not '': getFinalCastedValue flattens these types with split(','), and ''
+            // would become [''] — length 1, which Validators.required accepts.
+            it('should return null when the key is absent on a saved contentlet', () => {
                 const contentlet = createFakeContentlet({ identifier: 'saved-123' });
                 delete contentlet[selectionField.variable];
 
                 const result = resolutionValue[fieldType](contentlet, selectionField);
 
-                expect(result).toBe('');
+                expect(result).toBeNull();
             });
 
             it('should return the stored value when the contentlet has one', () => {

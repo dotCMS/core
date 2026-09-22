@@ -65,19 +65,27 @@ const defaultResolutionFn: FnResolutionValue<string> = (
  * the user deliberately cleared, and saving that screen writes the default back to the database.
  *
  * The default still seeds the form when there is no contentlet yet — new content — which is the
- * only point a Content Type default is meant to apply. This mirrors the backend guard in
- * `ESContentletAPIImpl#setDefaultValues`, which is scoped to the same two field types.
+ * only point a Content Type default is meant to apply.
+ *
+ * Returns `null`, not `''`, for the cleared case. `getFinalCastedValue` flattens these two field
+ * types with `split(',')`, which turns `''` into `['']` — an array of length one that Angular's
+ * `Validators.required` accepts, so a required field would pass validation with nothing selected.
+ * `null` survives that path untouched and stays empty.
+ *
+ * Scoped to these two types only, matching what already shipped on the backend. The same
+ * re-application of a default to saved content is still live for every other field type on
+ * `defaultResolutionFn` — that is remaining exposure, not intended behaviour.
  *
  * @see https://github.com/dotCMS/core/issues/35416
  */
-const selectionResolutionFn: FnResolutionValue<string> = (
+const selectionResolutionFn: FnResolutionValue<string | null> = (
     contentlet,
     field,
     _queryParams,
     isManualTranslation
 ) => {
     if (contentlet) {
-        return contentlet[field.variable] ?? '';
+        return contentlet[field.variable] ?? null;
     }
 
     return isManualTranslation ? null : field.defaultValue;
