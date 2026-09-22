@@ -106,6 +106,15 @@ interface WithActionExecutionState {
      * durable record still covers.
      */
     folderDeleteJobs: Record<string, string>;
+    /**
+     * Bulk folder deletes this page has already reported, by job id.
+     *
+     * Kept because {@link folderDeleteJobs} no longer answers "have we settled this?" on its own.
+     * A run submitted before a reload is reported from an empty map, so removal from that map
+     * cannot be what makes reporting idempotent any more — and the completion is a pushed event,
+     * which a socket reconnect can deliver again.
+     */
+    settledFolderDeleteJobs: string[];
 }
 
 /**
@@ -132,7 +141,8 @@ export function withActionExecution() {
             actionExecutionResults: [],
             refreshJobIds: [],
             uploadJobs: {},
-            folderDeleteJobs: {}
+            folderDeleteJobs: {},
+            settledFolderDeleteJobs: []
         }),
         withComputed(({ runs, actionExecutionResults }) => ({
             /**
@@ -874,28 +884,55 @@ export function withActionExecution() {
                         actionName: string,
                         event: DotFolderBulkDeleteCompletedEvent
                     ): void => {
-                        const tracked = store.folderDeleteJobs();
-
-                        // `hasOwnProperty`, not `in`: the latter walks the prototype chain, so a
-                        // jobId of `constructor` would read as tracked. Same guard the upload path
-                        // already uses, for the same reason.
-                        if (
-                            !event.jobId ||
-                            !Object.prototype.hasOwnProperty.call(tracked, event.jobId)
-                        ) {
-                            // Not ours: another tab's run, or one already settled. Silent by
-                            // design — an error here would blame this author for someone else's.
+                        if (!event.jobId) {
                             return;
                         }
 
-                        const runId = tracked[event.jobId];
+                        // Already reported here. The only reason to see one twice is redelivery.
+                        if (store.settledFolderDeleteJobs().includes(event.jobId)) {
+                            return;
+                        }
+
+                        const tracked = store.folderDeleteJobs();
+
+                        // **Ownership is the server's answer, not this map's.** The completion is
+                        // pushed with `Visibility.USER` addressed to the submitter, and
+                        // `UserVerifier` delivers it only to sessions whose user matches — so every
+                        // completion that arrives here belongs to this author by construction.
+                        //
+                        // What the map answers is narrower: whether *this page* submitted the run.
+                        // Requiring that was why a delete started before a reload settled in
+                        // silence — the map is store state and the reload emptied it, so the event
+                        // arrived about a run nothing here remembered. The author was left with a
+                        // folder gone from the listing, still sitting in the sidebar tree, and no
+                        // word that their delete had finished (FR-024, FR-036).
+                        //
+                        // `hasOwnProperty`, not `in`: the latter walks the prototype chain, so a
+                        // jobId of `constructor` would read as tracked.
+                        const isLocalRun = Object.prototype.hasOwnProperty.call(
+                            tracked,
+                            event.jobId
+                        );
+                        const runId = isLocalRun ? tracked[event.jobId] : undefined;
+
                         const remaining = { ...tracked };
                         delete remaining[event.jobId];
-                        patchState(store, { folderDeleteJobs: remaining });
+                        patchState(store, {
+                            folderDeleteJobs: remaining,
+                            settledFolderDeleteJobs: [
+                                ...store.settledFolderDeleteJobs(),
+                                event.jobId
+                            ]
+                        });
 
+                        // Only when this page has a run to end. A reload left none, and the
+                        // indicator it would have quietened went with it.
+                        //
                         // Ended before the outcome is published, so the indicator is already quiet
                         // when the message about it appears.
-                        endRun(runId);
+                        if (undefined !== runId) {
+                            endRun(runId);
+                        }
 
                         // The state first, because the counters cannot answer this. An abandoned
                         // run still records the counters it reached, and publishing them would tell

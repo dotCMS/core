@@ -977,12 +977,58 @@ describe('withActionExecution', () => {
             expect(store.activeRunCount()).toBe(0);
         });
 
-        it('should ignore a completion for a run this store did not submit', () => {
-            // The event is scoped to the submitting USER, so another tab's run reaches this store
-            // too. Reporting it would toast counts for folders this grid never selected.
+        /**
+         * **Reversed deliberately.** This used to assert the opposite — that a completion for a run
+         * this store did not submit was ignored — on the reasoning that it would "toast counts for
+         * folders this grid never selected".
+         *
+         * That reasoning mistook which question the jobId map answers. The server pushes this
+         * completion with `Visibility.USER` addressed to the submitter, and `UserVerifier` delivers
+         * it only to sessions whose user matches, so every completion that arrives is already this
+         * author's own run. The map only says whether *this page* submitted it.
+         *
+         * Requiring that is what made a delete started before a reload settle in silence: the map
+         * is store state, the reload emptied it, and the author was left with the folder gone from
+         * the listing, still sitting in the sidebar tree, and no word that their delete had
+         * finished. The outcome is also what triggers the tree reload in the shell, so the silence
+         * cost FR-036 as well as FR-024.
+         */
+        it('should report a completion for a run this page did not submit', () => {
+            // A page that has just reloaded: the run is in flight on the server and this store has
+            // never heard of it.
             build();
 
-            store.reportFolderDeleteCompleted('Delete', completed({ jobId: 'someone-elses' }));
+            store.reportFolderDeleteCompleted('Delete', completed({ jobId: 'before-the-reload' }));
+
+            expect(store.actionExecutionResult()?.successCount).toBe(2);
+        });
+
+        it('should not try to end a run when the reload left none', () => {
+            build();
+            expect(store.activeRunCount()).toBe(0);
+
+            store.reportFolderDeleteCompleted('Delete', completed({ jobId: 'before-the-reload' }));
+
+            expect(store.activeRunCount()).toBe(0);
+        });
+
+        it('should report a completion once, however many times it is delivered', () => {
+            // Removing the job from the map used to make this idempotent for free. It cannot any
+            // more, because the reload case reports from an empty map — and a pushed event can be
+            // delivered again on a socket reconnect.
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            expect(store.actionExecutionResults().length).toBe(1);
+        });
+
+        it('should ignore a completion carrying no job id', () => {
+            build();
+
+            store.reportFolderDeleteCompleted('Delete', completed({ jobId: undefined }));
 
             expect(store.actionExecutionResult()).toBeUndefined();
         });
