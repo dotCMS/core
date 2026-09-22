@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
 import java.util.Optional;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.opensearch.client.opensearch.OpenSearchClient;
@@ -82,9 +83,25 @@ public class ESContentFactoryImplMissingOsIndexTest {
         query = "+contentType:" + contentType.variable() + " +live:true";
     }
 
+    /** The phase the suite was running under before this test changed it. */
+    private String originalPhase;
+
+    /**
+     * Remembers the phase the suite is running under, so {@link #restorePhase()} can put it
+     * back. The weekly phase sweep sets it through {@code DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE}.
+     */
+    @Before
+    public void savePhase() {
+        originalPhase = Config.getStringProperty(FLAG_KEY, null);
+    }
+
+    /**
+     * Puts back the phase saved by {@link #savePhase()}. Clearing the flag instead would drop
+     * the sweep's phase and leave every later test in the suite running at phase 0.
+     */
     @After
-    public void clearPhase() {
-        Config.setProperty(FLAG_KEY, null);
+    public void restorePhase() {
+        Config.setProperty(FLAG_KEY, originalPhase);
     }
 
     private static void setPhase(final MigrationPhase phase) {
