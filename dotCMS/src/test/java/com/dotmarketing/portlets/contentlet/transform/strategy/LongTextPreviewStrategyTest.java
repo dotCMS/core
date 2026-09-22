@@ -388,6 +388,48 @@ public class LongTextPreviewStrategyTest {
     }
 
     /**
+     * Dotbot review finding on PR #37663: a content type can carry a short, dedicated Text field
+     * ({@code titleName}) that {@code Contentlet#getFieldWithVarStartingWithTitleWord} actually
+     * resolves the title from, AND an unrelated WYSIWYG field ({@code titleBody}) whose variable
+     * also happens to start with "title" but plays no part in title resolution. Trimming must
+     * follow the field dotCMS would actually pick (the first "title"-prefixed field in content-type
+     * order) rather than firing whenever ANY WYSIWYG/TextArea field's variable is title-prefixed --
+     * otherwise a short plain-text title gets run through Jsoup HTML extraction it was never meant
+     * to need, silently decoding any HTML entity it happens to contain.
+     */
+    @Test
+    public void transform_shortTitleFieldPrecedesUnrelatedTitlePrefixedWysiwygField_leavesTitleKeyAlone()
+            throws Exception {
+        final Field titleNameField = mockField(Field.class, "titleName");
+        final Field titleBodyField = mockField(WysiwygField.class, "titleBody");
+
+        final ContentType contentType = Mockito.mock(ContentType.class);
+        Mockito.when(contentType.id()).thenReturn("content-type-1");
+        Mockito.when(contentType.fields(WysiwygField.class)).thenReturn(List.of(titleBodyField));
+        Mockito.when(contentType.fields(TextAreaField.class)).thenReturn(List.of());
+        Mockito.when(contentType.fields(StoryBlockField.class)).thenReturn(List.of());
+        // titleName resolves first -- the same order Contentlet#getFieldWithVarStartingWithTitleWord
+        // would see it in.
+        Mockito.when(contentType.fields()).thenReturn(List.of(titleNameField, titleBodyField));
+
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        // A plain-text title carrying a literal HTML entity -- Jsoup would decode "&amp;" to "&" if
+        // this were wrongly run through HTML extraction, silently changing a value that was never
+        // HTML to begin with.
+        map.put("title", "Smith &amp; Sons");
+        map.put("titleName", "Smith &amp; Sons");
+        map.put("titleBody", "<p>" + "word ".repeat(60) + "</p>");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertEquals("The 'title' key must be left alone -- the resolved title source is a plain "
+                        + "Text field, not the unrelated WYSIWYG field that merely shares the prefix",
+                "Smith &amp; Sons", map.get("title"));
+    }
+
+    /**
      * A field that IS in scope (a WYSIWYG field on the content type) but whose key is entirely
      * absent from the row's map -- distinct from {@code transform_noInScopeFields_mapUnchanged},
      * which has no in-scope field at all -- must stay absent rather than gaining a synthesized

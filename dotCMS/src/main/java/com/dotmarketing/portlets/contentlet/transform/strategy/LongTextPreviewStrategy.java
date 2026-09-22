@@ -18,6 +18,7 @@ import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -122,12 +123,27 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
         if (titleIsItsOwnField) {
             return;
         }
-        final boolean titleSourceIsInScopeHtmlField = Stream.concat(wysiwygFields.stream(), textAreaFields.stream())
-                .anyMatch(field -> UtilMethods.isSet(field.variable()) && field.variable().startsWith(TITTLE_KEY));
+        // Mirrors Contentlet#getFieldWithVarStartingWithTitleWord's own resolution -- the first
+        // field, in content-type field order, whose variable starts with "title" -- rather than
+        // asking "does ANY WYSIWYG/TextArea field's variable start with title". A content type can
+        // carry more than one such field (e.g. a short Text field "titleName" the title actually
+        // resolves to, AND an unrelated WYSIWYG field "titleBody"); only the field getTitle() would
+        // actually pick determines what the "title" key holds, and running Jsoup extraction against
+        // a short plain-text title would mangle any reserved character it contains (found in
+        // review, issue #37185 PR #37663 second follow-up).
+        final Optional<String> titleSourceVariable = contentType.fields().stream()
+                .map(Field::variable)
+                .filter(variable -> UtilMethods.isSet(variable) && variable.startsWith(TITTLE_KEY))
+                .findFirst();
+        final boolean titleSourceIsInScopeHtmlField = titleSourceVariable.filter(variable ->
+                Stream.concat(wysiwygFields.stream(), textAreaFields.stream())
+                        .anyMatch(field -> variable.equals(field.variable())))
+                .isPresent();
         if (!titleSourceIsInScopeHtmlField) {
             // Either no field's variable starts with "title" (a dedicated, short title column is
-            // in play), or the one that does is not WYSIWYG/TextArea -- e.g. a plain Text field,
-            // which is out of scope for this strategy the same way it is for every other field.
+            // in play), or the one dotCMS would actually resolve the title from is not WYSIWYG/
+            // TextArea -- e.g. a plain Text field, which is out of scope for this strategy the
+            // same way it is for every other field.
             return;
         }
         Try.run(() -> map.put(TITTLE_KEY, extractHtmlPreview(map.get(TITTLE_KEY))))
