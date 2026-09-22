@@ -51,7 +51,9 @@
             @let isSingleColumnTab = isSingleColumnLayout(tab.layout);
             <div class="p-4">
                 <div
-                    [class]="isSingleColumnTab ? 'fields mx-auto max-w-206' : 'fields mx-auto max-w-343'"
+                    [class]="
+                        isSingleColumnTab ? 'fields mx-auto max-w-206' : 'fields mx-auto max-w-343'
+                    "
                     data-testId="tab-layout-container">
                     @for (row of tab.layout; track row) {
                         <div
