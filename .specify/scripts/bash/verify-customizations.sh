@@ -293,6 +293,52 @@ check_preexisting_feature_dir_resolves() {
     echo "a spec directory created before the upgrade still resolves, and resolution wrote nothing"
 }
 
+# T034 — FR-013/FR-013a. The shipped skill set is DERIVED from the tree, never
+# hard-coded at ten: a release that adds, removes or renames a shipped skill must
+# still be fully covered, and a review record silently missing its new row is the
+# failure this guards against.
+check_shipped_skills_all_reviewed() {
+    local record="$REPO_ROOT/specs/37649-speckit-upgrade-latest/shipped-skills-review.md"
+    if [ ! -f "$record" ]; then
+        echo "$record does not exist — no shipped skill has a reviewed diff on record"
+        return 1
+    fi
+    local skills_dir="$REPO_ROOT/.claude/skills"
+    local failures=0 reviewed=0 name
+    for dir in "$skills_dir"/speckit-*/; do
+        [ -d "$dir" ] || continue
+        name=$(basename "$dir")
+        # Ours, not upstream's — these are net-new names and are not part of the
+        # shipped set FR-013 requires a row for.
+        case "$name" in
+            speckit-adr-context|speckit-specify-fix|speckit-docs-converge) continue ;;
+        esac
+        # A row for the skill, carrying a verdict in its last column.
+        local row
+        row=$(grep -E "^\|[[:space:]]*\`?${name}\`?[[:space:]]*\|" "$record" | head -n1)
+        if [ -z "$row" ]; then
+            echo "$name has no row in the review record — an omitted row and an unreviewed skill are indistinguishable"
+            failures=$((failures + 1))
+            continue
+        fi
+        # Last non-empty cell is the verdict; refuse a row that was left blank.
+        local verdict
+        verdict=$(printf '%s' "$row" | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $(NF-1)); print $(NF-1)}')
+        if [ -z "$verdict" ]; then
+            echo "$name has a row but no verdict — silence is not an acceptable entry"
+            failures=$((failures + 1))
+            continue
+        fi
+        reviewed=$((reviewed + 1))
+    done
+    if [ "$reviewed" -eq 0 ] && [ "$failures" -eq 0 ]; then
+        echo "no shipped skills were found to review, which cannot be right"
+        return 1
+    fi
+    [ "$failures" -eq 0 ] || return 1
+    echo "all $reviewed shipped skills in this release have a row with a verdict"
+}
+
 # >>> CHECKS END (new check functions are inserted above this line)
 
 # ---------------------------------------------------------------------------
@@ -309,6 +355,7 @@ run_all_checks() {
     check hooks-resolve           "FR-012"                "all three hooks name skills that exist" check_hooks_resolve_to_skills
     check net-new-survived        "FR-010, FR-011"        "files upstream never ships survived --force" check_net_new_customizations_survived
     check preexisting-feature-dir "FR-016a, SC-009"       "a pre-upgrade spec directory still resolves, read-only" check_preexisting_feature_dir_resolves
+    check shipped-skills-reviewed "FR-013, FR-013a, SC-005" "every shipped skill has a reviewed diff on record" check_shipped_skills_all_reviewed
     # >>> RUNNER END (new check invocations are inserted above this line)
 }
 
