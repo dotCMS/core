@@ -102,13 +102,13 @@ type FieldOf<K extends DotCMSFieldType> = Extract<DotCMSContentTypeField, { fiel
 The projection from a discriminant value to its arm. It is what makes per-key narrowing
 expressible (FR-007) and is used by every map in the feature.
 
-### Transitional shape (Stories 1–4 only)
+### No transitional shape
 
-The flat interface survives under a deprecated name so consumers can migrate in batches
-(FR-003, FR-017). It carries a `@deprecated` tag naming the replacement, so editors steer
-authors away from it while it exists, and it is deleted in Story 5. It has no external
-consumers — `@dotcms/dotcms-models` is not published (research R-03) — so its lifetime is a
-repository detail with no release-note obligation.
+No compatibility alias is introduced. The flat interface is deleted in the same change that
+adds the union, and all 149 consumers move with it (FR-003, FR-017). The alternative — a
+`@deprecated` alias carrying the old shape through a batched migration — was considered and
+dropped: `@dotcms/dotcms-models` is not published (research R-03), so every consumer lives in
+this repository and an alias would only let new code keep writing the loose shape.
 
 ---
 
@@ -173,15 +173,17 @@ Tabs → rows → columns → fields.
 
 | Shape | Property | Before | After |
 |---|---|---|---|
-| `DotCMSContentTypeLayoutRow` | `divider` | `DotCMSContentTypeField` | a divider arm |
-| `DotCMSContentTypeLayoutColumn` | `columnDivider` | `DotCMSContentTypeField` | `ContentTypeColumnField` |
+| `DotCMSContentTypeLayoutRow` | `divider` | `DotCMSContentTypeField` | unchanged — see below |
+| `DotCMSContentTypeLayoutColumn` | `columnDivider` | `DotCMSContentTypeField` | unchanged — see below |
 | `DotCMSContentTypeLayoutColumn` | `fields` | `DotCMSContentTypeField[]` | unchanged — a column holds any field |
 
-Narrowing these expresses a constraint the model can now state and could not before. It is
-also where the migration is most likely to surface consumers relying on the loose type: 31
-production references to `.divider` / `columnDivider` were measured. `transformLayoutToTabs`
-(`functions.util.ts:63`) reads `row.divider.clazz` and compares against a tab-field class —
-a comparison that becomes a real narrowing once `divider` is typed.
+Narrowing these to the layout arms is a constraint the model could now state, and this change
+does **not** take it: both properties stay `DotCMSContentTypeField`. It is where the migration
+is most likely to surface consumers relying on the loose type — 31 production references to
+`.divider` / `columnDivider` were measured — and separating that from the field-type union
+keeps this change reviewable. `transformLayoutToTabs` (`functions.util.ts:63`) reads
+`row.divider.clazz` and compares against a tab-field class; that comparison becomes a real
+narrowing only once `divider` is typed, which remains open work.
 
 ---
 

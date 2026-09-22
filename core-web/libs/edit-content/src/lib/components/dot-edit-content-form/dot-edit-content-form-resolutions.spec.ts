@@ -2,12 +2,22 @@ import { Mock, vi } from 'vitest';
 
 import {
     DotCMSBaseTypesContentTypes,
-    DotCMSClazzes,
     DotCMSContentlet,
-    DotCMSContentTypeField,
     DotCMSFieldTypes
 } from '@dotcms/dotcms-models';
-import { createFakeContentlet, createFakeSelectField } from '@dotcms/utils-testing';
+import {
+    createFakeBlockEditorField,
+    createFakeCategoryField,
+    createFakeContentlet,
+    createFakeDateField,
+    createFakeHostFolderField,
+    createFakeKeyValueField,
+    createFakeLineDividerField,
+    createFakeRelationshipField,
+    createFakeSelectField,
+    createFakeTextAreaField,
+    createFakeTextField
+} from '@dotcms/utils-testing';
 
 import { resolutionValue } from './dot-edit-content-form-resolutions';
 
@@ -22,28 +32,25 @@ vi.mock('../../utils/relationshipFromContentlet', () => ({
 let originalResolutionValue: typeof resolutionValue;
 
 describe('DotEditContentFormResolutions', () => {
-    const mockField: DotCMSContentTypeField = {
+    // Shared across the arms below. `clazz`, `dataType` and `fieldType` are deliberately absent:
+    // each arm fixes all three together, and it was a single flat mock declaring them as
+    // lower-case 'text' that let one field stand in for every resolver.
+    const MOCK_FIELD_OVERRIDES = {
         variable: 'testField',
         defaultValue: 'default value',
-        clazz: DotCMSClazzes.TEXT,
         contentTypeId: 'test-content-type',
-        dataType: 'text',
-        fieldType: 'text',
-        fieldTypeLabel: 'Text',
-        fixed: false,
-        indexed: true,
-        listed: true,
-        readOnly: false,
-        required: false,
-        searchable: true,
-        sortOrder: 0,
-        unique: false,
-        fieldVariables: [],
-        iDate: 1710892800000, // 2024-03-20T00:00:00.000Z
         id: 'test-field-id',
-        modDate: 1710892800000, // 2024-03-20T00:00:00.000Z
-        name: 'Test Field'
+        name: 'Test Field',
+        iDate: 1710892800000, // 2024-03-20T00:00:00.000Z
+        modDate: 1710892800000 // 2024-03-20T00:00:00.000Z
     };
+
+    const mockTextField = createFakeTextField(MOCK_FIELD_OVERRIDES);
+    const mockTextAreaField = createFakeTextAreaField(MOCK_FIELD_OVERRIDES);
+    const mockHostFolderField = createFakeHostFolderField(MOCK_FIELD_OVERRIDES);
+    const mockCategoryField = createFakeCategoryField(MOCK_FIELD_OVERRIDES);
+    const mockRelationshipField = createFakeRelationshipField(MOCK_FIELD_OVERRIDES);
+    const mockLineDividerField = createFakeLineDividerField(MOCK_FIELD_OVERRIDES);
 
     const mockContentlet: DotCMSContentlet = {
         testField: 'test value',
@@ -80,19 +87,18 @@ describe('DotEditContentFormResolutions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
-        // Restore resolutionValue to its original state before each test
-        // This prevents test contamination from other tests
-        Object.keys(originalResolutionValue).forEach((key) => {
-            const fieldType = key;
-            if (originalResolutionValue[fieldType]) {
-                resolutionValue[fieldType] = originalResolutionValue[fieldType];
-            }
-        });
+        // Restore resolutionValue to its original state before each test. This prevents test
+        // contamination from other tests. Copied wholesale rather than key by key: the map is
+        // keyed by the field-type discriminant, so a `string` cannot index it.
+        Object.assign(resolutionValue, originalResolutionValue);
     });
 
     describe('defaultResolutionFn', () => {
         it('should return field value from contentlet', () => {
-            const result = resolutionValue[DotCMSFieldTypes.TEXTAREA](mockContentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.TEXTAREA](
+                mockContentlet,
+                mockTextAreaField
+            );
             expect(result).toBe('test value');
         });
 
@@ -100,19 +106,22 @@ describe('DotEditContentFormResolutions', () => {
             const contentlet = { ...mockContentlet };
             delete contentlet.testField;
 
-            const result = resolutionValue[DotCMSFieldTypes.TEXTAREA](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.TEXTAREA](
+                contentlet,
+                mockTextAreaField
+            );
             expect(result).toBe('default value');
         });
 
         it('should return defaultValue when contentlet is null', () => {
-            const result = resolutionValue[DotCMSFieldTypes.TEXTAREA](null, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.TEXTAREA](null, mockTextAreaField);
             expect(result).toBe('default value');
         });
 
         it('should return null when contentlet is null and isManualTranslation is true', () => {
             const result = resolutionValue[DotCMSFieldTypes.TEXTAREA](
                 null,
-                mockField,
+                mockTextAreaField,
                 undefined,
                 true
             );
@@ -127,17 +136,22 @@ describe('DotEditContentFormResolutions', () => {
                 testField: 'test-value'
             };
 
-            const result = resolutionValue[DotCMSFieldTypes.TEXT](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.TEXT](contentlet, mockTextField);
             expect(result).toBe('test-value');
         });
 
         it('should return defaultValue when contentlet is null', () => {
-            const result = resolutionValue[DotCMSFieldTypes.TEXT](null, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.TEXT](null, mockTextField);
             expect(result).toBe('default value');
         });
 
         it('should return null when contentlet is null and isManualTranslation is true', () => {
-            const result = resolutionValue[DotCMSFieldTypes.TEXT](null, mockField, undefined, true);
+            const result = resolutionValue[DotCMSFieldTypes.TEXT](
+                null,
+                mockTextField,
+                undefined,
+                true
+            );
             expect(result).toBeNull();
         });
 
@@ -147,7 +161,7 @@ describe('DotEditContentFormResolutions', () => {
                 baseType: 'HTMLPAGE',
                 url: '/test-url'
             };
-            const urlField = { ...mockField, variable: 'url' };
+            const urlField = { ...mockTextField, variable: 'url' };
 
             const result = resolutionValue[DotCMSFieldTypes.TEXT](contentlet, urlField);
             expect(result).toBe('test-url');
@@ -158,7 +172,7 @@ describe('DotEditContentFormResolutions', () => {
                 ...mockContentlet,
                 myVariable: '/content-url'
             };
-            const urlField = { ...mockField, variable: 'myVariable' };
+            const urlField = { ...mockTextField, variable: 'myVariable' };
 
             const result = resolutionValue[DotCMSFieldTypes.TEXT](contentlet, urlField);
             expect(result).toBe('/content-url');
@@ -172,7 +186,10 @@ describe('DotEditContentFormResolutions', () => {
         });
 
         it('should construct host folder path from hostName and url for non-file assets', () => {
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](mockContentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                mockContentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('https://example.com');
         });
 
@@ -184,7 +201,10 @@ describe('DotEditContentFormResolutions', () => {
                 url: '/path/to/file.jpg'
             };
 
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                contentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('https://example.com/path/to');
         });
 
@@ -196,7 +216,10 @@ describe('DotEditContentFormResolutions', () => {
                 url: '/file.jpg'
             };
 
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                contentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('https://example.com');
         });
 
@@ -208,7 +231,10 @@ describe('DotEditContentFormResolutions', () => {
                 url: '/content/blog/my-page'
             };
 
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                contentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('https://example.com/content/blog');
         });
 
@@ -220,7 +246,10 @@ describe('DotEditContentFormResolutions', () => {
                 url: '/my-page'
             };
 
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                contentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('https://example.com');
         });
 
@@ -232,7 +261,10 @@ describe('DotEditContentFormResolutions', () => {
                 url: '/content/test-page'
             };
 
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                contentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('https://example.com');
         });
 
@@ -244,7 +276,10 @@ describe('DotEditContentFormResolutions', () => {
                 url: '/some/other/path'
             };
 
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                contentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('https://example.com/some/other/path');
         });
 
@@ -252,7 +287,10 @@ describe('DotEditContentFormResolutions', () => {
             const contentlet = { ...mockContentlet };
             delete contentlet.hostName;
 
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                contentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('default value');
         });
 
@@ -260,7 +298,10 @@ describe('DotEditContentFormResolutions', () => {
             const contentlet = { ...mockContentlet };
             delete contentlet.url;
 
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                contentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('default value');
         });
 
@@ -273,7 +314,10 @@ describe('DotEditContentFormResolutions', () => {
             // Ensure the resolution function exists before calling it
             expect(resolutionValue[DotCMSFieldTypes.HOST_FOLDER]).toBeDefined();
 
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                contentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('default value');
         });
 
@@ -283,22 +327,28 @@ describe('DotEditContentFormResolutions', () => {
                 url: 123
             } as unknown as DotCMSContentlet;
 
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                contentlet,
+                mockHostFolderField
+            );
             expect(result).toBe('default value');
         });
 
         it('should return defaultValue when contentlet is null', () => {
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](null, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](null, mockHostFolderField);
             expect(result).toBe('default value');
         });
 
         it('should return defaultValue when contentlet is undefined', () => {
-            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](undefined, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                undefined,
+                mockHostFolderField
+            );
             expect(result).toBe('default value');
         });
 
         it('should return empty string when field has no defaultValue', () => {
-            const field = { ...mockField };
+            const field = { ...mockHostFolderField };
             delete field.defaultValue;
 
             const contentlet = { ...mockContentlet };
@@ -310,35 +360,51 @@ describe('DotEditContentFormResolutions', () => {
 
         describe('with queryParams', () => {
             it('should return folderPath from queryParams when contentlet is null', () => {
-                const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](null, mockField, {
-                    folderPath: 'default/level1/level2/'
-                });
+                const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                    null,
+                    mockHostFolderField,
+                    {
+                        folderPath: 'default/level1/level2/'
+                    }
+                );
                 expect(result).toBe('default/level1/level2/');
             });
 
             it('should return folderPath from queryParams when contentlet is undefined', () => {
-                const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](undefined, mockField, {
-                    folderPath: 'default/level1/'
-                });
+                const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                    undefined,
+                    mockHostFolderField,
+                    {
+                        folderPath: 'default/level1/'
+                    }
+                );
                 expect(result).toBe('default/level1/');
             });
 
             it('should prefer folderPath over field defaultValue when contentlet is null', () => {
-                const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](null, mockField, {
-                    folderPath: 'myhost/folder1/'
-                });
+                const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                    null,
+                    mockHostFolderField,
+                    {
+                        folderPath: 'myhost/folder1/'
+                    }
+                );
                 expect(result).toBe('myhost/folder1/');
             });
 
             it('should fall back to defaultValue when queryParams has no folderPath', () => {
-                const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](null, mockField, {});
+                const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
+                    null,
+                    mockHostFolderField,
+                    {}
+                );
                 expect(result).toBe('default value');
             });
 
             it('should ignore queryParams when contentlet has valid hostName and url', () => {
                 const result = resolutionValue[DotCMSFieldTypes.HOST_FOLDER](
                     mockContentlet,
-                    mockField,
+                    mockHostFolderField,
                     {
                         folderPath: 'default/should-be-ignored/'
                     }
@@ -355,7 +421,10 @@ describe('DotEditContentFormResolutions', () => {
                 testField: [{ key1: 'value1' }, { key2: 'value2' }]
             };
 
-            const result = resolutionValue[DotCMSFieldTypes.CATEGORY](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.CATEGORY](
+                contentlet,
+                mockCategoryField
+            );
             expect(result).toEqual(['key1', 'key2']);
         });
 
@@ -365,12 +434,15 @@ describe('DotEditContentFormResolutions', () => {
                 testField: 'not-an-array'
             };
 
-            const result = resolutionValue[DotCMSFieldTypes.CATEGORY](contentlet, mockField);
+            const result = resolutionValue[DotCMSFieldTypes.CATEGORY](
+                contentlet,
+                mockCategoryField
+            );
             expect(result).toBe('default value');
         });
 
         it('should return empty array when no defaultValue is provided', () => {
-            const field = { ...mockField };
+            const field = { ...mockCategoryField };
             delete field.defaultValue;
 
             const result = resolutionValue[DotCMSFieldTypes.CATEGORY](mockContentlet, field);
@@ -380,7 +452,7 @@ describe('DotEditContentFormResolutions', () => {
         it('should return empty array when contentlet is null and isManualTranslation is true', () => {
             const result = resolutionValue[DotCMSFieldTypes.CATEGORY](
                 null,
-                mockField,
+                mockCategoryField,
                 undefined,
                 true
             );
@@ -391,7 +463,7 @@ describe('DotEditContentFormResolutions', () => {
             const contentlet = { ...mockContentlet, testField: 'not-an-array' };
             const result = resolutionValue[DotCMSFieldTypes.CATEGORY](
                 contentlet,
-                mockField,
+                mockCategoryField,
                 undefined,
                 true
             );
@@ -409,16 +481,16 @@ describe('DotEditContentFormResolutions', () => {
         it('should join relationship identifiers with commas', () => {
             const result = resolutionValue[DotCMSFieldTypes.RELATIONSHIP](
                 mockContentlet,
-                mockField
+                mockRelationshipField
             );
             expect(result).toBe('id1,id2');
         });
 
         it('should call getRelationshipFromContentlet with correct parameters', () => {
-            resolutionValue[DotCMSFieldTypes.RELATIONSHIP](mockContentlet, mockField);
+            resolutionValue[DotCMSFieldTypes.RELATIONSHIP](mockContentlet, mockRelationshipField);
             expect(getRelationshipFromContentlet).toHaveBeenCalledWith({
                 contentlet: mockContentlet,
-                variable: mockField.variable
+                variable: mockRelationshipField.variable
             });
         });
 
@@ -426,7 +498,7 @@ describe('DotEditContentFormResolutions', () => {
             (getRelationshipFromContentlet as Mock).mockReturnValue([]);
             const result = resolutionValue[DotCMSFieldTypes.RELATIONSHIP](
                 mockContentlet,
-                mockField
+                mockRelationshipField
             );
             expect(result).toBe('');
         });
@@ -436,7 +508,7 @@ describe('DotEditContentFormResolutions', () => {
         it('should always return empty string', () => {
             const result = resolutionValue[DotCMSFieldTypes.LINE_DIVIDER](
                 mockContentlet,
-                mockField
+                mockLineDividerField
             );
             expect(result).toBe('');
         });
@@ -522,11 +594,10 @@ describe('DotEditContentFormResolutions', () => {
         });
 
         describe('blockEditorResolutionFn', () => {
-            const blockField = {
-                ...mockField,
-                fieldType: DotCMSFieldTypes.BLOCK_EDITOR,
+            const blockField = createFakeBlockEditorField({
+                ...MOCK_FIELD_OVERRIDES,
                 variable: 'blockContent'
-            } as DotCMSContentTypeField;
+            });
 
             it('should parse JSON string values from the API', () => {
                 const jsonObj = { type: 'doc', content: [{ type: 'paragraph' }] };
@@ -598,12 +669,10 @@ describe('DotEditContentFormResolutions', () => {
         });
 
         describe('dateResolutionFn', () => {
-            const dateField: DotCMSContentTypeField = {
-                ...mockField,
-                variable: 'campoDate',
-                fieldType: DotCMSFieldTypes.DATE,
-                dataType: 'DATE'
-            };
+            const dateField = createFakeDateField({
+                ...MOCK_FIELD_OVERRIDES,
+                variable: 'campoDate'
+            });
 
             it('should return numeric timestamp from contentlet', () => {
                 const contentlet = {
@@ -656,7 +725,7 @@ describe('KEY_VALUE resolution', () => {
     const resolve = (contentlet: unknown, variable = 'keyValue') =>
         resolutionValue[DotCMSFieldTypes.KEY_VALUE](
             contentlet as DotCMSContentlet,
-            { variable, defaultValue: null } as unknown as DotCMSContentTypeField,
+            createFakeKeyValueField({ variable, defaultValue: null }),
             undefined,
             false
         );

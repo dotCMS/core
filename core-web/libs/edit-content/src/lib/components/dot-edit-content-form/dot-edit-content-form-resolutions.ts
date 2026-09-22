@@ -22,6 +22,15 @@ import { orderedKeyValueText } from '../../utils/key-value-order.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
 /**
+ * The contentlet a resolver is handed.
+ *
+ * New content has none, so every resolver falls back to the field's default value for an
+ * absent one — the resolution specs assert exactly that. The signature says so rather than
+ * leaving each resolver to guess.
+ */
+export type ResolvedContentlet = DotCMSContentlet | null | undefined;
+
+/**
  * A function that provides a default resolution value for a contentlet field.
  *
  * @param {Object} contentlet - The contentlet object.
@@ -30,7 +39,7 @@ import { getRelationshipFromContentlet } from '../../utils/relationshipFromConte
  * @returns {*} The resolved value for the field.
  */
 export type FnResolutionValue<T> = (
-    contentlet: DotCMSContentlet,
+    contentlet: ResolvedContentlet,
     field: DotCMSContentTypeField,
     queryParams?: EditContentQueryParams,
     isManualTranslation?: boolean
@@ -45,7 +54,7 @@ export type FnResolutionValue<T> = (
  * parameter on a union-wide signature is accepted without being verified (FR-007).
  */
 export type FnResolutionValueFor<K extends DotCMSFieldType, T> = (
-    contentlet: DotCMSContentlet,
+    contentlet: ResolvedContentlet,
     field: FieldOf<K>,
     queryParams?: EditContentQueryParams,
     isManualTranslation?: boolean
@@ -303,10 +312,17 @@ const selectResolutionFn: FnResolutionValue<string> = (
  * This enables each field type to properly process its own data.
  *
  */
-export const resolutionValue: Record<
-    DotCMSFieldType,
-    FnResolutionValue<string | string[] | Date | number | Record<string, unknown> | null>
-> = {
+export type ResolvedFormValue = string | string[] | Date | number | Record<string, unknown> | null;
+
+/**
+ * Keyed by the discriminant so each entry is checked against **its own** arm. A plain
+ * `Record<DotCMSFieldType, FnResolutionValue<...>>` gives every entry the whole union, so a
+ * resolver narrowed to the wrong field type would still compile (FR-007). Resolvers that
+ * accept the union, as all of them do today, remain assignable to a narrower parameter.
+ */
+export const resolutionValue: {
+    [K in DotCMSFieldType]: FnResolutionValueFor<K, ResolvedFormValue>;
+} = {
     [DotCMSFieldTypes.BINARY]: defaultResolutionFn,
     [DotCMSFieldTypes.FILE]: defaultResolutionFn,
     [DotCMSFieldTypes.IMAGE]: defaultResolutionFn,
@@ -390,7 +406,10 @@ export const resolveFieldValue = (
     queryParams?: EditContentQueryParams,
     isManualTranslation = false
 ): unknown => {
-    const resolve = resolutionValue[field.fieldType];
+    // The map is keyed by the discriminant, so the lookup yields the union of every entry's
+    // signature and TypeScript cannot correlate it with `field` on its own. The assertion is
+    // confined to this one dispatch; the entries themselves are checked arm by arm above.
+    const resolve = resolutionValue[field.fieldType] as FnResolutionValue<ResolvedFormValue>;
 
     // Exhaustive by construction — the map is keyed by the vocabulary — but the content type
     // arrives from the backend, whose set of field types is open (FR-013). A plugin's field

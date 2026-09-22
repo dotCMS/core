@@ -37,6 +37,7 @@ import {
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentType,
+    DotCMSContentTypeField,
     DotCMSFieldType,
     DotCMSFieldTypes
 } from '@dotcms/dotcms-models';
@@ -106,7 +107,12 @@ declare module '@tiptap/core' {
 
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
-const FIELD_TYPES_COMPONENTS: Record<DotCMSFieldType, Type<unknown> | DotEditFieldTestBed> = {
+// Partial on purpose: the four layout types (row, column, tab divider, column break) arrange
+// other fields and render nothing of their own, so they have no component to map to. Every
+// read below goes through `?.`.
+const FIELD_TYPES_COMPONENTS: Partial<
+    Record<DotCMSFieldType, Type<unknown> | DotEditFieldTestBed>
+> = {
     // We had to use unknown because components have different types.
     [DotCMSFieldTypes.TEXT]: DotEditContentTextFieldComponent,
     [DotCMSFieldTypes.RELATIONSHIP]: {
@@ -466,7 +472,11 @@ describe('DotEditContentFieldComponent - an unmodelled field type', () => {
     } as unknown as DotCMSContentTypeField;
 
     beforeEach(() => {
-        spectator = createComponent({ props: { field: fieldFromAPluginWeDoNotModel } });
+        // Set by name rather than through `props`: the input's alias is `field`, which is what
+        // ComponentRef.setInput takes, while Spectator's InferInputSignals keys off the class
+        // member ($field) and so rejects the alias in a props literal.
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('field', fieldFromAPluginWeDoNotModel);
     });
 
     it('renders without throwing', () => {
@@ -507,11 +517,9 @@ describe('DotEditContentFieldComponent - Line Divider Field', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                field: LINE_DIVIDER_MOCK
-            }
-        });
+        // By name, not through `props`: see the note on the plugin-field suite above.
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('field', LINE_DIVIDER_MOCK);
     });
 
     it('should render the line divider field component', () => {

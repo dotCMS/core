@@ -125,17 +125,17 @@ than assumed away.
 
 ---
 
-## C-6: Transitional state (Stories 1–4 only)
+## C-6: No compatibility alias
 
-While the migration is in flight, the flat interface survives under a deprecated alias so the
-149 consuming files can move in reviewable batches (FR-003, FR-017).
+The flat interface is replaced outright — there is no deprecated alias standing in for it at
+any point. The migration moves all 149 consuming files in one change rather than in batches
+(FR-003, FR-017).
 
-**A consumer may rely on**: the alias is structurally what the flat interface was, so existing
-code compiles unchanged; it carries a `@deprecated` tag naming its replacement, so editor
-tooling steers new code away from it.
+**A consumer may rely on**: `DotCMSContentTypeField` being the union and nothing else. Code
+that needs the old loose shape has no supported way to keep it.
 
-**A consumer may not** rely on the alias existing after Story 5. It is deleted there, and
-because the library is unpublished (R-03) no external deprecation window is owed.
+**A consumer may not** expect a deprecation window. The library is unpublished (R-03), so
+every consumer lives in this repository and moves with the change.
 
 ---
 
@@ -148,7 +148,7 @@ because the library is unpublished (R-03) no external deprecation window is owed
 | C-3 | A handler registered under the wrong key fails to compile; the strict gate passes on the map's lines | SC-005 |
 | C-4 | No assertion into the type remains in the workspace | SC-003, SC-005 |
 | C-5 | Unit test at each of the two services with an unmodelled `fieldType` | SC-009 |
-| C-6 | Searching for the flat shape after Story 5 returns no declaration | SC-001 |
+| C-6 | Searching the model for the flat shape returns no declaration, deprecated or otherwise | SC-001 |
 
 Type-level contracts (C-1, C-2, C-3) are proven by **compilation**, not by runtime assertions:
 the test is that a wrong usage fails to build. Per constitution Principle V these still come

@@ -1100,7 +1100,9 @@ describe('Utils Functions', () => {
     describe('isFilteredType', () => {
         it('should correctly identify filtered and non-filtered field types', () => {
             const allFields = MOCK_CONTENTTYPE_2_TABS.fields;
-            const nonFormControlFieldTypes = Object.values(NON_FORM_CONTROL_FIELD_TYPES);
+            // Read directly: this was an enum, so the test went through Object.values to get at
+            // its members. It is a plain array of field types now.
+            const nonFormControlFieldTypes = NON_FORM_CONTROL_FIELD_TYPES;
 
             // Verify that none of the form control fields are filtered types
             MOCK_FORM_CONTROL_FIELDS.forEach((field) => {
@@ -1114,8 +1116,7 @@ describe('Utils Functions', () => {
             expect(filteredFields.length).toBe(MOCK_FORM_CONTROL_FIELDS.length);
 
             filteredFields.forEach((field) => {
-                const fieldType = field.fieldType as NON_FORM_CONTROL_FIELD_TYPES;
-                expect(nonFormControlFieldTypes.includes(fieldType)).toBe(false);
+                expect(nonFormControlFieldTypes.includes(field.fieldType)).toBe(false);
             });
         });
     });

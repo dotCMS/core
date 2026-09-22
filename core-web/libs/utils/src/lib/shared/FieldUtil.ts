@@ -29,7 +29,7 @@ export const EMPTY_FIELD: DotCMSContentTypeFieldTemplate = {
     fieldTypeLabel: '',
     fieldVariables: [],
     fixed: null,
-    forceIncludeInApi: null,
+    forceIncludeInApi: false,
     iDate: null,
     id: null,
     indexed: null,
