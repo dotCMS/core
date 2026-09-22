@@ -4,6 +4,7 @@ import static com.dotcms.content.index.IndexConfigHelper.MigrationPhase.FLAG_KEY
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -19,10 +20,14 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
 import java.util.Optional;
 import org.junit.After;
 import org.junit.Before;
@@ -104,8 +109,32 @@ public class ESContentFactoryImplMissingOsIndexTest {
         Config.setProperty(FLAG_KEY, originalPhase);
     }
 
+    /**
+     * Switches the phase for this test. Below phase 3 the test reads Elasticsearch, so it is
+     * skipped when Elasticsearch has no active content index.
+     */
     private static void setPhase(final MigrationPhase phase) {
         Config.setProperty(FLAG_KEY, String.valueOf(phase.ordinal()));
+        if (phase != MigrationPhase.PHASE_3_OPENSEARCH_ONLY) {
+            assumeElasticsearchContentIndices();
+        }
+    }
+
+    /**
+     * Skips the calling test when Elasticsearch has no active content index to read from. The
+     * phase 3 CI job starts with OpenSearch indices only, so a test that forces an earlier phase
+     * and reads Elasticsearch would fail on the missing index, not on the behavior it checks.
+     */
+    private static void assumeElasticsearchContentIndices() {
+        final IndiciesInfo info;
+        try {
+            info = APILocator.getIndiciesAPI().loadIndicies();
+        } catch (final DotDataException e) {
+            throw new DotRuntimeException(e);
+        }
+        assumeTrue("No active Elasticsearch content index in this environment",
+                info != null && UtilMethods.isSet(info.getWorking())
+                        && UtilMethods.isSet(info.getLive()));
     }
 
     /** The 404 a reachable OpenSearch returns when the counterpart index does not exist. */
