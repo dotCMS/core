@@ -144,6 +144,155 @@ check_no_eval_of_produced_strings() {
     echo "no script under .specify/scripts/bash re-parses a produced string as code"
 }
 
+# T017 — customization #3. Resolve the templates through the override stack rather
+# than stat the files: an override that still exists but no longer WINS the
+# resolution is the silent failure FR-007 was written to reject, and only the
+# resolving form of the check can tell the two apart.
+check_overrides_win_resolution() {
+    local resolver="$REPO_ROOT/.specify/scripts/bash/resolve-template.sh"
+    if [ ! -x "$resolver" ]; then
+        echo "$resolver is missing or not executable, so the override stack cannot be exercised"
+        return 1
+    fi
+    local failures=0 content
+    # template name -> a heading only the dotCMS override carries
+    local -a names=(plan-template plan-template spec-template tasks-template)
+    local -a markers=("## Legacy Impact" "## ADR Alignment (Gate)" "## Legacy Considerations" "[GATE] **Developer approval**")
+    local i
+    for i in "${!names[@]}"; do
+        # Pin the resolver to THIS tree. resolve-template.sh derives its own root by
+        # walking up from the working directory, so without SPECIFY_INIT_DIR it would
+        # happily resolve against whatever .specify/ the caller happens to stand in —
+        # and report a healthy override stack belonging to a different checkout.
+        content=$(SPECIFY_INIT_DIR="$REPO_ROOT" "$resolver" "${names[$i]}" 2>/dev/null)
+        if [ -z "$content" ]; then
+            echo "resolving ${names[$i]} produced nothing"
+            failures=$((failures + 1))
+            continue
+        fi
+        if ! printf '%s' "$content" | grep -qF "${markers[$i]}"; then
+            echo "${names[$i]} resolved, but without '${markers[$i]}' — the shipped template won instead of ours"
+            failures=$((failures + 1))
+        fi
+    done
+    [ "$failures" -eq 0 ] || return 1
+    echo "plan, spec and tasks templates all resolve to the dotCMS overrides"
+}
+
+# T018 — customization #1. The constitution is preserved rather than regenerated
+# by init, so this guards against a reset, not against an edit.
+check_constitution_intact() {
+    local f="$REPO_ROOT/.specify/memory/constitution.md"
+    if [ ! -f "$f" ]; then
+        echo "$f does not exist — the constitution was reset or removed"
+        return 1
+    fi
+    local failures=0
+    grep -qF "V. Test-First / TDD (NON-NEGOTIABLE)" "$f" || { echo "Principle V is no longer present as NON-NEGOTIABLE"; failures=$((failures + 1)); }
+    grep -qF "Tests are confirmed to FAIL" "$f" || { echo "Principle V no longer requires a confirmed Red phase"; failures=$((failures + 1)); }
+    grep -qF "Spec-Kit MUST NOT create, edit, or commit ADRs" "$f" || { echo "the guardrail against Spec-Kit creating ADRs is gone"; failures=$((failures + 1)); }
+    [ "$failures" -eq 0 ] || return 1
+    echo "Principle V and the never-create-ADRs guardrail are both intact"
+}
+
+# T019 — customizations #2, #7 and #8. A hook naming a skill that does not exist
+# fails silently: the shipped skill reads extensions.yml, finds an entry, and
+# dispatches a command nothing answers.
+check_hooks_resolve_to_skills() {
+    local f="$REPO_ROOT/.specify/extensions.yml"
+    if [ ! -f "$f" ]; then
+        echo "$f does not exist — all three registered hooks are gone"
+        return 1
+    fi
+    local failures=0 hook command skill_dir
+    # hook name -> command it dispatches -> whether it must be mandatory
+    while IFS='|' read -r hook command optional; do
+        [ -n "$hook" ] || continue
+        if ! grep -qE "^[[:space:]]*${hook}:" "$f"; then
+            echo "the $hook hook is not registered"
+            failures=$((failures + 1))
+            continue
+        fi
+        skill_dir="$REPO_ROOT/.claude/skills/${command//./-}"
+        if [ ! -d "$skill_dir" ]; then
+            echo "the $hook hook dispatches $command but $skill_dir does not exist"
+            failures=$((failures + 1))
+        fi
+        # The flag matters as much as the name: a mandatory hook silently turned
+        # optional stops firing by itself, which is exactly FR-008's failure mode.
+        if ! awk -v h="$hook" '
+            $0 ~ "^[[:space:]]*"h":" {found=1}
+            found && /optional:/ {print; exit}
+        ' "$f" | grep -qF "optional: $optional"; then
+            echo "the $hook hook is no longer 'optional: $optional'"
+            failures=$((failures + 1))
+        fi
+    done <<'HOOKS'
+before_plan|speckit.adr-context|false
+after_implement|speckit.converge|true
+after_converge|speckit.docs-converge|false
+HOOKS
+    [ "$failures" -eq 0 ] || return 1
+    echo "all three hooks are registered, name skills that exist, and keep their mandatory/optional flag"
+}
+
+# T020 — customizations #2, #4 and #8. These carry names upstream never ships, so
+# --force cannot reach them. "Cannot" still has to be verified rather than trusted.
+check_net_new_customizations_survived() {
+    local failures=0 p
+    for p in \
+        ".claude/skills/speckit-adr-context/SKILL.md" \
+        ".claude/skills/speckit-specify-fix/SKILL.md" \
+        ".claude/skills/speckit-docs-converge/SKILL.md" \
+        ".specify/templates/spec-issue-template.md" \
+        ".specify/scripts/bash/adr-context.sh" \
+        ".specify/extensions.yml" \
+        ".specify/CUSTOMIZATIONS.md" \
+        ".specify/templates/overrides/plan-template.md" \
+        ".specify/templates/overrides/spec-template.md" \
+        ".specify/templates/overrides/tasks-template.md"
+    do
+        if [ ! -f "$REPO_ROOT/$p" ]; then
+            echo "$p was destroyed by the regeneration, although upstream ships nothing under that name"
+            failures=$((failures + 1))
+        fi
+    done
+    if [ ! -x "$REPO_ROOT/.specify/scripts/bash/adr-context.sh" ]; then
+        echo "adr-context.sh exists but is not executable, so the ADR hook cannot run it"
+        failures=$((failures + 1))
+    fi
+    [ "$failures" -eq 0 ] || return 1
+    echo "all ten net-new files survived the regeneration"
+}
+
+# T021 — FR-016a. A developer returning to work started before the upgrade must
+# still reach their own directory, and finding out must not modify it.
+check_preexisting_feature_dir_resolves() {
+    local feature="specs/37649-speckit-upgrade-latest"
+    local dir="$REPO_ROOT/$feature"
+    if [ ! -d "$dir" ]; then
+        echo "$feature does not exist, so nothing pre-existing was exercised"
+        return 1
+    fi
+    local before after out
+    # Fingerprint names and sizes; a write by the resolver changes one of them.
+    before=$(find "$dir" -type f -exec stat -f '%N %z %m' {} \; 2>/dev/null | sort)
+    out=$(cd "$REPO_ROOT" && SPECIFY_FEATURE_DIRECTORY="$feature" \
+        .specify/scripts/bash/check-prerequisites.sh --json --paths-only 2>&1)
+    if ! printf '%s' "$out" | grep -qF "$feature/spec.md"; then
+        echo "resolving the pre-existing directory did not return its own spec.md:"
+        echo "$out"
+        return 1
+    fi
+    after=$(find "$dir" -type f -exec stat -f '%N %z %m' {} \; 2>/dev/null | sort)
+    if [ "$before" != "$after" ]; then
+        echo "resolution modified the pre-existing feature directory; it must be read-only"
+        diff <(printf '%s\n' "$before") <(printf '%s\n' "$after") | head -10
+        return 1
+    fi
+    echo "a spec directory created before the upgrade still resolves, and resolution wrote nothing"
+}
+
 # >>> CHECKS END (new check functions are inserted above this line)
 
 # ---------------------------------------------------------------------------
@@ -155,6 +304,11 @@ run_all_checks() {
     check version-agreement       "FR-002, SC-008"        "pin, installed CLI and 1.0.9 floor agree" check_version_agreement
     check managed-gitignore       "research.md R6"        "v1.0.9 .specify/.gitignore keeps feature.json untracked" check_managed_gitignore
     check no-eval                 "FR-004, FR-005, SC-003" "no vendored script re-parses a produced string as code" check_no_eval_of_produced_strings
+    check overrides-win           "FR-007"                "the three dotCMS template overrides win resolution" check_overrides_win_resolution
+    check constitution-intact     "FR-009"                "Principle V and the never-create-ADRs guardrail survive" check_constitution_intact
+    check hooks-resolve           "FR-012"                "all three hooks name skills that exist" check_hooks_resolve_to_skills
+    check net-new-survived        "FR-010, FR-011"        "files upstream never ships survived --force" check_net_new_customizations_survived
+    check preexisting-feature-dir "FR-016a, SC-009"       "a pre-upgrade spec directory still resolves, read-only" check_preexisting_feature_dir_resolves
     # >>> RUNNER END (new check invocations are inserted above this line)
 }
 
