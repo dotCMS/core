@@ -130,7 +130,7 @@
                     "header": [],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    }\n}",
+                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    },\n    \"persistenceMode\": {\n        \"value\": \"readwrite\"\n    }\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -402,6 +402,358 @@
                   "response": []
                 }
               ]
+            },
+            {
+              "name": "Persistence Mode Gate",
+              "item": [
+                {
+                  "name": "Set Persistence Mode - Read Only",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"HTTP Status code must be successful\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "",
+                          "pm.test(\"Check that response is correct\", function () {",
+                          "    const jsonData = pm.response.json();",
+                          "    pm.expect(jsonData.entity).to.equal(\"Ok\", \"The value of the 'entity' attribute is not the expected one\");",
+                          "    pm.expect(jsonData.errors.length).to.equal(0, \"An error occurred when saving the App secret\");",
+                          "});",
+                          ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "auth": {
+                      "type": "bearer",
+                      "bearer": [
+                        {
+                          "key": "token",
+                          "value": "{{jwt}}",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    },\n    \"persistenceMode\": {\n        \"value\": \"readonly\"\n    }\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/apps/{{appKey}}/{{testSiteId}}",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "apps",
+                        "{{appKey}}",
+                        "{{testSiteId}}"
+                      ]
+                    },
+                    "description": "Sets Persistence Mode to `readonly` for the test Site, re-sending `siteAuth` in the same request since the Apps secrets save endpoint replaces the full secret set with whatever is submitted -- an omitted, editable field (like `siteAuth`) is dropped, not preserved. See `specs/37521-content-analytics-mode/contracts/app-config-schema.md`."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Fully Valid Event - Read Only Short-Circuits",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "// Per contracts/persistence-mode-gate.md: a Read Only site never reaches CAEM -- the",
+                          "// proxy resumes with its own short-circuited 200 instead of forwarding.",
+                          "pm.test(\"HTTP Status code must be 200 (short-circuited, never reaches CAEM)\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "",
+                          "// Regression guard: the short-circuit must carry the same ResponseEntityView JSON",
+                          "// envelope a genuine forwarded success response would (an empty object), not an empty",
+                          "// body -- a caller that calls response.json() on every 2xx, not just on error, must not",
+                          "// fail to parse it. Found via manual testing 2026-09-21; see",
+                          "// EventAnalyticsProxyResourceTest's matching unit-level regression guard.",
+                          "pm.test(\"Response body is valid JSON carrying an entity envelope, not empty\", function () {",
+                          "    const responseBody = pm.response.json();",
+                          "    pm.expect(responseBody).to.have.property(\"entity\");",
+                          "    pm.expect(responseBody.entity).to.be.an(\"object\");",
+                          "});",
+                          ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "auth": {
+                      "type": "bearer",
+                      "bearer": [
+                        {
+                          "key": "token",
+                          "value": "{{jwt}}",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Origin",
+                        "value": "http://{{testSiteName}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Referer",
+                        "value": "http://{{testSiteName}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\"\n    },\n    \"events\": [\n        {\n            \"event_type\": \"page_view\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://{{testSiteName}}/index\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"Persistence Mode Gate Test Page\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"{{testSiteName}}\",\n                    \"doc_protocol\": \"http\"\n                }\n            }\n        }\n    ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "analytics",
+                        "content",
+                        "event"
+                      ]
+                    },
+                    "description": "With Persistence Mode set to `readonly` on the test Site, a fully-valid event (passes SiteAuth validation) must never reach CAEM's ingest endpoint -- the proxy short-circuits to its own 200 instead. See `specs/37521-content-analytics-mode/contracts/persistence-mode-gate.md`."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Generate Site Key While Read Only (US3 regression)",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "// US3 (spec.md): Read Only must mean \"no ingest\", never \"no read access\". This resource's",
+                          "// other GET method (generateSiteKey) shares no code with the persistenceMode gate added to",
+                          "// proxyEventRequest -- this proves that structurally, not just by observation.",
+                          "pm.test(\"HTTP Status code must be successful (Read Only site, unrelated GET endpoint)\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "",
+                          "pm.test(\"Verify expected data in response body\", function () {",
+                          "    const testSiteId = pm.collectionVariables.get(\"testSiteId\");",
+                          "    pm.expect(pm.response.text()).to.contain(\"DOT.\" + testSiteId + \".\", \"Returned Site Key doesn't have the expected format/value\");",
+                          "});",
+                          ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                      }
+                    }
+                  ],
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": {
+                      "type": "bearer",
+                      "bearer": [
+                        {
+                          "key": "token",
+                          "value": "{{jwt}}",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "GET",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": ""
+                    },
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/analytics/content/siteauth/generate/{{testSiteId}}",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "analytics",
+                        "content",
+                        "siteauth",
+                        "generate",
+                        "{{testSiteId}}"
+                      ]
+                    },
+                    "description": "US3 regression check: with the test Site still set to `persistenceMode=readonly` (from the previous request), `EventAnalyticsProxyResource#generateSiteKey` -- a sibling GET method on the same resource class this feature modifies -- must be entirely unaffected, since it shares no code path with the gated `proxyEventRequest`. See spec.md User Story 3 and `specs/37521-content-analytics-mode/contracts/persistence-mode-gate.md` (\"Out of scope\")."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Set Persistence Mode - Read & Write",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "pm.test(\"HTTP Status code must be successful\", function () {",
+                          "    pm.response.to.have.status(200);",
+                          "});",
+                          "",
+                          "pm.test(\"Check that response is correct\", function () {",
+                          "    const jsonData = pm.response.json();",
+                          "    pm.expect(jsonData.entity).to.equal(\"Ok\", \"The value of the 'entity' attribute is not the expected one\");",
+                          "    pm.expect(jsonData.errors.length).to.equal(0, \"An error occurred when saving the App secret\");",
+                          "});",
+                          ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "auth": {
+                      "type": "bearer",
+                      "bearer": [
+                        {
+                          "key": "token",
+                          "value": "{{jwt}}",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "POST",
+                    "header": [],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    },\n    \"persistenceMode\": {\n        \"value\": \"readwrite\"\n    }\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/apps/{{appKey}}/{{testSiteId}}",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "apps",
+                        "{{appKey}}",
+                        "{{testSiteId}}"
+                      ]
+                    },
+                    "description": "Sets Persistence Mode to `readwrite` for the test Site, re-sending `siteAuth` in the same request since the Apps secrets save endpoint replaces the full secret set with whatever is submitted -- an omitted, editable field (like `siteAuth`) is dropped, not preserved. See `specs/37521-content-analytics-mode/contracts/app-config-schema.md`."
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Fully Valid Event - Read & Write Still Forwards",
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "// CAEM is not reachable in this test environment (see plan.md Test Strategy) -- a",
+                          "// fully-valid event that clears dotCMS-side validation still fails once it reaches the",
+                          "// forward step, exactly as it does today without this feature. That failure -- not a",
+                          "// successful CAEM round-trip -- is the signal this test exploits: it proves Read & Write",
+                          "// still attempts the forward (unlike the Read Only case above), even though the forward",
+                          "// itself can't succeed here.",
+                          "pm.test(\"HTTP Status code must be 500 (upstream forward attempted, CAEM unreachable here)\", function () {",
+                          "    pm.response.to.have.status(500);",
+                          "});",
+                          "",
+                          "pm.test(\"Failure comes from the forward attempt itself, not dotCMS-side validation\", function () {",
+                          "    const responseBody = pm.response.json();",
+                          "    pm.expect(responseBody).to.have.property('errors').that.is.not.empty;",
+                          "    pm.expect(['CONFIGURATION_ERROR', 'PROXY_ERROR']).to.include(responseBody.errors[0].errorCode);",
+                          "});",
+                          ""
+                        ],
+                        "type": "text/javascript",
+                        "packages": {}
+                      }
+                    }
+                  ],
+                  "request": {
+                    "auth": {
+                      "type": "bearer",
+                      "bearer": [
+                        {
+                          "key": "token",
+                          "value": "{{jwt}}",
+                          "type": "string"
+                        }
+                      ]
+                    },
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Origin",
+                        "value": "http://{{testSiteName}}",
+                        "type": "text"
+                      },
+                      {
+                        "key": "Referer",
+                        "value": "http://{{testSiteName}}",
+                        "type": "text"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n    \"context\": {\n        \"site_auth\": \"{{testSiteAuth}}\",\n        \"session_id\": \"abc\",\n        \"user_id\": \"qwe\"\n    },\n    \"events\": [\n        {\n            \"event_type\": \"page_view\",\n            \"data\": {\n                \"page\": {\n                    \"url\": \"http://{{testSiteName}}/index\",\n                    \"doc_encoding\": \"UTF8\",\n                    \"title\": \"Persistence Mode Gate Test Page\",\n                    \"doc_path\": \"index\",\n                    \"doc_host\": \"{{testSiteName}}\",\n                    \"doc_protocol\": \"http\"\n                }\n            }\n        }\n    ]\n}",
+                      "options": {
+                        "raw": {
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{serverURL}}/api/v1/analytics/content/event",
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "analytics",
+                        "content",
+                        "event"
+                      ]
+                    },
+                    "description": "With Persistence Mode set back to `readwrite`, the same fully-valid event must still attempt the forward to CAEM exactly as it does today (FR-003) -- proving re-enabling Read & Write needs no restart (FR-005) and regresses nothing. The specific failure here is an artifact of CAEM not running in this test environment (see plan.md Test Strategy), not something this test is asserting is correct behavior on its own."
+                  },
+                  "response": []
+                }
+              ]
             }
           ]
         },
@@ -632,7 +984,7 @@
                 ],
                 "body": {
                   "mode": "raw",
-                  "raw": "{ \n\t  \"siteAuth\": {\n\t\t \"value\": \"{{customKeyValue}}\"\n      }\n}\n"
+                  "raw": "{ \n\t  \"siteAuth\": {\n\t\t \"value\": \"{{customKeyValue}}\"\n      },\n\t  \"persistenceMode\": {\n\t\t \"value\": \"readwrite\"\n      }\n}\n"
                 },
                 "url": {
                   "raw": "{{serverURL}}/api/v1/apps/{{appKey}}/{{siteId}}",
@@ -667,7 +1019,11 @@
                       "    const siteName = pm.collectionVariables.get(\"siteName\");",
                       "    const entity = pm.response.json().entity;",
                       "    pm.expect(entity.sites[0].name).to.equal(siteName, \"The Site Name is not the expected one.\");",
-                      "    pm.expect(entity.sites[0].secrets[0].value).to.equal(customKeyValue, \"The custom Site Key is not the expected one.\");",
+                      "    // Find by name, not a fixed index -- persistenceMode is declared before siteAuth in",
+                      "    // dotContentAnalytics-config.yml (see contracts/app-config-schema.md), so secrets[0]",
+                      "    // is no longer reliably siteAuth.",
+                      "    const siteAuthSecret = entity.sites[0].secrets.find((secret) => secret.name === \"siteAuth\");",
+                      "    pm.expect(siteAuthSecret.value).to.equal(customKeyValue, \"The custom Site Key is not the expected one.\");",
                       "});",
                       ""
                     ],

@@ -9,6 +9,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
+import com.dotcms.experiments.business.ExperimentResultsQueryFactoryIntegrationTest;
 import com.dotcms.rest.api.v1.experiments.ExperimentsResourceIntegrationTest;
 import com.dotcms.experiments.business.ExperimentUrlPatternCalculatorIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
@@ -56,6 +57,7 @@ import org.junit.runners.Suite.SuiteClasses;
         StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
         ExperimentAPIImpIntegrationTest.class,
+        ExperimentResultsQueryFactoryIntegrationTest.class,
         ExperimentsResourceIntegrationTest.class,
         ExperimentWebAPIImplIntegrationTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
