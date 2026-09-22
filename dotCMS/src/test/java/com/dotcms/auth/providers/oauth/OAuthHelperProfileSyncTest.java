@@ -188,6 +188,49 @@ class OAuthHelperProfileSyncTest {
     }
 
     /**
+     * dotCMS stores emails lowercased (Liferay trims and lowercases on create and update)
+     * and its duplicate check compares lowercased addresses, but the email lookup is an
+     * exact match. A mixed-case email from the IdP must still link the existing account
+     * rather than fall through to a duplicate create (#37691).
+     */
+    @Test
+    void mixedCaseEmail_linksExistingAccount() throws Exception {
+        final OAuthHelper helper = new OAuthHelper();
+        final OAuthProvider provider = provider();
+        final UserAPI userAPI = mock(UserAPI.class);
+        final User systemUser = mock(User.class);
+        final User existing = mock(User.class);
+
+        when(existing.getUserId()).thenReturn("existing-user");
+        when(existing.isActive()).thenReturn(true);
+        when(existing.getFirstName()).thenReturn("Alice");
+        when(existing.getLastName()).thenReturn("Example");
+        when(userAPI.loadUserById(Mockito.anyString())).thenReturn(null);
+        // Only the stored, lowercased form finds the account.
+        when(userAPI.loadByUserByEmail(eq("alice@example.com"), eq(systemUser), anyBoolean()))
+                .thenReturn(existing);
+        when(userAPI.loadUserById(eq("existing-user"), eq(systemUser), anyBoolean())).thenReturn(existing);
+
+        try (MockedStatic<APILocator> api = Mockito.mockStatic(APILocator.class);
+             MockedStatic<Config> cfg = Mockito.mockStatic(Config.class);
+             MockedStatic<SecurityLogger> security = Mockito.mockStatic(SecurityLogger.class)) {
+            api.when(APILocator::getUserAPI).thenReturn(userAPI);
+            api.when(APILocator::systemUser).thenReturn(systemUser);
+            cfg.when(() -> Config.getIntProperty("dotcms.user.id.maxlength", 100)).thenReturn(100);
+            cfg.when(() -> Config.getStringProperty(ROLE_STRATEGY_PROP, BuildRolesStrategy.ALL.name()))
+                    .thenReturn(BuildRolesStrategy.NONE.name());
+
+            final User resolved = helper.resolveOrProvisionUser(provider, null, Map.of(
+                    "email", " Alice@Example.COM ",
+                    "sub", "entra-subject-1"), null, true);
+
+            assertSame(existing, resolved, "A mixed-case email must link the lowercased stored account");
+        }
+
+        verify(userAPI, never()).createUser(Mockito.anyString(), Mockito.anyString());
+    }
+
+    /**
      * The subject must win even when the IdP also asserts a verified email that belongs to a
      * different account. Before #37691 a verified email was checked first and won.
      */

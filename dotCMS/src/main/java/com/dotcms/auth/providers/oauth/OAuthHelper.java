@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
@@ -678,7 +679,11 @@ public class OAuthHelper {
     }
 
     private static String getEmail(final Map<String, Object> userInfo, final OAuthAppConfig config) {
-        final String email = claimValue(userInfo, config == null ? null : config.emailClaim, EMAIL_CLAIMS, null);
+        final String raw = claimValue(userInfo, config == null ? null : config.emailClaim, EMAIL_CLAIMS, null);
+        // dotCMS stores emails trimmed and lowercased (Liferay normalizes on create and
+        // update) but looks them up by exact match, so normalize the IdP's value the same
+        // way or a mixed-case or padded address misses its own account (#37691).
+        final String email = raw == null ? null : raw.trim().toLowerCase(Locale.ROOT);
         if (UtilMethods.isSet(email) && !UtilMethods.isValidEmail(email)) {
             // The regex caps TLDs at 4 chars (pre-2012 gTLDs), so real addresses like
             // user@corp.systems get dropped here — the user is then provisioned with a
