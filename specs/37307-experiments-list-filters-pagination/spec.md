@@ -532,6 +532,37 @@ fewer rows than one page.
 - **FR-051**: The screen's "are any filters active" condition and its clear-filters action MUST both
   account for the two new filters, so the "nothing matched" empty state appears when one of them is
   the reason nothing matched, and its action actually widens the list.
+- **FR-051a**: The toolbar's chips MUST render through the shared filter bar (`dot-filter-bar` in
+  `@dotcms/ui`), reading and writing the listing's state through a `DOT_FILTER_FACADE`
+  implementation over the list store. **This requirement was added after the spec was first
+  approved and is not in #37307**; it is recorded here because it shipped, and it needs
+  re-approval.
+
+  Three consequences follow, each a MUST:
+
+  1. The toolbar gains the bar's **Clear all** affordance, which this screen did not have —
+     clearing was previously reachable only from the no-results state. Its condition is "is
+     anything narrowing", which is deliberately *not* the same question as FR-051's: a page
+     narrowing that arrived in the address is an active filter for the empty state but is not the
+     user's to clear from the chip row.
+  2. `DOT_CANONICAL_FILTER_ORDER` MUST gain `goal`, `schedule` and `createdBy`, and this listing
+     MUST render its chips in that order. Experiments is the first surface in that list that is
+     not browsing content, so the constant stops meaning "the order for browsing content". The
+     rule is a subsequence, so no existing toolbar changes.
+  3. The facade MUST validate what it is handed rather than cast it. Values arrive through a
+     shared contract any chip on any surface can write to, so they are as untrusted as the
+     address — and the address path already drops what it cannot recognise (FR-048).
+
+  The shared conformance suite for `DOT_FILTER_FACADE` is **not** run against this
+  implementation, and that is a finding rather than an exemption: it assumes an open,
+  string-keyed filter bag (its obligations are asserted with literal content-browsing keys, and
+  one requires a patch to `[]` to read back as `[]` rather than `undefined`). This store keeps
+  typed state changed only through dispatched events, which is what makes an unknown status
+  unstorable. Satisfying the suite would mean a second open bag beside the typed state, or
+  replacing the typed state and with it the parsing rules and every reducer. The two obligations
+  the bar actually depends on — clearing, and "is anything non-default" — MUST be asserted
+  directly instead.
+
 - **FR-052**: Filtering MUST remain client-side over the already-loaded set. The server-side
   contract this would otherwise use does not exist: the endpoint still accepts only `pageId`,
   `name` and `status`, there is no experiments paginator, and #36823's own security finding — the
