@@ -61,30 +61,48 @@ runs:
       with:
         path: ~/.sdkman
         key: ${{ runner.os }}-${{ env.ARCHITECTURE }}-sdkman-install
-    - name: Install Bash 4+ (macOS)
-      if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' && runner.os == 'macOS' }}
-      shell: bash
-      run: |
-        # macOS ships Bash 3.2 but SDKMAN 5.21+ requires Bash 4+.
-        # Homebrew is pre-installed on GitHub macOS runners.
-        brew install bash
-        echo "Installed Bash: $($(brew --prefix)/bin/bash --version | head -1)"
     - name: Install SDKMan
       id: install-sdkman
       if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' }}
       shell: bash
       run: |
-        if [ ! -f "$HOME/.sdkman/bin/sdkman-init.sh" ]; then
-          echo "Downloading SDKMAN install"
-          # Use Homebrew bash on macOS (Bash 4+), system bash on Linux (already 5.x)
-          if [[ "$RUNNER_OS" == "macOS" ]]; then
-            BREW_BASH="$(brew --prefix)/bin/bash"
-            echo "Using Homebrew bash: $($BREW_BASH --version | head -1)"
-            curl -s "https://get.sdkman.io" | "$BREW_BASH"
-          else
-            curl -s "https://get.sdkman.io" | bash
-          fi
+        set -euo pipefail
+
+        if [ -f "$HOME/.sdkman/bin/sdkman-init.sh" ]; then
+          echo "SDKMAN already present, nothing to install"
+          exit 0
         fi
+
+        # Download before executing (rather than `curl | bash`) so the script can be
+        # inspected first, and use -f so an HTTP error body is never run as a script.
+        INSTALLER="${RUNNER_TEMP}/sdkman-install.sh"
+        echo "Downloading SDKMAN installer"
+        curl -fsSL "https://get.sdkman.io" -o "$INSTALLER"
+
+        # macOS ships Bash 3.2 and Apple will never upgrade it (GPL v3). SDKMAN's installer
+        # refuses to run below Bash 4, but that check is advisory: neither the installer nor
+        # the 5.x runtime uses a single Bash 4 construct, and `sdk install` works correctly
+        # under 3.2 -- which the steps below already rely on, since they run with the system
+        # bash on every platform.
+        #
+        # We used to satisfy the check with `brew install bash`. That made every macOS build
+        # depend on Homebrew publishing a bash bottle for the runner platform; it stopped
+        # doing so and the build broke (#37650). Disarm the check instead -- and if upstream
+        # ever reworks it, fail loudly rather than silently installing a broken toolchain.
+        if [ "$RUNNER_OS" = "macOS" ]; then
+          GUARD='if [ "$bash_major_version" -lt 4 ]; then'
+          if ! grep -qF "$GUARD" "$INSTALLER"; then
+            echo "::error::SDKMAN installer no longer contains the expected Bash version guard. Re-verify that it still runs on Bash 3.2 before updating this patch (see #37650)."
+            exit 1
+          fi
+          # sed to a temp file + mv: `sed -i` takes an argument on BSD but not on GNU.
+          sed 's/if \[ "\$bash_major_version" -lt 4 \]; then/if false; then/' \
+            "$INSTALLER" > "${INSTALLER}.patched"
+          mv "${INSTALLER}.patched" "$INSTALLER"
+          echo "Bash version guard disarmed; installing with system bash ${BASH_VERSION}"
+        fi
+
+        bash "$INSTALLER"
     - name: Save Cache SDKMan install
       id: save-cache-sdkman
       if: ${{ steps.restore-cache-sdkman.outputs.cache-hit != 'true' }}
