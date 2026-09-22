@@ -369,6 +369,45 @@ public class LongTextPreviewStrategyTest {
     }
 
     /**
+     * Dotbot review finding on PR #37663 (third follow-up): when the title-source field is a Story
+     * Block field (variable starting with {@code "title"}), {@code Contentlet#getTitle()} returns
+     * that field's raw JSON schema verbatim into the {@code "title"} key -- the exact payload bloat
+     * this strategy exists to remove for Story Block fields. The fix copies the already-extracted
+     * Story Block preview (written under the field's own key by {@code applyPreview}, earlier in
+     * {@code transform}) into {@code "title"}, rather than leaving the raw JSON copy untouched.
+     */
+    @Test
+    public void transform_titleDerivedFromStoryBlockField_copiesExtractedPreviewIntoTitleKey()
+            throws Exception {
+        final Field titleSourceField = mockField(StoryBlockField.class, "titleStory");
+        final ContentType contentType = mockContentType(List.of(), List.of(), List.of(titleSourceField));
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> textNode = Map.of("type", "text", "text", "Launch announcement");
+        final Map<String, Object> paragraph = Map.of("type", "paragraph", "content", List.of(textNode));
+        final LinkedHashMap<String, Object> storyBlockDoc = new LinkedHashMap<>();
+        storyBlockDoc.put("type", "doc");
+        storyBlockDoc.put("content", List.of(paragraph));
+
+        final Map<String, Object> map = new HashMap<>();
+        // "titleStory" starts as the parsed Story Block structure StoryBlockViewStrategy produced;
+        // "title" starts as COMMON_PROPS's independent raw-JSON-string copy from getTitle().
+        map.put("titleStory", storyBlockDoc);
+        map.put("title", "{\"type\":\"doc\",\"content\":[/* the full, untruncated schema */]}");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String fieldPreview = (String) map.get("titleStory");
+        final String titlePreview = (String) map.get("title");
+        assertTrue("The field's own key must hold the extracted Story Block preview",
+                fieldPreview.contains("Launch announcement"));
+        assertEquals("The 'title' key must match the field's own already-extracted preview",
+                fieldPreview, titlePreview);
+        assertFalse("The 'title' key must no longer carry the raw JSON schema",
+                titlePreview.contains("untruncated schema"));
+    }
+
+    /**
      * A dedicated, short "title" field (a normal Text column, not WYSIWYG/TextArea/Story Block)
      * means no field's variable starts with "title" among the in-scope lists -- nothing to trim.
      */

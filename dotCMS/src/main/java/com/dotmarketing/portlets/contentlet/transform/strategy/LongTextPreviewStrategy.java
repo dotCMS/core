@@ -96,7 +96,8 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
         applyPreview(textAreaFields, map, LongTextPreviewStrategy::extractHtmlPreview);
         applyPreview(storyBlockFields, map, LongTextPreviewStrategy::extractStoryBlockPreview);
         removeRawCompanionKeys(storyBlockFields, map);
-        trimTitleCopyFromDifferentlyNamedSourceField(contentType, wysiwygFields, textAreaFields, map);
+        trimTitleCopyFromDifferentlyNamedSourceField(contentType, wysiwygFields, textAreaFields,
+                storyBlockFields, map);
 
         return map;
     }
@@ -111,10 +112,17 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
      * {@code Contentlet#getFieldWithVarStartingWithTitleWord} fallback (e.g. {@code titleLongText}),
      * {@code applyPreview} only trims that field's OWN key -- the separate {@code "title"} copy is
      * never iterated and rides through at full length, the same payload bloat this strategy exists
-     * to remove (found in review, issue #37185 PR #37663).
+     * to remove (found in review, issue #37185 PR #37663). The same gap applies when the title
+     * source is a Story Block field: {@link Contentlet#getTitle()} returns that field's raw JSON
+     * schema as a {@code String}, not the parsed {@link Map} shape {@link #extractStoryBlockPreview}
+     * expects (that shape only exists in the map under the field's OWN key, already written there
+     * by {@code applyPreview} earlier in {@link #transform}), so the fix here copies that
+     * already-extracted preview into the {@code "title"} key rather than re-extracting from the raw
+     * JSON string (found in review, issue #37185 PR #37663 third follow-up).
      */
     private void trimTitleCopyFromDifferentlyNamedSourceField(final ContentType contentType,
-            final List<Field> wysiwygFields, final List<Field> textAreaFields, final Map<String, Object> map) {
+            final List<Field> wysiwygFields, final List<Field> textAreaFields,
+            final List<Field> storyBlockFields, final Map<String, Object> map) {
         if (!(map.get(TITTLE_KEY) instanceof String)) {
             return;
         }
@@ -135,6 +143,19 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
                 .map(Field::variable)
                 .filter(variable -> UtilMethods.isSet(variable) && variable.startsWith(TITTLE_KEY))
                 .findFirst();
+        final boolean titleSourceIsStoryBlockField = titleSourceVariable.filter(variable ->
+                storyBlockFields.stream().anyMatch(field -> variable.equals(field.variable())))
+                .isPresent();
+        if (titleSourceIsStoryBlockField) {
+            // The field's own key already holds extractStoryBlockPreview's output -- applyPreview
+            // ran against storyBlockFields earlier in transform(), before this method is called. If
+            // the field is absent from the row's map, leave "title" as-is rather than clobbering it
+            // with a synthesized null (mirrors applyPreview's own containsKey guard).
+            if (map.containsKey(titleSourceVariable.get())) {
+                map.put(TITTLE_KEY, map.get(titleSourceVariable.get()));
+            }
+            return;
+        }
         final boolean titleSourceIsInScopeHtmlField = titleSourceVariable.filter(variable ->
                 Stream.concat(wysiwygFields.stream(), textAreaFields.stream())
                         .anyMatch(field -> variable.equals(field.variable())))
@@ -142,8 +163,8 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
         if (!titleSourceIsInScopeHtmlField) {
             // Either no field's variable starts with "title" (a dedicated, short title column is
             // in play), or the one dotCMS would actually resolve the title from is not WYSIWYG/
-            // TextArea -- e.g. a plain Text field, which is out of scope for this strategy the
-            // same way it is for every other field.
+            // TextArea/Story Block -- e.g. a plain Text field, which is out of scope for this
+            // strategy the same way it is for every other field.
             return;
         }
         Try.run(() -> map.put(TITTLE_KEY, extractHtmlPreview(map.get(TITTLE_KEY))))
