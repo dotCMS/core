@@ -19,40 +19,77 @@ Backend unit tests in dotCMS are located in `dotCMS/src/test/java` and use JUnit
 
 ## Testing Patterns
 
-> Examples below marked with a file path are copied from real tests and compile against current source. The rest are **shapes** — they use deliberately generic names (`MyWorkflowService`, `SomeService`) for the class under test, with real dotCMS APIs around them. Don't copy a generic name expecting to find it in the codebase.
+> Examples below marked with a file path are taken from real tests and compile against current source; where one is abridged, the elisions are marked. The rest are **shapes** — they use deliberately generic names (`MyWorkflowService`, `SomeService`) for the class under test, with real dotCMS APIs around them. Don't copy a generic name expecting to find it in the codebase.
 
 ### Standard Unit Test Structure
 
-Modelled on a real test — `dotCMS/src/test/java/com/dotcms/health/servlet/HealthProbeServletTest.java`:
+Abridged from a real test — `dotCMS/src/test/java/com/dotcms/health/servlet/HealthProbeServletTest.java`. Elisions are marked; everything shown compiles against current source.
 
 ```java
 public class HealthProbeServletTest {
 
     @Mock
+    private HttpServletRequest request;
+
+    @Mock
+    private HttpServletResponse response;
+
+    @Mock
     private HealthStateManager healthStateManager;
 
     private HealthProbeServlet servlet;
+    private StringWriter responseWriter;
+    private PrintWriter printWriter;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        Config.setProperty("health.detailed.authentication.required", "false");
+
         servlet = new HealthProbeServlet();
+
+        // The servlet exposes no setter, so the collaborator goes in by reflection
+        java.lang.reflect.Field healthField =
+            HealthProbeServlet.class.getDeclaredField("healthStateManager");
+        healthField.setAccessible(true);
+        healthField.set(servlet, healthStateManager);
+        // ... same for the objectMapper field
+
+        responseWriter = new StringWriter();
+        printWriter = new PrintWriter(responseWriter);
+        when(response.getWriter()).thenReturn(printWriter);
+    }
+
+    @After
+    public void tearDown() {
+        Config.setProperty("health.detailed.authentication.required", "true");
     }
 
     @Test
-    public void testLivenessReturnsOk() throws Exception {
+    public void testDotmgtLivezEndpointReturnsTextResponse() throws Exception {
         // Given
-        when(healthStateManager.getLivenessResponse()).thenReturn(healthyResponse());
+        when(request.getServletPath()).thenReturn(HealthEndpointConstants.Endpoints.LIVENESS);
+
+        HealthResponse healthResponse = HealthResponse.builder()
+            .status(HealthStatus.UP)
+            .checks(Collections.emptyList())
+            .timestamp(Instant.now())
+            .build();
+        when(healthStateManager.getLivenessHealth()).thenReturn(healthResponse);
 
         // When
-        servlet.doGet(request, response);
+        servlet.doManagementGet(request, response);
 
         // Then
-        assertEquals(200, response.getStatus());
-        verify(healthStateManager).getLivenessResponse();
+        verify(response).setStatus(HttpServletResponse.SC_OK);
+        verify(response).setContentType("text/plain");
+        printWriter.flush();
+        assertEquals(HealthEndpointConstants.Responses.ALIVE_RESPONSE, responseWriter.toString());
     }
 }
 ```
+
+Two things worth copying from it beyond the shape: configuration touched in `setUp` is restored in `tearDown`, and a collaborator with no setter is injected by reflection rather than by widening the production class's visibility for the test.
 
 Mockito is initialized two ways in this codebase, both live: `MockitoAnnotations.initMocks(this)` in a `@Before` (5 classes) and `@RunWith(MockitoJUnitRunner.class)` (6 classes). One class uses the newer `openMocks`. Follow whichever the file you are editing already uses rather than converting it.
 
@@ -245,15 +282,15 @@ with `maven_opts: "-Xmx2048m"` from the matrix defaults. To change how unit test
 ```java
 // Add debugging breakpoints
 @Test
-public void testLivenessReturnsOk() throws Exception {
+public void testDotmgtLivezEndpointReturnsTextResponse() throws Exception {
     // Set breakpoint here
-    when(healthStateManager.getLivenessResponse()).thenReturn(healthyResponse());
+    when(healthStateManager.getLivenessHealth()).thenReturn(healthResponse);
 
     // Debug step through the servlet
-    servlet.doGet(request, response);
+    servlet.doManagementGet(request, response);
 
     // Examine result
-    assertEquals(200, response.getStatus());
+    verify(response).setStatus(HttpServletResponse.SC_OK);
 }
 ```
 
