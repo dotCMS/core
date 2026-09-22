@@ -25,6 +25,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.test.DeleteFieldJobTest.class,
         com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
+        com.dotcms.content.elasticsearch.business.ESMappingAPINumericFieldTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
         com.dotcms.contenttype.test.ContentTypeAPIImplTest.class,
         com.dotcms.contenttype.test.ContentTypeBuilderTest.class,
