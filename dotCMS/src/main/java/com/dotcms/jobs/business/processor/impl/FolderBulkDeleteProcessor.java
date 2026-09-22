@@ -113,6 +113,17 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
     private static final int DEFAULT_ABANDONMENT_THRESHOLD_MINUTES = 30;
     private static final int HEARTBEAT_INTERVAL_DIVISOR = 3;
 
+    /**
+     * Internal override for {@link #heartbeatIntervalMillis()}, not surfaced anywhere
+     * client-facing (unlike {@code FolderBulkDeleteHelper.MAX_PATHS_KEY}, which {@code
+     * ConfigurationHelper} advertises via {@code GET /api/v1/appconfiguration} because a client
+     * needs it - nothing outside this process needs to know the heartbeat cadence). Exists so a
+     * test can set an interval well under the abandonment threshold's one-minute floor, rather
+     * than depending on a real delete outlasting a 20-second tick on every CI runner (#37685).
+     */
+    private static final String HEARTBEAT_INTERVAL_MILLIS_KEY =
+            "FOLDER_BULK_DELETE_HEARTBEAT_INTERVAL_MILLIS";
+
     private final AtomicInteger successCount = new AtomicInteger();
     private final AtomicInteger failedCount = new AtomicInteger();
     private final AtomicInteger skippedCount = new AtomicInteger();
@@ -404,12 +415,24 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
         return executor;
     }
 
+    /**
+     * Derived from the abandonment threshold by default (a third of it, floored at one minute's
+     * worth — 20 seconds — since the threshold itself has minute granularity), but overridable via
+     * {@link #HEARTBEAT_INTERVAL_MILLIS_KEY} for whoever needs a tick faster than that floor
+     * allows: a real delete can legitimately finish in well under 20 seconds on a fast CI runner,
+     * which starved {@code FolderBulkDeleteHeartbeatIT} of its first tick before {@code
+     * shutdownNow()} cancelled it (#37685) — the test now sets this override directly instead of
+     * needing an ever-larger folder to outrun the floor. Read fresh on every call, same as the
+     * threshold read above, so a test can rely on {@code Config.setProperty} taking effect
+     * immediately.
+     */
     private long heartbeatIntervalMillis() {
         final int thresholdMinutes = Config.getIntProperty(
                 ABANDONMENT_THRESHOLD_MINUTES_KEY, DEFAULT_ABANDONMENT_THRESHOLD_MINUTES);
-        return Duration.ofMinutes(Math.max(thresholdMinutes, 1))
+        final long derivedFromThreshold = Duration.ofMinutes(Math.max(thresholdMinutes, 1))
                 .dividedBy(HEARTBEAT_INTERVAL_DIVISOR)
                 .toMillis();
+        return Config.getLongProperty(HEARTBEAT_INTERVAL_MILLIS_KEY, derivedFromThreshold);
     }
 
     /**

@@ -47,20 +47,26 @@ import org.junit.jupiter.api.Test;
  * caching of its own — specifically so a test can control it reliably. This test exercises that
  * second, uncached read; it does not touch {@code AbandonedJobDetector} at all.
  * <p>
- * <b>Deliberately slow, not a mistake.</b> The threshold's minute granularity floors the derived
- * heartbeat interval at 60/3 = 20 seconds even at its lowest configurable value (1 minute), so
- * proving the heartbeat fires more than once mid-delete needs a delete that genuinely runs longer
- * than that — a large content count, not an artificial delay hook (none exists for
- * {@code FolderAPI.delete}, and adding one only for this test would test the hook, not the real
- * call). Matches this suite's own accepted cost for "expensive but real" tests elsewhere (the
- * cancellation and overlap-guard tests' own "big folder" technique), just with a bigger folder and
- * a longer budget.
+ * <b>Overrides the heartbeat interval directly, not just the abandonment threshold.</b> Lowering
+ * {@code JOB_ABANDONMENT_THRESHOLD_MINUTES} to its minute-granularity floor of 1 still derives a
+ * 20-second tick (60s / 3) — and a real 500-item delete finishes in roughly 15 seconds on a fast
+ * CI runner, comfortably under that floor, so the first tick never landed before {@code
+ * shutdownNow()} cancelled it: this test failed 4/4 on CI while passing locally on slower
+ * hardware (#37685 — a genuine timing race against runner speed, not flakiness).
+ * {@code FolderBulkDeleteProcessor.heartbeatIntervalMillis()} now also reads {@code
+ * FOLDER_BULK_DELETE_HEARTBEAT_INTERVAL_MILLIS}, so this test sets that directly to a couple of
+ * seconds instead of needing an ever-larger folder to outrun a floor it could never actually
+ * control. The 500-item folder stays — a genuinely blocking {@code FolderAPI.delete} call, not an
+ * artificial delay hook — it just no longer has to single-handedly outlast 20 seconds.
  */
 @EnableWeld
 public class FolderBulkDeleteHeartbeatIT extends Junit5WeldBaseTest {
 
     private static final int BIG_FOLDER_CONTENT_COUNT = 500;
     private static final String THRESHOLD_KEY = "JOB_ABANDONMENT_THRESHOLD_MINUTES";
+    private static final String HEARTBEAT_INTERVAL_KEY =
+            "FOLDER_BULK_DELETE_HEARTBEAT_INTERVAL_MILLIS";
+    private static final String HEARTBEAT_INTERVAL_MILLIS_UNDER_TEST = "2000";
 
     @Inject
     JobQueueManagerAPI jobQueueManagerAPI;
@@ -69,6 +75,7 @@ public class FolderBulkDeleteHeartbeatIT extends Junit5WeldBaseTest {
     private static Host site;
     private static ContentType contentType;
     private static String originalThreshold;
+    private static String originalHeartbeatInterval;
 
     @BeforeAll
     public static void prepare() throws Exception {
@@ -78,14 +85,20 @@ public class FolderBulkDeleteHeartbeatIT extends Junit5WeldBaseTest {
         contentType = new ContentTypeDataGen().nextPersisted();
 
         originalThreshold = Config.getStringProperty(THRESHOLD_KEY, "30");
-        // The lowest value the config's minute granularity allows — see the class javadoc on why
-        // this floors the derived heartbeat interval at 20 seconds, not something smaller.
+        // Lowered too, so a genuinely abandoned run (were one to happen here) would still be
+        // caught quickly — but per the class javadoc, this alone cannot get the tick under 20s.
         Config.setProperty(THRESHOLD_KEY, "1");
+
+        originalHeartbeatInterval = Config.getStringProperty(HEARTBEAT_INTERVAL_KEY, (String) null);
+        Config.setProperty(HEARTBEAT_INTERVAL_KEY, HEARTBEAT_INTERVAL_MILLIS_UNDER_TEST);
     }
 
     @AfterAll
     public static void restore() {
         Config.setProperty(THRESHOLD_KEY, originalThreshold);
+        // null (this key was never set before this test) is itself a valid value here — Config's
+        // own trackOverrides treats setProperty(key, null) as the removal it should be.
+        Config.setProperty(HEARTBEAT_INTERVAL_KEY, originalHeartbeatInterval);
     }
 
     private String pathOf(final Folder folder) {
@@ -94,8 +107,8 @@ public class FolderBulkDeleteHeartbeatIT extends Junit5WeldBaseTest {
 
     /**
      * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}, via the real queue Given
-     * Scenario: A single folder heavy enough that its own delete call outlasts one derived
-     * heartbeat interval (20 seconds at the lowest configurable threshold) ExpectedResult:
+     * Scenario: A single folder heavy enough that its own delete call outlasts the overridden
+     * 2-second heartbeat interval several times over ExpectedResult:
      * {@code job.updatedAt()} — read fresh on every poll, the same cache-safe path
      * {@code HeartbeatIT} already established — advances more than once while the job is still
      * {@code RUNNING}, and {@code job.progress()} never leaves {@code 0.0} while running: a
