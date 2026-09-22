@@ -115,6 +115,52 @@ describe('DotEditContentFormResolutions', () => {
         });
     });
 
+    // A Checkbox or Multi-Select the user cleared comes back from the API with its key absent.
+    // On saved content that absence means "nothing selected", so the Content Type default must
+    // not be re-applied — otherwise the box re-checks itself and a save writes the default back.
+    // See https://github.com/dotCMS/core/issues/35416
+    describe('selectionResolutionFn', () => {
+        const selectionField: DotCMSContentTypeField = {
+            ...mockField,
+            variable: 'showOnMenu',
+            defaultValue: 'true'
+        };
+
+        describe.each([FIELD_TYPES.CHECKBOX, FIELD_TYPES.MULTI_SELECT])('%s', (fieldType) => {
+            it('should return an empty value when the key is absent on a saved contentlet', () => {
+                const contentlet = createFakeContentlet({ identifier: 'saved-123' });
+                delete contentlet[selectionField.variable];
+
+                const result = resolutionValue[fieldType](contentlet, selectionField);
+
+                expect(result).toBe('');
+            });
+
+            it('should return the stored value when the contentlet has one', () => {
+                const contentlet = createFakeContentlet({
+                    identifier: 'saved-123',
+                    [selectionField.variable]: 'true'
+                });
+
+                const result = resolutionValue[fieldType](contentlet, selectionField);
+
+                expect(result).toBe('true');
+            });
+
+            it('should return the defaultValue for new content', () => {
+                const result = resolutionValue[fieldType](null, selectionField);
+
+                expect(result).toBe('true');
+            });
+
+            it('should return null for new content during manual translation', () => {
+                const result = resolutionValue[fieldType](null, selectionField, undefined, true);
+
+                expect(result).toBeNull();
+            });
+        });
+    });
+
     describe('textFieldResolutionFn', () => {
         it('should not modify non-URL values', () => {
             const contentlet = {
@@ -480,13 +526,13 @@ describe('DotEditContentFormResolutions', () => {
                 FIELD_TYPES.BINARY,
                 FIELD_TYPES.FILE,
                 FIELD_TYPES.IMAGE,
-                FIELD_TYPES.CHECKBOX,
+                // CHECKBOX and MULTI_SELECT have their own resolver — for saved content an
+                // absent key means "nothing selected", so no default is applied.
                 FIELD_TYPES.CONSTANT,
                 FIELD_TYPES.CUSTOM_FIELD,
                 FIELD_TYPES.HIDDEN,
                 FIELD_TYPES.JSON,
                 // KEY_VALUE has its own resolver — it recovers the response's key order.
-                FIELD_TYPES.MULTI_SELECT,
                 FIELD_TYPES.RADIO,
                 FIELD_TYPES.TAG,
                 FIELD_TYPES.TEXTAREA,

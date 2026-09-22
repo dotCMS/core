@@ -55,6 +55,33 @@ const defaultResolutionFn: FnResolutionValue<string> = (
 };
 
 /**
+ * Resolves a Checkbox or Multi-Select field, whose value is a set of selected options.
+ *
+ * For a contentlet that has already been saved the stored value is authoritative: a field the
+ * user cleared comes back with its key absent from the payload, and that absence means "nothing
+ * selected", not "no value supplied". Falling back to `field.defaultValue` there re-checks a box
+ * the user deliberately cleared, and saving that screen writes the default back to the database.
+ *
+ * The default still seeds the form when there is no contentlet yet — new content — which is the
+ * only point a Content Type default is meant to apply. This mirrors the backend guard in
+ * `ESContentletAPIImpl#setDefaultValues`, which is scoped to the same two field types.
+ *
+ * @see https://github.com/dotCMS/core/issues/35416
+ */
+const selectionResolutionFn: FnResolutionValue<string> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (contentlet) {
+        return contentlet[field.variable] ?? '';
+    }
+
+    return isManualTranslation ? null : field.defaultValue;
+};
+
+/**
  * Resolves a Key/Value field, preferring the key order the response actually carried.
  *
  * A JavaScript object cannot hold that order: integer-like keys are enumerated first,
@@ -288,7 +315,7 @@ export const resolutionValue: Record<
     [FIELD_TYPES.FILE]: defaultResolutionFn,
     [FIELD_TYPES.IMAGE]: defaultResolutionFn,
     [FIELD_TYPES.BLOCK_EDITOR]: blockEditorResolutionFn,
-    [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,
+    [FIELD_TYPES.CHECKBOX]: selectionResolutionFn,
     [FIELD_TYPES.CONSTANT]: defaultResolutionFn,
     [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,
     [FIELD_TYPES.DATE]: dateResolutionFn,
@@ -298,7 +325,7 @@ export const resolutionValue: Record<
     [FIELD_TYPES.HOST_FOLDER]: hostFolderResolutionFn,
     [FIELD_TYPES.JSON]: defaultResolutionFn,
     [FIELD_TYPES.KEY_VALUE]: keyValueResolutionFn,
-    [FIELD_TYPES.MULTI_SELECT]: defaultResolutionFn,
+    [FIELD_TYPES.MULTI_SELECT]: selectionResolutionFn,
     [FIELD_TYPES.RADIO]: defaultResolutionFn,
     [FIELD_TYPES.SELECT]: selectResolutionFn,
     [FIELD_TYPES.TAG]: defaultResolutionFn,
