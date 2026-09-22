@@ -35,7 +35,6 @@ import { DotToolsToolDialogComponent } from '../dot-tools-tool-dialog/dot-tools-
 import {
     DotToolsCatalogEntry,
     DotToolsSection,
-    DotToolsSectionForm,
     DotToolsToolForm
 } from '../models/dot-tools.models';
 
@@ -247,19 +246,17 @@ export class DotToolsPageComponent {
     }
 
     protected openNewSectionDialog(): void {
-        const ref = this.#dialogService.open(DotToolsSectionDialogComponent, {
+        // Section dialog owns its own submit (per libs/portlets/CLAUDE.md ›
+        // Dialogs whose submit can fail into the form) so we do not subscribe
+        // to onClose for the form value — the store is already updated by the
+        // time the dialog closes on success.
+        this.#dialogService.open(DotToolsSectionDialogComponent, {
             header: this.#messageService.get('tools.new-section'),
             width: '700px',
             closable: true,
             closeOnEscape: true,
             draggable: false,
             position: 'center'
-        });
-
-        ref?.onClose.pipe(take(1)).subscribe((form: DotToolsSectionForm | undefined) => {
-            if (form) {
-                this.store.createSection(form);
-            }
         });
     }
 
@@ -293,7 +290,8 @@ export class DotToolsPageComponent {
     }
 
     private openEditSectionDialog(section: DotToolsSection): void {
-        const ref = this.#dialogService.open(DotToolsSectionDialogComponent, {
+        // Same "dialog owns the submit" pattern as openNewSectionDialog.
+        this.#dialogService.open(DotToolsSectionDialogComponent, {
             header: this.#messageService.get('tools.edit-section'),
             width: '700px',
             data: { section },
@@ -302,19 +300,12 @@ export class DotToolsPageComponent {
             draggable: false,
             position: 'center'
         });
-
-        ref?.onClose.pipe(take(1)).subscribe((form: DotToolsSectionForm | undefined) => {
-            if (form) {
-                this.store.updateSection(section.id, form);
-            }
-        });
     }
 
     private openEditToolDialog(tool: DotToolsCatalogEntry): void {
-        // TODO(#37353): once `GET /v1/portlet/custom/{id}` lands, fetch the
-        // current config and pass it as `prefill` so the dialog reopens with
-        // the stored base types, content types and view mode. Until then the
-        // dialog opens with defaults and the user has to re-pick.
+        // The tool dialog fetches its own prefill from
+        // GET /v1/portlet/custom/{id} (PR #37678). We just pass the catalog
+        // entry so it can seed the form while the prefill is in flight.
         const ref = this.#dialogService.open(DotToolsToolDialogComponent, {
             header: this.#messageService.get('tools.edit-tool'),
             width: '700px',

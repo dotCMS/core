@@ -16,7 +16,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
-import { catchError, take } from 'rxjs/operators';
+import { catchError, finalize, take } from 'rxjs/operators';
 
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
@@ -28,9 +28,11 @@ import {
     DotToolsCustomToolConfig,
     DotToolsDataViewMode
 } from '../models/dot-tools.models';
+import { DotToolsService } from '../services/dot-tools.service';
 
 interface DotToolsToolDialogData {
     tool?: DotToolsCatalogEntry;
+    /** Optional prefill; tests inject one, production fetches it via the service. */
     prefill?: DotToolsCustomToolConfig;
 }
 
@@ -59,6 +61,7 @@ export class DotToolsToolDialogComponent implements OnInit {
 
     readonly #fb = inject(FormBuilder);
     readonly #contentTypeService = inject(DotContentTypeService);
+    readonly #toolsService = inject(DotToolsService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
     protected readonly form = this.#fb.nonNullable.group({
@@ -66,16 +69,14 @@ export class DotToolsToolDialogComponent implements OnInit {
         portletId: ['', Validators.required],
         baseTypes: [<DotCMSBaseTypesContentTypes[]>[DotCMSBaseTypesContentTypes.CONTENT]],
         contentTypes: [<string[]>[]],
-        dataViewMode: [<DotToolsDataViewMode>'List', Validators.required]
+        dataViewMode: [<DotToolsDataViewMode>'list', Validators.required]
     });
 
     protected readonly baseTypes = DOT_TOOLS_BASE_TYPES;
     protected readonly viewModes = DOT_TOOLS_DATA_VIEW_MODES;
     protected readonly $contentTypes = signal<ContentTypeOption[]>([]);
     protected readonly $contentTypesLoading = signal(true);
-
-    // See sibling comment in dot-tools-section-dialog: flipped by onSubmit
-    // and drives error visibility on untouched fields.
+    protected readonly $prefillLoading = signal(false);
     protected readonly $submitted = signal(false);
 
     protected readonly $nameShowsError = computed(() => {
@@ -99,18 +100,24 @@ export class DotToolsToolDialogComponent implements OnInit {
 
     ngOnInit(): void {
         const tool = this.config.data?.tool;
-        const prefill = this.config.data?.prefill;
+        const injectedPrefill = this.config.data?.prefill;
 
         if (tool) {
             this.isEdit = true;
-            this.form.patchValue({
-                portletName: prefill?.portletName ?? tool.title,
-                portletId: prefill?.portletId ?? tool.id,
-                baseTypes: prefill?.baseTypes ?? [DotCMSBaseTypesContentTypes.CONTENT],
-                contentTypes: prefill?.contentTypes ?? [],
-                dataViewMode: prefill?.dataViewMode ?? 'List'
-            });
             this.#idTouched = true;
+            // Seed with what the catalog already knows so the dialog renders
+            // immediately; the fetched prefill patches over on arrival.
+            this.form.patchValue({
+                portletName: injectedPrefill?.portletName ?? tool.title,
+                portletId: injectedPrefill?.portletId ?? tool.id,
+                baseTypes: injectedPrefill?.baseTypes ?? [DotCMSBaseTypesContentTypes.CONTENT],
+                contentTypes: injectedPrefill?.contentTypes ?? [],
+                dataViewMode: injectedPrefill?.dataViewMode ?? 'list'
+            });
+
+            if (!injectedPrefill && tool.isCustom) {
+                this.#loadPrefill(tool.id);
+            }
         }
 
         this.#loadContentTypes();
@@ -162,6 +169,31 @@ export class DotToolsToolDialogComponent implements OnInit {
                     .sort((a, b) => a.label.localeCompare(b.label));
                 this.$contentTypes.set(options);
                 this.$contentTypesLoading.set(false);
+            });
+    }
+
+    #loadPrefill(portletId: string): void {
+        this.$prefillLoading.set(true);
+
+        this.#toolsService
+            .getCustomTool(portletId)
+            .pipe(
+                take(1),
+                catchError((error) => {
+                    this.#httpErrorManager.handle(error);
+
+                    return EMPTY;
+                }),
+                finalize(() => this.$prefillLoading.set(false))
+            )
+            .subscribe((config) => {
+                this.form.patchValue({
+                    portletName: config.portletName,
+                    portletId: config.portletId,
+                    baseTypes: config.baseTypes,
+                    contentTypes: config.contentTypes,
+                    dataViewMode: config.dataViewMode
+                });
             });
     }
 
