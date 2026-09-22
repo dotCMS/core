@@ -11,17 +11,17 @@ import { KeyValueField } from './helpers/key-value-field';
 const VAR = 'keyValueField';
 
 /**
- * Row paging in the shared Key/Value editor (#37191).
+ * The Show all toggle in the shared Key/Value editor (#37191).
  *
- * The list is rendered 40 rows at a time, but the table stays bound to all of it —
- * PrimeNG reorders the array it is given, so a shortened one would silently drop a
- * drag. These tests exist to hold that apart: they check what is on screen AND that
- * the withheld tail survives a reorder and a delete.
+ * The list renders its first 40 rows collapsed and the rest behind one click, but the
+ * table stays bound to all of it — PrimeNG reorders the array it is given, so a
+ * shortened one would silently drop a drag. These tests exist to hold that apart: they
+ * check what is on screen AND that the withheld tail survives a reorder and a delete.
  *
  * Reached by the Angular route rather than the content listing, so the legacy
  * portlet is not a prerequisite.
  */
-test.describe('key/value paging @smoke', () => {
+test.describe('key/value show all @smoke', () => {
     let contentType: ContentType | null = null;
     let variable: string;
 
@@ -57,22 +57,27 @@ test.describe('key/value paging @smoke', () => {
 
     const root = (page: Page) => page.getByTestId(`field-${VAR}`);
 
-    test('renders one page and reveals the rest on demand', async ({ page }) => {
+    test('renders one page and reveals the whole list in a single click', async ({ page }) => {
         await openWith(page, 45);
 
-        await expect(root(page).getByTestId('dot-key-value-key')).toHaveCount(40);
-        await expect(root(page).getByTestId('dot-key-value-load-more')).toBeVisible();
+        const toggle = root(page).getByTestId('dot-key-value-show-all');
 
-        await root(page).getByTestId('dot-key-value-load-more').click();
+        await expect(root(page).getByTestId('dot-key-value-key')).toHaveCount(40);
+        await expect(toggle).toBeVisible();
+        await expect(toggle).toContainText('45');
+
+        await toggle.click();
         await expect(root(page).getByTestId('dot-key-value-key')).toHaveCount(45);
-        await expect(root(page).getByTestId('dot-key-value-load-more')).toHaveCount(0);
-        // The row itself is permanent now — it also carries Clear All.
-        await expect(root(page).getByTestId('dot-key-value-footer-row')).toHaveCount(1);
+        // Still there, now offering the way back.
+        await expect(toggle).toContainText('Show less');
+
+        await toggle.click();
+        await expect(root(page).getByTestId('dot-key-value-key')).toHaveCount(40);
     });
 
     test('no control at all when the list fits one page', async ({ page }) => {
         await openWith(page, 3);
-        await expect(root(page).getByTestId('dot-key-value-load-more')).toHaveCount(0);
+        await expect(root(page).getByTestId('dot-key-value-show-all')).toHaveCount(0);
         // The row itself is permanent now — it also carries Clear All.
         await expect(root(page).getByTestId('dot-key-value-footer-row')).toHaveCount(1);
     });
@@ -92,7 +97,7 @@ test.describe('key/value paging @smoke', () => {
         expect(after[0]).toBe(before[1]);
         expect(after[1]).toBe(before[0]);
 
-        await root(page).getByTestId('dot-key-value-load-more').click();
+        await root(page).getByTestId('dot-key-value-show-all').click();
         const all = (await root(page).getByTestId('dot-key-value-key').allInnerTexts()).map((t) =>
             t.trim()
         );
@@ -106,7 +111,7 @@ test.describe('key/value paging @smoke', () => {
         await field.deleteEntryByKey('key-044');
 
         await expect(root(page).getByTestId('dot-key-value-key')).toHaveCount(40);
-        await root(page).getByTestId('dot-key-value-load-more').click();
+        await root(page).getByTestId('dot-key-value-show-all').click();
 
         const all = (await root(page).getByTestId('dot-key-value-key').allInnerTexts()).map((t) =>
             t.trim()
