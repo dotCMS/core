@@ -62,8 +62,8 @@ export class DotKeyValueComponent {
      *
      * For fields whose pairs are produced elsewhere — a file asset's metadata is
      * regenerated on every save — where adding, editing, reordering or clearing would
-     * offer control the user does not actually have. Paging and the hidden indicator
-     * stay: they help read a long list without pretending it can be edited.
+     * offer control the user does not actually have. The Show all toggle and the hidden
+     * indicator stay: they help read a long list without pretending it can be edited.
      */
     $readOnly = input<boolean>(false, { alias: 'readOnly' });
 
@@ -107,7 +107,13 @@ export class DotKeyValueComponent {
      */
     $colspan = computed(() => (this.$readOnly() ? 3 : 4));
 
-    /** Rows revealed per step, matching the site/folder selector's page size. */
+    /**
+     * Rows rendered while the list is collapsed.
+     *
+     * Matches `dot-relationship-field`, which shows the same two-state toggle over the
+     * same number of rows — one threshold across the two, so an editor learns the
+     * affordance once.
+     */
     static readonly PAGE_SIZE = 40;
 
     /**
@@ -124,31 +130,46 @@ export class DotKeyValueComponent {
     protected readonly CLEAR_ALL_KEY = 'dot-key-value-clear-all';
 
     /**
-     * How many rows are currently rendered.
+     * Whether the list is showing every pair or only the first {@link PAGE_SIZE}.
      *
-     * Deliberately not derived from `$variables`. Two of the three consumers hand back
-     * a fresh array on every edit, so reacting to that input collapsed the table to the
-     * first page the moment anything changed after revealing rows — 45 rows back down
-     * to 40 on a single delete.
+     * A flag rather than a count: the control is a two-state toggle — "Show all (N)"
+     * and "Show less" — not an incremental reveal, so there is no intermediate amount
+     * to track. Revealing a long list is one click at any length, which is what the
+     * incremental version was asked to stop making people repeat.
      *
-     * A field opened afresh still starts at page one, because each consumer builds a
-     * new editor for it: a new dialog in Field Variables, a new panel in Apps, a new
-     * field component in Edit Content.
+     * **Deliberately state, not derived from `$variables`.** Two of the three consumers
+     * hand back a fresh array on every edit, so reacting to that input collapsed the
+     * table the moment anything changed after expanding — 95 rows back down to 40 on a
+     * single delete.
+     *
+     * A field opened afresh still starts collapsed, because each consumer builds a new
+     * editor for it: a new dialog in Field Variables, a new panel in Apps, a new field
+     * component in Edit Content.
      */
-    $visibleCount = signal(DotKeyValueComponent.PAGE_SIZE);
-
-    /** Rows still hidden below the last rendered one. */
-    $remaining = computed(() => Math.max(0, this.$variableList().length - this.$visibleCount()));
+    $showingAll = signal(false);
 
     /**
-     * Reveals the next page.
+     * How many rows are currently rendered: all of them, or the first page.
+     */
+    $visibleCount = computed(() =>
+        this.$showingAll() ? this.$variableList().length : DotKeyValueComponent.PAGE_SIZE
+    );
+
+    /**
+     * Whether the toggle is worth rendering at all: only once the list outgrows one
+     * page. Below that there is nothing to expand and nothing to collapse.
+     */
+    $canToggleAll = computed(() => this.$variableList().length > DotKeyValueComponent.PAGE_SIZE);
+
+    /**
+     * Expands the list to every row, or collapses it back to the first page.
      *
      * Purely a rendering limit: the whole list is already in memory, so unlike the
      * site/folder selector this fetches nothing. Rows are withheld from the DOM,
      * never from the data — every operation below still indexes the full list.
      */
-    loadMore(): void {
-        this.$visibleCount.update((count) => count + DotKeyValueComponent.PAGE_SIZE);
+    toggleShowAll(): void {
+        this.$showingAll.update((showingAll) => !showingAll);
     }
 
     saveVariable(variable: DotKeyValue): void {

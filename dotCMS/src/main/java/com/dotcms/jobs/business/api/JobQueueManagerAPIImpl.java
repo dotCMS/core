@@ -923,7 +923,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         if (optional.isPresent()) {
             final JobProcessor processor = optional.get();
 
-            final ProgressTracker progressTracker = new DefaultProgressTracker();
+            final DefaultProgressTracker progressTracker = new DefaultProgressTracker();
             Job runningJob = job.markAsRunning().withProgressTracker(progressTracker);
             updateJobStatus(runningJob);
             // Send the job started events
@@ -945,6 +945,18 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                                 }
                             } catch (DotDataException e) {
                                 throw new DotRuntimeException("Error updating job progress", e);
+                            }
+
+                            // A heartbeat is independent of the progress-changed branch above: it
+                            // must refresh updated_at even when progress has not (and must not)
+                            // moved, and it must never fire a progress-changed event (#37063, spec
+                            // FR-024a) - see ProgressTracker.heartbeat().
+                            if (progressTracker.consumeHeartbeat()) {
+                                try {
+                                    jobQueue.touchJob(runningJob.id());
+                                } catch (JobQueueDataException e) {
+                                    throw new DotRuntimeException("Error touching job for heartbeat", e);
+                                }
                             }
                         }, 0, 3, TimeUnit.SECONDS
                 );

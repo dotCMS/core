@@ -32,7 +32,6 @@ import {
     DotFilterChipError,
     DotLanguageFilterChipComponent,
     DotMessagePipe,
-    DotSharedAssetsFilterComponent,
     DotStatusFilterComponent,
     DotUploadButtonComponent
 } from '@dotcms/ui';
@@ -49,25 +48,6 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
  * Animation delay in milliseconds - matches the duration of the enter/leave fade
  */
 const ANIMATION_DELAY = 135;
-
-/** Characters that would let an interpolated value become markup. */
-const HTML_ESCAPES: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-};
-
-/**
- * Escapes a value that will be interpolated into a message rendered as HTML.
- *
- * Needed only because `content-drive.action-center.applying` carries its own `<b>`, which forces the
- * label to be bound with `[innerHTML]` rather than interpolated. Everything substituted into such a
- * message has to be escaped, or the message stops being the only source of markup in it.
- */
-const escapeHtml = (value: string): string =>
-    value.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char]);
 
 /**
  * Base-type options in the "New" menu (all base types except FORM, which is deprecated).
@@ -145,7 +125,6 @@ interface ToolbarAnimationState {
         DotContentDriveWorkflowFilterComponent,
         DotFieldFilterComponent,
         DotFieldFilterMenuComponent,
-        DotSharedAssetsFilterComponent,
         DotFilterBarComponent,
         DotStatusFilterComponent,
         TooltipModule
@@ -226,10 +205,27 @@ export class DotContentDriveToolbarComponent {
      */
     protected readonly $canAddChildren = this.#store.$canAddChildren;
 
+    /** Gates the Show System Host chip: it has something to decide in one scope only. */
+    protected readonly $allSiteContentSelected = this.#store.$allSiteContentSelected;
+
     /** Empty when creation is allowed, so the buttons carry no tooltip in the normal case. */
-    protected readonly $addChildrenTooltip = computed(() =>
-        this.$canAddChildren() ? '' : 'content-drive.add-new.no-add-children'
-    );
+    /**
+     * Why creating and uploading are unavailable, when they are.
+     *
+     * Two different refusals reach the same disabled buttons, and they must not say the same
+     * thing. In all site content nothing is wrong with the user's permissions: the view simply
+     * spans the whole site and names no place for new content to land. Telling them they lack
+     * permission there would send them to an administrator for a problem they do not have.
+     */
+    protected readonly $addChildrenTooltip = computed(() => {
+        if (this.$canAddChildren()) {
+            return '';
+        }
+
+        // One reason left, and it is always a permission one: every scope that reaches here now
+        // has a place for content to land.
+        return 'content-drive.add-new.no-add-children';
+    });
 
     protected readonly $uploadBaseType = computed(() => {
         const data = this.#store.selectedNode()?.data;
@@ -239,7 +235,19 @@ export class DotContentDriveToolbarComponent {
             : null;
     });
 
-    readonly $items = signal<MenuItem[]>([
+    /**
+     * What the "New" menu offers, which depends on where the user is.
+     *
+     * A computed rather than a fixed list because System Host takes one entry away. It lists no
+     * folders -- `listsFolders` answers false for that scope, and its sidebar row opens no tree --
+     * so a folder created there could never be shown again by this portlet. The dialog could not
+     * even name where it would land: the location is a reserved word, so the path preview read
+     * `//demo.dotcms.comSYSTEM_HOST/`.
+     *
+     * Content types stay. System Host holds content, and adding some is the whole reason the scope
+     * accepts new items at all.
+     */
+    readonly $items = computed<MenuItem[]>(() => [
         {
             label: this.#dotMessageService.get('content-drive.add-new.all-content-types'),
             icon: 'grid_view',
@@ -251,17 +259,25 @@ export class DotContentDriveToolbarComponent {
             icon: option.icon,
             command: () => this.#openContentTypeSelector(option.listType)
         })),
-        { separator: true },
-        {
-            label: this.#dotMessageService.get('content-drive.add-new.context-menu.folder'),
-            icon: 'folder',
-            command: () => {
-                this.#store.setDialog({
-                    type: DIALOG_TYPE.FOLDER,
-                    header: this.#dotMessageService.get('content-drive.dialog.folder.header')
-                });
-            }
-        }
+        ...(this.#store.$systemHostSelected()
+            ? []
+            : [
+                  { separator: true },
+                  {
+                      label: this.#dotMessageService.get(
+                          'content-drive.add-new.context-menu.folder'
+                      ),
+                      icon: 'folder',
+                      command: () => {
+                          this.#store.setDialog({
+                              type: DIALOG_TYPE.FOLDER,
+                              header: this.#dotMessageService.get(
+                                  'content-drive.dialog.folder.header'
+                              )
+                          });
+                      }
+                  }
+              ])
     ]);
 
     /**
@@ -291,95 +307,13 @@ export class DotContentDriveToolbarComponent {
     readonly $defaultLanguageId = computed(() => this.#store.defaultLanguageId() ?? null);
 
     /**
-     * The action currently being applied, surfaced here because the run outlives the Action Center
-     * dialog. Once the user closes that dialog the toolbar is the only place still reporting the run,
-     * so without this the work would continue with no indication until the completion toast fired.
-     */
-    readonly $actionExecution = this.#store.toolbarRun;
-
-    /**
-     * How many runs are in flight. Drives whether the indicator is shown at all: with several runs
-     * `$actionExecution` is deliberately undefined, so keying visibility off it alone would hide the
-     * indicator exactly when the most is happening.
+     * Whether anything is in flight, which is all the toolbar needs to know: it disables the Action
+     * Center while a run is going and says so in the tooltip. Reporting the run is the shell's job,
+     * because the shell owns the outlet it is reported through and outlives every dialog.
      */
     readonly $activeRunCount = this.#store.toolbarRunCount;
 
     readonly $hasRunInFlight = computed(() => this.$activeRunCount() > 0);
-
-    /**
-     * Resolved indicator label. Built here rather than in the template because `DotMessagePipe` takes
-     * `string[]` arguments and the item count is a number.
-     *
-     * The action name is escaped because this label is bound with `[innerHTML]` — the message itself
-     * carries a `<b>`, which is the only reason it is not plain interpolation. For a workflow action
-     * that name is `WorkflowAction.name` straight from the backend, so without this a name containing
-     * markup becomes real DOM. Angular's sanitizer already drops event-handler attributes, so this is
-     * not an XSS fix; what it stops is structural injection that survives sanitizing — an `<img>`
-     * pointing at an arbitrary URL, a link, or markup that simply breaks the toolbar's layout.
-     */
-    readonly $actionExecutionLabel = computed(() => {
-        const execution = this.$actionExecution();
-
-        // Several at once: name none of them and report the number instead (FR-017).
-        if (!execution) {
-            return this.$activeRunCount() > 1
-                ? this.#dotMessageService.get(
-                      'content-drive.action-center.applying-many',
-                      String(this.$activeRunCount())
-                  )
-                : '';
-        }
-
-        // Both halves are escaped, and the item name matters more: `actionName` is a
-        // `WorkflowAction.name` from the backend, but a target label is content an author typed.
-        const actionName = escapeHtml(execution.actionName);
-
-        // A run carrying its own copy uses it: the "Applying X to Y" form describes an operation
-        // being performed on something, which is not what every run is.
-        if (execution.labelKey) {
-            return this.#dotMessageService.get(
-                execution.labelKey,
-                escapeHtml(execution.targetLabel ?? ''),
-                String(execution.total)
-            );
-        }
-
-        // "Applying Publish to 1 item(s)" tells an author nothing they did not already know. When
-        // the run is over one nameable thing, name it.
-        return execution.targetLabel
-            ? this.#dotMessageService.get(
-                  'content-drive.action-center.applying-item',
-                  actionName,
-                  escapeHtml(execution.targetLabel)
-              )
-            : this.#dotMessageService.get(
-                  'content-drive.action-center.applying',
-                  actionName,
-                  String(execution.total)
-              );
-    });
-
-    /**
-     * How far the run has got, as a percentage, or `undefined` when it does not report progress.
-     *
-     * `undefined` and `0` are deliberately different answers: a run that has done nothing yet is not
-     * the same as a run that cannot say. A truthiness check would collapse the two and show an empty
-     * bar for a run that has no bar to show.
-     *
-     * Counts items, and only items. An upload measures itself in bytes, which this cannot express —
-     * but it has no position to report here anyway: the app runs on Angular's fetch backend, which
-     * never emits upload progress, and the XHR backend that would is deprecated. An upload shows the
-     * indeterminate spinner instead, which is the honest rendering of a wait with no denominator.
-     */
-    readonly $actionExecutionPercent = computed(() => {
-        const execution = this.$actionExecution();
-
-        if (!execution || execution.processed === undefined || !execution.total) {
-            return undefined;
-        }
-
-        return Math.round((execution.processed / execution.total) * 100);
-    });
 
     /**
      * Active field-filter chips, in the order the user added them (the store keeps `userSearchableActive`

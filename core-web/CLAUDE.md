@@ -103,7 +103,7 @@ spectator.setInput('prop', value);           // ALWAYS use setInput
 
 ### Form Markup
 
-See [Form Fields](docs/frontend/STYLING_STANDARDS.md#form-fields) for the current field-layout,
+See [Form Fields](../docs/frontend/STYLING_STANDARDS.md#form-fields) for the current field-layout,
 typography, and hint-handling rules — do not hand-roll a form wrapper from memory or copy an
 existing form without checking it first. Different areas of the app (e.g. `edit-content`) have
 diverged in the past; the doc is the tie-breaker.

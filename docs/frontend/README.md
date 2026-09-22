@@ -10,10 +10,10 @@
 
 | Doc | When to load |
 |-----|--------------|
-| [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) | **Start here.** Components, templates, signals, change detection, forms, icons, reuse, state and error handling, build commands |
+| [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) | **Start here.** Components, templates, signals, change detection, reactive forms, icons, reuse, state and error handling, build commands |
 | [COMPONENT_ARCHITECTURE.md](./COMPONENT_ARCHITECTURE.md) | Component structure, file layout, data flow, parent-child communication |
 | [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) | NgRx Signal Store, `rxMethod`, `patchState` — **prefer over manual state** |
-| [STYLING_STANDARDS.md](./STYLING_STANDARDS.md) | Tailwind CSS, PrimeNG theme, BEM (when needed), SCSS variables |
+| [STYLING_STANDARDS.md](./STYLING_STANDARDS.md) | Tailwind CSS, PrimeNG theme, BEM (when needed), SCSS variables — **and form markup**: the global `.form` / `.field` system, labels, hints and errors, `dotFieldRequired`, naming a field for assistive technology |
 | [TYPESCRIPT_STANDARDS.md](./TYPESCRIPT_STANDARDS.md) | Strict types, inference, `unknown`, `as const`, `#` private |
 | [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) | Writing tests: Spectator, Vitest, `byTestId`, `setInput`, `data-testid` |
 | [TESTING_REVIEW_RULES.md](./TESTING_REVIEW_RULES.md) | **Reviewing** test files: condensed violation checklist, severity-ranked |
@@ -38,6 +38,11 @@ These hold across every doc here — if you see a violation, it is a defect rega
 - **Testing**: Vitest + `@openng/spectator`, `byTestId`, `setInput` — TESTING_FRONTEND, TESTING_REVIEW_RULES, ANGULAR_STANDARDS
 - **TypeScript**: strict, no `any`, `as const`, `#` private — TYPESCRIPT_STANDARDS
 - **Commands**: `pnpm nx …` — Nx is not installed globally and the package manager is pnpm — ANGULAR_STANDARDS
+- **Form markup**: the root `<form>` carries `class="form"`; field layout, label typography and hint/error colour come from the global system, never from local utilities — STYLING_STANDARDS
+
+## Where forms are split between two docs
+
+`ANGULAR_STANDARDS.md` owns the **TypeScript** side of forms — `FormBuilder`, typed controls, validation signals. It says nothing about markup. Everything you can see — the `.form` / `.field` structure, label typography, where a hint or an error renders, the required asterisk, how a field is named for a screen reader — is in `STYLING_STANDARDS.md` under **Form Fields**. Going to the "single source of truth" for a form question and finding no answer is the expected outcome, not a gap: load the other one.
 
 ## Versions
 

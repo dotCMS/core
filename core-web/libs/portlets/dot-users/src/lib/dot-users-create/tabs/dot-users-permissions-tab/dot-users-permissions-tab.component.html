@@ -11,18 +11,18 @@
             </div>
         }
         @if ($state() === 'unavailable') {
-            <p class="text-color-secondary m-0 p-3" data-testid="permissions-unavailable">
+            <p class="m-0 p-3 text-slate-500" data-testid="permissions-unavailable">
                 {{ 'users.dialog.permissions.unavailable' | dm }}
             </p>
         }
         @if ($state() === 'timeout') {
             <div class="flex flex-col items-start gap-3 p-3" data-testid="permissions-timeout">
-                <p class="text-color-secondary m-0">
+                <p class="m-0 text-slate-500">
                     {{ 'users.dialog.permissions.timeout' | dm }}
                 </p>
                 <p-button
                     [label]="'users.dialog.permissions.retry' | dm"
-                    severity="secondary"
+                    [outlined]="true"
                     size="small"
                     (onClick)="retry()"
                     data-testid="permissions-retry-btn" />
@@ -49,7 +49,7 @@
         <span class="material-symbols-rounded text-5xl! text-surface-400" aria-hidden="true">
             lock_person
         </span>
-        <p class="text-color-secondary m-0">
+        <p class="m-0 text-slate-500">
             {{ 'users.dialog.permissions.create-mode' | dm }}
         </p>
     </div>
