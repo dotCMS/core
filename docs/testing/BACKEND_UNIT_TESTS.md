@@ -13,43 +13,48 @@ Backend unit tests in dotCMS are located in `dotCMS/src/test/java` and use JUnit
 - **Framework**: JUnit 4/5 (primarily JUnit 4)
 
 ### Base Classes
-- **`UnitTestBase`**: Common setup for unit tests
-- **`UnitTestBaseMarker`**: Marker interface for test categorization
+- **`UnitTestBase`** (`dotCMS/src/test/java/com/dotcms/UnitTestBase.java`): common setup, extended by ~120 test classes
 - **Mock utilities**: Extensive use of Mockito for dependency mocking
 - **Class metadata scanning**: Use `JandexClassMetadataScanner` for high-performance class analysis (see [Jandex Integration](../backend/JANDEX_METADATA_SCANNING.md))
 
 ## Testing Patterns
 
+> Examples below marked with a file path are copied from real tests and compile against current source. The rest are **shapes** — they use deliberately generic names (`MyWorkflowService`, `SomeService`) for the class under test, with real dotCMS APIs around them. Don't copy a generic name expecting to find it in the codebase.
+
 ### Standard Unit Test Structure
+
+Modelled on a real test — `dotCMS/src/test/java/com/dotcms/health/servlet/HealthProbeServletTest.java`:
+
 ```java
-public class ContentTypeValidatorTest {
-    
+public class HealthProbeServletTest {
+
     @Mock
-    private ContentTypeAPI contentTypeAPI;
-    
-    @InjectMocks
-    private ContentTypeValidator validator;
-    
+    private HealthStateManager healthStateManager;
+
+    private HealthProbeServlet servlet;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        servlet = new HealthProbeServlet();
     }
-    
+
     @Test
-    public void testValidContentType() {
+    public void testLivenessReturnsOk() throws Exception {
         // Given
-        ContentType contentType = createMockContentType();
-        when(contentTypeAPI.find(anyString())).thenReturn(contentType);
-        
+        when(healthStateManager.getLivenessResponse()).thenReturn(healthyResponse());
+
         // When
-        ValidationResult result = validator.validate(contentType);
-        
+        servlet.doGet(request, response);
+
         // Then
-        assertTrue(result.isValid());
-        verify(contentTypeAPI).find(contentType.id());
+        assertEquals(200, response.getStatus());
+        verify(healthStateManager).getLivenessResponse();
     }
 }
 ```
+
+Mockito is initialized two ways in this codebase, both live: `MockitoAnnotations.initMocks(this)` in a `@Before` (5 classes) and `@RunWith(MockitoJUnitRunner.class)` (6 classes). One class uses the newer `openMocks`. Follow whichever the file you are editing already uses rather than converting it.
 
 ### Common Annotations
 - **`@Test`**: Marks test methods
@@ -122,7 +127,7 @@ public class StringUtilsTest {
 
 ### 3. Business Logic
 ```java
-public class WorkflowManagerTest {
+public class MyWorkflowServiceTest {   // illustrative name; WorkflowAPI and ContentletAPI are real
     
     @Mock
     private WorkflowAPI workflowAPI;
@@ -131,7 +136,7 @@ public class WorkflowManagerTest {
     private ContentletAPI contentletAPI;
     
     @InjectMocks
-    private WorkflowManager workflowManager;
+    private MyWorkflowService myWorkflowService;   // stand-in for the class under test
     
     @Test
     public void testProcessWorkflow_WhenValidContentlet_ShouldExecuteAction() {
@@ -141,7 +146,7 @@ public class WorkflowManagerTest {
         when(workflowAPI.findAction(anyString())).thenReturn(action);
         
         // When
-        WorkflowResult result = workflowManager.processWorkflow(contentlet, action);
+        MyWorkflowResult result = myWorkflowService.processWorkflow(contentlet, action);
         
         // Then
         assertNotNull(result);
@@ -159,53 +164,40 @@ public class WorkflowManagerTest {
 ./mvnw test
 
 # Run specific test class
-./mvnw test -Dtest=ContentTypeValidatorTest
+./mvnw test -pl :dotcms-core -Dtest=StringUtilTest
 
 # Run tests matching pattern
-./mvnw test -Dtest=*ValidatorTest
-
-# Run tests with specific profile
-./mvnw test -Punit-tests
+./mvnw test -pl :dotcms-core -Dtest=*UtilTest
 
 # Run tests with coverage
-./mvnw test -Pcoverage
+./mvnw test -pl :dotcms-core -Pcoverage
 
 # Skip tests
 ./mvnw install -DskipTests
 ```
 
 ### Maven Configuration
+Surefire is configured once in `parent/pom.xml` and inherited. It sets no `<includes>`/`<excludes>` — Surefire's defaults apply, which is why the naming convention below matters:
+
 ```xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-surefire-plugin</artifactId>
+    <version>${version.surefire.plugin}</version>
     <configuration>
-        <includes>
-            <include>**/*Test.java</include>
-            <include>**/*Tests.java</include>
-        </includes>
-        <excludes>
-            <exclude>**/*IntegrationTest.java</exclude>
-            <exclude>**/*IT.java</exclude>
-        </excludes>
+        <forkCount>${surefire.fork.count}</forkCount>
+        <reuseForks>true</reuseForks>
+        <argLine>@{argLine} -Xmx1024m ...</argLine>
+        <trimStackTrace>true</trimStackTrace>
     </configuration>
 </plugin>
 ```
 
-### Test Categories
-```java
-// Fast unit tests
-@Category(UnitTestBaseMarker.class)
-public class FastUnitTest {
-    // Quick tests without external dependencies
-}
+Integration tests live in a separate module (`dotcms-integration`) and run under Failsafe, so no exclusion is needed here. See [Integration Tests](INTEGRATION_TESTS.md).
 
-// Slow unit tests
-@Category(SlowTestMarker.class)
-public class SlowUnitTest {
-    // Tests that require more setup or computation
-}
-```
+### Test naming is the only categorization
+
+There is **no** category or tag mechanism for unit tests in this repo — no `@Category`, no JUnit 5 `@Tag`, no `groups` configuration in any pom. Surefire picks tests up by name alone, so `*Test.java` in `dotCMS/src/test/java` is the whole contract. If you need a test excluded from a run, select it by name with `-Dtest=`.
 
 ## CI/CD Integration
 
@@ -221,13 +213,15 @@ backend: &backend
   - '**/pom.xml'
 ```
 
-**Execution**:
+**Execution**: the job is generated from `.github/test-matrix.yml` rather than written inline. The JVM unit-test entry is:
+
 ```yaml
-- name: Run Backend Unit Tests
-  run: ./mvnw test -pl :dotcms-core
-  env:
-    MAVEN_OPTS: -Xmx2g
+- name: "JVM Unit Tests"
+  maven_args: "test -Dprod -pl :dotcms-core"
+  stage_name: "JVM Tests"
 ```
+
+with `maven_opts: "-Xmx2048m"` from the matrix defaults. To change how unit tests run in CI, edit that file — not the workflow.
 
 ### Test Results
 - **JUnit XML Reports**: `target/surefire-reports/`
@@ -241,25 +235,25 @@ backend: &backend
 #### 1. Run Single Test with Debug
 ```bash
 # Run specific test with debug output
-./mvnw test -Dtest=ContentTypeValidatorTest -X
+./mvnw test -pl :dotcms-core -Dtest=StringUtilTest -X
 
 # Run with JVM debug
-./mvnw test -Dtest=ContentTypeValidatorTest -Dmaven.surefire.debug
+./mvnw test -pl :dotcms-core -Dtest=StringUtilTest -Dmaven.surefire.debug
 ```
 
 #### 2. IDE Integration
 ```java
 // Add debugging breakpoints
 @Test
-public void testValidateContentType() {
+public void testLivenessReturnsOk() throws Exception {
     // Set breakpoint here
-    ContentType contentType = createMockContentType();
-    
-    // Debug step through validation
-    ValidationResult result = validator.validate(contentType);
-    
+    when(healthStateManager.getLivenessResponse()).thenReturn(healthyResponse());
+
+    // Debug step through the servlet
+    servlet.doGet(request, response);
+
     // Examine result
-    assertTrue(result.isValid());
+    assertEquals(200, response.getStatus());
 }
 ```
 
@@ -308,8 +302,8 @@ public void testValidateContentType() {
 **Memory Issues**:
 ```bash
 # Increase memory for tests
-export MAVEN_OPTS="-Xmx4g -XX:MaxPermSize=512m"
-./mvnw test
+export MAVEN_OPTS="-Xmx4g"
+./mvnw test -pl :dotcms-core
 ```
 
 **Mock Issues**:
@@ -365,11 +359,11 @@ public void testServiceCall() {
 ### ✅ Test Data Management
 ```java
 // Use builder pattern for test data
-public class ContentTypeTestDataBuilder {
+public class MyContentTypeTestDataBuilder {
     private String name = "default";
     private String description = "default description";
     
-    public ContentTypeTestDataBuilder withName(String name) {
+    public MyContentTypeTestDataBuilder withName(String name) {
         this.name = name;
         return this;
     }
@@ -380,13 +374,14 @@ public class ContentTypeTestDataBuilder {
 }
 
 @Test
-public void testContentTypeValidation() {
-    ContentType contentType = new ContentTypeTestDataBuilder()
+public void testContentTypeName() {
+    // Builder shown is illustrative — check for an existing builder or
+    // @dotcms test utility before writing a new one
+    ContentType contentType = new MyContentTypeTestDataBuilder()
         .withName("TestType")
         .build();
-    
-    ValidationResult result = validator.validate(contentType);
-    assertTrue(result.isValid());
+
+    assertEquals("TestType", contentType.name());
 }
 ```
 
@@ -429,8 +424,7 @@ public void tearDown() {
     // Reset static state
     SomeStaticClass.reset();
     
-    // Clear thread local variables
-    ThreadLocalManager.clear();
+    // Clear any thread-local state the class under test sets
 }
 ```
 
@@ -454,11 +448,8 @@ public void testTimeSensitiveOperation() {
 # Run tests in parallel
 ./mvnw test -T 1C
 
-# Run only fast tests
-./mvnw test -Dgroups=fast
-
-# Use test categories
-./mvnw test -Dexclude.groups=slow
+# Narrow a run by class name — there is no group/tag mechanism
+./mvnw test -pl :dotcms-core -Dtest=StringUtilTest
 ```
 
 ### Memory Management
@@ -469,7 +460,7 @@ public void testTimeSensitiveOperation() {
     <configuration>
         <forkCount>1</forkCount>
         <reuseForks>true</reuseForks>
-        <argLine>-Xmx2g -XX:MaxPermSize=256m</argLine>
+        <argLine>-Xmx2g</argLine>
     </configuration>
 </plugin>
 ```
