@@ -60,7 +60,18 @@ test('the category field renders and the form saves with it present @critical', 
     await expect(categoryField).toBeVisible({ timeout: 20000 });
 
     await formPage.save();
-    await page.reload();
+
+    // `save()` only waits for the workflow API response, not for the editor to navigate from
+    // /content/new/<type> to the saved contentlet. Reloading before that lands re-opens the *new*
+    // content form — an empty one — which is why this read back nothing. Same wait the image,
+    // file and binary specs already use.
+    await page.waitForURL(/\/content\/([a-f0-9-]+)/);
+    const [, savedContentIdentifier] = page
+        .url()
+        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
+    expect(savedContentIdentifier).toBeTruthy();
+
+    await formPage.goToContent(savedContentIdentifier);
 
     // The field still renders after the round trip, on a contentlet saved with no category
     // selected. That is the empty-value path through the resolver, not the reshape — see the

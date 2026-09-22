@@ -49,9 +49,12 @@ test('date, date-and-time and time each survive save and reopen @critical', asyn
 
     await page.getByTestId('title').fill('Calendar round trip');
 
-    const dateInput = page.getByTestId('dateField').locator('input').first();
-    const dateTimeInput = page.getByTestId('dateTimeField').locator('input').first();
-    const timeInput = page.getByTestId('timeField').locator('input').first();
+    // `calendar-input-<variable>` is what the calendar field renders; the bare variable is only
+    // an id on PrimeNG's inner input, and the dispatcher's own testid is `field-<variable>`.
+    // Waiting on `dateField` matched nothing and simply timed out.
+    const dateInput = page.getByTestId('calendar-input-dateField').locator('input').first();
+    const dateTimeInput = page.getByTestId('calendar-input-dateTimeField').locator('input').first();
+    const timeInput = page.getByTestId('calendar-input-timeField').locator('input').first();
 
     await expect(dateInput).toBeVisible({ timeout: 20000 });
 
@@ -66,7 +69,18 @@ test('date, date-and-time and time each survive save and reopen @critical', asyn
     };
 
     await formPage.save();
-    await page.reload();
+
+    // `save()` only waits for the workflow API response, not for the editor to navigate from
+    // /content/new/<type> to the saved contentlet. Reloading before that lands re-opens the *new*
+    // content form — an empty one — which is why this read back nothing. Same wait the image,
+    // file and binary specs already use.
+    await page.waitForURL(/\/content\/([a-f0-9-]+)/);
+    const [, savedContentIdentifier] = page
+        .url()
+        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
+    expect(savedContentIdentifier).toBeTruthy();
+
+    await formPage.goToContent(savedContentIdentifier);
 
     await expect(dateInput).toBeVisible({ timeout: 20000 });
 

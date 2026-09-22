@@ -80,6 +80,30 @@ export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {
     fieldType: DotCMSFieldTypes.ROW
 };
 
+/**
+ * The column divider the layout fixtures below are compared against.
+ *
+ * Deliberately a fixed value rather than `createFakeColumnField()`: `createFakeBaseField` fills
+ * ids, names and dates from faker, so every call returns a different object. `fieldsWithBreakColumn`
+ * is fed to the component and `fieldsBrokenWithColumns` is what the emitted layout is compared to —
+ * two independent faker calls can never be deep-equal, and the column the component *creates* when
+ * it breaks one comes from `FieldUtil`'s own `EMPTY_SYSTEM_FIELD`-based constant, which carries
+ * none of those values. Same shape as that constant, so both sides match.
+ */
+const columnDividerMock: ContentTypeColumnField = {
+    ...EMPTY_SYSTEM_FIELD,
+    clazz: DotCMSClazzes.COLUMN,
+    fieldType: DotCMSFieldTypes.COLUMN
+};
+
+/** Fixed for the same reason as {@link columnDividerMock}. */
+const columnBreakMock: ContentTypeColumnBreakField = {
+    ...EMPTY_SYSTEM_FIELD,
+    clazz: DotCMSClazzes.COLUMN_BREAK,
+    fieldType: DotCMSFieldTypes.COLUMN_BREAK,
+    name: 'Column'
+};
+
 export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
     {
         divider: {
@@ -87,12 +111,12 @@ export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
         },
         columns: [
             {
-                columnDivider: createFakeColumnField(),
+                columnDivider: { ...columnDividerMock },
                 fields: [
                     {
                         ...dotcmsContentTypeFieldBasicMock
                     },
-                    createFakeColumnBreakField({ name: 'Column' }),
+                    { ...columnBreakMock },
                     {
                         ...dotcmsContentTypeFieldBasicMock
                     }
@@ -109,7 +133,7 @@ export const fieldsBrokenWithColumns: DotCMSContentTypeLayoutRow[] = [
         },
         columns: [
             {
-                columnDivider: createFakeColumnField(),
+                columnDivider: { ...columnDividerMock },
                 fields: [
                     {
                         ...dotcmsContentTypeFieldBasicMock
@@ -117,7 +141,7 @@ export const fieldsBrokenWithColumns: DotCMSContentTypeLayoutRow[] = [
                 ]
             },
             {
-                columnDivider: createFakeColumnField(),
+                columnDivider: { ...columnDividerMock },
                 fields: [
                     {
                         ...dotcmsContentTypeFieldBasicMock

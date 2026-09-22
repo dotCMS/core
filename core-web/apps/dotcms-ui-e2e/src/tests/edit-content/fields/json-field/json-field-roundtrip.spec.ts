@@ -52,7 +52,18 @@ test('a JSON value survives save and reopen, still indented @critical', async ({
 
     await formPage.save();
 
-    await page.reload();
+    // `save()` only waits for the workflow API response, not for the editor to navigate from
+    // /content/new/<type> to the saved contentlet. Reloading before that lands re-opens the *new*
+    // content form — an empty one — which is why this read back nothing. Same wait the image,
+    // file and binary specs already use.
+    await page.waitForURL(/\/content\/([a-f0-9-]+)/);
+    const [, savedContentIdentifier] = page
+        .url()
+        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
+    expect(savedContentIdentifier).toBeTruthy();
+
+    await formPage.goToContent(savedContentIdentifier);
+
     await expect(editor).toBeVisible({ timeout: 30000 });
 
     const rendered = await editor.innerText();
