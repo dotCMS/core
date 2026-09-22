@@ -60,8 +60,21 @@ import static com.liferay.portal.model.Portlet.DATA_VIEW_MODE_KEY;
 import static com.liferay.util.StringPool.BLANK;
 
 /**
- * This Resource is for create custom portlets. These kind of custom portlets are to show diff types
- * or content (content types or base types).
+ * REST resource for portlets, the tools of the back-end navigation.
+ * <p>
+ * It manages <b>custom content portlets</b> (tools an admin creates to list the content of
+ * given base types or content types): create, update and delete under {@code /custom}, plus a
+ * single read of one tool's editable configuration under {@code /custom/{portletId}}. Those
+ * operations accept a back-end user who holds the {@code roles}, {@code tools} or
+ * {@code tools-beta} portlet, or a CMS Administrator; the read and the catalog require
+ * {@code tools} or {@code tools-beta}. The delete refuses anything that is not a custom content
+ * tool, so tools shipped with the product cannot be removed through it.
+ * <p>
+ * It also serves the <b>tools catalog</b> ({@code /_catalog}): every portlet that can be placed
+ * in a navigation section, with a localized title and an {@code isCustom} flag, as the Tools
+ * portlet's Available Tools panel shows it. The remaining operations (add a tool to a section
+ * the caller holds, per-role removal, raw portlet lookup, access check, create-content action
+ * URL) keep their original behaviour and gates.
  */
 @Path("/v1/portlet")
 @Tag(name = "Portlets")
