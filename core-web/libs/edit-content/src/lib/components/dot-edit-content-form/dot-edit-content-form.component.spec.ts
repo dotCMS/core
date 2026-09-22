@@ -270,7 +270,7 @@ describe('DotFormComponent', () => {
         };
 
         const [firstRow, ...otherRows] = MOCK_CONTENTTYPE_1_TAB.layout;
-        const [firstColumn, ...otherColumns] = firstRow.columns;
+        const [firstColumn, ...otherColumns] = firstRow.columns ?? [];
 
         const CONTENT_TYPE_WITH_CHECKBOX: DotCMSContentType = {
             ...MOCK_CONTENTTYPE_1_TAB,
@@ -317,11 +317,17 @@ describe('DotFormComponent', () => {
         });
 
         it('should leave the control empty instead of re-applying the default value', () => {
-            expect(component.form.get(REQUIRED_CHECKBOX.variable).value).toBeNull();
+            const control = component.form.get(REQUIRED_CHECKBOX.variable);
+
+            expect(control).not.toBeNull();
+            expect(control?.value).toBeNull();
         });
 
         it('should keep a required cleared checkbox invalid', () => {
-            expect(component.form.get(REQUIRED_CHECKBOX.variable).valid).toBe(false);
+            const control = component.form.get(REQUIRED_CHECKBOX.variable);
+
+            expect(control).not.toBeNull();
+            expect(control?.valid).toBe(false);
         });
     });
 

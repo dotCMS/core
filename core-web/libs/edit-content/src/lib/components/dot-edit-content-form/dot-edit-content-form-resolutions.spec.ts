@@ -120,12 +120,14 @@ describe('DotEditContentFormResolutions', () => {
     // not be re-applied — otherwise the box re-checks itself and a save writes the default back.
     // See https://github.com/dotCMS/core/issues/35416
     describe('selectionResolutionFn', () => {
+        const SELECTION_FIELD_TYPES = [FIELD_TYPES.CHECKBOX, FIELD_TYPES.MULTI_SELECT] as const;
+
         const CLAZZ_BY_FIELD_TYPE = {
             [FIELD_TYPES.CHECKBOX]: DotCMSClazzes.CHECKBOX,
             [FIELD_TYPES.MULTI_SELECT]: DotCMSClazzes.MULTI_SELECT
         } as const;
 
-        describe.each([FIELD_TYPES.CHECKBOX, FIELD_TYPES.MULTI_SELECT])('%s', (fieldType) => {
+        describe.each(SELECTION_FIELD_TYPES)('%s', (fieldType) => {
             // Built per field type rather than shared: the resolver ignores fieldType/clazz today,
             // but a fixture that claims to be a Checkbox while carrying TEXT metadata would start
             // lying the moment this moves behind getFinalCastedValue, which dispatches on fieldType.
