@@ -295,6 +295,28 @@ properties of an agent interpreting Markdown — no process to invoke, no exit c
 Grepping a skill for the word "hook" would assert that the text exists, which is the weaker claim.
 Those stay manual; [Quick Start](../docs/core/SPEC_KIT_QUICK_START.md) carries the walkthrough.
 
+## `.specify/feature.json` — assessed, and a no-op for us
+
+Upstream's per-checkout pointer to the active feature directory. It is worth a paragraph only
+because it is easy to mistake for new surface arriving with v1.0.9, and then to go looking for a
+migration that does not exist.
+
+**It is not new.** The 0.12.4 tree already read it: `read_feature_json_feature_directory()` and
+`_persist_feature_json()` are in that version's `common.sh`, and resolution order was already
+`SPECIFY_FEATURE_DIRECTORY` → `.specify/feature.json` → error. What was true before the upgrade is
+that the **file** did not exist in most checkouts, not that the mechanism was absent. v1.0.9
+changes nothing about it: `create-new-feature.sh` persists it, and `check-prerequisites.sh` passes
+`--no-persist` so read-only path resolution never dirties the working tree.
+
+**What did change** is that v1.0.9 ships a managed `.specify/.gitignore` carrying `feature.json`,
+so the rule that used to live in the repo root `.gitignore` was removed in #37649 — its own comment
+had said it lived there only "until the upgrade".
+
+**Verified, not assumed**: a spec directory created *before* the upgrade still resolves to itself
+afterwards, and resolving it writes nothing. `verify-customizations.sh` asserts both, fingerprinting
+the directory before and after so the read-only property is checked rather than merely not
+violated. No in-flight work is orphaned and no migration step is needed for anyone's open branch.
+
 ## Guardrail: Spec-Kit must never create ADRs
 
 Enforced in the constitution, the `adr-context.sh` output, the `speckit-adr-context` and
