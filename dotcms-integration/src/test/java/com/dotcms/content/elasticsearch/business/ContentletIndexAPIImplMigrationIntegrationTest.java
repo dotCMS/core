@@ -15,6 +15,8 @@ import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesImpl;
+import com.dotcms.content.index.migration.MigrationReadiness;
+import com.dotcms.content.index.migration.MigrationReadinessService;
 import com.dotmarketing.business.DotStateException;
 import com.dotcms.content.elasticsearch.util.MappingHelper;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
@@ -1156,6 +1158,88 @@ public class ContentletIndexAPIImplMigrationIntegrationTest extends IntegrationT
                 Try.run(() -> new DotConnect()
                         .setSQL("DELETE FROM indicies WHERE index_name = ?")
                         .addParam(name).loadResult());
+            }
+        }
+    }
+
+    /**
+     * Given Scenario: Phase 3 after a full reindex. The OpenSearch store points at the newly promoted
+     *        working/live pair (both indices exist on the cluster); the legacy Elasticsearch pointers
+     *        still name the previous generation, as they do right up to the switchover.
+     * When : {@link VersionedIndicesAPI#removeLegacyIndices()} runs — the cleanup step the Phase 3
+     *        switchover performs immediately after promoting the OpenSearch slots.
+     * Then : the migration-readiness report is still populated. Both slots must be reported, named by
+     *        the logical name, with the OpenSearch copy present and no blockers.
+     *
+     * <p>This is the regression that issue #37635 asks for. The reconciler used to resolve the active
+     * names through {@code IndiciesInfo} in every phase; the purge empties that store, so afterwards
+     * both slots were skipped and the report came back with an empty {@code content} map — on which
+     * {@code outOfSyncCount} read 0 (nothing counted) and both verdicts read safe (no row could
+     * contradict them). The assertion that matters is therefore the <em>after</em> one: the
+     * <em>before</em> block only establishes that the report was populated to begin with, so a
+     * regression shows up as "went blind at the purge" rather than "was never populated".</p>
+     *
+     * <p>Driven by the switchover's own cleanup call rather than by a real full reindex: it is the
+     * exact step that produces the state, it needs no reindex to complete under the Phase 3 index
+     * resolution gap, and it keeps the test deterministic — the same reasoning as
+     * {@link #test_phase3_removeLegacyIndices_purgesEsRowsPreservesSiteSearchAndOs()}.</p>
+     */
+    @Test
+    public void test_phase3_readinessReportSurvivesTheLegacyPointerPurge() throws Exception {
+        setPhase(3);
+
+        // Logical names of the "newly promoted" pair, and the physical OS form the store holds.
+        final String workingBare = "working_37635_" + RUN_ID;
+        final String liveBare    = "live_37635_"    + RUN_ID;
+        final String workingOsPhysical = opsOS.toPhysicalName(workingBare);
+        final String liveOsPhysical    = opsOS.toPhysicalName(liveBare);
+
+        try {
+            // Create them on the OS cluster: the reconciler decides existence from a live stats
+            // snapshot, so the pointers must name indices that are really there.
+            osIndexAPI.createIndex(IndexTag.OS.tag(workingBare), 1);
+            osIndexAPI.createIndex(IndexTag.OS.tag(liveBare), 1);
+
+            clearContentIndiciesRows();
+            // The legacy ES pointers still name the PREVIOUS generation — the divergence the issue
+            // reported. Going through the APIs rather than raw SQL keeps the index caches coherent.
+            APILocator.getIndiciesAPI().point(new IndiciesInfo.Builder()
+                    .setWorking("cluster_test.working_20200101000000_" + RUN_ID)
+                    .setLive("cluster_test.live_20200101000000_" + RUN_ID)
+                    .build());
+            APILocator.getVersionedIndicesAPI().saveIndices(VersionedIndicesImpl.builder()
+                    .version(VersionedIndices.OPENSEARCH_3X)
+                    .working(workingOsPhysical)
+                    .live(liveOsPhysical)
+                    .build());
+
+            final MigrationReadiness before = new MigrationReadinessService().evaluate();
+            assertEquals("precondition: the report is populated before the purge",
+                    2, before.content().size());
+
+            APILocator.getVersionedIndicesAPI().removeLegacyIndices();
+
+            final MigrationReadiness after = new MigrationReadinessService().evaluate();
+
+            assertEquals("the report must still cover both content slots after the purge",
+                    2, after.content().size());
+            assertNotNull(after.content().get("WORKING"));
+            assertNotNull(after.content().get("LIVE"));
+            assertEquals("reported by logical name, with the .os tag stripped back off",
+                    workingBare, after.content().get("WORKING").indexName());
+            assertEquals(liveBare, after.content().get("LIVE").indexName());
+            assertTrue("the OpenSearch copy is present and must be seen as such",
+                    after.content().get("WORKING").os().exists());
+            assertTrue(after.content().get("LIVE").os().exists());
+            assertTrue("a healthy Phase 3 pair leaves nothing to block on",
+                    after.verdict().blockers().isEmpty());
+
+            Logger.info(this, "✅ Phase 3 readiness report survived the legacy pointer purge");
+        } finally {
+            for (final String name : List.of(IndexTag.OS.tag(workingBare), IndexTag.OS.tag(liveBare))) {
+                Try.run(() -> { if (osIndexAPI.indexExists(name)) osIndexAPI.delete(name); })
+                   .onFailure(e -> Logger.warn(this,
+                           "Cleanup: error removing OS index '" + name + "': " + e.getMessage()));
             }
         }
     }
