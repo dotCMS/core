@@ -282,8 +282,22 @@ cover, and confirm the nightly job goes red on it rather than absorbing it silen
   package's own isolated directory without relying on walking up into the project.
 - **FR-004**: Those corrections MUST be expressed in repository-owned configuration and MUST NOT
   require an unreleased upstream change or a vendored copy of a third-party package.
-- **FR-005**: The set of corrected packages MUST be discovered exhaustively — the four already
-  identified are a starting point, not the complete list.
+- **FR-005**: The set of corrected packages MUST be discovered across **every module graph this
+  workspace builds**, not just the production bundle. A cache-skipped production build only exercises
+  imports it happens to reach, so passing it proves nothing about the others. The graphs, and the
+  enumeration required for each:
+  - **Production bundle** — the build names them, one failure at a time (FR-007).
+  - **Vitest suite** — enumerated by scanning the packages named in the vite configs'
+    `test.server.deps.inline`, the set Vitest actually resolves.
+  - **Stencil / webcomponents** — enumerated from its build's `UNRESOLVED_IMPORT` warnings, which do
+    **not** fail the build and must therefore be read deliberately.
+
+  The scan reports are **required verification artifacts**, attached to the pull request, not
+  transient console output. The four packages named in the issue are a starting point, not the list.
+- **FR-005a**: Coverage is explicitly **bounded** to those three graphs. An import reached only by a
+  computed or dynamic specifier is invisible to a static scan and may still surface later; FR-019's
+  detector is what catches it. This bound MUST be stated in the documentation of FR-017 rather than
+  left as an implied guarantee of completeness.
 - **FR-006**: The global virtual store MUST remain a **per-developer opt-in**. The repository MUST
   NOT set it as the default for `core-web`: only the corrections of FR-003 are committed, and the
   setting itself is enabled by each developer in their own machine-level package-manager
@@ -311,8 +325,16 @@ cover, and confirm the nightly job goes red on it rather than absorbing it silen
 - **FR-013**: Every pipeline job that passes on the trunk MUST still pass with the corrections
   committed and the default local virtual store in effect.
 - **FR-014**: A frozen-lockfile install against the committed lockfile MUST succeed under the local
-  virtual store, and the only resolved versions that differ from the trunk MUST be those of the
-  corrected packages.
+  virtual store, and the lockfile diff against the trunk MUST be reviewed on **three** axes, not one:
+  1. **Resolved versions** — no package outside the correction set may change version.
+  2. **Dependency edges and peer-resolution snapshots** — a package extension adds edges and new
+     peer-suffixed `snapshots:` keys *without* changing any version, so a version-only check would
+     pass while the graph shifted underneath it. Every changed snapshot key MUST trace to a
+     corrected package or to a dependent of one.
+  3. **New declared dependencies** — the only edges added may be the peers FR-003 introduces.
+
+  A check that inspects versions alone is insufficient and MUST NOT be treated as satisfying this
+  requirement.
 - **FR-015**: The pipeline's dependency cache MUST still hit on the same key basis, and pipeline
   wall-clock time MUST NOT materially regress.
 - **FR-016**: In the nightly job of FR-019, the cached package store MUST cover the global virtual
@@ -324,15 +346,35 @@ cover, and confirm the nightly job goes red on it rather than absorbing it silen
 
 - **FR-017**: Developer documentation MUST state how a developer opts in to the global virtual store,
   how to migrate a worktree that was installed the old way, and what a machine-wide shared store means
-  for pruning and for cleaning up a worktree.
+  for pruning and for cleaning up a worktree. It MUST additionally carry, as an explicit warning:
+  - **The trust boundary.** One writable store shared between mutually untrusted users or agents is
+    unsafe, and the upstream guidance says so. A single-user developer machine and an ephemeral
+    single-tenant pipeline runner both satisfy the boundary; a **shared or multi-tenant build box does
+    not**, and the setting MUST NOT be applied there.
+  - **The machine-wide reach.** Opting in applies the layout to every pnpm project on that machine,
+    not only this repository.
+  - **The coverage bound** from FR-005a.
 - **FR-018**: The reason each third-party correction exists MUST be recorded alongside it, naming the
   package, the undeclared import, and the version the correction was written against — so a future
   maintainer can tell whether an upgrade makes it removable.
 - **FR-019**: A **periodic (nightly) pipeline job** MUST install and build `core-web` with the global
   virtual store explicitly enabled — the only place in the pipeline where that configuration is
-  exercised, because FR-006 keeps it off by default. It MUST perform the FR-007 build and the FR-008
-  file-count assertions with the build cache skipped, and MUST report a failure loudly enough to be
-  triaged rather than accumulate unnoticed. It MUST NOT run on pull requests or block a merge.
+  exercised, because FR-006 keeps it off by default. With the build cache skipped it MUST cover
+  **every check the user stories promise**, because a guard narrower than the promise silently
+  degrades into a false assurance:
+  - the FR-007 production build and the FR-008 asset file-count assertions;
+  - the FR-009 workspace test run — the Vitest graph broke under the global store while the
+    production build was green, so a build-only detector would have reported success;
+  - the FR-011 project-graph inference;
+  - the FR-005 scans, so a newly added dependency with an undeclared import is reported before
+    anyone hits it.
+
+  The FR-010 dev-server check is **explicitly excluded** and remains manual: it needs a browser, and
+  a resolution regression fails the build first. That exclusion is the one narrowing of the guarantee,
+  and it MUST be stated in the documentation rather than implied.
+
+  The job MUST report a failure loudly enough to be triaged rather than accumulate unnoticed, and
+  MUST NOT run on pull requests or block a merge.
 - **FR-020**: If exhaustive discovery shows the build cannot be made green from repository-owned
   configuration alone, the work MUST close by recording the newly found blockers in the issue rather
   than shipping a partially working adoption.
@@ -345,8 +387,12 @@ cover, and confirm the nightly job goes red on it rather than absorbing it silen
 
 - **SC-001**: A freshly installed `core-web` dependency directory occupies under 50 MB, against
   ~2.1 GB today — at least a 97% reduction per checkout.
-- **SC-002**: A developer who opts in with five worktrees open reclaims at least 8 GB of disk after
-  migrating all of them.
+- **SC-002**: A developer who opts in with five worktrees reclaims at least 8 GB **of total machine
+  footprint**, measured as the sum of all five `core-web/node_modules` directories **plus** the shared
+  store, before versus after migration. The shared store counts against the saving: five local trees
+  at ~2.1 GB each is ~10.5 GB, while five symlink trees plus one store is a few megabytes each plus
+  a store the machine already carried for other pnpm projects. Comparing only the `node_modules`
+  directories would overstate the win.
 - **SC-003**: A warm frozen-lockfile install completes in under 6 seconds, against ~15 seconds today
   — at least 60% faster.
 - **SC-004**: A cache-skipping production build of the admin UI completes successfully, reporting

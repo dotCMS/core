@@ -35,6 +35,137 @@ peerDependencyRules:
         '@ngrx/signals>@angular/core': '22'
         '@ngrx/component-store>@angular/core': '22'
 
+# Third-party manifest corrections — packages that import modules they never declare.
+#
+# All four work today only by accident of directory geometry: Node's walk-up escapes the isolated
+# package directory and reaches core-web's own node_modules, where the module happens to be a direct
+# dependency. That rescue disappears the moment the virtual store lives outside the project
+# (`virtualStoreType: global`, which pnpm recommends for git worktrees — see #37573), and the
+# production build then fails with "Could not resolve".
+#
+# Each entry adds the missing module as a **peerDependency**, never a `dependency`. A dependency
+# would let pnpm resolve a SECOND copy: yjs throws when two instances load, and Angular does not
+# throw at all — it just ends up with two injector registries, which fails quietly and far from the
+# cause. A peer resolves from the consumer, so the package links the single instance core-web
+# already installs.
+#
+# Keys carry the exact validated version on purpose: when a package moves past it the correction
+# stops applying, which is the condition the nightly detector exists to surface. Re-validate and
+# re-key rather than widening a range.
+packageExtensions:
+    # Imports 'chart.js/auto' in fesm2022/primeng-chart.mjs. Declares every Angular peer it needs
+    # and rxjs, but not chart.js. Optional: only consumers using the Chart component need it, and
+    # core-web does (dot-analytics). Verified against #37573 build output. discoveredBy: build
+    'primeng@21.1.3':
+        peerDependencies:
+            chart.js: '^4.0.0'
+        peerDependenciesMeta:
+            chart.js:
+                optional: true
+
+    # Imports 'yjs' in awareness.js. Declares only lib0 and has no peerDependencies at all.
+    # discoveredBy: build (and independently by tools/scan-undeclared-imports.mjs)
+    'y-protocols@1.0.1':
+        peerDependencies:
+            yjs: '^13.5.0'
+
+    # Imports '@angular/forms' (NG_VALUE_ACCESSOR, NG_VALIDATORS). Declares @angular/core and rxjs
+    # as peers but omits forms. Range mirrors its own `>=` style. discoveredBy: build
+    '@materia-ui/ngx-monaco-editor@6.0.0':
+        peerDependencies:
+            '@angular/forms': '>=13.0.0'
+
+    # Imports 'rxjs' and 'rxjs/operators'. Declares the three Angular peers and tinymce, but not
+    # rxjs. Range mirrors its own `>=` style. discoveredBy: build
+    '@tinymce/tinymce-angular@7.0.0':
+        peerDependencies:
+            rxjs: '>=6.0.0'
+
+    # setup-testbed.js imports 'tslib', '@angular/core', '@angular/core/testing' and
+    # '@angular/platform-browser/testing'. The manifest has `dependencies: {}` and lists neither
+    # tslib nor any @angular package among its peers.
+    #
+    # This one is NOT reachable from the production bundle, so `nx build` never surfaced it — the
+    # whole Vitest suite failed to load instead (116 test files, "no tests"). It is the reason the
+    # test run is a separate acceptance story rather than a formality after a green build.
+    # discoveredBy: build (test layer)
+    '@analogjs/vitest-angular@2.7.1':
+        peerDependencies:
+            tslib: '^2.0.0'
+            '@angular/core': '>=17.0.0'
+            '@angular/platform-browser': '>=17.0.0'
+
+    # --- Test-layer corrections ---------------------------------------------------------------
+    # The six below serve the Vitest module graph, which the production bundler never walks. They
+    # were found by scanning the 28 packages listed in the vite configs' `test.server.deps.inline`
+    # rather than by iterating on failed test runs, after the first two cost a full suite run each.
+    # Every added peer is a direct dependency of core-web, so each resolves to the one instance the
+    # workspace already installs. discoveredBy: scan (test layer)
+
+    # Imports @angular/core, @angular/platform-browser(-dynamic), rxjs and vitest; declares only
+    # @angular/common, @angular/router and @angular/animations as peers. Its '@jest/globals' import
+    # is deliberately NOT declared here — this workspace is migrating off jest, and core-web does
+    # not carry it. If a spec ever reaches that path it should fail loudly rather than resolve.
+    '@openng/spectator@1.0.1':
+        peerDependencies:
+            '@angular/core': '>=22.0.0'
+            '@angular/platform-browser': '>=22.0.0'
+            '@angular/platform-browser-dynamic': '>=22.0.0'
+            rxjs: '>=7.0.0'
+            vitest: '>=1.0.0'
+
+    '@analogjs/vite-plugin-angular@2.7.1':
+        peerDependencies:
+            '@angular/compiler': '>=17.0.0'
+            '@angular/compiler-cli': '>=17.0.0'
+            '@angular/core': '>=17.0.0'
+            typescript: '>=5.0.0'
+            vitest: '>=1.0.0'
+
+    # Imports @angular/forms from its form-field and input modules without declaring it.
+    '@angular/cdk@22.1.0':
+        peerDependencies:
+            '@angular/forms': '>=22.0.0'
+
+    # Both import '@ngrx/operators', which neither declares.
+    '@ngrx/component-store@21.1.1':
+        peerDependencies:
+            '@ngrx/operators': '>=21.0.0'
+
+    '@ngrx/signals@21.1.1':
+        peerDependencies:
+            '@ngrx/operators': '>=21.0.0'
+
+    # --- Stencil / webcomponents layer -------------------------------------------------------
+    # A third module graph, found only by watching the dotcms-webcomponents build inside
+    # `nx serve`. Both import '@material/mwc-base/aria-property.js' and declare mwc-icon,
+    # mwc-ripple, lit and tslib but never mwc-base — which core-web does carry as a direct
+    # dependency at the same 0.27.0. Under the global store Stencil reported UNRESOLVED_IMPORT and
+    # silently treated it as external, so the component would have shipped with a broken import
+    # rather than failing the build. discoveredBy: build (stencil layer)
+    '@material/mwc-button@0.27.0':
+        peerDependencies:
+            '@material/mwc-base': '^0.27.0'
+
+    '@material/mwc-icon-button@0.27.0':
+        peerDependencies:
+            '@material/mwc-base': '^0.27.0'
+
+    # Ships an optional Angular wrapper (gridstack/dist/angular) importing Angular and rxjs, none of
+    # it declared. Optional because the plain gridstack entry point needs none of it.
+    'gridstack@8.4.0':
+        peerDependencies:
+            '@angular/common': '>=22.0.0'
+            '@angular/core': '>=22.0.0'
+            rxjs: '>=7.0.0'
+        peerDependenciesMeta:
+            '@angular/common':
+                optional: true
+            '@angular/core':
+                optional: true
+            rxjs:
+                optional: true
+
 ignoredOptionalDependencies:
     - canvas
 
