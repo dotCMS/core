@@ -1273,71 +1273,73 @@ describe('DotExperimentsListComponent', () => {
             expect(spectator.component.$hasActiveFilters()).toBe(false);
         });
 
-    describe('the shared filter bar (#37307)', () => {
-        const chipIds = () =>
-            spectator
-                .queryAll('[data-filter-chip]')
-                .map((chip) => chip.getAttribute('data-filter-chip') as string);
+        describe('the shared filter bar (#37307)', () => {
+            const chipIds = () =>
+                spectator
+                    .queryAll('[data-filter-chip]')
+                    .map((chip) => chip.getAttribute('data-filter-chip') as string);
 
-        it('should render the four chips inside the shared bar', () => {
-            renderRowWith(DotExperimentStatus.DRAFT);
+            it('should render the four chips inside the shared bar', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
 
-            expect(spectator.query(byTestId('dot-filter-bar'))).not.toBeNull();
-            expect(chipIds()).toEqual(['status', 'goal', 'schedule', 'createdBy']);
+                expect(spectator.query(byTestId('dot-filter-bar'))).not.toBeNull();
+                expect(chipIds()).toEqual(['status', 'goal', 'schedule', 'createdBy']);
+            });
+
+            /**
+             * The rule the shared constant exists for: two toolbars offering the same chips in
+             * different orders cost an editor a re-orientation on every switch. A surface may omit
+             * chips, never reorder them — asserted per toolbar because the bar projects its content
+             * and cannot enforce it.
+             */
+            it('should render them in canonical order', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(isCanonicalChipOrder(chipIds())).toBe(true);
+            });
+
+            it('should offer no way to clear while nothing is filtered', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(spectator.query(byTestId('clear-all-filters'))).toBeNull();
+            });
+
+            it('should offer clearing once a chip is in force', () => {
+                storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.RUNNING]);
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(spectator.query(byTestId('clear-all-filters'))).not.toBeNull();
+            });
+
+            it('should clear every filter in one dispatch from the bar', () => {
+                storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.RUNNING]);
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                spectator.click(
+                    spectator
+                        .query(byTestId('clear-all-filters'))
+                        ?.querySelector('button') as HTMLElement
+                );
+
+                expect(dispatchedEvents()).toContainEqual(
+                    dotExperimentsListPageEvents.filtersCleared()
+                );
+            });
+
+            /**
+             * The bar's own signal asks "is anything worth clearing", which is not the question the
+             * empty state asks. A page narrowing that arrived in the address and matched nothing is an
+             * active filter for the empty state — it is why nothing is showing — but it is not the
+             * user's to clear from this row.
+             */
+            it('should not offer clearing for a page narrowing the address brought', () => {
+                storeMock.selectedPageUrl.mockReturnValue('/asdasd');
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(spectator.component.$hasActiveFilters()).toBe(true);
+                expect(spectator.query(byTestId('clear-all-filters'))).toBeNull();
+            });
         });
-
-        /**
-         * The rule the shared constant exists for: two toolbars offering the same chips in
-         * different orders cost an editor a re-orientation on every switch. A surface may omit
-         * chips, never reorder them — asserted per toolbar because the bar projects its content
-         * and cannot enforce it.
-         */
-        it('should render them in canonical order', () => {
-            renderRowWith(DotExperimentStatus.DRAFT);
-
-            expect(isCanonicalChipOrder(chipIds())).toBe(true);
-        });
-
-        it('should offer no way to clear while nothing is filtered', () => {
-            renderRowWith(DotExperimentStatus.DRAFT);
-
-            expect(spectator.query(byTestId('clear-all-filters'))).toBeNull();
-        });
-
-        it('should offer clearing once a chip is in force', () => {
-            storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.RUNNING]);
-            renderRowWith(DotExperimentStatus.DRAFT);
-
-            expect(spectator.query(byTestId('clear-all-filters'))).not.toBeNull();
-        });
-
-        it('should clear every filter in one dispatch from the bar', () => {
-            storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.RUNNING]);
-            renderRowWith(DotExperimentStatus.DRAFT);
-
-            spectator.click(
-                spectator.query(byTestId('clear-all-filters'))?.querySelector('button') as HTMLElement
-            );
-
-            expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListPageEvents.filtersCleared()
-            );
-        });
-
-        /**
-         * The bar's own signal asks "is anything worth clearing", which is not the question the
-         * empty state asks. A page narrowing that arrived in the address and matched nothing is an
-         * active filter for the empty state — it is why nothing is showing — but it is not the
-         * user's to clear from this row.
-         */
-        it('should not offer clearing for a page narrowing the address brought', () => {
-            storeMock.selectedPageUrl.mockReturnValue('/asdasd');
-            renderRowWith(DotExperimentStatus.DRAFT);
-
-            expect(spectator.component.$hasActiveFilters()).toBe(true);
-            expect(spectator.query(byTestId('clear-all-filters'))).toBeNull();
-        });
-    });
 
         /**
          * FR-021a. Reported in the toolbar rather than inside the chip's popover, because only an

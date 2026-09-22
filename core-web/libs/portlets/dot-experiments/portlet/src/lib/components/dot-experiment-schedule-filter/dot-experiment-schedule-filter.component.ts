@@ -46,13 +46,7 @@ import {
  */
 @Component({
     selector: 'dot-experiment-schedule-filter',
-    imports: [
-        FormsModule,
-        DatePickerModule,
-        PopoverModule,
-        DotChipFilterComponent,
-        DotMessagePipe
-    ],
+    imports: [FormsModule, DatePickerModule, PopoverModule, DotChipFilterComponent, DotMessagePipe],
     templateUrl: './dot-experiment-schedule-filter.component.html'
 })
 export class DotExperimentScheduleFilterComponent {

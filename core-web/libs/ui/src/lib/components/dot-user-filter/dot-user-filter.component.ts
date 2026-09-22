@@ -1,4 +1,3 @@
-
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     Component,
@@ -15,7 +14,6 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { PopoverModule } from 'primeng/popover';
 
 import { map } from 'rxjs/operators';
-
 
 import { DotUserSearchService, dotUserDisplayName } from '@dotcms/data-access';
 

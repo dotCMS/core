@@ -191,5 +191,4 @@ describe('DotExperimentScheduleFilterComponent', () => {
             expect(emitted).toHaveBeenCalledWith({ from: null, to: null });
         });
     });
-
 });

@@ -155,10 +155,7 @@ export function isScheduleRangeInverted(period: ExperimentsListSchedulePeriod): 
  * `scheduling` may be absent altogether, or present carrying a null `startDate`. Reading through
  * the first shape without care throws; treating the second as scheduled lets it into every period.
  */
-export function matchesSchedulePeriod(
-    experiment: DotExperiment,
-    bounds: ScheduleBounds
-): boolean {
+export function matchesSchedulePeriod(experiment: DotExperiment, bounds: ScheduleBounds): boolean {
     const startDate = experiment.scheduling?.startDate;
 
     return startDate != null && startDate >= bounds.min && startDate <= bounds.max;
