@@ -46,9 +46,13 @@ class GoalConditionUtil {
      * @throws DotDataException if the page cannot be found or loaded
      */
     static String resolvePageUri(final Experiment experiment) throws DotDataException {
-        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-                APILocator.getContentletAPI()
-                        .findContentletByIdentifierAnyLanguage(experiment.pageId(), false));
+        final var contentlet = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+        if (contentlet == null) {
+            throw new DotDataException(
+                    "Experiment page not found for pageId: " + experiment.pageId());
+        }
+        final HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
         return page.getURI();
     }
 
