@@ -98,6 +98,10 @@ export class RouterEditContentHost implements EditContentHost {
         // separate opener to notify.
     }
 
+    reportLockChanged(_contentlet: DotCMSContentlet): void {
+        // no-op: full-screen has no separate opener to notify.
+    }
+
     reloadContent(inode: string): void {
         // Locale switch mints a new inode; repoint the trail's current crumb to it
         // so the breadcrumb keeps labeling the content actually being edited (AC-B4).

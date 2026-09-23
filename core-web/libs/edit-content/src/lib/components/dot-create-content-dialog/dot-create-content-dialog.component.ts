@@ -118,6 +118,12 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
             this.#hasContentBeenSaved.set(true);
         });
 
+        // Forward lock/unlock immediately (not deferred to close) so an opener with its own
+        // lock indicator (e.g. UVE) stays in sync even if the dialog stays open.
+        this.#host.lockChanged$.pipe(takeUntilDestroyed()).subscribe((contentlet) => {
+            this.#dialogConfig.data?.onLockChanged?.(contentlet);
+        });
+
         // Single source of truth for callbacks — only fires when the close actually completes.
         // This prevents callbacks from firing if the dirty-close guard cancels the close.
         this.#dialogRef.onClose.pipe(takeUntilDestroyed()).subscribe(() => {

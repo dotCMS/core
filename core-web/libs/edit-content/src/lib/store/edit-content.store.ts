@@ -94,6 +94,7 @@ export interface EditContentState {
     lockStatus: ComponentStatus;
     canLock: boolean;
     lockSwitchLabel: string;
+    lockActionSuccess: DotCMSContentlet | null;
 
     // Form state
     formValues: FormValues;
@@ -245,6 +246,7 @@ export const initialRootState: EditContentState = {
     lockStatus: ComponentStatus.IDLE,
     canLock: false,
     lockSwitchLabel: 'edit.content.unlocked',
+    lockActionSuccess: null,
 
     // Form state
     formValues: {},

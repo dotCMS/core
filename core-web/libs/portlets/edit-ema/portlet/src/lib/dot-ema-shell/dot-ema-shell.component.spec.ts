@@ -1109,6 +1109,24 @@ describe('DotEmaShellComponent', () => {
                 expect(spyGetWorkflowActions).toHaveBeenCalled();
             });
 
+            it('should reload the page when `UPDATE_WORKFLOW_ACTION` carries isLockAction (lock/unlock sync)', () => {
+                const spyReload = vi.spyOn(pageApi(), 'pageReload');
+
+                spectator.detectChanges();
+
+                spectator.triggerEventHandler(
+                    DotEmaDialogComponent,
+                    'action',
+                    createDialogActionEvent({
+                        name: NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION,
+                        payload: { isLockAction: true }
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(spyReload).toHaveBeenCalled();
+            });
+
             it('should trigger a store reload when htmlPageReferer is missing (new language version save)', () => {
                 spectator.detectChanges();
                 const spyReload = vi.spyOn(pageApi(), 'pageReload');

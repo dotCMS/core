@@ -67,6 +67,12 @@ export interface EditContentDialogData {
     onContentSaved?: (contentlet: DotCMSContentlet) => void;
 
     /**
+     * Optional callback fired immediately on every lock/unlock, not just on close/save — so an
+     * opener that shows its own lock indicator (e.g. UVE's toolbar) can refresh right away.
+     */
+    onLockChanged?: (contentlet: DotCMSContentlet) => void;
+
+    /**
      * Optional callback for when dialog is cancelled
      */
     onCancel?: () => void;

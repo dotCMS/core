@@ -519,6 +519,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION: {
                 this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
+
+                if (event.detail.payload?.isLockAction) {
+                    // Lock/unlock in the legacy content-edit dialog updates the contentlet
+                    // directly and never touches UVEStore — reload so $lockOptions
+                    // (page.locked/lockedBy) reflects the change immediately.
+                    this.uveStore.pageReload();
+                }
+
                 break;
             }
 

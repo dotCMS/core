@@ -936,7 +936,8 @@
 
 
         const eventData = {
-            name: 'update-workflow-action'
+            name: 'update-workflow-action',
+            payload: { isLockAction: true }
         };
         dispatchCustomEvent(eventData)
         refreshActionPanel(data["lockedIdent"]);
@@ -955,7 +956,8 @@
         }
 
         const eventData = {
-            name: 'update-workflow-action'
+            name: 'update-workflow-action',
+            payload: { isLockAction: true }
         };
 
         dispatchCustomEvent(eventData)
@@ -966,11 +968,6 @@
     function unlockContent(contentletInode){
         window.onbeforeunload=true;
 
-        const eventData = {
-            name: 'update-workflow-action'
-        };
-
-        dispatchCustomEvent(eventData)
         ContentletAjax.unlockContent(contentletInode, unlockContentCallback);
     }
 
@@ -982,6 +979,12 @@
             return;
         }
 
+        const eventData = {
+            name: 'update-workflow-action',
+            payload: { isLockAction: true }
+        };
+
+        dispatchCustomEvent(eventData)
         refreshActionPanel(data["lockedIdent"]);
     }
 

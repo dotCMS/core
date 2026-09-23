@@ -43,6 +43,7 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #config = inject(DynamicDialogConfig, { optional: true });
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
     readonly #saved$ = new Subject<DotCMSContentlet>();
+    readonly #lockChanged$ = new Subject<DotCMSContentlet>();
 
     /** Per-instance trail; starts empty and never touches the shared root store. */
     readonly #trailInodes = signal<string[]>([]);
@@ -54,6 +55,9 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
     /** Emits each successful save so the dialog can notify its opener. */
     readonly saved$ = this.#saved$.asObservable();
+
+    /** Emits each successful lock/unlock so the opener can refresh its own lock-state view. */
+    readonly lockChanged$ = this.#lockChanged$.asObservable();
 
     readonly trail = computed<DotRelatedContentCrumb[]>(() =>
         toRelatedContentCrumbs(this.#trailInodes(), this.#relatedNav.titleCache())
@@ -71,6 +75,10 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
     reportSaved(contentlet: DotCMSContentlet): void {
         this.#saved$.next(contentlet);
+    }
+
+    reportLockChanged(contentlet: DotCMSContentlet): void {
+        this.#lockChanged$.next(contentlet);
     }
 
     reloadContent(inode: string): void {
@@ -132,5 +140,6 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     ngOnDestroy(): void {
         this.#navigation$.complete();
         this.#saved$.complete();
+        this.#lockChanged$.complete();
     }
 }

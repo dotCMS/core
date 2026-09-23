@@ -288,6 +288,19 @@ export class DotEditContentLayoutComponent {
 
             this.$store.clearWorkflowActionSuccess();
         });
+
+        // After a successful lock/unlock: notify the host so an opener tracking lock state
+        // elsewhere (e.g. UVE's toolbar) can refresh, then clear the signal so the same
+        // contentlet can trigger another lock/unlock event.
+        effect(() => {
+            const success = this.$store.lockActionSuccess();
+            if (!success) {
+                return;
+            }
+
+            this.#host.reportLockChanged(success);
+            this.$store.clearLockActionSuccess();
+        });
     }
 
     /**

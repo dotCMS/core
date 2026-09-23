@@ -198,6 +198,15 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
                     this.#lastSaved = contentlet;
                     this.saved.emit(contentlet);
                 });
+
+            // Forward lock/unlock immediately (not deferred to close) so an opener with its own
+            // lock indicator (e.g. UVE) stays in sync while the panel is still open.
+            this.#injector
+                .get(OverlayEditContentHost)
+                .lockChanged$.pipe(takeUntilDestroyed(this.#destroyRef))
+                .subscribe((contentlet) => {
+                    this.data()?.onLockChanged?.(contentlet);
+                });
         });
     }
 

@@ -1283,6 +1283,19 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 this.uveStore.pageLoad({
                     language_id
                 });
+            },
+            [NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION]: () => {
+                this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
+
+                if (detail.payload?.isLockAction) {
+                    // Lock/unlock in the legacy content-edit dialog updates the contentlet
+                    // directly and never touches UVEStore — reload so $lockOptions
+                    // (page.locked/lockedBy) reflects the change immediately. This editor
+                    // renders its OWN <dot-edit-ema-dialog> instance — the one actually used
+                    // for Page Properties while a page is open — separate from the shell's,
+                    // which already handles this same event on ITS OWN dialog instance.
+                    this.uveStore.pageReload();
+                }
             }
         })[detail.name];
     }
@@ -1396,6 +1409,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const dialogData: EditContentDialogData = {
             mode: 'edit',
             contentletInode: contentlet.inode,
+            onLockChanged: () => {
+                this.uveStore.pageReload();
+                // pageReload() doesn't mint a new inode on a lock/unlock, so the $inode-keyed
+                // effect that normally refreshes workflowActions never re-fires — refresh it
+                // explicitly here too (mirrors the legacy dialog's UPDATE_WORKFLOW_ACTION handling).
+                this.uveStore.workflowFetch(contentlet.inode);
+            },
             onContentSaved: () => {
                 this.uveStore.pageReload();
             }

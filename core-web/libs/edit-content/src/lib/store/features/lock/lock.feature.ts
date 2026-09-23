@@ -153,15 +153,17 @@ export function withLock() {
 
                                             return;
                                         }
+                                        const contentlet = {
+                                            ...current,
+                                            locked: updated.locked,
+                                            lockedBy: updated.lockedBy,
+                                            lockedByName: updated.lockedByName,
+                                            lockedOn: updated.lockedOn
+                                        };
                                         patchState(store, {
                                             lockStatus: ComponentStatus.LOADED,
-                                            contentlet: {
-                                                ...current,
-                                                locked: updated.locked,
-                                                lockedBy: updated.lockedBy,
-                                                lockedByName: updated.lockedByName,
-                                                lockedOn: updated.lockedOn
-                                            }
+                                            contentlet,
+                                            lockActionSuccess: contentlet
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -203,15 +205,17 @@ export function withLock() {
 
                                             return;
                                         }
+                                        const contentlet = {
+                                            ...current,
+                                            locked: updated.locked,
+                                            lockedBy: updated.lockedBy,
+                                            lockedByName: updated.lockedByName,
+                                            lockedOn: updated.lockedOn
+                                        };
                                         patchState(store, {
                                             lockStatus: ComponentStatus.LOADED,
-                                            contentlet: {
-                                                ...current,
-                                                locked: updated.locked,
-                                                lockedBy: updated.lockedBy,
-                                                lockedByName: updated.lockedByName,
-                                                lockedOn: updated.lockedOn
-                                            }
+                                            contentlet,
+                                            lockActionSuccess: contentlet
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -267,7 +271,17 @@ export function withLock() {
                             );
                         })
                     )
-                )
+                ),
+
+                /**
+                 * Clears the lock action success signal.
+                 * Used to reset the signal after it has been processed to prevent duplicate emissions.
+                 */
+                clearLockActionSuccess: () => {
+                    patchState(store, {
+                        lockActionSuccess: null
+                    });
+                }
             })
         ),
         withHooks({

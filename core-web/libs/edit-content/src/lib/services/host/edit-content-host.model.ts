@@ -62,6 +62,13 @@ export interface EditContentHost {
     reportSaved(contentlet: DotCMSContentlet): void;
 
     /**
+     * Reports a successful lock/unlock to the opener. Full-screen ignores it (no separate
+     * opener); overlay hosts forward it so an opener tracking lock state elsewhere (e.g. UVE)
+     * can refresh.
+     */
+    reportLockChanged(contentlet: DotCMSContentlet): void;
+
+    /**
      * Reloads the editor with a different content (locale switch, etc.). Full-screen
      * navigates via the router (guard handles dirty state); the dialog reloads in
      * place (the layout handles the dirty check).

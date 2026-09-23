@@ -161,6 +161,47 @@ export function withWorkflow() {
         }),
         withMethods((store) => {
             const dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
+
+            return {
+                /**
+                 * Load workflow actions
+                 */
+                workflowFetch: rxMethod<string>(
+                    pipe(
+                        tap(() => {
+                            patchState(store, {
+                                workflowIsLoading: true
+                            });
+                        }),
+                        switchMap((pageInode) => {
+                            return dotWorkflowsActionsService.getByInode(pageInode).pipe(
+                                tapResponse({
+                                    next: (workflowActions = []) => {
+                                        patchState(store, {
+                                            workflowActions,
+                                            workflowIsLoading: false
+                                        });
+                                    },
+                                    error: () => {
+                                        patchState(store, {
+                                            workflowActions: [],
+                                            workflowIsLoading: false
+                                        });
+                                    }
+                                })
+                            );
+                        })
+                    )
+                ),
+                setWorkflowActionLoading: (workflowIsLoading: boolean) => {
+                    patchState(store, { workflowIsLoading });
+                }
+            };
+        }),
+        // Split into a second `withMethods` block (rather than one) so `lockPage`/`unlockPage`
+        // below can call `store.workflowFetch` — a sibling method is only visible on `store`
+        // once it's returned from an EARLIER `withMethods` call, not the one defining it.
+        withMethods((store) => {
             const dotContentletLockerService = inject(DotContentletLockerService);
             const dotPageApiService = inject(DotPageApiService);
             const dotLanguagesService = inject(DotLanguagesService);
@@ -258,6 +299,10 @@ export function withWorkflow() {
                     next: () => {
                         patchState(store, { editorSelected: null });
                         reloadPageAfterLockChange();
+                        // Locking/unlocking changes which workflow actions are available (e.g.
+                        // Save/Publish), but it doesn't mint a new inode, so the $inode-keyed
+                        // onInit effect below never re-fires on its own to refresh them.
+                        store.workflowFetch(inode);
                     },
                     error: () => {
                         patchState(store, { workflowLockIsLoading: false });
@@ -272,6 +317,7 @@ export function withWorkflow() {
                     next: () => {
                         patchState(store, { editorSelected: null });
                         reloadPageAfterLockChange();
+                        store.workflowFetch(inode);
                     },
                     error: () => {
                         patchState(store, { workflowLockIsLoading: false });
@@ -280,39 +326,6 @@ export function withWorkflow() {
             };
 
             return {
-                /**
-                 * Load workflow actions
-                 */
-                workflowFetch: rxMethod<string>(
-                    pipe(
-                        tap(() => {
-                            patchState(store, {
-                                workflowIsLoading: true
-                            });
-                        }),
-                        switchMap((pageInode) => {
-                            return dotWorkflowsActionsService.getByInode(pageInode).pipe(
-                                tapResponse({
-                                    next: (workflowActions = []) => {
-                                        patchState(store, {
-                                            workflowActions,
-                                            workflowIsLoading: false
-                                        });
-                                    },
-                                    error: () => {
-                                        patchState(store, {
-                                            workflowActions: [],
-                                            workflowIsLoading: false
-                                        });
-                                    }
-                                })
-                            );
-                        })
-                    )
-                ),
-                setWorkflowActionLoading: (workflowIsLoading: boolean) => {
-                    patchState(store, { workflowIsLoading });
-                },
                 /**
                  * Toggle page lock/unlock
                  */

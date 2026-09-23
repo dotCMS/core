@@ -109,6 +109,7 @@ import {
 import { ActionPayload, ContentletPayload, VTLFile } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
+import { WithWorkflowMethods } from '../store/features/workflow/withWorkflow';
 import { IframeAccessMode } from '../store/models';
 
 global.URL.createObjectURL = vi.fn(
@@ -455,6 +456,7 @@ describe('EditEmaEditorComponent', () => {
         // a plain `vi.spyOn(store, ...)` cannot see them. Spying through the feature's own
         // interface keeps the call typed and still installs the spy on the real store.
         const pageApi = () => store as unknown as WithPageApiMethods;
+        const workflowApi = () => store as unknown as WithWorkflowMethods;
         let confirmationService: ConfirmationService;
         let messageService: MessageService;
         let addMessageSpy: MockInstance;
@@ -3420,6 +3422,47 @@ describe('EditEmaEditorComponent', () => {
                             actionPayload: EDIT_ACTION_PAYLOAD_MOCK
                         })
                     );
+                });
+            });
+
+            describe('handleNgEvent - UPDATE_WORKFLOW_ACTION (#33631)', () => {
+                it('should refresh workflow actions and reload the page when the event carries isLockAction', () => {
+                    const workflowFetchSpy = vi.spyOn(workflowApi(), 'workflowFetch');
+                    const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                    spectator.component['handleNgEvent']({
+                        event: new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION,
+                                payload: { isLockAction: true }
+                            }
+                        }),
+                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
+                        clientAction: DotCMSUVEAction.NOOP,
+                        form: null
+                    })?.();
+
+                    expect(workflowFetchSpy).toHaveBeenCalled();
+                    expect(pageReloadSpy).toHaveBeenCalled();
+                });
+
+                it('should refresh workflow actions but NOT reload the page for a non-lock workflow action', () => {
+                    const workflowFetchSpy = vi.spyOn(workflowApi(), 'workflowFetch');
+                    const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                    spectator.component['handleNgEvent']({
+                        event: new CustomEvent('ng-event', {
+                            detail: {
+                                name: NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION
+                            }
+                        }),
+                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
+                        clientAction: DotCMSUVEAction.NOOP,
+                        form: null
+                    })?.();
+
+                    expect(workflowFetchSpy).toHaveBeenCalled();
+                    expect(pageReloadSpy).not.toHaveBeenCalled();
                 });
             });
 

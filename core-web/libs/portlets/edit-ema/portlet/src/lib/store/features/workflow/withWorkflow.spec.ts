@@ -163,6 +163,30 @@ describe('withLoad', () => {
                 expect(dotContentletLockerService.unlock).toHaveBeenCalledWith(inode);
                 expect(dotContentletLockerService.lock).not.toHaveBeenCalled();
             });
+
+            it('should refresh workflow actions after a successful lock (Save/Publish stays in sync, #33631)', () => {
+                const inode = 'page-inode-123';
+                store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+                spectator.flushEffects();
+
+                const getByInodeSpy = vi.spyOn(dotWorkflowsActionsService, 'getByInode');
+
+                store.workflowToggleLock(inode, false, false);
+
+                expect(getByInodeSpy).toHaveBeenCalledWith(inode);
+            });
+
+            it('should refresh workflow actions after a successful unlock (Save/Publish stays in sync, #33631)', () => {
+                const inode = 'page-inode-123';
+                store.setPageAPIResponse(MOCK_RESPONSE_HEADLESS);
+                spectator.flushEffects();
+
+                const getByInodeSpy = vi.spyOn(dotWorkflowsActionsService, 'getByInode');
+
+                store.workflowToggleLock(inode, true, true);
+
+                expect(getByInodeSpy).toHaveBeenCalledWith(inode);
+            });
         });
     });
 
