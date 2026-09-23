@@ -105,8 +105,8 @@ finished.
 5. **Given** a folder holding a published page and an unpublished draft, **When** it is duplicated,
    **Then** the page's duplicate is published and the draft's duplicate is not. Each copy keeps the
    state its source had (FR-012e).
-6. **Given** a folder holding an item whose working version is archived, **When** it is duplicated,
-   **Then** that item is not duplicated, and the rest of the folder is.
+6. **Given** a folder holding an archived item, **When** it is duplicated, **Then** that item is
+   duplicated too, and its duplicate is archived like its source.
 7. **Given** a folder whose parent is a site root, **When** it is duplicated, **Then** the duplicate
    lands at that site root; **Given** a nested folder, **Then** it lands in its parent folder. Both
    cases work.
@@ -350,9 +350,11 @@ per-folder outcome is still readable and a durable notification was addressed to
   means a successful duplication can create content the submitting author was never able to read,
   and because a reader who assumes the two entry checks govern the whole operation will be wrong
   about what the feature does.
-- **FR-012d**: A duplicate MUST hold the **generic contentlets** its source held, meaning content of
-  any type that lives in the folder and is neither a file asset, a page nor a link. A Blog entry, a
-  Document, or any custom type with a folder field MUST be carried.
+- **FR-012d**: A duplicate MUST hold **everything its source folder holds**. That includes two
+  things the shipped walk leaves behind: **generic contentlets**, meaning content of any type that
+  is neither a file asset, a page nor a link, such as a Blog entry, a Document or any custom type
+  with a folder field; and **archived items** of every type, which the walk's working filter skips.
+  *(Developer decision, 2026-09-23: copy all content in the folder.)*
 
   **This closes a gap in the shipped walk rather than describing it.** The walk copies exactly four
   things: file assets, working pages, links and child folders. It has no branch for anything else,
@@ -369,23 +371,31 @@ per-folder outcome is still readable and a durable notification was addressed to
   Browser and for every plugin calling `FolderAPI.copy`, which is the rollback-unsafe shape D-012
   exists to avoid.
 - **FR-012e**: The system MUST state which content it carries and in what state, because nothing in
-  either half said so and the answer is less obvious than it looks. Two separate filters apply, and
-  they do different jobs:
+  either half said so and the answer is less obvious than it looks.
 
-  **Which items are copied** is decided by the walk's source reads, which are working-filtered: file
-  assets only where working and not archived, pages through the working-pages lookup, links only
-  where working. So an item whose working version is archived is **not duplicated at all**.
+  **Every item in the folder is carried**, whatever its state (FR-012d). The shipped walk selects
+  its sources on a working basis, file assets only where working and not archived, pages through the
+  working-pages lookup, links only where working, so on its own it would skip archived items. This
+  feature carries what the walk skips, in the same place it carries generic content.
 
-  **What each copied item carries** is decided by the content copy itself, which copies every
-  version of the source, oldest first, and reproduces its state: a version that was live is set live
-  on the copy, and a version that was archived is marked deleted. So **a published page duplicates
-  as a published page**, not as an unpublished working copy. A reading of the working filter alone
-  suggests the opposite, which is why this is stated rather than left to be inferred.
+  **Each copied item keeps the state its source had.** The content copy copies every version of the
+  source, oldest first, and reproduces its state: a version that was live is set live on the copy,
+  and a version that was archived is marked deleted. So a published page duplicates as a published
+  page, a draft as a draft, and an archived item as an archived item. A reading of the working
+  filter alone suggests published pages come out as unpublished working copies, which is why this is
+  stated rather than left to be inferred.
 
-  Generic content carried under FR-012d MUST follow the same two rules, so a duplicate does not
-  treat a Blog entry differently from a page: selected on the same working, non-archived basis, and
-  carried with its published state preserved. Links are the one type whose state handling was not
-  traced, since they are copied through a separate legacy path, and the plan MUST confirm it.
+  Generic and archived content added by this feature MUST follow the same rule, so a duplicate does
+  not treat a Blog entry differently from a page. Links are the one type whose state handling was
+  not traced, since they are copied through a separate legacy path, and the plan MUST confirm it.
+
+  **"Everything" has two practical limits the plan MUST account for rather than discover.** The
+  shipped lookup that resolves a folder's contentlets is an **index search**, not a read of storage,
+  so content missing from the search index is invisible to it, exactly as it is to folder deletion.
+  And it filters its results by the read rights of the user passed in, so it returns everything only
+  when called with rights to see everything, which is what the walk's system-user behaviour implies
+  (FR-012b). Whether archived items come back from that search at all MUST be verified rather than
+  assumed; if they do not, the plan names a lookup that does.
 - **FR-012c**: The contract MUST NOT imply that a client-side permission check can predict the
   outcome, and the server MUST enforce both rights regardless of what the client checked. Under
   duplicate-in-place the client is better placed than bulk delete's, because the target parent is
@@ -655,8 +665,8 @@ abandonment behaviour, and the durable record's lifetime.
   rather than a policy.
 - **The sources are version-filtered**, which nothing in either half said before: file assets are
   read only where working and not archived, pages through the working-pages lookup, links only where
-  working. Archived content is therefore not carried, and the published state of a duplicate is
-  whatever falls out rather than something chosen. FR-012e requires that to be pinned.
+  working. On its own the walk therefore skips archived items. This feature carries them (FR-012d),
+  and FR-012e pins the state each duplicate comes out in.
 - **Site copy already solved the generic-content problem, and did not use this walk.** The
   enterprise host-assets job builds its own folder structure and copies content separately through
   `copyContentlet` with content-type mapping. That is both the evidence the omission is real and the
@@ -840,16 +850,19 @@ abandonment behaviour, and the durable record's lifetime.
   over the other. Skipping the descendant removes the question and matches what the author meant.
   The skip reason needs its own wording (C-005): delete's says the ancestor removed the folder, and
   here the folder is still there.
-- **D-018: The generic-content gap is closed in this feature's processor, not in the shared walk.**
-  *(Developer decision, 2026-09-23; FR-012d.)* Raised in review against the code rather than against
-  the issue: the shipped walk carries file assets, pages, links and child folders and nothing else,
-  while folder deletion resolves every contentlet regardless of type. Copy therefore drops generic
-  content and reports the folder as a success, which is survivable in the Site Browser and not in
-  Content Drive, where the listing an author is looking at is mixed content by design. The decision
-  is to close it rather than record it as a limitation. **Where** it is closed was then settled by a
-  precedent already in the codebase: the enterprise site-copy job carries generic content itself and
-  does not use the folder factory's walk. Following that keeps the fix inside this feature, leaves
-  the Site Browser and every plugin calling `FolderAPI.copy` untouched, and avoids the
+- **D-018: A duplicate holds everything in the folder, and the gaps are closed in this feature's
+  processor, not in the shared walk.** *(Developer decision, 2026-09-23; FR-012d.)* Raised in review
+  against the code rather than against the issue: the shipped walk carries file assets, pages, links
+  and child folders and nothing else, while folder deletion resolves every contentlet regardless of
+  type. Copy therefore drops generic content and reports the folder as a success, which is
+  survivable in the Site Browser and not in Content Drive, where the listing an author is looking at
+  is mixed content by design. The decision is to close it rather than record it as a limitation, and
+  a later decision the same day widened it to **all** content in the folder, so archived items the
+  walk's working filter skips are carried too, each duplicate keeping its source's state. **Where**
+  it is closed was then settled by a precedent already in the codebase: the enterprise site-copy job
+  carries generic content itself and does not use the folder factory's walk. The same processor
+  carries the archived items the walk skips. Following that keeps the fix inside this feature,
+  leaves the Site Browser and every plugin calling `FolderAPI.copy` untouched, and avoids the
   rollback-unsafe behaviour change that D-012 exists to keep out of this ticket. Extending the
   factory remains the option if the duplication turns out to be worse than the coupling, but it is a
   different piece of work with a different blast radius.
@@ -889,10 +902,12 @@ abandonment behaviour, and the durable record's lifetime.
 - **The configured maximum** (FR-007) and the durable record's lifetime (FR-036a) both need concrete
   values and a documented default.
 - **Not copying anything twice** (FR-012d). File assets and pages **are** contentlets, and the walk
-  already carries them through dedicated branches that de-duplicate by identifier. A processor that
-  resolves every contentlet in the folder and copies it will copy those a second time unless it
-  excludes what the walk already handled. The plan MUST say how, and a test MUST prove a folder of
-  mixed content produces one of each rather than two of some.
+  already carries the working, non-archived ones through dedicated branches that de-duplicate by
+  identifier. The processor carries everything else: generic content of any state, and archived file
+  assets and pages the walk skipped. A processor that resolves every contentlet in the folder and
+  copies it will copy those a second time unless it excludes what the walk already handled. The plan
+  MUST say how, and a test MUST prove a folder of mixed content produces one of each rather than two
+  of some.
 - **Which user the added content copy runs as** (FR-012b, FR-012d). The walk runs as the system
   user. The plan MUST state whether the content this feature adds follows that or uses the
   submitting user, and MUST NOT leave the two halves of one duplication running under different
