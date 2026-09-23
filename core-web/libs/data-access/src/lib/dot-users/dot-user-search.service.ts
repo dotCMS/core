@@ -78,15 +78,13 @@ const RESOLVE_CONCURRENCY = 3;
  * Anonymous and default users are excluded unless asked for: `includeanonymous` and
  * `includedefault` both default to false and this service does not send them, so the list is real
  * people rather than system accounts.
- */
-/**
- * Not auto-provided. The directory search is wanted by whichever chip is asking, and there is
- * nothing here worth sharing across the application — no cache, no subscription, no state, just a
- * shaped call. A root singleton would put it in every injector that never asks for it, so
- * `DotUserFilterComponent` provides it and its lifetime matches the control that needs it.
  *
- * `@Service` rather than `@Injectable`: Angular 22's decorator for this, with `autoProvided: false`
- * saying explicitly that a provider list is the caller's job.
+ * **Not auto-provided.** `@Service()` alone would register this in the root injector; with
+ * `autoProvided: false` the class keeps its DI metadata and nothing else, so a `providers` list has
+ * to name it. `DotUserFilterComponent` does. There is nothing here worth sharing across the
+ * application — no cache, no subscription, no state, just a shaped call — so a root singleton only
+ * put it in every injector that never asks for it, and its lifetime now matches the control that
+ * does.
  */
 @Service({ autoProvided: false })
 export class DotUserSearchService {
