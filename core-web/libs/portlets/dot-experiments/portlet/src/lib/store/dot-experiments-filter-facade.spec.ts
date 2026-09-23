@@ -225,10 +225,16 @@ describe('DotExperimentsFilterFacade', () => {
     });
 
     describe('clearing', () => {
-        it('should clear every narrowing in the one event the store already has', () => {
+        /**
+         * The chip-scoped event, not `filtersCleared`. The bar's button is on screen while the
+         * list is working, and a page narrowing that arrived from the editor is not the user's
+         * to widen from there — `filtersCleared` stays the empty state's way out of a narrowing
+         * that matched nothing.
+         */
+        it('should clear what the chips own without touching the page narrowing', () => {
             facade.clearFilters();
 
-            expect(dispatched()).toEqual([dotExperimentsListPageEvents.filtersCleared()]);
+            expect(dispatched()).toEqual([dotExperimentsListPageEvents.chipFiltersCleared()]);
         });
     });
 

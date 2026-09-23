@@ -328,7 +328,7 @@ export class DotExperimentsListComponent {
               };
     });
 
-    /** The search box and the three chips: everything the toolbar itself can narrow by. */
+    /** The search box and the chips: everything the toolbar itself can narrow by. */
     readonly #hasToolbarNarrowing = computed<boolean>(
         () =>
             this.store.filter().length > 0 ||
@@ -524,7 +524,7 @@ export class DotExperimentsListComponent {
      * Clears the narrowings the user applied, from the no-results state.
      *
      * Two lines rather than one because the search box is a control of *this* component: its model
-     * has to be written here, while the store's own copy of the term, the three chips and the page
+     * has to be written here, while the store's own copy of the term, the chips and the page
      * narrowing all go in the single event.
      *
      * The page narrowing goes with them only because this button is on screen beside one that

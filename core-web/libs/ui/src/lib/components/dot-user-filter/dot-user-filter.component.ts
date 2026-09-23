@@ -62,7 +62,6 @@ export class DotUserFilterComponent {
     /** Message key for what the chip reads while nothing is selected. */
     readonly $emptyLabelKey = input<string>('all', { alias: 'emptyLabelKey' });
 
-    /** Applied user ids. Owned by the consumer, usually backed by its address. */
     /**
      * Ids currently applied, owned by the consumer.
      *
@@ -189,11 +188,22 @@ export class DotUserFilterComponent {
         });
     }
 
-    /** Remembers the labels the list just showed, so a fresh pick never needs resolving. */
+    /**
+     * Remembers the labels the list just showed, so a fresh pick never needs resolving.
+     *
+     * `label !== value` is the filter that makes this safe. The list labels only what it has
+     * loaded, and it is rebuilt every time the popover opens, so it falls back to the id for
+     * anyone it has not seen — including a person restored from the address and already named
+     * here. Folding that back in would be permanent: an id counts as a resolved name, so
+     * `#unresolvedIds` would never ask for it again and the chip would read as a raw id until
+     * the page reloaded.
+     */
     onSelectionChange(options: DotLazyMultiselectOption[]): void {
+        const named = options.filter(({ value, label }) => label !== value);
+
         this.#namesById.update((names) => ({
             ...names,
-            ...Object.fromEntries(options.map(({ value, label }) => [value, label]))
+            ...Object.fromEntries(named.map(({ value, label }) => [value, label]))
         }));
 
         this.selectionChange.emit(options.map(({ value }) => value));

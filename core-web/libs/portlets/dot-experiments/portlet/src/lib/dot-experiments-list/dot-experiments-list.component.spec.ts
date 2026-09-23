@@ -1311,7 +1311,12 @@ describe('DotExperimentsListComponent', () => {
                 expect(spectator.query(byTestId('clear-all-filters'))).not.toBeNull();
             });
 
-            it('should clear every filter in one dispatch from the bar', () => {
+            /**
+             * The chip-scoped event, in one dispatch. Not `filtersCleared`: this button is on
+             * screen while the list is working, and that event also widens a page narrowing the
+             * user never set — see the reducer note on `chipFiltersCleared`.
+             */
+            it('should clear what the chips own in one dispatch from the bar', () => {
                 storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.RUNNING]);
                 renderRowWith(DotExperimentStatus.DRAFT);
 
@@ -1322,6 +1327,9 @@ describe('DotExperimentsListComponent', () => {
                 );
 
                 expect(dispatchedEvents()).toContainEqual(
+                    dotExperimentsListPageEvents.chipFiltersCleared()
+                );
+                expect(dispatchedEvents()).not.toContainEqual(
                     dotExperimentsListPageEvents.filtersCleared()
                 );
             });

@@ -74,6 +74,23 @@ export interface DotExperimentsListState extends DotExperimentsListViewState {
     error: unknown;
 }
 
+/**
+ * What both Clear affordances widen: the search term and every chip, back to page one.
+ *
+ * Shared rather than repeated so the two cannot drift — a filter added later has one place to be
+ * remembered, and the empty state's button stays the wider of the two by *adding* the page
+ * narrowing to this, never by listing its own copy of the chips.
+ */
+const CLEARED_TOOLBAR_NARROWINGS = {
+    filter: '',
+    selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+    selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
+    scheduleFrom: null,
+    scheduleTo: null,
+    page: DEFAULT_EXPERIMENTS_LIST_PAGE
+} as const;
+
 const initialState: DotExperimentsListState = {
     status: ComponentStatus.LOADING,
     healthStatus: null,
@@ -524,14 +541,11 @@ export const DotExperimentsListStore = signalStore(
          * version of the narrowed page they came from, so it means nothing once that page is gone.
          * `syncUrlEffect` follows, which is what takes the params out of the address.
          */
+        // Both clear what the toolbar's controls set; only the empty state's button also drops the
+        // page narrowing, and only because it is on screen beside one that matched nothing.
+        on(dotExperimentsListPageEvents.chipFiltersCleared, () => CLEARED_TOOLBAR_NARROWINGS),
         on(dotExperimentsListPageEvents.filtersCleared, () => ({
-            filter: '',
-            selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
-            selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
-            selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
-            scheduleFrom: null,
-            scheduleTo: null,
-            page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+            ...CLEARED_TOOLBAR_NARROWINGS,
             selectedPageId: null,
             selectedPageUrl: null,
             languageId: null

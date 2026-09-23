@@ -1712,6 +1712,79 @@ describe('DotExperimentsListStore', () => {
         });
     });
 
+    /**
+     * The filter bar's Clear all is a different button from the empty state's, and it is on
+     * screen while the list is *working*. Sharing `filtersCleared` with the dead-end button
+     * made it widen a page narrowing the user never set and cannot restore.
+     */
+    describe('clearing only what the chips own', () => {
+        it('should widen every narrowing a chip or the search box can set', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('nothing-matches'));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.SCHEDULED])
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+            );
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scheduleChanged({
+                    from: '2026-06-01',
+                    to: '2026-06-30'
+                })
+            );
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.filter()).toBe('');
+            expect(store.selectedStatuses()).toEqual([]);
+            expect(store.selectedGoals()).toEqual([]);
+            expect(store.selectedCreators()).toEqual([]);
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
+        });
+
+        it('should return to the first page', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 3, perPage: 20 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        /**
+         * The whole reason this event exists. A page narrowing arrives from the editor, has one
+         * writer — the address — and is not the user's to widen from a toolbar button that is
+         * visible whenever any chip is set. Clearing a narrowing that *matched nothing* is still
+         * offered, by the empty state's own button (`filtersCleared`).
+         */
+        it('should keep a page narrowing and its return context', () => {
+            initStore();
+
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.hydratedFromUrl({
+                    ...VIEW_STATE_DEFAULTS,
+                    selectedPageId: 'page-1',
+                    selectedPageUrl: '/blog/post',
+                    languageId: 2
+                })
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.SCHEDULED])
+            );
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.selectedPageId()).toBe('page-1');
+            expect(store.selectedPageUrl()).toBe('/blog/post');
+            expect(store.languageId()).toBe(2);
+            expect(store.selectedStatuses()).toEqual([]);
+        });
+    });
+
     describe('panel mode (#37478)', () => {
         let panelPageId: WritableSignal<string | null>;
         let panelLanguageId: WritableSignal<number | null>;

@@ -264,6 +264,33 @@ describe('DotUserFilterComponent', () => {
             expect(spectator.component.$resolving()).toBe(true);
         });
 
+        /**
+         * The shared option list only labels what it has loaded this session, and it is rebuilt
+         * every time the popover opens. So a creator restored from the address comes back through
+         * `onSelectionChange` with `label === value` as soon as a second person is ticked. Folding
+         * that in would overwrite the name with the id *permanently*: an id counts as a resolved
+         * name, so nothing ever fetches it again, and the chip reads as a raw id until reload —
+         * which is the state the `loading` input exists to avoid.
+         */
+        it('should keep a resolved name when a later pick re-emits its id as the label', () => {
+            (searchService.resolveNames as ReturnType<typeof vi.fn>).mockReturnValue(
+                of({ u1: 'Jane Doe' })
+            );
+
+            spectator.setInput('selected', ['u1']);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('chip-values'))?.textContent).toContain('Jane Doe');
+
+            spectator.component.onSelectionChange([
+                { value: 'u1', label: 'u1' },
+                { value: 'u2', label: 'Name u2' }
+            ]);
+            spectator.setInput('selected', ['u1', 'u2']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-values'))?.textContent).toContain('Jane Doe');
+        });
+
         it('should fall back to the id when a name cannot be resolved', () => {
             (searchService.resolveNames as ReturnType<typeof vi.fn>).mockReturnValue(
                 of({ u1: 'u1' })

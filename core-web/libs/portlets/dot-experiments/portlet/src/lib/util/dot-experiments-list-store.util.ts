@@ -89,14 +89,6 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
     };
 }
 
-/**
- * A page path as the Page column resolves it, or `null` when there is nothing to narrow by.
- *
- * Both sides of the comparison come from different places — one from an address someone pasted,
- * the other from `htmlpageasset` — so the two ways the same path can be spelled are settled here:
- * a missing leading slash, and a trailing one. Case is left alone; dotCMS paths are not
- * case-insensitive, and lowercasing here would claim a match the backend would not make.
- */
 /** Inclusive instant bounds of a schedule period. `Infinity` on a side the period leaves open. */
 export interface ScheduleBounds {
     min: number;
@@ -198,6 +190,14 @@ function normalizeScheduleBound(raw: string | null | undefined): string | null {
     return parsed ? formatScheduleBound(parsed) : null;
 }
 
+/**
+ * A page path as the Page column resolves it, or `null` when there is nothing to narrow by.
+ *
+ * Both sides of the comparison come from different places — one from an address someone pasted,
+ * the other from `htmlpageasset` — so the two ways the same path can be spelled are settled here:
+ * a missing leading slash, and a trailing one. Case is left alone; dotCMS paths are not
+ * case-insensitive, and lowercasing here would claim a match the backend would not make.
+ */
 export function normalizePagePath(rawPath: string | null | undefined): string | null {
     const path = (rawPath ?? '').trim();
 

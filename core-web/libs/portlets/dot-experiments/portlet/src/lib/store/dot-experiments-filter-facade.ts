@@ -132,8 +132,11 @@ export function createExperimentsFilterFacade(
             }
         },
 
+        // The chip-scoped event, not `filtersCleared`. This button is on screen while the list is
+        // working, and a page narrowing that arrived from the editor has one writer — the address.
+        // Widening it from here would drop a scope the user never set and cannot restore.
         clearFilters: (): void => {
-            dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
         },
 
         /**

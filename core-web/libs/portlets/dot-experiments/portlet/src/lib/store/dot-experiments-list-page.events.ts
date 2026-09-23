@@ -53,8 +53,8 @@ export const dotExperimentsListPageEvents = eventGroup({
         hydratedFromUrl: type<DotExperimentsListViewState>(),
 
         /**
-         * Widens the list back out: the search term, the three chips and the page narrowing all go
-         * at once.
+         * Widens the list back out: the search term, the chips and the page narrowing all go at
+         * once. The way out of the **dead end**, dispatched only from the no-results state.
          *
          * One event rather than one per control, because it is one intent and because the
          * narrowings have to go together. Dispatched separately they are four state transitions,
@@ -69,6 +69,20 @@ export const dotExperimentsListPageEvents = eventGroup({
          * nothing is the dead end, and clearing it is the only way out.
          */
         filtersCleared: type<void>(),
+
+        /**
+         * Widens everything the toolbar's own controls set, and nothing else.
+         *
+         * The filter bar's **Clear all** rather than the empty state's button, and the difference
+         * is not cosmetic: that button is on screen while the list is *working*, so sharing
+         * `filtersCleared` with it made it drop a page narrowing the user never set and has no way
+         * to restore. Which is precisely what the rule above forbids.
+         *
+         * The search term goes with the chips. `$hasNonDefaultFilters` ignores it — a term alone
+         * never reveals the button — but once the button is there, "clear all" that leaves the
+         * search box full does not mean what it says.
+         */
+        chipFiltersCleared: type<void>(),
 
         /**
          * The panel is now about this page (#37478).

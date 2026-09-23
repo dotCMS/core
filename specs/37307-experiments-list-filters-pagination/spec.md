@@ -544,7 +544,10 @@ fewer rows than one page.
      clearing was previously reachable only from the no-results state. Its condition is "is
      anything narrowing", which is deliberately *not* the same question as FR-051's: a page
      narrowing that arrived in the address is an active filter for the empty state but is not the
-     user's to clear from the chip row.
+     user's to clear from the chip row. What it *does* MUST match what reveals it: pressing it
+     widens the search term and the chips only, and leaves a page narrowing and its return
+     context in force. FR-051's action stays the wider of the two, because it is offered beside a
+     narrowing that matched nothing.
   2. `DOT_CANONICAL_FILTER_ORDER` MUST gain `goal`, `schedule` and `createdBy`, and this listing
      MUST render its chips in that order. Experiments is the first surface in that list that is
      not browsing content, so the constant stops meaning "the order for browsing content". The
