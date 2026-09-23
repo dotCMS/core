@@ -151,8 +151,20 @@ templates:
 ### 5. Timestamp feature numbering — CONFIGURATION ONLY (patch retired in #37649)
 
 **`.specify/init-options.json`** sets `"feature_numbering": "timestamp"`, so a feature created
-without an explicit `--number` is identified by `YYYYMMDD-HHMMSS`, which is collision-free by
-construction. No script is patched.
+without an explicit `--number` is identified by `YYYYMMDD-HHMMSS`. No script is patched.
+
+**What that actually guarantees**, stated precisely because the old patch was sold on a promise it
+did not keep: it removes the *cross-branch sequential reuse* — the identifier no longer depends on
+scanning `specs/`, so a branch nobody pushed can no longer make two developers claim the same
+number. It is **not** collision-proof. `date +%Y%m%d-%H%M%S` has one-second resolution, and
+`create-new-feature.sh:352` errors with *"Feature directory already exists. Rerun to get a new
+timestamp"* when two features are created inside the same second. That case is the residual risk
+recorded below, not an oversight.
+
+Note also that `create-new-feature.sh` does **not** read this setting — it only accepts
+`--timestamp` on the command line. The `/speckit-*` flows are what consult `feature_numbering` and
+pass the flag (see customization #4 for why the fix flow has to do it explicitly). Run the script
+by hand without the flag and you get sequential numbering regardless of what this file says.
 
 Until #37649 this was a patch to `.specify/scripts/bash/create-new-feature.sh` adding
 `get_highest_from_branches()`, a scan of branch names to stop two unmerged branches claiming the
@@ -341,8 +353,12 @@ customizations are split so that most survive automatically:
 | `.specify/init-options.json` | ❌ No (regenerated) | Re-set `"feature_numbering": "timestamp"` (#5); confirm `speckit_version` matches the CLI you used |
 | `.specify/scripts/bash/common.sh`, `setup-plan.sh`, `setup-tasks.sh`, `check-prerequisites.sh` | ❌ No (shipped scripts, patched in-place) | Re-apply the eval-free path resolution patch (#6): direct assignment in `get_feature_paths()` + plain calls at the three call sites. **Re-derive it against the new function bodies; do not apply the old diff textually.** |
 
-**One** shipped file is patched in place — `common.sh` and the three call sites of patch #6,
-counted as one patch. `create-new-feature.sh` left that list in #37649 when patch #5 was retired.
+**One patch** remains against upstream-owned files — patch #6 — and it spans **four** of them:
+`common.sh`, plus the plain calls at `setup-plan.sh`, `setup-tasks.sh` and
+`check-prerequisites.sh`. What dropped from two to one in #37649 is the number of patches, not the
+number of files: `create-new-feature.sh` left the list when patch #5 was retired. Re-applying #6 to
+`common.sh` alone leaves three `eval` call sites standing, which is a half-patched tree that
+reports no error — run `verify-customizations.sh` after re-applying, not instead of reading this.
 We do **not edit** any shipped `/speckit-*` skill or core template, and a gate that an upgrade
 weakens must be re-imposed from a file we own, never by editing the shipped skill.
 

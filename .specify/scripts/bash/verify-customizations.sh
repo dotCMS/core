@@ -48,6 +48,29 @@ FAILED_NAMES=()
 # Each check function prints its own explanation on failure and returns non-zero.
 # `check` runs one and records the outcome. The requirement id travels with the
 # description so a failure says which requirement it belongs to without a lookup.
+# Read one top-level string key out of a small JSON file. Prefers jq, falls back to
+# grep/sed the way common.sh does for feature.json — every other script in this
+# directory provides a jq-free path, and a verifier that cannot run without jq is a
+# verifier that reports false failures on a perfectly valid installation.
+json_string_value() {
+    local file="$1" key="$2"
+    [ -f "$file" ] || { printf ''; return 0; }
+    if command -v jq >/dev/null 2>&1; then
+        jq -r --arg k "$key" '.[$k] // empty' "$file" 2>/dev/null
+        return 0
+    fi
+    { grep -E "\"$key\"[[:space:]]*:" "$file" 2>/dev/null || true; } \
+        | head -n 1 \
+        | sed -E 's/^[^:]*:[[:space:]]*"([^"]*)".*$/\1/'
+}
+
+# Content fingerprint of every file under a directory, used to prove a read-only
+# operation wrote nothing. Deliberately does not use `stat`: its format flag is -f on
+# BSD and -c on GNU, and getting that wrong fails silently rather than loudly.
+fingerprint_dir() {
+    find "$1" -type f -exec cksum {} \; 2>/dev/null | sort
+}
+
 check() {
     local name="$1" requirement="$2" description="$3"
     shift 3
@@ -78,7 +101,7 @@ check() {
 # Today they name three, which is the drift SC-008 exists to remove.
 check_version_agreement() {
     local pinned installed
-    pinned=$(jq -r '.speckit_version // empty' "$REPO_ROOT/.specify/init-options.json" 2>/dev/null)
+    pinned=$(json_string_value "$REPO_ROOT/.specify/init-options.json" speckit_version)
     if [ -z "$pinned" ]; then
         echo "no speckit_version recorded in .specify/init-options.json"
         return 1
@@ -275,8 +298,21 @@ check_preexisting_feature_dir_resolves() {
         return 1
     fi
     local before after out
-    # Fingerprint names and sizes; a write by the resolver changes one of them.
-    before=$(find "$dir" -type f -exec stat -f '%N %z %m' {} \; 2>/dev/null | sort)
+    # Fingerprint with cksum rather than stat. `stat -f` is a FORMAT string on BSD and
+    # means --file-system on GNU, where the format is then read as a path and every call
+    # errors — so on Linux both fingerprints came back empty, the comparison was true,
+    # and this check reported PASS without having compared anything. cksum is POSIX and
+    # prints checksum, size and name on both; the algorithm does not matter because the
+    # two runs are always on the same machine. It also compares CONTENT, which is what
+    # "was this directory written to" actually means.
+    before=$(fingerprint_dir "$dir")
+    # An empty fingerprint must never be mistaken for "nothing changed". This guard is
+    # the durable half of the fix: whatever tool is used, a fingerprint that produces
+    # nothing fails the check instead of silently satisfying it.
+    if [ -z "$before" ]; then
+        echo "could not fingerprint $feature — it contains $(find "$dir" -type f | wc -l | tr -d ' ') files but the fingerprint came back empty, so the read-only property cannot be checked"
+        return 1
+    fi
     out=$(cd "$REPO_ROOT" && SPECIFY_FEATURE_DIRECTORY="$feature" \
         .specify/scripts/bash/check-prerequisites.sh --json --paths-only 2>&1)
     if ! printf '%s' "$out" | grep -qF "$feature/spec.md"; then
@@ -284,7 +320,7 @@ check_preexisting_feature_dir_resolves() {
         echo "$out"
         return 1
     fi
-    after=$(find "$dir" -type f -exec stat -f '%N %z %m' {} \; 2>/dev/null | sort)
+    after=$(fingerprint_dir "$dir")
     if [ "$before" != "$after" ]; then
         echo "resolution modified the pre-existing feature directory; it must be read-only"
         diff <(printf '%s\n' "$before") <(printf '%s\n' "$after") | head -10
@@ -346,7 +382,7 @@ check_numbering_is_collision_free() {
     local opts="$REPO_ROOT/.specify/init-options.json"
     local script="$REPO_ROOT/.specify/scripts/bash/create-new-feature.sh"
     local failures=0 numbering
-    numbering=$(jq -r '.feature_numbering // empty' "$opts" 2>/dev/null)
+    numbering=$(json_string_value "$opts" feature_numbering)
     if [ "$numbering" != "timestamp" ]; then
         echo "feature_numbering is '${numbering:-unset}', not 'timestamp' — sequential numbering in this repo derives its next number from the issue-numbered spec directories and produces a value that looks like a GitHub issue number and is not one"
         failures=$((failures + 1))
@@ -379,7 +415,7 @@ check_numbering_is_collision_free() {
 check_fix_flow_honours_numbering() {
     local skill="$REPO_ROOT/.claude/skills/speckit-specify-fix/SKILL.md"
     local numbering
-    numbering=$(jq -r '.feature_numbering // empty' "$REPO_ROOT/.specify/init-options.json" 2>/dev/null)
+    numbering=$(json_string_value "$REPO_ROOT/.specify/init-options.json" feature_numbering)
     if [ ! -f "$skill" ]; then
         echo "$skill does not exist"
         return 1
@@ -410,7 +446,7 @@ check_customizations_describes_this_tree() {
         return 1
     fi
     local failures=0 version
-    version=$(jq -r '.speckit_version // empty' "$opts" 2>/dev/null)
+    version=$(json_string_value "$opts" speckit_version)
 
     # 1. It names the version the tree actually records.
     if ! grep -qF "$version" "$doc"; then

@@ -242,9 +242,13 @@ disagree with the spec without reading any code.
 
 Name the directory for the **GitHub issue number** — `37070-roles-users-endpoint` — so the branch
 matches the issue everyone else is reading (`create-new-feature.sh --help` for `--number` /
-`--short-name`). Skip the `--number` and you get a timestamp instead
-(`20260922-100416-roles-users-endpoint`): collision-free, but it tells a reviewer nothing. The
-timestamp is the fallback, not the convention.
+`--short-name`). Skip the `--number` and the `/speckit-*` flows fall back to a timestamp
+(`20260922-100416-roles-users-endpoint`). That stops two unpushed branches claiming the same
+number — the identifier no longer comes from scanning `specs/` — but it is not collision-proof:
+the timestamp has one-second resolution, so two features created in the same second still clash
+and the script tells you to rerun. And it tells a reviewer nothing. **The timestamp is the
+fallback, not the convention.** (Running `create-new-feature.sh` by hand without `--timestamp`
+still numbers sequentially; it is the `/speckit-*` commands that read the setting.)
 
 **Stop here.** Open PR 1 with the spec alone and get it **approved** (§3). Everything below
 happens after that — you don't need to wait for it to merge.
