@@ -2,7 +2,7 @@
 
 Complete index of every file under `docs/` — 54 documents. If a doc is not listed here, it is not reachable, and neither a developer browsing nor an AI assistant loading context on demand will find it.
 
-This file and root [`CLAUDE.md`](../CLAUDE.md) are the two entry points. `CLAUDE.md` carries always-loaded context and routes to the docs used most often in day-to-day work; this index covers **everything**, including the less-travelled corners. Both are checked by `scripts/validate-docs-reachability.py`, which fails if any file under `docs/` is unreachable from either.
+This file and root [`CLAUDE.md`](../CLAUDE.md) are the two entry points. `CLAUDE.md` carries always-loaded context and routes to the docs used most often in day-to-day work; this index covers **everything**, including the less-travelled corners. Both are checked by `scripts/validate-docs-reachability.py`, which fails if any file under `docs/` is unreachable from either. It runs on every PR that touches `docs/`, `CLAUDE.md` or the script itself (`.github/workflows/cicd_pr_docs-reachability.yml`).
 
 Descriptions say **when to load** the doc, not what it contains.
 
@@ -113,11 +113,12 @@ Cursor rules live in [`.cursor/rules/`](../.cursor/rules/README.md) (short remin
 
 ## Keeping this index honest
 
-An index is only useful if it is complete, and completeness decays silently — a doc gets added, nobody links it, and it is invisible from then on. `scripts/validate-docs-reachability.py` walks the link graph from `CLAUDE.md` and this file and exits non-zero on any unreachable `.md` under `docs/`, so the decay fails a check instead of going unnoticed.
+An index is only useful if it is complete, and completeness decays silently — a doc gets added, nobody links it, and it is invisible from then on. `scripts/validate-docs-reachability.py` walks the link graph from `CLAUDE.md` and this file and exits non-zero on any unreachable `.md` under `docs/`. It runs as a PR check, so the decay fails a build instead of going unnoticed.
 
 ```bash
 python3 scripts/validate-docs-reachability.py           # report
 python3 scripts/validate-docs-reachability.py --strict  # exit 1 if anything is unreachable
+python3 scripts/validate-docs-reachability.py --links   # also list broken links (report-only)
 ```
 
 When you add a doc, add it here. When you write one, say when to load it, not what it contains — that is what makes an index usable by someone who does not already know the answer.

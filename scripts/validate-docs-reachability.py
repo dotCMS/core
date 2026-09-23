@@ -12,6 +12,10 @@ Usage:
     python3 scripts/validate-docs-reachability.py           # report
     python3 scripts/validate-docs-reachability.py --strict  # exit 1 on any orphan
     python3 scripts/validate-docs-reachability.py --links   # also report broken links
+
+Only orphans gate the exit code. --links is report-only on purpose: the link
+regex also matches example links inside fenced code blocks, so failing on it
+would produce false positives. Treat its output as a to-do list, not a gate.
 """
 import os
 import re
@@ -68,7 +72,8 @@ def main():
     while queue:
         current = queue.popleft()
         try:
-            text = open(current, encoding="utf-8", errors="replace").read()
+            with open(current, encoding="utf-8", errors="replace") as handle:
+                text = handle.read()
         except OSError:
             continue
         found = [(m, False) for m in MD_LINK.findall(text)]
@@ -106,6 +111,7 @@ def main():
         for source, target in sorted(set(broken)):
             print(f"  {source} -> {target}")
 
+    # Only orphans gate the exit code — see the module docstring on --links.
     if strict and orphans:
         return 1
     return 0
