@@ -8,9 +8,11 @@ import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.publishing.sitesearch.OSSiteSearchAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -49,22 +51,66 @@ public class SiteSearchMirrorReconciler {
     }
 
     /**
-     * The per-index mirror status for every logical site-search index that exists on <em>either</em>
-     * engine (so a counterpart missing on one side still appears). Purely factual and phase-independent.
+     * The Site Search half of the report, together with the engines that could not be read.
+     *
+     * @param statuses           per-index mirror status
+     * @param unreachableEngines engine name → why that engine could not be read; empty when both were
      */
-    public List<MirrorStatus> statuses() {
-        final TreeSet<String> names = new TreeSet<>(esImpl.listIndices());
-        names.addAll(osImpl.listIndices());
+    public record SiteSearchMirrors(List<MirrorStatus> statuses,
+            Map<String, String> unreachableEngines) {}
+
+    /**
+     * The per-index mirror status for every logical site-search index that exists on <em>either</em>
+     * engine (so a counterpart missing on one side still appears), plus the engines that could not be
+     * read. Purely factual and phase-independent.
+     *
+     * <p>An engine whose index list cannot be read is recorded as unreachable and asked nothing else:
+     * the rows then come from the other engine alone, with this engine's side marked unavailable, so
+     * one engine's outage no longer takes the whole report down (issue #37636).</p>
+     */
+    public SiteSearchMirrors mirrors() {
+        final Map<String, String> unreachable = new LinkedHashMap<>();
+        final List<String> esNames = namesOrUnreachable(esImpl, MirrorStatus.ELASTICSEARCH, unreachable);
+        final List<String> osNames = namesOrUnreachable(osImpl, MirrorStatus.OPENSEARCH, unreachable);
+        final TreeSet<String> names = new TreeSet<>();
+        if (esNames != null) {
+            names.addAll(esNames);
+        }
+        if (osNames != null) {
+            names.addAll(osNames);
+        }
         // One alias lookup per engine for the whole set — not one per index. Operators identify a
         // site-search index by its alias, never by its sitesearch_<timestamp>_<uuid> name, so the
         // report is unusable without it (issue #36983).
-        final Map<String, String> esAliases = indexToAlias(esImpl);
-        final Map<String, String> osAliases = indexToAlias(osImpl);
+        final Map<String, String> esAliases = esNames == null ? Map.of() : indexToAlias(esImpl);
+        final Map<String, String> osAliases = osNames == null ? Map.of() : indexToAlias(osImpl);
         final List<MirrorStatus> statuses = new ArrayList<>(names.size());
         for (final String name : names) {
-            statuses.add(statusFor(name, esAliases.get(name), osAliases.get(name)));
+            statuses.add(statusFor(name, esAliases.get(name), osAliases.get(name),
+                    unreachable.get(MirrorStatus.ELASTICSEARCH),
+                    unreachable.get(MirrorStatus.OPENSEARCH)));
         }
-        return statuses;
+        return new SiteSearchMirrors(statuses, Map.copyOf(unreachable));
+    }
+
+    /** Kept for callers that only need the rows. See {@link #mirrors()}. */
+    public List<MirrorStatus> statuses() {
+        return mirrors().statuses();
+    }
+
+    /** One engine's site-search index names, or {@code null} after recording why it could not be read. */
+    private static List<String> namesOrUnreachable(final SiteSearchAPI engine, final String engineName,
+            final Map<String, String> unreachable) {
+        try {
+            return engine.listIndices();
+        } catch (Exception e) {
+            final String reason = MirrorStatus.reasonOf(e);
+            Logger.warn(SiteSearchMirrorReconciler.class, engineName
+                    + " could not be reached for migration readiness; reporting its side of the "
+                    + "Site Search indices as unavailable: " + reason, e);
+            unreachable.put(engineName, reason);
+            return null;
+        }
     }
 
     /**
@@ -77,20 +123,33 @@ public class SiteSearchMirrorReconciler {
         return reversed;
     }
 
-    private MirrorStatus statusFor(final String name, final String esAlias, final String osAlias) {
-        final boolean esExists = esImpl.existsOnAllWriteEngines(name);
-        final boolean osExists = osImpl.existsOnAllWriteEngines(name);
-        final long esCount = esExists ? esImpl.documentCount(name) : 0L;
-        final long osCount = osExists ? osImpl.documentCount(name) : 0L;
+    /**
+     * The row for one index. A non-null {@code esUnreachable} / {@code osUnreachable} is the reason that
+     * engine could not be read: its side is reported as unavailable and it is not queried.
+     */
+    private MirrorStatus statusFor(final String name, final String esAlias, final String osAlias,
+            final String esUnreachable, final String osUnreachable) {
         // Physical names as stored: ES is the cluster-prefixed logical name; OS is that + the .os tag
         // (applied via IndexTag, the sole owner of the marker).
         final String esPhysical = clusterPrefixSupplier.get() + name;
         final String osPhysical = IndexTag.OS.tag(esPhysical);
-        final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
-        return new MirrorStatus(name, IndexKind.SITE_SEARCH,
-                new MirrorStatus.EngineCopy(esExists, esCount, esPhysical, esAlias),
-                new MirrorStatus.EngineCopy(osExists, osCount, osPhysical, osAlias),
-                verdict, recommend(name, verdict, esAlias, osAlias));
+        final MirrorStatus.EngineCopy es = copyOn(esImpl, name, esPhysical, esAlias, esUnreachable);
+        final MirrorStatus.EngineCopy os = copyOn(osImpl, name, osPhysical, osAlias, osUnreachable);
+        final Verdict verdict = MirrorStatus.verdictFor(es, os);
+        final String recommendation = verdict == Verdict.UNMEASURED
+                ? MirrorStatus.unmeasuredAdvice("site-search index", name, es, os)
+                : recommend(name, verdict, esAlias, osAlias);
+        return new MirrorStatus(name, IndexKind.SITE_SEARCH, es, os, verdict, recommendation);
+    }
+
+    private static MirrorStatus.EngineCopy copyOn(final SiteSearchAPI engine, final String name,
+            final String physicalName, final String alias, final String unreachableReason) {
+        if (unreachableReason != null) {
+            return MirrorStatus.EngineCopy.unavailable(physicalName, alias, unreachableReason);
+        }
+        final boolean exists = engine.existsOnAllWriteEngines(name);
+        final long count = exists ? engine.documentCount(name) : 0L;
+        return new MirrorStatus.EngineCopy(exists, count, physicalName, alias);
     }
 
     /**

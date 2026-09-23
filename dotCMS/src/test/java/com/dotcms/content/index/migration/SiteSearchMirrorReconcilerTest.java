@@ -6,12 +6,15 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.content.index.migration.MirrorStatus.Verdict;
+import com.dotcms.content.index.migration.SiteSearchMirrorReconciler.SiteSearchMirrors;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import java.util.List;
 import java.util.Map;
@@ -137,5 +140,47 @@ public class SiteSearchMirrorReconcilerTest extends UnitTestBase {
 
         verify(es, times(1)).getAliasToIndexMap();
         verify(os, times(1)).getAliasToIndexMap();
+    }
+
+    /**
+     * Elasticsearch cannot be reached: the index list comes from OpenSearch alone, and the
+     * Elasticsearch side of each row is marked unavailable rather than missing — "missing" would tell
+     * the operator to re-crawl an index that may be perfectly fine (issue #37636). Nothing else is
+     * asked of the engine already known to be down.
+     */
+    @Test
+    public void elasticsearchUnreachable_reportsOpenSearchIndices_andMarksElasticsearchUnavailable() {
+        when(es.listIndices()).thenThrow(new DotRuntimeException("elasticsearch: Name or service not known"));
+
+        final SiteSearchMirrors mirrors = reconciler().mirrors();
+
+        assertEquals(List.of(MirrorStatus.ELASTICSEARCH),
+                List.copyOf(mirrors.unreachableEngines().keySet()));
+        assertEquals(1, mirrors.statuses().size());
+        final MirrorStatus status = mirrors.statuses().get(0);
+        assertEquals(INDEX, status.indexName());
+        assertEquals(Verdict.UNMEASURED, status.verdict());
+        assertFalse(status.es().wasRead());
+        assertEquals(-1, status.es().docCount());
+        assertEquals(10, status.os().docCount());
+        assertFalse(status.recommendation().contains("is missing"));
+        verify(es, never()).documentCount(anyString());
+        verify(es, never()).getAliasToIndexMap();
+    }
+
+    /** The same, the other way round. */
+    @Test
+    public void openSearchUnreachable_reportsElasticsearchIndices_andMarksOpenSearchUnavailable() {
+        when(os.listIndices()).thenThrow(new DotRuntimeException("Connection refused"));
+
+        final SiteSearchMirrors mirrors = reconciler().mirrors();
+
+        assertEquals(List.of(MirrorStatus.OPENSEARCH),
+                List.copyOf(mirrors.unreachableEngines().keySet()));
+        final MirrorStatus status = mirrors.statuses().get(0);
+        assertEquals(Verdict.UNMEASURED, status.verdict());
+        assertEquals(10, status.es().docCount());
+        assertFalse(status.os().wasRead());
+        verify(os, never()).documentCount(anyString());
     }
 }

@@ -22,6 +22,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -117,10 +118,23 @@ public class ContentIndexMirrorReconciler {
      * collapsing them into one value would hand the operator a confident instruction derived from an
      * unknown (issue #37635). {@code unreadableReason} is present only in the second case.</p>
      *
-     * @param statuses         per-index mirror status; empty when no active pointers were resolved
-     * @param unreadableReason why the store could not be read, when that is what happened
+     * <p>{@code unreachableEngines} is the per-engine counterpart of {@code unreadableReason}: the
+     * pointers were read, but one engine's index stats could not be, so its side of every row is
+     * unknown while the other side is still reported (issue #37636).</p>
+     *
+     * @param statuses           per-index mirror status; empty when no active pointers were resolved
+     * @param unreadableReason   why the store could not be read, when that is what happened
+     * @param unreachableEngines engine name → why that engine could not be read; empty when both were
      */
-    public record ContentMirrors(List<MirrorStatus> statuses, Optional<String> unreadableReason) {}
+    public record ContentMirrors(List<MirrorStatus> statuses, Optional<String> unreadableReason,
+            Map<String, String> unreachableEngines) {
+
+        /** Both engines were read (or never needed to be). */
+        public ContentMirrors(final List<MirrorStatus> statuses,
+                final Optional<String> unreadableReason) {
+            this(statuses, unreadableReason, Map.of());
+        }
+    }
 
     /**
      * Per-index mirror status for the active working and live content indices.
@@ -141,17 +155,43 @@ public class ContentIndexMirrorReconciler {
         if (lookup.hasNoPointers()) {
             return new ContentMirrors(List.of(), Optional.empty());
         }
-        return new ContentMirrors(statusesFor(lookup), Optional.empty());
+        // One engine-wide stats call per engine. Either can fail on its own — the old cluster retired
+        // at Phase 3, or any outage — and the other engine's half of the report is still worth
+        // having, so a failure marks that engine unreachable instead of escaping (issue #37636).
+        final Map<String, String> unreachable = new LinkedHashMap<>();
+        final Map<String, IndexStats> esStats =
+                statsOrUnreachable(esImpl, MirrorStatus.ELASTICSEARCH, unreachable);
+        final Map<String, IndexStats> osStats =
+                statsOrUnreachable(osImpl, MirrorStatus.OPENSEARCH, unreachable);
+        return new ContentMirrors(statusesFor(lookup, esStats, osStats, unreachable),
+                Optional.empty(), Map.copyOf(unreachable));
     }
 
-    private List<MirrorStatus> statusesFor(final PointerLookup pointers) {
-        final Map<String, IndexStats> esStats = esImpl.getIndicesStats();
-        final Map<String, IndexStats> osStats = osImpl.getIndicesStats();
+    /**
+     * One engine's index stats, or {@code null} after recording why that engine could not be read.
+     */
+    private static Map<String, IndexStats> statsOrUnreachable(final IndexAPI engine,
+            final String engineName, final Map<String, String> unreachable) {
+        try {
+            return engine.getIndicesStats();
+        } catch (Exception e) {
+            final String reason = MirrorStatus.reasonOf(e);
+            Logger.warn(ContentIndexMirrorReconciler.class, engineName
+                    + " could not be reached for migration readiness; reporting its side of the "
+                    + "content indices as unavailable: " + reason, e);
+            unreachable.put(engineName, reason);
+            return null;
+        }
+    }
+
+    private List<MirrorStatus> statusesFor(final PointerLookup pointers,
+            final Map<String, IndexStats> esStats, final Map<String, IndexStats> osStats,
+            final Map<String, String> unreachable) {
         final DatabaseCounts dbCounts = databaseCountsSupplier.get();
         final List<MirrorStatus> out = new ArrayList<>(2);
-        addStatus(out, IndexKind.CONTENT_WORKING, pointers.working(), esStats, osStats,
+        addStatus(out, IndexKind.CONTENT_WORKING, pointers.working(), esStats, osStats, unreachable,
                 dbCounts == null ? null : dbCounts.working());
-        addStatus(out, IndexKind.CONTENT_LIVE, pointers.live(), esStats, osStats,
+        addStatus(out, IndexKind.CONTENT_LIVE, pointers.live(), esStats, osStats, unreachable,
                 dbCounts == null ? null : dbCounts.live());
         return out;
     }
@@ -251,9 +291,15 @@ public class ContentIndexMirrorReconciler {
         return PointerLookup.failed(store + " could not be read: " + e.getMessage());
     }
 
+    /**
+     * Adds the row for one slot. A {@code null} stats map means that engine could not be read: its
+     * side is reported as unavailable (existence unknown, no count query sent) and the row's verdict
+     * is {@link Verdict#UNMEASURED}, so nothing downstream mistakes "unknown" for "missing".
+     */
     private void addStatus(final List<MirrorStatus> out, final IndexKind kind,
             final SlotPointers pointers, final Map<String, IndexStats> esStats,
-            final Map<String, IndexStats> osStats, final Long databaseDocCount) {
+            final Map<String, IndexStats> osStats, final Map<String, String> unreachable,
+            final Long databaseDocCount) {
         if (pointers.isUnset()) {
             return;
         }
@@ -264,9 +310,9 @@ public class ContentIndexMirrorReconciler {
         final String osBare = pointers.os() == null ? null : esImpl.removeClusterIdFromName(pointers.os());
 
         // Existence from the stats snapshot; the count from a live count query (see class javadoc).
-        final boolean esExists = esBare != null && esStats.containsKey(esBare);
+        final boolean esExists = esStats != null && esBare != null && esStats.containsKey(esBare);
         final long esCount = esExists ? countQuietly(esOps, pointers.es()) : 0L;
-        final boolean osExists = osBare != null && osStats.containsKey(osBare);
+        final boolean osExists = osStats != null && osBare != null && osStats.containsKey(osBare);
         final long osCount = osExists ? countQuietly(osOps, pointers.os()) : 0L;
 
         // The row is named after the engine that owns the content in this phase, with the .os tag
@@ -275,14 +321,23 @@ public class ContentIndexMirrorReconciler {
         final String name = IndexTag.strip(
                 IndexConfigHelper.isMigrationComplete() && osBare != null ? osBare : esBare);
 
-        final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
-        final String recommendation = recommend(name, verdict, osExists)
+        final MirrorStatus.EngineCopy esCopy = esStats == null
+                ? MirrorStatus.EngineCopy.unavailable(pointers.es(), null,
+                        unreachable.get(MirrorStatus.ELASTICSEARCH))
+                : new MirrorStatus.EngineCopy(esExists, esCount, pointers.es());
+        final MirrorStatus.EngineCopy osCopy = osStats == null
+                ? MirrorStatus.EngineCopy.unavailable(pointers.os(), null,
+                        unreachable.get(MirrorStatus.OPENSEARCH))
+                : new MirrorStatus.EngineCopy(osExists, osCount, pointers.os());
+
+        final Verdict verdict = MirrorStatus.verdictFor(esCopy, osCopy);
+        final String recommendation = (verdict == Verdict.UNMEASURED
+                ? MirrorStatus.unmeasuredAdvice("content index", name, esCopy, osCopy)
+                : recommend(name, verdict, osExists))
                 + incompleteNote("Elasticsearch", esExists, esCount, databaseDocCount)
                 + incompleteNote("OpenSearch", osExists, osCount, databaseDocCount);
-        out.add(new MirrorStatus(name, kind,
-                new MirrorStatus.EngineCopy(esExists, esCount, pointers.es()),
-                new MirrorStatus.EngineCopy(osExists, osCount, pointers.os()),
-                verdict, recommendation, databaseDocCount));
+        out.add(new MirrorStatus(name, kind, esCopy, osCopy, verdict, recommendation,
+                databaseDocCount));
     }
 
     /**

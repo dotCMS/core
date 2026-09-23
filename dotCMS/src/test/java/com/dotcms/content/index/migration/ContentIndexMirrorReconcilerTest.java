@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -501,5 +502,86 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         assertFalse(working.es().exists());
         assertNull("an absent copy has no completeness to report", working.esIndexedPercent());
         assertEquals(100.0, working.osIndexedPercent(), 0.001);
+    }
+
+    /**
+     * Elasticsearch cannot be reached — the runbook's "retire the old cluster" step, or any outage.
+     * The report must still answer for OpenSearch: before issue #37636 the stats call threw straight
+     * out of the reconciler and the endpoint returned nothing but the connection error. The
+     * Elasticsearch side is marked unavailable with the reason — not "missing", which would prescribe
+     * a reindex over an unknown — and no count query is sent to an engine already known to be down.
+     */
+    @Test
+    public void elasticsearchUnreachable_reportsOpenSearchSide_andMarksElasticsearchUnavailable() {
+        final Map<String, IndexStats> osStats = Map.of("working_1.os", present(), "live_1.os", present());
+        when(es.getIndicesStats()).thenThrow(
+                new DotRuntimeException("elasticsearch: Name or service not known"));
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(osOps, "working_1", 100);
+        count(osOps, "live_1", 50);
+
+        final ContentMirrors mirrors =
+                reconciler(indicies(PREFIX + "working_1", PREFIX + "live_1")).mirrors();
+
+        assertTrue(mirrors.unreadableReason().isEmpty());
+        assertEquals(List.of(MirrorStatus.ELASTICSEARCH),
+                List.copyOf(mirrors.unreachableEngines().keySet()));
+        assertTrue(mirrors.unreachableEngines().get(MirrorStatus.ELASTICSEARCH)
+                .contains("Name or service not known"));
+        assertEquals(2, mirrors.statuses().size());
+        final MirrorStatus working = mirrors.statuses().get(0);
+        assertEquals("working_1", working.indexName());
+        assertEquals(Verdict.UNMEASURED, working.verdict());
+        assertFalse(working.es().wasRead());
+        assertTrue(working.es().unavailableReason().contains("Name or service not known"));
+        assertFalse(working.es().exists());
+        assertEquals(-1, working.es().docCount());
+        assertEquals("cluster_x.working_1", working.es().physicalName());
+        assertTrue(working.os().wasRead());
+        assertTrue(working.os().exists());
+        assertEquals(100, working.os().docCount());
+        assertEquals(50, mirrors.statuses().get(1).os().docCount());
+        assertFalse("an unknown copy must not be reported as missing",
+                working.recommendation().contains("is missing"));
+        verify(esOps, never()).getIndexDocumentCount(anyString());
+    }
+
+    /** The same, the other way round: OpenSearch down, Elasticsearch still reported. */
+    @Test
+    public void openSearchUnreachable_reportsElasticsearchSide_andMarksOpenSearchUnavailable() {
+        final Map<String, IndexStats> esStats = Map.of("working_1", present(), "live_1", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenThrow(new DotRuntimeException("Connection refused"));
+        count(esOps, "working_1", 100);
+        count(esOps, "live_1", 50);
+
+        final ContentMirrors mirrors =
+                reconciler(indicies(PREFIX + "working_1", PREFIX + "live_1")).mirrors();
+
+        assertEquals(List.of(MirrorStatus.OPENSEARCH),
+                List.copyOf(mirrors.unreachableEngines().keySet()));
+        final MirrorStatus working = mirrors.statuses().get(0);
+        assertEquals(Verdict.UNMEASURED, working.verdict());
+        assertEquals(100, working.es().docCount());
+        assertFalse(working.os().wasRead());
+        assertEquals(-1, working.os().docCount());
+        assertEquals("cluster_x.working_1.os", working.os().physicalName());
+        verify(osOps, never()).getIndexDocumentCount(anyString());
+    }
+
+    /** Both engines down: the rows are still there, both sides unavailable, nothing thrown. */
+    @Test
+    public void bothEnginesUnreachable_rowsStillReported() {
+        when(es.getIndicesStats()).thenThrow(new DotRuntimeException("es down"));
+        when(os.getIndicesStats()).thenThrow(new DotRuntimeException("os down"));
+
+        final ContentMirrors mirrors =
+                reconciler(indicies(PREFIX + "working_1", PREFIX + "live_1")).mirrors();
+
+        assertEquals(2, mirrors.unreachableEngines().size());
+        assertEquals(2, mirrors.statuses().size());
+        assertEquals(Verdict.UNMEASURED, mirrors.statuses().get(0).verdict());
+        assertFalse(mirrors.statuses().get(0).es().wasRead());
+        assertFalse(mirrors.statuses().get(0).os().wasRead());
     }
 }
