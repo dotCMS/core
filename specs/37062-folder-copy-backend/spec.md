@@ -62,10 +62,10 @@ diverge**.
 
 **Duplication is not delete with a different verb, and the differences run in both directions.** It
 is gentler in the ways that shaped most of delete's specification: nothing is destroyed, so no
-folder becomes unusable while a run works on it, nothing is announced to other authors, and two runs
-over the same folders cannot harm each other. It is harsher in one way delete is not: **duplication
-is not idempotent**. Re-running a delete over a folder that is already gone changes nothing;
-re-running a duplication produces a second duplicate. See FR-034 and D-015.
+folder becomes unusable while a run works on it, no busy signal is broadcast to other authors, and
+two runs over the same folders cannot harm each other. It is harsher in one way delete is not:
+**duplication is not idempotent**. Re-running a delete over a folder that is already gone changes
+nothing; re-running a duplication produces a second duplicate. See FR-034 and D-015.
 
 ---
 
@@ -102,16 +102,18 @@ finished.
 4. **Given** a folder holding content of a type that is neither a file asset, a page nor a link,
    such as a Blog entry or a Document, **When** it is duplicated, **Then** that content is present
    in the duplicate too. The shipped walk does not carry it and this feature adds it (FR-012d).
-5. **Given** a folder holding archived content, **When** it is duplicated, **Then** the outcome
-   matches what FR-012e pins, and the duplicate's published state is the one that requirement fixes
-   rather than whatever falls out.
-6. **Given** a folder whose parent is a site root, **When** it is duplicated, **Then** the duplicate
+5. **Given** a folder holding a published page and an unpublished draft, **When** it is duplicated,
+   **Then** the page's duplicate is published and the draft's duplicate is not. Each copy keeps the
+   state its source had (FR-012e).
+6. **Given** a folder holding an item whose working version is archived, **When** it is duplicated,
+   **Then** that item is not duplicated, and the rest of the folder is.
+7. **Given** a folder whose parent is a site root, **When** it is duplicated, **Then** the duplicate
    lands at that site root; **Given** a nested folder, **Then** it lands in its parent folder. Both
    cases work.
-7. **Given** a submission naming exactly one folder, **When** it is made, **Then** it is accepted
+8. **Given** a submission naming exactly one folder, **When** it is made, **Then** it is accepted
    and runs as a batch of one. There is no separate synchronous endpoint for a single folder, and
    the submission is not special-cased into one.
-8. **Given** any folder in the selection, **When** it is duplicated, **Then** the same permission
+9. **Given** any folder in the selection, **When** it is duplicated, **Then** the same permission
    rules apply and the same event is emitted as when that folder is copied through the shipped Site
    Browser copy. What a duplicate *holds* deliberately differs, by FR-012d.
 
@@ -280,6 +282,13 @@ per-folder outcome is still readable and a durable notification was addressed to
 - **FR-004**: A submission that is malformed, meaning no folders, an empty list, or more folders
   than the configured maximum, MUST be refused before any run is created, with distinguishable
   refusals.
+- **FR-004a**: The configured maximum MUST be **advertised** in the application configuration the
+  server already publishes at `/api/v1/appconfiguration`, read from the same constant the endpoint
+  enforces with so the two cannot disagree. This is how bulk upload exposes its ceilings today
+  (`ConfigurationHelper`), and it is what lets the client check a selection before submitting it.
+  The refusal remains the authority; the advertised value is the courtesy. The refusal MUST NOT be
+  relied on to carry the number, because the shared refusal shape puts detail in free-text wording
+  that the contract does not treat as stable.
 - **FR-005**: A caller who is not entitled to use the operation at all MUST be refused at
   submission. Per-path permission is a different question and is FR-012.
 - **FR-005a**: A submission's folder paths are recorded with the run and are therefore readable by
@@ -359,13 +368,24 @@ per-folder outcome is still readable and a durable notification was addressed to
   the content the walk does not carry. Extending the factory would change behaviour for the Site
   Browser and for every plugin calling `FolderAPI.copy`, which is the rollback-unsafe shape D-012
   exists to avoid.
-- **FR-012e**: The system MUST state which **versions** it carries, because the shipped walk filters
-  its sources and nothing in either half said so. File assets are read only where they are working
-  and not archived, pages only through the working-pages lookup, and links only where they are
-  working. Two consequences follow and MUST be settled rather than discovered: archived content is
-  not carried at all, and whether a duplicate of a folder of published pages is itself live is not
-  something today's behaviour answers. The answer MUST be pinned by an acceptance scenario, since it
-  is the first question an author asks after using the feature once.
+- **FR-012e**: The system MUST state which content it carries and in what state, because nothing in
+  either half said so and the answer is less obvious than it looks. Two separate filters apply, and
+  they do different jobs:
+
+  **Which items are copied** is decided by the walk's source reads, which are working-filtered: file
+  assets only where working and not archived, pages through the working-pages lookup, links only
+  where working. So an item whose working version is archived is **not duplicated at all**.
+
+  **What each copied item carries** is decided by the content copy itself, which copies every
+  version of the source, oldest first, and reproduces its state: a version that was live is set live
+  on the copy, and a version that was archived is marked deleted. So **a published page duplicates
+  as a published page**, not as an unpublished working copy. A reading of the working filter alone
+  suggests the opposite, which is why this is stated rather than left to be inferred.
+
+  Generic content carried under FR-012d MUST follow the same two rules, so a duplicate does not
+  treat a Blog entry differently from a page: selected on the same working, non-archived basis, and
+  carried with its published state preserved. Links are the one type whose state handling was not
+  traced, since they are copied through a separate legacy path, and the plan MUST confirm it.
 - **FR-012c**: The contract MUST NOT imply that a client-side permission check can predict the
   outcome, and the server MUST enforce both rights regardless of what the client checked. Under
   duplicate-in-place the client is better placed than bulk delete's, because the target parent is
@@ -441,6 +461,13 @@ per-folder outcome is still readable and a durable notification was addressed to
 - **FR-028**: A run that is working MUST NOT be mistaken for one that has stalled. A single folder
   can take many minutes with no progress event, so whatever the framework uses to detect abandoned
   work MUST tolerate that silence.
+
+  **This is load-bearing, not a tolerance.** Under FR-034 an abandoned run is not retried, so being
+  wrongly marked abandoned ends a healthy run permanently. The signal that the run is alive
+  therefore cannot come from the code doing the work: duplicating one folder is a single blocking
+  call that returns only when the whole subtree is copied, exactly as bulk delete's single-folder
+  call blocks until the folder is gone. Bulk delete found this first and had to keep the run visibly
+  alive from outside the blocking call; the plan MUST say how duplication does the same.
 - **FR-029**: Progress MUST be reported at the granularity that actually exists, which is completed
   top-level folders and nothing finer, and the contract MUST say so rather than leaving the client
   to infer precision the number does not carry.
@@ -455,28 +482,28 @@ per-folder outcome is still readable and a durable notification was addressed to
   parent, cannot interfere: neither destroys anything, and the naming rule gives each duplicate a
   distinct name. **This is a deliberate omission of a requirement bulk delete carries** (its
   FR-029), recorded so its absence reads as a decision rather than an oversight.
-- **FR-034**: The system MUST record, in the processor itself, that **duplication is not
-  idempotent** and that a re-queued run duplicates again everything the first attempt completed. A
-  folder that was duplicated successfully leaves nothing that makes a second attempt a no-op, and
-  the framework holds no durable per-item state, so an interrupted run restarts from the first
-  folder. Each re-run produces a further set of duplicates under further derived names.
+- **FR-034**: The processor MUST record that **duplication is not idempotent**: a folder that was
+  duplicated successfully leaves nothing that makes a second attempt a no-op, and the framework
+  holds no durable per-item state, so a re-run restarts from the first folder and duplicates again
+  everything the first attempt completed, under further derived names. There is no backstop of the
+  kind bulk upload has, where a unique index on a file asset's lower-cased path rejects the second
+  create; the naming rule simply derives the next free name.
 
-  **This is accepted, not prevented, and the reason is that it cannot be prevented from here.** An
-  earlier draft of this document asked the plan to choose between disabling automatic re-queue for
-  this queue and accepting the consequence. The first option does not exist: `@NoRetryPolicy`
-  governs retry after a *failure*, while the abandoned-job sweep re-queues a stalled run
-  unconditionally, without consulting the retry policy at all. Marking the processor no-retry would
-  therefore not prevent a second attempt; it would only leave that attempt unprepared for one. Bulk
-  upload reached this exact conclusion for the same reason and records it on `BulkUploadProcessor`,
-  which is the precedent to follow rather than re-derive.
+  **A re-run can be prevented, and the plan MUST decide whether to.** `@NoRetryPolicy` stops it: an
+  abandoned job put back in the queue is routed through the same retry gate as a failed one, which
+  for a no-retry processor declines and marks the run permanently abandoned, still firing its
+  completion events. An earlier draft of this document said the opposite, relying on a comment in
+  `BulkUploadProcessor` that is itself wrong; bulk delete found and corrected the same claim on its
+  own processor.
 
-  **Where duplication differs from upload, and it is worse.** An interrupted upload re-creating a
-  file asset is stopped by the unique index on the lower-cased path, so the second create is
-  rejected and only the report is wrong. Duplication has no such backstop: the naming rule simply
-  derives the next free name, so a re-run creates a genuinely new folder rather than colliding with
-  the first attempt's. The spec therefore does not promise a defence it does not have, and the
-  obligation on the plan is to state the behaviour in the endpoint's published description so an
-  author who sees two sets of duplicates knows why.
+  **The recommendation is to mark the processor no-retry**, and it points the other way from
+  delete's choice for a reason worth keeping. Delete left the annotation off because a second pass
+  was *useful* to it, correcting its own report. Duplication has nothing to correct and everything
+  to repeat. The cost of no-retry MUST be stated with it: a run abandoned mid-way ends permanently,
+  and because per-folder results are held in memory until the run finishes, its outcome is lost with
+  it. The author learns it ended without learning which folders were duplicated. That is the trade,
+  and it is why FR-028 is load-bearing: not being marked abandoned in the first place is the main
+  defence.
 
 #### Telling the author
 
@@ -492,10 +519,17 @@ per-folder outcome is still readable and a durable notification was addressed to
   recorded outcome.
 - **FR-039**: The system MUST emit a distinguishable completion signal type, so a client can tell a
   finished copy from a finished run of any other kind without inspecting its payload.
-- **FR-040**: The system MUST NOT announce a folder's entry into or exit from a copy to other
-  authors. Bulk delete broadcasts that, so every author who may see a folder can be stopped from
-  walking into one that is being destroyed; nothing about a folder being duplicated makes it unsafe
-  to use, so the broadcast has no purpose here. Recorded as a deliberate omission (D-016).
+- **FR-040**: The system MUST NOT add a busy announcement of the kind bulk delete broadcasts, where
+  every author who may see a folder is told it has entered a delete and later that it has left one.
+  That exists so nobody walks into a folder being destroyed; nothing about a folder being duplicated
+  makes it unsafe to use, so it has no purpose here (D-016).
+
+  **One announcement already exists and MUST be left as it is.** `FolderAPIImpl.copy` emits
+  `COPY_FOLDER` on commit, once per duplicated folder, to every author with read rights on it,
+  excluding the submitter. That is a completion notice, not a busy signal: it arrives after the
+  duplicate exists and says nothing about a run in flight. This feature inherits it by calling the
+  shipped method, and a client listening for it may use it to refresh a listing another author is
+  duplicating into.
 
 #### Contract and documentation
 
@@ -532,7 +566,8 @@ per-folder outcome is still readable and a durable notification was addressed to
 - **C-004**: **Distinguishable submission refusals** for: nothing submitted, over the configured
   maximum, and not entitled (FR-004, FR-005). **There is no overlap refusal**, because there is no
   overlap guard (FR-033). A client written against bulk delete's contract must not carry copy for a
-  refusal this operation cannot produce.
+  refusal this operation cannot produce. **The maximum itself is read from the advertised
+  application configuration** (FR-004a), not from the refusal.
 - **C-005**: **A stable, enumerated set of failure and skip reasons**, each mapped to client copy
   (FR-020). The server's message is diagnostic and is never displayed. Failures: no rights on the
   folder, no rights to add to its parent, the folder no longer resolves, the folder is protected,
@@ -565,10 +600,12 @@ per-folder outcome is still readable and a durable notification was addressed to
   durable record afterwards; it does not poll for completion and does not build a jobs screen.
 - **C-010**: **The signal is emitted after the copies are complete**, so a listing refreshed on it
   shows the new folders rather than racing them.
-- **C-011**: **Nothing is announced to other authors, and nothing needs marking** (FR-040). A folder
-  being duplicated stays fully usable: it can be opened, uploaded into and dragged onto while a run
-  works on it, and neither the source nor any other folder is made inert. A client written against
-  bulk delete's contract must not carry its marking machinery here.
+- **C-011**: **No busy announcement, and nothing needs marking** (FR-040). A folder being duplicated
+  stays fully usable: it can be opened, uploaded into and dragged onto while a run works on it, and
+  neither the source nor any other folder is made inert. A client written against bulk delete's
+  contract must not carry its marking machinery here. The one event that does reach other authors is
+  the existing per-folder `COPY_FOLDER` completion notice, which says a duplicate now exists, never
+  that a run is working.
 
 **Explicitly the server's business, not specified by the client half**: how a run is executed, the
 transaction boundary, what happens to content within a subtree the author cannot read, retry and
@@ -768,30 +805,30 @@ abandonment behaviour, and the durable record's lifetime.
 - **D-014: Behaviour on locked or in-use content is today's behaviour.** Copy reads its sources and
   does not need to destroy or modify them, so it has no analogue of the lock failure delete reports
   per folder. Recorded so its absence from the failure-reason set is deliberate.
-- **D-015: Duplication is not idempotent, a re-queued run duplicates again, and this is accepted
-  because it cannot be prevented from here.** *(FR-034; corrected 2026-09-22 after checking the
-  framework.)* A successful duplication leaves nothing that makes a second attempt a no-op, so an
-  automatically re-queued run repeats everything the first attempt completed. Bulk delete faces the
+- **D-015: Duplication is not idempotent, and the recommendation is not to retry it.** *(FR-034;
+  corrected twice, the second time after @dario-daza traced the retry path on 2026-09-23.)* A
+  successful duplication leaves nothing that makes a second attempt a no-op. Bulk delete faces the
   same absence of durable per-item state and is unharmed, because a delete that already happened
   simply fails to resolve the second time.
 
-  **An earlier draft asked the plan to choose between disabling automatic re-queue and accepting the
-  consequence. That choice was not real.** `@NoRetryPolicy` governs retry after a failure; the
-  abandoned-job sweep calls `putJobBackInQueue` on a stalled run without consulting the retry
-  policy, so no annotation on the processor prevents a second attempt. Bulk upload records exactly
-  this on `BulkUploadProcessor` and deliberately does not mark itself no-retry, on the reasoning
-  that doing so would only leave the inevitable second attempt unprepared for itself. Duplication
-  follows that precedent, and is worse off than upload in one respect worth stating: upload's second
-  attempt is blocked by the unique index on a file asset's lower-cased path, while the naming rule
-  here simply derives the next free name, so a re-run genuinely creates more folders.
-- **D-016: Nothing is marked, blocked or announced.** *(Developer decision, 2026-09-21; FR-040,
-  C-011.)* Bulk delete makes a folder inert everywhere it appears while a run works on it, keeps
-  that true across reloads and authors, and broadcasts a folder's entry into and exit from a delete.
-  All of it exists because a folder being deleted is about to stop existing. Nothing about a folder
-  being duplicated makes it unsafe to open, upload into or drag onto, so this feature carries none
-  of that machinery: no marking, no reading the in-flight run listing, no announcements. The author
-  gets a completion signal and a report. This is the single largest reduction in scope relative to
-  the sibling feature and is why the client half is substantially smaller than bulk delete's.
+  The first draft offered the plan a choice between disabling re-queue and accepting duplicated
+  duplicates. The second draft withdrew that choice on the claim that the abandoned-job sweep
+  ignores the retry policy. That claim was wrong: the sweep puts the job back in the queue, and when
+  it is picked up the queue manager gates an abandoned job through the same retry check as a failed
+  one, so a no-retry processor is not run again. The choice is real, and for duplication it resolves
+  toward no-retry, the opposite of delete, because delete gains from a second pass and duplication
+  only repeats itself. The price is losing a stalled run's per-folder outcome, which makes staying
+  alive (FR-028) the thing that actually protects the author.
+- **D-016: Nothing is marked or blocked, and no busy signal is broadcast.** *(Developer decision,
+  2026-09-21; FR-040, C-011.)* Bulk delete makes a folder inert everywhere it appears while a run
+  works on it, keeps that true across reloads and authors, and broadcasts a folder's entry into and
+  exit from a delete. All of it exists because a folder being deleted is about to stop existing.
+  Nothing about a folder being duplicated makes it unsafe to open, upload into or drag onto, so this
+  feature carries none of that machinery: no marking, no reading the in-flight run listing, no busy
+  announcements. The existing per-folder `COPY_FOLDER` completion event is unaffected and still
+  reaches other authors (FR-040). The author gets a completion signal and a report. This is the
+  single largest reduction in scope relative to the sibling feature and is why the client half is
+  substantially smaller than bulk delete's.
 - **D-017: A selected folder inside another selected folder is skipped, as it is for delete.**
   *(Developer decision, 2026-09-22; FR-016.)* An earlier draft of this document duplicated both, on
   the reasoning that the two duplicates land in different places so neither is redundant. That was
@@ -831,12 +868,13 @@ abandonment behaviour, and the durable record's lifetime.
   distinct names, and cancellation mid-run leaving no partial duplicate. #37062's list additionally
   names a subtree large enough to exercise more than one chunk; under D-012 that case no longer
   applies and **must not be written**.
-- **Saying that a re-queued run duplicates again** (FR-034, D-015). No longer a choice, because the
-  abandonment sweep re-queues regardless of the retry policy, so the obligation is to state the
-  behaviour rather than to pick one. The plan MUST say where it is stated in the endpoint's
-  published description, and MUST carry the same note on the processor class that
-  `BulkUploadProcessor` carries, so the next person to read it does not assume `@NoRetryPolicy`
-  would have helped.
+- **Confirming no-retry and keeping the run alive** (FR-028, FR-034, D-015). The plan MUST confirm
+  the recommendation to mark the processor `@NoRetryPolicy` or give a reason not to, and MUST say
+  how a run stays visibly alive while a single folder's duplication blocks, since under no-retry a
+  false abandonment ends a healthy run and loses its outcome. Bulk delete's processor solved the
+  same problem first and is the precedent to read before designing a new one. The
+  `BulkUploadProcessor` javadoc that claims the annotation is ineffective is wrong and MUST NOT be
+  copied into this processor.
 - **How a folder is matched between a run and a row.** The client has both a path and an identifier
   for every folder it lists, and which one travels in the submission, in the run's parameters and in
   the outcome need not be the same choice. Both plans MUST agree, and this half MUST state what the

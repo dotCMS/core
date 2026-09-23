@@ -333,13 +333,20 @@ offered, says it will act on four, and acts on four.
   remain available for it and the server's per-folder refusal MUST be what reports it. The client
   MUST NOT guess a refusal. Filtering under FR-005a acts on rights the client **has**, never on
   their absence, and the per-folder outcome remains the only authority (backend FR-012c).
-- **FR-006**: Where a submission is refused for carrying more folders than the configured maximum,
-  the client MUST explain the refusal in terms of that limit, using the number the server reports
-  with the refusal. The client MUST NOT hold its own copy of the maximum, and MUST NOT gate the
-  action on it before submitting: the limit is not exposed ahead of time and the client learns it by
-  being refused. An earlier draft required reading the limit up front, which the server half has no
-  contract item to satisfy; exposing it would be a new capability rather than a wording change, and
-  is not worth one message.
+- **FR-006**: The client MUST read the maximum number of folders one submission may carry from the
+  application configuration the server advertises, and MUST check a selection against it before
+  submitting, explaining a selection over the limit in terms of that limit. It MUST NOT hold its own
+  copy of the number. This is exactly how bulk upload treats its ceilings today: read from the
+  advertised configuration, checked as a courtesy, with the server remaining the enforcer. Where the
+  advertised value is absent, on an instance older than the field, the client MUST NOT gate and the
+  server's refusal is what reports it.
+
+  **This reverses an earlier draft**, which had the client learn the limit only from the refusal on
+  the grounds that exposing it ahead of time would be a new capability. It is not new: the
+  application configuration already advertises bulk upload's ceilings from the same constants the
+  server enforces with. And learning it from the refusal would have depended on the refusal carrying
+  the number, which nothing required and which the shared refusal shape only offers as free-text
+  wording the contract does not treat as stable.
 
 #### Committing
 
@@ -469,8 +476,10 @@ C-011), from this side.
 - **A count to display, from the server** (C-003). The number of folders accepted into the run comes
   back with the handle and equals the total the outcome later reports. FR-019 depends on it.
 - **Distinguishable refusals** (C-004): nothing submitted, over the maximum, and not entitled.
-  FR-033 rests on this. **There is no overlap refusal**, because the server carries no overlap
-  guard, which is why FR-017 forbids writing copy for one.
+  FR-033 rests on this. The maximum itself is read from the advertised configuration rather than
+  from the refusal (backend FR-004a), which is what FR-006 depends on. **There is no overlap
+  refusal**, because the server carries no overlap guard, which is why FR-017 forbids writing copy
+  for one.
 - **A stable, enumerated set of failure and skip reasons** (C-005), each mapped to client copy
   (FR-023). **Not a subset of bulk delete's, despite an earlier draft saying so.** Duplication drops
   "something inside is in use" but adds several the shared vocabulary does not have: a second
@@ -493,9 +502,12 @@ C-011), from this side.
   screen.
 - **The signal is emitted after the copies are complete** (C-010). FR-029 and FR-030 refresh on it
   and depend on that ordering, which the client cannot observe for itself.
-- **Nothing is announced and nothing needs marking** (C-011). A folder being duplicated stays usable
-  throughout, which is what lets FR-014 and FR-015 remove the largest part of the sibling feature's
-  client work.
+- **No busy announcement, and nothing needs marking** (C-011). A folder being duplicated stays
+  usable throughout, which is what lets FR-014 and FR-015 remove the largest part of the sibling
+  feature's client work. One event does reach this client from other authors' runs: the existing
+  per-folder `COPY_FOLDER` notice, sent once a duplicate exists. It is a completion notice rather
+  than a busy signal, and a listing MAY refresh on it when another author duplicates into the folder
+  being viewed.
 
 **Explicitly the server's business, not specified here**: how a run is executed, the transaction
 boundary, how a duplicate's name is derived, what happens to content within a subtree the author
@@ -574,8 +586,9 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
   `specs/37062-folder-copy-backend/spec.md`.
 - **Copying a folder to a chosen destination**, and the destination picker #33468 describes. Removed
   by the backend half's D-005; it belongs to folder move (#37165).
-- **Marking, blocking or announcing a folder while it is being duplicated** (FR-014, FR-015). Bulk
-  folder delete's entire in-flight machinery has no analogue here and is deliberately not built.
+- **Marking or blocking a folder, or broadcasting that it is busy, while it is being duplicated**
+  (FR-014, FR-015). Bulk folder delete's entire in-flight machinery has no analogue here and is
+  deliberately not built.
 - **Cancelling a run from this client** (D-005 below). The server provides cancellation and the
   contract fixes its wording; surfacing it is expected to arrive with the background task manager
   (#33331), where bulk upload's stop also lives.
