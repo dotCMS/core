@@ -234,6 +234,19 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
  * Counts come from the response, never from the number of items submitted: both endpoints answer 200
  * with per-item failures inside, so an item locked by another user would otherwise read as a success.
  */
+/**
+ * Which vocabulary an outcome's failures speak.
+ *
+ * A named constant rather than the bare strings: the producer in `withActionExecution` and the
+ * consumer in the shell both test it, and two literals that must agree are two chances to typo one.
+ */
+export const OUTCOME_KIND = {
+    UPLOAD: 'upload',
+    FOLDER_DELETE: 'folderDelete'
+} as const;
+
+export type DotContentDriveOutcomeKind = (typeof OUTCOME_KIND)[keyof typeof OUTCOME_KIND];
+
 export interface DotContentDriveActionExecutionResult {
     actionName: string;
     /**
@@ -272,7 +285,7 @@ export interface DotContentDriveActionExecutionResult {
      *
      * Absent means upload, which is the only producer that predates this field.
      */
-    outcomeKind?: 'upload' | 'folderDelete';
+    outcomeKind?: DotContentDriveOutcomeKind;
     /**
      * The folders whose contents this run changed, as `//hostname/path` references.
      *

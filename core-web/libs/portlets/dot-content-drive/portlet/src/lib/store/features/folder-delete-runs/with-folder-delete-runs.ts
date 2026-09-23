@@ -24,6 +24,11 @@ import {
     DotFolderBulkDeleteCompletedEvent,
     DotFolderDeleteAnnouncementEvent
 } from '@dotcms/dotcms-models';
+import {
+    DotFolderTreeNodeContentData,
+    DotFolderTreeNodeItem,
+    LOAD_MORE_NODE_TYPE
+} from '@dotcms/portlets/content-drive/ui';
 
 import { SYSTEM_HOST, SYSTEM_HOST_PATH } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
@@ -60,6 +65,52 @@ const rowHostnameOf = (
  * Each match contributes **both** `inode` and `identifier`, because the search service only
  * backfills one from the other when the API returned none.
  */
+/**
+ * The same, for the sidebar tree.
+ *
+ * **A second resolution, not duplication.** The two surfaces render different collections: the
+ * listing shows one folder's children a page at a time, the tree shows the hierarchy. Resolving
+ * only against the listing marked a folder in the tree exactly when it happened to also be on the
+ * current page — at the site root the two overlap, so it looked right, and stepping into a folder
+ * left the rest of the tree unmarked with a delete running.
+ *
+ * Each node carries its own `hostname`, so unlike a listing row it needs no browsed-site heuristic
+ * to be qualified. Walks children too: a run started deeper than the level on screen still marks
+ * its folder once the author expands to it.
+ */
+const resolveTreeKeys = (refs: Set<string>, nodes: DotFolderTreeNodeItem[]): string[] => {
+    if (!refs.size) {
+        return [];
+    }
+
+    const keys: string[] = [];
+
+    const visit = (node: DotFolderTreeNodeItem): void => {
+        const data = node?.data;
+
+        // A load-more row is a node with no folder behind it, so it has nothing to mark.
+        if (data && LOAD_MORE_NODE_TYPE !== data.type) {
+            const folder = data as DotFolderTreeNodeContentData;
+
+            if (refs.has(toFolderRef(folder.hostname, folder.path))) {
+                if (folder.inode) {
+                    keys.push(folder.inode);
+                }
+
+                if (folder.id) {
+                    keys.push(folder.id);
+                }
+            }
+        }
+
+        (node?.children ?? []).forEach(visit);
+    };
+
+    nodes.forEach(visit);
+
+    return keys;
+};
+
 const resolveRowKeys = (
     refs: Set<string>,
     items: DotContentDriveItem[],
@@ -115,7 +166,11 @@ interface WithFolderDeleteRunsState {
 export function withFolderDeleteRuns() {
     return signalStoreFeature(
         {
-            state: type<DotContentDriveState>(),
+            // Intersected with the sidebar's slice rather than declaring `DotContentDriveState`
+            // alone: `folders` is what the TREE renders, and marking it is a different resolution
+            // from marking the listing. `withSidebar` composes before this feature, so the member
+            // is there at runtime; this is what makes it visible to the type system.
+            state: type<DotContentDriveState & { folders: DotFolderTreeNodeItem[] }>(),
             // A required input rather than something recomputed: `busyRows` belongs to
             // `withActionExecution`, which must be installed before this feature. Reading it here is
             // what lets both sources meet in ONE computed — see `allBusyRows`.
@@ -141,13 +196,16 @@ export function withFolderDeleteRuns() {
              * is a second chance to drift, and the drift reads as a folder inert in one surface and
              * usable in the other.
              */
-            const inFlightFolderKeys = computed<string[]>(() =>
-                resolveRowKeys(
-                    inFlightRefs(),
-                    store.items(),
-                    rowHostnameOf(store.path(), store.currentSite()?.hostname)
-                )
-            );
+            const inFlightFolderKeys = computed<string[]>(() => [
+                ...new Set([
+                    ...resolveRowKeys(
+                        inFlightRefs(),
+                        store.items(),
+                        rowHostnameOf(store.path(), store.currentSite()?.hostname)
+                    ),
+                    ...resolveTreeKeys(inFlightRefs(), store.folders())
+                ])
+            ]);
 
             return {
                 /** Every folder any in-flight run is working on, deduplicated. */

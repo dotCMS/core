@@ -39,6 +39,7 @@ import {
 } from '@dotcms/dotcms-models';
 
 import {
+    OUTCOME_KIND,
     DotContentDriveActionExecution,
     DotContentDriveActionExecutionResult,
     DotContentDriveRun,
@@ -1014,7 +1015,7 @@ export function withActionExecution() {
                                     failures: (event.results ?? []).filter(
                                         (item) => 'SUCCESS' !== item.status
                                     ),
-                                    outcomeKind: 'folderDelete',
+                                    outcomeKind: OUTCOME_KIND.FOLDER_DELETE,
                                     // Arrived unprompted, possibly minutes after the author moved
                                     // on, so nothing on screen reflects it — the notification is
                                     // the only way they learn (FR-024).

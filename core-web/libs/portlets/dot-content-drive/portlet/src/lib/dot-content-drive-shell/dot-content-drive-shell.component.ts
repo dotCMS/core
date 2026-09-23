@@ -96,6 +96,7 @@ import {
     ROOT_PATH
 } from '../shared/constants';
 import {
+    OUTCOME_KIND,
     DotContentDriveContentTypeSelectorPayload,
     DotContentDriveDialog,
     DotContentDriveSortOrder,
@@ -959,7 +960,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 ? (selectedNodeData as DotFolderTreeNodeContentData)
                 : undefined;
 
-        const isFolderDelete = 'folderDelete' === outcomeKind;
+        const isFolderDelete = OUTCOME_KIND.FOLDER_DELETE === outcomeKind;
 
         if (isFolderDelete) {
             // The listing and the sidebar tree load separately, so refreshing one is not refreshing

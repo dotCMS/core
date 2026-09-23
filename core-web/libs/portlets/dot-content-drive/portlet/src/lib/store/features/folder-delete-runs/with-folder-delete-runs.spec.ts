@@ -17,6 +17,7 @@ import {
     DotFolderDeleteActiveRun,
     DotFolderDeleteAnnouncementEvent
 } from '@dotcms/dotcms-models';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { SYSTEM_HOST_ID } from '@dotcms/ui';
 
 import { withFolderDeleteRuns } from './with-folder-delete-runs';
@@ -76,6 +77,22 @@ describe('withFolderDeleteRuns', () => {
     });
 
     /**
+     * A sidebar tree node as the hierarchy holds it — carrying its OWN hostname, unlike a listing
+     * row, so it needs no browsed-site heuristic to be qualified.
+     */
+    const treeNode = (
+        path: string,
+        inode: string,
+        id: string,
+        children: DotFolderTreeNodeItem[] = []
+    ) =>
+        ({
+            key: inode,
+            data: { type: 'folder', hostname: HOSTNAME, path, inode, id },
+            children
+        }) as unknown as DotFolderTreeNodeItem;
+
+    /**
      * `withFolderDeleteRuns` declares `busyRows` as a required input — it belongs to
      * `withActionExecution`, which the real store installs first. Standing in for it here keeps this
      * spec about the server-derived half without dragging in the whole execution feature.
@@ -91,9 +108,23 @@ describe('withFolderDeleteRuns', () => {
             withComputed(() => ({ busyRows: computed<string[]>(() => []) }))
         );
 
+    /**
+     * The tree the sidebar renders. Deliberately NOT the same folders as `items`: a folder in the
+     * tree that is not on the listing's current page is exactly the case that used to go unmarked.
+     */
+    const treeState = {
+        folders: [
+            // Deliberately NOT among `items`: a folder the tree renders and the listing's current
+            // page does not is exactly the case that used to go unmarked.
+            treeNode('/tree-only/', 'inode-t', 'id-t', [
+                treeNode('/tree-only/deep/', 'inode-d', 'id-d')
+            ])
+        ]
+    };
+
     const store = signalStore(
         { providedIn: 'root' },
-        withState(initialState),
+        withState({ ...initialState, ...treeState }),
         withBusyRowsStub(),
         withFolderDeleteRuns()
     );
@@ -347,6 +378,34 @@ describe('withFolderDeleteRuns', () => {
             expect(instance.inFlightFolderKeys().sort()).toEqual(['id-a', 'inode-a']);
         });
 
+        /**
+         * **The cold-load gap (@zJaaal, PR #37688).** Marking used to resolve only against
+         * `items` — the LISTING's rows — while the sidebar renders `folders`. At the site root the
+         * two overlap, so it looked right; step into a folder and the rest of the tree went
+         * unmarked with a delete running. Reported as "does not trigger unless you click on the
+         * root/folder".
+         */
+        it('should mark a tree folder the listing is not showing', () => {
+            // `/tree-only/` is in the tree and NOT in `items`. Resolving against the listing alone
+            // left it live while a delete ran on it.
+            build([run('r1', ['//demo.dotcms.com/tree-only/'])]);
+
+            expect(instance.inFlightFolderKeys().sort()).toEqual(['id-t', 'inode-t']);
+        });
+
+        it('should mark a tree folder nested below the level on screen', () => {
+            // A run can start deeper than whatever the author has expanded to.
+            build([run('r1', ['//demo.dotcms.com/tree-only/deep/'])]);
+
+            expect(instance.inFlightFolderKeys().sort()).toEqual(['id-d', 'inode-d']);
+        });
+
+        it('should not mark a tree folder no run names', () => {
+            build([run('r1', [PATH_A])]);
+
+            expect(instance.inFlightFolderKeys()).not.toContain('inode-d');
+        });
+
         it('should not match a same-named folder on a different site', () => {
             // The bare row path `/old-a/` exists on every site. Resolving it without the browsed
             // site's hostname would mark this site's folder because another site's is being
@@ -377,7 +436,9 @@ describe('withFolderDeleteRuns', () => {
 
         const systemHostStore = signalStore(
             { providedIn: 'root' },
-            withState(systemHostState),
+            // `folders: []` because this block is about a listing row on System Host; the tree
+            // resolution has its own coverage above.
+            withState({ ...systemHostState, folders: [] as DotFolderTreeNodeItem[] }),
             withBusyRowsStub(),
             withFolderDeleteRuns()
         );
