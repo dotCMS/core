@@ -1656,7 +1656,11 @@ describe('DotEmaShellComponent', () => {
 
             const banner = spectator.query(byTestId('experiment-banner'));
 
-            expect(banner).not.toBeNull();
+            // `expect(...).not.toBeNull()` does not narrow the type, so assert before reaching in.
+            if (!banner) {
+                throw new Error('experiment banner should be rendered');
+            }
+
             // The condition outlives any click, so there is nothing a close button could
             // truthfully mean.
             expect(banner.querySelector('[data-testid="close-message"]')).toBeNull();
@@ -1680,8 +1684,10 @@ describe('DotEmaShellComponent', () => {
             const lock = spectator.query(byTestId('message'));
             const experiment = spectator.query(byTestId('experiment-banner'));
 
-            expect(lock).not.toBeNull();
-            expect(experiment).not.toBeNull();
+            if (!lock || !experiment) {
+                throw new Error('both banners should be rendered when the page is locked');
+            }
+
             // Order is a guaranteed property, not an accident of template layout: the lock is
             // what stops them editing at all, so it has to be read first.
             const position = lock.compareDocumentPosition(experiment);

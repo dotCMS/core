@@ -202,7 +202,8 @@ public class ExperimentVariantEditIntegrationTest {
                         "The experiment was created with a variant beside its control"));
     }
 
-    private static Contentlet saveContentletOnVariant(final Variant variant, final String value) {
+    private static Contentlet saveContentletOnVariant(final Variant variant, final String value)
+            throws DotDataException, DotSecurityException {
         final Field textField = new FieldDataGen()
                 .name(TEXT_FIELD_VAR)
                 .velocityVarName(TEXT_FIELD_VAR)

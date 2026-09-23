@@ -97,6 +97,13 @@ const LIVE_EXPERIMENT_STATUSES: readonly DotExperimentStatus[] = [
     DotExperimentStatus.SCHEDULED
 ];
 
+/** Narrowing helpers: the store's experiment is optional, so its status may be absent. */
+const isFinished = (status?: DotExperimentStatus): boolean =>
+    !!status && FINISHED_EXPERIMENT_STATUSES.includes(status);
+
+const isLive = (status?: DotExperimentStatus): boolean =>
+    !!status && LIVE_EXPERIMENT_STATUSES.includes(status);
+
 /**
  * The single row drawn while no experiment exists yet (#37003).
  *
@@ -210,9 +217,7 @@ export class DotExperimentsConfigureVariantsComponent {
         // only a finished one stays frozen. `$isLocked` itself must keep its meaning, because it
         // also freezes the configuration form's name, description, traffic allocation, goal,
         // scheduling and Save. Widening it here would unfreeze all of those.
-        const experimentIsFinished = FINISHED_EXPERIMENT_STATUSES.includes(
-            this.store.experiment()?.status
-        );
+        const experimentIsFinished = isFinished(this.store.experiment()?.status);
 
         return this.store.$variants().map((variant, index) => {
             const isControl = isControlVariant(variant);
@@ -509,7 +514,7 @@ export class DotExperimentsConfigureVariantsComponent {
         // PREVIEW explicitly, and previewing a live variant takes none of the risk this question
         // is about — asking there would put a dialog in front of the safe way out. The control
         // never reaches EDIT in any status, so it never asks either.
-        const costsSomething = mode === UVE_MODE.EDIT && LIVE_EXPERIMENT_STATUSES.includes(status);
+        const costsSomething = mode === UVE_MODE.EDIT && isLive(status);
 
         if (!costsSomething) {
             leave();
