@@ -87,9 +87,13 @@ public class FolderBulkDeleteHelper {
                     "no folder paths were submitted");
         }
 
-        // FR-012: collapsed before the run, so the outcome reports each distinct path once.
-        // LinkedHashSet so the run still attempts folders in submission order.
-        final Set<String> distinctPaths = new LinkedHashSet<>(form.assetPaths());
+        // Collapsed before the run, so the outcome reports each distinct path once.
+        // Normalized before collapsing: "//host/a" and "//host/a/" are the same folder, but as raw
+        // strings they would be two set entries. LinkedHashSet keeps submission order.
+        final Set<String> distinctPaths = new LinkedHashSet<>();
+        for (final String path : form.assetPaths()) {
+            distinctPaths.add(normalize(path));
+        }
 
         final int maxPaths = Config.getIntProperty(MAX_PATHS_KEY, DEFAULT_MAX_PATHS);
         if (distinctPaths.size() > maxPaths) {

@@ -165,4 +165,36 @@ public class FolderBulkDeleteResourceIT extends Junit5WeldBaseTest {
 
         assertEquals(1, response.submitted());
     }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteHelper#submit(FolderBulkDeleteForm, User)}
+     * Given Scenario: The same folder submitted twice, once with a trailing slash and once
+     * without — the same path as far as any folder path is concerned, but two different strings
+     * ExpectedResult: Still collapsed to one — submitted is 1, and the single stored path is the
+     * normalized (trailing-slash) form, matching what the processor's own dedup logic already
+     * normalizes to (#37685 review — previously both survived, and the second was reported
+     * PATH_NOT_FOUND against a folder the first had just deleted)
+     */
+    @Test
+    public void test_submit_samePathDifferingOnlyByTrailingSlash_collapsedBeforeTheRun()
+            throws Exception {
+
+        final String pathWithSlash = pathOf(folder());
+        final String pathWithoutSlash =
+                pathWithSlash.substring(0, pathWithSlash.length() - 1);
+        final FolderBulkDeleteForm form = FolderBulkDeleteForm.builder()
+                .assetPaths(List.of(pathWithSlash, pathWithoutSlash))
+                .build();
+
+        final AbstractFolderBulkDeleteSubmitResponse response = helper.submit(form, admin);
+
+        assertEquals(1, response.submitted());
+
+        final List<String> storedPaths = FolderBulkDeleteHelper.pathsOf(
+                jobQueueManagerAPI.getJob(response.jobId()).parameters());
+        assertEquals(1, storedPaths.size(),
+                "only one path must reach the job's own parameters — found: " + storedPaths);
+        assertEquals(pathWithSlash, storedPaths.getFirst(),
+                "the stored path must be the normalized (trailing-slash) form");
+    }
 }
