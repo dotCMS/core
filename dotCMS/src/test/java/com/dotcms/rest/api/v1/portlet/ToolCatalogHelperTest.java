@@ -3,9 +3,11 @@ package com.dotcms.rest.api.v1.portlet;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.business.portal.PortletAPI;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PortletID;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import org.junit.Before;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -188,6 +191,17 @@ public class ToolCatalogHelperTest {
         assertEquals("X", json.get("title").asText());
         assertTrue(json.get("isCustom").asBoolean());
         assertEquals(3, json.size());
+    }
+
+    /**
+     * Given Scenario: loading the portlets fails.
+     * Expected Result: the failure propagates instead of turning into an empty catalog.
+     */
+    @Test
+    public void catalog_propagatesPortletLoadFailure() throws Exception {
+        when(portletApi.findAllPortlets()).thenThrow(new SystemException("db down"));
+
+        assertThrows(DotRuntimeException.class, () -> helper.catalog(user));
     }
 
     // ==================== US3: toCustomToolView ====================

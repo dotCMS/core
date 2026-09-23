@@ -308,7 +308,9 @@ public class PortletResource implements Serializable {
 
     /**
      * Saves a new working version of an existing custom content tool. The form must carry the
-     * identifier of the tool. Requires an authenticated back-end user with access to the
+     * identifier of the tool. Only custom content tools can be rewritten: an id that belongs to
+     * a tool shipped with the product (Language Variables included) or to no tool is answered
+     * with 404 and nothing changes. Requires an authenticated back-end user with access to the
      * {@code roles}, {@code tools} or {@code tools-beta} portlet, or the CMS Administrator role.
      *
      * @param request  the current request
@@ -319,8 +321,10 @@ public class PortletResource implements Serializable {
             operationId = "updatePortlet",
             summary = "Update a custom content tool",
             description = "Replaces the name, base types, content types and data view mode of an existing custom "
-                    + "content tool. Requires an authenticated back-end user with access to the roles, tools or "
-                    + "tools-beta portlet, or the CMS Administrator role."
+                    + "content tool. Refuses, with 404 and no change, an id that is not a custom content tool: "
+                    + "tools shipped with the product cannot be rewritten this way. Requires an authenticated "
+                    + "back-end user with access to the roles, tools or tools-beta portlet, or the CMS "
+                    + "Administrator role."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -332,7 +336,7 @@ public class PortletResource implements Serializable {
                             + "roles, tools or tools-beta portlets and is not a CMS Administrator",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404",
-                    description = "No portlet has the given id",
+                    description = "No portlet has the given id, or it is a tool shipped with the product",
                     content = @Content(mediaType = "application/json"))
     })
     @PUT
@@ -354,8 +358,15 @@ public class PortletResource implements Serializable {
 
         try {
             final String portletId = portletApi.portletIdPrefixCleaner(formData.portletId);
-            if (!UtilMethods.isSet(portletApi.findPortlet(portletId))) {
+            final Portlet existing = portletApi.findPortlet(portletId);
+            if (!UtilMethods.isSet(existing)) {
                 throw new DoesNotExistException("Portlet with Id: " + formData.portletId + " does not exist");
+            }
+            // Only admin-made tools may be rewritten: a shipped tool stored in the database, such as
+            // Language Variables, resolves to the same c_ id but is not a custom content tool.
+            if (!portletApi.isCustomContentPortlet(existing)) {
+                throw new DoesNotExistException("Portlet with Id: " + formData.portletId
+                        + " is not a custom content tool");
             }
             final Portlet contentPortlet = portletApi.findPortlet("content");
 

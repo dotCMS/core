@@ -138,10 +138,11 @@ paths:
     put:
       tags: [Portlets]
       operationId: updatePortlet
-      summary: Update a custom content tool (existing endpoint, gate changed)
+      summary: Update a custom content tool (existing endpoint, changed)
       description: >
         CHANGED — gate widened to `roles`, `tools` or `tools-beta`, or CMS Administrator.
-        Request body and responses unchanged.
+        CHANGED — target narrowed (FR-013): an id that is not a custom content tool is refused
+        with 404 and nothing is changed. Request body and success response unchanged.
       requestBody:
         content:
           application/json:
@@ -151,7 +152,7 @@ paths:
         "200":
           description: Updated; entity carries the stored portlet id
         "401": { description: Unauthorized — see above }
-        "404": { description: Portlet does not exist (unchanged) }
+        "404": { description: "No portlet has the given id, or it is a tool shipped with the product (Language Variables included)" }
 
   /v1/portlet/custom/{portletId}/_addtolayout/{layoutId}:
     put:

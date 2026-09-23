@@ -122,8 +122,9 @@ deletes a custom content tool. Both succeed. A third user with neither is reject
    the tool is gone from every section that contained it, and open admin sessions refresh
    their navigation without a hard reload. This is existing behaviour and must not regress.
 7. **Given** the id of a tool that ships with the product, Language Variables included, **When**
-   any authorised user attempts to delete it through the custom-tool delete, **Then** the
-   response is not found and the tool is still present in every section that had it.
+   any authorised user attempts to delete it through the custom-tool delete or to overwrite it
+   through the custom-tool update, **Then** the response is not found, its configuration is
+   unchanged and the tool is still present in every section that had it.
 8. **Given** a non-admin backend user whose only relevant grant is a section containing the
    Tools (Beta) portlet, **When** they attempt to add a tool to a section through the existing
    add-to-section operation, **Then** the request is rejected as unauthorized, exactly as
@@ -256,7 +257,8 @@ before any portlet named `tools` is registered, which is how the test grants it.
   Administrator. Any other caller MUST receive 401 Unauthorized with no tool data.
 - **FR-009**: The existing operations to create, update and delete a custom content tool MUST
   accept a caller who holds `roles`, `tools` or `tools-beta` in a granted section, or is a CMS
-  Administrator. Their request and response contracts MUST NOT change.
+  Administrator. Their request and response contracts MUST NOT change, except that the update
+  refuses a target that is not a custom content tool (FR-013).
 - **FR-009a**: The existing operation that adds a tool to a section the caller holds MUST keep
   its current Roles-only gate. It accepts any placeable tool, not only custom ones, so widening
   it would let a Tools holder add the Roles or Users tool to their own section. The new portlet
@@ -268,9 +270,9 @@ before any portlet named `tools` is registered, which is how the test grants it.
   today.
 - **FR-012**: Every endpoint added or changed MUST be described in the generated API
   documentation with response schemas that match what is actually returned.
-- **FR-013**: The delete of a custom content tool MUST refuse, with not found and without
-  changing any data, any id that is not a custom content tool under FR-004. Language Variables
-  is therefore refused.
+- **FR-013**: The delete and the update of a custom content tool MUST refuse, with not found
+  and without changing any data, any id that is not a custom content tool under FR-004.
+  Language Variables is therefore refused by both.
 
 ### Key Entities
 
@@ -310,8 +312,8 @@ before any portlet named `tools` is registered, which is how the test grants it.
   delete.
 - **SC-007**: No catalog title is a raw translation key in a default install with all
   configured languages.
-- **SC-008**: Zero shipped tools can be removed from any section through the custom-tool
-  delete, for any caller including administrators.
+- **SC-008**: Zero shipped tools can be removed from any section, or have their configuration
+  rewritten, through the custom-tool delete or update, for any caller including administrators.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -324,9 +326,9 @@ before any portlet named `tools` is registered, which is how the test grants it.
   layout and portlet services are read, not modified, except for the one-line addition of the
   new portlet id.
 - **Backward-compatibility expectations**: Every existing operation keeps its contract. Existing endpoints
-  admit more callers, never fewer. The one narrowing is the custom-tool delete refusing ids that
-  are not custom tools. Removing a shipped tool from sections was never this operation's
-  purpose; the role-scoped per-portlet remove and the layout editor keep serving that need. Rolling back
+  admit more callers, never fewer. The one narrowing is the custom-tool delete and update
+  refusing ids that are not custom tools. Removing or rewriting a shipped tool was never these
+  operations' purpose; the role-scoped per-portlet remove and the layout editor keep serving that need. Rolling back
   is safe: a section that contains `tools-beta` simply has a portlet the older release does not
   gate on, and the frontend PR ships the `tools-beta` portlet registration independently. No
   stored data changes shape. The legacy Dojo screen continues to work for anyone who has not

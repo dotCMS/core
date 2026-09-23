@@ -14814,9 +14814,10 @@ paths:
       - Portlets
     put:
       description: "Replaces the name, base types, content types and data view mode\
-        \ of an existing custom content tool. Requires an authenticated back-end user\
-        \ with access to the roles, tools or tools-beta portlet, or the CMS Administrator\
-        \ role."
+        \ of an existing custom content tool. Refuses, with 404 and no change, an\
+        \ id that is not a custom content tool: tools shipped with the product cannot\
+        \ be rewritten this way. Requires an authenticated back-end user with access\
+        \ to the roles, tools or tools-beta portlet, or the CMS Administrator role."
       operationId: updatePortlet
       requestBody:
         content:
@@ -14839,7 +14840,8 @@ paths:
         "404":
           content:
             application/json: {}
-          description: No portlet has the given id
+          description: "No portlet has the given id, or it is a tool shipped with\
+            \ the product"
       summary: Update a custom content tool
       tags:
       - Portlets

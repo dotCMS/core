@@ -503,6 +503,29 @@ public class PortletResourceIntegrationTest {
     }
 
     /**
+     * Given Scenario: an administrator sends the custom-tool update for Language Variables, a
+     * product tool stored as a database row, with a different name, base types and view mode.
+     * Expected Result: 404; the stored configuration is exactly what it was before.
+     */
+    @Test
+    public void updateCustom_shippedDbTool_404_configUnchanged() throws Exception {
+        ensureLanguageVariablesPortlet();
+        final String langVars = PortletID.LANGUAGE_VARIABLES.toString();
+        final Map<String, String> before = new HashMap<>(portletAPI.findPortlet(langVars).getInitParams());
+
+        final Response response = resource.updatePortlet(adminRequest(), CustomPortletForm.builder()
+                .withPortletId("Language-Variables")
+                .withPortletName("Hijacked")
+                .withBaseTypes("CONTENT")
+                .withContentTypes("")
+                .withDataViewMode("card")
+                .build());
+
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());
+        assertEquals(before, portletAPI.findPortlet(langVars).getInitParams());
+    }
+
+    /**
      * Given Scenario: an id no tool has is sent to the custom-tool delete.
      * Expected Result: 404.
      */

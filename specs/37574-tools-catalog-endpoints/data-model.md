@@ -107,8 +107,10 @@ CMS Administrators pass every set through `LayoutAPIImpl.doesUserHaveAccessToPor
 
 ## State transitions
 
-None new. Create/update/delete of custom tools keep their existing transitions; the delete gains a
-precondition (`isCustomContentPortlet`) before `PortletAPI.deletePortlet` runs.
+None new. Create/update/delete of custom tools keep their existing transitions; the update and the
+delete gain a precondition (`isCustomContentPortlet` on the existing portlet) before
+`PortletAPI.savePortlet` / `PortletAPI.deletePortlet` run, so a shipped tool stored in the database
+can be neither rewritten nor removed through them.
 
 ## Validation rules carried over (unchanged)
 

@@ -2,10 +2,12 @@ package com.dotcms.rest.api.v1.portlet;
 
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.business.portal.PortletAPI;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
@@ -71,10 +73,17 @@ public class ToolCatalogHelper {
      *
      * @param user the caller, whose language decides the titles
      * @return the catalog rows
+     * @throws DotRuntimeException when the portlets cannot be loaded; the caller answers an error
+     *                             rather than an empty catalog
      */
     public List<ToolCatalogEntryView> catalog(final User user) {
-        final Collection<Portlet> portlets = Try.of(portletApi::findAllPortlets)
-                .getOrElse(Collections.emptyList());
+        final Collection<Portlet> portlets;
+        try {
+            portlets = portletApi.findAllPortlets();
+        } catch (final SystemException e) {
+            // Surface the failure instead of answering an empty catalog that looks like "no tools".
+            throw new DotRuntimeException("Unable to load the portlets for the tools catalog", e);
+        }
         final boolean hideOldLanguages = Config.getBooleanProperty(
                 FeatureFlagName.FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET, true);
         final String languagesId = PortletID.LANGUAGES.toString();
