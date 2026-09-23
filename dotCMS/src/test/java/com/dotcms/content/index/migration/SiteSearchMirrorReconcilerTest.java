@@ -42,8 +42,8 @@ public class SiteSearchMirrorReconcilerTest extends UnitTestBase {
     public void setUp() {
         es = mock(SiteSearchAPI.class);
         os = mock(SiteSearchAPI.class);
-        when(es.listIndices()).thenReturn(List.of(INDEX));
-        when(os.listIndices()).thenReturn(List.of(INDEX));
+        when(es.listIndicesOrThrow()).thenReturn(List.of(INDEX));
+        when(os.listIndicesOrThrow()).thenReturn(List.of(INDEX));
         when(es.existsOnAllWriteEngines(anyString())).thenReturn(true);
         when(os.existsOnAllWriteEngines(anyString())).thenReturn(true);
         when(es.documentCount(anyString())).thenReturn(10L);
@@ -133,8 +133,8 @@ public class SiteSearchMirrorReconcilerTest extends UnitTestBase {
     /** The alias lookup is one call per engine for the whole set, not one per index. */
     @Test
     public void aliasLookup_runsOncePerEngine() {
-        when(es.listIndices()).thenReturn(List.of(INDEX, "sitesearch_20260811090000"));
-        when(os.listIndices()).thenReturn(List.of(INDEX, "sitesearch_20260811090000"));
+        when(es.listIndicesOrThrow()).thenReturn(List.of(INDEX, "sitesearch_20260811090000"));
+        when(os.listIndicesOrThrow()).thenReturn(List.of(INDEX, "sitesearch_20260811090000"));
 
         assertEquals(2, reconciler().statuses().size());
 
@@ -150,7 +150,7 @@ public class SiteSearchMirrorReconcilerTest extends UnitTestBase {
      */
     @Test
     public void elasticsearchUnreachable_reportsOpenSearchIndices_andMarksElasticsearchUnavailable() {
-        when(es.listIndices()).thenThrow(new DotRuntimeException("elasticsearch: Name or service not known"));
+        when(es.listIndicesOrThrow()).thenThrow(new DotRuntimeException("elasticsearch: Name or service not known"));
 
         final SiteSearchMirrors mirrors = reconciler().mirrors();
 
@@ -171,7 +171,7 @@ public class SiteSearchMirrorReconcilerTest extends UnitTestBase {
     /** The same, the other way round. */
     @Test
     public void openSearchUnreachable_reportsElasticsearchIndices_andMarksOpenSearchUnavailable() {
-        when(os.listIndices()).thenThrow(new DotRuntimeException("Connection refused"));
+        when(os.listIndicesOrThrow()).thenThrow(new DotRuntimeException("Connection refused"));
 
         final SiteSearchMirrors mirrors = reconciler().mirrors();
 

@@ -46,7 +46,7 @@ import java.util.function.Supplier;
  * from the other there would report "Elasticsearch has no copy" for an index that exists and holds
  * content, so both stores are read and the generation split is reported as what it is (issue #37635).</p>
  *
- * <p><strong>Existence</strong> comes from each engine leaf's {@code getIndicesStats()} — one call per
+ * <p><strong>Existence</strong> comes from each engine leaf's {@code getIndicesStatsOrThrow()} — one call per
  * engine covering the whole index set, so both slots are decided from a single snapshot. Those stats
  * maps are keyed by the <em>cluster-stripped</em> name (Elasticsearch un-tagged, OpenSearch carrying
  * {@code .os}), so each raw name is stripped of the cluster prefix and then, for the OpenSearch lookup,
@@ -173,7 +173,9 @@ public class ContentIndexMirrorReconciler {
     private static Map<String, IndexStats> statsOrUnreachable(final IndexAPI engine,
             final String engineName, final Map<String, String> unreachable) {
         try {
-            return engine.getIndicesStats();
+            // The propagating variant: the default OpenSearch getIndicesStats() answers an outage with
+            // an empty map, which would read here as "no copies" and prescribe a reindex.
+            return engine.getIndicesStatsOrThrow();
         } catch (Exception e) {
             final String reason = MirrorStatus.reasonOf(e);
             Logger.warn(ContentIndexMirrorReconciler.class, engineName

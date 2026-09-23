@@ -138,8 +138,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         // trip Mockito's UnfinishedStubbingException.
         final Map<String, IndexStats> esStats = Map.of("working_1", present(), "live_1", present());
         final Map<String, IndexStats> osStats = Map.of("working_1.os", present(), "live_1.os", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(esOps, "working_1", 100); count(osOps, "working_1", 100);
         count(esOps, "live_1", 50);     count(osOps, "live_1", 50);
 
@@ -165,8 +165,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     public void missingOsCounterpart_onWorking() {
         final Map<String, IndexStats> esStats = Map.of("working_1", present(), "live_1", present());
         final Map<String, IndexStats> osStats = Map.of("live_1.os", present()); // working_1.os absent
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(esOps, "working_1", 100);
         count(esOps, "live_1", 50); count(osOps, "live_1", 50);
 
@@ -187,8 +187,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     public void countDrift_onLive() {
         final Map<String, IndexStats> esStats = Map.of("working_1", present(), "live_1", present());
         final Map<String, IndexStats> osStats = Map.of("working_1.os", present(), "live_1.os", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(esOps, "working_1", 100); count(osOps, "working_1", 100);
         count(esOps, "live_1", 50);     count(osOps, "live_1", 40);
 
@@ -217,8 +217,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, "3");
         final Map<String, IndexStats> osStats =
                 Map.of("working_1.os", present(), "live_1.os", present());
-        when(es.getIndicesStats()).thenReturn(Map.of());
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(Map.of());
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(osOps, "working_1", 683); count(osOps, "live_1", 682);
 
         final List<MirrorStatus> statuses = reconciler(null, osStore(
@@ -253,8 +253,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, "3");
         final Map<String, IndexStats> esStats = Map.of("working_OLD", present());
         final Map<String, IndexStats> osStats = Map.of("working_NEW.os", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         when(esOps.getIndexDocumentCount(PREFIX + "working_OLD")).thenReturn(600L);
         when(osOps.getIndexDocumentCount(PREFIX + "working_NEW.os")).thenReturn(683L);
 
@@ -336,8 +336,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     public void unsetSlot_skipped() {
         final Map<String, IndexStats> esStats = Map.of("live_1", present());
         final Map<String, IndexStats> osStats = Map.of("live_1.os", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(esOps, "live_1", 50); count(osOps, "live_1", 50);
 
         final List<MirrorStatus> statuses = reconciler(indicies(null, PREFIX + "live_1")).statuses();
@@ -357,8 +357,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         // Build the maps first: present() calls when(), which cannot run inside another when().
         final Map<String, IndexStats> esStats = Map.of("working_1", present());
         final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(esOps, "working_1", 683); count(osOps, "working_1", 15);
 
         final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null)).statuses().get(0);
@@ -378,8 +378,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     public void coverage_isMeasuredAgainstTheDatabase() {
         final Map<String, IndexStats> esStats = Map.of("working_1", present());
         final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(esOps, "working_1", 686); count(osOps, "working_1", 21);
 
         final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
@@ -400,8 +400,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     public void coverage_absentWithoutADatabaseDenominator() {
         final Map<String, IndexStats> esStats = Map.of("working_1", present());
         final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(esOps, "working_1", 686); count(osOps, "working_1", 21);
 
         final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null)).statuses().get(0);
@@ -420,8 +420,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     public void coverage_completeMirror_isNotFlagged() {
         final Map<String, IndexStats> esStats = Map.of("working_1", present());
         final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(esOps, "working_1", 686); count(osOps, "working_1", 686);
 
         final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
@@ -441,8 +441,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     public void countQueryFailure_isReportedAsUnmeasurable() {
         final Map<String, IndexStats> esStats = Map.of("working_1", present());
         final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(esOps, "working_1", 683);
         when(osOps.getIndexDocumentCount("cluster_x.working_1.os"))
                 .thenThrow(new DotRuntimeException("OS unreachable"));
@@ -467,8 +467,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     public void bothCountQueriesFailing_isNeverInSync() {
         final Map<String, IndexStats> esStats = Map.of("working_1", present());
         final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         when(esOps.getIndexDocumentCount("cluster_x.working_1"))
                 .thenThrow(new DotRuntimeException("ES unreachable"));
         when(osOps.getIndexDocumentCount("cluster_x.working_1.os"))
@@ -492,8 +492,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     @Test
     public void absentCopy_reportsNoIndexedPercentage() {
         final Map<String, IndexStats> osStats = Map.of("working_1.os", present());
-        when(es.getIndicesStats()).thenReturn(Map.of());
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(es.getIndicesStatsOrThrow()).thenReturn(Map.of());
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(osOps, "working_1", 686);
 
         final MirrorStatus working = reconciler(indicies(PREFIX + "working_1", null),
@@ -514,9 +514,9 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     @Test
     public void elasticsearchUnreachable_reportsOpenSearchSide_andMarksElasticsearchUnavailable() {
         final Map<String, IndexStats> osStats = Map.of("working_1.os", present(), "live_1.os", present());
-        when(es.getIndicesStats()).thenThrow(
+        when(es.getIndicesStatsOrThrow()).thenThrow(
                 new DotRuntimeException("elasticsearch: Name or service not known"));
-        when(os.getIndicesStats()).thenReturn(osStats);
+        when(os.getIndicesStatsOrThrow()).thenReturn(osStats);
         count(osOps, "working_1", 100);
         count(osOps, "live_1", 50);
 
@@ -550,8 +550,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     @Test
     public void openSearchUnreachable_reportsElasticsearchSide_andMarksOpenSearchUnavailable() {
         final Map<String, IndexStats> esStats = Map.of("working_1", present(), "live_1", present());
-        when(es.getIndicesStats()).thenReturn(esStats);
-        when(os.getIndicesStats()).thenThrow(new DotRuntimeException("Connection refused"));
+        when(es.getIndicesStatsOrThrow()).thenReturn(esStats);
+        when(os.getIndicesStatsOrThrow()).thenThrow(new DotRuntimeException("Connection refused"));
         count(esOps, "working_1", 100);
         count(esOps, "live_1", 50);
 
@@ -572,8 +572,8 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     /** Both engines down: the rows are still there, both sides unavailable, nothing thrown. */
     @Test
     public void bothEnginesUnreachable_rowsStillReported() {
-        when(es.getIndicesStats()).thenThrow(new DotRuntimeException("es down"));
-        when(os.getIndicesStats()).thenThrow(new DotRuntimeException("os down"));
+        when(es.getIndicesStatsOrThrow()).thenThrow(new DotRuntimeException("es down"));
+        when(os.getIndicesStatsOrThrow()).thenThrow(new DotRuntimeException("os down"));
 
         final ContentMirrors mirrors =
                 reconciler(indicies(PREFIX + "working_1", PREFIX + "live_1")).mirrors();

@@ -102,7 +102,8 @@ public class SiteSearchMirrorReconciler {
     private static List<String> namesOrUnreachable(final SiteSearchAPI engine, final String engineName,
             final Map<String, String> unreachable) {
         try {
-            return engine.listIndices();
+            // The propagating variant — see ContentIndexMirrorReconciler for why.
+            return engine.listIndicesOrThrow();
         } catch (Exception e) {
             final String reason = MirrorStatus.reasonOf(e);
             Logger.warn(SiteSearchMirrorReconciler.class, engineName
