@@ -14,7 +14,12 @@
         <!-- Ahead of the value branch deliberately: while the labels are still being resolved
              there is nothing truthful to render after the title, and the raw values would be an
              identifier the user never chose. -->
-        <i class="pi pi-spin pi-spinner ml-1 text-sm leading-none" data-testid="chip-loading"></i>
+        <i
+            class="material-symbols-outlined ml-1 animate-spin text-sm leading-none"
+            aria-hidden="true"
+            data-testid="chip-loading">
+            progress_activity
+        </i>
     } @else if (title() && active() && !isToggle()) {
         <span data-testid="chip-values">: {{ valuesLabel() }}</span>
     } @else if (!isToggle() && emptyLabel()) {

@@ -1,7 +1,7 @@
 import { from, Observable, of } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 
 import { catchError, map, mergeMap, switchMap, tap, toArray } from 'rxjs/operators';
 
@@ -79,7 +79,16 @@ const RESOLVE_CONCURRENCY = 3;
  * `includedefault` both default to false and this service does not send them, so the list is real
  * people rather than system accounts.
  */
-@Injectable({ providedIn: 'root' })
+/**
+ * Not auto-provided. The directory search is wanted by whichever chip is asking, and there is
+ * nothing here worth sharing across the application — no cache, no subscription, no state, just a
+ * shaped call. A root singleton would put it in every injector that never asks for it, so
+ * `DotUserFilterComponent` provides it and its lifetime matches the control that needs it.
+ *
+ * `@Service` rather than `@Injectable`: Angular 22's decorator for this, with `autoProvided: false`
+ * saying explicitly that a provider list is the caller's job.
+ */
+@Service({ autoProvided: false })
 export class DotUserSearchService {
     readonly #http = inject(HttpClient);
 

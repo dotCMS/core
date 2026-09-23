@@ -28,11 +28,16 @@ describe('DotUserFilterComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotUserFilterComponent,
-        providers: [
+        // Component-level, because the component provides the real service itself: the search is
+        // scoped to the chip that asks for it, so a provider on the TestBed would be shadowed and
+        // every test would hit the real HTTP path.
+        componentProviders: [
             mockProvider(DotUserSearchService, {
                 searchPage: vi.fn().mockReturnValue(of(directoryPage(['u1', 'u2'], 2))),
                 resolveNames: vi.fn().mockReturnValue(of({}))
-            }),
+            })
+        ],
+        providers: [
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
@@ -57,7 +62,10 @@ describe('DotUserFilterComponent', () => {
         spectator = createComponent({
             props: { titleKey: 'users.filter.title', emptyLabelKey: 'all' } as never
         });
-        searchService = spectator.inject(DotUserSearchService);
+        // From the COMPONENT injector: the component provides the search itself, so the instance
+        // the tests arm has to be the one the component resolved, not a second one from the
+        // TestBed that nothing would ever call.
+        searchService = spectator.inject(DotUserSearchService, true);
 
         // Re-armed per test, not once in the factory. The factory's `vi.fn()`s are shared across
         // every test in the file and this suite does not restore mocks, so a `mockReturnValue` set

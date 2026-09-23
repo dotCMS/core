@@ -1,14 +1,7 @@
+import { signalMethod } from '@ngrx/signals';
+
 import { HttpErrorResponse } from '@angular/common/http';
-import {
-    Component,
-    computed,
-    effect,
-    inject,
-    input,
-    output,
-    signal,
-    untracked
-} from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { PopoverModule } from 'primeng/popover';
@@ -45,7 +38,10 @@ const SEARCH_DEBOUNCE_MS = 300;
 @Component({
     selector: 'dot-user-filter',
     imports: [PopoverModule, DotChipFilterComponent, DotLazyMultiselectComponent, DotMessagePipe],
-    templateUrl: './dot-user-filter.component.html'
+    templateUrl: './dot-user-filter.component.html',
+    // The service is not auto-provided: it holds nothing worth sharing, so its lifetime is this
+    // chip's rather than the application's.
+    providers: [DotUserSearchService]
 })
 export class DotUserFilterComponent {
     readonly #search = inject(DotUserSearchService);
@@ -168,24 +164,25 @@ export class DotUserFilterComponent {
             }))
         );
 
+    /**
+     * Folds each resolution into the accumulator.
+     *
+     * The resource decides *when* to fetch and what to cancel; this only records what came back.
+     * `signalMethod` is what makes that safe to write: it tracks the signal it is called with and
+     * runs the body untracked, so recording a name cannot loop back into the resource whose params
+     * read the same accumulator. The guard is still that a name just recorded leaves
+     * `#unresolvedIds` smaller, never larger, so the sequence terminates.
+     */
+    readonly #foldResolved = signalMethod<Record<string, string> | undefined>((resolved) => {
+        if (!resolved) {
+            return;
+        }
+
+        this.#namesById.update((names) => ({ ...names, ...resolved }));
+    });
+
     constructor() {
-        /**
-         * Folds each resolution into the accumulator.
-         *
-         * The resource decides *when* to fetch and what to cancel; this only records what came
-         * back. Writing to a signal read by the same resource's params would loop, hence the
-         * `untracked` — the guard is that a name just recorded leaves `#unresolvedIds` smaller,
-         * never larger, so the sequence terminates.
-         */
-        effect(() => {
-            const resolved = this.#resolved.value();
-
-            if (!resolved) {
-                return;
-            }
-
-            untracked(() => this.#namesById.update((names) => ({ ...names, ...resolved })));
-        });
+        this.#foldResolved(this.#resolved.value);
     }
 
     /**
