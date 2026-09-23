@@ -1,6 +1,7 @@
 package com.dotcms.jobs.business.processor.impl;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -24,6 +25,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -446,6 +448,123 @@ public class FolderBulkDeleteProcessorIT extends Junit5WeldBaseTest {
         final Folder childStillThere = folderAPI.find(child.getInode(), admin, false);
         assertTrue(childStillThere != null && UtilMethods.isSet(childStillThere.getInode()),
                 "the subfolder itself must survive too — its own permission check is what failed");
+    }
+
+    /** One folder holding one piece of content, and the non-admin user who will delete it. */
+    private record ContentScenario(Folder folder, Contentlet content, User deleter) { }
+
+    /**
+     * Builds one folder holding one piece of content, a deleter and a locker, set up the way the
+     * manual run of this scenario was (which reported {@code IN_USE} on a real instance):
+     * <ul>
+     *   <li>Both users are Back-end Users, like anyone who can call the endpoint, and neither is
+     *   a CMS admin: {@code canLock} skips the lock check for admins, and a non-backend user only
+     *   finds live content in the index, so {@code FolderAPIImpl} would see nothing to destroy
+     *   in this never-published content.</li>
+     *   <li>Deleter, on the folder: READ, EDIT and EDIT_PERMISSIONS ({@code FolderAPIImpl.delete}
+     *   checks the last two). On content inherited from the folder: READ, EDIT and PUBLISH
+     *   ({@code canLock} checks EDIT, {@code internalDestroy} checks PUBLISH).</li>
+     *   <li>Locker, on content inherited from the folder: READ and EDIT, enough to lock it.</li>
+     * </ul>
+     * The content keeps the System Workflow {@code ContentTypeDataGen} attaches, like real content.
+     */
+    private ContentScenario contentScenario(final boolean locked) throws Exception {
+
+        final Role backEndUserRole = APILocator.getRoleAPI().loadBackEndUserRole();
+        final User deleter = new UserDataGen().roles(backEndUserRole).nextPersisted();
+        final String deleterRoleId = APILocator.getRoleAPI()
+                .loadRoleByKey(deleter.getUserId()).getId();
+        final User locker = new UserDataGen().roles(backEndUserRole).nextPersisted();
+        final String lockerRoleId = APILocator.getRoleAPI()
+                .loadRoleByKey(locker.getUserId()).getId();
+        grantPermission(site, deleterRoleId, PermissionAPI.PERMISSION_READ);
+        grantPermission(site, lockerRoleId, PermissionAPI.PERMISSION_READ);
+
+        final Folder folder = folder();
+        final String contentPermissionType = Contentlet.class.getCanonicalName();
+        APILocator.getPermissionAPI().save(List.of(
+                new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, folder.getPermissionId(),
+                        deleterRoleId, PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                                | PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true),
+                new Permission(contentPermissionType, folder.getPermissionId(), deleterRoleId,
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                                | PermissionAPI.PERMISSION_PUBLISH, true),
+                new Permission(contentPermissionType, folder.getPermissionId(), lockerRoleId,
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true)
+        ), folder, admin, false);
+
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet content = new ContentletDataGen(contentType.id())
+                .host(site)
+                .folder(folder)
+                .nextPersisted();
+
+        if (locked) {
+            APILocator.getContentletAPI().lock(content, locker, false);
+        }
+
+        return new ContentScenario(folder, content, deleter);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: The same folder, content and deleter as the {@code IN_USE} test below, but
+     * nobody holds a lock on the content
+     * ExpectedResult: SUCCESS, and both the folder and the content are gone. The control for the
+     * {@code IN_USE} test: the deleter's rights are enough, so a failure there comes from the lock
+     */
+    @Test
+    public void test_process_unlockedContent_nonAdminDeleter_folderAndContentDeleted()
+            throws Exception {
+
+        final ContentScenario scenario = contentScenario(false);
+
+        final Job job = jobForPaths(List.of(pathOf(scenario.folder())), scenario.deleter());
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        final BatchItemResult result = resultFor(processor.getResultMetadata(job),
+                pathOf(scenario.folder()));
+        assertEquals(BatchItemStatus.SUCCESS, result.status(),
+                "reason: " + result.reason() + ", message: " + result.message());
+        assertThrowsDoesNotExist(scenario.folder().getInode());
+        assertNull(APILocator.getContentletAPI().find(scenario.content().getInode(), admin, false),
+                "the content must have been destroyed with its folder");
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: A folder whose only content is locked by another user, deleted by a
+     * non-admin who otherwise has every right needed (see the control test above)
+     * ExpectedResult: Recorded FAILED/IN_USE, and the folder, the content and the lock survive.
+     * {@code canLock} throws {@code DotLockException}, which {@code FolderAPIImpl} rewraps (also
+     * through the System Workflow's {@code Destroy} action), so only walking the cause chain
+     * recovers it (#37685 review)
+     */
+    @Test
+    public void test_process_contentLockedByAnotherUser_recordedAsInUse() throws Exception {
+
+        final ContentScenario scenario = contentScenario(true);
+
+        final Job job = jobForPaths(List.of(pathOf(scenario.folder())), scenario.deleter());
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        final BatchItemResult result = resultFor(processor.getResultMetadata(job),
+                pathOf(scenario.folder()));
+        assertEquals(BatchItemStatus.FAILED, result.status(),
+                "reason: " + result.reason() + ", message: " + result.message());
+        assertEquals(BatchFailureReason.IN_USE, result.reason().orElseThrow(),
+                "message: " + result.message());
+
+        final Folder folderStillThere = folderAPI.find(scenario.folder().getInode(), admin, false);
+        assertTrue(folderStillThere != null && UtilMethods.isSet(folderStillThere.getInode()),
+                "the folder must be untouched — its delete failed on the locked content");
+        final Contentlet contentAfter = APILocator.getContentletAPI()
+                .find(scenario.content().getInode(), admin, false);
+        assertNotNull(contentAfter, "the locked content must not have been destroyed");
+        assertTrue(APILocator.getVersionableAPI().getLockedBy(contentAfter).isPresent(),
+                "the other user's lock must still be in place");
     }
 
     /**
