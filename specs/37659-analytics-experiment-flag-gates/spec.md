@@ -428,3 +428,6 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
   enforced at the endpoint level, not embedded in the token.
 - The gates described here are dotCMS-side pre-flight checks and are not a replacement for
   any existing validations in the analytics pipeline.
+- No non-UI consumers of `GET /api/v1/analytics/health` are known; the response-shape change
+  introduced by FR-003a affects only the Analytics portlet, which is updated as part of this
+  feature.
