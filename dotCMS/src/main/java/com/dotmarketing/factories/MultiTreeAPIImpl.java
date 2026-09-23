@@ -178,6 +178,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_TWO_LANGUAGES =
             SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_TWO_LANGUAGES + NON_ARCHIVED_IN_VARIANT_AND_TWO_LANGUAGES;
 
+    // Page-level variant fallback probe, mirroring getMultiTreesByVariant: a page with NO rows at
+    // all in a variant renders DEFAULT's rows instead.
+    private static final String SELECT_MULTI_TREE_EXISTS_BY_PARENT_AND_VARIANT =
+            "SELECT 1 FROM multi_tree WHERE parent1 = ? AND variant_id = ? LIMIT 1";
+
     private static final String SELECT_NOT_EMPTY_CONTENTLET_STYLES_BY_PAGE =
             SELECT_ALL + "WHERE parent1 = ? AND style_properties IS NOT NULL";
 
@@ -790,22 +795,22 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             final boolean defaultContentToDefaultLanguageGuard = Config.getBooleanProperty(
                     "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
 
-            final Set<String> existing;
-            if (languageIdOpt.isPresent() && defaultContentToDefaultLanguageGuard) {
-                final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-                if (defaultLanguageId == languageIdOpt.get()) {
-                    existing = this.getNonArchivedContentlets(pageId, personalization, variantId,
-                            languageIdOpt.get());
-                } else {
-                    existing = this.getNonArchivedContentlets(pageId, personalization, variantId,
-                            languageIdOpt.get(), defaultLanguageId);
-                }
-            } else if (languageIdOpt.isPresent()) {
-                existing = this.getNonArchivedContentlets(pageId, personalization, variantId,
-                        languageIdOpt.get());
-            } else {
-                existing = this.getNonArchivedContentlets(pageId, personalization, variantId);
-            }
+            // Page-level variant fallback, mirroring getMultiTreesByVariant. A page with no rows at
+            // all in the requested variant renders DEFAULT's rows, so those are what a save there
+            // would displace and what the guard must measure.
+            //
+            // The condition is "does this page have ANY row in that variant", NOT "did the count
+            // come back empty". The latter is also true when the variant's own rows exist but are
+            // all archived, and falling back then would count DEFAULT's live content against a
+            // variant that legitimately has none — inflating the count into false rejections, the
+            // very bug class issue #37377 was about.
+            final String countVariantId =
+                    !DEFAULT_VARIANT.name().equals(variantId)
+                            && !this.hasMultiTreesInVariant(pageId, variantId)
+                            ? DEFAULT_VARIANT.name()
+                            : variantId;
+            final Set<String> existing = this.countNonArchivedForGuard(pageId, personalization,
+                    countVariantId, languageIdOpt, defaultContentToDefaultLanguageGuard);
             if (!existing.isEmpty()) {
                 final int netLoss = existing.size() - multiTrees.size();
                 final Set<String> incomingIds = multiTrees.stream()
@@ -1935,6 +1940,59 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 secondLanguageId,
                 variantId);
         return this.getOriginalContentlets(SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_TWO_LANGUAGES, params);
+    }
+
+    /**
+     * Returns whether the given HTML Page has any {@link MultiTree} row at all in the given Variant.
+     *
+     * <p>Used by the net-loss guard to decide whether the page-level Variant fallback applies. It
+     * mirrors {@link #getMultiTreesByVariant(String, String)}, which serves DEFAULT's rows for a
+     * page that has none of its own in the requested Variant.</p>
+     *
+     * @param pageId    The ID of the HTML Page.
+     * @param variantId The Variant to look for rows in.
+     *
+     * @return {@code true} if at least one row exists for that page and Variant.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private boolean hasMultiTreesInVariant(final String pageId, final String variantId)
+            throws DotDataException {
+        return !new DotConnect().setSQL(SELECT_MULTI_TREE_EXISTS_BY_PARENT_AND_VARIANT)
+                .addParam(pageId)
+                .addParam(variantId)
+                .loadObjectResults()
+                .isEmpty();
+    }
+
+    /**
+     * Counts the non-archived Contentlets on a page for the net-loss guard, picking the language
+     * scoping that matches what the save's DELETE will target.
+     *
+     * @param pageId          The ID of the HTML Page.
+     * @param personalization The Persona set for the Multi-Tree entry.
+     * @param variantId       The Variant to count in — already resolved for page-level fallback.
+     * @param languageIdOpt   The language the page is being saved in, when there is one.
+     * @param fallbackEnabled Whether {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is on.
+     *
+     * @return The IDs of the non-archived Contentlets in scope.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> countNonArchivedForGuard(final String pageId, final String personalization,
+            final String variantId, final Optional<Long> languageIdOpt, final boolean fallbackEnabled)
+            throws DotDataException {
+        if (languageIdOpt.isEmpty()) {
+            return this.getNonArchivedContentlets(pageId, personalization, variantId);
+        }
+        if (fallbackEnabled) {
+            final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+            if (defaultLanguageId != languageIdOpt.get()) {
+                return this.getNonArchivedContentlets(pageId, personalization, variantId,
+                        languageIdOpt.get(), defaultLanguageId);
+            }
+        }
+        return this.getNonArchivedContentlets(pageId, personalization, variantId, languageIdOpt.get());
     }
 
     /**

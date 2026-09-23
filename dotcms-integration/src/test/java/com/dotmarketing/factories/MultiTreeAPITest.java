@@ -5682,6 +5682,107 @@ public class MultiTreeAPITest extends IntegrationTestBase {
     }
 
 
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A page has <b>no</b> {@code multi_tree} rows in the Variant being saved, but does have
+     * rows in DEFAULT. The editor renders DEFAULT's content through the page-level Variant
+     * fallback, and a stale client posts an empty payload with
+     * {@code MULTITREE_NET_LOSS_THRESHOLD=0}.
+     * Should: Reject the save. Those DEFAULT rows are what the page renders in that Variant, so
+     * replacing them with nothing is real content loss — even though the DELETE itself removes no
+     * row, because writing rows in the Variant stops the fallback and the page then renders empty.
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_variantWithNoRows_fallsBackToDefaultRowsForTheCount() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Rows exist only in DEFAULT; the variant has none, so the page renders DEFAULT's content
+        for (int i = 0; i < 3; i++) {
+            createLiveContentletOnPage(page, container, instanceId, contentType,
+                    defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, i);
+        }
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    new ArrayList<>(),
+                    Optional.of(defaultLanguage.getId()),
+                    variant.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A page has rows in <b>both</b> the Variant being saved (2) and DEFAULT (5).
+     * {@code MULTITREE_NET_LOSS_THRESHOLD=5} and the client drops one of the Variant's two.
+     * Should: Allow the save. The page has its own rows in that Variant, so the page-level fallback
+     * does not apply and the guard counts 2, not 7.
+     * <p>This is the false-rejection guard for the fallback. Counting DEFAULT's rows on top of the
+     * Variant's would make this look like a loss of 6 against a threshold of 5 and reject a
+     * perfectly ordinary edit — reintroducing the issue #37377 bug class from the other side.</p>
+     */
+    @Test
+    public void test_overridesMultitrees_variantWithOwnRows_doesNotAddDefaultRowsToTheCount() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(10).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // 5 rows in DEFAULT — must NOT be counted, because the variant has rows of its own
+        for (int i = 0; i < 5; i++) {
+            createLiveContentletOnPage(page, container, instanceId, contentType,
+                    defaultLanguage.getId(), VariantAPI.DEFAULT_VARIANT, i);
+        }
+        // 2 rows in the variant being saved
+        final Contentlet keep = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet drop = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        for (final Contentlet contentlet : List.of(keep, drop)) {
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(contentlet)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setVariant(variant).setTreeOrder(0).nextPersisted();
+        }
+
+        final List<MultiTree> incoming = List.of(new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(keep.getIdentifier()).setInstanceId(instanceId)
+                .setVariantId(variant.name()).setTreeOrder(0));
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 5);
+        try {
+            // Correct: 2 - 1 = net loss 1, within 5. Wrong (7 - 1 = 6) would reject.
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    variant.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
     // ── Style-properties tests ──────────────────────────────────────────────
 
     /**
