@@ -20,6 +20,7 @@ import {
     DotBulkRefreshService,
     DotEventsSocket,
     DotFolderBulkDeleteRefusal,
+    DotFolderBulkDeleteRefusalKind,
     DotFolderBulkDeleteService,
     DotHttpErrorManagerService,
     DotMessageService,
@@ -115,6 +116,19 @@ interface WithActionExecutionState {
      * which a socket reconnect can deliver again.
      */
     settledFolderDeleteJobs: string[];
+    /**
+     * A bulk folder delete the server refused, as the kind it refused it for.
+     *
+     * The **kind**, not a sentence: which words go on screen is the shell's decision, the way it
+     * already is for an upload's own submission refusal. Held in state rather than toasted from
+     * here because the store never touches the UI — the shell drains this exactly as it drains
+     * {@link actionExecutionResults}.
+     *
+     * `UNCLASSIFIED` never lands here. It covers a transport failure rather than a refusal the
+     * endpoint reasoned about, and those keep going through `DotHttpErrorManagerService`, which is
+     * what still redirects on a 401 and reports a license wall properly.
+     */
+    folderDeleteRefusal: DotFolderBulkDeleteRefusalKind | undefined;
 }
 
 /**
@@ -142,7 +156,8 @@ export function withActionExecution() {
             refreshJobIds: [],
             uploadJobs: {},
             folderDeleteJobs: {},
-            settledFolderDeleteJobs: []
+            settledFolderDeleteJobs: [],
+            folderDeleteRefusal: undefined
         }),
         withComputed(({ runs, actionExecutionResults }) => ({
             /**
@@ -825,6 +840,32 @@ export function withActionExecution() {
                                     // A refusal means no run exists server-side, so nothing will
                                     // ever arrive to settle this one.
                                     endRun(runId);
+
+                                    const kind = refusal?.kind ?? 'UNCLASSIFIED';
+
+                                    // The kinds the endpoint reasoned about get their own words
+                                    // (FR-041): an empty selection, too many folders and no
+                                    // entitlement must not all read alike, and an overlap — the one
+                                    // refusal an ordinary author can actually provoke — is
+                                    // actionable where a generic failure is not.
+                                    //
+                                    // The server's own `message` is deliberately not rendered. It is
+                                    // English the server generated, so it is not localised; it is
+                                    // logged instead.
+                                    if ('UNCLASSIFIED' !== kind) {
+                                        console.warn(
+                                            `Content drive folder delete refused: ${kind}`,
+                                            refusal?.message
+                                        );
+                                        patchState(store, { folderDeleteRefusal: kind });
+
+                                        return EMPTY;
+                                    }
+
+                                    // Not a refusal the endpoint reasoned about — a transport
+                                    // failure, or an instance whose body carried no code. This path
+                                    // still redirects on a 401 and reports a license wall properly,
+                                    // which is why it is not replaced wholesale.
                                     httpErrorManagerService.handle(
                                         refusal?.response ??
                                             new HttpErrorResponse({ error: refusal })
@@ -989,6 +1030,11 @@ export function withActionExecution() {
                      *
                      * @param affectedFolders where the batch landed, as `//hostname/path` refs
                      */
+                    /** Consumes the refusal once the shell has said it. */
+                    clearFolderDeleteRefusal: (): void => {
+                        patchState(store, { folderDeleteRefusal: undefined });
+                    },
+
                     trackUploadJob: (
                         jobId: string,
                         affectedFolders: string[] = [],

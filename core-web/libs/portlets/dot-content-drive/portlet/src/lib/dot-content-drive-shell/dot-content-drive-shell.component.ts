@@ -30,6 +30,7 @@ import { catchError } from 'rxjs/operators';
 import {
     AddToBundleService,
     DotCurrentUserService,
+    DotFolderBulkDeleteRefusalKind,
     DotFolderService,
     DotUploadFileService,
     DotWorkflowsActionsService,
@@ -1092,6 +1093,53 @@ export class DotContentDriveShellComponent implements OnDestroy {
             }
 
             this.#store.clearActionExecutionResult();
+        });
+    });
+
+    /**
+     * The words for each refusal the delete endpoint reasoned about.
+     *
+     * Here rather than in the store for the same reason {@link #describeSubmissionRefusal} is: the
+     * store carries the kind, the component decides what an author reads. `UNCLASSIFIED` has an
+     * entry so the map is total, though the store routes that one through
+     * `DotHttpErrorManagerService` instead and it should not arrive.
+     *
+     * None of them names a number or a folder. The ceiling is in the server's prose, which is not
+     * localised and so is not rendered, and the overlap body carries no structured field naming the
+     * folder it collided on — a shortfall against FR-040 recorded in the contract rather than
+     * papered over by parsing a sentence.
+     */
+    readonly #folderDeleteRefusalKeys: Record<DotFolderBulkDeleteRefusalKind, string> = {
+        EMPTY_SELECTION: 'content-drive.delete.refused.empty-selection',
+        OVER_MAX_PATHS: 'content-drive.delete.refused.over-max-paths',
+        NOT_ENTITLED: 'content-drive.delete.refused.not-entitled',
+        OVERLAPPING_RUN: 'content-drive.delete.refused.overlapping-run',
+        UNCLASSIFIED: 'content-drive.delete.refused.unclassified'
+    };
+
+    /**
+     * Says why a bulk folder delete never became a run, and consumes the refusal.
+     *
+     * Its own effect rather than a branch of the outcome drain: a refusal is not an outcome. Nothing
+     * ran, so there are no counts to report, nothing to reload, and no dialog state to settle — the
+     * only thing owed to the author is the sentence (FR-041).
+     */
+    readonly folderDeleteRefusalEffect = effect(() => {
+        const kind = this.#store.folderDeleteRefusal();
+
+        untracked(() => {
+            if (!kind) {
+                return;
+            }
+
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.delete.refused.title'),
+                detail: this.#dotMessageService.get(this.#folderDeleteRefusalKeys[kind]),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            this.#store.clearFolderDeleteRefusal();
         });
     });
 

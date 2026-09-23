@@ -3,6 +3,8 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { Observable, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
+
 import {
     AddToBundleService,
     DotBulkRefreshService,
@@ -850,6 +852,70 @@ describe('withActionExecution', () => {
     describe('executeFolderBulkDelete (#37063)', () => {
         const PATH_A = '//demo.dotcms.com/old-a/';
         const PATH_B = '//demo.dotcms.com/old-b/';
+
+        /**
+         * **FR-041 — refusals must be told apart.** "an empty selection, too many folders, and no
+         * entitlement MUST NOT all read the same." The service derives a `kind` for exactly this;
+         * for a while nothing read it and every refusal went to `DotHttpErrorManagerService`, so
+         * the author got one generic HTTP error whichever of them happened.
+         */
+        describe('refusals', () => {
+            const refuseWith = (kind: string, status = 400) => {
+                submitFolderBulkDelete.mockReturnValue(
+                    throwError(() => ({
+                        kind,
+                        message: 'server prose, never rendered',
+                        response: new HttpErrorResponse({ status })
+                    }))
+                );
+            };
+
+            it.each(['EMPTY_SELECTION', 'OVER_MAX_PATHS', 'NOT_ENTITLED', 'OVERLAPPING_RUN'])(
+                'should surface %s as itself, not as a generic error',
+                (kind) => {
+                    build();
+                    refuseWith(kind);
+
+                    store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+                    expect(store.folderDeleteRefusal()).toBe(kind);
+                    // The generic path would have swallowed the distinction.
+                    expect(handle).not.toHaveBeenCalled();
+                }
+            );
+
+            it('should leave an unclassified refusal to the HTTP error manager', () => {
+                // Not a refusal the endpoint reasoned about — a transport failure, or a body with no
+                // code. That path still redirects on a 401 and reports a license wall properly.
+                build();
+                refuseWith('UNCLASSIFIED', 500);
+
+                store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+                expect(store.folderDeleteRefusal()).toBeUndefined();
+                expect(handle).toHaveBeenCalled();
+            });
+
+            it('should end the run a refusal killed', () => {
+                // No run exists server-side, so nothing will ever arrive to settle this one.
+                build();
+                refuseWith('OVERLAPPING_RUN');
+
+                store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+                expect(store.activeRunCount()).toBe(0);
+            });
+
+            it('should consume the refusal once it has been said', () => {
+                build();
+                refuseWith('OVERLAPPING_RUN');
+                store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+                store.clearFolderDeleteRefusal();
+
+                expect(store.folderDeleteRefusal()).toBeUndefined();
+            });
+        });
 
         it('should mark both the inode and the identifier of every folder', () => {
             build();

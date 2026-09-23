@@ -19,13 +19,15 @@ import {
  * refusal an ordinary author can actually provoke, and "someone is already deleting one of these
  * folders" is actionable where a generic failure is not (contract CR-02).
  */
+export type DotFolderBulkDeleteRefusalKind =
+    | 'EMPTY_SELECTION'
+    | 'OVER_MAX_PATHS'
+    | 'NOT_ENTITLED'
+    | 'OVERLAPPING_RUN'
+    | 'UNCLASSIFIED';
+
 export interface DotFolderBulkDeleteRefusal {
-    kind:
-        | 'EMPTY_SELECTION'
-        | 'OVER_MAX_PATHS'
-        | 'NOT_ENTITLED'
-        | 'OVERLAPPING_RUN'
-        | 'UNCLASSIFIED';
+    kind: DotFolderBulkDeleteRefusalKind;
     /**
      * The server's own sentence, for logging.
      *

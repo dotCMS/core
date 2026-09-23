@@ -33,6 +33,7 @@ import {
     DotPropertiesService,
     DotRouterService,
     DotSiteService,
+    DotFolderBulkDeleteRefusalKind,
     DotSystemConfigService,
     DotUploadFileService,
     DotWorkflowActionsFireService,
@@ -105,6 +106,10 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 const editPanelRequestSignal: WritableSignal<EditContentDialogData | null> = signal(null);
 // Module scope: both store mocks in this file read it, and they live in describes that do not
 // share a `beforeEach`. Reset per test rather than re-created, so neither mock captures a stale one.
+/** Nothing refused by default; the refusal tests set it. Module-scoped like its siblings,
+ * because the deep-link describe mounts its own shell without the main block's beforeEach. */
+const folderDeleteRefusalSignal: WritableSignal<DotFolderBulkDeleteRefusalKind | undefined> =
+    signal(undefined);
 const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
 // The site-level answer the drop guard falls back to at the root. Module scope for the same reason
 // as the one above: two store mocks in this file read it from describes with no shared `beforeEach`.
@@ -237,6 +242,7 @@ describe('DotContentDriveShellComponent', () => {
         selectedItemsSignal = signal<DotContentDriveItem[]>([]);
         pageLeaveRequestSubject = new Subject<void>();
         dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
+        folderDeleteRefusalSignal.set(undefined);
         actionExecutionResultSignal = signal<DotContentDriveActionExecutionResult | undefined>(
             undefined
         );
@@ -250,6 +256,8 @@ describe('DotContentDriveShellComponent', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: vi.fn(),
+                    folderDeleteRefusal: folderDeleteRefusalSignal,
+                    clearFolderDeleteRefusal: vi.fn(),
                     // No advertised ceiling by default, which is the case that leaves the refusing
                     // to the server. The gate's own tests set one.
                     uploadCeilings: vi.fn().mockReturnValue(null),
@@ -663,6 +671,44 @@ describe('DotContentDriveShellComponent', () => {
             actionExecutionResultSignal.set(result);
             spectator.detectChanges();
         };
+
+        /**
+         * **FR-041.** The store carries the kind; these tests pin that each one reaches the author
+         * as its own sentence. Before this, every refusal went through `DotHttpErrorManagerService`
+         * and an author who hit a ceiling, selected nothing, or collided with a colleague's delete
+         * all saw the same generic HTTP error.
+         */
+        describe('folder delete refusals', () => {
+            const refuse = (kind: DotFolderBulkDeleteRefusalKind) => {
+                folderDeleteRefusalSignal.set(kind);
+                spectator.detectChanges();
+            };
+
+            it.each([
+                ['EMPTY_SELECTION', 'content-drive.delete.refused.empty-selection'],
+                ['OVER_MAX_PATHS', 'content-drive.delete.refused.over-max-paths'],
+                ['NOT_ENTITLED', 'content-drive.delete.refused.not-entitled'],
+                ['OVERLAPPING_RUN', 'content-drive.delete.refused.overlapping-run']
+            ])('should say %s in its own words', (kind, key) => {
+                refuse(kind as DotFolderBulkDeleteRefusalKind);
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'error', detail: key })
+                );
+            });
+
+            it('should consume the refusal so it is said once', () => {
+                refuse('OVERLAPPING_RUN');
+
+                expect(store.clearFolderDeleteRefusal).toHaveBeenCalled();
+            });
+
+            it('should say nothing while nothing has been refused', () => {
+                spectator.detectChanges();
+
+                expect(messageService.add).not.toHaveBeenCalled();
+            });
+        });
 
         it('should stay silent on a clean success the listing already shows', () => {
             // The rule the PM asked for: success is not announced when the author can see it. The
@@ -5039,6 +5085,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: vi.fn(),
+                    folderDeleteRefusal: folderDeleteRefusalSignal,
+                    clearFolderDeleteRefusal: vi.fn(),
                     // No advertised ceiling by default, which is the case that leaves the refusing
                     // to the server. The gate's own tests set one.
                     uploadCeilings: vi.fn().mockReturnValue(null),
