@@ -857,7 +857,7 @@ describe('withActionExecution', () => {
             // Neither field is reliably the key the row carries — the search service only backfills
             // `inode` from `identifier` when the API returned none — so a run that targets one of them
             // leaves half the selection looking untouched.
-            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a', 'id-a']);
+            store.executeFolderBulkDelete([PATH_A], ['inode-a', 'id-a']);
 
             expect(store.busyRows()).toEqual(['inode-a', 'id-a']);
         });
@@ -868,7 +868,7 @@ describe('withActionExecution', () => {
             // The two disagree whenever the server drops a duplicate or a nested path. Substituting the
             // selection size turns a partially-accepted submission into a report that overstates it
             // (FR-025, CR-03) — the same trap every other action in this file already avoids.
-            store.executeFolderBulkDelete('Delete', [PATH_A, PATH_B], ['inode-a', 'inode-b']);
+            store.executeFolderBulkDelete([PATH_A, PATH_B], ['inode-a', 'inode-b']);
 
             expect(store.actionExecution()?.total).toBe(2);
         });
@@ -876,8 +876,8 @@ describe('withActionExecution', () => {
         it('should refuse a repeat of the same delete over the same folders', () => {
             build();
 
-            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
-            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
 
             expect(store.activeRunCount()).toBe(1);
         });
@@ -887,8 +887,8 @@ describe('withActionExecution', () => {
 
             // A run lasts minutes. A guard that stopped this would freeze the portlet for the length of
             // the operation that was made asynchronous precisely so the author could keep working.
-            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
-            store.executeFolderBulkDelete('Delete', [PATH_B], ['inode-b']);
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+            store.executeFolderBulkDelete([PATH_B], ['inode-b']);
 
             expect(store.activeRunCount()).toBe(2);
         });
@@ -897,7 +897,7 @@ describe('withActionExecution', () => {
             build();
             fireDefaultAction.mockReturnValue(new Subject());
 
-            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
             store.executeQuickAction('lock-id', 'Lock', ['inode-z']);
 
             expect(fireDefaultAction).toHaveBeenCalledTimes(1);
@@ -907,7 +907,7 @@ describe('withActionExecution', () => {
         it('should do nothing when there are no paths to delete', () => {
             build();
 
-            store.executeFolderBulkDelete('Delete', [], []);
+            store.executeFolderBulkDelete([], []);
 
             expect(store.activeRunCount()).toBe(0);
         });
@@ -941,7 +941,7 @@ describe('withActionExecution', () => {
             submitFolderBulkDelete.mockReturnValue(
                 of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status', submitted: 3 })
             );
-            store.executeFolderBulkDelete('Delete', ['//d/a/', '//d/b/', '//d/c/'], ['inode-a']);
+            store.executeFolderBulkDelete(['//d/a/', '//d/b/', '//d/c/'], ['inode-a']);
         };
 
         it('should report the SERVER’s counts, not the number submitted', () => {
@@ -1091,7 +1091,7 @@ describe('withActionExecution', () => {
                 of({ jobId: 'job-1', statusUrl: '/s', submitted: 1 })
             );
 
-            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
 
             // Nothing else settles it: not another action finishing, not a different run's event.
             store.reportFolderDeleteCompleted('Delete', {
@@ -1114,7 +1114,7 @@ describe('withActionExecution', () => {
             submitFolderBulkDelete.mockReturnValue(
                 of({ jobId: 'job-1', statusUrl: '/s', submitted: 1 })
             );
-            store.executeFolderBulkDelete('Delete', [PATH_A], ['inode-a']);
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
 
             store.reportFolderDeleteCompleted('Delete', {
                 state: 'SUCCESS',

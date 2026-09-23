@@ -793,11 +793,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                 [folder.inode, folder.identifier].filter((key): key is string => !!key)
             );
 
-            this.#store.executeFolderBulkDelete(
-                this.#dotMessageService.get(quickAction.name),
-                assetPaths,
-                targets
-            );
+            this.#store.executeFolderBulkDelete(assetPaths, targets);
             this.handOffToToolbar();
 
             return;

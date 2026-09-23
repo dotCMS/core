@@ -809,21 +809,16 @@ export function withActionExecution() {
                      *
                      * NOT YET IMPLEMENTED — stub so the specs compile and fail on behaviour (T019).
                      */
-                    executeFolderBulkDelete: (
-                        actionName: string,
-                        assetPaths: string[],
-                        targets: string[]
-                    ): void => {
+                    executeFolderBulkDelete: (assetPaths: string[], targets: string[]): void => {
                         if (!assetPaths.length || isRunning(DELETE_FOLDER_OPERATION, targets)) {
                             return;
                         }
 
-                        // No resolved label travels with the run any more: a run now names itself
-                        // through `operation` and an optional `labelKey`, and the toolbar only ever
-                        // surfaces *unmarked* runs (`targets.length === 0`). This one is marked by
-                        // construction, so a label on it could never reach a screen. `actionName`
-                        // stays on the signature because the outcome toast still needs it, via
-                        // `reportFolderDeleteCompleted`.
+                        // No resolved label travels with the run: a run names itself through
+                        // `operation` and an optional `labelKey`, and the toolbar only ever surfaces
+                        // *unmarked* runs (`targets.length === 0`). This one is marked by
+                        // construction, so a label on it could never reach a screen. The outcome
+                        // toast has its own, resolved where that event is handled.
                         const runId = startRun({
                             operation: DELETE_FOLDER_OPERATION,
                             total: assetPaths.length,
