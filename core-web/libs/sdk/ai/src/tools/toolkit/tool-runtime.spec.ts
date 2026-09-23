@@ -1,6 +1,6 @@
 import { errorMessage, MAX_ERROR_CHARS, toolFailure, type ToolFailure } from './tool-runtime';
 
-import { AbortError, HttpError, PolicyError, TimeoutError } from '../runtime';
+import { AbortError, HttpError, PolicyError, TimeoutError } from '../../runtime';
 
 /** Parse what a tool handler actually returns — a JSON string, not an object. */
 function parse(result: string): ToolFailure {

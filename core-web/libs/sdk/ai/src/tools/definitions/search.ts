@@ -1,10 +1,10 @@
 import { z } from 'zod';
 
 import { formatSandboxResult } from '../../runtime';
-import { createTool, defineTool } from '../create-tools';
-import { CONTEXT_ENDPOINTS } from '../endpoints';
+import { createTool, defineTool } from '../toolkit/create-tool';
+import { CONTEXT_ENDPOINTS } from '../toolkit/endpoints';
 
-import type { DotCMSTool, DotCMSToolOptions } from '../toolkit';
+import type { DotCMSTool, DotCMSToolOptions } from '../toolkit/types';
 
 /**
  * Search only reads the bundled spec plus the instance context, so it gets a short leash —

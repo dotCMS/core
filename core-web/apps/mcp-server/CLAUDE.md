@@ -74,8 +74,10 @@ export default handler;
 **Wiring** (`src/lib/tools.ts`) — `xmcpTool(factory)` calls a `@dotcms/ai/tools` factory with this server's options (`SANDBOX_TIMEOUT`, context-error logging) and maps the tool onto xmcp's exports, turning a manifest or failure into the JSON text the server has always returned. It passes no `url` / `token`: the tools read `DOTCMS_URL` / `AUTH_TOKEN` themselves, on each call, so a server started without credentials still boots and answers every call with a `CONFIGURATION` failure.
 
 **Tool logic** — lives in `@dotcms/ai`, not here:
-- `libs/sdk/ai/src/tools/definitions/` — each tool's name, description, Zod input and handler
-- `libs/sdk/ai/src/tools/*.ts` — the operations behind them (`page-create`, `page-place-content`, `page-verify`, `assets-transfer`, `resolve`, …) and `tool-runtime.ts` (per-call runtime, request deadline, the `ToolFailure` envelope)
+- `libs/sdk/ai/src/tools/definitions/` — the tools: each one's name, description, Zod input and handler
+- `libs/sdk/ai/src/tools/operations/` — the dotCMS work behind them (`page-create`, `page-place-content`, `page-verify`, `assets-transfer`), each with the endpoint list its tool enforces
+- `libs/sdk/ai/src/tools/toolkit/` — how any tool is built and run: factory, per-call runtime, request deadline, the `ToolFailure` envelope, endpoint policies
+- [`libs/sdk/ai/src/tools/README.md`](../../libs/sdk/ai/src/tools/README.md) — what goes where
 - `libs/sdk/ai/src/runtime.ts`, `sandbox/`, `adapter/` — the runtime, sandbox and dotCMS adapter everything runs on
 
 See the [`@dotcms/ai` README](../../libs/sdk/ai/README.md) for the layering rules.
@@ -87,10 +89,9 @@ See the [`@dotcms/ai` README](../../libs/sdk/ai/README.md) for the layering rule
 ## Development Guidelines
 
 ### Adding New Tools
-1. Add the definition to `libs/sdk/ai/src/tools/definitions/` with `defineTool({ name, title, description, inputSchema, annotations, endpoints, handler })` plus a factory that calls `createTool(definition, options)`, and put any logic worth testing on its own in a sibling operation module under `libs/sdk/ai/src/tools/`. `endpoints` is enforced — list every method + path the operation calls, and guard the operation's spec with `unlistedCalls` (see `page-verify.spec.ts`)
-2. Export the factory (and the operation, if it has one) from `libs/sdk/ai/src/tools/index.ts`, and add it to `FACTORIES` in `create-tools.spec.ts`
-3. Add `src/tools/<tool_name>.ts` here — the three lines above, with your factory
-4. Add the name to the expected list in `src/smoke/server-boot.spec.ts`
+1. Build the tool in the SDK — operation, endpoint list, definition, export — following [`libs/sdk/ai/src/tools/README.md`](../../libs/sdk/ai/src/tools/README.md#adding-a-tool), which also says what goes in `definitions/`, `operations/` and `toolkit/` (lint-enforced)
+2. Add `src/tools/<tool_name>.ts` here — the three lines above, with your factory
+3. Add the name to the expected list in `src/smoke/server-boot.spec.ts`
 
 ### Adding New Adapters
 Sandbox adapters (extra globals for `execute` code) are built with `defineAdapter` from `@dotcms/ai/sandbox` — see the [`@dotcms/ai` README](../../libs/sdk/ai/README.md#custom-typed-operations--defineadapter).

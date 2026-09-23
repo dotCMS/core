@@ -1,13 +1,15 @@
 /**
  * `@dotcms/ai/tools` — ready-made dotCMS tools for a host's own MCP server or agent.
  *
- * Two layers, the same split as the runtime's two verbs:
- *  - the tool factories (`searchTool()`, `pageCreateTool()`, …) — the model-facing layer. Each
- *    returns a plain object shaped for the Vercel AI SDK and the MCP TypeScript SDK alike,
- *    whose `execute` validates the model's input and never throws.
- *  - the operations (`createPage`, `placeContent`, `verifyPage`, `uploadAssets`,
- *    `downloadAssets`) — the direct layer. Typed options in, typed manifest out, typed
- *    errors thrown. Use these when YOU write the call; the tools are formatting on top.
+ * Two public layers, the same split as the runtime's two verbs:
+ *  - `definitions/` — the tool factories (`searchTool()`, `pageCreateTool()`, …), the
+ *    model-facing layer. Each returns a plain object shaped for the Vercel AI SDK and the MCP
+ *    TypeScript SDK alike, whose `execute` validates the model's input and never throws.
+ *  - `operations/` — `createPage`, `placeContent`, `verifyPage`, `uploadAssets`,
+ *    `downloadAssets`, the direct layer. Typed options in, typed manifest out, typed errors
+ *    thrown. Use these when YOU write the call; the tools are formatting on top.
+ *
+ * Both are built on `toolkit/`, which is internal. See ./README.md for what goes where.
  *
  * This is the top layer of the package: it builds on `@dotcms/ai/runtime`, and nothing below
  * it may import it (lint-enforced).
@@ -29,18 +31,18 @@ export type {
     DotCMSToolOptions,
     ExecuteToolOptions,
     RequestToolOptions
-} from './toolkit';
+} from './toolkit/types';
 
 // What every tool resolves to on failure, and the guard to tell it from a normal result.
-export { isToolFailure } from './tool-runtime';
-export type { ToolFailure } from './tool-runtime';
+export { isToolFailure } from './toolkit/tool-runtime';
+export type { ToolFailure } from './toolkit/tool-runtime';
 
 // ---- Direct operations -----------------------------------------------------------------
 
-export { createPage } from './page-create';
-export type { CreatePageManifest, CreatePageOptions } from './page-create';
+export { createPage } from './operations/page-create';
+export type { CreatePageManifest, CreatePageOptions } from './operations/page-create';
 
-export { placeContent } from './page-place-content';
+export { placeContent } from './operations/page-place-content';
 export type {
     PagePlaceContentManifest,
     PagePlaceContentOptions,
@@ -49,9 +51,9 @@ export type {
     SlotAddress,
     SlotAssignment,
     SlotResult
-} from './page-place-content';
+} from './operations/page-place-content';
 
-export { verifyPage } from './page-verify';
+export { verifyPage } from './operations/page-verify';
 export type {
     SlotVerdict,
     UrlMapResult,
@@ -60,9 +62,9 @@ export type {
     VerifyPageManifest,
     VerifyPageOptions,
     VerifySlotResult
-} from './page-verify';
+} from './operations/page-verify';
 
-export { downloadAssets, uploadAssets } from './assets-transfer';
+export { downloadAssets, uploadAssets } from './operations/assets-transfer';
 export type {
     AssetManifestFailure,
     AssetManifestFile,
@@ -72,4 +74,4 @@ export type {
     OverwriteMode,
     UploadAssetsManifest,
     UploadAssetsOptions
-} from './assets-transfer';
+} from './operations/assets-transfer';

@@ -1,22 +1,14 @@
 import { z } from 'zod';
 
-import { createTool, defineTool, type ToolContext } from '../create-tools';
-import { CONTEXT_ENDPOINTS, RESOLVE_ENDPOINTS, type Endpoint } from '../endpoints';
 import {
+    PAGE_PLACE_CONTENT_ENDPOINTS,
     placeContent,
     type PagePlaceContentManifest,
     type PagePlaceContentOptions
-} from '../page-place-content';
+} from '../operations/page-place-content';
+import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 
-import type { DotCMSTool, RequestToolOptions } from '../toolkit';
-
-/** Every endpoint `placeContent` calls. Anything else is refused before it reaches the wire. */
-export const PAGE_PLACE_CONTENT_ENDPOINTS: readonly Endpoint[] = [
-    ...CONTEXT_ENDPOINTS,
-    ...RESOLVE_ENDPOINTS,
-    'GET /api/v1/page/json/**',
-    'POST /api/v1/page/{pageId}/content'
-];
+import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
 
 // A slot address: a 1-based index into the page's real slots, OR a container reference. `instance`
 // (the slot uuid) is optional only when the container occupies exactly one slot on the page.

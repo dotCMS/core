@@ -7,7 +7,7 @@ import {
     type DotCMSRuntime,
     type DotCMSRuntimeConfig,
     type RequestOptions
-} from '../runtime';
+} from '../../runtime';
 
 /**
  * Wall-clock deadline applied to every direct `dotcms.request()` a tool makes.

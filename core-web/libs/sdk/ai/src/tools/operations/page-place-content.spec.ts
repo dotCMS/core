@@ -1,13 +1,13 @@
 import { vi } from 'vitest';
 
-import { PAGE_PLACE_CONTENT_ENDPOINTS } from './definitions/page-place-content';
-import { unlistedCalls } from './endpoints';
 import {
+    PAGE_PLACE_CONTENT_ENDPOINTS,
     placeContent as placeContentImpl,
     type PagePlaceContentOptions
 } from './page-place-content';
 
-import { HttpError, type DotCMSRuntime, type RequestOptions } from '../runtime';
+import { HttpError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
+import { unlistedCalls } from '../toolkit/endpoints';
 
 // Every request the fake below sees. After each test, all of them must be endpoints the
 // page_place_content tool owns — otherwise the operation works here and is refused in production.

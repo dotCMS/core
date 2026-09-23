@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 import { formatSandboxResult } from '../../runtime';
-import { createTool, defineTool } from '../create-tools';
+import { createTool, defineTool } from '../toolkit/create-tool';
 
-import type { DotCMSTool, ExecuteToolOptions } from '../toolkit';
+import type { DotCMSTool, ExecuteToolOptions } from '../toolkit/types';
 
 /** Sandbox wall-clock timeout for `execute` when the factory is given none. */
 export const DEFAULT_EXECUTE_TIMEOUT_MS = 45_000;

@@ -1,11 +1,11 @@
 import { vi } from 'vitest';
 
-import { PAGE_CREATE_ENDPOINTS } from './definitions/page-create';
-import { unlistedCalls } from './endpoints';
-import { createPage } from './page-create';
-import { splitUrlPath } from './page-path';
+import { createPage, PAGE_CREATE_ENDPOINTS } from './page-create';
+import { splitUrlPath } from './shared/page-path';
 
-import type { DotCMSRuntime, RequestOptions } from '../runtime';
+import { unlistedCalls } from '../toolkit/endpoints';
+
+import type { DotCMSRuntime, RequestOptions } from '../../runtime';
 
 // Every request the fakes below see. After each test, all of them must be endpoints the
 // page_create tool owns — otherwise the operation works here and is refused in production.

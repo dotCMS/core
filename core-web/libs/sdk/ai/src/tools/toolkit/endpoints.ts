@@ -1,7 +1,7 @@
-import { CONTEXT_PATHS } from '../adapter/context';
-import { toRequestPolicy, type RequestPolicy } from '../adapter/request-core';
+import { CONTEXT_PATHS } from '../../adapter/context';
+import { toRequestPolicy, type RequestPolicy } from '../../adapter/request-core';
 
-import type { RuntimeAllow } from '../runtime';
+import type { RuntimeAllow } from '../../runtime';
 
 /**
  * One endpoint a tool may call: an HTTP method and a path pattern, e.g.
@@ -14,17 +14,14 @@ import type { RuntimeAllow } from '../runtime';
  */
 export type Endpoint = `${'GET' | 'POST' | 'PUT' | 'DELETE'} /${string}`;
 
-/** What loading instance context reads. The runtime does it on a tool's behalf. */
+/**
+ * What loading instance context reads. The runtime does it on a tool's behalf, so every tool
+ * that touches context includes these — they are the one endpoint list the toolkit owns.
+ * Every other list lives next to the operation that makes those requests.
+ */
 export const CONTEXT_ENDPOINTS: readonly Endpoint[] = Object.values(CONTEXT_PATHS).map(
     (path): Endpoint => `GET ${path}`
 );
-
-/** What resolving a site or language named by the model reads (`resolve.ts`). */
-export const RESOLVE_ENDPOINTS: readonly Endpoint[] = [
-    'GET /api/v1/site',
-    'GET /api/v1/site/{identifier}',
-    'GET /api/v2/languages'
-];
 
 interface CompiledEndpoint {
     method: string;

@@ -2,10 +2,32 @@ import { constants } from 'node:fs';
 import { access, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 
-import { isContentLive } from './page-common';
-import { errorMessage } from './tool-runtime';
+import { isContentLive } from './shared/page-common';
 
-import { type DotCMSRuntime, isBinaryResponseEnvelope } from '../runtime';
+import { type DotCMSRuntime, isBinaryResponseEnvelope } from '../../runtime';
+import { type Endpoint } from '../toolkit/endpoints';
+import { errorMessage } from '../toolkit/tool-runtime';
+
+/**
+ * Every endpoint `uploadAssets` calls — the `upload_assets` tool enforces exactly this list,
+ * and `assets-transfer-io.spec.ts` checks every request against it. Add a request, add it here.
+ */
+export const UPLOAD_ASSETS_ENDPOINTS: readonly Endpoint[] = [
+    'PUT /api/v2/assets/publish',
+    'PUT /api/v2/assets/save',
+    'GET /api/v1/content/{identifier}',
+    'PUT /api/v1/workflow/actions/default/fire/PUBLISH'
+];
+
+/**
+ * Every endpoint `downloadAssets` calls — all reads. The `download_assets` tool enforces
+ * exactly this list, and `assets-transfer-io.spec.ts` checks every request against it.
+ */
+export const DOWNLOAD_ASSETS_ENDPOINTS: readonly Endpoint[] = [
+    'POST /api/content/_search',
+    'GET /api/v2/assets',
+    'GET /api/v2/assets/{identifier}'
+];
 
 /** What `downloadAssets` does when a destination file already exists. */
 export type OverwriteMode = 'skip' | 'overwrite' | 'error';

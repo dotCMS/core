@@ -4,12 +4,16 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { downloadAssets, uploadAssets } from './assets-transfer';
-import { DOWNLOAD_ASSETS_ENDPOINTS } from './definitions/download-assets';
-import { UPLOAD_ASSETS_ENDPOINTS } from './definitions/upload-assets';
-import { unlistedCalls } from './endpoints';
+import {
+    DOWNLOAD_ASSETS_ENDPOINTS,
+    downloadAssets,
+    UPLOAD_ASSETS_ENDPOINTS,
+    uploadAssets
+} from './assets-transfer';
 
-import type { DotCMSRuntime, RequestOptions } from '../runtime';
+import { unlistedCalls } from '../toolkit/endpoints';
+
+import type { DotCMSRuntime, RequestOptions } from '../../runtime';
 
 /** Every request the fake sees; each describe checks it against its own tool's endpoints. */
 const seen: RequestOptions[] = [];

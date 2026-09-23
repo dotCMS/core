@@ -1,17 +1,14 @@
 import { z } from 'zod';
 
-import { createTool, defineTool, type ToolContext } from '../create-tools';
-import { CONTEXT_ENDPOINTS, RESOLVE_ENDPOINTS, type Endpoint } from '../endpoints';
-import { verifyPage, type VerifyPageManifest, type VerifyPageOptions } from '../page-verify';
+import {
+    PAGE_VERIFY_ENDPOINTS,
+    verifyPage,
+    type VerifyPageManifest,
+    type VerifyPageOptions
+} from '../operations/page-verify';
+import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 
-import type { DotCMSTool, RequestToolOptions } from '../toolkit';
-
-/** Every endpoint `verifyPage` calls — all reads. Anything else is refused before the wire. */
-export const PAGE_VERIFY_ENDPOINTS: readonly Endpoint[] = [
-    ...CONTEXT_ENDPOINTS,
-    ...RESOLVE_ENDPOINTS,
-    'GET /api/v1/page/render/**'
-];
+import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
 
 const definition = defineTool({
     name: 'page_verify',

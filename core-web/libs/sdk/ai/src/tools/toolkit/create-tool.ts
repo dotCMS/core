@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { modelChosenPolicy, toolPolicy, type Endpoint } from './endpoints';
 import { createToolRuntime, toToolFailure } from './tool-runtime';
 
-import { ValidationError, type DotCMSRuntime } from '../runtime';
+import { ValidationError, type DotCMSRuntime } from '../../runtime';
 
 import type {
     DotCMSTool,
@@ -11,7 +11,7 @@ import type {
     DotCMSToolOptions,
     ExecuteToolOptions,
     RequestToolOptions
-} from './toolkit';
+} from './types';
 
 /** The union of every factory's options — what `createTool` may find on any of them. */
 type AnyToolOptions = DotCMSToolOptions &

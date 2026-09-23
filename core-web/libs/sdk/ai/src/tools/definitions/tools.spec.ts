@@ -1,16 +1,17 @@
 import { vi } from 'vitest';
 import { z } from 'zod';
 
-import { downloadAssetsTool } from './definitions/download-assets';
-import { executeTool } from './definitions/execute';
-import { pageCreateTool } from './definitions/page-create';
-import { pagePlaceContentTool } from './definitions/page-place-content';
-import { pageVerifyTool } from './definitions/page-verify';
-import { searchTool } from './definitions/search';
-import { uploadAssetsTool } from './definitions/upload-assets';
-import { isToolFailure, type ToolFailure } from './tool-runtime';
+import { downloadAssetsTool } from './download-assets';
+import { executeTool } from './execute';
+import { pageCreateTool } from './page-create';
+import { pagePlaceContentTool } from './page-place-content';
+import { pageVerifyTool } from './page-verify';
+import { searchTool } from './search';
+import { uploadAssetsTool } from './upload-assets';
 
-import type { DotCMSTool } from './toolkit';
+import { isToolFailure, type ToolFailure } from '../toolkit/tool-runtime';
+
+import type { DotCMSTool } from '../toolkit/types';
 
 /** Build a minimal JSON Response stub. */
 function jsonResponse(body: unknown): Response {

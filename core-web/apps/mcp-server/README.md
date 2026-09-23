@@ -458,10 +458,10 @@ libs/sdk/ai/                      # @dotcms/ai — where the tools actually live
 │   └── generate-spec.ts          # OpenAPI spec processor (run by build/serve/test)
 ├── src/
 │   ├── tools/                    # @dotcms/ai/tools — the tool set this server registers
-│   │   ├── definitions/          # Each tool's name, description, input schema and handler
-│   │   ├── create-tools.ts       # createTool() — what every tool factory is built with
-│   │   ├── page-*.ts             # Page operations (create, place content, verify)
-│   │   └── assets-transfer.ts    # Upload/download operations
+│   │   ├── README.md             # What goes where — start here
+│   │   ├── definitions/          # The tools: name, description, input schema, handler
+│   │   ├── operations/           # The dotCMS work behind them, and each one's endpoint list
+│   │   └── toolkit/              # How any tool is built and run
 │   ├── runtime.ts                # @dotcms/ai/runtime — createRuntime()
 │   ├── adapter/                  # @dotcms/ai/adapter — authenticated HTTP, instance context
 │   ├── sandbox/                  # @dotcms/ai/sandbox — dual-runtime worker sandbox

@@ -1,14 +1,29 @@
-import { isContentLive } from './page-common';
-import { splitUrlPath } from './page-path';
-import { resolveLanguageId, resolveSite } from './resolve';
-import { errorMessage } from './tool-runtime';
+import { isContentLive } from './shared/page-common';
+import { splitUrlPath } from './shared/page-path';
+import { RESOLVE_ENDPOINTS, resolveLanguageId, resolveSite } from './shared/resolve';
 
 import {
     HttpError,
     type ContentTypeSummary,
     type DotCMSRuntime,
     type RequestOptions
-} from '../runtime';
+} from '../../runtime';
+import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
+import { errorMessage } from '../toolkit/tool-runtime';
+
+/**
+ * Every endpoint `createPage` calls — the `page_create` tool enforces exactly this list, and
+ * `page-create.spec.ts` checks every request against it. Add a request, add it here.
+ */
+export const PAGE_CREATE_ENDPOINTS: readonly Endpoint[] = [
+    ...CONTEXT_ENDPOINTS,
+    ...RESOLVE_ENDPOINTS,
+    'GET /api/v1/contenttype/id/{idOrVar}',
+    'GET /api/v1/templates/{identifier}/working',
+    'POST /api/v1/folder/createfolders/{site}',
+    'PUT /api/v1/workflow/actions/default/fire/PUBLISH',
+    'GET /api/v1/content/{identifier}'
+];
 
 /** The default page content type when the caller does not name one. */
 export const DEFAULT_PAGE_CONTENT_TYPE = 'htmlpageasset';

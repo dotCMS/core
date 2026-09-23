@@ -1,10 +1,14 @@
 import { vi } from 'vitest';
 
-import { PAGE_VERIFY_ENDPOINTS } from './definitions/page-verify';
-import { unlistedCalls } from './endpoints';
-import { buildManifest, MAX_INCLUDED_HTML_CHARS, verifyPage } from './page-verify';
+import {
+    buildManifest,
+    MAX_INCLUDED_HTML_CHARS,
+    PAGE_VERIFY_ENDPOINTS,
+    verifyPage
+} from './page-verify';
 
-import { HttpError, type DotCMSRuntime, type RequestOptions } from '../runtime';
+import { HttpError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
+import { unlistedCalls } from '../toolkit/endpoints';
 
 // Every request the fake below sees. After each test, all of them must be endpoints the
 // page_verify tool owns — otherwise the operation works here and is refused in production.

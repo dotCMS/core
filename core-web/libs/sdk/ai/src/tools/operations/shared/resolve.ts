@@ -1,6 +1,16 @@
-import { errorMessage } from './tool-runtime';
+import { HttpError, type DotCMSRuntime } from '../../../runtime';
+import { type Endpoint } from '../../toolkit/endpoints';
+import { errorMessage } from '../../toolkit/tool-runtime';
 
-import { HttpError, type DotCMSRuntime } from '../runtime';
+/**
+ * Every endpoint this module calls. Each operation that resolves a site or language includes
+ * these in its own list. `resolve.spec.ts` checks every request against them.
+ */
+export const RESOLVE_ENDPOINTS: readonly Endpoint[] = [
+    'GET /api/v1/site',
+    'GET /api/v1/site/{identifier}',
+    'GET /api/v2/languages'
+];
 
 /**
  * Resolution of the instance references a caller can name: sites and languages.

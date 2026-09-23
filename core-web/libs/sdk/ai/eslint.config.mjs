@@ -65,6 +65,48 @@ export default [
         }
     },
     {
+        // Inside @dotcms/ai/tools the layers only point down: definitions → operations →
+        // toolkit. The toolkit is how ANY tool is built and knows no dotCMS operation; see
+        // src/tools/README.md for what goes where.
+        files: ['src/tools/toolkit/**/*.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: [
+                                '**/operations',
+                                '**/operations/*',
+                                '**/definitions',
+                                '**/definitions/*'
+                            ],
+                            message:
+                                'tools/toolkit is how any tool is built; it must not depend on a specific operation or tool definition. Move dotCMS-specific code into tools/operations.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
+        files: ['src/tools/operations/**/*.ts'],
+        rules: {
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: ['**/definitions', '**/definitions/*'],
+                            message:
+                                'tools/operations is the direct layer and must work without the model-facing tools. Definitions import operations, never the reverse.'
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    {
         ignores: ['**/node_modules/**', 'node_modules/**']
     }
 ];

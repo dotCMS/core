@@ -1,12 +1,19 @@
-import { PAGE_PLACE_CONTENT_ENDPOINTS } from './definitions/page-place-content';
-import { PAGE_VERIFY_ENDPOINTS } from './definitions/page-verify';
 import {
     CONTEXT_ENDPOINTS,
     matchesEndpoint,
     modelChosenPolicy,
     toolPolicy,
-    unlistedCalls
+    unlistedCalls,
+    type Endpoint
 } from './endpoints';
+
+// Local fixtures shaped like real tool lists — the toolkit is tested without reaching up into
+// the operations that own the real ones.
+const RENDER_ENDPOINTS: readonly Endpoint[] = ['GET /api/v1/site', 'GET /api/v1/page/render/**'];
+const PLACE_ENDPOINTS: readonly Endpoint[] = [
+    'GET /api/v1/page/json/**',
+    'POST /api/v1/page/{pageId}/content'
+];
 
 describe('matchesEndpoint', () => {
     it('matches an exact endpoint, method included', () => {
@@ -68,7 +75,7 @@ describe('unlistedCalls', () => {
             { method: 'DELETE', path: '/api/v1/site/abc' }
         ];
 
-        expect(unlistedCalls(PAGE_VERIFY_ENDPOINTS, calls)).toEqual([
+        expect(unlistedCalls(RENDER_ENDPOINTS, calls)).toEqual([
             'POST /api/v1/workflow/actions/x/fire',
             'DELETE /api/v1/site/abc'
         ]);
@@ -76,7 +83,7 @@ describe('unlistedCalls', () => {
 });
 
 describe('toolPolicy', () => {
-    const policy = toolPolicy('page_place_content', PAGE_PLACE_CONTENT_ENDPOINTS, 'A hint.');
+    const policy = toolPolicy('page_place_content', PLACE_ENDPOINTS, 'A hint.');
 
     it('allows what the tool owns', () => {
         expect(policy({ method: 'GET', path: '/api/v1/page/json/about-us' })).toBe(true);

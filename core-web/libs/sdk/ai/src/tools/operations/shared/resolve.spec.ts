@@ -1,9 +1,9 @@
 import { vi } from 'vitest';
 
-import { RESOLVE_ENDPOINTS, unlistedCalls } from './endpoints';
-import { resolveLanguageId, resolveSite } from './resolve';
+import { RESOLVE_ENDPOINTS, resolveLanguageId, resolveSite } from './resolve';
 
-import { HttpError, type DotCMSRuntime, type RequestOptions } from '../runtime';
+import { HttpError, type DotCMSRuntime, type RequestOptions } from '../../../runtime';
+import { unlistedCalls } from '../../toolkit/endpoints';
 
 // Every request the fake below sees. After each test, all of them must be in the shared
 // RESOLVE_ENDPOINTS every page tool includes — otherwise resolution works here and is refused

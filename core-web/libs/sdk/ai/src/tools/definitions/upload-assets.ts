@@ -1,19 +1,14 @@
 import { z } from 'zod';
 
-import { uploadAssets, type UploadAssetsManifest } from '../assets-transfer';
-import { createTool, defineTool, type ToolContext } from '../create-tools';
-import { type Endpoint } from '../endpoints';
-import { lenientBoolean } from '../lenient-boolean';
+import {
+    UPLOAD_ASSETS_ENDPOINTS,
+    uploadAssets,
+    type UploadAssetsManifest
+} from '../operations/assets-transfer';
+import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
+import { lenientBoolean } from '../toolkit/lenient-boolean';
 
-import type { DotCMSTool, RequestToolOptions } from '../toolkit';
-
-/** Every endpoint `uploadAssets` calls. Anything else is refused before it reaches the wire. */
-export const UPLOAD_ASSETS_ENDPOINTS: readonly Endpoint[] = [
-    'PUT /api/v2/assets/publish',
-    'PUT /api/v2/assets/save',
-    'GET /api/v1/content/{identifier}',
-    'PUT /api/v1/workflow/actions/default/fire/PUBLISH'
-];
+import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
 
 const definition = defineTool({
     name: 'upload_assets',

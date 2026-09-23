@@ -1,17 +1,13 @@
 import { z } from 'zod';
 
-import { downloadAssets, type DownloadAssetsManifest } from '../assets-transfer';
-import { createTool, defineTool, type ToolContext } from '../create-tools';
-import { type Endpoint } from '../endpoints';
+import {
+    DOWNLOAD_ASSETS_ENDPOINTS,
+    downloadAssets,
+    type DownloadAssetsManifest
+} from '../operations/assets-transfer';
+import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 
-import type { DotCMSTool, RequestToolOptions } from '../toolkit';
-
-/** Every endpoint `downloadAssets` calls — all reads. Anything else is refused before the wire. */
-export const DOWNLOAD_ASSETS_ENDPOINTS: readonly Endpoint[] = [
-    'POST /api/content/_search',
-    'GET /api/v2/assets',
-    'GET /api/v2/assets/{identifier}'
-];
+import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
 
 const definition = defineTool({
     name: 'download_assets',

@@ -1,6 +1,6 @@
 import type { DotCMSColumnContainer } from '@dotcms/types';
 
-import type { DotCMSRuntime } from '../runtime';
+import type { DotCMSRuntime } from '../../../runtime';
 
 /**
  * Response shapes and probes shared by more than one page tool.

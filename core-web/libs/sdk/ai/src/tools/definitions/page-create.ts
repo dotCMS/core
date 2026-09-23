@@ -1,21 +1,13 @@
 import { z } from 'zod';
 
-import { createTool, defineTool, type ToolContext } from '../create-tools';
-import { CONTEXT_ENDPOINTS, RESOLVE_ENDPOINTS, type Endpoint } from '../endpoints';
-import { createPage, type CreatePageManifest } from '../page-create';
+import {
+    createPage,
+    PAGE_CREATE_ENDPOINTS,
+    type CreatePageManifest
+} from '../operations/page-create';
+import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 
-import type { DotCMSTool, RequestToolOptions } from '../toolkit';
-
-/** Every endpoint `createPage` calls. Anything else is refused before it reaches the wire. */
-export const PAGE_CREATE_ENDPOINTS: readonly Endpoint[] = [
-    ...CONTEXT_ENDPOINTS,
-    ...RESOLVE_ENDPOINTS,
-    'GET /api/v1/contenttype/id/{idOrVar}',
-    'GET /api/v1/templates/{identifier}/working',
-    'POST /api/v1/folder/createfolders/{site}',
-    'PUT /api/v1/workflow/actions/default/fire/PUBLISH',
-    'GET /api/v1/content/{identifier}'
-];
+import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
 
 const definition = defineTool({
     name: 'page_create',

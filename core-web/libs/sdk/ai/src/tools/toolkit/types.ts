@@ -1,5 +1,5 @@
-import type { RequestCallEvent, RuntimeAllow } from '../runtime';
 import type { ToolFailure } from './tool-runtime';
+import type { RequestCallEvent, RuntimeAllow } from '../../runtime';
 import type { z } from 'zod';
 
 /**

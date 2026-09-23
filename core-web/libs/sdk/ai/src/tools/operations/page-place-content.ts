@@ -1,9 +1,22 @@
-import { LayoutRow } from './page-common';
-import { normalizePagePath } from './page-path';
-import { resolveSite } from './resolve';
-import { errorMessage } from './tool-runtime';
+import { LayoutRow } from './shared/page-common';
+import { normalizePagePath } from './shared/page-path';
+import { RESOLVE_ENDPOINTS, resolveSite } from './shared/resolve';
 
-import { HttpError, type DotCMSRuntime } from '../runtime';
+import { HttpError, type DotCMSRuntime } from '../../runtime';
+import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
+import { errorMessage } from '../toolkit/tool-runtime';
+
+/**
+ * Every endpoint `placeContent` calls — the `page_place_content` tool enforces exactly this
+ * list, and `page-place-content.spec.ts` checks every request against it. Add a request, add it
+ * here.
+ */
+export const PAGE_PLACE_CONTENT_ENDPOINTS: readonly Endpoint[] = [
+    ...CONTEXT_ENDPOINTS,
+    ...RESOLVE_ENDPOINTS,
+    'GET /api/v1/page/json/**',
+    'POST /api/v1/page/{pageId}/content'
+];
 
 /** The default variant when the caller does not name one. */
 export const DEFAULT_VARIANT = 'DEFAULT';
