@@ -171,10 +171,6 @@ export class DotTreeFolderComponent {
     }
 
     /**
-     * @description Prevent the default behavior to allow drop and not opening the file in the browser
-     * @param event - DragEvent
-     */
-    /**
      * Whether a node is a folder an operation is currently running on.
      *
      * Checks the node's own keys only — it does **not** walk ancestors. Marking covers the folders
@@ -214,6 +210,10 @@ export class DotTreeFolderComponent {
         this.onNodeExpand.emit(event);
     }
 
+    /**
+     * @description Prevent the default behavior to allow drop and not opening the file in the browser
+     * @param event - DragEvent
+     */
     @HostListener('dragover', ['$event'])
     onDragOver(event: DragEvent) {
         event.stopPropagation();

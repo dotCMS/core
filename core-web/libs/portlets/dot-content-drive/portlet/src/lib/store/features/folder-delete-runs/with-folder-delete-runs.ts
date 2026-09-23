@@ -268,13 +268,14 @@ export function withFolderDeleteRuns() {
                     /**
                      * Drops every folder a run was covering, when the run itself ends.
                      *
-                     * The **submitter's** only way out. Both per-folder announcements are pushed
-                     * with `EXCLUDE_OWNER`, so whoever started the run never hears their own
-                     * folders leave it, and the completion event they *do* receive is correlated
-                     * against state a reload has already thrown away — so
-                     * `reportFolderDeleteCompleted` returns before it clears anything. Without this,
-                     * a folder marked from the load-time listing stays marked until the next reload,
-                     * which is precisely the inert folder FR-021 forbids.
+                     * The **submitter's** only way out of the server-derived marking. Both
+                     * per-folder announcements are pushed with `EXCLUDE_OWNER`, so whoever started
+                     * the run never hears their own folders leave it. The completion event they
+                     * *do* receive is handled by `reportFolderDeleteCompleted`, which publishes the
+                     * outcome and ends any local run — but it knows nothing about
+                     * `folderDeleteRuns`, which lives in this feature and composes after it.
+                     * Without this, a folder marked from the load-time listing stays marked until
+                     * the next reload, which is precisely the inert folder FR-021 forbids.
                      *
                      * Keyed by job rather than by path because a completion names the run, not the
                      * folders: by the time it arrives a successful delete has left no folder to name.
@@ -307,12 +308,12 @@ export function withFolderDeleteRuns() {
                 // above it is scoped to whoever submitted the run, which is exactly the audience
                 // `EXCLUDE_OWNER` denies the announcements to.
                 //
-                // Acted on unconditionally — no check that this page tracked the run. That check is
-                // what `reportFolderDeleteCompleted` does before deciding whether to *report* an
-                // outcome, and it is right there: an outcome for a run this page never saw would be
-                // a toast about somebody else's work. Clearing is the opposite case. The server only
-                // sends this to the submitter, the run it names has ended whatever this page
-                // remembers, and a job id that marks nothing here removes nothing.
+                // Acted on unconditionally, for the same reason `reportFolderDeleteCompleted`
+                // reports unconditionally: the server pushes this with `Visibility.USER` addressed
+                // to the submitter, so every one that arrives names a run this author started —
+                // whichever of their tabs happens to be listening. The run it names has ended
+                // whatever this page remembers, and a job id that marks nothing here removes
+                // nothing.
                 socket
                     .on<DotFolderBulkDeleteCompletedEvent>(
                         DotSystemEventType.BULK_FOLDER_DELETE_COMPLETED

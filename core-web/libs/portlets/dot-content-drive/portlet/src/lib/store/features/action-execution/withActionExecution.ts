@@ -785,12 +785,6 @@ export function withActionExecution() {
                     endExternalRun: (runId: string): void => endRun(runId),
 
                     /**
-                     * Remembers a batch this store submitted, so its completion can be told from
-                     * another tab's.
-                     *
-                     * @param affectedFolders where the batch landed, as `//hostname/path` refs
-                     */
-                    /**
                      * Submits a bulk folder delete and marks the folders it accepted (#37063 US1).
                      *
                      * Two separate identities, deliberately:
@@ -806,8 +800,6 @@ export function withActionExecution() {
                      * The guard is the shared one — this operation over these folders — so a delete
                      * running for minutes never blocks an unrelated action, or a delete of different
                      * folders (FR-018).
-                     *
-                     * NOT YET IMPLEMENTED — stub so the specs compile and fail on behaviour (T019).
                      */
                     executeFolderBulkDelete: (assetPaths: string[], targets: string[]): void => {
                         if (!assetPaths.length || isRunning(DELETE_FOLDER_OPERATION, targets)) {
@@ -991,6 +983,12 @@ export function withActionExecution() {
                         });
                     },
 
+                    /**
+                     * Remembers a batch this store submitted, so its completion can be told from
+                     * another tab's.
+                     *
+                     * @param affectedFolders where the batch landed, as `//hostname/path` refs
+                     */
                     trackUploadJob: (
                         jobId: string,
                         affectedFolders: string[] = [],

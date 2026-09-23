@@ -355,6 +355,18 @@ describe('DotFolderListViewComponent', () => {
             expect(spectator.query(byTestId('row-busy'))).toBeTruthy();
         });
 
+        it('should mark a row named by its identifier rather than its inode', () => {
+            // The sidebar tree's `isNodeInFlight` matches on either key, and the two surfaces are
+            // meant to give one answer (FR-014). A run registers both because the search service
+            // only backfills `inode` from `identifier` when the API returned none — so a producer
+            // that sends only the identifier would otherwise mark the folder in the tree and leave
+            // it live here.
+            spectator.setInput('busyRows', [busyItem.identifier]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeTruthy();
+        });
+
         it('should keep a busy row readable rather than replacing it', () => {
             // The whole point. Swapping it for a skeleton would repeat, one row at a time, the bug
             // this feature removes: the row the author wants to watch is the one that vanishes.
