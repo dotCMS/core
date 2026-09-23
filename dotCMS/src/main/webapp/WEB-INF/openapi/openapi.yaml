@@ -31909,8 +31909,10 @@ components:
           type: string
           description: "The operation this model serves: chat completions, embeddings\
             \ or image generation. Taken from the section of the site's configuration\
-            \ the model is listed in; sending the model to a different operation is\
-            \ refused with a 404."
+            \ the model is listed in; a model listed in more than one section reports\
+            \ the first, in the order chat, embeddings, image. Any other operation\
+            \ refuses the model with a 404 unless the site configured it for that\
+            \ operation too."
           enum:
           - chat
           - embedding

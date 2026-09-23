@@ -44,9 +44,10 @@ public record ModelListView(
      *                and reporting a vendor here would imply a provenance dotCMS cannot vouch for
      * @param type    which operation the model serves — {@code chat}, {@code embedding} or
      *                {@code image} — taken from the {@code providerConfig} section the site
-     *                configured it in. Not one of the four standard fields: it is added alongside
-     *                them, which standard clients ignore, and uses the vocabulary Together AI's
-     *                listing already puts in the same place.
+     *                configured it in, or the first of them — chat, embeddings, image — when it
+     *                is configured in several. Not one of the four standard fields: it is added
+     *                alongside them, which standard clients ignore, and uses the vocabulary
+     *                Together AI's listing already puts in the same place.
      */
     @Schema(description = "One configured model")
     public record ModelView(
@@ -56,8 +57,10 @@ public record ModelListView(
             @JsonProperty("owned_by") @Schema(description = "Owner", example = "dotcms") String ownedBy,
             @JsonProperty("type") @Schema(description = "The operation this model serves: chat "
                     + "completions, embeddings or image generation. Taken from the section of the "
-                    + "site's configuration the model is listed in; sending the model to a "
-                    + "different operation is refused with a 404.",
+                    + "site's configuration the model is listed in; a model listed in more than "
+                    + "one section reports the first, in the order chat, embeddings, image. Any "
+                    + "other operation refuses the model with a 404 unless the site configured it "
+                    + "for that operation too.",
                     allowableValues = {TYPE_CHAT, TYPE_EMBEDDING, TYPE_IMAGE},
                     example = TYPE_CHAT) String type) {
 
