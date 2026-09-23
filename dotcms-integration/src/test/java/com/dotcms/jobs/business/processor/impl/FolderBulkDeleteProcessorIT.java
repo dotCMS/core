@@ -18,7 +18,6 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.processor.DefaultProgressTracker;
 import com.dotcms.jobs.business.processor.ProgressTracker;
-import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteForm;
 import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -367,6 +366,52 @@ public class FolderBulkDeleteProcessorIT extends Junit5WeldBaseTest {
         final BatchItemResult notFoundResult = resultFor(metadata, unresolvablePath);
         assertEquals(BatchItemStatus.FAILED, notFoundResult.status());
         assertEquals(BatchFailureReason.PATH_NOT_FOUND, notFoundResult.reason().orElseThrow());
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: A deletable top-level folder containing one subfolder the user may only
+     * read, never edit
+     * ExpectedResult: Recorded FAILED/PERMISSION_DENIED, not UNCLASSIFIED — {@code
+     * FolderAPIImpl.delete}'s recursive call into the subfolder throws a raw
+     * {@code DotSecurityException} (the subfolder's own {@code PERMISSION_EDIT} check, which runs
+     * before that call's own {@code try} block) that the *parent* call's catch-all then rewraps
+     * into a plain {@code DotDataException}; only walking the cause chain
+     * ({@code classifyWrappedDeleteFailure}) recovers that this was a rights'
+     * refusal. Neither folder is touched, since the parent's own delete never reaches
+     * {@code folderFactory.delete} once the child's delete throws.
+     */
+    @Test
+    public void test_process_subfolderWithoutEditRights_recordedAsPermissionDenied()
+            throws Exception {
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final String roleId = APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId();
+        grantPermission(site, roleId, PermissionAPI.PERMISSION_READ);
+
+        final Folder parent = folder();
+        grantPermission(parent, roleId, PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
+
+        final Folder child = new FolderDataGen().parent(parent).name("read-only-child")
+                .nextPersisted();
+        grantPermission(child, roleId, PermissionAPI.PERMISSION_READ);
+
+        final Job job = jobForPaths(List.of(pathOf(parent)), limitedUser);
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        final BatchItemResult result = resultFor(metadata, pathOf(parent));
+        assertEquals(BatchItemStatus.FAILED, result.status());
+        assertEquals(BatchFailureReason.PERMISSION_DENIED, result.reason().orElseThrow());
+
+        final Folder parentStillThere = folderAPI.find(parent.getInode(), admin, false);
+        assertTrue(parentStillThere != null && UtilMethods.isSet(parentStillThere.getInode()),
+                "the parent must be untouched — its own recursive delete failed on the child");
+        final Folder childStillThere = folderAPI.find(child.getInode(), admin, false);
+        assertTrue(childStillThere != null && UtilMethods.isSet(childStillThere.getInode()),
+                "the subfolder itself must survive too — its own permission check is what failed");
     }
 
     /**

@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.VisibilityRoles;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.jobs.business.batch.BatchFailureReason;
 import com.dotcms.jobs.business.batch.BatchItemResult;
 import com.dotcms.jobs.business.batch.BatchItemStatus;
@@ -21,10 +22,11 @@ import com.dotcms.rest.api.v1.asset.WebAssetHelper;
 import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteHelper;
 import com.dotcms.rest.api.v1.asset.view.FolderView;
 import com.dotcms.rest.api.v1.asset.view.WebAssetView;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -308,25 +310,35 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
         final Folder folder;
         try {
             folder = resolve(webAssetHelper, path, user);
-        } catch (final NotAFolderException e) {
+        } catch (final NotAFolderException | NotFoundInDbException | NotFoundException e) {
+            // The only case FR-030's "already gone" reasoning actually applies to: the path
+            // genuinely does not resolve to anything (or resolves to a file, not a folder) — a
+            // prior, abandoned attempt could honestly have caused exactly that (#37685 review).
             recordUnresolved(path, e.getMessage());
             return;
+        } catch (final DotSecurityException e) {
+            // A rights refusal is never "already deleted" — recording it as SUCCESS on a
+            // re-queued run would hide a folder nothing ever touched, and recording it as
+            // PATH_NOT_FOUND on a fresh run would misname a folder that does exist (#37685
+            // review).
+            record(path, BatchItemStatus.FAILED, BatchFailureReason.PERMISSION_DENIED,
+                    e.getMessage());
+            return;
         } catch (final Exception e) {
-            // The resolution step itself failed for a reason other than "not a folder" — an
-            // unresolvable/malformed path behaves the same way from the caller's point of view
-            // (FR-010: gone, a file, or malformed are all this path's own PATH_NOT_FOUND failure).
+            // Anything else (a malformed path, a transient DB error) is not "not found" either —
+            // same reasoning as the DotSecurityException branch above.
             Logger.warn(this, String.format("Unable to resolve path [%s]: %s",
                     path, e.getMessage()), e);
-            recordUnresolved(path, e.getMessage());
+            record(path, BatchItemStatus.FAILED, BatchFailureReason.UNCLASSIFIED, e.getMessage());
             return;
         }
 
         if (FolderAPI.SYSTEM_FOLDER.equals(folder.getInode())) {
-            // Decided before attempting the delete: FolderAPIImpl.delete() also refuses this, but
+            // Decided before attempting to delete: FolderAPIImpl.delete() also refuses this, but
             // with the *same* DotSecurityException type it uses for an ordinary permission
             // refusal (FR-011 is a fact we already have, not one worth re-deriving from a message).
             // Never announced either — it is never actually attempted, so there is nothing for
-            // "entering a delete" to honestly describe.
+            // "entering a deleted" to honestly describe.
             record(path, BatchItemStatus.FAILED, BatchFailureReason.PROTECTED_FOLDER,
                     "the system folder is never deleted");
             return;
@@ -373,25 +385,46 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
             APILocator.getFolderAPI().delete(folder, user, false);
             record(path, BatchItemStatus.SUCCESS, null, null);
         } catch (final DotSecurityException e) {
+            // The one case that reaches here unwrapped: the root folder's own PERMISSION_EDIT
+            // check, thrown before FolderAPIImpl.delete's try block. Everything else it can fail
+            // on — a subfolder's own permission check, locked content — is caught inside that
+            // method and rethrown as a plain DotDataException, which is why every other branch
+            // below has to look at the cause chain instead of the exception's own type (#37685
+            // review — DotLockException/DotSecurityException from a subfolder never survive as
+            // themselves that far up).
             record(path, BatchItemStatus.FAILED, BatchFailureReason.PERMISSION_DENIED,
                     e.getMessage());
-        } catch (final DotStateException e) {
-            if (e.getCause() instanceof DotLockException) {
-                record(path, BatchItemStatus.FAILED, BatchFailureReason.IN_USE, e.getMessage());
-            } else {
+        } catch (final Exception e) {
+            final BatchFailureReason reason = classifyWrappedDeleteFailure(e);
+            if (reason == BatchFailureReason.UNCLASSIFIED) {
                 Logger.warn(this, String.format("Unable to delete folder [%s]: %s",
                         path, e.getMessage()), e);
-                record(path, BatchItemStatus.FAILED, BatchFailureReason.UNCLASSIFIED,
-                        e.getMessage());
             }
-        } catch (final Exception e) {
-            Logger.warn(this, String.format("Unable to delete folder [%s]: %s",
-                    path, e.getMessage()), e);
-            record(path, BatchItemStatus.FAILED, BatchFailureReason.UNCLASSIFIED, e.getMessage());
+            record(path, BatchItemStatus.FAILED, reason, e.getMessage());
         } finally {
             heartbeat.shutdownNow();
             announce(SystemEventType.FOLDER_DELETE_FINISHED, job, path, user, readers);
         }
+    }
+
+    /**
+     * Classifies a delete failure that arrived already wrapped in a {@code DotDataException} (see
+     * the catch block above) by walking its cause chain rather than trusting its own type — the
+     * only way to recover what actually went wrong once {@code FolderAPIImpl.delete} has rewrapped
+     * it. {@link DotLockException} is checked first even though it is itself a
+     * {@link DotSecurityException}: a lock is a more specific, more actionable answer than a bare
+     * rights refusal, and would otherwise be shadowed by the broader check.
+     */
+    private static BatchFailureReason classifyWrappedDeleteFailure(final Throwable e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+            if (cause instanceof DotLockException) {
+                return BatchFailureReason.IN_USE;
+            }
+            if (cause instanceof DotSecurityException) {
+                return BatchFailureReason.PERMISSION_DENIED;
+            }
+        }
+        return BatchFailureReason.UNCLASSIFIED;
     }
 
     /**
@@ -486,11 +519,19 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * delete does ({@code WebAssetHelper#deleteFolder}) — reused here rather than called directly
      * because classification needs the intermediate facts (is this even a folder? which one?) that
      * {@code deleteFolder}'s all-in-one method does not expose.
+     * <p>
+     * The caller ({@link #deleteOne}) classifies by exception type, not by catching everything the
+     * same way (#37685 review): a genuinely missing path
+     * ({@link com.dotcms.contenttype.exception.NotFoundInDbException},
+     * {@link com.dotcms.rest.exception.NotFoundException}, or this method's own
+     * {@code NotAFolderException}) is the only case FR-030's "already gone" reasoning applies to; a
+     * {@link DotSecurityException} is a rights refusal, never a deletion; anything else
+     * (a malformed path, a transient {@code DotDataException}) is neither.
      *
      * @throws NotAFolderException the path resolves, but not to a folder (a file) — FR-010
      */
     private Folder resolve(final WebAssetHelper webAssetHelper, final String path, final User user)
-            throws Exception {
+            throws NotAFolderException, DotDataException, DotSecurityException {
 
         final WebAssetView assetInfo = webAssetHelper.getAssetInfo(path, user);
         if (!(assetInfo instanceof FolderView)) {
