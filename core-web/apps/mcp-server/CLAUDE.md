@@ -71,7 +71,7 @@ export { schema, metadata };
 export default handler;
 ```
 
-**Wiring** (`src/lib/tools.ts`) — the one place that reads `DOTCMS_URL` / `AUTH_TOKEN`. It builds a `dotcmsConnection` whose `url` / `token` are resolvers over them, read on each call, so a server started without credentials still boots and answers every call with a `CONFIGURATION` failure. `xmcpTool(factory)` calls a `@dotcms/ai/tools` factory with that connection and this server's options (`SANDBOX_TIMEOUT`, and the asset tools' `root: '/'` — the whole disk, deliberately, since a local stdio server's model acts as the user who started it), and maps the tool onto xmcp's exports. `toolResultText` turns each result into the text this server has always returned. The SDK itself never reads the environment.
+**Wiring** (`src/lib/tools.ts`) — the one place that reads `DOTCMS_URL` / `AUTH_TOKEN`. It builds a `dotcmsConnection` whose `url` / `token` are resolvers over them, read on each call, so a server started without credentials still boots and answers every call with a `CONFIGURATION` failure. `xmcpTool(factory)` calls a `@dotcms/ai/tools` factory with that connection and this server's options (`SANDBOX_TIMEOUT`, and the asset tools' `root: '/'` — the whole disk, deliberately, since a local stdio server's model acts as the user who started it), and maps the tool onto xmcp's exports. Each tool's own `toText(result)` turns its result into the text this server has always returned. The SDK itself never reads the environment.
 
 **Tool logic** — lives in `@dotcms/ai`, not here:
 - `libs/sdk/ai/src/tools/definitions/` — the tools: each one's name, description, Zod input and handler

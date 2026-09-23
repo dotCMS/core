@@ -2,7 +2,6 @@ import { type ToolMetadata } from 'xmcp';
 
 import {
     dotcmsConnection,
-    toolResultText,
     type AssetToolOptions,
     type DotCMSConnection,
     type DotCMSTool,
@@ -64,6 +63,6 @@ export function xmcpTool(
         metadata,
         // MCP hands the model text: a code tool's output as-is, and a manifest or a failure as
         // the same pretty-printed JSON this server has always returned.
-        handler: async (args: unknown): Promise<string> => toolResultText(await tool.execute(args))
+        handler: async (args: unknown): Promise<string> => tool.toText(await tool.execute(args))
     };
 }

@@ -10,9 +10,9 @@ import { searchTool } from './search';
 import { uploadAssetsTool } from './upload-assets';
 
 import { dotcmsConnection, type DotCMSConnection } from '../toolkit/connection';
-import { toolResultText, type CodeToolResult } from '../toolkit/results';
 import { isToolFailure, type ToolFailure } from '../toolkit/tool-runtime';
 
+import type { CodeToolResult } from '../toolkit/results';
 import type { DotCMSTool } from '../toolkit/types';
 
 /** Build a minimal JSON Response stub. */
@@ -100,6 +100,7 @@ describe('tool factories', () => {
                 expect(typeof tool.inputSchema.safeParse).toBe('function');
                 expect(typeof tool.execute).toBe('function');
                 expect(typeof tool.toModelOutput).toBe('function');
+                expect(typeof tool.toText).toBe('function');
                 expect(Object.keys(tool.annotations).sort()).toEqual([
                     'destructiveHint',
                     'idempotentHint',
@@ -340,9 +341,24 @@ describe('tool factories', () => {
             });
         });
 
-        it('renders any result as the text an MCP host sends — code text unescaped', () => {
-            expect(toolResultText(codeResult)).toBe('line one\nline two');
-            expect(toolResultText(manifest)).toBe(JSON.stringify(manifest, null, 2));
+        it('renders a result as the text an MCP host sends — code text unescaped', () => {
+            expect(searchTool(DOTCMS).toText(codeResult)).toBe('line one\nline two');
+            expect(pageVerifyTool(DOTCMS).toText(manifest as never)).toBe(
+                JSON.stringify(manifest, null, 2)
+            );
+        });
+
+        it('shows text only for the tools that declare a text form', () => {
+            // Asked with the SAME code-shaped value, only search and execute answer with text:
+            // the choice is the tool's declaration, not a guess from the value's shape.
+            const textTools = Object.entries(FACTORIES)
+                .filter(
+                    ([, factory]) =>
+                        factory(DOTCMS).toModelOutput({ output: codeResult }).type === 'text'
+                )
+                .map(([name]) => name);
+
+            expect(textTools).toEqual(['execute', 'search']);
         });
     });
 });

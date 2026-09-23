@@ -81,8 +81,13 @@ export interface DotCMSTool<TInput extends z.ZodObject = z.ZodObject, TResult = 
     execute(input: unknown): Promise<TResult | ToolFailure>;
     /**
      * What the model sees of a result, for frameworks that ask (the AI SDK picks this up on its
-     * own): a code tool's text as text, everything else as JSON. For a text-only transport such
-     * as MCP, use `toolResultText(result)` instead.
+     * own): text for the tools that declare a text form (`search`, `execute`), structured JSON
+     * for the rest and for any failure.
      */
     toModelOutput(options: { output: TResult | ToolFailure }): ToolModelOutput;
+    /**
+     * The same rendering, as the text a text-only transport such as an MCP `content` block
+     * carries: a text tool's output as-is, everything else pretty-printed JSON.
+     */
+    toText(output: TResult | ToolFailure): string;
 }

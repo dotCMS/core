@@ -153,7 +153,7 @@ Paths are compared after symlinks resolve: a link inside the root that points ou
 
 **Nothing happens at creation.** Neither `dotcmsConnection` nor a factory does any I/O; the connection is resolved and checked on each call. So a host started before its credentials exist still boots and lists its tools, and every call answers with a `CONFIGURATION` failure instead of the host crashing. That covers an empty value, a resolver returning `undefined`, and a resolver that throws. Each call also builds a fresh runtime, so instance context (sites, content types, languages) is never stale from one call to the next.
 
-**What the model sees.** In the AI SDK, `toModelOutput` is picked up automatically: `search`/`execute` reach the model as plain text, and manifests as structured JSON. A text-only transport such as MCP uses `toolResultText(result)`, which applies the same rule: code text unescaped, everything else pretty-printed JSON.
+**What the model sees.** Each tool decides how its results reach the model. `search`/`execute` declare a text form, and the rest are shown as structured JSON (so is any failure). In the AI SDK, the tool's `toModelOutput` is picked up automatically. A text-only transport such as MCP calls the tool's own `toText(result)`, which applies the same rule: code text unescaped, everything else pretty-printed JSON.
 
 **Register each tool under its `name`.** The descriptions refer to their siblings by these names ("use the `search` tool first", "prefer `page_create`"). A tool registered under another name still works, but the model is pointed at one that does not exist.
 
@@ -163,13 +163,7 @@ The tool object is already a valid `registerTool` config. All that's left is MCP
 
 ```ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import {
-    dotcmsConnection,
-    pageVerifyTool,
-    searchTool,
-    toolResultText,
-    type DotCMSTool
-} from '@dotcms/ai/tools';
+import { dotcmsConnection, pageVerifyTool, searchTool, type DotCMSTool } from '@dotcms/ai/tools';
 
 const dotcms = dotcmsConnection({ url, token });
 const server = new McpServer({ name: 'my-server', version: '1.0.0' });
@@ -177,7 +171,7 @@ const tools: DotCMSTool[] = [searchTool(dotcms), pageVerifyTool(dotcms)];
 
 for (const tool of tools) {
     server.registerTool(tool.name, tool, async (args) => ({
-        content: [{ type: 'text', text: toolResultText(await tool.execute(args)) }]
+        content: [{ type: 'text', text: tool.toText(await tool.execute(args)) }]
     }));
 }
 ```

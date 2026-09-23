@@ -88,6 +88,8 @@ Common recipes:
     // The sandbox hands the model's code the same `api` adapter `execute` gets, so without
     // this a "read-only" search could write. It may read the context it is given, nothing more.
     endpoints: CONTEXT_ENDPOINTS,
+    // The result IS text (the capped output of the model's code): shown to the model as-is.
+    toText: ({ result }) => result,
     endpointHint:
         'search is read-only: its code explores the bundled `spec` and the pre-loaded context. ' +
         'Use the `execute` tool to call the dotCMS API.',

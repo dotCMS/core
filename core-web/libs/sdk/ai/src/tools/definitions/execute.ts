@@ -147,6 +147,8 @@ Helper utilities available: pick(arr, fields), table(arr), count(arr, field), su
     },
     // The model picks the endpoints here, so the consumer's `allow` bounds them.
     endpoints: 'model-chosen',
+    // The result IS text (the capped output of the model's code): shown to the model as-is.
+    toText: ({ result }) => result,
     async handler({ code }, ctx) {
         // The front door absorbs the executor + adapter + context-cache wiring and injects
         // dotCMS instance context automatically. Auth tokens never enter the sandbox.

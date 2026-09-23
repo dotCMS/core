@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 import { resolveConnection, type DotCMSConnection } from './connection';
 import { modelChosenPolicy, toolPolicy, type Endpoint } from './endpoints';
-import { toModelOutput } from './results';
-import { createToolRuntime, toToolFailure } from './tool-runtime';
+import { modelOutputText, renderToolOutput } from './results';
+import { createToolRuntime, toToolFailure, type ToolFailure } from './tool-runtime';
 
 import { ValidationError, type DotCMSRuntime } from '../../runtime';
 
@@ -47,6 +47,13 @@ export interface ToolDefinition<TInput extends z.ZodObject, TResult, TOptions ex
     endpoints: readonly Endpoint[] | 'model-chosen';
     /** Appended to the rejection message when a request falls outside `endpoints`. */
     endpointHint?: string;
+    /**
+     * The tool's text form, for a tool whose result IS text (`search`, `execute`): shown to the
+     * model as text rather than as a JSON string escaped inside an object. Omit it and results
+     * are shown as structured JSON. Declared here, typed against `TResult`, so the choice is the
+     * tool's — never inferred from what a result happens to look like.
+     */
+    toText?: (result: TResult) => string;
     handler(input: z.output<TInput>, ctx: ToolContext<TOptions>): Promise<TResult>;
 }
 
@@ -78,13 +85,18 @@ export function createTool<TInput extends z.ZodObject, TResult, TOptions extends
             ? modelChosenPolicy(options.allow)
             : toolPolicy(definition.name, definition.endpoints, definition.endpointHint);
 
+    // One rendering, two views of it: `toModelOutput` for frameworks that take structured model
+    // output (the AI SDK), `toText` for text-only transports (MCP). They cannot disagree.
+    const render = (output: TResult | ToolFailure) => renderToolOutput(definition.toText, output);
+
     return {
         name: definition.name,
         title: definition.title,
         description: definition.description,
         inputSchema: definition.inputSchema,
         annotations: definition.annotations,
-        toModelOutput,
+        toModelOutput: ({ output }) => render(output),
+        toText: (output) => modelOutputText(render(output)),
         async execute(input) {
             // The trust boundary, same as `defineAdapter`'s `input`: AI SDK and MCP validate
             // before calling, but a hand-rolled agent loop may not, and a handler must never

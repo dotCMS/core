@@ -42,8 +42,8 @@ export type {
 export { isToolFailure } from './toolkit/tool-runtime';
 export type { ToolFailure } from './toolkit/tool-runtime';
 
-// Rendering a result for a text-only transport (MCP), and the code tools' result shape.
-export { toolResultText } from './toolkit/results';
+// The code tools' result shape, and what `tool.toModelOutput()` returns. Rendering a result
+// for a text-only transport (MCP) is the tool's own `tool.toText(result)`.
 export type { CodeToolResult, ToolModelOutput } from './toolkit/results';
 
 // ---- Direct operations -----------------------------------------------------------------

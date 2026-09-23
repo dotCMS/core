@@ -48,7 +48,7 @@ Generic machinery with no knowledge of any specific dotCMS operation:
 | `types.ts` | The public `DotCMSTool` shape and the factory option types |
 | `connection.ts` | `dotcmsConnection`: the URL, token and observability hooks a consumer hands every tool, with values resolved on each call. The tools never read the environment (lint-enforced) |
 | `create-tool.ts` | `defineTool` / `createTool`: input validation, resolving the connection, turning throws into failures, building the per-tool policy |
-| `results.ts` | The `{ result }` shape of the code tools, `toModelOutput` (AI SDK), and `toolResultText` (MCP and other text transports) |
+| `results.ts` | The `{ result }` shape of the code tools, and the one rendering rule behind every tool's `toModelOutput` (AI SDK) and `toText` (MCP and other text transports): text for a tool whose definition declares `toText`, JSON otherwise |
 | `tool-runtime.ts` | The runtime one call runs on (fresh per call, request deadline), and the `ToolFailure` envelope |
 | `endpoints.ts` | The endpoint pattern language, the policies built from it, and `CONTEXT_ENDPOINTS` (the one list the toolkit owns, because the runtime makes those reads for every tool) |
 | `lenient-boolean.ts` | Zod helpers for input schemas |
