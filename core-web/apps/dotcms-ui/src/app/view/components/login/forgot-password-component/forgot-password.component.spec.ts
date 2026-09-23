@@ -112,7 +112,7 @@ describe('ForgotPasswordComponent', () => {
         spectator.detectChanges();
 
         const errorMessages = spectator.debugElement.queryAll(
-            By.css('dot-field-validation-message .p-invalid')
+            By.css('dot-field-validation-message [data-testId="error-msg"]')
         );
 
         expect(errorMessages.length).toBe(1);

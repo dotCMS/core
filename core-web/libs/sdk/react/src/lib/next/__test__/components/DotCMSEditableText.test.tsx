@@ -157,12 +157,19 @@ describe('DotCMSEditableText', () => {
             expect(editor).toBeNull();
             expect(screen.getByText(MOCK_CONTENTLET['title'])).not.toBeNull();
         });
+
+        it('should never load the TinyMCE integration outside edit mode', async () => {
+            // Regression guard for the code-split: live-mode pages must not pull TinyMCE.
+            await Promise.resolve();
+
+            expect(Editor).not.toHaveBeenCalled();
+        });
     });
 
     describe('Inside editor', () => {
         let rerenderFn: (ui: React.ReactNode) => void;
 
-        beforeEach(() => {
+        beforeEach(async () => {
             mockedGetUVEState.mockReturnValue({
                 mode: UVE_MODE.EDIT,
                 dotCMSHost: 'http://localhost:8080',
@@ -176,6 +183,9 @@ describe('DotCMSEditableText', () => {
                 <DotCMSEditableText contentlet={MOCK_CONTENTLET} fieldName="title" />
             );
             rerenderFn = rerender;
+            // The TinyMCE integration is code-split and only fetched once the UVE is in edit
+            // mode, so wait for that chunk before asserting on the editor.
+            await screen.findByTestId('tinymce-editor');
         });
 
         it('should pass the correct props to the Editor component', () => {

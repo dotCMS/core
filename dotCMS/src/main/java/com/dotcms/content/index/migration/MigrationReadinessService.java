@@ -2,12 +2,14 @@ package com.dotcms.content.index.migration;
 
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.ContentMirrors;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -22,12 +24,16 @@ import java.util.stream.Collectors;
  *   <li><b>Advance</b> (toward OpenSearch-only): meaningful in the dual-write phases (1/2), where it
  *       is safe only when no index needs attention. In Phase 0 there is nothing to reconcile yet
  *       (counterparts are built during dual-write) and in Phase 3 there is no further phase — both report
- *       safe with an explanatory summary.</li>
+ *       safe with an explanatory summary, but only once the mandatory content pair was actually
+ *       resolved; neither verdict may be asserted over zero measurements (issue #37635).</li>
  *   <li><b>Rollback</b> (downgrade): a downgrade ultimately routes reads back to Elasticsearch
  *       (Phases 0/1), so it is unsafe when any index's ES copy is missing, behind its OpenSearch
  *       counterpart, or when either count could not be measured — that delta (typically content written
  *       while OpenSearch served reads) would be silently missing until a full reindex. Derived from the
- *       same live counts, so no historical state is needed.</li>
+ *       same live counts, so no historical state is needed. Also unsafe when the mandatory content pair
+ *       could not be resolved at all: with no rows to compare, "nothing shows Elasticsearch behind" is
+ *       vacuously true, and a downgrade is the one decision this field exists to protect
+ *       (issue #37635).</li>
  * </ul>
  */
 public class MigrationReadinessService {
@@ -53,7 +59,8 @@ public class MigrationReadinessService {
     /** Builds the readiness report for the current phase. */
     public MigrationReadiness evaluate() {
         final MigrationPhase phase = MigrationPhase.current();
-        final List<MirrorStatus> content = new ArrayList<>(contentReconciler.statuses());
+        final ContentMirrors contentMirrors = contentReconciler.mirrors();
+        final List<MirrorStatus> content = new ArrayList<>(contentMirrors.statuses());
         final List<MirrorStatus> siteSearch = new ArrayList<>(siteSearchReconciler.statuses());
 
         final List<MirrorStatus> all = new ArrayList<>(content.size() + siteSearch.size());
@@ -66,25 +73,46 @@ public class MigrationReadinessService {
         final boolean esBehindAnywhere = all.stream()
                 .anyMatch(MigrationReadinessService::blocksRollback);
 
-        // Content WORKING/LIVE are mandatory in every pre-OpenSearch-only phase: they are the source
-        // that gets mirrored to OpenSearch, so a missing slot (pointer unset, or its Elasticsearch copy
-        // gone) means there is nothing to migrate — a hard no-go, independent of the sync check, which
-        // would otherwise pass vacuously when there are no active indices at all. Site Search is an open
-        // set that may legitimately be empty, so it is not required here.
-        final List<String> missingContent = requiredContentBlockers(content);
+        // Content WORKING/LIVE are mandatory in EVERY phase: they are the active content store, so a
+        // missing slot (pointer unset, or the copy on the engine that owns it gone) means there is
+        // nothing to report on — a hard no-go, independent of the sync check, which would otherwise
+        // pass vacuously when there are no active indices at all. Site Search is an open set that may
+        // legitimately be empty, so it is not required here.
+        final List<String> missingContent =
+                requiredContentBlockers(content, phase, contentMirrors.unreadableReason());
 
         final boolean safeToAdvance;
         final String summary;
         final List<String> blockers = new ArrayList<>();
 
         if (phase.isMigrationComplete()) {
-            safeToAdvance = true; // no phase beyond 3
-            summary = "Phase 3 (OpenSearch only) — the final phase, nothing to advance to. "
-                    + (esBehindAnywhere
-                        ? "WARNING: OpenSearch holds content Elasticsearch does not; a downgrade would "
-                                + "hide it until a full reindex."
-                        : "No index shows Elasticsearch behind OpenSearch; still verify before any "
-                                + "downgrade.");
+            // Phase 3 has no phase beyond it, so "safe to advance" is normally trivially true — but
+            // only once something was actually measured. With the mandatory content pair missing there
+            // are zero rows to reason about, and every field below would otherwise assert a clean bill
+            // of health over zero measurements: outOfSyncCount reads 0 because nothing was counted and
+            // the rollback verdict reads safe because no index could show Elasticsearch behind
+            // OpenSearch (issue #37635). Report the gap instead of the vacuous all-clear.
+            blockers.addAll(missingContent);
+            safeToAdvance = blockers.isEmpty();
+            summary = safeToAdvance
+                    ? "Phase 3 (OpenSearch only) — the final phase, nothing to advance to. "
+                        // Phase 3 counts what it depends on — the OpenSearch copy against the
+                        // database — so a non-zero count here is actionable; say so next to it.
+                        + (outOfSync.isEmpty() ? ""
+                            : String.format("%s %s an OpenSearch copy that is missing, could not be "
+                                    + "measured, or holds materially less than the database; run a "
+                                    + "full reindex. ", plural(outOfSync.size(), "index", "indices"),
+                                    outOfSync.size() == 1 ? "has" : "have"))
+                        + (esBehindAnywhere
+                            ? "WARNING: OpenSearch holds content Elasticsearch does not; a downgrade "
+                                    + "would hide it until a full reindex."
+                            : "No index shows Elasticsearch behind OpenSearch; still verify before any "
+                                    + "downgrade.")
+                    : String.format("Phase 3 (OpenSearch only), but this report measured nothing: %s "
+                            + "to resolve first (see the blockers list). No conclusion below is "
+                            + "supported by data — an outOfSyncCount of 0 here means nothing was "
+                            + "counted, not that nothing is wrong, and a downgrade must not be "
+                            + "attempted on this reading.", plural(blockers.size(), "blocker"));
         } else if (phase.isMigrationNotStarted()) {
             // Phase 0: OpenSearch counterparts are built later (during dual-write), so their absence is
             // expected and NOT a blocker; only the mandatory Elasticsearch content pair is required.
@@ -126,8 +154,13 @@ public class MigrationReadinessService {
         final MigrationReadiness.PhaseInfo phaseInfo = new MigrationReadiness.PhaseInfo(
                 phase.ordinal(), phase.name(), readEngine(phase), writeEngines(phase),
                 phase.isDualWrite());
+        // A downgrade routes reads back to Elasticsearch, so it is safe only when the report actually
+        // saw the mandatory content pair. Without it, "no index shows Elasticsearch behind OpenSearch"
+        // is vacuously true over an empty list — and the rollback verdict is the one decision that
+        // reading exists to protect (issue #37635).
+        final boolean safeToRollback = missingContent.isEmpty() && !esBehindAnywhere;
         final MigrationReadiness.Verdict verdict = new MigrationReadiness.Verdict(
-                safeToAdvance, !esBehindAnywhere, outOfSync.size(), summary, blockers);
+                safeToAdvance, safeToRollback, outOfSync.size(), summary, blockers);
 
         // Content is keyed by slot (WORKING/LIVE — a fixed pair, so a keyed object reads naturally);
         // Site Search stays a list (an open set with no natural key). LinkedHashMap keeps the
@@ -148,14 +181,51 @@ public class MigrationReadinessService {
      * contradict the "nothing to reconcile yet" verdict a technician reads next to it. An OpenSearch copy
      * that exists while the Elasticsearch one does not — or a count drift between two existing copies —
      * is still unexpected in Phase 0 and stays reported.
+     *
+     * <p>Phase 3 is judged differently altogether — see {@link #needsAttentionInFinalPhase}.</p>
      */
     private static boolean needsAttentionIn(final MigrationPhase phase, final MirrorStatus status) {
+        if (phase.isMigrationComplete()) {
+            return needsAttentionInFinalPhase(status);
+        }
         if (!status.needsAttention()) {
             return false;
         }
         final boolean expectedMissingCounterpart =
                 phase.isMigrationNotStarted() && status.es().exists() && !status.os().exists();
         return !expectedMissingCounterpart;
+    }
+
+    /**
+     * Phase 3 health, measured against the database rather than against Elasticsearch.
+     *
+     * <p>Past the final phase Elasticsearch receives no more writes. The switchover keeps its active
+     * pointers, so while that cluster is reachable its copy is still measured — frozen at cutover, and
+     * drifting from OpenSearch in <em>both</em> directions from then on: behind after every new
+     * contentlet, ahead after every delete or unpublish. Comparing the two engines therefore cannot
+     * tell a healthy install from one whose OpenSearch copy lost documents, and counting that drift
+     * would pin a healthy install at a non-zero {@code outOfSyncCount} forever. So neither direction
+     * of Elasticsearch drift — nor an Elasticsearch copy that is gone — is counted here. The gap is
+     * still reported by {@code safeToRollback} and the summary's downgrade warning, which derive from
+     * {@link #blocksRollback} and own that fact.</p>
+     *
+     * <p>What is counted is what Phase 3 actually depends on: an OpenSearch copy that is missing,
+     * whose size could not be measured, or that holds materially less than the database says it
+     * should ({@link MirrorStatus#INCOMPLETE_INDEXED_THRESHOLD}) — a reindex that never finished, which
+     * the engine-to-engine comparison would have missed whenever the frozen copy happened to match
+     * it. An unmeasurable Elasticsearch count also stays counted: it is an unknown, not a lag. Rows
+     * with no database denominator (Site Search) are judged on the first two conditions alone.</p>
+     */
+    private static boolean needsAttentionInFinalPhase(final MirrorStatus status) {
+        if (!status.os().exists() || status.os().docCount() < 0) {
+            return true;
+        }
+        if (status.es().exists() && status.es().docCount() < 0) {
+            return true;
+        }
+        final Double osIndexedPercent = status.osIndexedPercent();
+        return osIndexedPercent != null
+                && osIndexedPercent < MirrorStatus.INCOMPLETE_INDEXED_THRESHOLD;
     }
 
     /**
@@ -178,23 +248,40 @@ public class MigrationReadinessService {
 
     /**
      * Blockers for the mandatory content pair: WORKING and LIVE must each have a set pointer and an
-     * existing Elasticsearch copy (the migration source). Returns one message per missing/empty slot;
-     * an empty list means both are present. This is what stops a "no active content indices" state from
-     * passing the readiness check vacuously (an empty status list would otherwise leave nothing to flag).
+     * existing copy on the engine that owns the content in this phase — Elasticsearch while it is still
+     * the migration source (phases 0/1/2), OpenSearch once it is the only store left (phase 3). Returns
+     * one message per missing/empty slot; an empty list means both are present.
+     *
+     * <p>This is what stops a "no active content indices" state from passing the readiness check
+     * vacuously — an empty status list would otherwise leave nothing to flag, and every verdict derived
+     * from it would be asserted over zero measurements (issues #36360 and #37635).</p>
      */
-    private static List<String> requiredContentBlockers(final List<MirrorStatus> content) {
+    private static List<String> requiredContentBlockers(final List<MirrorStatus> content,
+            final MigrationPhase phase, final Optional<String> unreadableReason) {
+        final boolean openSearchOwnsContent = phase.isMigrationComplete();
+        final String engine = openSearchOwnsContent ? "OpenSearch" : "Elasticsearch";
+        // A store that could not be read is NOT a store with no indices. Both leave the report with
+        // no rows, but the operator action is the opposite — fix the read, do not reindex — and the
+        // per-slot messages below would confidently prescribe the wrong one (issue #37635).
+        if (unreadableReason.isPresent()) {
+            return List.of(String.format("The active content indices could not be determined: %s. "
+                    + "Nothing below was measured, so no conclusion in this report is supported by "
+                    + "data. Resolve the read failure and re-run this check — do NOT reindex on the "
+                    + "strength of this reading; it is not known whether the indices are missing.",
+                    unreadableReason.get()));
+        }
         final List<String> out = new ArrayList<>(2);
         for (final IndexKind kind : List.of(IndexKind.CONTENT_WORKING, IndexKind.CONTENT_LIVE)) {
             final String slot = contentSlot(kind);
             final MirrorStatus status = content.stream()
                     .filter(s -> s.kind() == kind).findFirst().orElse(null);
             if (status == null) {
-                out.add(String.format("No active %s content index — Elasticsearch has no %s index to "
-                        + "migrate. Reindex to (re)create it before changing the phase.",
-                        slot, slot.toLowerCase()));
-            } else if (!status.es().exists()) {
-                out.add(String.format("The active %s content index '%s' has no Elasticsearch copy — "
-                        + "reindex to rebuild it before changing the phase.", slot, status.indexName()));
+                out.add(String.format("No active %s content index is registered — %s has no %s index "
+                        + "to report on. Reindex to (re)create it before changing the phase.",
+                        slot, engine, slot.toLowerCase()));
+            } else if (openSearchOwnsContent ? !status.os().exists() : !status.es().exists()) {
+                out.add(String.format("The active %s content index '%s' has no %s copy — reindex to "
+                        + "rebuild it before changing the phase.", slot, status.indexName(), engine));
             }
         }
         return out;

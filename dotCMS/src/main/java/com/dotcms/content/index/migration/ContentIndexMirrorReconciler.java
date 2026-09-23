@@ -6,7 +6,9 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.IndexStats;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.dotcms.content.index.migration.MirrorStatus.Verdict;
@@ -14,6 +16,7 @@ import com.dotcms.content.index.opensearch.ContentletIndexOperationsOS;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -21,6 +24,7 @@ import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -28,10 +32,18 @@ import java.util.function.Supplier;
  * content indices (working and live) against their {@code .os} counterparts across both engines,
  * mirroring {@link SiteSearchMirrorReconciler} but for the content store. Never mutates anything.
  *
- * <h4>How the counts are read (phase-independently)</h4>
- * <p>{@code IndiciesInfo} always holds the cluster-prefixed, <em>un-tagged</em> Elasticsearch name for
- * working/live (its backing {@code indicies} table owns only the ES rows — {@code index_version IS
- * NULL}); the OpenSearch counterpart is that name with the {@code .os} tag.</p>
+ * <h4>Where the active index names come from</h4>
+ * <p>Each engine's physical name is read from the store that owns it: {@code IndiciesInfo} for
+ * Elasticsearch (its backing {@code indicies} rows are the ones with {@code index_version IS NULL})
+ * and {@code VersionedIndices} for OpenSearch.</p>
+ *
+ * <p>Up to Phase 2 the two are kept on one generation by construction, so the OpenSearch name is just
+ * the Elasticsearch one plus the {@code .os} tag and only the Elasticsearch store needs reading. From
+ * Phase 3 on that stops holding: writes go to OpenSearch alone, so a reindex advances OpenSearch to a
+ * newly built pair while Elasticsearch keeps naming the index it held at cutover — an index that
+ * survives indefinitely, since deletion in that phase routes to OpenSearch only. Deriving one name
+ * from the other there would report "Elasticsearch has no copy" for an index that exists and holds
+ * content, so both stores are read and the generation split is reported as what it is (issue #37635).</p>
  *
  * <p><strong>Existence</strong> comes from each engine leaf's {@code getIndicesStats()} — one call per
  * engine covering the whole index set, so both slots are decided from a single snapshot. Those stats
@@ -59,13 +71,15 @@ public class ContentIndexMirrorReconciler {
     private final ContentletIndexOperations esOps;
     private final ContentletIndexOperations osOps;
     private final Supplier<IndiciesInfo> indiciesSupplier;
+    private final Supplier<Optional<VersionedIndices>> versionedIndicesSupplier;
     private final Supplier<DatabaseCounts> databaseCountsSupplier;
 
     public ContentIndexMirrorReconciler() {
         this(new ESIndexAPI(), CDIUtils.getBeanThrows(OSIndexAPIImpl.class),
                 new ContentletIndexOperationsES(),
                 CDIUtils.getBeanThrows(ContentletIndexOperationsOS.class),
-                ContentIndexMirrorReconciler::loadIndiciesQuietly,
+                ContentIndexMirrorReconciler::loadIndicies,
+                ContentIndexMirrorReconciler::loadVersionedIndices,
                 ContentIndexMirrorReconciler::loadDatabaseCountsQuietly);
     }
 
@@ -73,12 +87,14 @@ public class ContentIndexMirrorReconciler {
     ContentIndexMirrorReconciler(final IndexAPI esImpl, final IndexAPI osImpl,
             final ContentletIndexOperations esOps, final ContentletIndexOperations osOps,
             final Supplier<IndiciesInfo> indiciesSupplier,
+            final Supplier<Optional<VersionedIndices>> versionedIndicesSupplier,
             final Supplier<DatabaseCounts> databaseCountsSupplier) {
         this.esImpl = esImpl;
         this.osImpl = osImpl;
         this.esOps = esOps;
         this.osOps = osOps;
         this.indiciesSupplier = indiciesSupplier;
+        this.versionedIndicesSupplier = versionedIndicesSupplier;
         this.databaseCountsSupplier = databaseCountsSupplier;
     }
 
@@ -92,80 +108,203 @@ public class ContentIndexMirrorReconciler {
      */
     public record DatabaseCounts(Long working, Long live) {}
 
-    /** Per-index mirror status for the active working and live content indices. */
+    /**
+     * The content half of the report, together with the reason it is empty when it is.
+     *
+     * <p>An empty {@code statuses} list on its own is ambiguous: it means either "the store was read
+     * and holds no active pointers" or "the store could not be read at all". Those call for opposite
+     * operator actions — reindex to recreate the indices, versus fix whatever broke the read — so
+     * collapsing them into one value would hand the operator a confident instruction derived from an
+     * unknown (issue #37635). {@code unreadableReason} is present only in the second case.</p>
+     *
+     * @param statuses         per-index mirror status; empty when no active pointers were resolved
+     * @param unreadableReason why the store could not be read, when that is what happened
+     */
+    public record ContentMirrors(List<MirrorStatus> statuses, Optional<String> unreadableReason) {}
+
+    /**
+     * Per-index mirror status for the active working and live content indices.
+     *
+     * <p>Kept for callers that only need the rows and have no use for the distinction
+     * {@link #mirrors()} draws.</p>
+     */
     public List<MirrorStatus> statuses() {
-        final IndiciesInfo info = indiciesSupplier.get();
-        if (info == null) {
-            return List.of();
+        return mirrors().statuses();
+    }
+
+    /** Per-index mirror status, plus why it came back empty when it did. */
+    public ContentMirrors mirrors() {
+        final PointerLookup lookup = activePointers();
+        if (lookup.failure() != null) {
+            return new ContentMirrors(List.of(), Optional.of(lookup.failure()));
         }
+        if (lookup.hasNoPointers()) {
+            return new ContentMirrors(List.of(), Optional.empty());
+        }
+        return new ContentMirrors(statusesFor(lookup), Optional.empty());
+    }
+
+    private List<MirrorStatus> statusesFor(final PointerLookup pointers) {
         final Map<String, IndexStats> esStats = esImpl.getIndicesStats();
         final Map<String, IndexStats> osStats = osImpl.getIndicesStats();
         final DatabaseCounts dbCounts = databaseCountsSupplier.get();
         final List<MirrorStatus> out = new ArrayList<>(2);
-        addStatus(out, IndexKind.CONTENT_WORKING, info.getWorking(), esStats, osStats,
+        addStatus(out, IndexKind.CONTENT_WORKING, pointers.working(), esStats, osStats,
                 dbCounts == null ? null : dbCounts.working());
-        addStatus(out, IndexKind.CONTENT_LIVE, info.getLive(), esStats, osStats,
+        addStatus(out, IndexKind.CONTENT_LIVE, pointers.live(), esStats, osStats,
                 dbCounts == null ? null : dbCounts.live());
         return out;
     }
 
-    private void addStatus(final List<MirrorStatus> out, final IndexKind kind, final String rawName,
-            final Map<String, IndexStats> esStats, final Map<String, IndexStats> osStats,
-            final Long databaseDocCount) {
-        if (!UtilMethods.isSet(rawName)) {
+    /**
+     * One slot's physical index name on each engine, exactly as its own store records it: the
+     * Elasticsearch name cluster-prefixed and un-tagged, the OpenSearch name additionally carrying
+     * {@code .os}. Either may be {@code null} when that engine has no pointer for the slot.
+     *
+     * <p>Two independent names rather than one derived from the other, because after a Phase 3
+     * reindex they are <em>not</em> the same generation: OpenSearch advances to the newly built pair
+     * while Elasticsearch keeps naming the index it held at cutover. Deriving one from the other
+     * would report "Elasticsearch has no copy" for an index that exists and holds content — the
+     * divergence has to be followed, not assumed away (issue #37635).</p>
+     */
+    private record SlotPointers(String es, String os) {
+
+        boolean isUnset() {
+            return !UtilMethods.isSet(es) && !UtilMethods.isSet(os);
+        }
+    }
+
+    /**
+     * The outcome of reading the index stores: one {@link SlotPointers} per slot, or the reason a
+     * read failed.
+     *
+     * <p>Three distinguishable outcomes, which is the whole point of the type: pointers present;
+     * no pointers (read fine, nothing registered); or {@code failure} set (a store could not be read,
+     * so nothing at all is known).</p>
+     */
+    private record PointerLookup(SlotPointers working, SlotPointers live, String failure) {
+
+        static PointerLookup of(final SlotPointers working, final SlotPointers live) {
+            return new PointerLookup(working, live, null);
+        }
+
+        static PointerLookup failed(final String reason) {
+            return new PointerLookup(null, null, reason);
+        }
+
+        boolean hasNoPointers() {
+            return working.isUnset() && live.isUnset();
+        }
+    }
+
+    /**
+     * Reads the active pointers for both engines.
+     *
+     * <p>Before Phase 3 the two engines are kept on one generation by construction, so the single
+     * Elasticsearch name yields the OpenSearch one by tagging. From Phase 3 on they can diverge, so
+     * each engine's name is read from its own store — see {@link SlotPointers}. The Elasticsearch
+     * store may legitimately have nothing there: an installation that reindexed at Phase 3 on a build
+     * that still purged those rows has lost the name for good, and the report then says the copy is
+     * absent, which at that point is all that can honestly be said.</p>
+     *
+     * <p>A store read that throws is reported as a failure rather than as an empty store: the loaders
+     * propagate so the policy lives here, in the one place that knows the difference matters. Either
+     * store failing is fatal to the report — half a comparison would be presented as a whole one.</p>
+     */
+    private PointerLookup activePointers() {
+        final IndiciesInfo info;
+        try {
+            info = indiciesSupplier.get();
+        } catch (Exception e) {
+            return readFailure("the Elasticsearch index store", e);
+        }
+        final String esWorking = info == null ? null : info.getWorking();
+        final String esLive = info == null ? null : info.getLive();
+
+        if (!IndexConfigHelper.isMigrationComplete()) {
+            return PointerLookup.of(
+                    new SlotPointers(esWorking, tagOrNull(esWorking)),
+                    new SlotPointers(esLive, tagOrNull(esLive)));
+        }
+
+        final Optional<VersionedIndices> versioned;
+        try {
+            versioned = versionedIndicesSupplier.get();
+        } catch (Exception e) {
+            return readFailure("the OpenSearch index store", e);
+        }
+        return PointerLookup.of(
+                new SlotPointers(esWorking,
+                        versioned.flatMap(VersionedIndices::working).orElse(null)),
+                new SlotPointers(esLive,
+                        versioned.flatMap(VersionedIndices::live).orElse(null)));
+    }
+
+    private static String tagOrNull(final String esName) {
+        return UtilMethods.isSet(esName) ? IndexTag.OS.tag(esName) : null;
+    }
+
+    /** Logs the store read failure and turns it into the reason carried back to the operator. */
+    private static PointerLookup readFailure(final String store, final Exception e) {
+        Logger.warn(ContentIndexMirrorReconciler.class,
+                "Could not read " + store + " for migration readiness: " + e.getMessage(), e);
+        return PointerLookup.failed(store + " could not be read: " + e.getMessage());
+    }
+
+    private void addStatus(final List<MirrorStatus> out, final IndexKind kind,
+            final SlotPointers pointers, final Map<String, IndexStats> esStats,
+            final Map<String, IndexStats> osStats, final Long databaseDocCount) {
+        if (pointers.isUnset()) {
             return;
         }
-        // IndiciesInfo holds the cluster-prefixed, un-tagged ES name — which IS the full ES physical
-        // name; the OS physical name is that + .os. The stats maps are keyed by the cluster-stripped
-        // name (ES un-tagged, OS carrying .os), so strip for the count lookup, tag for the OS key.
-        final String esPhysical = rawName;
-        final String osPhysical = IndexTag.OS.tag(rawName);
-        final String bare = esImpl.removeClusterIdFromName(rawName);
-        final String osKey = IndexTag.OS.tag(bare);
+        // Each store records the full physical name for its own engine. The stats maps are keyed by
+        // the cluster-stripped form (Elasticsearch un-tagged, OpenSearch carrying .os), so strip for
+        // the lookup; the count query takes the physical name as stored.
+        final String esBare = pointers.es() == null ? null : esImpl.removeClusterIdFromName(pointers.es());
+        final String osBare = pointers.os() == null ? null : esImpl.removeClusterIdFromName(pointers.os());
 
         // Existence from the stats snapshot; the count from a live count query (see class javadoc).
-        final boolean esExists = esStats.containsKey(bare);
-        final long esCount = esExists ? countQuietly(esOps, bare) : 0L;
-        final boolean osExists = osStats.containsKey(osKey);
-        final long osCount = osExists ? countQuietly(osOps, bare) : 0L;
+        final boolean esExists = esBare != null && esStats.containsKey(esBare);
+        final long esCount = esExists ? countQuietly(esOps, pointers.es()) : 0L;
+        final boolean osExists = osBare != null && osStats.containsKey(osBare);
+        final long osCount = osExists ? countQuietly(osOps, pointers.os()) : 0L;
+
+        // The row is named after the engine that owns the content in this phase, with the .os tag
+        // stripped so the name stays the logical one either way. Each engine's own physical name is
+        // reported alongside its copy, so a generation split is visible rather than flattened.
+        final String name = IndexTag.strip(
+                IndexConfigHelper.isMigrationComplete() && osBare != null ? osBare : esBare);
 
         final Verdict verdict = MirrorStatus.verdictFor(esExists, osExists, esCount, osCount);
-        final String recommendation = recommend(bare, verdict, osExists)
+        final String recommendation = recommend(name, verdict, osExists)
                 + incompleteNote("Elasticsearch", esExists, esCount, databaseDocCount)
                 + incompleteNote("OpenSearch", osExists, osCount, databaseDocCount);
-        out.add(new MirrorStatus(bare, kind,
-                new MirrorStatus.EngineCopy(esExists, esCount, esPhysical),
-                new MirrorStatus.EngineCopy(osExists, osCount, osPhysical),
+        out.add(new MirrorStatus(name, kind,
+                new MirrorStatus.EngineCopy(esExists, esCount, pointers.es()),
+                new MirrorStatus.EngineCopy(osExists, osCount, pointers.os()),
                 verdict, recommendation, databaseDocCount));
     }
 
     /**
-     * Exact document count of {@code logicalName} on one engine, or {@code -1} when the query fails.
+     * Exact document count of {@code physicalName} on one engine, or {@code -1} when the query fails.
      *
-     * <p>The leaf turns the logical name into its own physical form ({@code toPhysicalName}: the ES
-     * leaf cluster-prefixes it, the OpenSearch leaf also applies {@code .os}), the same convention
-     * {@code ContentletIndexAPIImpl} uses — so this never hand-builds a physical name.</p>
+     * <p>Takes the physical name as the store records it rather than re-deriving it through
+     * {@code toPhysicalName}: from Phase 3 on the two engines can name different generations, so a
+     * name derived for one engine from the other's would count the wrong index — or none
+     * (issue #37635).</p>
      *
      * <p>Failures are reported as {@code -1} rather than propagated: a readiness report that answers
      * "unknown" for one engine is useful, one that returns a 500 is not. {@code -1} is the established
      * unmeasurable marker — it compares unequal, so the verdict degrades to out-of-sync and
      * {@code safeToRollback} to false, never to a false green.</p>
      */
-    private static long countQuietly(final ContentletIndexOperations ops, final String logicalName) {
-        return Try.of(() -> ops.getIndexDocumentCount(ops.toPhysicalName(logicalName)))
+    private static long countQuietly(final ContentletIndexOperations ops, final String physicalName) {
+        return Try.of(() -> ops.getIndexDocumentCount(physicalName))
                 .onFailure(e -> Logger.warn(ContentIndexMirrorReconciler.class,
-                        "Could not count documents of '" + logicalName + "' on "
+                        "Could not count documents of '" + physicalName + "' on "
                                 + ops.getClass().getSimpleName() + ": " + e.getMessage()))
                 .getOrElse(-1L);
     }
-
-    /**
-     * Indexed percentage below which an existing index is called out as incomplete in the recommendation. Not a
-     * tight bound on purpose: the denominator is an order-of-magnitude measure (see
-     * {@code MirrorStatus#indexedPercentOf}), so this is meant to catch "3% of the content", not a handful of
-     * documents.
-     */
-    private static final double INCOMPLETE_INDEXED_THRESHOLD = 95.0;
 
     /**
      * A sentence appended to the recommendation when an engine holds materially less content than the
@@ -186,7 +325,7 @@ public class ContentIndexMirrorReconciler {
             return "";
         }
         final double indexedPercent = count * 100.0 / databaseDocCount;
-        if (indexedPercent >= INCOMPLETE_INDEXED_THRESHOLD) {
+        if (indexedPercent >= MirrorStatus.INCOMPLETE_INDEXED_THRESHOLD) {
             return "";
         }
         return String.format(" NOTE: the %s copy holds %d of the %d contentlets the database has "
@@ -280,10 +419,24 @@ public class ContentIndexMirrorReconciler {
         return value instanceof Number ? ((Number) value).longValue() : null;
     }
 
-    private static IndiciesInfo loadIndiciesQuietly() {
+    /**
+     * The Elasticsearch index store — the source of the active pointers before Phase 3.
+     *
+     * <p>Propagates rather than swallowing: a read that threw is a different fact from a store that
+     * holds nothing, and only {@link #activePointers()} can act on the difference. Returning
+     * {@code null} for both would make the report tell an operator to reindex when the real problem
+     * is that the database could not be read (issue #37635).</p>
+     */
+    private static IndiciesInfo loadIndicies() {
         return Try.of(() -> APILocator.getIndiciesAPI().loadIndicies())
-                .onFailure(e -> Logger.warn(ContentIndexMirrorReconciler.class,
-                        "Could not load content indices for migration readiness: " + e.getMessage()))
-                .getOrNull();
+                .getOrElseThrow(e -> new DotRuntimeException(
+                        "Could not load content indices for migration readiness", e));
+    }
+
+    /** The OpenSearch index store — the Phase 3 source of the active pointers. Propagates, as above. */
+    private static Optional<VersionedIndices> loadVersionedIndices() {
+        return Try.of(() -> APILocator.getVersionedIndicesAPI().loadDefaultVersionedIndices())
+                .getOrElseThrow(e -> new DotRuntimeException(
+                        "Could not load the OpenSearch index store for migration readiness", e));
     }
 }

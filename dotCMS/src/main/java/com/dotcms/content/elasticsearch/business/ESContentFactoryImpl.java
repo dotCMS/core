@@ -1,8 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
-import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
-import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.AUTO_ASSIGN_WORKFLOW;
 import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITLE_IMAGE_KEY;
@@ -17,6 +15,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
+import com.dotcms.content.index.PhaseRouter;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
@@ -232,8 +231,19 @@ public class ESContentFactoryImpl implements ContentletFactory {
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
-    private final ContentFactoryIndexOperations indexOperationsES;
-    private final ContentFactoryIndexOperations indexOperationsOS;
+    /**
+     * Phase-aware router for every index read this factory performs.
+     *
+     * <p>These read call sites are the funnel for essentially all content search in the product:
+     * {@code /api/content/_search}, {@code ContentletAPI} search and count, Velocity
+     * {@code $dotcontent.pull}, URL maps, Site Search, scroll consumers and the admin content
+     * browser. They used to pick a provider with a bare ternary and call it directly, which left
+     * the router's Phase 2 fallback to Elasticsearch unreachable from the busiest read path in
+     * the product — with OpenSearch down, a search returned a well-formed empty result rather
+     * than the data Elasticsearch was holding the whole time (issue #37413). The router is now
+     * the only way a provider is selected here; do not reintroduce a second mechanism.</p>
+     */
+    private final PhaseRouter<ContentFactoryIndexOperations> indexRouter;
 
     private static final ObjectMapper mapper = DotObjectMapperProvider.getInstance()
             .getDefaultObjectMapper();
@@ -260,18 +270,28 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	 * Elastic index.
 	 */
 	public ESContentFactoryImpl() {
-        this.contentletCache = CacheLocator.getContentletCache();
-        this.languageAPI     =  APILocator.getLanguageAPI();
-        this.indexOperationsOS = new ContentFactoryIndexOperationsOS();
-        this.indexOperationsES = new ContentFactoryIndexOperationsES(CacheLocator.getESQueryCache());
+        this(new ContentFactoryIndexOperationsES(CacheLocator.getESQueryCache()),
+                new ContentFactoryIndexOperationsOS());
 	}
 
     /**
-     * Migration-phase-aware Operations delegate
-     * @return {@link ContentFactoryIndexOperations}
+     * Constructor that accepts both index-operation providers, so a test can substitute one of
+     * them — typically an OpenSearch provider that fails on every read, to exercise the Phase 2
+     * fallback to Elasticsearch.
+     *
+     * <p>This exists only for testing: production code must use {@link #ESContentFactoryImpl()},
+     * which supplies the real providers. It carries no behaviour of its own — provider selection
+     * for reads is decided by {@link com.dotcms.content.index.PhaseRouter}, not here.</p>
+     *
+     * @param indexOperationsES the Elasticsearch provider
+     * @param indexOperationsOS the OpenSearch provider
      */
-    ContentFactoryIndexOperations indexOperationsDelegate(){
-        return isMigrationComplete() || isReadEnabled() ? indexOperationsOS : indexOperationsES ;
+    @VisibleForTesting
+    ESContentFactoryImpl(final ContentFactoryIndexOperations indexOperationsES,
+            final ContentFactoryIndexOperations indexOperationsOS) {
+        this.contentletCache = CacheLocator.getContentletCache();
+        this.languageAPI     =  APILocator.getLanguageAPI();
+        this.indexRouter = new PhaseRouter<>(indexOperationsES, indexOperationsOS);
     }
 
 	@Override
@@ -1349,7 +1369,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public List<Contentlet> findContentletsByHost(final String hostId, final int limit,
             final int offset) {
 		try {
-            final List<String> inodes = indexOperationsDelegate().search("+conhost:" + hostId, limit, offset);
+            final List<String> inodes = indexRouter.read("search",
+                    impl -> impl.search("+conhost:" + hostId, limit, offset));
             return findContentlets(inodes);
 		} catch (Exception e) {
 			throw new RuntimeException(e.getMessage(), e);
@@ -1604,7 +1625,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	public long indexCount(final String query) {
 	    final String qq = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, null).getQuery());
-        return indexOperationsDelegate().indexCount(qq);
+        return indexRouter.read("indexCount", impl -> impl.indexCount(qq));
     }
 
     @Override
@@ -1613,8 +1634,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
         final String formattedQuery = LuceneQueryDateTimeFormatter
                 .findAndReplaceQueryDates(translateQuery(query, sortBy).getQuery());
 
-        return indexOperationsDelegate().searchHits(
-                formattedQuery, limit, offset, sortBy);
+        return indexRouter.read("searchHits",
+                impl -> impl.searchHits(formattedQuery, limit, offset, sortBy));
 
     }
 
@@ -1631,7 +1652,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @return PaginatedArrayList containing all search results
      */
     PaginatedArrayList<ContentletSearch> indexSearchScroll(final String query, String sortBy) {
-       return indexOperationsDelegate().indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get());
+       return indexRouter.read("indexSearchScroll",
+               impl -> impl.indexSearchScroll(query, sortBy, SCROLL_BATCH_SIZE.get()));
     }
 
     /**
@@ -1666,7 +1688,15 @@ public class ESContentFactoryImpl implements ContentletFactory {
     public IndexContentletScroll createScrollQuery(final String luceneQuery, final User user,
                                                   final boolean respectFrontendRoles, final int batchSize,
                                                   final String sortBy) {
-       return indexOperationsDelegate().createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+       // Routed for provider selection only: the fallback here can never fire, and that is
+       // correct rather than an oversight. Both provider implementations just construct a
+       // cursor -- no I/O, nothing to throw -- and the requests happen later, inside that
+       // cursor, outside the router. A mid-scroll fallback is impossible in principle anyway:
+       // an OpenSearch scroll id is meaningless to Elasticsearch, so a half-drained scroll
+       // cannot be resumed on the other engine. Residual gap: a consumer already iterating a
+       // scroll when OpenSearch dies still fails (issue #37413, AC-002 documented exclusion).
+       return indexRouter.read("createScrollQuery", impl -> impl.createScrollQuery(
+               luceneQuery, user, respectFrontendRoles, batchSize, sortBy));
     }
 
     /**

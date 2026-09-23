@@ -3502,13 +3502,19 @@ public class BrowserAPITest extends IntegrationTestBase {
     /**
      * <ul>
      *     <li><b>Given Scenario:</b> A content type whose title-source field is itself a WYSIWYG
-     *     field (its variable is literally {@code "title"}) (T033, AC-008).</li>
-     *     <li><b>Expected Result:</b> The listing's {@code title} key is the correct, untruncated
-     *     title -- not derived from the same map entry the long-text preview strategy truncates.</li>
+     *     field (its variable is literally {@code "title"}) (T033, AC-008, revised per issue
+     *     #37185 QA follow-up).</li>
+     *     <li><b>Expected Result:</b> The listing's {@code title} key is trimmed to a &lt;=150-char
+     *     plain-text preview like any other in-scope long-text field -- {@link Contentlet#getTitle()}
+     *     returns that field's raw value verbatim (no HTML stripping, no length bound) and it is
+     *     the same map entry, so leaving it untouched would carry the full, untruncated title
+     *     through the listing response, exactly the payload bloat this strategy exists to remove.
+     *     Previously this test asserted the opposite (an untruncated title); that assertion pinned
+     *     the bug a live QA repro against a "long-text title" content type caught.</li>
      * </ul>
      */
     @Test
-    public void test_getPaginatedContents_wysiwygTitleField_titleKeyStaysUntruncated() throws Exception {
+    public void test_getPaginatedContents_wysiwygTitleField_titleKeyIsTrimmedLikeAnyLongTextField() throws Exception {
         final String uniqueId = UUIDGenerator.shorty();
         final Host site = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(site).nextPersisted();
@@ -3544,8 +3550,14 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must find the created contentlet in the listing"));
 
-        assertEquals("The title key must equal Contentlet#getTitle(), untruncated",
-                contentlet.getTitle(), row.get("title"));
+        final Object value = row.get("title");
+        assertTrue("The title value must be a String", value instanceof String);
+        final String preview = (String) value;
+        assertTrue("The title key must be trimmed to <=150 chars", preview.length() <= 150);
+        assertFalse("The title preview must not contain HTML tags",
+                preview.contains("<") || preview.contains(">"));
+        assertTrue("A title long enough to be truncated must carry the truncation marker",
+                preview.endsWith("…"));
     }
 
     // issue #37184 -- FR-002 single-pass eligibility (BrowserAPIImpl#isSinglePassEligible).

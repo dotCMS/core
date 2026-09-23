@@ -133,19 +133,22 @@ public interface IndicesFactory {
             String version) throws DotDataException;
 
     /**
-     * Removes the legacy ElasticSearch content-index pointers (NULL {@code index_version})
-     * from the {@code indicies} table: the {@code live} / {@code working} pair and the transient
-     * {@code reindex_live} / {@code reindex_working} pair.
+     * Removes the transient legacy ElasticSearch reindex pointers (NULL {@code index_version}) from
+     * the {@code indicies} table — the {@code reindex_live} / {@code reindex_working} pair, and only
+     * those.
      *
-     * <p>Intended for Phase 3 (OpenSearch-only) cleanup, where ES is decommissioned and these
-     * NULL-version rows are pure orphans. The {@code site_search} pointer — also stored
-     * NULL-versioned but NOT part of the content-index migration — is deliberately preserved.
-     * OS rows (which carry a non-NULL {@code index_version}) are never touched.</p>
+     * <p>Intended for Phase 3 (OpenSearch-only) cleanup, where ES is decommissioned and a stale
+     * reindex slot is a pure orphan. The active {@code live} / {@code working} pair is
+     * <strong>deliberately preserved</strong>: it is the only record of which ElasticSearch index
+     * holds the pre-migration content, that index is still on the cluster, and nothing else names it
+     * (issue #37635). The {@code site_search} pointer — also stored NULL-versioned but NOT part of
+     * the content-index migration — is likewise preserved. OS rows (which carry a non-NULL
+     * {@code index_version}) are never touched.</p>
      *
      * @return the number of rows removed
      * @throws DotDataException if a SQL error occurs
      */
-    int removeLegacyIndices() throws DotDataException;
+    int removeLegacyReindexIndices() throws DotDataException;
 
     /**
      * Validates that every present index name in {@code indicesInfo} carries the

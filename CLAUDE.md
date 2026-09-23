@@ -131,6 +131,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Security Patterns](docs/backend/SECURITY_BACKEND.md) — Input validation, auth, SQL/XSS prevention, secure logging
 - [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) — ES → OpenSearch: deprecated `ContentletAPI` search methods, plugin migration guide
 - [Telemetry Implementation](docs/backend/TELEMETRY_IMPLEMENTATION.md) — CDI-based metrics system, creating new metrics, `/v1/usage` endpoints
+- [Index Field Emission](docs/backend/INDEX_FIELD_EMISSION.md) — how `loadFields`/`toMap` build the index document; the `_dotraw` zero-padding sort invariant
 - [Jandex Metadata Scanning](docs/backend/JANDEX_METADATA_SCANNING.md) — Fast class/annotation metadata lookup, prefer over reflection
 - **ES → OpenSearch Migration** — infra migration from ElasticSearch to OpenSearch, phased dual-write/read rollout
   - [Migration Design](docs/backend/OPENSEARCH_MIGRATION.md) — Architecture, phased rollout, configuration
@@ -151,9 +152,13 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Breadcrumbs](docs/frontend/BREADCRUMBS.md) — GlobalStore breadcrumb trail
 
 ### Testing
-- [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — JUnit, integration patterns
+- [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — Surefire in `:dotcms-core`, Mockito setup, naming (there is no category/tag mechanism), running and debugging
 - [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — Running/debugging tests, MainSuite registration, API testing, database setup
 - [E2E Tests](docs/testing/E2E_TESTS.md) — Playwright, user workflows
+
+### CLI (`tools/dotcms-cli`)
+- [CLI Overview](docs/cli/CLI_OVERVIEW.md) — Quarkus + PicocLI architecture, module layout, command patterns. **Compiles to a lower `maven.compiler.release` than the core modules** — read the property before using modern syntax
+- [CLI Build System](docs/cli/CLI_BUILD_SYSTEM.md) — Maven profiles (`dist`, `native`, `release`), Quarkus dev mode, native image, testcontainers
 
 ### Infrastructure
 - [Docker Build Process](docs/infrastructure/DOCKER_BUILD_PROCESS.md) — Container setup, optimization

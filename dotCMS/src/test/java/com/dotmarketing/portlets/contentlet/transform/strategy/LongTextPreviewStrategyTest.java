@@ -48,6 +48,11 @@ public class LongTextPreviewStrategyTest {
         Mockito.when(contentType.fields(WysiwygField.class)).thenReturn(wysiwygFields);
         Mockito.when(contentType.fields(TextAreaField.class)).thenReturn(textAreaFields);
         Mockito.when(contentType.fields(StoryBlockField.class)).thenReturn(storyBlockFields);
+        final List<Field> allFields = new java.util.ArrayList<>();
+        allFields.addAll(wysiwygFields);
+        allFields.addAll(textAreaFields);
+        allFields.addAll(storyBlockFields);
+        Mockito.when(contentType.fields()).thenReturn(allFields);
         return contentType;
     }
 
@@ -118,6 +123,54 @@ public class LongTextPreviewStrategyTest {
         newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
 
         assertEquals("Hello world", map.get(WYSIWYG_VAR));
+    }
+
+    /**
+     * Every Story Block field carries an untouched {@code <var>_raw} companion holding the full,
+     * untruncated JSON schema (written upstream by {@code ContentletJsonAPIImpl} for consumers
+     * that read it directly off the {@code Contentlet}, e.g. nested Block Editor reference
+     * resolution). Left in a listing row, it rides alongside the trimmed preview and carries the
+     * exact bytes this strategy exists to shed (issue #37185 QA follow-up: Rafael found both
+     * {@code body} and {@code body_raw} in the search response for a Block Editor field).
+     */
+    @Test
+    public void transform_storyBlockField_removesRawCompanionKey() throws Exception {
+        final Field storyField = mockField(StoryBlockField.class, STORY_VAR);
+        final ContentType contentType = mockContentType(List.of(), List.of(), List.of(storyField));
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> textNode = Map.of("type", "text", "text", "Launch announcement");
+        final Map<String, Object> paragraph = Map.of("type", "paragraph", "content", List.of(textNode));
+        final LinkedHashMap<String, Object> storyBlockDoc = new LinkedHashMap<>();
+        storyBlockDoc.put("type", "doc");
+        storyBlockDoc.put("content", List.of(paragraph));
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(STORY_VAR, storyBlockDoc);
+        map.put(STORY_VAR + "_raw", "{\"type\":\"doc\",\"content\":[/* the full, untruncated schema */]}");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertFalse("The _raw companion key must not survive into a trimmed listing row",
+                map.containsKey(STORY_VAR + "_raw"));
+        assertTrue("The trimmed preview itself must still be present",
+                ((String) map.get(STORY_VAR)).contains("Launch announcement"));
+    }
+
+    /** A content type with no Story Block field at all must not touch any {@code _raw} key. */
+    @Test
+    public void transform_noStoryBlockFields_leavesUnrelatedRawKeyAlone() throws Exception {
+        final Field wysiwygField = mockField(WysiwygField.class, WYSIWYG_VAR);
+        final ContentType contentType = mockContentType(List.of(wysiwygField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(WYSIWYG_VAR, "<p>Hello world</p>");
+        map.put("someOtherField_raw", "unrelated value");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertEquals("unrelated value", map.get("someOtherField_raw"));
     }
 
     // --- T011: Story Block -- recursive traversal + truncation, run after StoryBlockViewStrategy
@@ -229,30 +282,265 @@ public class LongTextPreviewStrategyTest {
     }
 
     /**
-     * AC-008: when a content type's title-source field is itself a WYSIWYG or TextArea field
-     * (i.e. its variable is literally {@code "title"}), the {@code title} map key -- already
-     * populated independently by {@code DefaultTransformStrategy}/{@code COMMON_PROPS} from
-     * {@code Contentlet#getTitle()} -- must NOT be overwritten with a truncated preview. Found
-     * while designing this coverage: without the guard, {@code LongTextPreviewStrategy} would
-     * match the field by its WYSIWYG type and clobber the already-correct {@code title} value.
+     * AC-008 (revised, issue #37185 QA follow-up): when a content type's title-source field is
+     * itself a WYSIWYG or TextArea field (i.e. its variable is literally {@code "title"}), the
+     * {@code title} map key must still be trimmed like any other in-scope field.
+     *
+     * <p>An earlier version of this test asserted the opposite -- that {@code title} must stay
+     * untouched -- on the theory that {@code COMMON_PROPS}/{@code Contentlet#getTitle()} having
+     * already populated it meant it should not be touched again. In practice {@code getTitle()}
+     * returns that field's own raw value verbatim (no HTML stripping, no length bound), so
+     * "already populated" just meant "holds the same raw HTML every other in-scope field starts
+     * from" -- exempting it left a WYSIWYG/TextArea title at full, untruncated length in the
+     * listing response, defeating this strategy's purpose for that one field and failing the
+     * issue's own acceptance criterion ("a content type whose title field is itself a long-text
+     * field still returns a correct title"). Confirmed against a live repro (QA content type "QA
+     * 37185 Long Text Title").</p>
      */
     @Test
-    public void transform_wysiwygFieldNamedTitle_doesNotOverwriteTitleKey() throws Exception {
+    public void transform_wysiwygFieldNamedTitle_trimsLikeAnyOtherInScopeField() throws Exception {
         final Field titleField = mockField(WysiwygField.class, "title");
         final ContentType contentType = mockContentType(List.of(titleField), List.of(), List.of());
         final Contentlet contentlet = mockContentlet(contentType);
 
         // Simulates DefaultTransformStrategy/COMMON_PROPS having already run and populated
-        // "title" from Contentlet#getTitle() -- untruncated, HTML markup and all in this
-        // worst-case scenario, since getTitle() does not itself strip HTML.
+        // "title" from Contentlet#getTitle() -- untruncated, HTML markup and all, since
+        // getTitle() does not itself strip HTML.
         final String realTitle = "<p>" + "word ".repeat(60) + "</p>";
         final Map<String, Object> map = new HashMap<>();
         map.put("title", realTitle);
 
         newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
 
-        assertEquals("The 'title' key must be untouched by the long-text preview strategy",
-                realTitle, map.get("title"));
+        final String preview = (String) map.get("title");
+        assertTrue("The 'title' key must be trimmed to <=150 chars like any other in-scope field",
+                preview.length() <= 150);
+        assertFalse("Preview must not contain HTML tags",
+                preview.contains("<") || preview.contains(">"));
+        assertTrue("A truncated title must carry the truncation marker", preview.endsWith("…"));
+    }
+
+    /** A short WYSIWYG-backed title (under 150 chars) is trimmed of HTML but not truncated. */
+    @Test
+    public void transform_wysiwygFieldNamedTitle_shortValue_isNotTruncated() throws Exception {
+        final Field titleField = mockField(WysiwygField.class, "title");
+        final ContentType contentType = mockContentType(List.of(titleField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put("title", "<p>Short title</p>");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertEquals("Short title", map.get("title"));
+    }
+
+    /**
+     * Dotbot review finding on PR #37663: {@code COMMON_PROPS} always writes an independent copy
+     * of {@link Contentlet#getTitle()}'s raw value into the {@code "title"} key, regardless of the
+     * title-source field's own variable name -- {@code DefaultTransformStrategy#addCommonProperties}
+     * does {@code map.put("title", contentlet.getTitle())} unconditionally. When that field is
+     * named e.g. {@code titleLongText} rather than exactly {@code "title"} (dotCMS's own
+     * {@code Contentlet#getFieldWithVarStartingWithTitleWord} fallback), {@code applyPreview} only
+     * trims {@code titleLongText}'s own key -- the separate {@code "title"} copy is a different map
+     * entry entirely and would otherwise ride through at full length.
+     */
+    @Test
+    public void transform_titleDerivedFromDifferentlyNamedWysiwygField_trimsBothKeys() throws Exception {
+        final Field titleSourceField = mockField(WysiwygField.class, "titleLongText");
+        final ContentType contentType = mockContentType(List.of(titleSourceField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final String longBody = "<p>" + "word ".repeat(60) + "</p>";
+        final Map<String, Object> map = new HashMap<>();
+        // Both keys start out holding the exact same raw HTML -- "titleLongText" as the field's
+        // own entry, "title" as COMMON_PROPS's independent copy from Contentlet#getTitle().
+        map.put("titleLongText", longBody);
+        map.put("title", longBody);
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String fieldPreview = (String) map.get("titleLongText");
+        final String titlePreview = (String) map.get("title");
+        assertTrue("The field's own key must be trimmed", fieldPreview.length() <= 150);
+        assertTrue("The separate 'title' copy must also be trimmed", titlePreview.length() <= 150);
+        assertFalse("The 'title' copy must not contain HTML tags",
+                titlePreview.contains("<") || titlePreview.contains(">"));
+    }
+
+    /**
+     * Dotbot review finding on PR #37663 (third follow-up): when the title-source field is a Story
+     * Block field, {@code Contentlet#getTitle()} returns that field's raw JSON schema verbatim into
+     * the {@code "title"} key -- the exact payload bloat this strategy exists to remove for Story
+     * Block fields. The redesigned matching (compare {@code "title"}'s original value against each
+     * in-scope field's raw value -- read off the {@code Contentlet} for a Story Block field, since
+     * that, not the parsed view structure, is what {@code getTitle()} actually returns) finds this case
+     * without needing to know the field's variable is title-prefixed at all.
+     */
+    @Test
+    public void transform_titleDerivedFromStoryBlockField_copiesExtractedPreviewIntoTitleKey()
+            throws Exception {
+        final Field titleSourceField = mockField(StoryBlockField.class, "titleStory");
+        final ContentType contentType = mockContentType(List.of(), List.of(), List.of(titleSourceField));
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> textNode = Map.of("type", "text", "text", "Launch announcement");
+        final Map<String, Object> paragraph = Map.of("type", "paragraph", "content", List.of(textNode));
+        final LinkedHashMap<String, Object> storyBlockDoc = new LinkedHashMap<>();
+        storyBlockDoc.put("type", "doc");
+        storyBlockDoc.put("content", List.of(paragraph));
+        final String rawJson = "{\"type\":\"doc\",\"content\":[/* the full, untruncated schema */]}";
+        Mockito.when(contentlet.get("titleStory")).thenReturn(rawJson);
+
+        final Map<String, Object> map = new HashMap<>();
+        // "titleStory" starts as the parsed Story Block structure StoryBlockViewStrategy produced;
+        // its "_raw" companion and "title" both start as the same raw JSON -- "_raw" written
+        // upstream for Block Editor reference resolution, "title" as COMMON_PROPS's independent
+        // copy from getTitle() (which reads the field's OWN raw value off the Contentlet).
+        map.put("titleStory", storyBlockDoc);
+        map.put("titleStory_raw", rawJson);
+        map.put("title", rawJson);
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String fieldPreview = (String) map.get("titleStory");
+        final String titlePreview = (String) map.get("title");
+        assertTrue("The field's own key must hold the extracted Story Block preview",
+                fieldPreview.contains("Launch announcement"));
+        assertEquals("The 'title' key must match the field's own already-extracted preview",
+                fieldPreview, titlePreview);
+        assertFalse("The 'title' key must no longer carry the raw JSON schema",
+                titlePreview.contains("untruncated schema"));
+        assertFalse("The _raw companion must still be removed",
+                map.containsKey("titleStory_raw"));
+    }
+
+    /**
+     * The {@code <var>_raw} companion is only written when the contentlet is loaded from its JSON
+     * column ({@code ContentletJsonAPIImpl}); a contentlet loaded from legacy columns has none. The
+     * title match must still find a Story Block title source by reading the field's raw value off
+     * the {@link Contentlet} itself -- the same place {@link Contentlet#getTitle()} reads it from.
+     */
+    @Test
+    public void transform_titleDerivedFromStoryBlockField_withoutRawCompanion_stillTrimsTitleKey()
+            throws Exception {
+        final Field titleSourceField = mockField(StoryBlockField.class, "titleStory");
+        final ContentType contentType = mockContentType(List.of(), List.of(), List.of(titleSourceField));
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> textNode = Map.of("type", "text", "text", "Launch announcement");
+        final Map<String, Object> paragraph = Map.of("type", "paragraph", "content", List.of(textNode));
+        final LinkedHashMap<String, Object> storyBlockDoc = new LinkedHashMap<>();
+        storyBlockDoc.put("type", "doc");
+        storyBlockDoc.put("content", List.of(paragraph));
+        final String rawJson = "{\"type\":\"doc\",\"content\":[/* the full, untruncated schema */]}";
+        Mockito.when(contentlet.get("titleStory")).thenReturn(rawJson);
+
+        final Map<String, Object> map = new HashMap<>();
+        // No "titleStory_raw" key: legacy column-loaded contentlet.
+        map.put("titleStory", storyBlockDoc);
+        map.put("title", rawJson);
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String fieldPreview = (String) map.get("titleStory");
+        assertEquals("The 'title' key must match the field's own already-extracted preview",
+                fieldPreview, map.get("title"));
+    }
+
+    /**
+     * Fabrizzio's review on PR #37663: when a content type has no title-prefixed field at all,
+     * {@code Contentlet#getTitle()} falls further back to {@code Contentlet#buildName()}, which
+     * picks the first *listed* field with a "text"-prefixed storage column -- WYSIWYG and TextArea
+     * both qualify -- and truncates to 250 characters. A content type with a single listed WYSIWYG
+     * {@code body} field and no title-prefixed field at all hits exactly this path: {@code "title"}
+     * ends up holding raw HTML, cut at 250 characters, entirely missed by a title-prefix heuristic.
+     * The value-comparison redesign catches it because it does not care why a field was chosen.
+     */
+    @Test
+    public void transform_titleDerivedFromBuildNameFallbackToWysiwygField_trimsBothKeys()
+            throws Exception {
+        final Field bodyField = mockField(WysiwygField.class, "body");
+        final ContentType contentType = mockContentType(List.of(bodyField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        // buildName() truncates its resolved raw value to 250 characters before caching it as
+        // "title" -- longer than "body"'s own raw value stays, since only the cached copy is cut.
+        final String longBody = "<p>" + "word ".repeat(60) + "</p>";
+        final Map<String, Object> map = new HashMap<>();
+        map.put("body", longBody);
+        map.put("title", longBody.substring(0, 250));
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        final String fieldPreview = (String) map.get("body");
+        final String titlePreview = (String) map.get("title");
+        assertTrue("The field's own key must be trimmed", fieldPreview.length() <= 150);
+        assertEquals("The 'title' key must match the field's own already-extracted preview",
+                fieldPreview, titlePreview);
+        assertFalse("The 'title' key must not contain HTML tags",
+                titlePreview.contains("<") || titlePreview.contains(">"));
+    }
+
+    /**
+     * A dedicated, short "title" field (a normal Text column, not WYSIWYG/TextArea/Story Block)
+     * means no field's variable starts with "title" among the in-scope lists -- nothing to trim.
+     */
+    @Test
+    public void transform_dedicatedShortTitleField_leavesTitleKeyAlone() throws Exception {
+        final Field bodyField = mockField(WysiwygField.class, "body");
+        final ContentType contentType = mockContentType(List.of(bodyField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put("title", "A normal, short title");
+        map.put("body", "<p>Short body</p>");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertEquals("A normal, short title", map.get("title"));
+    }
+
+    /**
+     * Dotbot review finding on PR #37663: a content type can carry a short, dedicated Text field
+     * ({@code titleName}) that {@code Contentlet#getFieldWithVarStartingWithTitleWord} actually
+     * resolves the title from, AND an unrelated WYSIWYG field ({@code titleBody}) whose variable
+     * also happens to start with "title" but plays no part in title resolution. The value-comparison
+     * redesign sidesteps the original bug's root cause entirely -- it never asks which field's
+     * variable is title-prefixed or in what order, only whether {@code "title"}'s raw value matches
+     * an in-scope field's own raw value. Here it doesn't (the plain Text field's value is out of
+     * scope, and it isn't equal to the WYSIWYG field's unrelated raw HTML either), so {@code "title"}
+     * is correctly left alone -- proving the redesign still gets this case right without the
+     * title-prefix heuristic that originally caused it to be mishandled.
+     */
+    @Test
+    public void transform_shortTitleFieldPrecedesUnrelatedTitlePrefixedWysiwygField_leavesTitleKeyAlone()
+            throws Exception {
+        final Field titleNameField = mockField(Field.class, "titleName");
+        final Field titleBodyField = mockField(WysiwygField.class, "titleBody");
+
+        final ContentType contentType = Mockito.mock(ContentType.class);
+        Mockito.when(contentType.id()).thenReturn("content-type-1");
+        Mockito.when(contentType.fields(WysiwygField.class)).thenReturn(List.of(titleBodyField));
+        Mockito.when(contentType.fields(TextAreaField.class)).thenReturn(List.of());
+        Mockito.when(contentType.fields(StoryBlockField.class)).thenReturn(List.of());
+        Mockito.when(contentType.fields()).thenReturn(List.of(titleNameField, titleBodyField));
+
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        final Map<String, Object> map = new HashMap<>();
+        // A plain-text title carrying a literal HTML entity -- Jsoup would decode "&amp;" to "&" if
+        // this were wrongly run through HTML extraction, silently changing a value that was never
+        // HTML to begin with.
+        map.put("title", "Smith &amp; Sons");
+        map.put("titleName", "Smith &amp; Sons");
+        map.put("titleBody", "<p>" + "word ".repeat(60) + "</p>");
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertEquals("The 'title' key must be left alone -- the resolved title source is a plain "
+                        + "Text field, not the unrelated WYSIWYG field that merely shares the prefix",
+                "Smith &amp; Sons", map.get("title"));
     }
 
     /**

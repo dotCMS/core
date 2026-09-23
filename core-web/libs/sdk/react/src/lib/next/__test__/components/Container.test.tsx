@@ -32,7 +32,15 @@ vi.mock('@dotcms/uve/internal', () => ({
     PRODUCTION_MODE: 'production'
 }));
 
-const DEFAULT_CONTEXT_VALUE: DotCMSPageContextProps = {
+/**
+ * `isDevMode` and `isAnalyticsActive` are resolved once by DotCMSPageProvider and shared
+ * through the context, so tests supply them rather than the components deriving their own.
+ * They default from `mode` below, which is what the provider does outside the UVE.
+ */
+type TestContextValue = Omit<DotCMSPageContextProps, 'isDevMode' | 'isAnalyticsActive'> &
+    Partial<Pick<DotCMSPageContextProps, 'isDevMode' | 'isAnalyticsActive'>>;
+
+const DEFAULT_CONTEXT_VALUE: TestContextValue = {
     pageAsset: MOCK_PAGE_ASSET,
     mode: 'production',
     userComponents: {}
@@ -42,12 +50,14 @@ describe('Container', () => {
     const getContainersDataMock = utils.getContainersData as Mock;
     const getContentletsInContainerMock = utils.getContentletsInContainer as Mock;
 
-    const renderWithContext = (
-        component: React.ReactNode,
-        contextValue: DotCMSPageContextProps
-    ) => {
+    const renderWithContext = (component: React.ReactNode, contextValue: TestContextValue) => {
         return render(
-            <DotCMSPageContext.Provider value={contextValue}>
+            <DotCMSPageContext.Provider
+                value={{
+                    isDevMode: contextValue.mode === 'development',
+                    isAnalyticsActive: false,
+                    ...contextValue
+                }}>
                 {component}
             </DotCMSPageContext.Provider>
         );

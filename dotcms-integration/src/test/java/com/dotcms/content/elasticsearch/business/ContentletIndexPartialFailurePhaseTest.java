@@ -3,17 +3,23 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.content.index.IndexConfigHelper.MigrationPhase.FLAG_KEY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -46,13 +52,53 @@ public class ContentletIndexPartialFailurePhaseTest {
         contentType = new ContentTypeDataGen().nextPersisted();
     }
 
-    @After
-    public void clearPhase() {
-        Config.setProperty(FLAG_KEY, null);
+    /** The phase the suite was running under before this test changed it. */
+    private String originalPhase;
+
+    /**
+     * Remembers the phase the suite is running under, so {@link #restorePhase()} can put it
+     * back. The weekly phase sweep sets it through {@code DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE}.
+     */
+    @Before
+    public void savePhase() {
+        originalPhase = Config.getStringProperty(FLAG_KEY, null);
     }
 
+    /**
+     * Puts back the phase saved by {@link #savePhase()}. Clearing the flag instead would drop
+     * the sweep's phase and leave every later test in the suite running at phase 0.
+     */
+    @After
+    public void restorePhase() {
+        Config.setProperty(FLAG_KEY, originalPhase);
+    }
+
+    /**
+     * Switches the phase for this test. Below phase 3 the test relies on Elasticsearch, so it is
+     * skipped when Elasticsearch has no active content index.
+     */
     private static void setPhase(final int ordinal) {
         Config.setProperty(FLAG_KEY, String.valueOf(ordinal));
+        if (ordinal < MigrationPhase.PHASE_3_OPENSEARCH_ONLY.ordinal()) {
+            assumeElasticsearchContentIndices();
+        }
+    }
+
+    /**
+     * Skips the calling test when Elasticsearch has no active content index to read from. The
+     * phase 3 CI job starts with OpenSearch indices only, so a test that forces an earlier phase
+     * and reads Elasticsearch would fail on the missing index, not on the behavior it checks.
+     */
+    private static void assumeElasticsearchContentIndices() {
+        final IndiciesInfo info;
+        try {
+            info = APILocator.getIndiciesAPI().loadIndicies();
+        } catch (final DotDataException e) {
+            throw new DotRuntimeException(e);
+        }
+        assumeTrue("No active Elasticsearch content index in this environment",
+                info != null && UtilMethods.isSet(info.getWorking())
+                        && UtilMethods.isSet(info.getLive()));
     }
 
     /**

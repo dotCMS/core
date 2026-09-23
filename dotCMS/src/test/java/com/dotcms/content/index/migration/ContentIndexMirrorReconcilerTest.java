@@ -12,22 +12,34 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.index.ContentletIndexOperations;
+import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.ContentMirrors;
 import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.DatabaseCounts;
 import com.dotcms.content.index.IndexAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotcms.content.index.domain.IndexStats;
+import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.VersionedIndices;
+import com.dotcms.content.index.VersionedIndicesImpl;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.dotcms.content.index.migration.MirrorStatus.Verdict;
+import com.dotmarketing.util.Config;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
  * Unit tests for {@link ContentIndexMirrorReconciler} — the content (working/live) half of the
  * migration-readiness report (issue #36360). Both engine leaves are mocked and the index names are
- * fed through an injected {@code IndiciesInfo}, so no live cluster is needed. The mocked ES leaf
- * strips a fixed {@code cluster_x.} prefix, matching {@code removeClusterIdFromName}.
+ * fed through an injected index store, so no live cluster is needed. The mocked ES leaf strips a fixed
+ * {@code cluster_x.} prefix, matching {@code removeClusterIdFromName}.
+ *
+ * <p>Which store supplies those names is phase-dependent, so every case pins the phase: the bulk run in
+ * Phase 0 against {@code IndiciesInfo}; the {@code phase3_*} cases run against the OpenSearch store,
+ * which is all that is left once the Phase 3 switchover purges the legacy pointers (issue #37635).</p>
  */
 public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
 
@@ -38,8 +50,15 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
     private ContentletIndexOperations esOps;
     private ContentletIndexOperations osOps;
 
+    private String previousPhase;
+
     @Before
     public void setUp() {
+        // Pin the phase: which store owns the active pointers is phase-dependent, and these cases all
+        // assert the pre-Phase-3 source. Without this the suite inherits whatever phase ran last in the
+        // shared JVM.
+        previousPhase = Config.getStringProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, null);
+        Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, "0");
         es = mock(IndexAPI.class);
         os = mock(IndexAPI.class);
         esOps = mock(ContentletIndexOperations.class);
@@ -51,6 +70,11 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         // Mirror each leaf's physical-name convention: ES cluster-prefixes, OS also tags with .os.
         when(esOps.toPhysicalName(anyString())).thenAnswer(inv -> PREFIX + inv.getArgument(0));
         when(osOps.toPhysicalName(anyString())).thenAnswer(inv -> PREFIX + inv.getArgument(0) + ".os");
+    }
+
+    @After
+    public void tearDown() {
+        Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, previousPhase);
     }
 
     /**
@@ -75,14 +99,35 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         return new IndiciesInfo.Builder().setWorking(working).setLive(live).build();
     }
 
+    /**
+     * The OpenSearch index store as Phase 3 holds it: cluster-prefixed names carrying the .os tag.
+     * Unset slots are passed as {@code Optional.empty()} — the builder rejects a null String.
+     */
+    private static Optional<VersionedIndices> osStore(final String working, final String live) {
+        return Optional.of(VersionedIndicesImpl.builder()
+                .version("3.X")
+                .working(Optional.ofNullable(working))
+                .live(Optional.ofNullable(live))
+                .build());
+    }
+
     private ContentIndexMirrorReconciler reconciler(final IndiciesInfo info) {
-        return reconciler(info, null);
+        return reconciler(info, (DatabaseCounts) null);
+    }
+
+    /** Phase 3 shape: the legacy pointers are gone and the names come from the OpenSearch store. */
+    private ContentIndexMirrorReconciler reconciler(final IndiciesInfo info,
+            final Optional<VersionedIndices> osStore) {
+        return new ContentIndexMirrorReconciler(es, os, esOps, osOps, () -> info, () -> osStore, () -> null);
     }
 
     /** @param expected the database denominator behind the coverage percentages, or null when absent */
     private ContentIndexMirrorReconciler reconciler(final IndiciesInfo info,
             final DatabaseCounts expected) {
-        return new ContentIndexMirrorReconciler(es, os, esOps, osOps, () -> info, () -> expected);
+        // These cases all run in a pre-Phase-3 phase, where IndiciesInfo owns the active pointers, so
+        // the OpenSearch store is never consulted — the phase3_* cases cover that source.
+        return new ContentIndexMirrorReconciler(es, os, esOps, osOps, () -> info,
+                Optional::empty, () -> expected);
     }
 
     /** Both content indices present on both engines with equal counts → two IN_SYNC rows. */
@@ -156,6 +201,127 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         assertEquals(40, live.os().docCount());
         // mirror 10 docs behind the original of 50 → -20%
         assertEquals(-20.0, live.driftPercent(), 0.001);
+    }
+
+    /**
+     * Phase 3 on an installation whose Elasticsearch pointers are gone — the state left by a build
+     * that still purged them at switchover. The OpenSearch store is then the only surviving source,
+     * and the rows must still come back from it: resolving through {@code IndiciesInfo} alone would
+     * skip every slot and produce an empty report, which downstream reads as "nothing is out of sync"
+     * (issue #37635). The absent Elasticsearch copy is reported as absent, which at that point is all
+     * that can honestly be said — its name is unrecoverable.
+     */
+    @Test
+    public void phase3_sourcesTheActiveNamesFromTheOpenSearchStore() {
+        Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, "3");
+        final Map<String, IndexStats> osStats =
+                Map.of("working_1.os", present(), "live_1.os", present());
+        when(es.getIndicesStats()).thenReturn(Map.of());
+        when(os.getIndicesStats()).thenReturn(osStats);
+        count(osOps, "working_1", 683); count(osOps, "live_1", 682);
+
+        final List<MirrorStatus> statuses = reconciler(null, osStore(
+                PREFIX + "working_1.os", PREFIX + "live_1.os")).statuses();
+
+        assertEquals(2, statuses.size());
+        final MirrorStatus working = statuses.get(0);
+        // The .os tag is stripped back off, so the row is keyed by the same logical name both engines
+        // share — and the Elasticsearch side is reported as the missing copy it now is.
+        assertEquals("working_1", working.indexName());
+        assertEquals(IndexKind.CONTENT_WORKING, working.kind());
+        assertTrue(working.os().exists());
+        assertEquals(683, working.os().docCount());
+        assertFalse(working.es().exists());
+        assertEquals(IndexKind.CONTENT_LIVE, statuses.get(1).kind());
+        assertEquals(682, statuses.get(1).os().docCount());
+    }
+
+    /**
+     * The case this whole split exists for: after a Phase 3 reindex the two engines are on DIFFERENT
+     * generations — OpenSearch advanced to the newly built pair, Elasticsearch still names the index
+     * it held at cutover, which is still on the cluster with content in it.
+     *
+     * <p>Both copies must be reported, each counted on its own index. Deriving the Elasticsearch name
+     * from the OpenSearch one would look for a generation Elasticsearch never had and report the copy
+     * as absent — technically true of that name, and badly misleading about the engine (issue #37635).
+     * The Elasticsearch stats entry below deliberately holds ONLY the old generation, so this passes
+     * only if the old name was really used to look it up.</p>
+     */
+    @Test
+    public void phase3_divergedGenerations_reportsEachEngineOnItsOwnIndex() {
+        Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, "3");
+        final Map<String, IndexStats> esStats = Map.of("working_OLD", present());
+        final Map<String, IndexStats> osStats = Map.of("working_NEW.os", present());
+        when(es.getIndicesStats()).thenReturn(esStats);
+        when(os.getIndicesStats()).thenReturn(osStats);
+        when(esOps.getIndexDocumentCount(PREFIX + "working_OLD")).thenReturn(600L);
+        when(osOps.getIndexDocumentCount(PREFIX + "working_NEW.os")).thenReturn(683L);
+
+        final List<MirrorStatus> statuses = new ContentIndexMirrorReconciler(es, os, esOps, osOps,
+                () -> indicies(PREFIX + "working_OLD", null),
+                () -> osStore(PREFIX + "working_NEW.os", null),
+                () -> null).statuses();
+
+        assertEquals(1, statuses.size());
+        final MirrorStatus working = statuses.get(0);
+        assertTrue("the Elasticsearch index is still there and must be seen", working.es().exists());
+        assertEquals(600, working.es().docCount());
+        assertTrue(working.os().exists());
+        assertEquals(683, working.os().docCount());
+        // Each engine's own physical name is carried through, so the split is visible in the report.
+        assertEquals(PREFIX + "working_OLD", working.es().physicalName());
+        assertEquals(PREFIX + "working_NEW.os", working.os().physicalName());
+        // The row is named after the engine that owns the content in this phase.
+        assertEquals("working_NEW", working.indexName());
+        // 600 vs 683 is a real, reportable difference — exactly what a rollback would lose.
+        assertEquals(Verdict.COUNT_DRIFT, working.verdict());
+    }
+
+    /** Phase 3 with an empty OpenSearch store: no rows, rather than a throw — and no failure reported. */
+    @Test
+    public void phase3_emptyOsStore_emptyListWithNoFailure() {
+        Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, "3");
+
+        final ContentMirrors mirrors = reconciler(null, Optional.<VersionedIndices>empty()).mirrors();
+
+        assertTrue(mirrors.statuses().isEmpty());
+        assertTrue("read fine, nothing registered — not a read failure",
+                mirrors.unreadableReason().isEmpty());
+    }
+
+    /**
+     * A store read that throws is a different fact from a store that holds nothing: both yield no
+     * rows, but only one of them means the report knows nothing at all. Reported separately so the
+     * verdict can tell the operator to fix the read instead of to reindex (issue #37635).
+     */
+    @Test
+    public void storeReadFailure_isReportedSeparatelyFromAnEmptyStore() {
+        Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, "3");
+        final Supplier<Optional<VersionedIndices>> throwing = () -> {
+            throw new DotRuntimeException("connection refused");
+        };
+
+        final ContentMirrors mirrors = new ContentIndexMirrorReconciler(
+                es, os, esOps, osOps, () -> null, throwing, () -> null).mirrors();
+
+        assertTrue(mirrors.statuses().isEmpty());
+        assertTrue(mirrors.unreadableReason().isPresent());
+        assertTrue(mirrors.unreadableReason().get().contains("connection refused"));
+    }
+
+    /** Same distinction on the pre-Phase-3 side, where the Elasticsearch store owns the pointers. */
+    @Test
+    public void storeReadFailure_beforePhase3_isAlsoReported() {
+        Config.setProperty(IndexConfigHelper.MigrationPhase.FLAG_KEY, "1");
+        final Supplier<IndiciesInfo> throwing = () -> {
+            throw new DotRuntimeException("database unavailable");
+        };
+
+        final ContentMirrors mirrors = new ContentIndexMirrorReconciler(
+                es, os, esOps, osOps, throwing, Optional::empty, () -> null).mirrors();
+
+        assertTrue(mirrors.statuses().isEmpty());
+        assertTrue(mirrors.unreadableReason().get().contains("database unavailable"));
     }
 
     /** A null IndiciesInfo (could not be loaded) yields no rows rather than throwing. */

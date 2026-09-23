@@ -1,6 +1,7 @@
 package com.dotcms.enterprise.priv;
 
 import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
@@ -13,6 +14,7 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -20,7 +22,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import java.util.List;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -52,23 +53,51 @@ public class ESSearchProxyTest extends IntegrationTestBase {
 
     }
 
-    @Before
-    public void skipWhenOpenSearchOnly() {
-        // esSearch is an ES-only legacy API: ESSearchProxy delegates straight to the ES
-        // RestHighLevelClient and returns an org.elasticsearch SearchResponse, so it has no
-        // OpenSearch routing path. Under Phase 3 (OS-only, ES decommissioned) the ES store has
-        // no active index, so index resolution yields null and the call NPEs. Re-routing
-        // esSearch through the neutral search path is a pending product decision (#35784), so
-        // this ES-only assertion is gated to the phases where ES still serves reads (0/1/2).
-        assumeFalse("esSearch is ES-only; skipped under Phase 3 (OS-only) — see #35784",
+    /**
+     * esSearch is an ES-only legacy API: ESSearchProxy delegates straight to the ES
+     * RestHighLevelClient and returns an org.elasticsearch SearchResponse, so it has no OpenSearch
+     * routing path. Under Phase 3 (OS-only) Elasticsearch no longer receives writes, so the path
+     * refuses to run rather than answer from the index frozen at cutover — asserted separately by
+     * {@link #test_esSearch_phase3_failsLoudlyInsteadOfReturningNothing()}. Re-routing esSearch
+     * through the neutral search path is a pending product decision (#35784), so the assertions
+     * below are gated to the phases where ES still serves reads (0/1/2).
+     */
+    private static void skipWhenOpenSearchOnly() {
+        assumeFalse("esSearch is ES-only; asserted separately under Phase 3 (OS-only) — see #35784",
                 IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
     }
 
     @Test
     public void test_esSearch_WithLicense_Success() throws Exception {
+        skipWhenOpenSearchOnly();
         final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5 +parentpath:*\\\\\\/abou*\"}}}";
         final List<ESSearchResults> resultsList = getEsSearchResults(query);
         Assert.assertFalse(resultsList.isEmpty());
+    }
+
+    /**
+     * Phase 3 must fail this deprecated path loudly, with the specific exception type that survives
+     * Velocity.
+     *
+     * <p>Past the final phase Elasticsearch receives no more writes. The switchover keeps its active
+     * pointers, so without a phase check this path would answer from the index frozen at cutover —
+     * results that look valid but miss everything written since — and where no pointer was ever
+     * registered it used to carry a null into the ES client and die with a NullPointerException, which
+     * Velocity's method-exception handler converts into a null return outside EDIT mode, so a
+     * template's {@code #set} assigned nothing and the page rendered its own unresolved source
+     * (issue #37635). It now fails on the phase itself, whatever the index store holds.
+     * DotStateException is one of the few types that handler rethrows, so asserting the type here is
+     * asserting the visible behaviour: an error, not stale results and not Velocity printed on the
+     * page.</p>
+     */
+    @Test
+    public void test_esSearch_phase3_failsLoudlyInsteadOfReturningNothing() {
+        assumeTrue("asserts the Phase 3 (OS-only) behaviour of the deprecated ES-only path",
+                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
+        final String query = "{\"query\":{\"query_string\":{\"query\":\"+basetype:5\"}}}";
+
+        Assert.assertThrows(DotStateException.class,
+                () -> APILocator.getContentletAPI().esSearch(query, true, user, true));
     }
 
     /**
@@ -79,6 +108,7 @@ public class ESSearchProxyTest extends IntegrationTestBase {
      */
     @Test
     public void test_esSearch_WithDates_Success() throws Exception{
+        skipWhenOpenSearchOnly();
         final Host newHost = new SiteDataGen().nextPersisted();
         final ContentType blogContentType = TestDataUtils.getBlogLikeContentType(newHost);
         for(int i=0;i<10;i++) {

@@ -29,7 +29,7 @@ interface ActivityRendererData {
 }
 
 export function DetailPage({ pageContent }: DetailPageProps) {
-    const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent);
+    const { pageAsset, content = {} } = useEditableDotCMSPage(pageContent) ?? {};
     const urlContentMap = pageAsset?.urlContentMap as
         | (DotCMSBasicContentlet & { blogContent?: BlockEditorNode })
         | undefined;

@@ -40,6 +40,15 @@ public record MirrorStatus(
         String recommendation,
         @JsonInclude(JsonInclude.Include.NON_NULL) Long databaseDocCount) {
 
+    /**
+     * Indexed percentage (see {@link #osIndexedPercent()}) below which an existing copy is treated as
+     * incomplete against the database. Not a tight bound on purpose: counts are taken while indexing
+     * may still be catching up, so this is meant to catch "3% of the content" — a reindex that never
+     * finished — not a handful of documents in flight. Shared by the reconciler's "incomplete" note
+     * and the Phase 3 health count so the two never disagree.
+     */
+    public static final double INCOMPLETE_INDEXED_THRESHOLD = 95.0;
+
     /** A row with no database denominator — the shape the Site Search indices use. */
     public MirrorStatus(final String indexName, final IndexKind kind, final EngineCopy es,
             final EngineCopy os, final Verdict verdict, final String recommendation) {

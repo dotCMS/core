@@ -5,7 +5,8 @@
     "react": ">=18",
     "react-dom": ">=18",
     "@dotcms/uve": "0.0.0",
-    "@dotcms/client": "0.0.0"
+    "@dotcms/client": "0.0.0",
+    "@dotcms/types": "0.0.0"
   },
   "dependencies": {
     "@tinymce/tinymce-react": "6.2.1"
@@ -29,11 +30,17 @@
   ],
   "exports": {
     "./package.json": "./package.json",
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./index.d.ts",
+      "react-server": "./index.server.esm.js",
+      "import": "./index.esm.js"
+    }
   },
   "typesVersions": {
     "*": {
-      ".": ["./src/index.d.ts"]
+      ".": [
+        "./index.d.ts"
+      ]
     }
   },
   "author": "dotcms <dev@dotcms.com>",
@@ -41,5 +48,9 @@
   "bugs": {
     "url": "https://github.com/dotCMS/core/issues"
   },
-  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/react/README.md"
+  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/react/README.md",
+  "sideEffects": [
+    "**/*.css",
+    "**/*.css.esm.js"
+  ]
 }

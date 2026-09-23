@@ -218,7 +218,7 @@ describe('DotLoginComponent', () => {
 
             spectator.detectChanges();
 
-            const errorsMessages = spectator.queryAll('.p-invalid');
+            const errorsMessages = spectator.queryAll('[data-testId="error-msg"]');
             expect(errorsMessages.length).toBe(2);
         });
 

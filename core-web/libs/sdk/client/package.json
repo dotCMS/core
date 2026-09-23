@@ -6,6 +6,9 @@
     "type": "git",
     "url": "git+https://github.com/dotCMS/core.git#main"
   },
+  "peerDependencies": {
+    "@dotcms/types": "0.0.0"
+  },
   "dependencies": {
     "consola": "^3.4.2"
   },
@@ -26,8 +29,12 @@
   },
   "typesVersions": {
     "*": {
-      ".": ["./src/index.d.ts"],
-      "internal": ["./src/internal.d.ts"]
+      ".": [
+        "./src/index.d.ts"
+      ],
+      "internal": [
+        "./src/internal.d.ts"
+      ]
     }
   },
   "author": "dotcms <dev@dotcms.com>",
@@ -35,5 +42,6 @@
   "bugs": {
     "url": "https://github.com/dotCMS/core/issues"
   },
-  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/client/README.md"
+  "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/client/README.md",
+  "sideEffects": false
 }

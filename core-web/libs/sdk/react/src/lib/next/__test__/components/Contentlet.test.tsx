@@ -36,9 +36,20 @@ vi.mock('@dotcms/uve/internal', () => ({
 
 describe('Contentlet', () => {
     const dummyContentlet = { contentType: 'test-type', someField: 'value' };
+    /**
+     * Contentlet no longer resolves dev mode or the Analytics flag itself — DotCMSPageProvider
+     * resolves both once for the layout tree and shares them through the context. Tests keep
+     * expressing intent via `mode` and the `isDotAnalyticsActive` mock, so derive the two
+     * context fields here exactly as the provider would.
+     */
     const renderContentlet = (contextValue: any, contentletProps: any) => {
         return render(
-            <DotCMSPageContext.Provider value={contextValue}>
+            <DotCMSPageContext.Provider
+                value={{
+                    isDevMode: contextValue.mode === 'development',
+                    isAnalyticsActive: !!isDotAnalyticsActiveMock(),
+                    ...contextValue
+                }}>
                 <Contentlet {...contentletProps} />
             </DotCMSPageContext.Provider>
         );

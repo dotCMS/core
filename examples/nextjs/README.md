@@ -391,13 +391,18 @@ Here's how this looks in code:
 ```tsx
 "use client";
 
+import dynamic from "next/dynamic";
 import { DotCMSLayoutBody, useEditableDotCMSPage } from "@dotcms/react";
 
-// Define custom components for specific Content Types
-// The key is the Content Type variable name in dotCMS
+// Define custom components for specific Content Types.
+// The key is the Content Type variable name in dotCMS.
+//
+// Load them with `next/dynamic` so each becomes its own chunk, fetched only when a page
+// actually contains that content type. A static map makes every component reachable from
+// the client entry, so visitors download all of them on every route.
 const pageComponents = {
-    dotCMSProductContent: MyCustomDotCMSProductComponent,
-    dotCMSBlogPost: BlogPostComponent,
+    dotCMSProductContent: dynamic(() => import("./MyCustomDotCMSProductComponent")),
+    dotCMSBlogPost: dynamic(() => import("./BlogPostComponent")),
 };
 
 interface MyPageProps {
@@ -432,16 +437,64 @@ One of the key concepts in this integration is mapping dotCMS Content Types to R
 1. Each key in the mapping object must match exactly with a Content Type variable name in dotCMS
 2. Each value is a React component that will be used to render that specific Content Type
 3. When content is rendered, the contentlet data from dotCMS is passed as props to your component
+4. Load each component with `next/dynamic`, so it is fetched only when a page contains that Content Type
 
 ```ts
+import dynamic from "next/dynamic";
+
 // Example of mapping dotCMS Content Types to React components
 const pageComponents = {
     // The key "DotCMSProduct" must match a Content Type variable name in dotCMS
-    DotCMSProduct: ProductComponent,
+    DotCMSProduct: dynamic(() => import("./ProductComponent")),
     // The key "DotCMSBlogPost" must match a Content Type variable name in dotCMS
-    DotCMSBlogPost: BlogPostComponent,
+    DotCMSBlogPost: dynamic(() => import("./BlogPostComponent")),
 };
 ```
+
+**Why dynamic imports.** A static map is the obvious thing to write, and it is why this example
+used to ship every mapped component to every visitor: importing them statically makes all of
+them reachable from the client entry, whether or not the page renders them. Wrapping each in
+`next/dynamic` gives it its own chunk, so a page that renders two Content Types downloads two
+components instead of a dozen. See `src/components/content-types/index.ts` for the real map.
+
+##### Checking your own build
+
+`next build` with Turbopack prints no First Load JS column, and `@next/bundle-analyzer` is a webpack plugin that produces nothing on a Turbopack build — so there is no built-in way to see whether your components are actually loading on demand. This example ships a small script for it:
+
+```bash
+npm run build
+npm run analyze
+```
+
+```
+JavaScript downloaded before any interaction, per route:
+
+  /[[...slug]]/page              10 chunks    594.7 KB raw    172.7 KB gzip
+  /blog/page                     11 chunks    609.7 KB raw    178.6 KB gzip
+  /blog/post/[[...slug]]/page    10 chunks    596.3 KB raw    173.2 KB gzip
+
+  20 further chunks load on demand.
+```
+
+Those "on demand" chunks are the win: one per Content Type, fetched only when a page contains it. Convert the map back to static imports and that count drops to 6 while every route grows.
+
+To check a specific component, pass a string it renders — a class name, a label:
+
+```bash
+npm run analyze -- "pointer-events-none absolute inset-0"
+```
+
+```
+Not in the initial download.
+It lives in 1 on-demand chunk(s), fetched only when a page needs it.
+```
+
+Search for something from the component's **output**, not its name. The map keys are in the initial chunk by design: `Banner: dynamic(() => import("./Banner"))` compiles to a few bytes that decide when to fetch the real component. Grepping for `Banner` finds that loader and tells you nothing about where the component itself ended up.
+
+Two things to keep in mind:
+
+- Keep the `CustomNoComponent` fallback eagerly imported. It renders when no mapping matches, so it should not wait on a network round-trip.
+- Do not re-export your content-type components from a barrel (`export * from "./Banner"`). Anything importing that barrel makes every component statically reachable again, undoing the split.
 
 **What happens at runtime:**
 

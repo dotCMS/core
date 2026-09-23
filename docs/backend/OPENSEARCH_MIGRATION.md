@@ -113,6 +113,46 @@ In Phase 2 OS serves reads but ES is still active. If OS throws an exception on 
 `PhaseRouter` catches it, logs at **ERROR** level, and retries against ES automatically.
 
 - The caller receives a correct result from ES
+
+The fallback log line names the operation and the root cause, so an outage is identifiable from
+logs alone:
+
+```
+OS read failed in Phase 2 [indexCount] — falling back to ES. OS index may be stale or
+unavailable. Cause: An error occurred when executing the Lucene Query
+/ root cause: ConnectException: Connection refused
+```
+
+**Content search reached this fallback only from #37413 onward.** Before that fix,
+`ESContentFactoryImpl` selected a provider with a bare ternary and called it directly from its
+five read call sites, so the router — and therefore the fallback — was unreachable from the
+busiest read path in the product. An OpenSearch outage in Phase 2 returned a well-formed `200`
+with zero results for content types whose count was already cached, and a `500` for the rest.
+The empty result is the dangerous variant: a caller cannot tell it apart from "this content type
+has no content". If you are reading this against a build that predates that fix, the guarantee
+above did not hold for `/api/content/_search`, `ContentletAPI` search and count, Velocity
+`$dotcontent.pull`, URL maps, Site Search or the admin content browser.
+
+Two conditions are required for the fallback to fire, and both took work:
+
+1. **The read must go through `PhaseRouter`.** Provider selection in `ESContentFactoryImpl` now
+   has exactly one mechanism; a second one is what caused #37413.
+2. **The OpenSearch provider must actually raise.** In Phase 2, `ContentFactoryIndexOperationsOS`
+   raises instead of absorbing a failure into a legitimate-looking success — the `ERROR_HIT`
+   sentinel, `-1` for a count, an empty scroll list, and the index-resolution guard in
+   `searchHits` that returned an empty result for *any* exception. A provider that reports
+   success gives the router nothing to catch. Outside Phase 2 the absorbing behaviour is
+   unchanged, and `ContentFactoryIndexOperationsES` is not touched at all.
+
+**What still does not fall back**, by design or by limitation:
+
+| Situation | Behaviour | Why |
+|---|---|---|
+| Phase 3 read failure | Propagates | ES is decommissioned; a silent fallback would report data that is genuinely absent |
+| Failure mid-scroll | Propagates | An OS scroll id is meaningless to ES, so a half-drained scroll cannot be resumed on the other engine. `createScrollQuery` is routed for provider selection only |
+| OS answers successfully with stale or incomplete data | No fallback | Indistinguishable from a query that legitimately matches nothing; falling back on every empty result would double the load of most searches |
+| A repeated identical query during an outage | Served from the query cache | The cached value is a real earlier result, so serving it is correct — but it makes an outage invisible when reproducing by hand. Vary `offset` per call. The error *sentinel* is never cached on the Phase 2 path, so a poisoned entry cannot outlive the outage |
+| Any phase, read failure reaching the legacy layer | Empty `200` | `ContentUtils`' `catch (Throwable)` and `ContentHelper`'s `resultsSize = 0` overwrite predate the migration and affect pure-ES installs too. Tracked separately; this is why the outage was silent rather than loud |
 - The ERROR log makes the OS failure visible for operators
 - In Phase 3 there is no fallback — ES is decommissioned and OS failures propagate normally
 

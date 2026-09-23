@@ -4,7 +4,10 @@
 
 **Created**: 2026-08-21
 
-**Status**: Draft
+**Last revised**: 2026-09-21 — AC-008 amended (see inline). **Approved on PR #37396 predates this
+amendment — re-approval is required.**
+
+**Status**: Draft — pending re-approval of the AC-008 amendment
 
 **Type**: Issue / Bug Resolution
 
@@ -349,12 +352,22 @@ present by default and must be actively removed to be excluded.
   Editor, and the asset picker / File field are unaffected — verified by the new option being
   opt-in and by the asset picker's base-type pinning, not by assumption.
 - **AC-008 (title safety)**: A content type whose **title field is itself** a WYSIWYG or TextArea
-  field still returns a correct, untruncated `title` in the listing. (`COMMON_PROPS` populates
-  `title` independently of the field key, so this is expected to hold — but it is unverified.
-  Since the resolved fix truncates rather than removes, the risk here is not a blanked column but
-  a title silently cut to 150 characters if `title` is ever derived from the same truncated map
-  entry instead of `COMMON_PROPS`'s independent population — this AC exists to confirm that
-  cross-contamination does not happen.)
+  field still returns a correct, ~~untruncated~~ `title` in the listing. ~~(`COMMON_PROPS`
+  populates `title` independently of the field key, so this is expected to hold — but it is
+  unverified. Since the resolved fix truncates rather than removes, the risk here is not a blanked
+  column but a title silently cut to 150 characters if `title` is ever derived from the same
+  truncated map entry instead of `COMMON_PROPS`'s independent population — this AC exists to
+  confirm that cross-contamination does not happen.)~~ — **amended 2026-09-21**: the parenthetical's
+  premise does not hold when the title-source field's variable is literally `title` --
+  `Contentlet#getTitle()` reads `map.get("title")` directly, so in that case `title` *is* the same
+  map entry the field's own key would write to, not an independently-populated one. There is no
+  cross-contamination to guard against; there is only one entry. Leaving it untruncated (the
+  original implementation's reading of "correct" as "unchanged") shipped exactly the failure mode
+  this AC was meant to catch — a long-text title riding through the listing at full length,
+  defeating the feature for that one field (found in QA, issue #37185 retest, PR #37663). AC-008
+  now requires `title` to be trimmed like any other in-scope long-text field: "correct" means
+  matching `Contentlet#getTitle()`'s own text content up to the 150-character bound, not "byte-for-
+  byte unchanged."
 
 **Verification method**:
 

@@ -23,6 +23,17 @@ export interface DotCMSPageContextProps {
     mode: DotCMSPageRendererMode;
     userComponents: Record<string, React.ComponentType<DotCMSBasicContentlet>>;
     slots?: Record<string, ReactNode>;
+    /**
+     * Whether editor metadata (`data-dot-*` attributes, placeholders, fallbacks) should be
+     * emitted. Resolved once at the layout root and shared with the whole tree so it isn't
+     * recomputed by every container and contentlet.
+     */
+    isDevMode: boolean;
+    /**
+     * Whether dotCMS Analytics is active. Resolved once at the layout root — a single
+     * `dotcms:analytics:ready` listener for the tree instead of one per contentlet.
+     */
+    isAnalyticsActive: boolean;
 }
 
 /**
@@ -34,5 +45,7 @@ export const DotCMSPageContext = createContext<DotCMSPageContextProps>({
     pageAsset: undefined,
     mode: 'production',
     userComponents: {},
-    slots: {}
+    slots: {},
+    isDevMode: false,
+    isAnalyticsActive: false
 });
