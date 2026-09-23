@@ -16,10 +16,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * Replaces WYSIWYG, TextArea and Story Block field values in a transformed map with a
@@ -32,6 +34,35 @@ import java.util.function.Function;
  * every {@code text} leaf value, and truncates the concatenation to 150 characters. This is why
  * {@link TransformOptions#LONG_TEXT_PREVIEW} must be declared after {@code STORY_BLOCK_VIEW} and
  * {@code JSON_VIEW} in the enum -- {@code EnumSet} iteration order runs this strategy last.
+ * <p>
+ * A content type's title-source field is trimmed like any other in-scope field, including when
+ * its variable is literally {@code "title"} -- {@link Contentlet#getTitle()} returns that field's
+ * own raw value verbatim (it does not strip HTML or bound its length itself), so an untrimmed
+ * long-text title defeats this strategy's entire purpose for that one field (issue #37185 QA
+ * follow-up: a WYSIWYG/TextArea field used as the title rode through at full, untruncated length).
+ * An earlier version of this strategy exempted the {@code "title"} key outright on the theory that
+ * {@code COMMON_PROPS} had already populated it and it should not be touched again -- but "already
+ * populated" here just means "holds the same raw value every other in-scope field starts from",
+ * and the issue's own acceptance criteria call for a *correct*, not necessarily untouched, title
+ * in this exact scenario.
+ * <p>
+ * When the title field's variable IS {@code "title"}, the field's own key handles this directly --
+ * no special-casing needed. When it isn't (COMMON_PROPS wrote an independent raw copy into
+ * {@code "title"} from {@link Contentlet#getTitle()}, keyed by a differently-named field), this
+ * strategy does not re-derive which field {@code getTitle()} resolved to -- an earlier version
+ * tried, re-implementing {@code Contentlet#getFieldWithVarStartingWithTitleWord} and
+ * {@code Contentlet#buildName}'s field-selection rules in parallel, and each review round found a
+ * case the copy had drifted from (a Story Block title source, a {@code buildName} fallback to a
+ * WYSIWYG/TextArea field with no title-prefixed field at all). Instead, before any field is
+ * previewed, this strategy snapshots each in-scope field's own raw value (for a Story Block field,
+ * read off the {@link Contentlet} itself, since that -- not the parsed view structure
+ * {@code STORY_BLOCK_VIEW} already wrote under the field's own key -- is what {@code getTitle()}
+ * actually returns for that field). If the original {@code "title"} value matches one of those raw
+ * values exactly, or matches the first 250 characters of one (the length {@code buildName} itself
+ * truncates to), that field's already-computed preview is copied into {@code "title"}, whichever
+ * field it turns out to be (issue #37185 PR #37663, redesigned per review feedback: comparing
+ * against dotCMS's own resolved value can't drift the way re-implementing its resolution rules
+ * did).
  *
  * @since 25.xx
  */
@@ -61,6 +92,13 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
     /** Appended to a preview when truncation actually drops content (found in review). */
     private static final String TRUNCATION_MARKER = "…";
 
+    /**
+     * The length {@link Contentlet#buildName()} truncates a fallback-resolved title to before
+     * caching it -- matched against here to recognize when {@code "title"} came from that fallback
+     * rather than being copied verbatim (found in review, issue #37185 PR #37663 fourth follow-up).
+     */
+    private static final int BUILD_NAME_TRUNCATION_LENGTH = 250;
+
     LongTextPreviewStrategy(final APIProvider toolBox) {
         super(toolBox);
     }
@@ -75,11 +113,106 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
                     String.format("Content Type in Contentlet '%s' is not set", source.getIdentifier()));
         }
 
-        applyPreview(contentType.fields(WysiwygField.class), map, LongTextPreviewStrategy::extractHtmlPreview);
-        applyPreview(contentType.fields(TextAreaField.class), map, LongTextPreviewStrategy::extractHtmlPreview);
-        applyPreview(contentType.fields(StoryBlockField.class), map, LongTextPreviewStrategy::extractStoryBlockPreview);
+        final List<Field> wysiwygFields = contentType.fields(WysiwygField.class);
+        final List<Field> textAreaFields = contentType.fields(TextAreaField.class);
+        final List<Field> storyBlockFields = contentType.fields(StoryBlockField.class);
+
+        final Object originalTitle = map.get(TITTLE_KEY);
+        final Map<String, String> rawValuesByVariable =
+                captureRawFieldValues(source, wysiwygFields, textAreaFields, storyBlockFields, map);
+
+        applyPreview(wysiwygFields, map, LongTextPreviewStrategy::extractHtmlPreview);
+        applyPreview(textAreaFields, map, LongTextPreviewStrategy::extractHtmlPreview);
+        applyPreview(storyBlockFields, map, LongTextPreviewStrategy::extractStoryBlockPreview);
+        removeRawCompanionKeys(storyBlockFields, map);
+        trimTitleCopyMatchingFieldRawValue(originalTitle, rawValuesByVariable, map);
 
         return map;
+    }
+
+    /**
+     * Snapshots each in-scope field's own raw value -- exactly what {@link Contentlet#getTitle()}
+     * would read for that field -- before {@link #applyPreview} overwrites it with a preview. A
+     * Story Block field's raw value is read off the {@link Contentlet} itself, the same place
+     * {@code getTitle()} reads it from: by the time this strategy runs, the row map holds the parsed
+     * view structure {@code STORY_BLOCK_VIEW} wrote under the field's own key, and the
+     * {@code <var>_raw} companion only exists for contentlets loaded from their JSON column. The
+     * field literally named {@code "title"} is skipped -- {@link #applyPreview} trims that key
+     * directly since it IS the field's own key, so it needs no further handling.
+     */
+    private Map<String, String> captureRawFieldValues(final Contentlet source,
+            final List<Field> wysiwygFields, final List<Field> textAreaFields,
+            final List<Field> storyBlockFields, final Map<String, Object> map) {
+        final Map<String, String> rawValues = new LinkedHashMap<>();
+        Stream.concat(wysiwygFields.stream(), textAreaFields.stream())
+                .filter(field -> !TITTLE_KEY.equals(field.variable()))
+                .forEach(field -> {
+                    final Object raw = map.get(field.variable());
+                    if (raw instanceof String) {
+                        rawValues.put(field.variable(), (String) raw);
+                    }
+                });
+        storyBlockFields.stream()
+                .filter(field -> !TITTLE_KEY.equals(field.variable()))
+                .forEach(field -> {
+                    final Object raw = source.get(field.variable());
+                    if (raw != null) {
+                        rawValues.put(field.variable(), raw.toString());
+                    }
+                });
+        return rawValues;
+    }
+
+    /**
+     * {@code COMMON_PROPS} always writes an independent copy of {@link Contentlet#getTitle()}'s raw
+     * return value into the {@code "title"} key (see {@code DefaultTransformStrategy
+     * #addCommonProperties}), regardless of which field it came from. Rather than re-deriving which
+     * field {@code getTitle()} resolved to (an earlier version of this method did, and each review
+     * round found a case its re-implementation had drifted from dotCMS's own resolution rules), this
+     * matches the original {@code "title"} value against each in-scope field's own raw value --
+     * captured before {@link #applyPreview} touched it -- and copies that field's now-computed
+     * preview into {@code "title"} on a match (found in review, issue #37185 PR #37663, redesigned
+     * after the third follow-up). An exact match covers {@code Contentlet#
+     * getFieldWithVarStartingWithTitleWord}'s fallback; a 250-character-prefix match covers
+     * {@code Contentlet#buildName}'s further fallback, which truncates to 250 characters before
+     * caching -- reachable whenever a content type has no title-prefixed field at all and its first
+     * listed long-text field is WYSIWYG/TextArea/Story Block.
+     */
+    private void trimTitleCopyMatchingFieldRawValue(final Object originalTitle,
+            final Map<String, String> rawValuesByVariable, final Map<String, Object> map) {
+        if (!(originalTitle instanceof String)) {
+            return;
+        }
+        final String titleRaw = (String) originalTitle;
+        for (final Map.Entry<String, String> candidate : rawValuesByVariable.entrySet()) {
+            final String raw = candidate.getValue();
+            final boolean exactMatch = titleRaw.equals(raw);
+            final boolean buildNameTruncatedMatch = !exactMatch
+                    && raw.length() > BUILD_NAME_TRUNCATION_LENGTH
+                    && titleRaw.length() == BUILD_NAME_TRUNCATION_LENGTH
+                    && raw.startsWith(titleRaw);
+            if (exactMatch || buildNameTruncatedMatch) {
+                map.put(TITTLE_KEY, map.get(candidate.getKey()));
+                return;
+            }
+        }
+    }
+
+    /**
+     * Every Story Block field carries an untouched {@code <var>_raw} companion holding the full
+     * JSON schema, written far upstream of this strategy (see {@code ContentletJsonAPIImpl}) for
+     * consumers that need to re-parse it (e.g. nested Block Editor reference resolution in
+     * {@code StoryBlockAPIImpl}). None of those consumers read it off a listing row's map -- they
+     * read it directly off the {@link Contentlet} -- so removing it here does not affect them, and
+     * leaving it in defeats the whole point of this strategy for Story Block fields: the &lt;=150
+     * character preview {@link #applyPreview} just wrote rides alongside the complete, untruncated
+     * schema it was supposed to replace (issue #37185 QA follow-up).
+     */
+    private void removeRawCompanionKeys(final List<Field> storyBlockFields, final Map<String, Object> map) {
+        if (!UtilMethods.isSet(storyBlockFields)) {
+            return;
+        }
+        storyBlockFields.forEach(field -> map.remove(field.variable() + "_raw"));
     }
 
     private void applyPreview(final List<Field> fields, final Map<String, Object> map,
@@ -88,10 +221,6 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
             return;
         }
         fields.stream()
-                // AC-008: the "title" key is independently populated by COMMON_PROPS from
-                // Contentlet#getTitle() -- never overwrite it with a truncated preview, even when
-                // the content type's title-source field is itself WYSIWYG/TextArea/Story Block.
-                .filter(field -> !TITTLE_KEY.equals(field.variable()))
                 // A field entirely absent from the row's map must stay absent -- otherwise every
                 // in-scope field on the content type gets a synthesized "" entry, growing the
                 // payload this strategy exists to shrink (found in review).

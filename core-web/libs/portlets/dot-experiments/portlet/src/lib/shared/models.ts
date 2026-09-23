@@ -27,7 +27,6 @@ export interface DotExperimentPageInfo {
     host: string;
 }
 
-/** The URL-backed slice of the list view: filter, status selection, paging and sort. */
 /**
  * The page the Experiments panel is scoped to, handed down by the UVE shell (#37478).
  *
@@ -40,6 +39,12 @@ export interface DotExperimentsListPanelScope {
     languageId: number | null;
 }
 
+/**
+ * Everything about the list that lives in the address rather than in memory.
+ *
+ * Deliberately not a list of the fields: they are below, and an enumeration in the summary is one
+ * more place to forget when a filter is added.
+ */
 export interface DotExperimentsListViewState {
     filter: string;
     /**
@@ -52,6 +57,21 @@ export interface DotExperimentsListViewState {
     languageId: number | null;
     selectedStatuses: DotExperimentStatus[];
     selectedGoals: GOAL_TYPES[];
+    /**
+     * Ids of the users whose experiments the list is narrowed to; empty means no constraint.
+     *
+     * Ids rather than names: the payload carries the creator's id, so matching never depends on a
+     * name having been resolved. Carried in the address as `created_by` (#37307).
+     */
+    selectedCreators: string[];
+    /**
+     * Lower bound of the scheduled-start period; `null` for no lower bound (#37307).
+     *
+     * A local calendar date, carried in the address as `schedule_from`.
+     */
+    scheduleFrom: string | null;
+    /** Upper bound of the same period; `null` for no upper bound. Address: `schedule_to`. */
+    scheduleTo: string | null;
     page: number;
     perPage: number;
     orderBy: string;
@@ -87,6 +107,22 @@ export interface DotExperimentsListPageChange {
     perPage: number;
 }
 
+/**
+ * The period the list narrows its scheduled starts to, as the address carries it.
+ *
+ * Two independent bounds rather than a nullable pair, mirroring the two query parameters one for
+ * one: either may be absent, and an absent bound constrains nothing on that side. Neither present
+ * is no filter at all (FR-019, FR-020).
+ *
+ * Local calendar dates in `SCHEDULE_BOUND_FORMAT`, not instants — see that constant.
+ */
+export interface ExperimentsListSchedulePeriod {
+    /** Inclusive, from the first instant of its day; `null` for an open lower bound. */
+    from: string | null;
+    /** Inclusive, to the last instant of its day; `null` for an open upper bound. */
+    to: string | null;
+}
+
 /** Sort change emitted by the table header. */
 export interface DotExperimentsListSortChange {
     orderBy: string;
@@ -103,6 +139,14 @@ export interface ExperimentRow {
     /** i18n key of the primary goal type, or `null` when the experiment has no goal. */
     goalLabelKey: string | null;
     variants: number;
+    /**
+     * Display name of the creator as the payload delivered it, or `null` when it carried none.
+     *
+     * Null only against a backend older than #37304, which resolves the name server-side and
+     * always sends one — `System` for the system user, `unknown` for a creator that cannot be
+     * resolved. Those are values to print, not conditions to detect (FR-029).
+     */
+    createdByName: string | null;
     schedule: string;
     statusSeverity: TagSeverity;
     statusLabelKey: string;
@@ -287,6 +331,18 @@ export interface WeightedVariant {
 }
 
 /**
+ * Which bounded slices currently hold a value worth sending.
+ *
+ * The bounds themselves live in the form's schema, so validity is read off the field tree rather
+ * than re-derived here: an out-of-range allocation or an out-of-window end date is shown on screen
+ * and simply not sent.
+ */
+export interface ConfigureFormValidity {
+    trafficAllocation: boolean;
+    scheduling: boolean;
+}
+
+/**
  * Everything the Configure screen edits, as one model.
  *
  * The screen is a single signal form: the shell owns this model and the rules over it, and each
@@ -299,18 +355,6 @@ export interface WeightedVariant {
  * one `trafficProportion` key. Holding them here is what makes "they add up to 100" a cross-field
  * rule of the form rather than a sum recomputed wherever it happens to be needed.
  */
-/**
- * Which bounded slices currently hold a value worth sending.
- *
- * The bounds themselves live in the form's schema, so validity is read off the field tree rather
- * than re-derived here: an out-of-range allocation or an out-of-window end date is shown on screen
- * and simply not sent.
- */
-export interface ConfigureFormValidity {
-    trafficAllocation: boolean;
-    scheduling: boolean;
-}
-
 export interface ConfigureFormModel {
     name: string;
     description: string;
