@@ -720,6 +720,123 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                 asset.getTitle(), field.get("title"));
     }
 
+    /**
+     * Given: a customer asset type with a text field named {@code width}, which the asset
+     * interfaces otherwise declare as the binary's numeric width.
+     * When: the schema is built and queried.
+     * Then: the schema is still valid, the customer's field answers on its own type, the binary's
+     * width stays reachable through the binary, and selecting {@code width} directly on the asset
+     * field fails with an error naming it — never different data.
+     *
+     * <p>{@code width} and {@code sha256} rather than {@code size} or {@code name}: for DOTASSET
+     * content, DotAssetViewStrategy overwrites {@code name}, {@code size}, {@code path},
+     * {@code type} and {@code extension} with the binary's values on every read, collections
+     * included -- long-standing behavior this feature does not change, and that would mask what is
+     * being tested here.
+     *
+     * <p>Before the fix, an interface and its implementation disagreeing on a field's type made
+     * graphql-java reject the WHOLE schema: one customer field took every GraphQL query on the
+     * instance down.
+     */
+    @Test
+    public void test_incompatibleCollision_keepsSchemaValidAndCustomerFieldWins() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        try {
+            addTextProperty(assetType, "width");
+            final Contentlet asset = newAssetOf(assetType, "Collides", Map.of("width", "wide"));
+
+            final ContentType holder = newHolderType();
+            final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+            final String query = String.format(
+                    "{ %sCollection(query: \"+identifier:%s\") { %s { "
+                            + "fileName ... on %s { width } fileAsset { width } } } }",
+                    holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
+                    assetType.variable());
+            final Map<String, Object> field = (Map<String, Object>) firstRow(
+                    GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder)
+                    .get(IMAGE_FIELD_VAR);
+
+            assertEquals("the customer's own `width` must answer on its own type",
+                    "wide", field.get("width"));
+            final Map<String, Object> binary = (Map<String, Object>) field.get("fileAsset");
+            assertNotEquals("the binary's width must stay reachable through the binary",
+                    "wide", binary.get("width"));
+
+            final String direct = String.format(
+                    "{ %sCollection(query: \"+identifier:%s\") { %s { width } } }",
+                    holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
+            final String errors = GraphqlQueryRunner.executeAndExpectFailure(direct, systemUser)
+                    .toString();
+            assertTrue("the validation error must name the property: " + errors,
+                    errors.contains("width"));
+        } finally {
+            // A type carrying the collision changes what every asset field offers, so it must not
+            // outlive this test.
+            APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: a customer asset type with a text field named {@code sha256}, the same GraphQL type as
+     * the binary's hash.
+     * When: {@code sha256} is selected directly on the asset field.
+     * Then: the customer's value answers, and the binary's hash stays reachable through the
+     * binary. The customer's field existed first; answering with anything else would be a silent
+     * change.
+     */
+    @Test
+    public void test_compatibleCollision_customerFieldWins() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        try {
+            addTextProperty(assetType, "sha256");
+            final Contentlet asset = newAssetOf(assetType, "Hashed", Map.of("sha256", "customerHash"));
+
+            final ContentType holder = newHolderType();
+            final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+            final String query = String.format(
+                    "{ %sCollection(query: \"+identifier:%s\") { %s { sha256 fileAsset { sha256 } } } }",
+                    holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
+            final Map<String, Object> field = (Map<String, Object>) firstRow(
+                    GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder)
+                    .get(IMAGE_FIELD_VAR);
+
+            assertEquals("the customer's own `sha256` must win its name",
+                    "customerHash", field.get("sha256"));
+            final Map<String, Object> binary = (Map<String, Object>) field.get("fileAsset");
+            assertNotEquals("the binary's hash must stay reachable through the binary",
+                    "customerHash", binary.get("sha256"));
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: a new text field called "Size" added to an asset type, with no variable chosen.
+     * When: it is saved.
+     * Then: its generated variable is not {@code size}, so a new field cannot take a flat asset
+     * property's name with a different type.
+     */
+    @Test
+    public void test_newFieldIsSteeredAwayFromIncompatibleAssetPropertyName() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        try {
+            final Field saved = APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(TextField.class).name("Size")
+                            .contentTypeId(assetType.id()).dataType(DataTypes.TEXT).build(),
+                    systemUser);
+
+            assertNotEquals("a generated variable must not collide with the binary's `size`",
+                    "size", saved.variable());
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
     // ---------------------------------------------------------------- helpers
 
     /** Runs {@code query} as {@code user} and returns the asset field of the single row, if any. */
@@ -791,8 +908,12 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     }
 
     private void addCustomProperty(final ContentType type) throws Exception {
+        addTextProperty(type, CUSTOM_PROPERTY_VAR);
+    }
+
+    private void addTextProperty(final ContentType type, final String variable) throws Exception {
         final Field field = FieldBuilder.builder(TextField.class)
-                .name(CUSTOM_PROPERTY_VAR).variable(CUSTOM_PROPERTY_VAR)
+                .name(variable).variable(variable)
                 .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build();
         APILocator.getContentTypeFieldAPI().save(field, systemUser);
         APILocator.getGraphqlAPI().invalidateSchema();
@@ -800,14 +921,20 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
 
     private Contentlet newAssetOf(final ContentType assetType, final String propertyValue)
             throws Exception {
+        return newAssetOf(assetType, propertyValue, Map.of());
+    }
+
+    private Contentlet newAssetOf(final ContentType assetType, final String propertyValue,
+            final Map<String, Object> extraProperties) throws Exception {
         final File file = FileUtil.createTemporaryFile("subtype", ".txt", "subtype");
-        final Contentlet asset = new ContentletDataGen(assetType.id())
+        final ContentletDataGen dataGen = new ContentletDataGen(assetType.id())
                 .host(site)
                 .setProperty(DotAssetContentType.ASSET_FIELD_VAR, file)
                 .setProperty(DotAssetContentType.SITE_OR_FOLDER_FIELD_VAR, site.getIdentifier())
                 .setProperty(DotAssetContentType.TAGS_FIELD_VAR, "subtypeTag")
-                .setProperty(CUSTOM_PROPERTY_VAR, propertyValue)
-                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .setProperty(CUSTOM_PROPERTY_VAR, propertyValue);
+        extraProperties.forEach(dataGen::setProperty);
+        final Contentlet asset = dataGen.setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
         ContentletDataGen.publish(asset);
         return asset;
     }

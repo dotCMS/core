@@ -32,11 +32,9 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.graphql.ContentFields;
-import com.dotcms.contenttype.model.type.BaseContentType;
-import com.dotcms.contenttype.model.field.FileField;
-import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.graphql.CustomFieldType;
 import com.dotcms.graphql.InterfaceType;
+import com.dotcms.graphql.InterfaceType.AssetInterfaces;
 import com.dotcms.graphql.datafetcher.BinaryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.CategoryFieldDataFetcher;
 import com.dotcms.graphql.datafetcher.DotJSONDataFetcher;
@@ -64,17 +62,20 @@ import graphql.scalars.ExtendedScalars;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.PropertyDataFetcher;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -165,12 +166,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     private Set<GraphQLType> getContentAPITypes() throws DotDataException {
 
         Logger.debug(this, ()-> "Getting all Content Types for GraphQL Schema");
-        final Set<GraphQLType> contentAPITypes = new HashSet<>(InterfaceType.valuesAsSet());
-
-        // Not part of InterfaceType.values(): that enum is keyed by base type, and this interface
-        // deliberately spans two of them. It still has to be registered or introspection cannot
-        // see it and no fragment can narrow through it. See #34540.
-        contentAPITypes.add(InterfaceType.getAssetContentInterface());
+        final Set<GraphQLType> contentAPITypes = new HashSet<>();
 
         contentAPITypes.addAll(CustomFieldType.getCustomFieldTypes());
 
@@ -186,29 +182,133 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             localTypesMap.put(type.variable(), type);
         });
 
+        // Fields are generated for every type before any type is built: which flat asset
+        // properties the asset interfaces may declare depends on the fields of ALL asset types, and
+        // every type must be built against the same interfaces. See #34540.
+        final Map<ContentType, List<GraphQLFieldDefinition>> fieldsByType = new LinkedHashMap<>();
         allTypes.forEach((type) -> {
             try {
-
+                DotPreconditions.checkArgument(type.variable()
+                        .matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
+                        "Content Type variable does not conform to naming rules");
                 Logger.debug(this, ()-> "Generating GraphQL Type for type: " + type.variable());
-                contentAPITypes.add(createType(type));
+                fieldsByType.put(type, createFieldsForType(type));
             }catch (IllegalArgumentException e) {
                 Logger.error(this, "Unable to generate GraphQL Type for type: " + type.variable());
             }
         });
 
+        final Set<String> excludedForFile = incompatibleAssetFlatFields(fieldsByType,
+                BaseContentType.FILEASSET);
+        final Set<String> excludedForDotAsset = incompatibleAssetFlatFields(fieldsByType,
+                BaseContentType.DOTASSET);
+        final AssetInterfaces assetInterfaces = InterfaceType.assetInterfacesExcluding(
+                excludedForFile, excludedForDotAsset);
+
+        // The asset-carrying interfaces come from this build, not from InterfaceType's defaults:
+        // two different interface objects under one name would be rejected by the schema.
+        final Set<GraphQLInterfaceType> baseTypeInterfaces = InterfaceType.valuesAsSet();
+        baseTypeInterfaces.forEach(type -> {
+            if (InterfaceType.FILE_INTERFACE_NAME.equals(type.getName())) {
+                contentAPITypes.add(assetInterfaces.fileBaseType());
+            } else if (InterfaceType.DOTASSET_INTERFACE_NAME.equals(type.getName())) {
+                contentAPITypes.add(assetInterfaces.dotAssetBaseType());
+            } else {
+                contentAPITypes.add(type);
+            }
+        });
+        // Not part of InterfaceType.values(): that enum is keyed by base type, and this interface
+        // deliberately spans two of them. It still has to be registered or introspection cannot
+        // see it and no fragment can narrow through it. See #34540.
+        contentAPITypes.add(assetInterfaces.assetContent());
+
+        fieldsByType.forEach((type, fieldDefinitions) -> {
+            final Set<String> excluded = BaseContentType.FILEASSET == type.baseType()
+                    ? excludedForFile : excludedForDotAsset;
+            addAssetFlatFields(type, fieldDefinitions, excluded);
+            contentAPITypes.add(createType(type, fieldDefinitions, assetInterfaces));
+        });
+
         return contentAPITypes;
     }
 
-    private GraphQLObjectType createType(ContentType contentType) {
-        DotPreconditions.checkArgument(contentType.variable()
-                .matches(TYPES_AND_FIELDS_VALID_NAME_REGEX),
-                "Content Type variable does not conform to naming rules");
+    /**
+     * Finds the flat asset properties that some content type of the given base type already
+     * defines as a field of its own, with a GraphQL type the asset interfaces could not share.
+     *
+     * <p>The customer's field always wins its name (see {@link #addAssetFlatFields}). When the two
+     * types agree that is all there is to it; when they do not, no interface may declare the name,
+     * because graphql-java would reject the whole schema. Logged as a warning because it changes
+     * what an asset field offers directly for the whole instance, and the remedy -- renaming the
+     * customer's field -- is an administrator's decision.
+     */
+    private Set<String> incompatibleAssetFlatFields(
+            final Map<ContentType, List<GraphQLFieldDefinition>> fieldsByType,
+            final BaseContentType baseType) {
+
+        final Map<String, GraphQLFieldDefinition> flatDefinitions = TypeUtil
+                .getGraphQLFieldDefinitionsFromMap(CustomFieldType.getAssetFlatFields()).stream()
+                .collect(Collectors.toMap(GraphQLFieldDefinition::getName, Function.identity()));
+
+        final Set<String> incompatible = new HashSet<>();
+        fieldsByType.forEach((type, fieldDefinitions) -> {
+            if (baseType != type.baseType()) {
+                return;
+            }
+            fieldDefinitions.stream()
+                    .filter(definition -> flatDefinitions.containsKey(definition.getName()))
+                    .filter(definition -> !isCompatible(definition,
+                            flatDefinitions.get(definition.getName())))
+                    .forEach(definition -> {
+                        Logger.warn(this, "Field '" + definition.getName() + "' of Content Type '"
+                                + type.variable() + "' is a "
+                                + GraphQLTypeUtil.simplePrint(definition.getType())
+                                + ", which conflicts with the asset property of the same name ("
+                                + GraphQLTypeUtil.simplePrint(
+                                        flatDefinitions.get(definition.getName()).getType())
+                                + "). The asset property is left off the asset interfaces; it is"
+                                + " still reachable through the binary field.");
+                        incompatible.add(definition.getName());
+                    });
+        });
+        return incompatible;
+    }
+
+    /**
+     * Mirrors the check graphql-java applies to an object type implementing an interface: the
+     * object's field must have the same type, or a non-null version of it, and must accept every
+     * argument the interface's field declares, with the same type.
+     */
+    static boolean isCompatible(final GraphQLFieldDefinition implementation,
+            final GraphQLFieldDefinition declared) {
+
+        final String declaredType = GraphQLTypeUtil.simplePrint(declared.getType());
+        final String implementationType = GraphQLTypeUtil.simplePrint(implementation.getType());
+        if (!declaredType.equals(implementationType)
+                && !(declaredType + "!").equals(implementationType)) {
+            return false;
+        }
+
+        return declared.getArguments().stream().allMatch(argument -> {
+            final GraphQLArgument implemented = implementation.getArgument(argument.getName());
+            return null != implemented && GraphQLTypeUtil.simplePrint(argument.getType())
+                    .equals(GraphQLTypeUtil.simplePrint(implemented.getType()));
+        });
+    }
+
+    private GraphQLObjectType createType(final ContentType contentType,
+            final List<GraphQLFieldDefinition> fieldDefinitions,
+            final AssetInterfaces assetInterfaces) {
 
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject()
                 .name(contentType.variable());
 
-        if (InterfaceType.getInterfaceForBaseType(contentType.baseType()) != null) {
-            builder.withInterface(InterfaceType.getInterfaceForBaseType(contentType.baseType()));
+        final GraphQLInterfaceType baseTypeInterface =
+                InterfaceType.isAssetBaseType(contentType.baseType())
+                        ? assetInterfaces.forBaseType(contentType.baseType())
+                        : InterfaceType.getInterfaceForBaseType(contentType.baseType());
+        if (baseTypeInterface != null) {
+            builder.withInterface(baseTypeInterface);
         }
 
         // Anything derived from an asset base type can sit behind an Image or File field, so it
@@ -216,10 +316,10 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         // type in the interface's possible-type set -- which is why a content type the customer
         // creates later is reachable with no registration step of its own.
         if (InterfaceType.isAssetBaseType(contentType.baseType())) {
-            builder.withInterface(InterfaceType.getAssetContentInterface());
+            builder.withInterface(assetInterfaces.assetContent());
         }
 
-        builder.fields(createFieldsForType(contentType));
+        builder.fields(fieldDefinitions);
 
         builder.withInterface(InterfaceType.CONTENTLET.getType());
         return builder.build();
@@ -263,7 +363,18 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         fieldDefinitions.addAll(TypeUtil
                 .getGraphQLFieldDefinitionsFromMap(ContentFields.getContentFields()));
 
-        addAssetFlatFields(contentType, fieldDefinitions);
+        if (InterfaceType.isAssetBaseType(contentType.baseType())) {
+            // `description` is the one flat property that must OVERRIDE rather than fill in. Most
+            // asset types define a `description` of their own, so filling in would leave their
+            // stored-value fetcher in place -- and an asset-pointing field would silently start
+            // answering with the stored value instead of the title it has always returned.
+            // Dropping the type's own definition here hands the name to
+            // AssetDescriptionDataFetcher, which returns the right one of the two depending on how
+            // the asset was reached, so neither reading breaks. Done before collisions are
+            // computed, so `description` can never count as one.
+            fieldDefinitions.removeIf(
+                    definition -> FILEASSET_DESCRIPTION_FIELD_VAR.equals(definition.getName()));
+        }
 
         return fieldDefinitions;
     }
@@ -279,25 +390,19 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      * very same fetchers the flat view uses, which is what makes them answer identically.
      *
      * <p>A field the customer already defined always wins: a duplicate definition would fail the
-     * whole schema build and take every other content type down with it.
+     * whole schema build and take every other content type down with it, and its value predates
+     * this feature, so answering with anything else would be a silent change.
+     *
+     * @param excluded flat properties this build's asset interfaces leave off because some type of
+     *                 the same base collides with them; they are not synthesized either, so the
+     *                 property is offered the same way on every type of that base
      */
     private void addAssetFlatFields(final ContentType contentType,
-            final List<GraphQLFieldDefinition> fieldDefinitions) {
+            final List<GraphQLFieldDefinition> fieldDefinitions, final Set<String> excluded) {
 
         if (!InterfaceType.isAssetBaseType(contentType.baseType())) {
             return;
         }
-
-        // `description` is the one flat property that must OVERRIDE rather than fill in. Most
-        // asset types define a `description` of their own, so filling in would leave their stored
-        // -value fetcher in place -- and an asset-pointing field would silently start answering
-        // with the stored value instead of the title it has always returned. Dropping the type's
-        // own definition here hands the name to AssetDescriptionDataFetcher, which returns the
-        // right one of the two depending on how the asset was reached, so neither reading breaks.
-        // The interface declares it as String, so a type declaring it as anything else could not
-        // have built a valid schema in the first place: replacing is the only option, not a choice.
-        fieldDefinitions.removeIf(
-                definition -> FILEASSET_DESCRIPTION_FIELD_VAR.equals(definition.getName()));
 
         final Set<String> alreadyDefined = fieldDefinitions.stream()
                 .map(GraphQLFieldDefinition::getName).collect(Collectors.toSet());
@@ -309,6 +414,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         final Map<String, TypeFetcher> missing = CustomFieldType.getAssetFlatFields().entrySet()
                 .stream()
                 .filter(entry -> !alreadyDefined.contains(entry.getKey()))
+                .filter(entry -> !excluded.contains(entry.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         if (missing.isEmpty()) {
@@ -361,6 +467,10 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      * @return
      */
     public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
+        if (collidesWithAssetFlatField(variable, field)) {
+            return false;
+        }
+
         final Map<String, TypeUtil.TypeFetcher> lowerNewFieldMap = new LowerKeyMap<>();
         // making the keys lowercase
         lowerNewFieldMap.putAll(ContentFields.getContentFields());
@@ -383,6 +493,31 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             }
 
         return true;
+    }
+
+    /**
+     * Whether a new field on an asset content type would take the name of a flat asset property
+     * with a different GraphQL type.
+     *
+     * <p>Such a field cannot break the schema -- the build leaves the asset property off the
+     * interfaces instead, see {@link #incompatibleAssetFlatFields} -- but it would stop the asset
+     * field offering that property directly for the whole instance. Steering the suggested
+     * variable away from the name prevents that for new fields; the build-time rule is what
+     * protects data that predates the check, and variables chosen explicitly. See #34540.
+     */
+    private boolean collidesWithAssetFlatField(final String variable, final Field field) {
+        final TypeFetcher flatField = CustomFieldType.getAssetFlatFields().get(variable);
+        if (null == flatField || !UtilMethods.isSet(field.contentTypeId())) {
+            return false;
+        }
+
+        final boolean onAssetType = Try.of(() -> APILocator.getContentTypeAPI(
+                        APILocator.systemUser()).find(field.contentTypeId()))
+                .map(contentType -> InterfaceType.isAssetBaseType(contentType.baseType()))
+                .getOrElse(false);
+
+        return onAssetType && !GraphQLTypeUtil.simplePrint(flatField.getType())
+                .equals(GraphQLTypeUtil.simplePrint(getGraphqlTypeForFieldClass(field.type(), field)));
     }
 
     @VisibleForTesting

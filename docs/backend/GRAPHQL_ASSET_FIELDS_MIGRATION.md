@@ -90,6 +90,39 @@ looked valid.
 
 ---
 
+## If one of your asset types has a field named like an asset property
+
+The asset field now offers the binary's properties directly — `name`, `size`, `mime`,
+`versionPath`, `idPath`, `path`, `sha256`, `isImage`, `width`, `height` — alongside the six it
+always had. One of your own asset types may already have a field with one of those names.
+
+**Your field always wins its name on your type.** It existed first, and answering with anything
+else would silently change what your queries return. The asset property stays reachable through
+the binary: `asset { size }` on image-style content, `fileAsset { size }` on file-style content.
+
+What happens beyond that depends on whether the two agree on the kind of value:
+
+| Your field | Example | Effect |
+|---|---|---|
+| Same kind of value | a text field `sha256` | `image { sha256 }` returns **your** value for assets of that type |
+| Different kind of value | a text field `width`, where the asset's is a number | `width` is no longer offered directly on the asset field anywhere on the instance; `image { width }` is rejected with an error naming `width` |
+
+The second case is how the schema stays valid: GraphQL requires every type behind an asset field to
+agree on what `width` is, and a disagreement would otherwise reject the whole schema. dotCMS logs a
+warning at schema build naming the content type and field. To get the direct property back, rename
+your field; until then `... on YourType { width }` reads yours and `asset { width }` reads the
+binary's.
+
+One long-standing exception, unchanged by this work: on **image-style (DOTASSET)** types, a field
+of yours named `name`, `size`, `path`, `type` or `extension` is overwritten with the binary's value
+whenever the content is read — through its own collection as much as through an asset field. That
+was already true before; renaming the field is the only way to read what was stored in it.
+
+A new field whose variable is generated from its name steers clear of these names on asset types
+(a text field called "Width" gets `width1`). A variable you choose explicitly is not changed.
+
+---
+
 ## What does not change
 
 All six properties keep their names **and their exact values**:

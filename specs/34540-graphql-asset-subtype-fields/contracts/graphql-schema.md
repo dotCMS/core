@@ -115,6 +115,13 @@ such clause a customer has written.
 An asset field aimed at content that is not an asset resolves to `null`. Handing such a contentlet
 on would raise `UnresolvedTypeException`, which fails the **whole request** rather than that field.
 
+A customer field sharing a name with a flat asset property wins that name on its own type. If its
+GraphQL type differs (a text `size` against the binary's `Long`), the name is left off the asset
+interfaces for that build — `DotFileasset`, plus `DotAssetBaseType` or `FileBaseType` for the
+colliding base — and is not synthesized onto that base's types, so the schema stays valid and a
+direct selection fails validation naming the property. The binary's value stays under
+`asset { }` / `fileAsset { }`.
+
 ---
 
 ## 4. Before and after

@@ -87,6 +87,14 @@ public enum InterfaceType {
 
     public static final String DOT_CONTENTLET = "DotContentlet";
 
+    /** Content fields plus the fixed fields of each base type, before the flat properties. */
+    private static final Map<String, TypeFetcher> fileAssetBaseFields = new HashMap<>();
+    private static final Map<String, TypeFetcher> dotAssetBaseFields = new HashMap<>();
+    private static final Map<String, TypeFetcher> assetContentBaseFields = new HashMap<>();
+
+    // Declared before the static block on purpose: static initializers run in textual order.
+    private static AssetInterfaces defaultAssetInterfaces;
+
     static {
 
         Map<String, TypeFetcher> contentFields = ContentFields.getContentFields();
@@ -100,15 +108,9 @@ public enum InterfaceType {
 
         interfaceTypes.put("CONTENT", createInterfaceType(CONTENT_INTERFACE_NAME, contentFields, new ContentResolver()));
 
-        final Map<String, TypeFetcher> fileAssetFields = new HashMap<>(contentFields);
-        addBaseTypeFields(fileAssetFields, ImmutableFileAssetContentType.builder().name("dummy")
+        fileAssetBaseFields.putAll(contentFields);
+        addBaseTypeFields(fileAssetBaseFields, ImmutableFileAssetContentType.builder().name("dummy")
                 .build().requiredFields());
-        // Same flat properties the asset interface carries. Every possible type of this interface
-        // already has them, and leaving them off would make `fileName` selectable on the concrete
-        // types and on the asset interface but not here — the same query changing shape depending
-        // on which clause a client happens to narrow through. See #34540.
-        fileAssetFields.putAll(CustomFieldType.getAssetFlatFields());
-        interfaceTypes.put("FILEASSET", createInterfaceType(FILE_INTERFACE_NAME, fileAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> pageAssetFields = new HashMap<>(contentFields);
         addBaseTypeFields(pageAssetFields, ImmutablePageContentType.builder().name("dummy")
@@ -142,41 +144,108 @@ public enum InterfaceType {
         interfaceTypes.put("FORM", createInterfaceType(FORM_INTERFACE_NAME, formFields,
                 new ContentResolver()));
 
-        final Map<String, TypeFetcher> dotAssetFields = new HashMap<>(contentFields);
-        addBaseTypeFields(dotAssetFields, ImmutableDotAssetContentType.builder().name("dummy")
+        dotAssetBaseFields.putAll(contentFields);
+        addBaseTypeFields(dotAssetBaseFields, ImmutableDotAssetContentType.builder().name("dummy")
                 .build().requiredFields());
-        // See the note on the FILEASSET interface above: DOTASSET content has no stored file name,
-        // but every DOTASSET-derived object type carries the synthesized one, so the interface must
-        // too or `fileName` is reachable everywhere except through this clause.
-        dotAssetFields.putAll(CustomFieldType.getAssetFlatFields());
-        interfaceTypes.put("DOTASSET", createInterfaceType(DOTASSET_INTERFACE_NAME, dotAssetFields, new ContentResolver()));
 
-        // Carries the common content fields plus the flat properties an asset-pointing field has
-        // always exposed, so that retyping such a field to this interface leaves those selections
-        // working. Every implementing object type must therefore carry them too -- synthesized for
-        // DOTASSET-derived types, already present on FILEASSET-derived ones.
-        //
-        // `description` is deliberately absent. FILEASSET content stores one; DOTASSET content does
-        // not, and the flat view answered it with the contentlet title instead. Declaring it here
-        // would make DOTASSET-derived types answer with their own stored description -- the same
-        // name quietly returning a different value, which is the one outcome this work refuses.
-        // It is reachable, correctly, through a narrowing clause on the concrete type.
-        final Map<String, TypeFetcher> assetContentFields = new HashMap<>(contentFields);
-        assetContentFields.putAll(CustomFieldType.getAssetFlatFields());
+        assetContentBaseFields.putAll(contentFields);
 
-        assetContentInterface = createInterfaceType(ASSET_INTERFACE_NAME,
-                assetContentFields, new ContentResolver());
+        // Built once with nothing excluded; a schema build whose content types collide with the
+        // flat properties asks for its own copies through assetInterfacesExcluding.
+        final AssetInterfaces defaults = buildAssetInterfaces(Set.of(), Set.of());
+        interfaceTypes.put("FILEASSET", defaults.fileBaseType());
+        interfaceTypes.put("DOTASSET", defaults.dotAssetBaseType());
+        defaultAssetInterfaces = defaults;
     }
 
-    private static GraphQLInterfaceType assetContentInterface;
+    /**
+     * The three interfaces that carry the flat asset properties, built together so that a schema
+     * always uses one consistent set of them.
+     */
+    public record AssetInterfaces(GraphQLInterfaceType fileBaseType,
+                                  GraphQLInterfaceType dotAssetBaseType,
+                                  GraphQLInterfaceType assetContent) {
 
+        /** @return the base-type interface for an asset base type, or null for any other. */
+        public GraphQLInterfaceType forBaseType(final BaseContentType baseContentType) {
+            if (BaseContentType.FILEASSET == baseContentType) {
+                return fileBaseType;
+            }
+            if (BaseContentType.DOTASSET == baseContentType) {
+                return dotAssetBaseType;
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Builds the asset interfaces leaving out the flat properties that some content type on this
+     * instance already defines with an incompatible GraphQL type.
+     *
+     * <p>An interface and every object type implementing it must agree on each shared field's
+     * type, and graphql-java rejects the <b>whole</b> schema otherwise. A customer asset type with,
+     * say, a text field named {@code size} would therefore take every GraphQL query on the instance
+     * down. Leaving {@code size} off the interfaces instead keeps the schema valid: the customer's
+     * field keeps answering on its own type, the binary's size stays reachable through the binary
+     * field, and selecting {@code size} directly on an asset field fails validation with an error
+     * naming it rather than returning different data. See #34540.
+     *
+     * @param excludedForFile     names colliding on some FILEASSET-derived type
+     * @param excludedForDotAsset names colliding on some DOTASSET-derived type
+     * @return the defaults when nothing collides, which is the common case
+     */
+    public static AssetInterfaces assetInterfacesExcluding(final Set<String> excludedForFile,
+            final Set<String> excludedForDotAsset) {
+        if (excludedForFile.isEmpty() && excludedForDotAsset.isEmpty()) {
+            return defaultAssetInterfaces;
+        }
+        return buildAssetInterfaces(excludedForFile, excludedForDotAsset);
+    }
+
+    private static AssetInterfaces buildAssetInterfaces(final Set<String> excludedForFile,
+            final Set<String> excludedForDotAsset) {
+
+        // Same flat properties the asset interface carries. Every possible type of these
+        // interfaces has them, and leaving them off would make `fileName` selectable on the
+        // concrete types and on the asset interface but not through a base-type clause — the same
+        // query changing shape depending on which clause a client narrows through. DOTASSET
+        // content has no stored file name, but every DOTASSET-derived type carries the synthesized
+        // one. Only the flat overlay is filtered: a base type's own fixed fields are present on
+        // every type of that base, so they cannot collide.
+        final Map<String, TypeFetcher> fileAssetFields = new HashMap<>(fileAssetBaseFields);
+        fileAssetFields.putAll(flatFieldsExcluding(excludedForFile));
+
+        final Map<String, TypeFetcher> dotAssetFields = new HashMap<>(dotAssetBaseFields);
+        dotAssetFields.putAll(flatFieldsExcluding(excludedForDotAsset));
+
+        // Spans both base types, so a name colliding on either is left off. Carries the common
+        // content fields plus the flat properties an asset-pointing field has always exposed, so
+        // that retyping such a field to this interface leaves those selections working.
+        final Set<String> excludedForAsset = new HashSet<>(excludedForFile);
+        excludedForAsset.addAll(excludedForDotAsset);
+        final Map<String, TypeFetcher> assetContentFields = new HashMap<>(assetContentBaseFields);
+        assetContentFields.putAll(flatFieldsExcluding(excludedForAsset));
+
+        return new AssetInterfaces(
+                createInterfaceType(FILE_INTERFACE_NAME, fileAssetFields, new ContentResolver()),
+                createInterfaceType(DOTASSET_INTERFACE_NAME, dotAssetFields, new ContentResolver()),
+                createInterfaceType(ASSET_INTERFACE_NAME, assetContentFields,
+                        new ContentResolver()));
+    }
+
+    private static Map<String, TypeFetcher> flatFieldsExcluding(final Set<String> excluded) {
+        final Map<String, TypeFetcher> flatFields = new HashMap<>(
+                CustomFieldType.getAssetFlatFields());
+        flatFields.keySet().removeAll(excluded);
+        return flatFields;
+    }
 
     /**
      * @return the interface describing what an asset-pointing field returns, implemented by every
-     * content type derived from either asset base type.
+     * content type derived from either asset base type, as built when nothing collides.
      */
     public static GraphQLInterfaceType getAssetContentInterface() {
-        return assetContentInterface;
+        return defaultAssetInterfaces.assetContent();
     }
 
     /**
