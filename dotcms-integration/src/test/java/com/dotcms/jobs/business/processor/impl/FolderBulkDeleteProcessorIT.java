@@ -205,7 +205,7 @@ public class FolderBulkDeleteProcessorIT extends Junit5WeldBaseTest {
      * ExpectedResult: Behaves observably the same as the shipped single-folder delete — gone from
      * the folder API by inode, same as {@code WebAssetHelper.deleteFolder} already guarantees,
      * since the processor calls the identical unchanged {@code FolderAPI.delete} (US1 scenario 3,
-     * FR-006, research.md R3)
+     * FR-006)
      */
     @Test
     public void test_process_oneFolder_behavesLikeTheShippedSingleDelete() throws Exception {

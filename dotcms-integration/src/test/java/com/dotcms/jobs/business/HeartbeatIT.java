@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Integration test for the job-queue framework's liveness heartbeat — #37063 (Content Drive bulk
- * folder delete backend), plan.md Planning Obligation PO-4, research.md R6.
+ * folder delete backend), spec FR-024a.
  * <p>
  * The framework's existing progress poller ({@code JobQueueManagerAPIImpl.updateJobProgress})
  * only persists {@code job.updated_at} when the reported progress value strictly increases

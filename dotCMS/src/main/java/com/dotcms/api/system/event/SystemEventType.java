@@ -347,7 +347,7 @@ public enum SystemEventType {
 	 * {@code FolderAPIImpl#delete} returns normally. Reusing {@code DELETE_FOLDER} for this was
 	 * the original plan and was wrong: an author told a folder had "entered" a delete but never
 	 * told it left, because the delete happened to fail, would be left believing it is still busy
-	 * indefinitely (research.md R4).
+	 * indefinitely.
 	 * <p>
 	 * <b>This exact name is fixed by the frontend half of #37063</b>
 	 * ({@code DotSystemEventType.FOLDER_DELETE_FINISHED}, PR dotCMS/core#37612).

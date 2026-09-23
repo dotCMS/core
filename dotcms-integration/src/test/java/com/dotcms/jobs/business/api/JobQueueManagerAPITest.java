@@ -1396,7 +1396,7 @@ public class JobQueueManagerAPITest {
 
     /**
      * Method to test: JobQueueManagerAPI#getJobQueue() already exposes JobQueue#hasJobBeenInState
-     * Given Scenario: #37063 (research.md R7, plan.md PO-7) needed a way to ask whether a job has
+     * Given Scenario: #37063 (spec FR-030) needed a way to ask whether a job has
      * ever been ABANDONED, to avoid misreporting an already-deleted folder as a fresh failure on a
      * re-queued run. A new top-level JobQueueManagerAPI method was planned for this and even
      * reached this test file (removed here) before this test caught that getJobQueue() already

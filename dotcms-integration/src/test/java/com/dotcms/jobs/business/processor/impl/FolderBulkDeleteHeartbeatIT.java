@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Integration test for the liveness heartbeat wired into a single top-level folder's delete
- * (#37063, FR-024a, plan.md PO-4).
+ * (#37063, FR-024a).
  * <p>
  * <b>Why the abandonment threshold is lowered by {@code Config.setProperty} here but that same
  * trick was rejected for {@code FolderBulkDeleteResumeIT}.</b> Two different consumers read this

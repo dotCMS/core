@@ -107,7 +107,8 @@ public class FolderBulkDeleteHelper {
         // transaction (@WrapInTransaction on PostgresJobQueue#createJob reuses the connection
         // already open here rather than starting a second one). Two submissions for the same site
         // fully serialize through the overlap check; a submission for an unrelated site is
-        // unaffected (plan.md PO-6).
+        // unaffected. A database lock rather than an in-memory one, so it also holds across
+        // cluster nodes.
         acquireSiteLocks(distinctPaths);
         checkForOverlap(distinctPaths);
 
@@ -129,7 +130,7 @@ public class FolderBulkDeleteHelper {
      * Refuses the submission if any of its paths is the same as, an ancestor of, or a descendant of
      * a path an in-flight run in this queue is already covering (FR-029, FR-029a).
      * <p>
-     * <b>"Active" is deliberately conservative</b> (plan.md PO-6): every non-terminal state
+     * <b>"Active" is deliberately conservative</b>: every non-terminal state
      * {@link JobQueueManagerAPI#getActiveJobs} returns, including a run that has failed or been
      * abandoned but not yet reached its permanent state. A spurious refusal here is far cheaper
      * than a missed race.

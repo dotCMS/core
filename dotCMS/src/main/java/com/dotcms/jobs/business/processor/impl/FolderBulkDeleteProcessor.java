@@ -78,14 +78,26 @@ import javax.enterprise.context.Dependent;
  * author working inside the folder needs to know it is no longer busy either way. Distinct from the
  * existing {@code DELETE_FOLDER} event (which only fires on success) and from
  * {@code BULK_FOLDER_DELETE_COMPLETED} (submitter-only, carries the run's outcome, not "is this
- * folder busy") — see research.md R4 for why reusing {@code DELETE_FOLDER} was tried and wrong.
+ * folder busy"). {@code DELETE_FOLDER} cannot serve as the "finished" signal: it is pushed near
+ * the end of {@code FolderAPIImpl.delete} and never reached when the delete throws, so every failed
+ * folder would stay "busy" for other authors. The frontend subscribes to
+ * {@code FOLDER_DELETE_FINISHED} for that reason.
  * Audience ({@code PermissionAPI.getRolesWithPermission(folder, PERMISSION_READ)}) is computed once
  * per folder, before the delete attempt, and reused for both pushes.
  * <p>
- * The liveness heartbeat and the re-queued-run signal are added in later Polish tasks — see the
- * task list for where each lands. A per-folder failure is reported, not retried on the *item* level
- * — the author decides — but see the next paragraph for why that is not the same as
- * {@code @NoRetryPolicy} on the class.
+ * <b>Liveness heartbeat</b> (FR-024a): while one top-level folder is inside the blocking
+ * {@code FolderAPI.delete} call, {@link #startHeartbeat} calls {@link ProgressTracker#heartbeat()}
+ * at (by default) a third of the abandonment threshold, so a long delete refreshes
+ * {@code job.updated_at} without inventing progress and is not flagged abandoned. It is stopped
+ * around that same call.
+ * <p>
+ * <b>Re-queued runs</b> (FR-030): {@link #wasPreviouslyAbandoned} tells a run the abandonment
+ * sweep re-queued apart from a fresh one. On a re-queued run a path that no longer resolves is
+ * recorded {@code SUCCESS}, since a prior attempt most likely deleted it; any other failure,
+ * including a permission refusal, is still reported as that failure.
+ * <p>
+ * A per-folder failure is reported, not retried on the *item* level — the author decides — but see
+ * the next paragraph for why that is not the same as {@code @NoRetryPolicy} on the class.
  * <p>
  * <b>Not marked {@code @NoRetryPolicy}, deliberately</b> — the same correction
  * {@code BulkUploadProcessor}'s own javadoc already recorded, and FR-030a's own "Decided" text
@@ -226,9 +238,10 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
 
     /**
      * Whether this job has ever been marked {@code ABANDONED} before this call — read once, at the
-     * start of {@code process(Job)}, per plan.md PO-7. Checked via
-     * {@code JobQueueManagerAPI.getJobQueue().hasJobBeenInState(...)}, already public — no
-     * framework change was needed here (T009's own finding, see plan.md PO-7 and research.md R7).
+     * start of {@code process(Job)}. {@code job.startedAt()} cannot answer this: it is set before
+     * every {@code process(Job)} call, including the first. Checked instead via
+     * {@code JobQueueManagerAPI.getJobQueue().hasJobBeenInState(...)}, an existing public
+     * {@code EXISTS} query against {@code job_history}, so no framework change was needed.
      * <p>
      * Best-effort: a failure to read this history defaults to {@code false} (a fresh-run
      * assumption), which is the safe direction — it costs an author a spurious
@@ -432,8 +445,8 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * from the configured abandonment threshold — read fresh via {@code Config.getIntProperty} on
      * every call, deliberately not cached the way {@code AbandonedJobDetectorConfigProducer}'s own
      * {@code static final} fields are (that caching is exactly what made a runtime
-     * {@code Config.setProperty} override unreliable for T065's abandonment test; this read has no
-     * such caching to avoid the same trap). Set to a third of the threshold (plan.md PO-4) so a
+     * {@code Config.setProperty} override unreliable for {@code FolderBulkDeleteResumeIT}; this read
+     * has no such caching to avoid the same trap). Set to a third of the threshold so a
      * single slow tick does not itself risk a false abandonment. The caller owns shutting this down
      * — see {@link #announceAndDelete}.
      */

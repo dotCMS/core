@@ -40,14 +40,13 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Integration test for a re-queued (abandoned-then-retried) run not mistaking an
- * already-deleted folder for a new failure (#37063, FR-030, plan.md PO-7).
+ * already-deleted folder for a new failure (#37063, FR-030).
  * <p>
- * <b>No framework change needed to read the signal</b> — see plan.md PO-7's own history: this
- * plan proposed a new passthrough method on {@code JobQueueManagerAPI} not once but twice, and
- * both times the real answer turned out to already exist:
+ * <b>No framework change needed to read the signal</b>: a new passthrough method on
+ * {@code JobQueueManagerAPI} was considered, but
  * {@code APILocator.getJobQueueManagerAPI().getJobQueue().hasJobBeenInState(jobId,
- * JobState.ABANDONED)} was already public. T067 wires that read into
- * {@link FolderBulkDeleteProcessor}; this test proves the observable behavior it exists for.
+ * JobState.ABANDONED)} was already public. {@link FolderBulkDeleteProcessor} reads it once per
+ * run; this test proves the observable behavior it exists for.
  * <p>
  * Simulates the abandoned run the same way the framework's own precedent test does
  * ({@code JobQueueManagerAPIIntegrationTest#test_AbandonedJobDetection}): a job row inserted

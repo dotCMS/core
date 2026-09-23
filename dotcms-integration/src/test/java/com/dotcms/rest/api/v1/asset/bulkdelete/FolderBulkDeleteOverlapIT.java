@@ -178,7 +178,7 @@ public class FolderBulkDeleteOverlapIT extends Junit5WeldBaseTest {
      * Given Scenario: Two submissions for the very same, not-yet-active path race each other —
      * neither can see the other via {@code getActiveJobs} until one of them actually commits
      * ExpectedResult: Exactly one job is created and the other is refused {@code OVERLAPPING_RUN},
-     * every time — proving the per-site advisory lock (plan.md PO-6) actually serializes the
+     * every time — proving the per-site advisory lock actually serializes the
      * check-then-act window rather than merely making the race unlikely (FR-029b). Without the
      * lock this is a genuine TOCTOU race: both submissions could read "no active job yet" before
      * either's {@code createJob} commits, and this test would occasionally let both through.

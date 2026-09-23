@@ -45,8 +45,8 @@ import org.junit.jupiter.api.Test;
  * directly found the original plan wrong about reusing the existing {@code DELETE_FOLDER} event
  * for "left": the frontend subscribes to its own {@code FOLDER_DELETE_FINISHED}, expected on a
  * failed per-path delete too ("success or failure alike", its own fixture comment), which
- * {@code DELETE_FOLDER}'s success-only push cannot provide. See research.md R4 and plan.md PO-3
- * for the full trace. Both {@code FOLDER_DELETE_STARTED} and {@code FOLDER_DELETE_FINISHED} are
+ * {@code DELETE_FOLDER}'s success-only push cannot provide. Both
+ * {@code FOLDER_DELETE_STARTED} and {@code FOLDER_DELETE_FINISHED} are
  * therefore new pushes from {@link FolderBulkDeleteProcessor} itself.
  * <p>
  * <b>Drives {@link FolderBulkDeleteProcessor} with a captured {@link SystemEventsAPI}</b>, the

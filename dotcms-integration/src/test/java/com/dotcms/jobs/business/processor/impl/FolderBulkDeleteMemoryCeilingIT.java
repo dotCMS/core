@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Non-assertive: records, as a logged data point for #37565 (the un-bounded-transaction follow-up
  * this feature deliberately does not fix), the peak heap delta observed while one top-level folder
- * with a substantial content count is deleted (#37063, SC-004, plan.md PO-1/PO-5).
+ * with a substantial content count is deleted (#37063, SC-004).
  * <p>
  * <b>Deliberately not a pass/fail gate.</b> Asserting a hard byte ceiling would be flaky across
  * environments (heap size, GC behavior, concurrent test load) and is not what SC-004 asks for —
@@ -40,8 +40,7 @@ import org.junit.jupiter.api.Test;
  * exhausted would mean scaling up folder size until something breaks, which is exactly the kind of
  * environment-dependent, CI-hazardous test SC-004 explicitly rules out. This logs one substantial,
  * realistic size instead, leaving the follow-up ticket to run the same measurement at whatever
- * other sizes it needs once it is actually scoped (plan.md PO-1: "the number exists... rather than
- * being deferred a second time" — a starting number, not an exhaustive one).
+ * other sizes it needs once it is actually scoped — a starting number, not an exhaustive one.
  */
 @EnableWeld
 public class FolderBulkDeleteMemoryCeilingIT extends Junit5WeldBaseTest {
