@@ -661,6 +661,36 @@ public class FolderBulkDeleteProcessorIT extends Junit5WeldBaseTest {
 
     /**
      * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: The same folder-and-subfolder selection as above, but the ancestor is
+     * spelled in upper case — folder resolution is case-insensitive, so it still contains the
+     * descendant
+     * ExpectedResult: The descendant is still SKIPPED/COVERED_BY_PARENT, never attempted and
+     * reported FAILED/PATH_NOT_FOUND after its ancestor's delete already removed it (#37685
+     * review)
+     */
+    @Test
+    public void test_process_ancestorInDifferentCase_descendantStillSkipped() throws Exception {
+
+        final Folder parent = folder();
+        final Folder child = new FolderDataGen().parent(parent).name("child").nextPersisted();
+
+        final String parentPath = pathOf(parent).toUpperCase();
+        final String childPath = pathOf(parent) + child.getName() + "/";
+
+        final Job job = jobForPaths(List.of(childPath, parentPath), admin);
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        final BatchItemResult childResult = resultFor(metadata, childPath);
+        assertEquals(BatchItemStatus.SKIPPED, childResult.status(),
+                "reason: " + childResult.reason() + ", message: " + childResult.message());
+        assertEquals(BatchFailureReason.COVERED_BY_PARENT, childResult.reason().orElseThrow());
+        assertEquals(BatchItemStatus.SUCCESS, resultFor(metadata, parentPath).status());
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
      * Given Scenario: A selection where every path fails to resolve
      * ExpectedResult: The outcome shows zero successes and names every failure — never recorded as
      * a run-level success (US2 scenario 7)

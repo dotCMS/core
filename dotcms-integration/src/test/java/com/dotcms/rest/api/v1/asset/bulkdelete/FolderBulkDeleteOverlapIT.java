@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.asset.bulkdelete;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -162,13 +163,39 @@ public class FolderBulkDeleteOverlapIT extends Junit5WeldBaseTest {
         assertOverlapRefusal(childPath, descendantPath);
     }
 
+    /**
+     * Method to test: {@link FolderBulkDeleteHelper#submit(FolderBulkDeleteForm, User)}
+     * Given Scenario: A folder is being deleted by an in-flight run; a second submission names
+     * the same folder with different case, site included — folder and site resolution are
+     * case-insensitive, so it is the same folder
+     * ExpectedResult: Refused {@code 409 OVERLAPPING_RUN}, same as the exact path (#37685 review)
+     */
+    @Test
+    public void test_submit_samePathDifferentCaseAsInFlightRun_refused409() throws Exception {
+
+        final Host site = site();
+        final Folder big = folder(site, null);
+        for (int i = 0; i < BIG_FOLDER_CONTENT_COUNT; i++) {
+            new ContentletDataGen(contentType.id()).host(site).folder(big).nextPersisted();
+        }
+        final String bigPath = pathOf(site, big);
+        final String upperCasePath = bigPath.toUpperCase();
+
+        submitLongRunningJob(bigPath);
+
+        final FolderBulkDeleteRefusedException refusal = assertThrows(
+                FolderBulkDeleteRefusedException.class, () -> submit(upperCasePath),
+                "the same folder spelled with different case must be refused like the exact path");
+        assertOverlapRefusal(refusal, upperCasePath);
+    }
+
     private void assertOverlapRefusal(final FolderBulkDeleteRefusedException refusal,
             final String conflictingPath) {
         assertEquals("OVERLAPPING_RUN", refusal.errorCode());
         assertEquals(javax.ws.rs.core.Response.Status.CONFLICT, refusal.status());
         assertTrue(refusal.getMessage().contains(conflictingPath),
                 "the refusal must name the conflicting folder: " + refusal.getMessage());
-        assertTrue(!refusal.getMessage().contains(admin.getUserId()),
+        assertFalse(refusal.getMessage().contains(admin.getUserId()),
                 "the refusal must never name the other submitter — there is no field in this "
                         + "body where a user id could appear");
     }

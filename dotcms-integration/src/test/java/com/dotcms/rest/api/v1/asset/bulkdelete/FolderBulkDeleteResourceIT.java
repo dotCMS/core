@@ -197,4 +197,33 @@ public class FolderBulkDeleteResourceIT extends Junit5WeldBaseTest {
         assertEquals(pathWithSlash, storedPaths.getFirst(),
                 "the stored path must be the normalized (trailing-slash) form");
     }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteHelper#submit(FolderBulkDeleteForm, User)}
+     * Given Scenario: The same folder submitted twice, differing only by case — folder
+     * resolution is case-insensitive, so both name the same folder
+     * ExpectedResult: Collapsed to one, and the stored path is the first one exactly as it was
+     * sent, not a lowercased copy: it is what the result {@code key} and the folder events carry
+     * back to the client, which shows it to the author (#37685 review)
+     */
+    @Test
+    public void test_submit_samePathDifferingOnlyByCase_collapsedKeepingFirstAsSent()
+            throws Exception {
+
+        final Folder folder = folder();
+        final String mixedCase = String.format("//%s/%s/", site.getHostname(),
+                folder.getName().substring(0, 1).toUpperCase() + folder.getName().substring(1));
+        final String lowerCase = pathOf(folder).toLowerCase();
+        final FolderBulkDeleteForm form = FolderBulkDeleteForm.builder()
+                .assetPaths(List.of(mixedCase, lowerCase))
+                .build();
+
+        final AbstractFolderBulkDeleteSubmitResponse response = helper.submit(form, admin);
+
+        assertEquals(1, response.submitted());
+        final List<String> storedPaths = FolderBulkDeleteHelper.pathsOf(
+                jobQueueManagerAPI.getJob(response.jobId()).parameters());
+        assertEquals(List.of(mixedCase), storedPaths,
+                "only the first spelling must be stored, exactly as it was sent");
+    }
 }

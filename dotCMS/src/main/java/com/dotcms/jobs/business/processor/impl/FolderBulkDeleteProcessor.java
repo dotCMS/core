@@ -282,12 +282,14 @@ public class FolderBulkDeleteProcessor implements JobProcessor, Cancellable {
      * {@code test_process_siteRootPath_recordedAsProtectedFolder_restOfSelectionStillRuns}.
      */
     private static String findCoveringAncestor(final String path, final List<String> allPaths) {
-        final String normalizedPath = normalize(path);
+        // Lowercased because folder resolution ignores case: "//host/A/" still contains
+        // "//host/a/b/" (#37685 review).
+        final String normalizedPath = normalize(path).toLowerCase();
         for (final String other : allPaths) {
             if (other.equals(path)) {
                 continue;
             }
-            final String normalizedOther = normalize(other);
+            final String normalizedOther = normalize(other).toLowerCase();
             if (!normalizedOther.equals(normalizedPath)
                     && !isSiteRoot(normalizedOther)
                     && normalizedPath.startsWith(normalizedOther)) {

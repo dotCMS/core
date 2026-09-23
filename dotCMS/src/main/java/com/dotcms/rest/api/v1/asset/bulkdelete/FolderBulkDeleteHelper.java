@@ -12,6 +12,7 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -87,13 +88,16 @@ public class FolderBulkDeleteHelper {
                     "no folder paths were submitted");
         }
 
-        // Collapsed before the run, so the outcome reports each distinct path once.
-        // Normalized before collapsing: "//host/a" and "//host/a/" are the same folder, but as raw
-        // strings they would be two set entries. LinkedHashSet keeps submission order.
-        final Set<String> distinctPaths = new LinkedHashSet<>();
+        // Collapsed before the run, so the outcome reports each distinct path once. Keyed by
+        // comparisonKey: "//host/a", "//host/a/" and "//host/A/" are the same folder, since folder
+        // resolution ignores case. The first spelling is kept as sent (trailing slash added): it is
+        // what the result key and the folder events carry back to the author. LinkedHashMap keeps
+        // submission order.
+        final Map<String, String> firstSpellingByKey = new LinkedHashMap<>();
         for (final String path : form.assetPaths()) {
-            distinctPaths.add(normalize(path));
+            firstSpellingByKey.putIfAbsent(comparisonKey(path), normalize(path));
         }
+        final Set<String> distinctPaths = new LinkedHashSet<>(firstSpellingByKey.values());
 
         final int maxPaths = Config.getIntProperty(MAX_PATHS_KEY, DEFAULT_MAX_PATHS);
         if (distinctPaths.size() > maxPaths) {
@@ -174,16 +178,26 @@ public class FolderBulkDeleteHelper {
     }
 
     /**
-     * Same path, an ancestor, or a descendant — a bidirectional normalized prefix check.
+     * Same path, an ancestor, or a descendant — a bidirectional prefix check on
+     * {@link #comparisonKey}, so case differences never hide an overlap.
      */
     private static boolean overlaps(final String pathA, final String pathB) {
-        final String normalizedA = normalize(pathA);
-        final String normalizedB = normalize(pathB);
-        return normalizedA.startsWith(normalizedB) || normalizedB.startsWith(normalizedA);
+        final String keyA = comparisonKey(pathA);
+        final String keyB = comparisonKey(pathB);
+        return keyA.startsWith(keyB) || keyB.startsWith(keyA);
     }
 
     private static String normalize(final String path) {
         return path.endsWith("/") ? path : path + "/";
+    }
+
+    /**
+     * The form two paths are compared in: normalized and lowercased, the same way
+     * {@code FolderFactoryImpl} and {@code AssetPathResolver} lowercase a path before resolving
+     * it. Only for comparing — what is stored and reported stays as the author sent it.
+     */
+    private static String comparisonKey(final String path) {
+        return normalize(path).toLowerCase();
     }
 
     /**
@@ -228,10 +242,12 @@ public class FolderBulkDeleteHelper {
     }
 
     /**
-     * The hostname segment of a site-qualified path — {@code //hostname/segment/.../}.
+     * The hostname segment of a site-qualified path — {@code //hostname/segment/.../} —
+     * lowercased, since site resolution ignores case: {@code Demo.dotcms.com} and
+     * {@code demo.dotcms.com} must take the same advisory lock.
      */
     private static String hostnameOf(final String path) {
-        final String withoutLeadingSlashes = path.replaceFirst("^/+", "");
+        final String withoutLeadingSlashes = path.replaceFirst("^/+", "").toLowerCase();
         final int nextSlash = withoutLeadingSlashes.indexOf('/');
         return nextSlash == -1 ? withoutLeadingSlashes
                 : withoutLeadingSlashes.substring(0, nextSlash);
