@@ -162,6 +162,25 @@ interface WithFolderDeleteRunsState {
  * 3. **Re-establish** on the next load rather than inheriting what the client was told — a run
  *    whose process dies never announces that it ended, so announcements alone would mark a folder
  *    indefinitely with nothing to correct it (FR-020b, CR-12).
+ *
+ * ---
+ *
+ * **On making this generic** (raised in review on PR dotCMS/core#37688, deferred until there is a
+ * second consumer). Nothing here is delete-shaped except what it is wired to, so generalising is a
+ * matter of parameterising four things rather than restructuring:
+ *
+ * - the queue the active listing is read from (`folderBulkDelete`), and the mapper from a listed
+ *   job to the refs it covers — today `DotFolderBulkDeleteService.readActiveRuns`;
+ * - the three event types: entered, left, and the run's own completion;
+ * - how a ref is built from a rendered row and from a tree node, since the two surfaces spell a
+ *   folder differently (see {@link resolveRowKeys} and {@link resolveTreeKeys});
+ * - the state key, so two instances can coexist without one clearing the other's marks.
+ *
+ * **What has to exist server-side before it is worth doing.** Upload — the reuse suggested in
+ * review — has neither of the two things this feature is built on: no per-queue active listing that
+ * names the assets a run covers, and no per-item entered/left announcements. Without those there is
+ * nothing for a second instance to subscribe to, so the abstraction would be fitted to one consumer
+ * and guessed at for the other. Generalise when the second producer exists, not before.
  */
 export function withFolderDeleteRuns() {
     return signalStoreFeature(

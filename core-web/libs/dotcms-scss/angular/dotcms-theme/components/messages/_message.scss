@@ -167,3 +167,26 @@
         text-decoration: underline;
     }
 }
+
+/*
+ * No Message animates in, anywhere.
+ *
+ * PrimeNG gives its Message a 0.3s enter animation that expands the element's own box
+ * (`grid-template-rows: 0fr -> 1fr`) and offers no input to turn it off — the host binds
+ * `animate.enter` to a literal class name and the theme hangs the keyframes off it.
+ *
+ * Almost every Message in this app appears in the same frame as the panel around it rather than
+ * arriving during a stable view, and there the expansion reads as a late shove of whatever sits
+ * below, after the reader has already started on it. Live alerts landing in a settled view are the
+ * only case the animation is for, and we have none.
+ *
+ * Global rather than per component: this started life scoped to the Content Drive action centre,
+ * where a class on each element was tried first and left two of them still animating — one that had
+ * not been given the class, and one whose author had no reason to know the class existed. The same
+ * would happen again in the next dialog. `!important` because the rule is beating a themed
+ * animation on a third-party component; that is the whole reason the declaration exists.
+ */
+.p-message-enter-active,
+.p-message-leave-active {
+    animation: none !important;
+}
