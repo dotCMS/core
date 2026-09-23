@@ -72,7 +72,7 @@ import javax.ws.rs.core.Response;
  * Content-Type: application/json
  *
  * {
- *   "idToken":        "eyJhbGciOiJSUzI1NiIsImtpZCI6Ii4uLiJ9...",
+ *   "idToken":        "<id_token from the IdP>",
  *   "nonce":          "<same nonce the SPA sent in the /authorize request>",
  *   "expirationDays": 7          // optional; clamped to the configured max
  * }
