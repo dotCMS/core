@@ -220,21 +220,23 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
 
 **EventAnalyticsProxyResource — GET endpoints**
 
-- **FR-003**: `GET /api/v1/analytics/{path}` (all read/query paths except siteauth and health)
+- **FR-003**: `GET /api/v1/analytics/{path}` (all read/query paths except siteauth)
   MUST return `403` when `FEATURE_FLAG_CONTENT_ANALYTICS=false`.
-- **FR-003a**: `GET /api/v1/analytics/health` is an existing endpoint, not a new one introduced
-  by this feature. It is called out explicitly here because of its UI and diagnostic role (see
-  Note below) — the gate that FR-003 applies to all analytics read paths covers this path too.
-  The endpoint MUST return `403` when `FEATURE_FLAG_CONTENT_ANALYTICS=false`. When
-  `FEATURE_FLAG_CONTENT_ANALYTICS=true`, the response MUST surface one of three states
-  (mirroring FR-002a):
+- **FR-003a**: `GET /api/v1/analytics/health` is currently a pass-through proxy — it forwards
+  the request upstream to CAEM and returns whatever CAEM responds with. This feature changes
+  that behavior when `FEATURE_FLAG_CONTENT_ANALYTICS=true`: dotCMS MUST perform its own
+  health evaluation (verify that the required analytics credentials are configured for the
+  current site, then probe the analytics backend) and return one of three dotCMS-produced
+  states — it MUST NOT pass through the raw upstream response for this path:
   - `OK` — required credentials are configured and the analytics backend is reachable.
   - `NOT_CONFIGURED` — no analytics configuration has been set up for the site.
   - `CONFIGURATION_ERROR` — configuration exists but is incomplete (missing required
-    credentials such as the analytics URL) or the analytics backend is unreachable.
-  This endpoint is explicitly called out because it is the operator's primary tool for
-  diagnosing setup problems; returning a proxy error or timeout when the flag is ON but
-  misconfigured would obscure the real cause.
+    credentials) or the analytics backend is unreachable.
+  This is intentional scope beyond "add a gate": the Analytics portlet UI depends on these
+  structured states to decide whether to render; a raw proxy response cannot serve that role
+  reliably. The health check pattern mirrors the one already implemented for the experiments
+  health endpoint (FR-002a). When `FEATURE_FLAG_CONTENT_ANALYTICS=false`, this endpoint
+  returns `403` per FR-003.
   > **Note**: The Analytics portlet UI calls this endpoint to decide whether to render the
   > analytics interface. A response of `OK` enables the UI; `NOT_CONFIGURED` or
   > `CONFIGURATION_ERROR` causes the UI to display an error message to the operator instead.
@@ -248,18 +250,25 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
 
 - **FR-006**: The event ingest endpoint MUST return `403` when both flags are `false`.
 - **FR-007**: When `FEATURE_FLAG_CONTENT_ANALYTICS=true` and `FEATURE_FLAG_EXPERIMENTS=false`:
-  the system MUST strip `context.experiments` from the event payload before forwarding, and
-  MUST still forward the event (not drop it). Stripping is silent — no error returned.
+  the system MUST strip `context.experiments` from the top-level `context` object before
+  forwarding the request, and MUST still forward the request (not drop it). Stripping is
+  top-level only — `context.experiments` is shared across all events in the batch and appears
+  once in the payload, not per-event. Stripping is silent — no error returned.
 - **FR-008**: When both flags are `true`: the system MUST forward the event payload to the
   analytics backend as-is, regardless of event type or the presence of experiment context.
 - **FR-009**: When `FEATURE_FLAG_CONTENT_ANALYTICS=false` and `FEATURE_FLAG_EXPERIMENTS=true`:
-  the system MUST accept and forward events where `event_type = "pageview"`, and MUST reject
-  with `403` any event where `event_type` is present with a value other than `"pageview"`.
-  If `event_type` is absent, the event MUST be forwarded without rejection — `event_type` is
-  a required field enforced by the analytics backend itself, which will return its own
+  the system MUST inspect the `events` array in the payload and apply the following
+  batch-level rule: if **any** event in the batch has an `event_type` that is present with a
+  value other than `"pageview"`, the **entire request** MUST be rejected with `403` — no
+  events from the batch are forwarded. If all events in the batch have `event_type =
+  "pageview"` (or have no `event_type` field), the request is forwarded as-is.
+  If `event_type` is absent on an event, that event does not trigger rejection — `event_type`
+  is a required field enforced by the analytics backend itself, which will return its own
   validation error. Rejecting an absent `event_type` at this layer would produce a misleading
-  `403` (feature disabled) instead of the backend's precise validation response, obscuring the
-  real cause for the caller.
+  `403` (feature disabled) instead of the backend's precise validation response.
+  **Batch semantics rationale**: the gate treats each request as an atomic unit — it either
+  passes or fails in full. Partial forwarding (dropping offending events and forwarding the
+  rest) would silently discard data and make debugging client-side issues significantly harder.
 
 **Feature-disabled error response**
 
@@ -300,12 +309,21 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
 
 ### Key Entities
 
-- **Feature Flag**: A named boolean configuration property. Each flag is cached at startup and
-  refreshed when an administrator changes its value via the dotCMS configuration system.
+- **Feature Flag**: A named boolean configuration property. In the current system, each flag
+  is cached at startup and refreshed live when an administrator changes its value via the
+  dotCMS configuration system — other consumers of these flags continue to observe live
+  updates. **Exception — the gate introduced by this feature**: the gate enforcement MUST read
+  the flag value at startup only and MUST NOT react to live configuration changes. A server
+  restart is required for gate behavior to change (FR-011). The live-toggle capability is
+  preserved for all other existing consumers of these flags.
   Relevant flags: `FEATURE_FLAG_CONTENT_ANALYTICS`, `FEATURE_FLAG_EXPERIMENTS`.
-- **Event Payload**: The JSON body sent to `POST /api/v1/analytics/content/event`. Contains a
-  `context` object (with at minimum `site_auth`, optionally `experiments`) and an `event_type`
-  field indicating the kind of event (e.g., `pageview`, `content_click`).
+- **Event Payload**: The JSON body sent to `POST /api/v1/analytics/content/event`. Has the
+  shape `{"context": {...}, "events": [...]}`. The `context` object is shared across all
+  events in the batch and contains at minimum `site_auth` and optionally `experiments`. The
+  `events` array holds one or more event objects, each carrying its own `event_type` field
+  (e.g., `"pageview"`, `"content_click"`). Gate logic that inspects `event_type` operates
+  per-event within the array; gate logic that inspects `context.experiments` operates on the
+  single top-level `context` object.
 - **Experiment Context**: The `context.experiments` field in an event payload. Carries
   experiment enrollment metadata used to attribute pageview events to experiment variants.
 - **Site Auth Token**: A credential generated by the siteauth endpoint and required by the
