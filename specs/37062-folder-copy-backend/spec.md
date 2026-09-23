@@ -300,8 +300,13 @@ per-folder outcome is still readable and a durable notification was addressed to
   a choice this feature made.
 - **FR-006**: The system MUST NOT change the shipped Site Browser folder copy, its behaviour or its
   entry point. It is the only folder copy in the product today and is not this feature's to move.
-- **FR-007**: The maximum number of paths one submission may carry MUST be configurable, with a
-  documented default.
+- **FR-007**: The maximum number of folders one submission may carry MUST be configurable, and its
+  default MUST be **50**, the same as bulk folder delete's, so the two folder operations refuse at
+  the same size (D-019). Over the limit the submission is refused before any run exists.
+
+  **The cap bounds the selection, not the tree.** A single selected folder holding a hundred
+  thousand items counts as one. What protects the server from one very large folder is not this
+  number; see FR-024 and D-019.
 - **FR-007a**: The system MUST NOT add a synchronous single-folder duplication endpoint. A single
   folder is submitted through the same asynchronous endpoint as a batch of one. The cost of copying
   is set by the size of the folder rather than the size of the selection, so a synchronous
@@ -452,11 +457,26 @@ per-folder outcome is still readable and a durable notification was addressed to
 
 - **FR-023**: One top-level folder MUST be copied as **one transaction**, which is what the shipped
   copy already does.
-- **FR-024**: Copying one folder MUST NOT be made slower, hungrier or less atomic than copying that
-  same folder through the shipped path today.
+- **FR-024**: Duplicating a folder **costs more** than copying it through the shipped Site Browser
+  path, and the specification MUST say so rather than promise otherwise. The shipped copy carries
+  working file assets, pages, links and child folders; a duplicate here also carries generic content
+  and archived items, and every item is copied with its full version history (FR-012d, FR-012e). All
+  of it sits inside the same single transaction per top-level folder. Duplication MUST NOT be less
+  atomic than the shipped copy, and MUST NOT add cost beyond what carrying that extra content
+  requires: in particular, the content this feature adds MUST NOT be loaded all at once for the
+  whole subtree when it can be read folder by folder alongside the walk.
+
+  An earlier draft required duplication to be no slower or hungrier than the shipped copy. That was
+  true while it only wrapped the walk, and stopped being true the moment it was decided to copy
+  everything in the folder.
 - **FR-025**: The known costs of FR-023 MUST be recorded rather than discovered: a folder's children
   are loaded whole at each level rather than paged, so peak memory is bounded by the widest single
-  folder in the subtree, and the transaction is held for the whole walk.
+  folder in the subtree; the transaction, and with it a database connection and its locks, is held
+  for the whole walk; and one persistence session accumulates every entity the walk touches until it
+  commits. Carrying everything in the folder makes each of these larger. **Nobody has measured where
+  this becomes dangerous** for duplication; the only measurement in either sibling spec is delete's,
+  roughly eight minutes for a folder of twenty thousand files. Finding that number is the first job
+  of the deferred bounding work.
 - **FR-026**: All-or-nothing MUST hold under **every** interruption: cancellation, process death and
   a failure part-way through a folder. A duplicate that holds only part of its source's contents
   MUST NOT survive any of them. **This corrects #37062**, which states that a cancelled copy leaves
@@ -644,8 +664,9 @@ abandonment behaviour, and the durable record's lifetime.
   the folders they selected were duplicated, without having watched it.
 - **SC-009**: Concurrent runs over the same folders, from the same or different authors, complete
   without either being refused and without either producing a folder the other disturbed.
-- **SC-010**: Duplicating one folder through this feature costs no more time or memory than
-  duplicating it through the shipped path.
+- **SC-010**: A submission over the configured maximum of folders is refused before any run exists
+  in 100% of cases, at the same default as bulk folder delete's, and the maximum the client reads
+  from the advertised configuration matches the one the server enforces.
 
 ---
 
@@ -729,6 +750,9 @@ abandonment behaviour, and the durable record's lifetime.
   sibling of #37565, filed alongside this specification rather than promised by it. What that work
   carries: paging a folder's children instead of loading them whole, and splitting the transaction,
   which would reopen FR-026 and is the larger and riskier half.
+- **Batched commits in the style of site copy** (D-019). Considered and rejected for this version:
+  it scales, but it gives up the all-or-nothing guarantee and leaves partial duplicates behind, and
+  it belongs with the bounding work above rather than here.
 - **Correcting what the duplication walk may read** (D-009, FR-012b). Content the author cannot see
   is duplicated. Changing that means changing a path the Site Browser and any plugin calling
   `FolderAPI.copy` share. Note this is about *rights*, not about *coverage*: the generic content the
@@ -866,6 +890,19 @@ abandonment behaviour, and the durable record's lifetime.
   rollback-unsafe behaviour change that D-012 exists to keep out of this ticket. Extending the
   factory remains the option if the duplication turns out to be worse than the coupling, but it is a
   different piece of work with a different blast radius.
+- **D-019: No batching; duplication matches bulk delete's shape.** *(Developer decision, 2026-09-23;
+  FR-007, FR-024.)* Raised as a question about very large folder trees, answered by comparing the
+  two precedents in the codebase. The enterprise site-copy job handles whole sites by committing
+  every 500 items, reading its sources in pages and pausing between batches. That is why it scales,
+  and it is also why a failed site copy leaves a partly populated destination: on an error it rolls
+  back only the batch in progress, and nothing cleans up what earlier batches committed. Adopting it
+  here would trade FR-026's all-or-nothing guarantee for a scale nobody has measured, and a partial
+  duplicate left by a crashed node would have no cleanup and, under no-retry, no outcome record.
+  Bulk folder delete took the other path: a cap of 50 folders per submission, one transaction per
+  folder, and the bounding of a single huge folder deferred to its own ticket. Duplication does the
+  same, so the two folder operations share one shape and one deferred problem rather than solving it
+  twice in different ways. The cost is stated in FR-024: one very large folder is still one long
+  transaction, heavier here than in the shipped copy.
 
 ---
 
@@ -925,6 +962,17 @@ abandonment behaviour, and the durable record's lifetime.
   group, where every other job-queue collection already sits. That group shares one dotCMS container
   and one queue across its collections, so this one MUST clean up after every run and MUST NOT
   assert on queue-wide listings, or it will break the collections beside it.
+- **Relationships between items duplicated in the same run** (FR-012d). Site copy has dedicated,
+  separately batched handling for relationships, because copied items that point at each other, such
+  as a Blog entry and its Author, must end up pointing at each other's copies rather than at the
+  originals. The folder walk never needed that, since it copied only files and pages. Now that
+  duplication carries generic content, the plan MUST determine what the content copy does with a
+  relationship whose other end is copied in the same run, and MUST state the outcome rather than
+  leave it to whichever order the copies happen in.
+- **How a run stays alive while one folder blocks** (FR-028). Bulk folder delete's processor, in the
+  change that implements it, carries a configurable abandonment threshold with a thirty-minute
+  default, which appears to be its answer to the same problem. The plan MUST read it before
+  designing duplication's equivalent.
 - **Concrete field names and the exact submission shape** are deliberately left at behaviour
   altitude here and belong in the plan, recorded under `specs/*/contracts/` so they survive.
 
