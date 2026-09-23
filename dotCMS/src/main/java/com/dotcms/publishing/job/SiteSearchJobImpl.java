@@ -146,6 +146,47 @@ public class SiteSearchJobImpl {
         return bundleId;
     }
 
+    /**
+     * Runs one Site Search crawl: prepares the job from its Quartz detail, publishes every
+     * configured host into the search index, and records a {@link SiteSearchAudit} row for the run.
+     *
+     * <p><strong>There is deliberately no transaction around this method.</strong> There used to be
+     * — {@code HibernateUtil.startTransaction()} on entry, {@code closeSession()} in the finally —
+     * which leased one pooled connection for the crawl's entire duration. On a large site that is
+     * hours, and the connection goes quiet for long stretches (most obviously while the publisher
+     * reads bundled files off disk and pushes documents, which issues essentially no SQL). HikariCP
+     * never validates or retires an <em>in-use</em> connection and pgjdbc's {@code tcpKeepAlive}
+     * defaults to false, so any stateful device between dotCMS and Postgres could silently evict the
+     * idle TCP flow — and the audit insert below, the job's only write, was the first statement to
+     * touch the dead socket. It failed, and the failure was swallowed (issue #37321).</p>
+     *
+     * <p>The transaction bought nothing in exchange. The audit insert is a single row; the job
+     * detail is persisted by Quartz on its own connection; the crawl's real output goes to the
+     * search engine, which no Postgres transaction covers and none could roll back. What it did
+     * cost was a transaction held open for hours, pinning the {@code xmin} horizon and suppressing
+     * autovacuum across the whole database, not just Site Search tables.</p>
+     *
+     * <p>Without it, {@code SiteSearchAuditAPIImpl.save()}'s {@code @WrapInTransaction} is the
+     * outermost boundary and opens its own short transaction on a freshly leased, pool-validated
+     * connection — which is what makes the row survive a socket that died mid-crawl.
+     * {@code closeSession()} is still called in the finally: it no longer commits anything, but it
+     * closes a connection left behind by unannotated code and clears the listener lists.</p>
+     *
+     * <p><strong>This depends on the crawl phase staying read-only against Postgres.</strong> The
+     * one write reachable from the bundlers, {@code FileAssetBundler}'s
+     * {@code savePushedAssetForAllEnv(...)}, is gated behind
+     * {@link com.dotcms.publishing.PublisherConfig#shouldManageDependencies()} →
+     * {@code isStatic()}, and {@code SiteSearchConfig} never sets it. Calling {@code setStatic(true)}
+     * on a Site Search config would put a per-asset write back inside an untransacted crawl — see
+     * {@code SiteSearchJobImplTest#Test_SiteSearchConfig_Stays_Non_Static_So_The_Crawl_Writes_Nothing},
+     * which fails if that ever changes. Do not add Postgres writes to the crawl phase; a
+     * mid-crawl progress row would reintroduce exactly the held connection this removed.</p>
+     *
+     * @param jobContext the Quartz context carrying this run's job detail and fire time
+     * @throws DotDataException if the audit row cannot be saved — deliberately not swallowed, since
+     *         that row is the checkpoint an incremental crawl anchors on, so a run that lost it has
+     *         not succeeded
+     */
     @SuppressWarnings("unchecked")
     public void run(final JobExecutionContext jobContext)
             throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticsearchException, IOException {
@@ -161,7 +202,6 @@ public class SiteSearchJobImpl {
                 "User:" + userAPI.getSystemUser().getUserId() + "; Date: " + date
                         + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME);
 
-        HibernateUtil.startTransaction();
         try {
             final PreparedJobContext preparedJobContext = prepareJob(jobContext);
 
@@ -182,46 +222,48 @@ public class SiteSearchJobImpl {
                     publisherAPI.publish(config, status);
                 }
 
-                try {
-
-                    int filesCount = 0, pagesCount = 0, urlmapCount = 0;
-                    for (final BundlerStatus bundlerStatus : status.getBundlerStatuses()) {
-                        if (bundlerStatus.getBundlerClass()
-                                .equals(FileAssetBundler.class.getName())) {
-                            filesCount += bundlerStatus.getTotal();
-                        } else if (bundlerStatus.getBundlerClass()
-                                .equals(URLMapBundler.class.getName())) {
-                            urlmapCount += bundlerStatus.getTotal();
-                        } else if (bundlerStatus.getBundlerClass()
-                                .equals(HTMLPageAsContentBundler.class.getName())) {
-                            pagesCount += bundlerStatus.getTotal();
-                        }
+                int filesCount = 0;
+                int pagesCount = 0;
+                int urlmapCount = 0;
+                for (final BundlerStatus bundlerStatus : status.getBundlerStatuses()) {
+                    if (bundlerStatus.getBundlerClass()
+                            .equals(FileAssetBundler.class.getName())) {
+                        filesCount += bundlerStatus.getTotal();
+                    } else if (bundlerStatus.getBundlerClass()
+                            .equals(URLMapBundler.class.getName())) {
+                        urlmapCount += bundlerStatus.getTotal();
+                    } else if (bundlerStatus.getBundlerClass()
+                            .equals(HTMLPageAsContentBundler.class.getName())) {
+                        pagesCount += bundlerStatus.getTotal();
                     }
-
-                    final SiteSearchAudit audit = new SiteSearchAudit();
-                    audit.setPagesCount(pagesCount);
-                    audit.setFilesCount(filesCount);
-                    audit.setUrlmapsCount(urlmapCount);
-                    audit.setAllHosts(preparedJobContext.isIndexAll());
-                    audit.setFireDate(jobContext.getFireTime());
-                    audit.setHostList(preparedJobContext.getJoinedHosts());
-                    audit.setIncremental(preparedJobContext.isIncremental());
-                    audit.setStartDate(preparedJobContext.getStartDate());
-                    audit.setEndDate(preparedJobContext.getEndDate());
-                    audit.setIndexName(
-                            UtilMethods.isSet(preparedJobContext.getNewIndexName())
-                                    ? preparedJobContext
-                                    .getNewIndexName() : preparedJobContext.getIndexName());
-                    audit.setJobId(preparedJobContext.getJobId());
-                    audit.setJobName(preparedJobContext.getJobName());
-                    audit.setLangList(preparedJobContext.getLangList());
-                    audit.setPath(preparedJobContext.getPaths());
-                    audit.setPathInclude(preparedJobContext.isPathInclude());
-                    siteSearchAuditAPI.save(audit);
-
-                } catch (DotDataException ex) {
-                    Logger.error(this, "can't save audit data", ex);
                 }
+
+                final SiteSearchAudit audit = new SiteSearchAudit();
+                audit.setPagesCount(pagesCount);
+                audit.setFilesCount(filesCount);
+                audit.setUrlmapsCount(urlmapCount);
+                audit.setAllHosts(preparedJobContext.isIndexAll());
+                audit.setFireDate(jobContext.getFireTime());
+                audit.setHostList(preparedJobContext.getJoinedHosts());
+                audit.setIncremental(preparedJobContext.isIncremental());
+                audit.setStartDate(preparedJobContext.getStartDate());
+                audit.setEndDate(preparedJobContext.getEndDate());
+                audit.setIndexName(
+                        UtilMethods.isSet(preparedJobContext.getNewIndexName())
+                                ? preparedJobContext
+                                .getNewIndexName() : preparedJobContext.getIndexName());
+                audit.setJobId(preparedJobContext.getJobId());
+                audit.setJobName(preparedJobContext.getJobName());
+                audit.setLangList(preparedJobContext.getLangList());
+                audit.setPath(preparedJobContext.getPaths());
+                audit.setPathInclude(preparedJobContext.isPathInclude());
+                // Deliberately not caught. This row is the checkpoint an incremental crawl anchors
+                // its delta on, so a run that failed to write it has not succeeded — swallowing the
+                // failure here is what let issue #37321 sit unnoticed in production, the job
+                // reporting "Job Finished" while incremental indexing silently degraded to a full
+                // rebuild. The crawl is already complete by this point, so failing now costs no
+                // index work.
+                siteSearchAuditAPI.save(audit);
             }
         } finally {
             HibernateUtil.closeSession();
