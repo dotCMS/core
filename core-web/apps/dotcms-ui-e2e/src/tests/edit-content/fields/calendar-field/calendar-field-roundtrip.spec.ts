@@ -58,15 +58,30 @@ test('date, date-and-time and time each survive save and reopen @critical', asyn
 
     await expect(dateInput).toBeVisible({ timeout: 20000 });
 
-    await dateInput.fill('09/22/2026');
-    await dateTimeInput.fill('09/22/2026 10:30');
-    await timeInput.fill('10:30');
+    // Set each value through the picker's own footer action (Today / Now), not `fill()`. The field
+    // only reports to the form from the picker's `onSelect`, which typing never fires; and PrimeNG
+    // ignores `fill()` outright — its input handler bails unless a real keydown preceded it — then
+    // resets the text to the empty model on blur. Filled values were never saved, and the date
+    // assertions below passed only because both sides were "".
+    const footerAction = page.getByTestId('calendar-field-today-button');
+    for (const input of [dateInput, dateTimeInput, timeInput]) {
+        await input.click();
+        await expect(footerAction).toBeEnabled();
+        await footerAction.click();
+        await page.keyboard.press('Escape');
+        await expect(footerAction).toBeHidden();
+    }
 
     const before = {
         date: await dateInput.inputValue(),
         dateTime: await dateTimeInput.inputValue(),
         time: await timeInput.inputValue()
     };
+
+    // Guards the comparison below: an empty value on both sides is a pass that proves nothing.
+    expect(before.date).not.toBe('');
+    expect(before.dateTime).not.toBe('');
+    expect(before.time).not.toBe('');
 
     await formPage.save();
 
