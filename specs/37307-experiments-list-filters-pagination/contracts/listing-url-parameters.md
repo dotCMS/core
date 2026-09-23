@@ -60,6 +60,12 @@ Note that the server-side contract does not exist yet: the endpoint still accept
 - **An inverted range is reported, not applied** (FR-021a). Two parseable dates whose end precedes
   its start match nothing by construction, so applying them would read as a site with no
   experiments scheduled then. Only the address can produce one.
+- **Clear all widens the path, not the scope** (FR-051a). The filter bar's button clears the
+  search term, the chips and `url`, and leaves `pageId` and `language_id` in force. `pageId` is
+  written by the listing itself on every way out and read back on the way in, so it is a scope
+  the screen hands down; `url` has no writer anywhere in the application and only ever arrives
+  typed or pasted, so it is a filter the user applied — and one that would otherwise be
+  unremovable while it still matched rows.
 - **Changing either filter resets to the first page** (FR-041).
 - **A page size outside the offered set is still honoured** (FR-044), so an address bookmarked
   under the old 10/25/50 options is not broken.

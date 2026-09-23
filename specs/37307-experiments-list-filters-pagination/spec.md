@@ -545,9 +545,12 @@ fewer rows than one page.
      anything narrowing", which is deliberately *not* the same question as FR-051's: a page
      narrowing that arrived in the address is an active filter for the empty state but is not the
      user's to clear from the chip row. What it *does* MUST match what reveals it: pressing it
-     widens the search term and the chips only, and leaves a page narrowing and its return
-     context in force. FR-051's action stays the wider of the two, because it is offered beside a
-     narrowing that matched nothing.
+     widens the search term, the chips and the page **path**, and leaves the page **scope**
+     (`pageId`) and its return context in force. The line between the two page parameters is
+     which one the application writes: `pageId` is handed out on every way out of the list and
+     read back on the way in, while `?url=` has no writer at all and only ever arrives typed or
+     pasted. A path left in force here would be unremovable, since FR-051's action — which stays
+     the wider of the two — is offered only beside a narrowing that matched nothing.
   2. `DOT_CANONICAL_FILTER_ORDER` MUST gain `goal`, `schedule` and `createdBy`, and this listing
      MUST render its chips in that order. Experiments is the first surface in that list that is
      not browsing content, so the constant stops meaning "the order for browsing content". The

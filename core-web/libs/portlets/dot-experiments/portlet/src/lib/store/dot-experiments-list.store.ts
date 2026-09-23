@@ -88,7 +88,15 @@ const CLEARED_TOOLBAR_NARROWINGS = {
     selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
     scheduleFrom: null,
     scheduleTo: null,
-    page: DEFAULT_EXPERIMENTS_LIST_PAGE
+    page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+    // The path narrowing is in here and the page *scope* is not, though they sit side by side in
+    // state. Nothing in the app writes `?url=`: it arrives typed or pasted and is then echoed back
+    // on every change, which makes it a filter the user applied. `pageId` is the opposite — the
+    // screen hands it out on all four ways out and reads it back on the way in — so it is a scope
+    // this button does not own. Left here, a path that still matches rows could not be removed at
+    // all: the empty state's button is the only other way out and it appears only once the path
+    // matches nothing.
+    selectedPageUrl: null
 } as const;
 
 const initialState: DotExperimentsListState = {
@@ -542,12 +550,11 @@ export const DotExperimentsListStore = signalStore(
          * `syncUrlEffect` follows, which is what takes the params out of the address.
          */
         // Both clear what the toolbar's controls set; only the empty state's button also drops the
-        // page narrowing, and only because it is on screen beside one that matched nothing.
+        // page *scope*, and only because it is on screen beside one that matched nothing.
         on(dotExperimentsListPageEvents.chipFiltersCleared, () => CLEARED_TOOLBAR_NARROWINGS),
         on(dotExperimentsListPageEvents.filtersCleared, () => ({
             ...CLEARED_TOOLBAR_NARROWINGS,
             selectedPageId: null,
-            selectedPageUrl: null,
             languageId: null
         })),
         on(

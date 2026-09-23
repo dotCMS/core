@@ -71,12 +71,18 @@ export const dotExperimentsListPageEvents = eventGroup({
         filtersCleared: type<void>(),
 
         /**
-         * Widens everything the toolbar's own controls set, and nothing else.
+         * Widens everything the toolbar's own controls set, plus the page *path*, and nothing else.
          *
          * The filter bar's **Clear all** rather than the empty state's button, and the difference
          * is not cosmetic: that button is on screen while the list is *working*, so sharing
-         * `filtersCleared` with it made it drop a page narrowing the user never set and has no way
-         * to restore. Which is precisely what the rule above forbids.
+         * `filtersCleared` with it made it drop the page scope the editor handed down.
+         *
+         * The line between the two page fields is which one the app writes. `pageId` is the scope
+         * this screen hands out on all four ways out (`pageFilterParams`) and reads back on the
+         * way in (`listReturnParams`), so it survives. `?url=` has no writer anywhere in the app —
+         * it arrives typed or pasted and is echoed back on every change — so it is a filter the
+         * user applied, and it goes. Keeping it would leave it unremovable while it still matched
+         * rows, since the empty state's button appears only once it matches nothing.
          *
          * The search term goes with the chips. `$hasNonDefaultFilters` ignores it — a term alone
          * never reveals the button — but once the button is there, "clear all" that leaves the

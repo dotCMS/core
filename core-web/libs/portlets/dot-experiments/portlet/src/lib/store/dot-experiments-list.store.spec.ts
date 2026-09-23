@@ -1755,15 +1755,7 @@ describe('DotExperimentsListStore', () => {
             expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
         });
 
-        /**
-         * The whole reason this event exists. A page narrowing arrives from the editor, has one
-         * writer — the address — and is not the user's to widen from a toolbar button that is
-         * visible whenever any chip is set. Clearing a narrowing that *matched nothing* is still
-         * offered, by the empty state's own button (`filtersCleared`).
-         */
-        it('should keep a page narrowing and its return context', () => {
-            initStore();
-
+        const hydrateNarrowedPage = () =>
             dispatcher.dispatch(
                 dotExperimentsListPageEvents.hydratedFromUrl({
                     ...VIEW_STATE_DEFAULTS,
@@ -1772,6 +1764,18 @@ describe('DotExperimentsListStore', () => {
                     languageId: 2
                 })
             );
+
+        /**
+         * The whole reason this event exists. `pageId` is the scope the screen itself hands out
+         * and takes back — `pageFilterParams` writes it on all four ways out of the list and
+         * `listReturnParams` reads it on the way back — so a toolbar button visible whenever any
+         * chip is set must not drop it. Clearing a scope that *matched nothing* is still offered,
+         * by the empty state's own button (`filtersCleared`).
+         */
+        it('should keep the page scope and its return context', () => {
+            initStore();
+
+            hydrateNarrowedPage();
             dispatcher.dispatch(
                 dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.SCHEDULED])
             );
@@ -1779,9 +1783,25 @@ describe('DotExperimentsListStore', () => {
             dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
 
             expect(store.selectedPageId()).toBe('page-1');
-            expect(store.selectedPageUrl()).toBe('/blog/post');
             expect(store.languageId()).toBe(2);
             expect(store.selectedStatuses()).toEqual([]);
+        });
+
+        /**
+         * The path narrowing is not the same thing, despite sitting beside it in state. Nothing in
+         * the app writes `?url=` — it only ever arrives typed or pasted, and is then echoed back
+         * on every change — so it is a filter the user applied, not a scope handed down. Keeping
+         * it here would leave it unremovable: the empty state's button is the only other way out
+         * and it appears only once the path matches nothing.
+         */
+        it('should widen a page path the address brought', () => {
+            initStore();
+
+            hydrateNarrowedPage();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.selectedPageUrl()).toBeNull();
         });
     });
 
