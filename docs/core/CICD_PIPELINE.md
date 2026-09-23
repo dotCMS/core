@@ -171,7 +171,7 @@ patterns move as the module layout does. The ones that gate work:
 | `cli` | CLI build and tests |
 | `sdk_libs`, `sdk_package_shapes` | SDK builds and the package-shape validation |
 | `examples` | example apps |
-| `full_build_test` | forces a full build; anchored into `frontend` |
+| `full_build_test` | forces the full path; anchored into **both** `backend` and `frontend` |
 | `area_backend`, `area_frontend`, `area_cli`, `area_sdk`, `area_documentation`, `area_cicd` | PR area labels, not test selection — mapped to label names in `.github/area-labels.yml` and applied by `cicd_comp_pr-area-labeler.yml` |
 
 Two things about these are easy to get wrong:
@@ -180,8 +180,9 @@ Two things about these are easy to get wrong:
   verification — `bom/**`, `build-parent/**`, `core-web/pom.xml`, `dotcms-postman/**`,
   `test-karate/**`, `e2e/**`, the component workflows themselves, and non-CSS/JS webapp resources.
 - **`full_build_test` is small and anchored, not a trigger list.** It is `.sdkmanrc` and the two
-  `.nvmrc` files, pulled into `frontend` via a YAML anchor — changing a toolchain pin forces the
-  full path.
+  `.nvmrc` files, pulled into **both** `backend` (`filters.yaml:40`) and `frontend`
+  (`filters.yaml:45`) via a YAML anchor. So changing a toolchain pin matches `backend` directly —
+  and therefore `jvm_unit_test` and `build`, which include it — not only the frontend path.
 
 ### Change Detection Usage
 
