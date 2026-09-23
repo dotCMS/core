@@ -14,6 +14,17 @@
         "strictMetadataEmit": true,
         "enableResourceInlining": true
     },
-    "exclude": ["src/test.ts", "**/*.spec.ts"],
-    "include": ["**/*.ts"]
+    // `src/**/*.it-spec.ts` needs its own entry: `*.spec.ts` does not match `Rule.it-spec.ts`,
+    // so the three integration specs were compiling as production sources under `types: []`
+    // (32 errors). No test target collects them either — jest matches `.spec.ts` — and they
+    // import `ReflectiveInjector`, which Angular removed, so they cannot run as written.
+    // The stale `src/test.ts` entry was replaced with the file that actually exists.
+    "exclude": [
+        "src/test-setup.ts",
+        "jest.config.ts",
+        "src/**/*.spec.ts",
+        "src/**/*.it-spec.ts",
+        "src/**/*.test.ts"
+    ],
+    "include": ["src/**/*.ts"]
 }

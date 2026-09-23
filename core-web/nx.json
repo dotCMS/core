@@ -9,10 +9,12 @@
             "e2eTestRunner": "playwright",
             "linter": "eslint",
             "style": "scss",
+            "strict": true,
             "unitTestRunner": "vitest-analog"
         },
         "@nx/angular:library": {
             "linter": "eslint",
+            "strict": true,
             "unitTestRunner": "vitest-analog"
         },
         "@nx/angular:component": {
@@ -109,7 +111,11 @@
         },
         "lint": {
             "cache": true,
-            "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"]
+            "inputs": [
+                "default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{projectRoot}/eslint-suppressions.json"
+            ]
         },
         "@nx/eslint:lint": {
             "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"],
@@ -258,7 +264,8 @@
                 "libs/sdk/types/**/*",
                 "libs/sdk/uve/**/*"
             ]
-        }
+        },
+        "./tools/plugins/typecheck-spec.plugin.mjs"
     ],
     "defaultBase": "main",
     "ignorePatterns": [

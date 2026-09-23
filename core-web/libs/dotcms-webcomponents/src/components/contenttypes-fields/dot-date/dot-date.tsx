@@ -26,7 +26,7 @@ import { setDotAttributesToElement, getDotAttributesFromElement } from '../dot-f
 })
 export class DotDateComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value format yyyy-mm-dd  e.g., 2005-12-01 */
     @Prop({ mutable: true, reflect: true })
@@ -73,22 +73,23 @@ export class DotDateComponent {
     step = '1';
 
     @State()
-    classNames: DotFieldStatusClasses;
+    classNames!: DotFieldStatusClasses;
     @State()
     errorMessageElement: any;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.
      */
     @Method()
     async reset(): Promise<void> {
+        // Absent before the first render, when there is nothing to reset yet.
         const input = this.el.querySelector('dot-input-calendar');
-        input.reset();
+        await input?.reset();
     }
 
     componentWillLoad(): void {
@@ -109,12 +110,12 @@ export class DotDateComponent {
 
     @Watch('min')
     minWatch(): void {
-        this.min = checkProp<DotDateComponent, string>(this, 'min', 'date');
+        this.min = checkProp<DotDateComponent, string>(this, 'min', 'date') ?? '';
     }
 
     @Watch('max')
     maxWatch(): void {
-        this.max = checkProp<DotDateComponent, string>(this, 'max', 'date');
+        this.max = checkProp<DotDateComponent, string>(this, 'max', 'date') ?? '';
     }
 
     @Listen('_dotValueChange')
@@ -147,7 +148,7 @@ export class DotDateComponent {
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <dot-input-calendar
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
+                        tabIndex={this.hint ? 0 : undefined}
                         disabled={this.disabled}
                         type="date"
                         name={this.name}

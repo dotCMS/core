@@ -25,7 +25,7 @@ export class DotContentletsComponent implements AfterViewInit {
         setTimeout(() => {
             this.dotContentletEditorService.edit({
                 data: {
-                    inode: this.route.snapshot.params.asset
+                    inode: this.route.snapshot.params['asset']
                 }
             });
         }, 0);

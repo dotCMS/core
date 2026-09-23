@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
 import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
@@ -31,7 +32,7 @@ function cleanOptionText(option: string): string {
     ]
 })
 class MonacoEditorMockComponent {
-    @Input() options: Record<string, unknown>;
+    @Input() options!: Record<string, unknown>;
 
     writeValue() {}
 
@@ -237,7 +238,8 @@ describe('DotTextareaContentComponent', () => {
     });
 
     it('should init editor with the correct value', () => {
-        const mockEditor = { test: 'editor' };
+        // `onInit` only forwards the instance, so the stub stands in for the full editor.
+        const mockEditor = { test: 'editor' } as unknown as MonacoStandaloneCodeEditor;
         spectator.setInput('editorName', 'testName');
         vi.spyOn(component.monacoInit, 'emit');
         spectator.detectChanges();

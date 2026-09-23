@@ -1,4 +1,4 @@
 export interface ActionHeaderDeleteOptions {
-    confirmHeader?: string;
-    confirmMessage?: string;
+    confirmHeader: string;
+    confirmMessage: string;
 }

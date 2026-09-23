@@ -70,7 +70,7 @@ describe('DotSiteSelectorDirective', () => {
     });
 
     describe('Get Sites', () => {
-        let getSitesSpy;
+        let getSitesSpy: jest.SpyInstance;
 
         beforeEach(() => {
             getSitesSpy = vi

@@ -86,9 +86,13 @@ export class DotEditContentSidebarSectionComponent {
 
     /**
      * The action template for the section.
+     *
+     * `| undefined` because the template is optional content: sections that project no
+     * `#sectionAction` leave this unset, which is exactly what the `@if (actionTemplate)` in the
+     * template already checks for.
      */
     @ContentChild('sectionAction')
-    actionTemplate: TemplateRef<unknown>;
+    actionTemplate: TemplateRef<unknown> | undefined;
 
     /**
      * Handles the accordion opening/closing its single panel: mirrors the new value into

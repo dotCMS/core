@@ -12,7 +12,7 @@ import { DotContextMenuAction } from '../../models/dot-context-menu-action.model
     shadow: true
 })
 export class DotContextMenu {
-    @Element() el: HTMLElement;
+    @Element() el!: HTMLElement;
 
     @Prop() options: DotContextMenuOption<DotContextMenuAction>[] = [];
     @Prop() fontSize = '16px';

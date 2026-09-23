@@ -28,7 +28,7 @@ describe('DotContentDriveActionMoveTargetComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotMessageService, {
-                get: vi.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotHttpErrorManagerService),
             // Backs the picker's own store. The picker renders for real: this component exists only to

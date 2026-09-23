@@ -28,9 +28,9 @@ import { JSON_FIELD_MOCK } from '../../utils/mocks';
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    contentlet: DotCMSContentlet;
-    field: DotCMSContentTypeField;
+    formGroup!: FormGroup;
+    contentlet!: DotCMSContentlet;
+    field!: DotCMSContentTypeField;
 }
 /** Flipped by tests that need the required error to surface (#37464 gates it on save). */
 const submitAttempted = signal(false);
@@ -84,7 +84,7 @@ describe('DotEditContentJsonFieldComponent', () => {
         });
 
         it('should render the language variable selector', () => {
-            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
+            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent)!;
             expect(languageVariableSelector).toBeTruthy();
         });
 
@@ -93,12 +93,12 @@ describe('DotEditContentJsonFieldComponent', () => {
         });
 
         it('should render the monaco editor component', () => {
-            const monacoEditor = spectator.query(DotEditContentMonacoEditorControlComponent);
+            const monacoEditor = spectator.query(DotEditContentMonacoEditorControlComponent)!;
             expect(monacoEditor).toBeTruthy();
         });
 
         it('should pass JSON as forced language to monaco editor', () => {
-            const monacoEditor = spectator.query(DotEditContentMonacoEditorControlComponent);
+            const monacoEditor = spectator.query(DotEditContentMonacoEditorControlComponent)!;
             // Mock $forcedLanguage signal for this test
             Object.defineProperty(monacoEditor, '$forcedLanguage', {
                 value: vi.fn().mockReturnValue(AvailableLanguageMonaco.Json),
@@ -130,7 +130,7 @@ describe('DotEditContentJsonFieldComponent', () => {
             spectator.component['insertLanguageVariableInMonaco'] = vi.fn();
 
             // Get language variable selector component
-            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
+            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent)!;
 
             // Trigger onSelectLanguageVariable event
             const testVariable = '${languageVariable}';
@@ -177,8 +177,8 @@ describe('DotEditContentJsonFieldComponent', () => {
         it('should show error message when field is required and has error', () => {
             // Simulate form validation error
             const formControl = spectator.component.formControl;
-            formControl.setErrors({ required: true });
-            formControl.markAsTouched();
+            formControl!.setErrors({ required: true });
+            formControl!.markAsTouched();
             // The error is gated on a save attempt now, not on touched (#37464), and the markup is
             // the shared `.p-field-error`, not the old unstyled `.error-message`.
             submitAttempted.set(true);
@@ -210,7 +210,7 @@ describe('DotEditContentJsonFieldComponent', () => {
         });
 
         it('should show hint message when field has hint and no error', () => {
-            const hintElement = spectator.query(byTestId(`hint-${JSON_FIELD_MOCK.variable}`));
+            const hintElement = spectator.query(byTestId(`hint-${JSON_FIELD_MOCK.variable}`))!;
             expect(hintElement).toBeTruthy();
             expect(hintElement.textContent.trim()).toBe(JSON_FIELD_MOCK.hint);
         });

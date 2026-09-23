@@ -41,7 +41,7 @@ import { EditorStore } from '../../../store/editor.store';
                 {{ displayTitle() }}
             </p>
             <p class="mt-1 font-mono text-xs text-gray-500 dark:text-gray-400">
-                {{ d.identifier ?? '' }}
+                {{ d.identifier }}
             </p>
             @if (d.modDate) {
                 <p class="mt-2 text-xs text-gray-400 dark:text-gray-500">{{ updatedLabel() }}</p>

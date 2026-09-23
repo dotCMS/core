@@ -34,14 +34,13 @@ export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
     private cdr = inject(ChangeDetectorRef);
 
     show = false;
-    data$: Observable<DotContentCompareEvent>;
+    data$!: Observable<DotContentCompareEvent>;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
         this.data$ = this.dotEventsService.listen(COMPARE_CUSTOM_EVENT).pipe(
             takeUntil(this.destroy$),
-            map((x) => x?.data),
-            map((data: DotContentCompareEvent) => data),
+            map((x) => x?.data as DotContentCompareEvent),
             tap(() => {
                 this.show = true;
                 this.cdr.detectChanges();

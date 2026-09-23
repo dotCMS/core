@@ -225,7 +225,7 @@ class ActivatedRouteMock {
     template: ''
 })
 class MockDotContentTypeSelectorComponent {
-    @Input() value: SelectItem;
+    @Input() value!: SelectItem;
     @Output() selected = new EventEmitter<string>();
 }
 
@@ -359,7 +359,7 @@ describe('ContainerListComponent', () => {
         });
 
         it('should set actions to publish template', () => {
-            const publishedContainer = containersMock.find((c) => c.identifier === '123Published');
+            const publishedContainer = containersMock.find((c) => c.identifier === '123Published')!;
             const actions = setBasicOptions();
             actions.push({
                 menuItem: { label: 'Unpublish', command: expect.any(Function) }
@@ -383,11 +383,11 @@ describe('ContainerListComponent', () => {
                 menuItem: { label: 'Duplicate', command: expect.any(Function) }
             });
 
-            expect(comp.setContainerActions(unpublishedContainer)).toEqual(actions);
+            expect(comp.setContainerActions(unpublishedContainer!)).toEqual(actions);
         });
 
         it('should set actions to archived template', () => {
-            const archivedContainer = containersMock.find((c) => c.identifier === '123Archived');
+            const archivedContainer = containersMock.find((c) => c.identifier === '123Archived')!;
 
             const actions = [
                 { menuItem: { label: 'Unarchive', command: expect.any(Function) } },
@@ -409,7 +409,7 @@ describe('ContainerListComponent', () => {
 
             comp.handleActionMenuOpen({} as MouseEvent);
 
-            menu.model[0].command({
+            menu.model![0].command!({
                 originalEvent: createFakeEvent('click')
             });
             expect(store['dotContainersService'].publish).toHaveBeenCalledWith([
@@ -433,10 +433,11 @@ describe('ContainerListComponent', () => {
         });
 
         it('should click on file container and move on Browser Screen', () => {
-            const fileContainer = containersMock.find((c) => c.identifier === 'FILE_CONTAINER');
+            const fileContainer = containersMock.find((c) => c.identifier === 'FILE_CONTAINER')!;
             // Spy on the store's methods since it's now using component-level providers
             vi.spyOn(store['dotSiteBrowserService'], 'setSelectedFolder').mockReturnValue(
-                of({} as DotCMSResponse<Record<string, unknown>>)
+                // Only the call is asserted below, so an empty response stands in for the body.
+                of({ entity: {} } as DotCMSResponse<Record<string, unknown>>)
             );
             vi.spyOn(store['dotRouterService'], 'goToSiteBrowser');
 
@@ -445,7 +446,7 @@ describe('ContainerListComponent', () => {
 
             fixture.detectChanges();
             expect(store['dotSiteBrowserService'].setSelectedFolder).toHaveBeenCalledWith(
-                fileContainer.pathName
+                fileContainer!.pathName
             );
             expect(store['dotSiteBrowserService'].setSelectedFolder).toHaveBeenCalledTimes(1);
             expect(store['dotRouterService'].goToSiteBrowser).toHaveBeenCalledTimes(1);

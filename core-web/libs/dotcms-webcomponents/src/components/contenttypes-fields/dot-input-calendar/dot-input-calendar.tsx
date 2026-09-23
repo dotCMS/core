@@ -9,7 +9,7 @@ import { getErrorClass, getId, getOriginalStatus, updateStatus } from '../../../
 })
 export class DotInputCalendarComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value specifies the value of the input element */
     @Prop({ mutable: true, reflect: true })
@@ -44,11 +44,11 @@ export class DotInputCalendarComponent {
     type = '';
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
     @Event()
-    _dotValueChange: EventEmitter<DotFieldValueEvent>;
+    _dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    _dotStatusChange: EventEmitter<DotInputCalendarStatusEvent>;
+    _dotStatusChange!: EventEmitter<DotInputCalendarStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.
@@ -70,11 +70,11 @@ export class DotInputCalendarComponent {
         return (
             <input
                 class={getErrorClass(this.status.dotValid)}
-                disabled={this.disabled || null}
+                disabled={this.disabled || undefined}
                 id={getId(this.name)}
                 onBlur={() => this.blurHandler()}
                 onInput={(event: Event) => this.setValue(event)}
-                required={this.required || null}
+                required={this.required || undefined}
                 type={this.type}
                 min={this.min}
                 max={this.max}
@@ -113,8 +113,8 @@ export class DotInputCalendarComponent {
         }
     }
 
-    private setValue(event): void {
-        this.value = event.target.value.toString();
+    private setValue(event: Event): void {
+        this.value = (event.target as HTMLInputElement).value.toString();
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,

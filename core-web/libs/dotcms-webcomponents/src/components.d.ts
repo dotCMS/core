@@ -6,6 +6,7 @@
  */
 import { HTMLStencilElement, JSXBase } from "@stencil/core/internal";
 import { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState, DotHttpErrorResponse } from "../../dotcms-models/src/index";
+import { SelectionFeedback } from "./components/contenttypes-fields/dot-tags/components/dot-autocomplete/dot-autocomplete";
 import { DotBinaryFileEvent, DotFieldStatusEvent, DotFieldValueEvent, DotInputCalendarStatusEvent, DotKeyValueField } from "./models";
 import { DotCardContentletEvent, DotCardContentletItem } from "./models/dot-card-contentlet.model";
 import { DotContentletItem } from "./models/dot-contentlet-item.model";
@@ -13,6 +14,7 @@ import { DotContextMenuOption } from "./models/dot-context-menu.model";
 import { DotContextMenuAction } from "./models/dot-context-menu-action.model";
 import { DotSelectButtonOption } from "./models/dotSelectButtonOption";
 export { DotCMSContentlet, DotCMSContentTypeLayoutColumn, DotCMSContentTypeLayoutRow, DotContentState, DotHttpErrorResponse } from "../../dotcms-models/src/index";
+export { SelectionFeedback } from "./components/contenttypes-fields/dot-tags/components/dot-autocomplete/dot-autocomplete";
 export { DotBinaryFileEvent, DotFieldStatusEvent, DotFieldValueEvent, DotInputCalendarStatusEvent, DotKeyValueField } from "./models";
 export { DotCardContentletEvent, DotCardContentletItem } from "./models/dot-card-contentlet.model";
 export { DotContentletItem } from "./models/dot-contentlet-item.model";
@@ -31,7 +33,7 @@ export namespace Components {
           * @default 'Creating DotAssets'
          */
         "createAssetsText": string;
-        "customUploadFiles": (props: {
+        "customUploadFiles"?: (props: {
         files: File[];
         onSuccess: () => void;
         updateProgress: (progress: number) => void;
@@ -94,10 +96,10 @@ export namespace Components {
     }
     interface DotAutocomplete {
         /**
-          * Function or array of string to get the data to use for the autocomplete search
+          * Function or array of string to get the data to use for the autocomplete search.  Null until a consumer supplies one, which `componentDidLoad` checks before initialising.
           * @default null
          */
-        "data": () => Promise<string[]> | string[];
+        "data": (() => Promise<string[]> | string[]) | null;
         /**
           * (optional) Duraction in ms to start search into the autocomplete
           * @default 300
@@ -125,22 +127,13 @@ export namespace Components {
         "threshold": number;
     }
     interface DotBadge {
-        /**
-          * @default null
-         */
-        "bgColor": string;
+        "bgColor"?: string;
         /**
           * @default false
          */
         "bordered": boolean;
-        /**
-          * @default null
-         */
-        "color": string;
-        /**
-          * @default null
-         */
-        "size": string;
+        "color"?: string;
+        "size"?: string;
     }
     /**
      * Represent a dotcms binary file control.
@@ -268,7 +261,7 @@ export namespace Components {
         /**
           * (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg
          */
-        "accept": string;
+        "accept"?: string;
         /**
           * (optional) Disables field's interaction
           * @default false
@@ -290,10 +283,10 @@ export namespace Components {
          */
         "required": boolean;
         /**
-          * Value specifies the value of the <input> element
-          * @default null
+          * Value specifies the value of the <input> element.  `string | File`, because both are assigned: `handleURLPaste` stores the pasted URL and `handleFilePaste` stores the pasted `File` itself. The `<input value>` in `render` accepts neither directly, so it coerces — which is what Stencil's attribute serialization already did, meaning a pasted file renders as `[object File]` rather than its name. That is a display bug, but repairing it changes what the user sees; see the note in `render`.
+          * @default ''
          */
-        "value": any;
+        "value": string | File;
     }
     /**
      * Represent a dotcms text field for the binary file element.
@@ -304,7 +297,7 @@ export namespace Components {
         /**
           * (optional) Describes a type of file that may be selected by the user, separated by comma  eg: .pdf,.jpg
          */
-        "accept": string;
+        "accept"?: string;
         /**
           * (optional) Text that be shown in the browse file button
           * @default ''
@@ -334,12 +327,15 @@ export namespace Components {
     interface DotCard {
     }
     interface DotCardContentlet {
-        "checked": boolean;
+        "checked"?: boolean;
         "hideMenu": () => Promise<void>;
         /**
           * @default '96px'
          */
         "iconSize": string;
+        /**
+          * Required in practice, not optional: `render` reads `contentlet.language` and `contentlet.locked` with no guard, so a missing item has always thrown. Third component with this shape, after `dot-contentlet-thumbnail` and `dot-video-thumbnail`.
+         */
         "item": DotCardContentletItem;
         "showMenu": (x: number, y: number) => Promise<void>;
         /**
@@ -362,7 +358,7 @@ export namespace Components {
           * @default true
          */
         "showVideoThumbnail": boolean;
-        "value": string;
+        "value"?: string;
     }
     interface DotCheckbox {
         /**
@@ -444,7 +440,7 @@ export namespace Components {
         "size": string;
     }
     interface DotContentletLockIcon {
-        "locked": boolean;
+        "locked"?: boolean;
         /**
           * @default '16px'
          */
@@ -466,6 +462,9 @@ export namespace Components {
           * @default false
          */
         "backgroundImage": boolean;
+        /**
+          * Required in practice, not optional: `componentWillLoad` destructures it on the first line, so a missing contentlet has always thrown rather than degraded. Declared with a definite assignment so the eighteen accesses below read it directly, as they already did.
+         */
         "contentlet": DotContentletItem;
         /**
           * @default ''
@@ -505,7 +504,7 @@ export namespace Components {
         "show": (x: number, y: number, position?: string) => Promise<void>;
     }
     interface DotDataViewButton {
-        "value": string;
+        "value"?: string;
     }
     interface DotDate {
         /**
@@ -711,7 +710,7 @@ export namespace Components {
         /**
           * (optional) List of fields (variableName) separated by comma, to be shown
          */
-        "fieldsToShow": string;
+        "fieldsToShow"?: string;
         /**
           * Layout metada to be rendered
           * @default []
@@ -737,21 +736,21 @@ export namespace Components {
         /**
           * Fields metada to be rendered
          */
-        "column": DotCMSContentTypeLayoutColumn;
+        "column"?: DotCMSContentTypeLayoutColumn;
         /**
           * (optional) List of fields (variableName) separated by comma, to be shown
          */
-        "fieldsToShow": string;
+        "fieldsToShow"?: string;
     }
     interface DotFormRow {
         /**
           * (optional) List of fields (variableName) separated by comma, to be shown
          */
-        "fieldsToShow": string;
+        "fieldsToShow"?: string;
         /**
           * Fields metada to be rendered
          */
-        "row": DotCMSContentTypeLayoutRow;
+        "row"?: DotCMSContentTypeLayoutRow;
     }
     interface DotHtmlToImage {
         /**
@@ -827,23 +826,23 @@ export namespace Components {
         /**
           * (optional) Label for the add button in the key-value-form
          */
-        "formAddButtonLabel": string;
+        "formAddButtonLabel"?: string;
         /**
           * (optional) The string to use in the key label in the key-value-form
          */
-        "formKeyLabel": string;
+        "formKeyLabel"?: string;
         /**
           * (optional) Placeholder for the key input text in the key-value-form
          */
-        "formKeyPlaceholder": string;
+        "formKeyPlaceholder"?: string;
         /**
           * (optional) The string to use in the value label in the key-value-form
          */
-        "formValueLabel": string;
+        "formValueLabel"?: string;
         /**
           * (optional) Placeholder for the value input text in the key-value-form
          */
-        "formValuePlaceholder": string;
+        "formValuePlaceholder"?: string;
         /**
           * (optional) Hint text that suggest a clue of the field
           * @default ''
@@ -857,7 +856,7 @@ export namespace Components {
         /**
           * (optional) The string to use in the delete button of a key/value item
          */
-        "listDeleteLabel": string;
+        "listDeleteLabel"?: string;
         /**
           * Name that will be used as ID
           * @default ''
@@ -890,11 +889,11 @@ export namespace Components {
         /**
           * (optional) The string containing the value to be parsed for whitelist key/value
          */
-        "whiteList": string;
+        "whiteList"?: string;
         /**
           * (optional) The string to use in the empty option of whitelist dropdown key/value item
          */
-        "whiteListEmptyOptionLabel": string;
+        "whiteListEmptyOptionLabel"?: string;
     }
     /**
      * Represent a dotcms label control.
@@ -941,14 +940,12 @@ export namespace Components {
         "placeholder": string;
         /**
           * Show/Hide color picker
-          * @default null
          */
-        "showColor": string;
+        "showColor"?: string;
         /**
           * Size value set for font-size
-          * @default null
          */
-        "size": string;
+        "size"?: string;
         /**
           * Values that the auto-complete textbox should search for
           * @default MaterialIconClasses
@@ -1147,29 +1144,23 @@ export namespace Components {
          */
         "value": string;
     }
-    /**
-     * @deprecated Use dot-contentlet-status-badge instead
-     */
     interface DotStateIcon {
         /**
           * @default {         archived: 'Archived',         published: 'Published',         revision: 'Revision',         draft: 'Draft'     }
          */
-        "labels": { archived: string; published: string; revision: string; draft: string; };
+        "labels": Record<DotStateIconType, string>;
         /**
           * @default '16px'
          */
         "size": string;
-        /**
-          * @default null
-         */
-        "state": DotContentState;
+        "state"?: DotContentState;
     }
     interface DotTags {
         /**
           * Function or array of string to get the data to use for the autocomplete search
           * @default null
          */
-        "data": () => Promise<string[]> | string[];
+        "data": (() => Promise<string[]> | string[]) | null;
         /**
           * Duraction in ms to start search into the autocomplete
           * @default 300
@@ -1410,9 +1401,9 @@ export namespace Components {
         "value": string;
     }
     interface DotTooltip {
-        "content": string;
-        "delay": number;
-        "for": string;
+        "content"?: string;
+        "delay"?: number;
+        "for"?: string;
         /**
           * @default 'center bottom'
          */
@@ -1420,8 +1411,7 @@ export namespace Components {
     }
     interface DotVideoThumbnail {
         /**
-          * @type {DotContentletItem}
-          * @memberof DotVideoThumbnail
+          * Required in practice, not optional: `render` destructures it and the video URL interpolates its inode, so a missing contentlet has always thrown rather than degraded — the same reason `dot-contentlet-thumbnail` declares it this way.
          */
         "contentlet": DotContentletItem;
         /**
@@ -1441,7 +1431,7 @@ export namespace Components {
           * @type {string}
           * @memberof variable
          */
-        "variable": string;
+        "variable"?: string;
     }
     interface KeyValueForm {
         /**
@@ -1639,7 +1629,7 @@ declare global {
         new (): HTMLDotAssetDropZoneElement;
     };
     interface HTMLDotAutocompleteElementEventMap {
-        "selection": string;
+        "selection": SelectionFeedback;
         "enter": string;
         "lostFocus": FocusEvent;
     }
@@ -1963,8 +1953,10 @@ declare global {
     };
     interface HTMLDotHtmlToImageElementEventMap {
         "pageThumbnail": {
-        file: File;
-        error?: string;
+        /** Null on every failure path — a document that would not open, a script that would not load. */
+        file: File | null;
+        /** A message, or the caught value itself when the failure came from a `try`/`catch`. */
+        error?: unknown;
     };
     }
     interface HTMLDotHtmlToImageElement extends Components.DotHtmlToImage, HTMLStencilElement {
@@ -2142,9 +2134,6 @@ declare global {
         prototype: HTMLDotSelectButtonElement;
         new (): HTMLDotSelectButtonElement;
     };
-    /**
-     * @deprecated Use dot-contentlet-status-badge instead
-     */
     interface HTMLDotStateIconElement extends Components.DotStateIcon, HTMLStencilElement {
     }
     var HTMLDotStateIconElement: {
@@ -2407,10 +2396,10 @@ declare namespace LocalJSX {
     }
     interface DotAutocomplete {
         /**
-          * Function or array of string to get the data to use for the autocomplete search
+          * Function or array of string to get the data to use for the autocomplete search.  Null until a consumer supplies one, which `componentDidLoad` checks before initialising.
           * @default null
          */
-        "data"?: () => Promise<string[]> | string[];
+        "data"?: (() => Promise<string[]> | string[]) | null;
         /**
           * (optional) Duraction in ms to start search into the autocomplete
           * @default 300
@@ -2428,7 +2417,10 @@ declare namespace LocalJSX {
         "maxResults"?: number;
         "onEnter"?: (event: DotAutocompleteCustomEvent<string>) => void;
         "onLostFocus"?: (event: DotAutocompleteCustomEvent<FocusEvent>) => void;
-        "onSelection"?: (event: DotAutocompleteCustomEvent<string>) => void;
+        /**
+          * Emitted when a suggestion is chosen.  Typed `SelectionFeedback`, not `string`: nothing in this component calls `.emit()` — the event is dispatched by autocomplete.js on the inner input and bubbles to the host — and its payload is the library's own feedback object, which is what `dot-tags.onSelectHandler` reads (`detail.selection.value`). The declaration exists to type the `onSelection` prop.
+         */
+        "onSelection"?: (event: DotAutocompleteCustomEvent<SelectionFeedback>) => void;
         /**
           * (optional) text to show when no value is set
           * @default ''
@@ -2441,21 +2433,12 @@ declare namespace LocalJSX {
         "threshold"?: number;
     }
     interface DotBadge {
-        /**
-          * @default null
-         */
         "bgColor"?: string;
         /**
           * @default false
          */
         "bordered"?: boolean;
-        /**
-          * @default null
-         */
         "color"?: string;
-        /**
-          * @default null
-         */
         "size"?: string;
     }
     /**
@@ -2606,10 +2589,10 @@ declare namespace LocalJSX {
          */
         "required"?: boolean;
         /**
-          * Value specifies the value of the <input> element
-          * @default null
+          * Value specifies the value of the <input> element.  `string | File`, because both are assigned: `handleURLPaste` stores the pasted URL and `handleFilePaste` stores the pasted `File` itself. The `<input value>` in `render` accepts neither directly, so it coerces — which is what Stencil's attribute serialization already did, meaning a pasted file renders as `[object File]` rather than its name. That is a display bug, but repairing it changes what the user sees; see the note in `render`.
+          * @default ''
          */
-        "value"?: any;
+        "value"?: string | File;
     }
     /**
      * Represent a dotcms text field for the binary file element.
@@ -2656,7 +2639,10 @@ declare namespace LocalJSX {
           * @default '96px'
          */
         "iconSize"?: string;
-        "item"?: DotCardContentletItem;
+        /**
+          * Required in practice, not optional: `render` reads `contentlet.language` and `contentlet.locked` with no guard, so a missing item has always thrown. Third component with this shape, after `dot-contentlet-thumbnail` and `dot-video-thumbnail`.
+         */
+        "item": DotCardContentletItem;
         "onCheckboxChange"?: (event: DotCardContentletCustomEvent<DotCardContentletEvent>) => void;
         "onContextMenuClick"?: (event: DotCardContentletCustomEvent<MouseEvent>) => void;
         /**
@@ -2781,7 +2767,10 @@ declare namespace LocalJSX {
           * @default false
          */
         "backgroundImage"?: boolean;
-        "contentlet"?: DotContentletItem;
+        /**
+          * Required in practice, not optional: `componentWillLoad` destructures it on the first line, so a missing contentlet has always thrown rather than degraded. Declared with a definite assignment so the eighteen accesses below read it directly, as they already did.
+         */
+        "contentlet": DotContentletItem;
         /**
           * @default ''
          */
@@ -3070,8 +3059,10 @@ declare namespace LocalJSX {
          */
         "height"?: string;
         "onPageThumbnail"?: (event: DotHtmlToImageCustomEvent<{
-        file: File;
-        error?: string;
+        /** Null on every failure path — a document that would not open, a script that would not load. */
+        file: File | null;
+        /** A message, or the caught value itself when the failure came from a `try`/`catch`. */
+        error?: unknown;
     }>) => void;
         /**
           * @default ''
@@ -3253,12 +3244,10 @@ declare namespace LocalJSX {
         "placeholder"?: string;
         /**
           * Show/Hide color picker
-          * @default null
          */
         "showColor"?: string;
         /**
           * Size value set for font-size
-          * @default null
          */
         "size"?: string;
         /**
@@ -3452,21 +3441,15 @@ declare namespace LocalJSX {
          */
         "value"?: string;
     }
-    /**
-     * @deprecated Use dot-contentlet-status-badge instead
-     */
     interface DotStateIcon {
         /**
           * @default {         archived: 'Archived',         published: 'Published',         revision: 'Revision',         draft: 'Draft'     }
          */
-        "labels"?: { archived: string; published: string; revision: string; draft: string; };
+        "labels"?: Record<DotStateIconType, string>;
         /**
           * @default '16px'
          */
         "size"?: string;
-        /**
-          * @default null
-         */
         "state"?: DotContentState;
     }
     interface DotTags {
@@ -3474,7 +3457,7 @@ declare namespace LocalJSX {
           * Function or array of string to get the data to use for the autocomplete search
           * @default null
          */
-        "data"?: () => Promise<string[]> | string[];
+        "data"?: (() => Promise<string[]> | string[]) | null;
         /**
           * Duraction in ms to start search into the autocomplete
           * @default 300
@@ -3716,10 +3699,9 @@ declare namespace LocalJSX {
     }
     interface DotVideoThumbnail {
         /**
-          * @type {DotContentletItem}
-          * @memberof DotVideoThumbnail
+          * Required in practice, not optional: `render` destructures it and the video URL interpolates its inode, so a missing contentlet has always thrown rather than degraded — the same reason `dot-contentlet-thumbnail` declares it this way.
          */
-        "contentlet"?: DotContentletItem;
+        "contentlet": DotContentletItem;
         /**
           * @type {boolean}
           * @memberof DotVideoThumbnail
@@ -3964,9 +3946,6 @@ declare module "@stencil/core" {
              */
             "dot-select": LocalJSX.DotSelect & JSXBase.HTMLAttributes<HTMLDotSelectElement>;
             "dot-select-button": LocalJSX.DotSelectButton & JSXBase.HTMLAttributes<HTMLDotSelectButtonElement>;
-            /**
-             * @deprecated Use dot-contentlet-status-badge instead
-             */
             "dot-state-icon": LocalJSX.DotStateIcon & JSXBase.HTMLAttributes<HTMLDotStateIconElement>;
             "dot-tags": LocalJSX.DotTags & JSXBase.HTMLAttributes<HTMLDotTagsElement>;
             /**

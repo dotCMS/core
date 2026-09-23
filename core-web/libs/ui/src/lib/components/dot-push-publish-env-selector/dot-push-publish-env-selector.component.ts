@@ -38,7 +38,7 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
     private pushPublishService = inject(PushPublishService);
 
     @Input()
-    assetIdentifier: string;
+    assetIdentifier = '';
     @Input()
     showList = false;
     pushEnvironments: DotEnvironment[] = [];
@@ -107,7 +107,7 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
      * @param any selectedEnvironments
      * @memberof PushPublishEnvSelectorComponent
      */
-    valueChange(_event, selectedEnvironments): void {
+    valueChange(_event: unknown, selectedEnvironments: DotEnvironment[]): void {
         this.propagateEnvironmentId(selectedEnvironments);
     }
 
@@ -123,8 +123,10 @@ export class PushPublishEnvSelectorComponent implements OnInit, ControlValueAcce
         this.propagateEnvironmentId(this.selectedEnvironments);
     }
 
-    private propagateEnvironmentId(selectedEnvironments): void {
-        this.selectedEnvironmentIds = selectedEnvironments.map((environment) => environment.id);
+    private propagateEnvironmentId(selectedEnvironments: DotEnvironment[]): void {
+        this.selectedEnvironmentIds = selectedEnvironments.map(
+            (environment: DotEnvironment) => environment.id
+        );
         this.propagateChange(this.selectedEnvironmentIds);
         this.propagateTouched(this.selectedEnvironmentIds);
     }

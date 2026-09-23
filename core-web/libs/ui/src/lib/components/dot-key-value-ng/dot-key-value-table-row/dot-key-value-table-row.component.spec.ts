@@ -70,14 +70,14 @@ describe('DotKeyValueTableRowComponent', () => {
 
     describe('at-rest presentation (FR-005, FR-008)', () => {
         it('should render the value as plain text, not an always-on input', () => {
-            const output = spectator.query(byTestId('dot-key-value-value-output'));
+            const output = spectator.query(byTestId('dot-key-value-value-output'))!;
 
             expect(output.textContent).toContain('John');
             expect(spectator.query(byTestId('dot-key-value-input'))).toBeFalsy();
         });
 
         it('should never expose an editable control for the key', () => {
-            const keyCell = spectator.query(byTestId('dot-key-value-key'));
+            const keyCell = spectator.query(byTestId('dot-key-value-key'))!;
 
             expect(keyCell.textContent).toContain('name');
             expect(keyCell.querySelector('input')).toBeFalsy();
@@ -86,9 +86,9 @@ describe('DotKeyValueTableRowComponent', () => {
         it('should render a stored "null" rather than dropping the pair', () => {
             setProps({ variable: { key: 'imported-key', hidden: false, value: 'null' } });
 
-            expect(spectator.query(byTestId('dot-key-value-value-output')).textContent.trim()).toBe(
-                'null'
-            );
+            expect(
+                spectator.query(byTestId('dot-key-value-value-output'))!.textContent.trim()
+            ).toBe('null');
         });
     });
 
@@ -111,7 +111,7 @@ describe('DotKeyValueTableRowComponent', () => {
             const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             activate();
 
-            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'));
+            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'))!;
             spectator.typeInElement('edited', input);
             input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
             spectator.detectChanges();
@@ -133,8 +133,8 @@ describe('DotKeyValueTableRowComponent', () => {
              * keeps their centres at the same height however far the row grows.
              */
             const alignment = () => [
-                spectator.query(byTestId('dot-key-value-key')).className,
-                spectator.query(byTestId('dot-key-value-editable-column')).className
+                spectator.query(byTestId('dot-key-value-key'))!.className,
+                spectator.query(byTestId('dot-key-value-editable-column'))!.className
             ];
 
             expect(alignment().join()).not.toContain('align-top');
@@ -157,15 +157,15 @@ describe('DotKeyValueTableRowComponent', () => {
             const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             activate();
 
-            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'));
+            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'))!;
             spectator.typeInElement('edited', input);
             spectator.dispatchFakeEvent(input, 'blur');
             spectator.detectChanges();
 
             expect(saveSpy).not.toHaveBeenCalled();
-            expect(spectator.query(byTestId('dot-key-value-value-output')).textContent.trim()).toBe(
-                mockVariable.value
-            );
+            expect(
+                spectator.query(byTestId('dot-key-value-value-output'))!.textContent.trim()
+            ).toBe(mockVariable.value);
         });
 
         it('should refuse an emptied value and say why', () => {
@@ -193,7 +193,7 @@ describe('DotKeyValueTableRowComponent', () => {
         });
 
         it('should activate the value with Space as well as Enter', () => {
-            const output = spectator.query(byTestId('dot-key-value-value-output'));
+            const output = spectator.query(byTestId('dot-key-value-value-output'))!;
             const event = new KeyboardEvent('keydown', { key: ' ', cancelable: true });
 
             output.dispatchEvent(event);
@@ -207,13 +207,13 @@ describe('DotKeyValueTableRowComponent', () => {
             const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             activate();
 
-            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'));
+            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'))!;
             spectator.typeInElement('discard me', input);
             input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
             spectator.detectChanges();
 
             expect(saveSpy).not.toHaveBeenCalled();
-            expect(spectator.query(byTestId('dot-key-value-value-output')).textContent).toContain(
+            expect(spectator.query(byTestId('dot-key-value-value-output'))!.textContent).toContain(
                 'John'
             );
         });
@@ -223,7 +223,7 @@ describe('DotKeyValueTableRowComponent', () => {
             activate();
 
             spectator
-                .query(byTestId('dot-key-value-input'))
+                .query(byTestId('dot-key-value-input'))!
                 .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
             spectator.detectChanges();
 
@@ -253,7 +253,7 @@ describe('DotKeyValueTableRowComponent', () => {
         it.each([['dot-key-value-delete-button'], ['dot-key-value-drag-handle']])(
             'should keep %s in the DOM and out of sight via opacity only',
             (testId) => {
-                const action = spectator.query(byTestId(testId));
+                const action = spectator.query(byTestId(testId))!;
 
                 expect(action).toBeTruthy();
                 expect(action.className).toContain('opacity-0');
@@ -268,7 +268,7 @@ describe('DotKeyValueTableRowComponent', () => {
         it.each([['dot-key-value-delete-button'], ['dot-key-value-drag-handle']])(
             'should reveal %s on focus-within, not on hover alone',
             (testId) => {
-                const action = spectator.query(byTestId(testId));
+                const action = spectator.query(byTestId(testId))!;
 
                 expect(action.className).toContain('group-hover:opacity-100');
                 expect(action.className).toContain('group-focus-within:opacity-100');
@@ -277,7 +277,7 @@ describe('DotKeyValueTableRowComponent', () => {
 
         it('should expose an accessible name on the actions a keyboard can reach', () => {
             expect(
-                spectator.query(byTestId('dot-key-value-delete-button')).getAttribute('aria-label')
+                spectator.query(byTestId('dot-key-value-delete-button'))!.getAttribute('aria-label')
             ).toBeTruthy();
         });
 
@@ -285,7 +285,7 @@ describe('DotKeyValueTableRowComponent', () => {
             // PrimeNG's row reorder is pointer-driven: it binds mousedown and the HTML
             // drag events, and nothing for Enter, Space or the arrows. A role and a tab
             // stop here would announce a button that cannot be operated at all.
-            const handle = spectator.query(byTestId('dot-key-value-drag-handle'));
+            const handle = spectator.query(byTestId('dot-key-value-drag-handle'))!;
 
             expect(handle).toBeTruthy();
             expect(handle.getAttribute('role')).toBeNull();
@@ -295,14 +295,14 @@ describe('DotKeyValueTableRowComponent', () => {
 
     describe('icons use Material Symbols (DC-003)', () => {
         it('should render the drag handle as the drag_indicator glyph', () => {
-            const icon = spectator.query(byTestId('dot-key-value-drag-handle-icon'));
+            const icon = spectator.query(byTestId('dot-key-value-drag-handle-icon'))!;
 
             expect(icon.className).toContain('material-symbols-outlined');
             expect(icon.textContent.trim()).toBe('drag_indicator');
         });
 
         it('should render the remove action as the close glyph', () => {
-            const icon = spectator.query(byTestId('dot-key-value-delete-icon'));
+            const icon = spectator.query(byTestId('dot-key-value-delete-icon'))!;
 
             expect(icon.className).toContain('material-symbols-outlined');
             expect(icon.textContent.trim()).toBe('close');
@@ -365,7 +365,7 @@ describe('DotKeyValueTableRowComponent', () => {
             spectator.detectChanges();
 
             expect(saveSpy).not.toHaveBeenCalled();
-            expect(spectator.query(byTestId('dot-key-value-key-output')).textContent.trim()).toBe(
+            expect(spectator.query(byTestId('dot-key-value-key-output'))!.textContent.trim()).toBe(
                 mockVariable.key
             );
         });
@@ -445,13 +445,13 @@ describe('DotKeyValueTableRowComponent', () => {
             const saveSpy = vi.spyOn(spectator.component.save, 'emit');
             startEditing();
 
-            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-key-input'));
+            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-key-input'))!;
             spectator.typeInElement('renamed', input);
             spectator.dispatchFakeEvent(input, 'blur');
             spectator.detectChanges();
 
             expect(saveSpy).not.toHaveBeenCalled();
-            expect(spectator.query(byTestId('dot-key-value-key-output')).textContent.trim()).toBe(
+            expect(spectator.query(byTestId('dot-key-value-key-output'))!.textContent.trim()).toBe(
                 mockVariable.key
             );
         });
@@ -468,7 +468,7 @@ describe('DotKeyValueTableRowComponent', () => {
         });
 
         it('should activate the key with Space as well as Enter', () => {
-            const output = spectator.query(byTestId('dot-key-value-key-output'));
+            const output = spectator.query(byTestId('dot-key-value-key-output'))!;
             const event = new KeyboardEvent('keydown', { key: ' ', cancelable: true });
 
             output.dispatchEvent(event);
@@ -500,7 +500,7 @@ describe('DotKeyValueTableRowComponent', () => {
         it('should state that a hidden value is withheld, under a lock', () => {
             mountHidden(true);
 
-            expect(spectator.query(byTestId('dot-key-value-hidden-icon')).textContent.trim()).toBe(
+            expect(spectator.query(byTestId('dot-key-value-hidden-icon'))!.textContent.trim()).toBe(
                 'lock'
             );
             expect(spectator.query(byTestId('dot-key-value-label'))).toBeTruthy();
@@ -509,7 +509,7 @@ describe('DotKeyValueTableRowComponent', () => {
 
         it('should keep the withheld state visible without hover or focus', () => {
             mountHidden(true);
-            const label = spectator.query(byTestId('dot-key-value-label'));
+            const label = spectator.query(byTestId('dot-key-value-label'))!;
 
             // State, not an action — so it must NOT carry the hover-reveal classes
             // the drag handle and remove control use.
@@ -520,7 +520,7 @@ describe('DotKeyValueTableRowComponent', () => {
         it('should show a plain value as editable text', () => {
             mountHidden(false);
 
-            expect(spectator.query(byTestId('dot-key-value-value-output')).textContent).toContain(
+            expect(spectator.query(byTestId('dot-key-value-value-output'))!.textContent).toContain(
                 'John'
             );
             expect(spectator.query(byTestId('dot-key-value-label'))).toBeFalsy();
@@ -550,7 +550,7 @@ describe('DotKeyValueTableRowComponent', () => {
             setProps({ showHiddenField: false, variable: { ...mockVariable, hidden: true } });
 
             expect(spectator.query(byTestId('dot-key-value-label'))).toBeFalsy();
-            expect(spectator.query(byTestId('dot-key-value-value-output')).textContent).toContain(
+            expect(spectator.query(byTestId('dot-key-value-value-output'))!.textContent).toContain(
                 'John'
             );
         });

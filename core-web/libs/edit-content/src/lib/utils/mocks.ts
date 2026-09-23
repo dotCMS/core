@@ -8,6 +8,7 @@ import {
 } from '@angular/forms';
 
 import {
+    CustomTreeNode,
     DotCMSClazzes,
     DotCMSContentlet,
     DotCMSContentType,
@@ -16,8 +17,8 @@ import {
     DotCMSTempFile,
     DotCMSWorkflowStatus,
     FeaturedFlags,
-    TreeNodeItem,
-    CustomTreeNode
+    TreeNodeContentData,
+    TreeNodeItem
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -848,7 +849,7 @@ export const BINARY_FIELD_CONTENTLET: DotCMSContentlet = {
 
 // This creates a mock FormGroup from an array of fielda
 export const createFormControlObjectMock = (fields = FIELDS_MOCK) => {
-    return fields.reduce((acc, field) => {
+    return fields.reduce<Record<string, FormControl>>((acc, field) => {
         acc[field.variable] = new FormControl(null);
 
         return acc;
@@ -869,10 +870,10 @@ export const createFormGroupDirectiveMock = (
 };
 
 function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
-    let fields = [];
+    let fields: DotCMSContentTypeField[] = [];
 
     data.forEach((row) => {
-        row.columns.forEach((column) => {
+        row.columns!.forEach((column) => {
             fields = [...fields, ...column.fields];
         });
     });
@@ -1117,7 +1118,7 @@ export const LAYOUT_FIELDS_VALUES_MOCK = {
     date: '2023-11-14 19:27:53'
 };
 
-const metadata = {};
+const metadata: Record<string, boolean> = {};
 metadata[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] = false;
 
 export const CONTENT_FORM_DATA_MOCK: DotFormData = {
@@ -1342,7 +1343,17 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
     metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
 };
 
-export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
+/**
+ * Fixture variant of {@link TreeNodeItem}. PrimeNG leaves `data` optional on `TreeNode`, but
+ * every node in the fixtures below populates it, and the specs read it directly. `children`
+ * stays optional — only some nodes have them.
+ */
+// `data` is pinned to the *content* variant, not the `TreeNodeData` union: every entry in the
+// tree mocks below is a `type: 'site'` or `type: 'folder'` node, never a `loadMore` sentinel.
+// Specs read `data.hostname` and `data.path` off these, which only exist on that variant.
+type MockTreeNodeItem = TreeNodeItem & { data: TreeNodeContentData };
+
+export const TREE_SELECT_SITES_MOCK: MockTreeNodeItem[] = [
     {
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
@@ -1381,7 +1392,7 @@ export const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
     }
 ];
 
-export const TREE_SELECT_MOCK: TreeNodeItem[] = [
+export const TREE_SELECT_MOCK: MockTreeNodeItem[] = [
     {
         key: 'demo.dotcms.com',
         label: 'demo.dotcms.com',
@@ -1449,10 +1460,10 @@ export const TREE_SELECT_MOCK: TreeNodeItem[] = [
 ];
 
 export const TREE_SELECT_MOCK_NODE: CustomTreeNode = {
-    node: { ...TREE_SELECT_MOCK[0].children[0] },
+    node: { ...TREE_SELECT_MOCK[0]!.children![0] },
     tree: {
         path: 'demo.dotcms.com',
-        folders: [...TREE_SELECT_MOCK[0].children]
+        folders: [...(TREE_SELECT_MOCK[0]!.children ?? [])]
     }
 };
 

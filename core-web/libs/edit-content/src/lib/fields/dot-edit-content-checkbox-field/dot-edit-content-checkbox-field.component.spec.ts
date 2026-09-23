@@ -20,9 +20,9 @@ import { CHECKBOX_FIELD_MOCK } from '../../utils/mocks';
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 describe('DotEditContentCheckboxFieldComponent', () => {

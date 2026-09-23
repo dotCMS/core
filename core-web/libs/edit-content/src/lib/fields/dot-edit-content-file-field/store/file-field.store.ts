@@ -71,7 +71,7 @@ const resolveContentletMetadata = (
     fieldVariable: string
 ): DotFileMetadata => {
     const metadata =
-        contentlet?.metaData ||
+        contentlet?.['metaData'] ||
         contentlet?.['assetMetaData'] ||
         contentlet?.[`${fieldVariable}MetaData`];
 
@@ -88,7 +88,7 @@ const resolveContentletVersion = (
 ): string | null => {
     return (
         contentlet?.['assetVersion'] ||
-        contentlet?.fileAssetVersion ||
+        contentlet?.['fileAssetVersion'] ||
         contentlet?.[`${fieldVariable}Version`] ||
         null
     );

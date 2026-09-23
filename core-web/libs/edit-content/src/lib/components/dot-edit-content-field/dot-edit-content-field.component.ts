@@ -80,12 +80,14 @@ export class DotEditContentFieldComponent {
     /**
      * The field.
      */
-    $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+    $field = input<DotCMSContentTypeField | null>(null, { alias: 'field' });
 
     /**
      * The contentlet.
      */
-    $contentlet = input<DotCMSContentlet | undefined>(null, { alias: 'contentlet' });
+    // `| null`, not `| undefined`: the default value below is `null`, so the declared type
+    // never admitted its own initial value.
+    $contentlet = input<DotCMSContentlet | null>(null, { alias: 'contentlet' });
 
     /**
      * The content type.

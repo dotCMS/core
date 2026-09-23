@@ -411,7 +411,7 @@ describe('DotAgentRunService', () => {
 
             const events: AgentStreamEvent<DemoResult>[] = [];
             await expect(
-                new Promise((resolve, reject) => {
+                new Promise<void>((resolve, reject) => {
                     service.run<DemoResult>('/url', {}).subscribe({
                         next: (event) => events.push(event),
                         error: reject,

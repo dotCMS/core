@@ -71,7 +71,7 @@ export const handleContentletClick = (
 
     // Read cached DOM index instead of expensive O(3n) query
     // Index is cached in data-attribute when listener is attached
-    const domIndex = parseInt(contentletElement.dataset.dotAnalyticsDomIndex || '-1', 10);
+    const domIndex = parseInt(contentletElement.dataset['dotAnalyticsDomIndex'] || '-1', 10);
 
     const payload: DotCMSContentClickPayload = {
         content: {

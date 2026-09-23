@@ -130,16 +130,17 @@ export class DOTTestBed {
     };
 
     public static configureTestingModule(config: TestModuleMetadata): typeof TestBed {
-        // tslint:disable-next-line:forin
-        for (const property in DOTTestBed.DEFAULT_CONFIG) {
-            if (config[property]) {
-                DOTTestBed.DEFAULT_CONFIG[property]
-                    .filter((provider) => !config[property].includes(provider))
-                    .forEach((item) => config[property].unshift(item));
-            } else {
-                config[property] = DOTTestBed.DEFAULT_CONFIG[property];
-            }
-        }
+        // `imports` and `providers` are named rather than walked with `for...in` over the default
+        // config's keys, which is what turned every access into an index into `TestModuleMetadata`.
+        // Those are the only two keys the defaults carry.
+        config.imports = DOTTestBed.mergeDefaults(
+            DOTTestBed.DEFAULT_CONFIG.imports,
+            config.imports
+        );
+        config.providers = DOTTestBed.mergeDefaults(
+            DOTTestBed.DEFAULT_CONFIG.providers,
+            config.providers
+        );
 
         TestBed.configureTestingModule(config);
         TestBed.compileComponents();
@@ -149,5 +150,21 @@ export class DOTTestBed {
 
     public static createComponent<T>(component: Type<T>): ComponentFixture<T> {
         return TestBed.createComponent(component);
+    }
+
+    /**
+     * Prepends whichever defaults the caller did not already list, in place — the same thing the
+     * `for...in` did, including handing back the defaults array itself when the caller passed none.
+     */
+    private static mergeDefaults(defaults: unknown[], provided?: unknown[]): unknown[] {
+        if (!provided) {
+            return defaults;
+        }
+
+        defaults
+            .filter((item) => !provided.includes(item))
+            .forEach((item) => provided.unshift(item));
+
+        return provided;
     }
 }

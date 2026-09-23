@@ -73,10 +73,13 @@ export function typeText(editor: Editor, text: string): void {
     for (const char of Array.from(text)) {
         const { view } = editor;
         const { from, to } = view.state.selection;
-        const handled = view.someProp('handleTextInput', (fn) => fn(view, from, to, char));
+        const insertChar = () => view.state.tr.insertText(char, from, to);
+        const handled = view.someProp('handleTextInput', (fn) =>
+            fn(view, from, to, char, insertChar)
+        );
 
         if (!handled) {
-            view.dispatch(view.state.tr.insertText(char, from, to));
+            view.dispatch(insertChar());
         }
     }
 }

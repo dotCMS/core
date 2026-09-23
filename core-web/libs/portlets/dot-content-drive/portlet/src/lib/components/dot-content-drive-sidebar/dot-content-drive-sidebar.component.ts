@@ -225,7 +225,9 @@ export class DotContentDriveSidebarComponent {
      * Expands the path to the node and scrolls it into view
      * This is a signalMethod that automatically subscribes to the signal when called in constructor
      *
-     * @param {DotFolderTreeNodeItem} selectedNode - The selected node with fromTable flag
+     * @param {DotFolderTreeNodeItem | undefined} selectedNode - The selected node with fromTable
+     * flag. Undefined-able because that is what `store.selectedNode` publishes before anything is
+     * selected; the body already guards on it.
      */
     readonly handleSelectedNodeFromTable = signalMethod<DotFolderTreeNodeItem | undefined>(
         (selectedNode) => {
@@ -447,7 +449,9 @@ export class DotContentDriveSidebarComponent {
         nodes: DotFolderTreeNodeItem[]
     ): DotFolderTreeNodeItem | undefined {
         for (const node of nodes) {
-            if (node.data?.type !== LOAD_MORE_NODE_TYPE && node.data.path === path) {
+            // `data` is optional on the tree node, so it is checked once up front rather than
+            // optional-chained on the first read and dereferenced plainly on the second.
+            if (node.data && node.data.type !== LOAD_MORE_NODE_TYPE && node.data.path === path) {
                 return node;
             }
 
@@ -543,6 +547,7 @@ export class DotContentDriveSidebarComponent {
 
         const node = nodes.find(
             (candidate) =>
+                !!candidate.data &&
                 candidate.data.type !== LOAD_MORE_NODE_TYPE &&
                 candidate.data.path.includes(segments[0])
         );

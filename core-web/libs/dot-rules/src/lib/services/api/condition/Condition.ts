@@ -43,7 +43,7 @@ export class ConditionService {
 
     static toJson(condition: ConditionModel): ConditionJson {
         return {
-            id: condition.key,
+            id: condition.key ?? undefined,
             conditionlet: condition.type.key,
             priority: condition.priority,
             operator: condition.operator,
@@ -55,16 +55,15 @@ export class ConditionService {
         condition: ICondition,
         loggerService?: LoggerService
     ): ConditionModel {
-        let conditionModel: ConditionModel = null;
+        const conditionModel = new ConditionModel(condition);
         try {
-            conditionModel = new ConditionModel(condition);
-            const values = condition['values'] as Record<
-                string,
-                { value: string; priority?: number }
-            >;
+            // `values` is what the server calls the parameter map; `ICondition` declares it as
+            // `parameters`, which is why this reads through the index signature.
+            const values = (condition as ICondition & Record<string, unknown>)['values'] as
+                | Record<string, { value: string; priority?: number }>
+                | undefined;
 
-            Object.keys(values).forEach((key) => {
-                const x = values[key];
+            Object.entries(values ?? {}).forEach(([key, x]) => {
                 conditionModel.setParameter(key, x.value, x.priority);
                 loggerService?.info('ConditionService', 'setting parameter', key, x);
             });
@@ -121,7 +120,9 @@ export class ConditionService {
         return conditionModelResult.pipe(
             map((entity) => {
                 entity.id = conditionId;
-                entity._type = conditionTypes ? conditionTypes[entity.conditionlet] : null;
+                entity._type = entity.conditionlet
+                    ? conditionTypes?.[entity.conditionlet]
+                    : undefined;
 
                 return ConditionService.fromServerConditionTransformFn(entity, this.loggerService);
             })
@@ -155,7 +156,9 @@ export class ConditionService {
         }
 
         if (!model.isPersisted()) {
-            this.add(groupId, model);
+            // As in `ActionService.updateRuleAction`: the observable was dropped, so the POST
+            // never ran and this method returned `undefined`.
+            return this.add(groupId, model);
         } else {
             const json = ConditionService.toJson(model);
             json.owningGroup = groupId;

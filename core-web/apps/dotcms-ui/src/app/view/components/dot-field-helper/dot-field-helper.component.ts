@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { PopoverModule } from 'primeng/popover';
@@ -11,5 +11,5 @@ import { PopoverModule } from 'primeng/popover';
     imports: [ButtonModule, PopoverModule]
 })
 export class DotFieldHelperComponent {
-    @Input() message: string;
+    readonly message = input<string>();
 }

@@ -56,7 +56,7 @@ export class DotEditContentFileFieldComponent extends BaseWrapperField {
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * Emits when the field value changes due to a user action. Bubbled from the
      * inner file field so the parent can sync FileAsset title/fileName.

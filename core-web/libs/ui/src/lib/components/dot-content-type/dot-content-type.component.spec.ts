@@ -89,7 +89,7 @@ describe('DotContentTypeComponent', () => {
             spectator.component.value.set('Blog');
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
 
             expect(spectator.component.$options()).toEqual(
                 expect.arrayContaining(mockContentTypes)
@@ -103,7 +103,7 @@ describe('DotContentTypeComponent', () => {
         it('should update disabled state via ControlValueAccessor', () => {
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.disabled()).toBe(false);
 
             spectator.component.setDisabledState(true);
@@ -392,7 +392,7 @@ describe('DotContentTypeComponent', () => {
             spectator.detectChanges();
 
             // Get the Select component and open the dropdown
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             select.show();
             spectator.detectChanges();
             tick(); // Allow overlay to render
@@ -400,7 +400,7 @@ describe('DotContentTypeComponent', () => {
             // Query document.body since overlay is appended there
             const input = document.body.querySelector<HTMLInputElement>(
                 'input[type="text"][role="searchbox"]'
-            );
+            )!;
             expect(input).toBeTruthy();
 
             // Set the value and trigger the actual DOM input event
@@ -480,7 +480,7 @@ describe('DotContentTypeComponent', () => {
             tick(300);
 
             // Get the Select component and open the dropdown
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             select.show();
             spectator.detectChanges();
             tick(); // Allow overlay to render
@@ -488,7 +488,7 @@ describe('DotContentTypeComponent', () => {
             // Query document.body since overlay is appended there
             const input = document.body.querySelector<HTMLInputElement>(
                 'input[type="text"][role="searchbox"]'
-            );
+            )!;
 
             expect(input.value).toBe('');
             expect(contentTypeService.getContentTypesWithPagination).toHaveBeenCalledWith({
@@ -540,7 +540,7 @@ describe('DotContentTypeComponent', () => {
             spectator.setInput('placeholder', 'Custom placeholder');
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.placeholder()).toBe('Custom placeholder');
         });
 
@@ -548,7 +548,7 @@ describe('DotContentTypeComponent', () => {
             spectator.setInput('disabled', true);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.disabled()).toBe(true);
 
             spectator.setInput('disabled', false);
@@ -568,7 +568,7 @@ describe('DotContentTypeComponent', () => {
             spectator.setInput('id', 'custom-id');
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.inputId).toBe('custom-id');
         });
 
@@ -656,9 +656,9 @@ describe('DotContentTypeComponent', () => {
             expect(options.length).toBe(3);
 
             // Verify $options() binding to p-select
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select.options).toEqual(options);
-            expect(select.options[0]).toEqual(mockContentTypes[1]);
+            expect(select.options![0]).toEqual(mockContentTypes[1]);
         }));
 
         it('should update pinnedOption when p-select onChange is triggered', () => {
@@ -722,13 +722,13 @@ describe('DotContentTypeComponent', () => {
 
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             // Should have pinned at top, then only News and Article (Blog filtered out)
-            expect(select.options[0]).toEqual(pinned);
-            expect(select.options.length).toBe(3);
+            expect(select.options![0]).toEqual(pinned);
+            expect(select.options!.length).toBe(3);
 
             // Verify Blog only appears once (as pinned)
-            const blogCount = select.options.filter((ct) => ct.variable === 'Blog').length;
+            const blogCount = select.options!.filter((ct) => ct.variable === 'Blog').length;
             expect(blogCount).toBe(1);
         });
 
@@ -748,9 +748,9 @@ describe('DotContentTypeComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             // Pinned should appear at top if it matches filter
-            expect(select.options[0]).toEqual(pinned);
+            expect(select.options![0]).toEqual(pinned);
         }));
 
         it('should show pinnedOption when filtering if it matches the filter by variable', fakeAsync(() => {
@@ -769,8 +769,8 @@ describe('DotContentTypeComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
-            expect(select.options[0]).toEqual(pinned);
+            const select = spectator.query(Select)!;
+            expect(select.options![0]).toEqual(pinned);
         }));
 
         it('should not show pinnedOption when filtering if it does not match the filter', fakeAsync(() => {
@@ -789,11 +789,11 @@ describe('DotContentTypeComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             // Pinned should not appear if it doesn't match filter
-            expect(select.options.find((ct) => ct.variable === 'Custom')).toBeFalsy();
+            expect(select.options!.find((ct) => ct.variable === 'Custom')).toBeFalsy();
             // Should only show filtered results
-            expect(select.options.length).toBeGreaterThan(0);
+            expect(select.options!.length).toBeGreaterThan(0);
         }));
 
         it('should show pinnedOption when filter is cleared', fakeAsync(() => {
@@ -814,8 +814,8 @@ describe('DotContentTypeComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
-            expect(select.options[0]).toEqual(pinned);
+            const select = spectator.query(Select)!;
+            expect(select.options![0]).toEqual(pinned);
         }));
 
         it('should handle case-insensitive filter matching for pinnedOption', fakeAsync(() => {
@@ -834,8 +834,8 @@ describe('DotContentTypeComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            const select = spectator.query(Select);
-            expect(select.options[0]).toEqual(pinned);
+            const select = spectator.query(Select)!;
+            expect(select.options![0]).toEqual(pinned);
         }));
     });
 
@@ -1166,7 +1166,7 @@ describe('DotContentTypeComponent - ControlValueAccessor Integration', () => {
         expect(hostSpectator.component.$isDisabled()).toBe(true);
         expect(hostSpectator.component.$disabled()).toBe(true);
 
-        const select = hostSpectator.query(Select);
+        const select = hostSpectator.query(Select)!;
         expect(select.disabled()).toBe(true);
     });
 

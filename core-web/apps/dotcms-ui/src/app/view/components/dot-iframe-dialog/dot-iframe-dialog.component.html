@@ -6,9 +6,12 @@
     [contentStyle]="{ padding: '0', height: '100%' }"
     (visibleChange)="onDialogHide()"
     #dialog>
-    <dot-iframe
-        (charge)="onLoad($event)"
-        (keyWasDown)="onKeyDown($event)"
-        (custom)="custom.emit($event)"
-        [src]="url" />
+    <!-- `show` is derived from `url`, so there is nothing to load without one. -->
+    @if (url) {
+        <dot-iframe
+            (charge)="onLoad($event)"
+            (keyWasDown)="onKeyDown($event)"
+            (custom)="custom.emit($event)"
+            [src]="url" />
+    }
 </p-dialog>

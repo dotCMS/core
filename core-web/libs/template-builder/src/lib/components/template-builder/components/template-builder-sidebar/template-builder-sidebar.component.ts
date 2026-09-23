@@ -1,4 +1,4 @@
-import { Component, Input, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy, input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { SelectModule } from 'primeng/select';
@@ -19,20 +19,20 @@ import { TemplateBuilderBoxComponent } from '../template-builder-box/template-bu
 export class TemplateBuilderSidebarComponent {
     private store = inject(DotTemplateBuilderStore);
 
-    @Input() sidebarProperties: DotLayoutSideBar = {
+    readonly sidebarProperties = input<DotLayoutSideBar>({
         width: 'medium',
         containers: []
-    };
+    });
 
-    @Input() containerMap: DotContainerMap;
+    readonly containerMap = input.required<DotContainerMap>();
     readonly widthOptions = ['Small', 'Medium', 'Large'];
 
     get width() {
-        return (this.sidebarProperties.width ?? 'medium').replace(/^\w/g, (l) => l.toUpperCase());
+        return (this.sidebarProperties().width ?? 'medium').replace(/^\w/g, (l) => l.toUpperCase());
     }
 
     get containers() {
-        return this.sidebarProperties.containers;
+        return this.sidebarProperties().containers ?? [];
     }
 
     /**

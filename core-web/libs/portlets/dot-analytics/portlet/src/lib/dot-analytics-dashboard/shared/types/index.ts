@@ -9,14 +9,8 @@ import {
 } from '@dotcms/portlets/dot-analytics/data-access';
 
 // Re-export for consumers
-export {
-    AnalyticsChartColors,
-    AnalyticsChartColorVariants,
-    DateRange,
-    PieChartEntry,
-    TimeRange,
-    TimeRangeInput
-};
+export { AnalyticsChartColors, AnalyticsChartColorVariants };
+export type { DateRange, PieChartEntry, TimeRange, TimeRangeInput };
 
 /**
  * Get color properties for a dataset by index.

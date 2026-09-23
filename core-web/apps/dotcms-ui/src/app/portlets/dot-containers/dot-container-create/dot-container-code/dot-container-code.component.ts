@@ -3,12 +3,12 @@ import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
 import { trigger, transition, style, animate } from '@angular/animations';
 import {
     Component,
-    Input,
     OnChanges,
     OnInit,
     SimpleChanges,
     inject,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -62,17 +62,19 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     private dialogService = inject(DialogService);
     private dotMessageService = inject(DotMessageService);
 
-    @Input() fg: FormGroup;
-    @Input() contentTypes: DotCMSContentType[];
+    readonly fg = input.required<FormGroup>();
+    readonly contentTypes = input.required<DotCMSContentType[]>();
 
-    menuItems: MenuItem[];
+    menuItems: MenuItem[] = [];
     activeTabIndex = 0;
     monacoEditors: Record<string, MonacoStandaloneCodeEditor> = {};
-    contentTypeNamesById = {};
+    /** Content type names keyed by id, built from whichever types the container allows. */
+    contentTypeNamesById: Record<string, string> = {};
 
     ngOnInit() {
-        if (this.contentTypes && this.contentTypes.length > 0) {
-            this.contentTypes.forEach(({ id, name }: DotCMSContentType) => {
+        const contentTypes = this.contentTypes();
+        if (contentTypes && contentTypes.length > 0) {
+            contentTypes.forEach(({ id, name }: DotCMSContentType) => {
                 this.contentTypeNamesById[id] = name;
             });
         }
@@ -82,8 +84,8 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.contentTypes?.currentValue?.length > 0) {
-            changes.contentTypes.currentValue.forEach(({ id, name }: DotCMSContentType) => {
+        if (changes['contentTypes']?.currentValue?.length > 0) {
+            changes['contentTypes'].currentValue.forEach(({ id, name }: DotCMSContentType) => {
                 this.contentTypeNamesById[id] = name;
             });
 
@@ -103,19 +105,25 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @memberof DotContentEditorComponent
      */
     get getcontainerStructures(): FormArray {
-        return this.fg.get('containerStructures') as FormArray;
+        return this.fg().get('containerStructures') as FormArray;
     }
 
     /**
      * Handles tab change from p-tabs valueChange event
-     * @param {number} value - The new tab index value
+     * @param {string | number | undefined} value - The new tab index, as `p-tabs` types it
      * @memberof DotContentEditorComponent
      */
-    public handleTabChange(value: number): void {
-        if (value !== 0) {
-            this.updateActiveTabIndex(value);
-            this.focusCurrentEditor(value);
+    public handleTabChange(value: string | number | undefined): void {
+        const index = Number(value);
+
+        // Rejects a non-numeric or absent payload as well as tab 0, which the original
+        // `value !== 0` check already skipped.
+        if (Number.isNaN(index) || index === 0) {
+            return;
         }
+
+        this.updateActiveTabIndex(index);
+        this.focusCurrentEditor(index);
     }
 
     /**
@@ -125,7 +133,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @param {number} [index=null] - number = null
      * @returns false
      */
-    public handleTabClick(event: MouseEvent, index: number = null): boolean {
+    public handleTabClick(event: MouseEvent, index: number | null = null): boolean {
         if (index === 0) {
             event.preventDefault();
             event.stopPropagation();
@@ -142,8 +150,9 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @param {number} [index=null] - number = null
      * @memberof DotContentEditorComponent
      */
-    removeItem(index: number = null): void {
-        if (this.contentTypes.length > 0) {
+    removeItem(index: number | null = null): void {
+        // The default is `null`, which names no tab to remove.
+        if (index !== null && this.contentTypes().length > 0) {
             this.getcontainerStructures.removeAt(index - 1);
             const currentTabIndex = this.findCurrentTabIndex(index);
             this.updateActiveTabIndex(currentTabIndex);
@@ -158,8 +167,16 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      */
     focusCurrentEditor(tabIdx: number) {
         if (tabIdx > 0) {
+            // `.get(...)`, not `.controls[...]`: a `FormArray` element is an `AbstractControl`, which
+            // has no `controls` map — only `FormGroup` does. The id also gates the lookup below,
+            // where an absent one would index `monacoEditors` by `undefined`.
             const contentTypeId =
-                this.getcontainerStructures.controls[tabIdx - 1].get('structureId').value;
+                this.getcontainerStructures.controls[tabIdx - 1].get('structureId')?.value;
+
+            if (!contentTypeId) {
+                return;
+            }
+
             // Tab Panel does not trigger any event after completely rendered.
             // Tab Panel and Monaco-Editor take sometime to render it completely.
             requestAnimationFrame(() => {
@@ -174,7 +191,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @return {*}  {number}
      * @memberof DotContentEditorComponent
      */
-    findCurrentTabIndex(index): number {
+    findCurrentTabIndex(index: number): number {
         // -1 in condition because if it is first tab then no need to minus
         return index - 1 > 0 ? index - 1 : this.getcontainerStructures.length > 0 ? index : 0;
     }
@@ -198,7 +215,12 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
                 onSave: (codeTemplate: string) => {
                     const editor = this.monacoEditors[contentType.structureId];
 
-                    const selections = editor.getSelections();
+                    const selections = editor?.getSelections();
+                    const model = editor?.getModel();
+
+                    if (!selections || !model) {
+                        return;
+                    }
 
                     const editOperation = selections.map((selection) => {
                         return {
@@ -212,7 +234,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
                         };
                     });
 
-                    editor.getModel().pushEditOperations(selections, editOperation, () => {
+                    model.pushEditOperations(selections, editOperation, () => {
                         return null;
                     });
                 }
@@ -225,9 +247,9 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @param monacoInstance - The monaco instance that is created by the component.
      * @memberof DotContentEditorComponent
      */
-    monacoInit(monacoEditor) {
+    monacoInit(monacoEditor: { name: string; editor: MonacoStandaloneCodeEditor }) {
         this.monacoEditors[monacoEditor.name] = monacoEditor.editor;
-        if (this.contentTypes.length === 0) {
+        if (this.contentTypes().length === 0) {
             this.monacoEditors[monacoEditor.name].updateOptions({ readOnly: true });
         }
 
@@ -235,14 +257,15 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     }
 
     private init(): void {
-        this.menuItems = this.getMenuItems(this.contentTypes || []);
+        this.menuItems = this.getMenuItems(this.contentTypes() || []);
 
         // default content type if content type does not exist
-        if (this.getcontainerStructures.length === 0 && this.contentTypes?.length > 0) {
+        const contentTypes = this.contentTypes();
+        if (this.getcontainerStructures.length === 0 && contentTypes?.length > 0) {
             this.getcontainerStructures.push(
                 new FormGroup({
                     code: new FormControl(''),
-                    structureId: new FormControl(this.contentTypes[0].id, [Validators.required])
+                    structureId: new FormControl(contentTypes[0].id, [Validators.required])
                 })
             );
         }

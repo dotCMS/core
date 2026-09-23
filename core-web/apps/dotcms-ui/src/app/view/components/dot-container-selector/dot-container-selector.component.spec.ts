@@ -24,7 +24,7 @@ import {
 
 describe('ContainerSelectorComponent', () => {
     let spectator: Spectator<DotContainerSelectorComponent>;
-    let searchableDropdownComponent: SearchableDropdownComponent | null;
+    let searchableDropdownComponent: SearchableDropdownComponent<DotContainer> | null;
     let containers: DotContainer[];
     let paginatorService: PaginatorService;
 
@@ -92,7 +92,8 @@ describe('ContainerSelectorComponent', () => {
         const searchable = spectator.debugElement.query(
             By.css('[data-testid="searchableDropdown"]')
         );
-        const searchableComponent = searchable.componentInstance as SearchableDropdownComponent;
+        const searchableComponent =
+            searchable.componentInstance as SearchableDropdownComponent<DotContainer>;
 
         expect(searchableComponent.labelPropertyName).toEqual(['name', 'hostName']);
         expect(searchableComponent.multiple).toBe(true);
@@ -102,10 +103,11 @@ describe('ContainerSelectorComponent', () => {
         expect(searchableComponent.rows).toBe(5);
         expect(searchableComponent.width).toBe('fit-content');
 
+        // `persistentPlaceholder` is a real boolean binding, not a static attribute, so it is
+        // asserted through the component instance above rather than here.
         expect(searchable.attributes).toEqual(
             expect.objectContaining({
                 overlayWidth: '440px',
-                persistentPlaceholder: 'true',
                 width: 'fit-content'
             })
         );
@@ -120,9 +122,9 @@ describe('ContainerSelectorComponent', () => {
         spectator.detectChanges();
         searchableDropdownComponent = spectator.debugElement.query(
             By.css('dot-searchable-dropdown')
-        ).componentInstance as SearchableDropdownComponent;
+        ).componentInstance as SearchableDropdownComponent<DotContainer>;
 
-        searchableDropdownComponent.pageChange.emit({
+        searchableDropdownComponent?.pageChange.emit({
             filter: filter,
             first: 10,
             page: page,
@@ -144,9 +146,9 @@ describe('ContainerSelectorComponent', () => {
         spectator.detectChanges();
         searchableDropdownComponent = spectator.debugElement.query(
             By.css('dot-searchable-dropdown')
-        ).componentInstance as SearchableDropdownComponent;
+        ).componentInstance as SearchableDropdownComponent<DotContainer>;
 
-        searchableDropdownComponent.filterChange.emit(filter);
+        searchableDropdownComponent?.filterChange.emit(filter);
 
         tick();
         spectator.fixture.detectChanges(false);
@@ -160,11 +162,11 @@ describe('ContainerSelectorComponent', () => {
         vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(observableOf(containers));
         const searchable = spectator.debugElement.query(
             By.css('[data-testid="searchableDropdown"]')
-        ).componentInstance as SearchableDropdownComponent;
+        ).componentInstance as SearchableDropdownComponent<DotContainer>;
         searchable.pageChange.emit({ filter: '', first: 0 } as PaginationEvent);
         tick();
         spectator.detectChanges();
-        expect(searchable.data[0].identifier).toEqual('427c47a4-c380-439f');
-        expect(searchable.data[1].identifier).toEqual('container/path');
+        expect(searchable.data[0]['identifier']).toEqual('427c47a4-c380-439f');
+        expect(searchable.data[1]['identifier']).toEqual('container/path');
     }));
 });

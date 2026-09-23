@@ -31,10 +31,7 @@ import {
     DotMessagePipe
 } from '@dotcms/ui';
 
-import {
-    DotContainerPropertiesState,
-    DotContainerPropertiesStore
-} from './store/dot-container-properties.store';
+import { DotContainerPropertiesStore } from './store/dot-container-properties.store';
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 import { MonacoEditor } from '../../../../shared/models/monaco-editor/monaco-editor.model';
@@ -80,15 +77,16 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
     readonly #dotRouterService = inject(DotRouterService);
 
     vm$ = this.#store.vm$;
-    editor: MonacoEditor;
-    form: FormGroup;
+    editor!: MonacoEditor;
+    form!: FormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
         this.#store.containerAndStructure$
             .pipe(take(1))
-            .subscribe((state: DotContainerPropertiesState) => {
-                const { container, containerStructures } = state;
+            // Not annotated with the whole state: `containerAndStructure$` selects two fields, and
+            // a wider parameter than the selector emits is what strictFunctionTypes rejects.
+            .subscribe(({ container, containerStructures }) => {
                 this.form = this.fb.group({
                     identifier: new FormControl(container?.identifier ?? ''),
                     title: new FormControl(container?.title ?? '', [Validators.required]),
@@ -213,12 +211,12 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
                 Validators.required,
                 Validators.minLength(1)
             ]);
-            this.form.get('code').clearValidators();
-            this.form.get('code').reset('');
+            this.form.controls['code'].clearValidators();
+            this.form.controls['code'].reset('');
             this.#store.updateContentTypeVisibility(true);
         } else {
-            this.form.get('code').setValidators(Validators.required);
-            this.form.get('containerStructures').clearValidators();
+            this.form.controls['code'].setValidators(Validators.required);
+            this.form.controls['containerStructures'].clearValidators();
         }
 
         this.form.updateValueAndValidity();
@@ -252,17 +250,22 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
 
     /**
      * Opens modal for confirmation.
-     * @param {number} lastValue
+     * @param {number} [lastValue] - Value to restore if the user cancels. The Clear button
+     * passes nothing: it is only reachable while `maxContentlets` is non-zero, so there is
+     * nothing for the reject branch to put back.
      * @memberof DotContainerPropertiesComponent
      */
-    clearContentConfirmationModal(lastValue: number): void {
+    clearContentConfirmationModal(lastValue?: number): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
                 this.clearContentTypesAndCode();
             },
             reject: () => {
-                if (this.form.value.maxContentlets === 0 || !this.form.value.maxContentlets) {
-                    this.form.get('maxContentlets').setValue(lastValue);
+                if (
+                    lastValue !== undefined &&
+                    (this.form.value.maxContentlets === 0 || !this.form.value.maxContentlets)
+                ) {
+                    this.form.controls['maxContentlets'].setValue(lastValue);
                 }
             },
             header: this.dotMessageService.get(
@@ -280,14 +283,14 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
      * @memberof DotContainerPropertiesComponent
      */
     private clearContentTypesAndCode(): void {
-        this.form.get('containerStructures').clearValidators();
-        this.form.get('containerStructures').reset();
-        this.form.get('preLoop').reset();
-        this.form.get('postLoop').reset();
+        this.form.controls['containerStructures'].clearValidators();
+        this.form.controls['containerStructures'].reset();
+        this.form.controls['preLoop'].reset();
+        this.form.controls['postLoop'].reset();
         // clear containerStructures array
         (this.form.get('containerStructures') as FormArray).clear();
-        this.form.get('code').addValidators(Validators.required);
-        this.form.get('maxContentlets').setValue(0);
+        this.form.controls['code'].addValidators(Validators.required);
+        this.form.controls['maxContentlets'].setValue(0);
         this.form.updateValueAndValidity();
 
         this.#store.updateContentTypeAndPrePostLoopVisibility({

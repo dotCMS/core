@@ -36,7 +36,8 @@ import {
 } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
 
-interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
+interface ParsedSelectLazyLoadEvent extends Omit<SelectLazyLoadEvent, 'last'> {
+    last?: number;
     itemsNeeded: number;
 }
 

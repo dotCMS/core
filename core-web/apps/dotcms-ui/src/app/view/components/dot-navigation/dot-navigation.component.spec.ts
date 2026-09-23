@@ -216,7 +216,7 @@ describe('DotNavigationComponent collapsed', () => {
             globalStore.collapseNavigation();
             spectator.detectChanges();
 
-            expect(spectator.debugElement.styles.cssText).toEqual('');
+            expect(spectator.debugElement.styles['cssText']).toEqual('');
         });
     });
 });
@@ -358,7 +358,7 @@ describe('DotNavigationComponent expanded', () => {
         it('should have scroll', () => {
             spectator.detectChanges();
 
-            expect(spectator.debugElement.styles.cssText).toEqual('overflow-y: auto;');
+            expect(spectator.debugElement.styles['cssText']).toEqual('overflow-y: auto;');
         });
     });
 
@@ -397,7 +397,7 @@ describe('DotNavigationComponent expanded', () => {
 
             spectator.component.onMenuClick({
                 originalEvent: {} as unknown as MouseEvent,
-                data: mockMenu
+                data: mockMenu!
             });
 
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();

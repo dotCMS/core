@@ -16,7 +16,13 @@ import { ImageNode } from '../../../nodes';
 import { getEditorElement, getNodeCoords } from '../../../shared';
 import { FloatingButtonComponent } from '../floating-button.component';
 
-export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
+export const setCoords = ({
+    viewCoords,
+    nodeCoords
+}: {
+    viewCoords: DOMRect;
+    nodeCoords: DOMRect;
+}): DOMRect => {
     const offset = 65;
     const { bottom: nodeBottom, left, top } = nodeCoords;
     const { bottom: viewBottom } = viewCoords;
@@ -32,7 +38,15 @@ export const setCoords = ({ viewCoords, nodeCoords }): DOMRect => {
     };
 };
 
-export const DotFloatingButtonPlugin = (options) => {
+export interface DotFloatingButtonPluginProps {
+    pluginKey: PluginKey;
+    editor: Editor;
+    element: HTMLElement;
+    component: ComponentRef<FloatingButtonComponent>;
+    dotUploadFileService: DotUploadFileService;
+}
+
+export const DotFloatingButtonPlugin = (options: DotFloatingButtonPluginProps) => {
     return new Plugin({
         key: options.pluginKey as PluginKey,
         view: (view) => new DotFloatingButtonPluginView({ view, ...options })
@@ -48,12 +62,18 @@ export class DotFloatingButtonPluginView {
     private preventHide = false;
     private $destroy = new Subject<boolean>();
     private dotUploadFileService: DotUploadFileService;
-    private imageUrl: string;
+    private imageUrl = '';
     private initialLabel = 'Import to dotCMS';
     private offset = 10;
 
     /* @Overrrider */
-    constructor({ dotUploadFileService, editor, component, element, view }) {
+    constructor({
+        dotUploadFileService,
+        editor,
+        component,
+        element,
+        view
+    }: DotFloatingButtonPluginProps & { view: EditorView }) {
         this.editor = editor;
         this.element = element;
         this.view = view;
@@ -83,11 +103,12 @@ export class DotFloatingButtonPluginView {
         }
 
         const from = Math.min(...ranges.map((range) => range.$from.pos));
-        const type = doc.nodeAt(from)?.type.name;
+        // Defaults to '' rather than undefined so the `isImage` comparison below still narrows.
+        const type = doc.nodeAt(from)?.type.name ?? '';
         const props = this.editor.getAttributes(ImageNode.name);
         const isImage = type === ImageNode.name;
 
-        if (empty || !isImage || props?.data) {
+        if (empty || !isImage || props?.['data']) {
             this.hide();
 
             return;
@@ -96,15 +117,16 @@ export class DotFloatingButtonPluginView {
         const node = view.nodeDOM(from) as HTMLElement;
         const image = node.querySelector('img');
 
-        this.imageUrl = props?.src;
+        this.imageUrl = props?.['src'] ?? '';
         this.updateButtonLabel(this.initialLabel);
 
         this.createTooltip();
 
         this.tippy?.setProps({
-            maxWidth: image?.width - this.offset || 250,
+            maxWidth: (image?.width ?? 0) - this.offset || 250,
             getReferenceClientRect: () => {
-                const viewCoords = view.dom.parentElement.getBoundingClientRect();
+                // Falls back to the editor element itself when it has no parent yet.
+                const viewCoords = (view.dom.parentElement ?? view.dom).getBoundingClientRect();
                 const nodeCoords = getNodeCoords(node, type);
 
                 return setCoords({ viewCoords, nodeCoords });

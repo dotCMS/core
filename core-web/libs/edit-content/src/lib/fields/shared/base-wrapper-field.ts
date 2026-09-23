@@ -1,6 +1,6 @@
 import { merge } from 'rxjs';
 
-import { afterNextRender, computed, DestroyRef, inject, InputSignal, signal } from '@angular/core';
+import { afterNextRender, computed, DestroyRef, inject, Signal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlContainer, FormControl, TouchedChangeEvent, Validators } from '@angular/forms';
 
@@ -26,8 +26,19 @@ export abstract class BaseWrapperField {
      * store at all. Falling back to "not submitted" there costs nothing and cannot throw.
      */
     protected editContentStore = inject(DotEditContentStore, { optional: true });
-    abstract $field: InputSignal<DotCMSContentTypeField>;
-    abstract $contentlet: InputSignal<DotCMSContentlet>;
+
+    /**
+     * `Signal`, not `InputSignal`: this class only ever *reads* these, and `InputSignal<T>` is
+     * invariant in `T` — declaring one here would force all 17 subclasses to use byte-identical
+     * input types, which they legitimately do not. The custom and JSON fields default `field` to
+     * null, the text area declares both as `input.required<T | null>`, and the other 14 use
+     * `input.required<T>`. `Signal<T>` is covariant, so every one of those satisfies this.
+     *
+     * Nullable because this class's own members already assume it: `$showLabel` returns early on
+     * `!field` and `isRequired` reads `field?.required`.
+     */
+    abstract $field: Signal<DotCMSContentTypeField | null>;
+    abstract $contentlet: Signal<DotCMSContentlet | null>;
 
     /**
      * Whether the field should present itself as being in error.
@@ -112,6 +123,12 @@ export abstract class BaseWrapperField {
         return control.disabled;
     }
 
+    /**
+     * `| null` states what the body always did: `ControlContainer.control` is nullable, `get()`
+     * returns null for an unknown name, and the field itself may not be bound yet. The old
+     * `as FormControl` hid all three — which is why every caller in this class and its subclasses
+     * already checks the result before using it.
+     */
     get formControl(): FormControl | null {
         // `$field` is `input.required` on most subclasses but NOT all: custom-field and json-field
         // both declare it with a `null` default, so destructuring it unguarded throws a TypeError

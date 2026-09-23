@@ -26,8 +26,8 @@ export class DotRippleEffectDirective {
     @HostBinding('style.position')
     position = 'relative';
 
-    private rippleElement: HTMLElement;
-    private rippleSize: RippleSize;
+    private rippleElement!: HTMLElement;
+    private rippleSize!: RippleSize;
     private hostNativeElement: HTMLElement = this.host.nativeElement;
 
     @HostListener('click', ['$event'])

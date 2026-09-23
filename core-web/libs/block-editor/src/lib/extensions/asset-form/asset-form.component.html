@@ -1,29 +1,29 @@
 <p-tabs [value]="activeTab">
-    <p-tablist class="flex items-center flex-1">
-        <p-tab [value]="0" [disabled]="disableTabs" class="flex justify-center gap-2 grow">
+    <p-tablist class="flex flex-1 items-center">
+        <p-tab [value]="0" [disabled]="disableTabs" class="flex grow justify-center gap-2">
             <i class="pi pi-images"></i>
             <span>Library</span>
         </p-tab>
-        <p-tab [value]="1" [disabled]="disableTabs" class="flex justify-center gap-2 grow">
+        <p-tab [value]="1" [disabled]="disableTabs" class="flex grow justify-center gap-2">
             <i class="pi pi-folder"></i>
             <span>{{ 'Upload ' + type }}</span>
         </p-tab>
-        <p-tab [value]="2" [disabled]="disableTabs" class="flex justify-center gap-2 grow">
+        <p-tab [value]="2" [disabled]="disableTabs" class="flex grow justify-center gap-2">
             <i class="pi pi-link"></i>
             <span>{{ type + ' URL' }}</span>
         </p-tab>
     </p-tablist>
     <p-tabpanels>
         <p-tabpanel [value]="0">
-            <div class="flex items-center justify-center h-full w-full">
+            <div class="flex h-full w-full items-center justify-center">
                 <dot-asset-search
                     (addAsset)="onSelectAsset($event)"
                     [type]="type"
-                    [languageId]="languageId" />
+                    [languageId]="languageId.toString()" />
             </div>
         </p-tabpanel>
         <p-tabpanel [value]="1">
-            <div class="flex items-center justify-center h-full w-full">
+            <div class="flex h-full w-full items-center justify-center">
                 <dot-upload-asset
                     (uploadedFile)="onSelectAsset($event)"
                     (preventClose)="onPreventClose($event)"
@@ -32,7 +32,7 @@
             </div>
         </p-tabpanel>
         <p-tabpanel [value]="2">
-            <div class="flex items-center justify-center h-full w-full">
+            <div class="flex h-full w-full items-center justify-center">
                 <dot-external-asset (addAsset)="onSelectAsset($event)" [type]="type" />
             </div>
         </p-tabpanel>

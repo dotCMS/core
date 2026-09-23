@@ -58,14 +58,14 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private dotEventsSocket = inject(DotEventsSocket);
     private dotIframeService = inject(DotIframeService);
 
-    canAccessPortlet: boolean;
+    canAccessPortlet = false;
     url: BehaviorSubject<string> = new BehaviorSubject('');
     isLoading = signal(false);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
-        this.dotRouterService.portletReload$.subscribe((portletId: string) => {
+        this.dotRouterService.portletReload$.subscribe((portletId) => {
             if (this.dotRouterService.isJSPPortlet()) {
                 this.reloadIframePortlet(portletId);
             }
@@ -85,7 +85,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
 
         this.route.data
             .pipe(
-                map((x) => x?.canAccessPortlet),
+                map((x) => x?.['canAccessPortlet']),
                 takeUntil(this.destroy$)
             )
             .subscribe((canAccessPortlet: boolean) => {
@@ -138,7 +138,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private setIframeSrc(): void {
         // We use the query param to load a page in edit mode in the iframe
         const queryUrl$ = this.route.queryParams.pipe(
-            map((x) => x?.url),
+            map((x) => x?.['url']),
             map((url: string) => url)
         );
 
@@ -152,17 +152,21 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     }
 
     private setPortletUrl(): void {
+        const parent = this.route.parent;
+
+        if (!parent) {
+            return;
+        }
+
         const portletId$ = this.route.params.pipe(
-            map((x) => x?.id),
+            map((x) => x?.['id']),
             map((id: string) => id)
         );
 
         portletId$
             .pipe(
                 withLatestFrom(
-                    this.route.parent.url.pipe(
-                        map((urlSegment: UrlSegment[]) => urlSegment[0].path)
-                    )
+                    parent.url.pipe(map((urlSegment: UrlSegment[]) => urlSegment[0].path))
                 ),
                 mergeMap(([id, url]) =>
                     url === 'add'

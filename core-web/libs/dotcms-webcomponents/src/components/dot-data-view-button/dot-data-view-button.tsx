@@ -5,7 +5,7 @@ import { Component, h, Prop } from '@stencil/core';
     styleUrl: 'dot-data-view-button.css'
 })
 export class DotDataViewButton {
-    @Prop() value: string;
+    @Prop() value?: string;
 
     render() {
         return (

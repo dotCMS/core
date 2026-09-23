@@ -170,7 +170,7 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                 const node = doc.nodeAt(from);
                 const link = (event.target as HTMLElement)?.closest('a');
 
-                if (link && node.type.name === ImageNode.name) {
+                if (link && node?.type.name === ImageNode.name) {
                     event.preventDefault();
                     event.stopPropagation();
 
@@ -189,6 +189,11 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
              */
             function hanlderPaste(view: EditorView, event: ClipboardEvent) {
                 const { clipboardData } = event;
+
+                if (!clipboardData) {
+                    return;
+                }
+
                 const { files } = clipboardData;
                 const text = clipboardData.getData('Text') || '';
                 const type = getFileType(files[0]) as EditorAssetTypes;
@@ -229,7 +234,12 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
              * @return {*}
              */
             function hanlderDrop(view: EditorView, event: DragEvent) {
-                const { files } = event.dataTransfer;
+                const files = event.dataTransfer?.files;
+
+                if (!files) {
+                    return;
+                }
+
                 const { length } = files;
                 const file = files[0];
                 const type = getFileType(file) as EditorAssetTypes;
@@ -247,12 +257,17 @@ export const AssetUploader = (injector: Injector, viewContainerRef: ViewContaine
                 event.preventDefault();
                 event.stopPropagation();
                 const { clientX, clientY } = event;
-                const { pos } = view.posAtCoords({
+                const coords = view.posAtCoords({
                     left: clientX,
                     top: clientY
                 });
 
-                uploadAsset({ view, file, position: pos });
+                // Null when the drop lands outside the editor.
+                if (!coords) {
+                    return;
+                }
+
+                uploadAsset({ view, file, position: coords.pos });
             }
 
             return [

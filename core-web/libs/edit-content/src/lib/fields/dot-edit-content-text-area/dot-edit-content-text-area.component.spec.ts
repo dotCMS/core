@@ -42,9 +42,9 @@ const TEXT_AREA_FIELD_MOCK = createFakeTextAreaField({
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 describe('DotEditContentTextAreaComponent', () => {
@@ -90,7 +90,7 @@ describe('DotEditContentTextAreaComponent', () => {
                 }
             );
             spectator.detectChanges();
-            textArea = spectator.query(byTestId(TEXT_AREA_FIELD_MOCK.variable));
+            textArea = spectator.query(byTestId(TEXT_AREA_FIELD_MOCK.variable))!;
         });
 
         it('should have the variable as id', () => {
@@ -122,7 +122,7 @@ describe('DotEditContentTextAreaComponent', () => {
         });
 
         it('should have language variable selector component', () => {
-            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
+            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent)!;
             expect(languageVariableSelector).toBeTruthy();
         });
 
@@ -157,7 +157,7 @@ describe('DotEditContentTextAreaComponent', () => {
             const spy = vi.spyOn(spectator.component, 'onSelectLanguageVariable');
 
             // Get language variable selector component
-            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
+            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent)!;
 
             // Trigger onSelectLanguageVariable event
             const testVariable = '${languageVariable}';

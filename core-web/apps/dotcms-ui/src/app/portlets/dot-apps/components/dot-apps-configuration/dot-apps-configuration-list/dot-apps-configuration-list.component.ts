@@ -40,6 +40,9 @@ export class DotAppsConfigurationListComponent {
      * @memberof DotAppsConfigurationListComponent
      */
     loadNext() {
-        this.loadData.emit({ first: this.siteConfigurations().length, rows: this.itemsPerPage() });
+        this.loadData.emit({
+            first: this.siteConfigurations()?.length ?? 0,
+            rows: this.itemsPerPage()
+        });
     }
 }

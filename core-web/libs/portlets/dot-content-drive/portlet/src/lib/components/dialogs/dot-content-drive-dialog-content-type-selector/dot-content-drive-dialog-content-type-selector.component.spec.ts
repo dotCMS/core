@@ -143,7 +143,7 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
                 .query(byTestId('content-type-selector-create'))
                 ?.querySelector('button');
 
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             // folderPath = hostname + current path (new editor); folderInode = current folder (legacy editor)
             expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, {
@@ -156,13 +156,17 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
         it('should fall back to the current site (no folder) when browsing the root', () => {
             // Root: no path selected and the root node carries an empty inode.
             store.path.mockReturnValue(undefined);
-            store.selectedNode.mockReturnValue({ data: { inode: '' } });
+            // `DotFolderTreeNodeContentData` requires `type`/`path`/`hostname`/`id`; only the empty
+            // inode is what this test is about, so the rest describes the "All folders" root node.
+            store.selectedNode.mockReturnValue({
+                data: { type: 'folder', id: '', inode: '', path: '', hostname: 'demo.dotcms.com' }
+            });
 
             const createButton = spectator
                 .query(byTestId('content-type-selector-create'))
                 ?.querySelector('button');
 
-            spectator.click(createButton);
+            spectator.click(createButton!);
 
             expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, {
                 folderPath: 'demo.dotcms.com',
@@ -177,7 +181,7 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
                 .query(byTestId('content-type-selector-cancel'))
                 ?.querySelector('button');
 
-            spectator.click(cancelButton);
+            spectator.click(cancelButton!);
 
             expect(store.closeDialog).toHaveBeenCalled();
             expect(navigationService.createContent).not.toHaveBeenCalled();

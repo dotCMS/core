@@ -9,7 +9,9 @@ import { DotCopyButtonComponent, DotMessagePipe, DotRelativeDatePipe } from '@do
 
 interface ContentSidebarInformation {
     contentlet: DotCMSContentlet | null;
-    contentType: DotCMSContentType;
+    // Nullable like `contentlet` above: the sidebar renders before the content type resolves.
+    // The template's `@if (contentType)` was already written for it.
+    contentType: DotCMSContentType | null;
     loading: boolean;
     referencesPageCount: string;
 }

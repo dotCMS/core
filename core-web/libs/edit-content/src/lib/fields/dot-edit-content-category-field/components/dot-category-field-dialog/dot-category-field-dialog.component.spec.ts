@@ -72,7 +72,7 @@ describe('DotCategoryFieldDialogComponent', () => {
 
     it('should have the correct configuration for the dialog.', () => {
         const closedDialogSpy = vi.spyOn(spectator.component.closedDialog, 'emit');
-        const dialog = spectator.query(Dialog);
+        const dialog = spectator.query(Dialog)!;
 
         expect(dialog.draggable).toBe(false);
         expect(dialog.resizable).toBe(false);

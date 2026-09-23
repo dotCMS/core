@@ -80,6 +80,16 @@ import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
 /** SVGs route the edit action to the source-code editor instead of the raster image editor. */
 const SVG_MIME_TYPE = 'image/svg+xml';
 
+/**
+ * A generated AI image that actually carries a response.
+ *
+ * `DotGeneratedAIImage.response` is null when generation failed; the AI prompt dialog can close
+ * with such an image, and everything the mapper needs lives under `response`.
+ */
+type GeneratedAIImage = DotGeneratedAIImage & {
+    response: NonNullable<DotGeneratedAIImage['response']>;
+};
+
 @Component({
     selector: 'dot-file-field',
     imports: [
@@ -203,7 +213,7 @@ export class DotFileFieldComponent
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * Signal indicating whether the field has an error.
      *
@@ -258,7 +268,7 @@ export class DotFileFieldComponent
 
         const file = uploaded.file;
 
-        return file.fileName ?? getFileMetadata(file)?.name ?? file.title ?? '';
+        return file['fileName'] ?? getFileMetadata(file)?.name ?? file.title ?? '';
     });
 
     /**
@@ -496,9 +506,9 @@ export class DotFileFieldComponent
         const textUrl =
             uploaded.source === 'temp'
                 ? file.referenceUrl
-                : file['assetVersion'] ||
-                  file['fileAssetVersion'] ||
-                  file[`${fieldVariable}Version`];
+                : ((file as Record<string, unknown>)['assetVersion'] as string) ||
+                  ((file as Record<string, unknown>)['fileAssetVersion'] as string) ||
+                  ((file as Record<string, unknown>)[`${fieldVariable}Version`] as string);
 
         if (!textUrl) {
             this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
@@ -700,7 +710,7 @@ export class DotFileFieldComponent
             }
         });
 
-        this.#dialogRef.onClose
+        this.#dialogRef?.onClose
             .pipe(
                 filter((file) => !!file),
                 takeUntilDestroyed(this.#destroyRef)
@@ -744,9 +754,15 @@ export class DotFileFieldComponent
             style: { 'max-width': '1040px' }
         });
 
-        this.#dialogRef.onClose
+        this.#dialogRef?.onClose
             .pipe(
-                filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
+                // Filtered on `response`, not just the image: the dialog closes with a
+                // `DotGeneratedAIImage` whose `response` is null when generation failed, and
+                // the mapper below reads straight through it.
+                filter(
+                    (selectedImage: DotGeneratedAIImage): selectedImage is GeneratedAIImage =>
+                        !!selectedImage?.response
+                ),
                 map((selectedImage) => this.#mapAIImageToUploadedFile(selectedImage)),
                 takeUntilDestroyed(this.#destroyRef)
             )
@@ -769,7 +785,7 @@ export class DotFileFieldComponent
      * @param selectedImage the AI image returned by the prompt dialog
      * @returns the uploaded file to preview and persist
      */
-    #mapAIImageToUploadedFile(selectedImage: DotGeneratedAIImage): UploadedFile {
+    #mapAIImageToUploadedFile(selectedImage: GeneratedAIImage): UploadedFile {
         const { response } = selectedImage;
         const contentlet = response.contentlet;
 
@@ -786,8 +802,8 @@ export class DotFileFieldComponent
             image: true,
             length: metadata.length,
             mimeType: metadata.contentType,
-            referenceUrl: contentlet.asset,
-            thumbnailUrl: contentlet.asset,
+            referenceUrl: contentlet['asset'],
+            thumbnailUrl: contentlet['asset'],
             metadata
         };
 
@@ -838,7 +854,7 @@ export class DotFileFieldComponent
             }
         });
 
-        this.#dialogRef.onClose
+        this.#dialogRef?.onClose
             .pipe(
                 filter((file) => !!file),
                 takeUntilDestroyed(this.#destroyRef)
@@ -932,7 +948,7 @@ export class DotFileFieldComponent
         const mode = this.$field().fieldType === INPUT_TYPES.Image ? 'image' : 'file';
 
         this.#trackPicker(
-            this.#assetPickerLauncher.open(
+            this.#assetPickerLauncher?.open(
                 // The launcher borrows this field's own `DialogService` so the picker stays scoped
                 // to it — see `ASSET_PICKER_LAUNCHER`.
                 this.#dialogService,
@@ -994,7 +1010,15 @@ export class DotFileFieldComponent
      * close with the same hydrated contentlet, so everything downstream of here — preview,
      * `fileName` auto-fill, the legacy binary-field contract — keeps working either way.
      */
-    #trackPicker(ref: DynamicDialogRef) {
+    #trackPicker(ref: DynamicDialogRef | null | undefined) {
+        // Released here too: PrimeNG returns null rather than opening a duplicate, and without
+        // this the guard below never runs and the button stays dead for the session.
+        if (!ref) {
+            this.#assetPickerPending = false;
+
+            return;
+        }
+
         this.#dialogRef = ref;
 
         // Not filtered on a truthy file: the guard has to be released on *every* close, cancel
@@ -1051,7 +1075,7 @@ export class DotFileFieldComponent
      */
     #lastOnChangeValue: string | null = null;
 
-    override writeValue(value: string): void {
+    override writeValue(value: string | null): void {
         super.writeValue(value);
         this.#originalValue = value ?? null;
         this.#lastOnChangeValue = value ?? null;
@@ -1119,7 +1143,7 @@ export class DotFileFieldComponent
         this.onChange(value);
     });
 
-    readonly handleValueChange = signalMethod<string>((value) => {
+    readonly handleValueChange = signalMethod<string | null>((value) => {
         if (!value) {
             return;
         }

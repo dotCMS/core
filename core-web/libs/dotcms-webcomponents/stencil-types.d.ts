@@ -153,3 +153,13 @@ declare module 'primeng/api' {
     }
 }
 
+
+/**
+ * `@tarekraafat/autocomplete.js` ships no type declarations. Only the constructor is declared,
+ * which is all `dot-autocomplete` uses — it builds one and never keeps the instance.
+ */
+declare module '@tarekraafat/autocomplete.js' {
+    export default class autoComplete {
+        constructor(config: Record<string, unknown>);
+    }
+}

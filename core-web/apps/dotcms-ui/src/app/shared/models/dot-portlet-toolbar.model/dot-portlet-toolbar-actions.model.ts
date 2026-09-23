@@ -1,6 +1,7 @@
 import { MenuItem } from 'primeng/api';
 
 export interface DotPortletToolbarActions {
-    primary: MenuItem[];
+    /** Null when the toolbar shows only a cancel button. */
+    primary: MenuItem[] | null;
     cancel: (event: MouseEvent) => void;
 }

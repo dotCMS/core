@@ -143,7 +143,8 @@ const NAV_ITEMS = [
         label: 'editema.editor.navbar.layout',
         href: 'layout',
         isDisabled: false,
-        tooltip: null,
+        // See the note in `mocks.ts`: `tooltip` is an optional `string`, never `null`.
+        tooltip: undefined,
         id: 'layout'
     },
     {
@@ -667,7 +668,7 @@ describe('DotEmaShellComponent', () => {
             });
 
             it('should have nav bar with items', () => {
-                const navBarComponent = spectator.query(EditEmaNavigationBarComponent);
+                const navBarComponent = spectator.query(EditEmaNavigationBarComponent)!;
 
                 expect(navBarComponent.items()).toEqual(NAV_ITEMS);
             });
@@ -1152,7 +1153,7 @@ describe('DotEmaShellComponent', () => {
             it('should reload content from dialog', () => {
                 const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
 
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
+                spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', undefined);
 
                 expect(reloadSpy).toHaveBeenCalled();
             });
@@ -1410,8 +1411,10 @@ describe('DotEmaShellComponent', () => {
                             title: 'Page Title',
                             identifier: 'page-id'
                         },
+                        // `urlContentMap` is optional on the asset, not nullable — and null is
+                        // exactly the absence this test is named for.
                         urlContentMap: null
-                    })
+                    }) as unknown as ReturnType<DotPageApiService['get']>
                 );
 
                 mockGlobalStore.addNewBreadcrumb.mockClear();
@@ -1514,7 +1517,7 @@ describe('DotEmaShellComponent', () => {
             // and the banner renders as an empty colored box with nothing inside.
             expect(spectator.query(byTestId('message'))).not.toBeNull();
 
-            const content = spectator.query(byTestId('message-content'));
+            const content = spectator.query(byTestId('message-content'))!;
             expect(content).not.toBeNull();
             expect(content.querySelector('button')).not.toBeNull();
 
@@ -1525,7 +1528,7 @@ describe('DotEmaShellComponent', () => {
             mockLockedPage({ canLock: true });
             await detectChangesAndFlush();
 
-            const content = spectator.query(byTestId('message-content'));
+            const content = spectator.query(byTestId('message-content'))!;
             expect(content.querySelector('button')).not.toBeNull();
         });
 
@@ -1533,7 +1536,7 @@ describe('DotEmaShellComponent', () => {
             mockLockedPage({ canLock: false });
             await detectChangesAndFlush();
 
-            const content = spectator.query(byTestId('message-content'));
+            const content = spectator.query(byTestId('message-content'))!;
             expect(content.querySelector('button')).toBeNull();
         });
 
@@ -1555,7 +1558,7 @@ describe('DotEmaShellComponent', () => {
             await spectator.fixture.whenStable();
             spectator.detectChanges();
 
-            const body = spectator.query('.dot-ema-shell__body');
+            const body = spectator.query('.dot-ema-shell__body')!;
             expect(body).not.toBeNull();
             expect(body.querySelector('[data-testid="ema-nav-bar"]')).not.toBeNull();
         });
@@ -1577,8 +1580,8 @@ describe('DotEmaShellComponent', () => {
             await spectator.fixture.whenStable();
             spectator.detectChanges();
 
-            const message = spectator.query(byTestId('message'));
-            const body = spectator.query('.dot-ema-shell__body');
+            const message = spectator.query(byTestId('message'))!;
+            const body = spectator.query('.dot-ema-shell__body')!;
 
             expect(message).not.toBeNull();
             expect(body).not.toBeNull();
@@ -1897,7 +1900,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 const menuItems = spectator.component['$menuItems']();
-                const layoutItem = menuItems.find((item) => item.id === 'layout');
+                const layoutItem = menuItems.find((item) => item.id === 'layout')!;
 
                 expect(layoutItem.isDisabled).toBe(true);
             });
@@ -1915,7 +1918,7 @@ describe('DotEmaShellComponent', () => {
                 spectator.detectChanges();
 
                 const menuItems = spectator.component['$menuItems']();
-                const layoutItem = menuItems.find((item) => item.id === 'layout');
+                const layoutItem = menuItems.find((item) => item.id === 'layout')!;
 
                 expect(layoutItem.tooltip).toBe(
                     'editema.editor.navbar.layout.tooltip.cannot.edit.advanced.template'
@@ -1933,7 +1936,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(seoParams).toEqual({
                     siteId: MOCK_RESPONSE_HEADLESS.site.identifier,
-                    languageId: MOCK_RESPONSE_HEADLESS.viewAs.language.id,
+                    languageId: MOCK_RESPONSE_HEADLESS.viewAs!.language.id,
                     currentUrl: expect.stringContaining('/'),
                     requestHostName: expect.any(String)
                 });

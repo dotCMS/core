@@ -200,7 +200,7 @@ describe('DotSidebarAccordionComponent', () => {
 
             // Click on tab2 header
             const tab2Header = spectator.queryAll('.accordion-header')[1];
-            spectator.click(tab2Header);
+            spectator.click(tab2Header!);
             spectator.detectChanges();
 
             // DOM should show tab2 as active
@@ -519,7 +519,7 @@ describe('DotSidebarAccordionComponent', () => {
                 '[data-testid="tab1-header-button"]'
             );
             expect(headerButton).toBeTruthy();
-            spectatorWithHeaderContent.click(headerButton);
+            spectatorWithHeaderContent.click(headerButton!);
             spectatorWithHeaderContent.detectChanges();
 
             // Tab should not be active
@@ -540,7 +540,7 @@ describe('DotSidebarAccordionComponent', () => {
                 '.accordion-tab:nth-child(1) .accordion-header__left'
             );
             expect(headerLeft).toBeTruthy();
-            spectatorWithHeaderContent.click(headerLeft);
+            spectatorWithHeaderContent.click(headerLeft!);
             spectatorWithHeaderContent.detectChanges();
 
             // Tab should be active
@@ -559,7 +559,7 @@ describe('DotSidebarAccordionComponent', () => {
                 '.accordion-tab:nth-child(1) .accordion-header__left'
             );
             expect(headerLeft).toBeTruthy();
-            spectatorWithHeaderContent.click(headerLeft);
+            spectatorWithHeaderContent.click(headerLeft!);
             spectatorWithHeaderContent.detectChanges();
 
             // Header content should still be there
@@ -573,7 +573,7 @@ describe('DotSidebarAccordionComponent', () => {
                 '.accordion-tab:nth-child(2) .accordion-header__left'
             );
             expect(tab2HeaderLeft).toBeTruthy();
-            spectatorWithHeaderContent.click(tab2HeaderLeft);
+            spectatorWithHeaderContent.click(tab2HeaderLeft!);
             spectatorWithHeaderContent.detectChanges();
 
             // Both tabs should maintain their header content
@@ -592,7 +592,7 @@ describe('DotSidebarAccordionComponent', () => {
                 '.accordion-tab:nth-child(2) .accordion-header__right span'
             );
             expect(headerSpan).toBeTruthy();
-            spectatorWithHeaderContent.click(headerSpan);
+            spectatorWithHeaderContent.click(headerSpan!);
             spectatorWithHeaderContent.detectChanges();
 
             // Tab should not be active
@@ -604,7 +604,7 @@ describe('DotSidebarAccordionComponent', () => {
                 '[data-testid="tab2-header-button"]'
             );
             expect(headerButton).toBeTruthy();
-            spectatorWithHeaderContent.click(headerButton);
+            spectatorWithHeaderContent.click(headerButton!);
             spectatorWithHeaderContent.detectChanges();
 
             // Button click should be registered

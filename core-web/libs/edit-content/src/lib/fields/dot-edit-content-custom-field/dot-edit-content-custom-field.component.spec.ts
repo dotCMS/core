@@ -398,13 +398,13 @@ describe('DotEditContentCustomFieldComponent', () => {
             const formGroup = renderRequiredField();
 
             const control = formGroup.get(REQUIRED_FIELD.variable);
-            control.setErrors({ required: true });
+            control!.setErrors({ required: true });
             // Touching no longer surfaces the error: it is gated on a save or publish attempt.
-            control.markAsTouched();
+            control!.markAsTouched();
             submitAttempted.set(true);
             spectator.detectChanges();
 
-            const errorEl = spectator.query('small.p-field-error');
+            const errorEl = spectator.query('small.p-field-error')!;
             expect(errorEl).toBeTruthy();
             expect(errorEl.textContent.trim()).toBe('dot.edit.content.form.field.required');
         });
@@ -414,14 +414,14 @@ describe('DotEditContentCustomFieldComponent', () => {
             submitAttempted.set(true);
 
             const control = formGroup.get(REQUIRED_FIELD.variable);
-            control.setErrors({ required: true });
-            control.markAsTouched();
+            control!.setErrors({ required: true });
+            control!.markAsTouched();
             spectator.detectChanges();
 
             expect(spectator.query('small.p-field-error')).toBeTruthy();
 
-            control.setValue('something');
-            control.setErrors(null);
+            control!.setValue('something');
+            control!.setErrors(null);
             spectator.detectChanges();
 
             expect(spectator.query('small.p-field-error')).toBeNull();

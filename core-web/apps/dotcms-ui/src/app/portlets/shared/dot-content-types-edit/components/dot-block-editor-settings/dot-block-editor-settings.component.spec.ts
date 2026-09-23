@@ -11,7 +11,7 @@ import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSContentTypeFieldVariable } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockFieldVariables } from '@dotcms/utils-testing';
 
 import { DotBlockEditorSettingsComponent } from './dot-block-editor-settings.component';
@@ -49,7 +49,7 @@ const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
     id: 'f965a51b-130a-435f-b646-41e07d685363',
     name: 'testField',
     clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
-} as unknown;
+};
 
 const CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
     ...MOCK_FIELD,
@@ -72,8 +72,8 @@ const CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
                 ]
             })
         }
-    ]
-} as unknown;
+    ] as DotCMSContentTypeFieldVariable[]
+};
 
 const CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK: Partial<DotCMSContentTypeField> = {
     ...MOCK_FIELD,
@@ -113,13 +113,15 @@ const CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK: Partial<DotCMSContentTypeField> = {
                 ]
             })
         }
-    ]
-} as unknown;
+    ] as DotCMSContentTypeFieldVariable[]
+};
 
 const MALFORMED_CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
     ...MOCK_FIELD,
-    fieldVariables: [{ key: 'customBlocks', value: '{ not json' }]
-} as unknown;
+    fieldVariables: [
+        { key: 'customBlocks', value: '{ not json' }
+    ] as DotCMSContentTypeFieldVariable[]
+};
 
 describe('DotBlockEditorSettingsComponent', () => {
     describe('with existing variables', () => {
@@ -171,7 +173,7 @@ describe('DotBlockEditorSettingsComponent', () => {
             const value = ['orderList', 'unorderList', 'table'];
             fixture.detectChanges();
             const selector = de.query(By.css('p-multiselect'));
-            expect(component.form.get('allowedBlocks').value).toEqual(value);
+            expect(component.form.get('allowedBlocks')!.value).toEqual(value);
             expect(selector).toBeTruthy();
         });
 
@@ -188,7 +190,7 @@ describe('DotBlockEditorSettingsComponent', () => {
         it('should emit valid output on form change', () => {
             vi.spyOn(component.$valid, 'emit');
             fixture.detectChanges();
-            component.form.get('allowedBlocks').setValue(['codeblock']);
+            component.form.get('allowedBlocks')!.setValue(['codeblock']);
             expect(component.$valid.emit).toHaveBeenCalled();
         });
 
@@ -206,7 +208,7 @@ describe('DotBlockEditorSettingsComponent', () => {
             mockFieldVariablesServiceWithData.delete.mockReturnValue(of(mockFieldVariables[0]));
             vi.spyOn(component.$save, 'emit');
             fixture.detectChanges();
-            component.form.get('allowedBlocks').setValue([]);
+            component.form.get('allowedBlocks')!.setValue([]);
             component.saveSettings();
             expect(dotFieldVariableService.delete).toHaveBeenCalled();
             expect(component.$save.emit).toHaveBeenCalled();
@@ -292,12 +294,12 @@ describe('DotBlockEditorSettingsComponent', () => {
 
         it('should not setup form values when no variables exist', () => {
             fixture.detectChanges();
-            expect(component.form.get('allowedBlocks').value).toBe(null);
+            expect(component.form.get('allowedBlocks')!.value).toBe(null);
         });
 
         it('should not call save or delete when is empty and no previous variable exist', () => {
             fixture.detectChanges();
-            component.form.get('allowedBlocks').setValue([]);
+            component.form.get('allowedBlocks')!.setValue([]);
             component.saveSettings();
             expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
             expect(dotFieldVariableService.save).not.toHaveBeenCalled();
@@ -307,7 +309,7 @@ describe('DotBlockEditorSettingsComponent', () => {
             fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
             fixture.detectChanges();
 
-            component.form.get('allowedBlocks').setValue(['customGallery']);
+            component.form.get('allowedBlocks')!.setValue(['customGallery']);
             component.saveSettings();
 
             expect(dotFieldVariableService.save).toHaveBeenCalledWith(
@@ -355,8 +357,8 @@ describe('DotBlockEditorSettingsComponent', () => {
             const options = component.settingsMap.allowedBlocks.options;
             const paragraphOption = options.find(
                 ({ label, code }) =>
-                    code.trim().toLowerCase() === 'paragraph' ||
-                    label.trim().toLowerCase() === 'paragraph'
+                    code?.trim().toLowerCase() === 'paragraph' ||
+                    label?.trim().toLowerCase() === 'paragraph'
             );
 
             expect(paragraphOption).not.toBeDefined();

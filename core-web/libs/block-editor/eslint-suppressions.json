@@ -1,0 +1,67 @@
+{
+  "src/lib/NodeViewRenderer.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 11
+    }
+  },
+  "src/lib/components/dot-block-editor/dot-block-editor.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 6
+    }
+  },
+  "src/lib/components/dot-editor-count-bar/dot-editor-count-bar.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/lib/extensions/asset-form/asset-form.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 5
+    }
+  },
+  "src/lib/extensions/asset-form/components/dot-external-asset/dot-external-asset.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/extensions/asset-form/components/dot-upload-asset/components/dot-asset-preview/dot-asset-preview.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/lib/extensions/asset-form/components/dot-upload-asset/dot-upload-asset.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/extensions/asset-uploader/components/upload-placeholder/upload-placeholder.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/extensions/floating-button/floating-button.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/shared/components/empty-message/empty-message.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/lib/shared/components/suggestion-list/components/suggestions-list-item/suggestions-list-item.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 7
+    }
+  },
+  "src/lib/shared/components/suggestion-list/suggestion-list.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/lib/shared/components/suggestions/suggestions.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 7
+    }
+  }
+}

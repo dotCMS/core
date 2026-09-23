@@ -48,7 +48,17 @@ export class DotImageEditorPanelsComponent {
     }
 
     /** Updates the open-section set from the accordion (also triggers the save effect). */
-    protected onOpenPanelsChange(value: string[]): void {
-        this.$openPanels.set(value ?? []);
+    protected onOpenPanelsChange(
+        value: string | number | string[] | number[] | null | undefined
+    ): void {
+        // Multi-mode accordions emit an array; the scalar and absent cases are normalised here
+        // rather than trusted, which is what the original `?? []` was already reaching for.
+        if (value == null) {
+            this.$openPanels.set([]);
+
+            return;
+        }
+
+        this.$openPanels.set((Array.isArray(value) ? value : [value]).map(String));
     }
 }

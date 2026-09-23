@@ -25,10 +25,11 @@ export class RemoveConfirmDialogComponent {
     private confirmationService = inject(ConfirmationService);
     private dotMessagePipe = inject(DotMessagePipe);
 
-    @Input() skipConfirmation: boolean;
+    @Input() skipConfirmation = false;
     @Output() deleteConfirmed: EventEmitter<void> = new EventEmitter();
     @Output() deleteRejected: EventEmitter<void> = new EventEmitter();
-    private currentPopup: ConfirmationService;
+    /** Null when no popup is open; `onEscapePress` clears it back to null. */
+    private currentPopup: ConfirmationService | null = null;
 
     @HostListener('document:keydown.escape')
     onEscapePress() {
@@ -45,7 +46,7 @@ export class RemoveConfirmDialogComponent {
         } else {
             this.currentPopup = this.confirmationService.confirm({
                 closeOnEscape: true,
-                target: event.target,
+                target: event.target ?? undefined,
                 message: this.dotMessagePipe.transform(
                     'dot.template.builder.comfirmation.popup.message'
                 ),

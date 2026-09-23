@@ -68,9 +68,9 @@ export class ContentTypesLayoutComponent implements OnInit {
     $contentTypeNameInput = viewChild.required<ElementRef>('contentTypeNameInput');
     $dotEditInline = viewChild.required<DotInlineEditComponent>('dotEditInline');
 
-    permissionURL: string;
-    pushHistoryURL: string;
-    contentTypeNameInputSize: number;
+    permissionURL!: string;
+    pushHistoryURL!: string;
+    contentTypeNameInputSize!: number;
     readonly $showStyleEditorTab = signal<boolean>(
         this.#route.snapshot.data['featuredFlags']?.[FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR] ??
             false
@@ -81,7 +81,7 @@ export class ContentTypesLayoutComponent implements OnInit {
     readonly $activeTab = signal(this.#route.firstChild?.snapshot.url[0]?.path ?? 'fields');
     readonly $addToMenuContentType = signal(false);
 
-    actions: MenuItem[];
+    actions: MenuItem[] = [];
 
     /** Context menu items derived from the current content type. */
     readonly $menuItems = computed<MenuItem[]>(() => {
@@ -166,7 +166,7 @@ export class ContentTypesLayoutComponent implements OnInit {
      * @memberof ContentTypesLayoutComponent
      */
     editInlineActivate(event: MouseEvent): void {
-        this.contentTypeNameInputSize = event.target['offsetWidth'] + 20;
+        this.contentTypeNameInputSize = (event.target as HTMLElement).offsetWidth + 20;
     }
 
     /**
@@ -181,7 +181,7 @@ export class ContentTypesLayoutComponent implements OnInit {
         } else if (event.key === 'Escape') {
             this.$dotEditInline().hideContent();
         } else {
-            const newInputSize = event.target['value'].length * 8 + 22;
+            const newInputSize = (event.target as HTMLInputElement).value.length * 8 + 22;
             this.contentTypeNameInputSize = newInputSize > 485 ? 485 : newInputSize;
         }
     }

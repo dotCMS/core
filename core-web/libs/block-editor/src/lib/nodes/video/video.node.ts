@@ -41,22 +41,22 @@ export const VideoNode = Node.create({
             src: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('src'),
-                renderHTML: (attributes) => ({ src: attributes.src })
+                renderHTML: (attributes) => ({ src: attributes['src'] })
             },
             mimeType: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('mimeType'),
-                renderHTML: (attributes) => ({ mimeType: attributes.mimeType })
+                renderHTML: (attributes) => ({ mimeType: attributes['mimeType'] })
             },
             width: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('width'),
-                renderHTML: (attributes) => ({ width: attributes.width })
+                renderHTML: (attributes) => ({ width: attributes['width'] })
             },
             height: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('height'),
-                renderHTML: (attributes) => ({ height: attributes.height })
+                renderHTML: (attributes) => ({ height: attributes['height'] })
             },
             orientation: {
                 default: null,
@@ -68,7 +68,7 @@ export const VideoNode = Node.create({
             data: {
                 default: null,
                 parseHTML: (element) => element.getAttribute('data'),
-                renderHTML: (attributes) => ({ data: JSON.stringify(attributes.data) })
+                renderHTML: (attributes) => ({ data: JSON.stringify(attributes['data']) })
             }
         };
     },

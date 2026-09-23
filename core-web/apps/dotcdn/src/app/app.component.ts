@@ -6,6 +6,7 @@ import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
 import { UIChart } from 'primeng/chart';
+import { SelectChangeEvent } from 'primeng/select';
 
 import { take } from 'rxjs/operators';
 
@@ -25,8 +26,8 @@ export class AppComponent implements OnInit {
     private fb = inject(UntypedFormBuilder);
     private dotCdnStore = inject(DotCDNStore);
 
-    @ViewChild('chart', { static: true }) chart: UIChart;
-    purgeZoneForm: UntypedFormGroup;
+    @ViewChild('chart', { static: true }) chart!: UIChart;
+    purgeZoneForm!: UntypedFormGroup;
     periodValues: SelectItem[] = [
         { label: 'Last 15 days', value: ChartPeriod.Last15Days },
         { label: 'Last 30 days', value: ChartPeriod.Last30Days },
@@ -38,7 +39,7 @@ export class AppComponent implements OnInit {
     vmPurgeLoaders$: Observable<Pick<DotCDNState, 'isPurgeUrlsLoading' | 'isPurgeZoneLoading'>> =
         this.dotCdnStore.vmPurgeLoaders$;
     chartHeight = '25rem';
-    options: CdnChartOptions;
+    options!: CdnChartOptions;
 
     ngOnInit(): void {
         this.setChartOptions();
@@ -54,8 +55,8 @@ export class AppComponent implements OnInit {
      * @param {*} event
      * @memberof AppComponent
      */
-    changePeriod(element: HTMLTextAreaElement): void {
-        this.dotCdnStore.getChartStats(element.value);
+    changePeriod(event: SelectChangeEvent): void {
+        this.dotCdnStore.getChartStats(event.value);
     }
 
     /**
@@ -74,9 +75,9 @@ export class AppComponent implements OnInit {
      */
     purgeUrls(): void {
         const urls: string[] = this.purgeZoneForm
-            .get('purgeUrlsTextArea')
+            .get('purgeUrlsTextArea')!
             .value.split('\n')
-            .map((url) => url.trim());
+            .map((url: string) => url.trim());
 
         this.dotCdnStore
             .purgeCDNCache(urls)
@@ -109,7 +110,7 @@ export class AppComponent implements OnInit {
                     display: true,
                     position: 'left',
                     ticks: {
-                        callback: function (value: number): string {
+                        callback: function (value: string | number): string {
                             return value.toString() + 'MB';
                         }
                     }
@@ -131,10 +132,10 @@ export class AppComponent implements OnInit {
             scales: {
                 ...defaultOptions.scales,
                 x: {
-                    ...defaultOptions.scales.x,
+                    ...defaultOptions.scales?.['x'],
                     ticks: {
-                        callback: (value: number): string => {
-                            return Math.round(value).toString();
+                        callback: (value: string | number): string => {
+                            return Math.round(Number(value)).toString();
                         }
                     }
                 }

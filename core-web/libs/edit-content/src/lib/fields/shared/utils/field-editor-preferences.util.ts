@@ -56,8 +56,10 @@ export enum DisabledEditorType {
 export interface DisabledEditorEntry {
     fieldVariable: string;
     editorType: DisabledEditorType | null;
-    /** The full entry string as it appears in disabledWYSIWYG array */
-    fullEntry: string;
+    /** The full entry string as it appears in disabledWYSIWYG array, or null when there was no
+     *  entry to parse — `parseDisabledEditorEntry` echoes its input back on that path, and a spec
+     *  asserts `fullEntry: null`. */
+    fullEntry: string | null;
 }
 
 /**
@@ -71,7 +73,9 @@ export interface DisabledEditorEntry {
  * @param entry - The disabledWYSIWYG entry string to parse
  * @returns Parsed entry with field variable and editor type
  */
-export const parseDisabledEditorEntry = (entry: string): DisabledEditorEntry => {
+// Nullable: the guard on the next line was already written for a missing entry, and a spec
+// exercises it with null.
+export const parseDisabledEditorEntry = (entry: string | null): DisabledEditorEntry => {
     if (!entry || typeof entry !== 'string') {
         return { fieldVariable: '', editorType: null, fullEntry: entry };
     }
