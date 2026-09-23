@@ -9,6 +9,17 @@ import { checkSdkCompatibility } from '../../utils/sdk-compatibility';
 // Mock fetch globally
 global.fetch = vi.fn();
 
+/** Awaits a promise that must reject and returns its rejection as a DotHttpError. */
+async function captureError(promise: Promise<unknown>): Promise<DotHttpError> {
+    try {
+        await promise;
+    } catch (error) {
+        return error as DotHttpError;
+    }
+
+    throw new Error('Expected the request to reject, but it resolved');
+}
+
 vi.mock('../../utils/sdk-compatibility', () => ({
     checkSdkCompatibility: vi.fn()
 }));
@@ -65,23 +76,74 @@ describe('FetchHttpClient', () => {
                 expect(result).toEqual(mockResponse);
             });
 
-            it('should handle non-JSON responses', async () => {
-                const mockHeaders = new Headers({
-                    'content-type': 'text/plain'
-                });
-
-                const mockResponse = {
+            it('should reject a successful response whose content type is not JSON', async () => {
+                mockFetch.mockResolvedValueOnce({
                     ok: true,
-                    headers: mockHeaders,
-                    text: vi.fn().mockResolvedValue('plain text response')
-                };
+                    status: 200,
+                    statusText: 'OK',
+                    url: 'https://api.example.com/test',
+                    redirected: false,
+                    headers: new Headers({ 'content-type': 'text/html; charset=utf-8' }),
+                    text: vi.fn().mockResolvedValue('<html>Not dotCMS</html>')
+                } as unknown as Response);
 
-                mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
+                const error = await captureError(
+                    httpClient.request('https://api.example.com/test')
+                );
 
-                const result = await httpClient.request('https://api.example.com/test');
+                expect(error).toBeInstanceOf(DotHttpError);
+                // Never a 2xx on an error: downstream code forwards error.status as the HTTP
+                // status of its own response. The real status stays in the message.
+                expect(error.status).toBe(502);
+                expect(error.statusText).toBe('Bad Gateway');
+                expect(error.message).toContain('(HTTP 200)');
+                expect(error.data).toBe('<html>Not dotCMS</html>');
+                expect(error.message).toContain('https://api.example.com/test');
+                expect(error.message).toContain("'text/html; charset=utf-8'");
+                expect(error.message).toContain('not JSON');
+                expect(error.message).toContain('dotcmsUrl');
+            });
 
-                expect(mockFetch).toHaveBeenCalledWith('https://api.example.com/test', undefined);
-                expect(result).toBe(mockResponse);
+            it('should name both URLs when a successful non-JSON response came from another origin', async () => {
+                // e.g. an SSO proxy redirecting the API call to its login page
+                mockFetch.mockResolvedValueOnce({
+                    ok: true,
+                    status: 200,
+                    statusText: 'OK',
+                    url: 'https://login.example.com/sso',
+                    redirected: true,
+                    headers: new Headers({ 'content-type': 'text/html' }),
+                    text: vi.fn().mockResolvedValue('<form>Sign in</form>')
+                } as unknown as Response);
+
+                const error = await captureError(
+                    httpClient.request('https://api.example.com/api/v1/nav/')
+                );
+
+                expect(error).toBeInstanceOf(DotHttpError);
+                expect(error.message).toContain("'https://api.example.com/api/v1/nav/'");
+                expect(error.message).toContain("'https://login.example.com/sso'");
+                expect(error.message).toContain('dotcmsUrl');
+            });
+
+            it('should name the final URL when a successful non-JSON response came from a same-origin redirect', async () => {
+                // e.g. the host bouncing an unauthenticated API call to its own login page
+                mockFetch.mockResolvedValueOnce({
+                    ok: true,
+                    status: 200,
+                    statusText: 'OK',
+                    url: 'https://api.example.com/login',
+                    redirected: true,
+                    headers: new Headers({ 'content-type': 'text/html' }),
+                    text: vi.fn().mockResolvedValue('<form>Sign in</form>')
+                } as unknown as Response);
+
+                const error = await captureError(
+                    httpClient.request('https://api.example.com/api/v1/nav/')
+                );
+
+                expect(error.message).toContain("'https://api.example.com/login'");
+                expect(error.message).not.toContain('a different origin');
             });
 
             it('should handle responses without content-type header', async () => {
@@ -239,6 +301,74 @@ describe('FetchHttpClient', () => {
                 }
             });
 
+            it('should name the requested URL, the final URL and dotcmsUrl when a failed request was redirected to another origin', async () => {
+                // The demo.dotcms.com case: http:// is 301'd to https://, the POST does
+                // not survive the hop, and the server answers 500 with an empty HTML body.
+                mockFetch.mockResolvedValueOnce({
+                    ok: false,
+                    status: 500,
+                    statusText: 'Internal Server Error',
+                    url: 'https://demo.dotcms.com/api/v1/graphql',
+                    redirected: true,
+                    headers: new Headers({ 'content-type': 'text/html' }),
+                    text: vi.fn().mockResolvedValue('')
+                } as unknown as Response);
+
+                const error = await captureError(
+                    httpClient.request('http://demo.dotcms.com/api/v1/graphql', { method: 'POST' })
+                );
+
+                expect(error).toBeInstanceOf(DotHttpError);
+                expect(error.status).toBe(500);
+                expect(error.statusText).toBe('Internal Server Error');
+                expect(error.message).toMatch(/^HTTP 500: Internal Server Error/);
+                expect(error.message).toContain("'http://demo.dotcms.com/api/v1/graphql'");
+                expect(error.message).toContain("'https://demo.dotcms.com/api/v1/graphql'");
+                expect(error.message).toContain('dotcmsUrl');
+            });
+
+            it('should not blame dotcmsUrl when a failed request was redirected within the same origin', async () => {
+                mockFetch.mockResolvedValueOnce({
+                    ok: false,
+                    status: 500,
+                    statusText: 'Internal Server Error',
+                    url: 'https://demo.dotcms.com/api/v2/graphql',
+                    redirected: true,
+                    headers: new Headers({ 'content-type': 'application/json' }),
+                    json: vi.fn().mockResolvedValue({ message: 'boom' })
+                } as unknown as Response);
+
+                const error = await captureError(
+                    httpClient.request('https://demo.dotcms.com/api/v1/graphql')
+                );
+
+                expect(error.message).toBe('HTTP 500: Internal Server Error');
+            });
+
+            it('should report a non-JSON content type on a failed response', async () => {
+                // e.g. a proxy or load balancer answering in front of dotCMS
+                mockFetch.mockResolvedValueOnce({
+                    ok: false,
+                    status: 502,
+                    statusText: 'Bad Gateway',
+                    url: 'https://api.example.com/test',
+                    redirected: false,
+                    headers: new Headers({ 'content-type': 'text/html' }),
+                    text: vi.fn().mockResolvedValue('<html>502 Bad Gateway</html>')
+                } as unknown as Response);
+
+                const error = await captureError(
+                    httpClient.request('https://api.example.com/test')
+                );
+
+                expect(error).toBeInstanceOf(DotHttpError);
+                expect(error.status).toBe(502);
+                expect(error.data).toBe('<html>502 Bad Gateway</html>');
+                expect(error.message).toMatch(/^HTTP 502: Bad Gateway/);
+                expect(error.message).toContain("'text/html'");
+                expect(error.message).toContain('not JSON');
+            });
+
             it('should include response headers in HttpError', async () => {
                 const mockHeaders = new Headers({
                     'content-type': 'application/json',
@@ -303,22 +433,21 @@ describe('FetchHttpClient', () => {
         });
 
         describe('edge cases', () => {
-            it('should handle responses with malformed content-type', async () => {
-                const mockHeaders = new Headers({
-                    'content-type': 'invalid-content-type'
-                });
-
-                const mockResponse = {
+            it('should reject a successful response with a malformed content-type', async () => {
+                mockFetch.mockResolvedValueOnce({
                     ok: true,
-                    headers: mockHeaders,
+                    status: 200,
+                    statusText: 'OK',
+                    headers: new Headers({ 'content-type': 'invalid-content-type' }),
                     text: vi.fn().mockResolvedValue('response with invalid content-type')
-                };
+                } as unknown as Response);
 
-                mockFetch.mockResolvedValueOnce(mockResponse as unknown as Response);
+                const error = await captureError(
+                    httpClient.request('https://api.example.com/test')
+                );
 
-                const result = await httpClient.request('https://api.example.com/test');
-
-                expect(result).toBe(mockResponse);
+                expect(error).toBeInstanceOf(DotHttpError);
+                expect(error.message).toContain("'invalid-content-type'");
             });
 
             it('should handle responses with JSON content-type but non-JSON body', async () => {
