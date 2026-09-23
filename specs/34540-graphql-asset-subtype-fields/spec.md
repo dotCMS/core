@@ -293,10 +293,13 @@ and confirm they match the asset's own record.
     the asset field then fails validation with an error naming it — loud, never different data —
     while the customer's own property keeps working through its type and the general value stays
     reachable through the binary.
-  - Creating a **new** asset-type property whose name and type would collide incompatibly MUST be
-    refused when the property is saved, as dotCMS already refuses properties that collide with the
-    general content properties. The build-time rule above exists for data that predates this
-    feature, which cannot be refused retroactively.
+  - A **new** asset-type property whose variable is generated from its name MUST be steered away
+    from an incompatible collision (a text property called "Size" gets `size1`), the same way
+    dotCMS already steers generated variables away from the general content properties. A variable
+    chosen explicitly is not changed; the build-time rule above covers it, together with data that
+    predates this feature.
+  - Every incompatible collision MUST be logged as a warning at schema build, naming the content
+    type and the property, so an administrator can find and rename it.
 - **FR-022**: Permission-restricted content MUST NOT leak through this feature:
   - Property values, and the concrete type reported by `__typename`, are only ever returned for an
     asset the caller can read (FR-008); an unreadable asset answers `null` (FR-019).
