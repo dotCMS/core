@@ -232,11 +232,15 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
   - `NOT_CONFIGURED` — no analytics configuration has been set up for the site.
   - `CONFIGURATION_ERROR` — configuration exists but is incomplete (missing required
     credentials) or the analytics backend is unreachable.
+  The auth model of the current catch-all MUST be preserved: a backend user is required
+  (unauthenticated callers receive `401`) and the caller must have site READ permission
+  (callers without permission receive `403 SITE_ACCESS_DENIED`). These checks run before
+  the feature-flag gate and before the health evaluation.
   This is intentional scope beyond "add a gate": the Analytics portlet UI depends on these
   structured states to decide whether to render; a raw proxy response cannot serve that role
   reliably. The health check pattern mirrors the one already implemented for the experiments
   health endpoint (FR-002a). When `FEATURE_FLAG_CONTENT_ANALYTICS=false`, this endpoint
-  returns `403` per FR-003.
+  returns `403 FEATURE_DISABLED` per FR-003.
   > **Note**: The Analytics portlet UI calls this endpoint to decide whether to render the
   > analytics interface. A response of `OK` enables the UI; `NOT_CONFIGURED` or
   > `CONFIGURATION_ERROR` causes the UI to display an error message to the operator instead.
@@ -264,6 +268,11 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
 
 **EventAnalyticsProxyResource — POST `/api/v1/analytics/content/event`**
 
+- **Gate ordering**: the feature-flag gate introduced by this feature MUST run before the
+  existing `persistenceMode=readonly` check. If the flags gate rejects the request with
+  `403`, the `persistenceMode` check MUST NOT be evaluated. The ordering is:
+  auth → feature-flag gate (this feature) → persistenceMode check → forwarding.
+
 - **FR-006**: The event ingest endpoint MUST return `403` when both flags are `false`.
 - **FR-007**: When `FEATURE_FLAG_CONTENT_ANALYTICS=true` and `FEATURE_FLAG_EXPERIMENTS=false`:
   the system MUST strip `context.experiments` from the top-level `context` object before
@@ -289,13 +298,18 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
 **Feature-disabled error response**
 
 - **FR-010**: Every `403` returned because a feature flag is `false` MUST include a
-  human-readable message in the response body that states which feature is disabled and
-  directs the operator to contact dotCMS to have it enabled.
-  - Example: *"The Experiments feature is currently disabled. Please contact dotCMS to enable it."*
-  - The message MUST follow the standard dotCMS error response envelope so clients can
-    parse it consistently alongside other API errors.
-  - **Test**: Postman — for each flag-disabled `403` case, verify the response body matches
-    the standard dotCMS error envelope shape and contains the expected human-readable message.
+  machine-readable error code `FEATURE_DISABLED` and a human-readable message in the response
+  body that states which feature is disabled and directs the operator to contact dotCMS.
+  - Example response body:
+    ```json
+    { "errors": [{ "errorCode": "FEATURE_DISABLED", "message": "The Experiments feature is currently disabled. Please contact dotCMS to enable it." }] }
+    ```
+  - The `FEATURE_DISABLED` error code distinguishes feature-flag `403`s from other `403`s
+    on the same endpoints (e.g. `SITE_ACCESS_DENIED` for permission failures), allowing
+    clients and UIs to show the correct message for each case.
+  - The response MUST follow the standard dotCMS error response envelope.
+  - **Test**: Postman — for each flag-disabled `403` case, verify the response body contains
+    `errorCode: "FEATURE_DISABLED"` and the expected human-readable message.
 
 **Flag state refresh**
 
