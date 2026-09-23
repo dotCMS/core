@@ -370,6 +370,40 @@ public class FolderBulkDeleteProcessorIT extends Junit5WeldBaseTest {
 
     /**
      * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: A folder the submitting user cannot even read — distinct from
+     * {@code test_process_mixedFailure_...} above, where the folder resolves fine and only to
+     * delete itself (inside {@code announceAndDelete}) fails on missing EDIT. Here resolution
+     * itself ({@code deleteOne}'s own {@code DotSecurityException} catch) is what fails, since
+     * {@code FolderAPIImpl.findFolderByPath} refuses a folder the user cannot even READ before
+     * the run ever reaches {@code FolderAPI.delete}
+     * ExpectedResult: Recorded FAILED/PERMISSION_DENIED, not PATH_NOT_FOUND — a rights refusal
+     * during resolution must not be misnamed as though the folder simply does not exist (#37685
+     * review)
+     */
+    @Test
+    public void test_process_unreadablePath_recordedAsPermissionDenied() throws Exception {
+
+        final Folder unreadableFolder = folder();
+        // Deliberately no permission grants at all for limitedUser on this folder or its site —
+        // the run must never resolve it.
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        final Job job = jobForPaths(List.of(pathOf(unreadableFolder)), limitedUser);
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        final BatchItemResult result = resultFor(metadata, pathOf(unreadableFolder));
+        assertEquals(BatchItemStatus.FAILED, result.status());
+        assertEquals(BatchFailureReason.PERMISSION_DENIED, result.reason().orElseThrow());
+
+        final Folder stillThere = folderAPI.find(unreadableFolder.getInode(), admin, false);
+        assertTrue(stillThere != null && UtilMethods.isSet(stillThere.getInode()),
+                "a folder the submitter never had rights to must be untouched");
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
      * Given Scenario: A deletable top-level folder containing one subfolder the user may only
      * read, never edit
      * ExpectedResult: Recorded FAILED/PERMISSION_DENIED, not UNCLASSIFIED — {@code

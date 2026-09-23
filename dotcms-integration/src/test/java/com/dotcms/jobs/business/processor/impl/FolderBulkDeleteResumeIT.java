@@ -6,7 +6,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.dotcms.Junit5WeldBaseTest;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
+import com.dotcms.jobs.business.batch.BatchFailureReason;
 import com.dotcms.jobs.business.batch.BatchItemResult;
 import com.dotcms.jobs.business.batch.BatchItemStatus;
 import com.dotcms.jobs.business.detector.AbandonedJobDetector;
@@ -222,5 +224,52 @@ public class FolderBulkDeleteResumeIT extends Junit5WeldBaseTest {
         assertTrue(stillThereGone == null
                         || !com.dotmarketing.util.UtilMethods.isSet(stillThereGone.getInode()),
                 "the second folder must actually be gone, not merely reported as such");
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}, via the real queue and the
+     * real {@link AbandonedJobDetector}
+     * Given Scenario: A re-queued (abandoned-then-retried) run whose one path the submitting
+     * user cannot even read — deliberately no permission grants on the folder or its site
+     * ExpectedResult: Recorded FAILED/PERMISSION_DENIED, never SUCCESS (#37685 review) — FR-030's
+     * "already gone, which is the intended end state" reasoning only covers a genuinely missing
+     * path; a rights refusal is not evidence a prior attempt deleted anything, on this attempt or
+     * the one the abandonment sweep re-queued
+     */
+    @Test
+    public void test_process_reQueuedAfterAbandonment_unreadablePathStillReportedPermissionDenied()
+            throws Exception {
+
+        ensureQueueStarted();
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final Folder unreadableFolder = folder();
+        final String unreadablePath = pathOf(unreadableFolder);
+
+        final String jobId = insertStaleRunningJob(List.of(unreadablePath), limitedUser);
+
+        abandonedJobDetector.detectAbandonedJobs();
+
+        Awaitility.await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(200, TimeUnit.MILLISECONDS)
+                .until(() -> jobQueueManagerAPI.getJob(jobId).state() == JobState.ABANDONED);
+
+        Awaitility.await().atMost(30, TimeUnit.SECONDS)
+                .pollInterval(200, TimeUnit.MILLISECONDS)
+                .until(() -> jobQueueManagerAPI.getJob(jobId).state() == JobState.SUCCESS);
+
+        final Job finished = jobQueueManagerAPI.getJob(jobId);
+        final BatchItemResult result = resultFor(finished, unreadablePath);
+        assertEquals(BatchItemStatus.FAILED, result.status(),
+                "a path the submitter cannot even read must never be reported SUCCESS just "
+                        + "because this run was previously abandoned — that reasoning only "
+                        + "covers a genuinely missing path");
+        assertEquals(BatchFailureReason.PERMISSION_DENIED, result.reason().orElseThrow());
+
+        final Folder stillThere = folderAPI.find(unreadableFolder.getInode(), admin, false);
+        assertTrue(stillThere != null && com.dotmarketing.util.UtilMethods.isSet(
+                        stillThere.getInode()),
+                "a folder the submitter never had rights to must be untouched, same as any other "
+                        + "refusal");
     }
 }
