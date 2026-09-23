@@ -33,8 +33,11 @@ import {
     DotClipboardUtil,
     DotEmptyContainerComponent,
     DotMessagePipe,
+    DotMonacoRunShortcutEditor,
     DotSpinnerComponent,
-    PrincipalConfiguration
+    getDotMonacoRunShortcutLabel,
+    PrincipalConfiguration,
+    registerDotMonacoRunShortcut
 } from '@dotcms/ui';
 import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
 
@@ -89,6 +92,9 @@ export class DotVelocityPlaygroundPageComponent {
 
     // Memoized i18n fallback used by every history-label render.
     readonly #emptyHistoryLabel = this.#messageService.get('velocityPlayground.history.empty');
+
+    /** Keyboard shortcut shown in the Run button tooltip (`⌘ + Enter` / `Ctrl + Enter`). */
+    readonly runShortcutLabel = getDotMonacoRunShortcutLabel(this.#document.defaultView?.navigator);
 
     // 2. State signals (viewChild signals + local state) — $ prefix
     readonly $helpPopover = viewChild.required<Popover>('helpPopoverEl');
@@ -180,8 +186,19 @@ export class DotVelocityPlaygroundPageComponent {
     }
 
     // 6. Public methods
-    onEditorInit(): void {
+    /**
+     * Registers the Velocity language once Monaco is available and binds `Cmd/Ctrl + Enter`
+     * inside the script editor to the same action as the Run button.
+     *
+     * @param editor the Monaco editor instance emitted by `ngx-monaco-editor`
+     */
+    onEditorInit(editor: DotMonacoRunShortcutEditor): void {
         ensureVelocityLanguageRegistered();
+        registerDotMonacoRunShortcut(
+            editor,
+            () => this.onRun(),
+            this.#messageService.get('velocityPlayground.action.run')
+        );
     }
 
     onRun(): void {
