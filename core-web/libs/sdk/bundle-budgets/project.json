@@ -1,0 +1,23 @@
+{
+    "name": "sdk-bundle-budgets",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/sdk/bundle-budgets/src",
+    "projectType": "library",
+    "tags": [],
+    "implicitDependencies": [
+        "sdk-react",
+        "sdk-client",
+        "sdk-uve",
+        "sdk-types",
+        "sdk-analytics",
+        "sdk-angular",
+        "sdk-vue",
+        "sdk-experiments"
+    ],
+    "targets": {
+        "test": {
+            "dependsOn": ["^build"],
+            "cache": false
+        }
+    }
+}
