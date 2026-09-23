@@ -87,8 +87,9 @@ arm fixes all three together, so narrowing on any one of them narrows the other 
 - **FR-001**: narrowing on `fieldType` yields the arm, with its required properties reachable
   without assertion.
 - **FR-002**: the arms are consumed by production code, not only by the test-mock file.
-- **FR-003**: during migration a deprecated alias of the old flat shape coexists; by Story 5 it
-  is deleted and the union is the only content-type-field type.
+- **FR-003**: the flat shape is deleted in the same change that introduces the union; no
+  deprecated alias coexists with it at any point, and the union is the only content-type-field
+  type (see "No transitional shape" below).
 - A value is a valid member only if `fieldType`, `dataType` and `clazz` agree with one arm.
   Partial literals are not members — this is the source of the 89 `as DotCMSContentTypeField`
   sites that must move to factories (FR-014).
@@ -207,9 +208,9 @@ that is awkward to type gets rewritten, not deleted or loosened.
 ```
 DotCMSContentType
   └── layout: DotCMSContentTypeLayoutRow[]
-        ├── divider: <divider arm>
+        ├── divider: DotCMSContentTypeField          ← not narrowed yet (see above)
         └── columns: DotCMSContentTypeLayoutColumn[]
-              ├── columnDivider: ContentTypeColumnField
+              ├── columnDivider: DotCMSContentTypeField   ← not narrowed yet (see above)
               └── fields: DotCMSContentTypeField[]   ← the union
 
 DotCMSContentTypeField (union of 28)
