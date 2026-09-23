@@ -97,18 +97,23 @@ finished.
    does not hold the caller until the duplicates exist.
 2. **Given** an accepted submission, **When** the run finishes, **Then** each source folder still
    exists untouched, and a duplicate of each exists in the same parent.
-3. **Given** a duplicated folder, **When** its contents are inspected, **Then** everything the
-   shipped copy carries is present: child folders, file assets, pages and links, with the folder's
-   permissions copied across.
-4. **Given** a folder whose parent is a site root, **When** it is duplicated, **Then** the duplicate
+3. **Given** a duplicated folder, **When** its contents are inspected, **Then** its child folders,
+   file assets, pages and links are present, with the folder's permissions copied across.
+4. **Given** a folder holding content of a type that is neither a file asset, a page nor a link,
+   such as a Blog entry or a Document, **When** it is duplicated, **Then** that content is present
+   in the duplicate too. The shipped walk does not carry it and this feature adds it (FR-012d).
+5. **Given** a folder holding archived content, **When** it is duplicated, **Then** the outcome
+   matches what FR-012e pins, and the duplicate's published state is the one that requirement fixes
+   rather than whatever falls out.
+6. **Given** a folder whose parent is a site root, **When** it is duplicated, **Then** the duplicate
    lands at that site root; **Given** a nested folder, **Then** it lands in its parent folder. Both
    cases work.
-5. **Given** a submission naming exactly one folder, **When** it is made, **Then** it is accepted
+7. **Given** a submission naming exactly one folder, **When** it is made, **Then** it is accepted
    and runs as a batch of one. There is no separate synchronous endpoint for a single folder, and
    the submission is not special-cased into one.
-6. **Given** any folder in the selection, **When** it is duplicated, **Then** the result is
-   indistinguishable from copying that same folder through the shipped Site Browser copy: same
-   permission rules, same contents carried, same event emitted.
+8. **Given** any folder in the selection, **When** it is duplicated, **Then** the same permission
+   rules apply and the same event is emitted as when that folder is copied through the shipped Site
+   Browser copy. What a duplicate *holds* deliberately differs, by FR-012d.
 
 ---
 
@@ -217,7 +222,7 @@ per-folder outcome is still readable and a durable notification was addressed to
 2. **Given** a notified run, **When** the notification is read, **Then** its wording reflects what
    happened: a clean run, a partial one and a cancelled one read differently.
 3. **Given** a finished run, **When** its outcome is requested later, **Then** the counts and the
-   per-folder records, including the names the duplicates were given, are still readable.
+   per-folder records, keyed by the folders that were submitted, are still readable.
 4. **Given** a run whose notification could not be delivered, **When** that happens, **Then** the
    run is still recorded as having finished.
 
@@ -321,18 +326,46 @@ per-folder outcome is still readable and a durable notification was addressed to
   one MUST NOT abort the run or roll back a folder already duplicated. A per-folder permission
   refusal MUST be recorded as that path's failure with a machine-readable reason. Both rights the
   operation needs, reading the source and adding to its parent, MUST be distinguishable in what is
-  reported, because either one alone can be the missing one.
+  reported, because either one alone can be the missing one. **The shipped enum cannot express that
+  distinction**: it carries a single permission-denied value. Telling the two apart therefore
+  requires a new, additive value, which is exactly the case FR-022 says must be agreed with the
+  client half before either is implemented.
 - **FR-012a**: The bulk path MUST NOT be more permissive than the shipped copy. The same two checks
   apply, against the same rights, before any folder is duplicated.
 - **FR-012b**: The system MUST define what happens to content within the subtree that the acting
   user cannot read. **Today the entire recursive walk beneath the two entry checks runs as the
-  system user**: the folder's file assets, pages, child folders and the contentlets themselves are
-  all resolved and copied with system rights, so content the acting user cannot see is duplicated
-  along with everything else. The folder's permissions are copied to the duplicate, so it is no more
-  visible than the source was. **This feature does not change that** (D-009). It is recorded here
-  because it means a successful duplication can create content the submitting author was never able
-  to read, and because a reader who assumes the two entry checks govern the whole operation will be
-  wrong about what the feature does.
+  system user**: the folder's file assets, pages, links and child folders are all resolved and
+  copied with system rights, so content the acting user cannot see is duplicated along with
+  everything else. The folder's permissions are copied to the duplicate, so it is no more visible
+  than the source was. **This feature does not change that** (D-009). It is recorded here because it
+  means a successful duplication can create content the submitting author was never able to read,
+  and because a reader who assumes the two entry checks govern the whole operation will be wrong
+  about what the feature does.
+- **FR-012d**: A duplicate MUST hold the **generic contentlets** its source held, meaning content of
+  any type that lives in the folder and is neither a file asset, a page nor a link. A Blog entry, a
+  Document, or any custom type with a folder field MUST be carried.
+
+  **This closes a gap in the shipped walk rather than describing it.** The walk copies exactly four
+  things: file assets, working pages, links and child folders. It has no branch for anything else,
+  while folder *deletion* resolves every contentlet in the folder regardless of type. So today the
+  two operations disagree: delete destroys generic content and copy silently leaves it behind while
+  reporting the folder as a success. That is tolerable in the Site Browser, whose tree is mostly
+  files and pages. It is not tolerable in Content Drive, whose entire premise is a listing of mixed
+  content, where an author duplicating a folder is looking at the very rows the copy would drop.
+
+  **The gap MUST be closed without changing the shared walk** (D-018). The enterprise site-copy job
+  already faced this and solved it by carrying generic content itself rather than by extending the
+  folder factory, and that is the precedent to follow: this feature's processor is responsible for
+  the content the walk does not carry. Extending the factory would change behaviour for the Site
+  Browser and for every plugin calling `FolderAPI.copy`, which is the rollback-unsafe shape D-012
+  exists to avoid.
+- **FR-012e**: The system MUST state which **versions** it carries, because the shipped walk filters
+  its sources and nothing in either half said so. File assets are read only where they are working
+  and not archived, pages only through the working-pages lookup, and links only where they are
+  working. Two consequences follow and MUST be settled rather than discovered: archived content is
+  not carried at all, and whether a duplicate of a folder of published pages is itself live is not
+  something today's behaviour answers. The answer MUST be pinned by an acceptance scenario, since it
+  is the first question an author asks after using the feature once.
 - **FR-012c**: The contract MUST NOT imply that a client-side permission check can predict the
   outcome, and the server MUST enforce both rights regardless of what the client checked. Under
   duplicate-in-place the client is better placed than bulk delete's, because the target parent is
@@ -357,11 +390,11 @@ per-folder outcome is still readable and a durable notification was addressed to
   earlier draft of this document treated that as reason enough to do both. Acting on both is
   **order-dependent**, and there is no ordering that is correct. Duplicating the descendant first
   creates its duplicate inside the original ancestor, so the ancestor's duplicate, made afterwards,
-  contains the descendant *and* the descendant's duplicate. Duplicating the ancestor first produces an
-  ancestor duplicate containing only the descendant. Same submission, two different results depending
-  on the order the run happens to process the selection. A specification that permits both has to pick
-  an order and defend it; skipping the descendant removes the question. The author also gets what they
-  almost certainly meant, which is the subtree duplicated once.
+  contains the descendant *and* the descendant's duplicate. Duplicating the ancestor first produces
+  an ancestor duplicate containing only the descendant. Same submission, two different results
+  depending on the order the run happens to process the selection. A specification that permits both
+  has to pick an order and defend it; skipping the descendant removes the question. The author also
+  gets what they almost certainly meant, which is the subtree duplicated once.
 
   This aligns with bulk delete, which also skips a descendant covered by a selected ancestor, though
   the two reach it differently: delete's descendant no longer exists by the time the run reaches it,
@@ -434,8 +467,8 @@ per-folder outcome is still readable and a durable notification was addressed to
   governs retry after a *failure*, while the abandoned-job sweep re-queues a stalled run
   unconditionally, without consulting the retry policy at all. Marking the processor no-retry would
   therefore not prevent a second attempt; it would only leave that attempt unprepared for one. Bulk
-  upload reached this exact conclusion for the same reason and records it on
-  `BulkUploadProcessor`, which is the precedent to follow rather than re-derive.
+  upload reached this exact conclusion for the same reason and records it on `BulkUploadProcessor`,
+  which is the precedent to follow rather than re-derive.
 
   **Where duplication differs from upload, and it is worse.** An interrupted upload re-creating a
   file asset is stopped by the unique index on the lower-cased path, so the second create is
@@ -477,10 +510,10 @@ per-folder outcome is still readable and a durable notification was addressed to
 - **Submission**: the folder paths an author asked to duplicate, accepted as one unit.
 - **Run**: one accepted submission, identified by a handle, with an observable state and an outcome.
 - **Per-folder outcome**: one record per submitted folder, carrying an identifying key, a
-  three-valued status, and a machine-readable reason plus diagnostic message on failure. Exactly
-  the shared shape, with nothing added: the shipped record carries a **key**, a status and an
-  optional reason and message, and no field for a path, so the folder's path travels as that key
-  the way an uploaded file's name does.
+  three-valued status, and a machine-readable reason plus diagnostic message on failure. Exactly the
+  shared shape, with nothing added: the shipped record carries a **key**, a status and an optional
+  reason and message, and no field for a path, so the folder's path travels as that key the way an
+  uploaded file's name does.
 - **Duplicate**: the folder the run created, living in the same parent as its source under a derived
   name.
 
@@ -551,8 +584,8 @@ abandonment behaviour, and the durable record's lifetime.
   can be duplicated from Content Drive at all.
 - **SC-002**: The submission is answered within the same time regardless of how much content the
   selected folders hold, and zero submissions fail for having taken too long to answer.
-- **SC-003**: 100% of accepted paths produce exactly one outcome record: succeeded with a name,
-  failed with a reason, or skipped. Zero are silently dropped.
+- **SC-003**: 100% of accepted folders produce exactly one outcome record: succeeded, failed with a
+  reason, or skipped with which kind of skip. Zero are silently dropped.
 - **SC-004**: 100% of successful duplications are reported against the path that was submitted, so
   an author can tell which of the folders they selected were duplicated and which were not.
 - **SC-005**: Zero duplicates exist that hold only part of their source's contents, across
@@ -560,8 +593,8 @@ abandonment behaviour, and the durable record's lifetime.
 - **SC-006**: A folder being duplicated remains fully usable throughout the run, in 100% of cases.
 - **SC-007**: Every failure reason the server can emit is drawn from the enumerated set, and zero
   diagnostic messages reach an author.
-- **SC-008**: An author absent when a run ended can determine the full outcome, including the names
-  of everything created, without having watched it.
+- **SC-008**: An author absent when a run ended can determine the full outcome, including which of
+  the folders they selected were duplicated, without having watched it.
 - **SC-009**: Concurrent runs over the same folders, from the same or different authors, complete
   without either being refused and without either producing a folder the other disturbed.
 - **SC-010**: Duplicating one folder through this feature costs no more time or memory than
@@ -575,6 +608,22 @@ abandonment behaviour, and the durable record's lifetime.
   is long-standing legacy. `FolderAPIImpl.copy` has two overloads, one taking a parent folder and
   one taking a site, both wrapping the whole recursive walk in a single transaction. This feature
   calls them and does not rewrite them.
+- **What the walk actually carries, and what it silently does not.** Four things: file assets,
+  working pages, links and child folders. There is no branch for anything else, so content of any
+  other type living in the folder is not copied. Folder *deletion* takes the opposite approach and
+  resolves every contentlet in the folder regardless of type, so the two operations disagree about
+  what a folder contains. **No rationale for the omission is recorded anywhere**: the method carries
+  only descriptive labels, the interface has no Javadoc on it, `docs/` says nothing, and the history
+  back to 2017 is incidental fixes with no commit that touches the question. It reads as an omission
+  rather than a policy.
+- **The sources are version-filtered**, which nothing in either half said before: file assets are
+  read only where working and not archived, pages through the working-pages lookup, links only where
+  working. Archived content is therefore not carried, and the published state of a duplicate is
+  whatever falls out rather than something chosen. FR-012e requires that to be pinned.
+- **Site copy already solved the generic-content problem, and did not use this walk.** The
+  enterprise host-assets job builds its own folder structure and copies content separately through
+  `copyContentlet` with content-type mapping. That is both the evidence the omission is real and the
+  precedent FR-012d follows: carry the missing content in the caller, leave the shared walk alone.
 - **There is no REST folder copy today.** `WebAssetResource` under `/v1/assets` exposes asset
   download, delete and archive, a single-folder delete, and folder create and update; it has no
   copy. `FolderResource` under `/v1/folder` has none either. The only shipped folder copy is
@@ -633,9 +682,11 @@ abandonment behaviour, and the durable record's lifetime.
   sibling of #37565, filed alongside this specification rather than promised by it. What that work
   carries: paging a folder's children instead of loading them whole, and splitting the transaction,
   which would reopen FR-026 and is the larger and riskier half.
-- **Correcting what the copy walk may read** (D-009, FR-012b). Content the author cannot see is
-  duplicated. Changing that means changing a path the Site Browser and any plugin calling
-  `FolderAPI.copy` share.
+- **Correcting what the duplication walk may read** (D-009, FR-012b). Content the author cannot see
+  is duplicated. Changing that means changing a path the Site Browser and any plugin calling
+  `FolderAPI.copy` share. Note this is about *rights*, not about *coverage*: the generic content the
+  walk does not carry is in scope and is closed by FR-012d, in the processor rather than in the
+  walk.
 - **Evening up the naming rule so derived names do not grow** (FR-010). Changing it changes what
   Site Browser authors have seen for years.
 - **Adding the self-target and descendant-target guards to `FolderAPI.copy`.** Not needed here; owed
@@ -724,15 +775,15 @@ abandonment behaviour, and the durable record's lifetime.
   same absence of durable per-item state and is unharmed, because a delete that already happened
   simply fails to resolve the second time.
 
-  **An earlier draft asked the plan to choose between disabling automatic re-queue and accepting
-  the consequence. That choice was not real.** `@NoRetryPolicy` governs retry after a failure; the
+  **An earlier draft asked the plan to choose between disabling automatic re-queue and accepting the
+  consequence. That choice was not real.** `@NoRetryPolicy` governs retry after a failure; the
   abandoned-job sweep calls `putJobBackInQueue` on a stalled run without consulting the retry
   policy, so no annotation on the processor prevents a second attempt. Bulk upload records exactly
   this on `BulkUploadProcessor` and deliberately does not mark itself no-retry, on the reasoning
   that doing so would only leave the inevitable second attempt unprepared for itself. Duplication
-  follows that precedent, and is worse off than upload in one respect worth stating: upload's
-  second attempt is blocked by the unique index on a file asset's lower-cased path, while the
-  naming rule here simply derives the next free name, so a re-run genuinely creates more folders.
+  follows that precedent, and is worse off than upload in one respect worth stating: upload's second
+  attempt is blocked by the unique index on a file asset's lower-cased path, while the naming rule
+  here simply derives the next free name, so a re-run genuinely creates more folders.
 - **D-016: Nothing is marked, blocked or announced.** *(Developer decision, 2026-09-21; FR-040,
   C-011.)* Bulk delete makes a folder inert everywhere it appears while a run works on it, keeps
   that true across reloads and authors, and broadcasts a folder's entry into and exit from a delete.
@@ -752,6 +803,19 @@ abandonment behaviour, and the durable record's lifetime.
   over the other. Skipping the descendant removes the question and matches what the author meant.
   The skip reason needs its own wording (C-005): delete's says the ancestor removed the folder, and
   here the folder is still there.
+- **D-018: The generic-content gap is closed in this feature's processor, not in the shared walk.**
+  *(Developer decision, 2026-09-23; FR-012d.)* Raised in review against the code rather than against
+  the issue: the shipped walk carries file assets, pages, links and child folders and nothing else,
+  while folder deletion resolves every contentlet regardless of type. Copy therefore drops generic
+  content and reports the folder as a success, which is survivable in the Site Browser and not in
+  Content Drive, where the listing an author is looking at is mixed content by design. The decision
+  is to close it rather than record it as a limitation. **Where** it is closed was then settled by a
+  precedent already in the codebase: the enterprise site-copy job carries generic content itself and
+  does not use the folder factory's walk. Following that keeps the fix inside this feature, leaves
+  the Site Browser and every plugin calling `FolderAPI.copy` untouched, and avoids the
+  rollback-unsafe behaviour change that D-012 exists to keep out of this ticket. Extending the
+  factory remains the option if the duplication turns out to be worse than the coupling, but it is a
+  different piece of work with a different blast radius.
 
 ---
 
@@ -786,6 +850,28 @@ abandonment behaviour, and the durable record's lifetime.
   path. Progressive enhancement suggests correcting it; the plan MUST decide rather than inherit.
 - **The configured maximum** (FR-007) and the durable record's lifetime (FR-036a) both need concrete
   values and a documented default.
+- **Not copying anything twice** (FR-012d). File assets and pages **are** contentlets, and the walk
+  already carries them through dedicated branches that de-duplicate by identifier. A processor that
+  resolves every contentlet in the folder and copies it will copy those a second time unless it
+  excludes what the walk already handled. The plan MUST say how, and a test MUST prove a folder of
+  mixed content produces one of each rather than two of some.
+- **Which user the added content copy runs as** (FR-012b, FR-012d). The walk runs as the system
+  user. The plan MUST state whether the content this feature adds follows that or uses the
+  submitting user, and MUST NOT leave the two halves of one duplication running under different
+  identities by accident.
+- **Pinning the failure and skip reason names before either half writes copy** (FR-022, C-005).
+  Duplication needs additive values: two distinguishable permission failures where the enum has one,
+  an unresolvable folder, a protected folder, and the ancestor skip. Bulk delete had to reconcile
+  reason *names* late because the client had already written copy against its own vocabulary, and
+  that round-trip is avoidable here. The names belong in
+  `specs/37062-folder-copy-backend/contracts/`, which is the one place in this repo's Spec-Kit
+  layout that survives alongside the spec.
+- **Registering the Postman collection so it actually runs** (Constitution V). A collection absent
+  from `dotcms-postman/config.json` never runs in CI: green build, zero coverage, the same failure
+  mode as an integration test missing from a suite list. It MUST go in the **`default-split`**
+  group, where every other job-queue collection already sits. That group shares one dotCMS container
+  and one queue across its collections, so this one MUST clean up after every run and MUST NOT
+  assert on queue-wide listings, or it will break the collections beside it.
 - **Concrete field names and the exact submission shape** are deliberately left at behaviour
   altitude here and belong in the plan, recorded under `specs/*/contracts/` so they survive.
 

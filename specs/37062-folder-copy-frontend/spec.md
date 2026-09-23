@@ -155,7 +155,7 @@ outcome is reported the same way the bulk action reports it.
 2. **Given** the action is chosen, **When** it is submitted, **Then** it goes through the same
    submission as the bulk action, carrying one folder.
 3. **Given** the single-folder action was submitted, **When** the run ends, **Then** the outcome is
-   reported through the same path as the bulk action, naming the duplicate that was created.
+   reported through the same path as the bulk action, naming the folder that was submitted.
 4. **Given** a folder the author has no right to duplicate, **When** they open its right-click menu,
    **Then** the action is not offered.
 
@@ -171,7 +171,7 @@ than for a delete: an author who cannot find out whether a duplication happened,
 a second duplicate rather than a harmless no-op (backend FR-034).
 
 **Independent Test**: Submit a run, navigate away from the portlet, return after it completes, and
-confirm the outcome including the duplicates' names is still reachable.
+confirm the outcome, including which of the selected folders were duplicated, is still reachable.
 
 **Acceptance Scenarios**:
 
@@ -297,9 +297,9 @@ offered, says it will act on four, and acts on four.
   This is one check for the whole selection rather than one per folder. It MUST reuse the portlet's
   **existing** answer to that question rather than computing a fourth copy of it: the store already
   derives whether the browsed folder accepts new children, and the New menu, the Upload button and
-  the drop zone all gate on it. That computed value already handles the cases this requirement
-  would otherwise have to restate: System Host, all-site-content, and a tree node with no
-  permissions of its own, which is the site root and falls back to the site's own rights.
+  the drop zone all gate on it. That computed value already handles the cases this requirement would
+  otherwise have to restate: System Host, all-site-content, and a tree node with no permissions of
+  its own, which is the site root and falls back to the site's own rights.
 
   Duplication MUST also inherit that value's **permissive** treatment of unknowns, which reads a
   lookup still in flight, and an instance too old to report the field, as allowed. Starting disabled
@@ -310,25 +310,25 @@ offered, says it will act on four, and acts on four.
   the other multi-selection actions already have rather than inventing a second one.
 
   **A folder the author cannot duplicate MUST NOT block the ones they can.** The action MUST remain
-  available, and MUST NOT be disabled, refused or turned into an error, because some of the selection
-  is ineligible. It narrows to the eligible folders and runs. The only whole-selection stop is FR-005,
-  where the author cannot add children to the folder every duplicate would land in and therefore
-  nothing in the selection could succeed.
+  available, and MUST NOT be disabled, refused or turned into an error, because some of the
+  selection is ineligible. It narrows to the eligible folders and runs. The only whole-selection
+  stop is FR-005, where the author cannot add children to the folder every duplicate would land in
+  and therefore nothing in the selection could succeed.
 
   **This reverses an earlier draft**, which required the selection to be submitted whole so the
   server's refusals could be reported per folder. That position is bulk delete's, and it was taken
   there because silently shrinking a **destructive** action is worse than reporting a refusal: an
-  author who believes six folders were deleted and finds four is in a different situation from one who
-  believes six were duplicated. Duplication destroys nothing, so the argument does not carry over, and
-  consistency with the other actions in the same menu is worth more. The filtering is **never
-  silent**: the count in FR-004 is what keeps it honest, and an action reading "4 of 6" tells the
-  author as much as a report of two refusals would, sooner.
-- **FR-005b**: Where the selection spans more than one parent, which a search or the all-site-content
-  view makes possible, the gate MUST NOT be applied against a folder that is not the destination.
-  The portlet's existing computation already covers this: selecting all site content clears the tree
-  selection and the answer falls back to the site's own rights, deliberately asked before any node
-  left over from earlier. Duplication MUST NOT reimplement that ordering, and MUST leave anything it
-  cannot resolve to the server's per-folder refusals.
+  author who believes six folders were deleted and finds four is in a different situation from one
+  who believes six were duplicated. Duplication destroys nothing, so the argument does not carry
+  over, and consistency with the other actions in the same menu is worth more. The filtering is
+  **never silent**: the count in FR-004 is what keeps it honest, and an action reading "4 of 6"
+  tells the author as much as a report of two refusals would, sooner.
+- **FR-005b**: Where the selection spans more than one parent, which a search or the
+  all-site-content view makes possible, the gate MUST NOT be applied against a folder that is not
+  the destination. The portlet's existing computation already covers this: selecting all site
+  content clears the tree selection and the answer falls back to the site's own rights, deliberately
+  asked before any node left over from earlier. Duplication MUST NOT reimplement that ordering, and
+  MUST leave anything it cannot resolve to the server's per-folder refusals.
 - **FR-005c**: Where the author's rights over an individual folder are unknown, the action MUST
   remain available for it and the server's per-folder refusal MUST be what reports it. The client
   MUST NOT guess a refusal. Filtering under FR-005a acts on rights the client **has**, never on
@@ -411,9 +411,11 @@ offered, says it will act on four, and acts on four.
   parent, the folder no longer exists, the folder is protected, and a general fallback. Skips: the
   run was cancelled before reaching the folder, and an ancestor in the same submission already
   covers it. Reasons bulk delete carries which duplication cannot produce MUST NOT be written for
-  this feature. The ancestor skip **is** shared with delete in shape but not in wording: delete says
-  the ancestor removed the folder, and here the folder is untouched, so its copy MUST say the
-  ancestor covers it.
+  this feature. **Several of these do not exist in the shared vocabulary yet**, including the two
+  permission failures, which the shipped enum collapses into one value. They are additions to be
+  agreed and named before this half writes any copy, not values to be assumed. The ancestor skip
+  **is** shared with delete in shape but not in wording: delete says the ancestor removed the
+  folder, and here the folder is untouched, so its copy MUST say the ancestor covers it.
 - **FR-024**: The server's diagnostic message MUST NOT be shown to the author. It is written for a
   log.
 - **FR-025**: A reason the client does not recognise MUST still name the folder and report it as
@@ -470,9 +472,12 @@ C-011), from this side.
   FR-033 rests on this. **There is no overlap refusal**, because the server carries no overlap
   guard, which is why FR-017 forbids writing copy for one.
 - **A stable, enumerated set of failure and skip reasons** (C-005), each mapped to client copy
-  (FR-023). Nearly a subset of bulk delete's: duplication has no "something inside is in use". It
-  does carry an ancestor skip, but the folder is still there afterwards, so the wording says the
-  ancestor covers it rather than removed it.
+  (FR-023). **Not a subset of bulk delete's, despite an earlier draft saying so.** Duplication drops
+  "something inside is in use" but adds several the shared vocabulary does not have: a second
+  permission value, so failing on the source and failing on its parent are told apart, an
+  unresolvable folder, a protected folder, and the ancestor skip. The ancestor skip is shared with
+  delete in shape only; the folder is still there afterwards, so the wording says the ancestor
+  covers it rather than removed it.
 - **Progress, and an honest statement of what it counts** (C-006). Completed top-level folders,
   nothing finer. This is why FR-012 requires an indeterminate indicator.
 - **A way to cancel, with this operation's guarantee** (C-007). Each folder is left either fully
@@ -506,10 +511,10 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
   can be duplicated from Content Drive at all.
 - **SC-002**: The author regains control of the interface within two seconds of committing,
   regardless of how much content the folders hold.
-- **SC-003**: 100% of duplicates created are named in the report, so an author never has to search
-  the listing to find out what was made.
-- **SC-004**: 100% of folders the server accepted are accounted for in the report: duplicated with a
-  name, failed with a reason, or skipped. Zero are silently dropped.
+- **SC-003**: 100% of the folders an author selected are accounted for in the report against the
+  path they were submitted under, so nobody has to work out which rows the run acted on.
+- **SC-004**: 100% of folders the server accepted are accounted for in the report: duplicated,
+  failed with a reason, or skipped with which kind of skip. Zero are silently dropped.
 - **SC-005**: The counts the author is shown match the server's record in 100% of runs, including
   partial ones.
 - **SC-006**: Every failure reason the server can emit renders as product copy; zero render as a raw
@@ -600,9 +605,12 @@ cannot read, retry and abandonment behaviour, and the durable record's lifetime.
   name is not, since the client is never told it.
 - **The reason-to-copy mapping is a cross-half dependency.** Every reason the server can emit needs
   client copy before either half is implemented, and the mapping is shared with delete and move. The
-  plan MUST name where it lives. Duplication adds no failure reason of its own, but it does need the
-  ancestor skip worded for an operation that leaves the folder in place, so the plan MUST settle
-  whether the shared value is reworded to cover both operations or a second value is added.
+  plan MUST name where it lives, and the names MUST be pinned in the backend half's `contracts/`
+  directory before this half writes any copy. Bulk delete reconciled reason names late, because the
+  client had already written copy against its own vocabulary, and that round-trip is avoidable here.
+  Duplication needs genuine additions, not just a rewording: two distinguishable permission values
+  where the shipped enum has one, an unresolvable folder, a protected folder, and the ancestor skip
+  worded for an operation that leaves the folder in place.
 - **The action's label and its commit copy** (FR-002, FR-009). This is a microcopy decision with a
   functional consequence, since the label is what sets the author's expectation about a destination.
   The plan MUST treat it as a deliverable with an owner, not as a string to be filled in during
