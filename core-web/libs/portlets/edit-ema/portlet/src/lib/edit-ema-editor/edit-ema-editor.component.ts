@@ -1424,7 +1424,11 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 // pageReload() doesn't mint a new inode on a lock/unlock, so the $inode-keyed
                 // effect that normally refreshes workflowActions never re-fires — refresh it
                 // explicitly here too (mirrors the legacy dialog's UPDATE_WORKFLOW_ACTION handling).
-                this.uveStore.workflowFetch(contentlet.inode);
+                // Use the PAGE's inode, not `contentlet.inode` — this dialog data is shared by
+                // every openContentForEdit() caller (Page Properties, but also the pencil/
+                // edit-in-place flow and VTL edit for a contentlet that isn't the page), and
+                // workflowFetch always writes into the page's own workflowActions.
+                this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
             },
             onContentSaved: () => {
                 this.uveStore.pageReload();

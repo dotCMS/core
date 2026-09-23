@@ -55,6 +55,7 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import { EditContentDialogData } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
@@ -2575,6 +2576,55 @@ describe('EditEmaEditorComponent', () => {
                             contentletInode: 'contentlet-inode-123'
                         })
                     );
+                });
+
+                it("onLockChanged should refresh workflow actions using the PAGE's inode, not the edited contentlet's (PR #37713 review)", async () => {
+                    // The edited contentlet (inode 'contentlet-inode-123') is NOT the page itself
+                    // (inode '123-i') — this is the pencil/edit-in-place case, not Page Properties.
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
+                    );
+                    const dialogRefMock = {
+                        onClose: new Subject<void | unknown>(),
+                        close: vi.fn()
+                    };
+                    const dialogServiceOpenSpy = vi
+                        .spyOn(spectator.inject(DialogService), 'open')
+                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
+                    spectator.detectChanges();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
+
+                    await spectator.fixture.whenStable();
+
+                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
+                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
+                    const dialogData = config.data as EditContentDialogData;
+
+                    const workflowFetchSpy = vi.spyOn(workflowApi(), 'workflowFetch');
+                    dialogData.onLockChanged?.(
+                        MOCK_RESPONSE_HEADLESS.page as unknown as DotCMSContentlet
+                    );
+
+                    expect(workflowFetchSpy).toHaveBeenCalledWith(MOCK_RESPONSE_HEADLESS.page.inode);
+                    expect(workflowFetchSpy).not.toHaveBeenCalledWith('contentlet-inode-123');
                 });
 
                 it('should fall back to legacy dialog when getContentType throws', () => {
