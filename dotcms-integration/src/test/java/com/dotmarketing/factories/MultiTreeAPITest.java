@@ -5569,6 +5569,119 @@ public class MultiTreeAPITest extends IntegrationTestBase {
                 1, result.size());
     }
 
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A page is saved in a <b>non-default variant</b> whose {@code multi_tree} rows point at
+     * Contentlets that exist only in the DEFAULT variant — the normal shape of a variant page,
+     * since copying a page into a variant copies its rows but not its Contentlets. The client posts
+     * an empty payload with {@code MULTITREE_NET_LOSS_THRESHOLD=0}.
+     * Should: Reject the save. The Contentlets are live content on that page by variant fallback,
+     * so wiping all of them is exactly the loss the guard exists to stop.
+     * <p>Regression test: requiring a version row in the <i>exact</i> save variant made the guard
+     * find nothing, leave {@code existing} empty, and skip the net-loss check entirely — silently
+     * disabling the safeguard on every variant page.</p>
+     */
+    @Test(expected = StalePageSaveException.class)
+    public void test_overridesMultitrees_variantSave_childrenOnlyInDefault_stillCounted() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Contentlets exist only in DEFAULT; their multi_tree rows are in the variant
+        for (int i = 0; i < 3; i++) {
+            final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                    .languageId(defaultLanguage.getId()).nextPersisted();
+            new MultiTreeDataGen()
+                    .setPage(page).setContainer(container).setContentlet(contentlet)
+                    .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                    .setVariant(variant).setTreeOrder(i).nextPersisted();
+        }
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    new ArrayList<>(),
+                    Optional.of(defaultLanguage.getId()),
+                    variant.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+    }
+
+    /**
+     * Method to Test: {@link MultiTreeAPI#overridesMultitreesByPersonalization(String, String, List, Optional, String)}
+     * When: A page is saved in a non-default variant and one Contentlet has version rows in
+     * <b>both</b> that variant (archived) and DEFAULT (live). {@code MULTITREE_NET_LOSS_THRESHOLD=0}
+     * and the payload drops it.
+     * Should: Not count it, so the save succeeds. The save variant's own row wins; DEFAULT is only
+     * a fallback for Contentlets that have no row in the variant at all.
+     * <p>This is what separates the fallback from a plain {@code variant_id IN (?, 'DEFAULT')},
+     * which would see the live DEFAULT row, keep counting the Contentlet, and reject a legitimate
+     * save — reintroducing the issue #37377 bug class through the variant door.</p>
+     */
+    @Test
+    public void test_overridesMultitrees_variantSave_archivedInVariant_notCountedDespiteLiveDefault() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().body("body").nextPersisted();
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template).nextPersisted();
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container container = new ContainerDataGen().maxContentlets(5).withStructure(structure, "").nextPersisted();
+        final String instanceId = UUIDGenerator.shorty();
+
+        // Survivor: lives only in DEFAULT, reached from the variant save by fallback
+        final Contentlet survivor = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(survivor)
+                .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setVariant(variant).setTreeOrder(0).nextPersisted();
+
+        // Dropped: live in DEFAULT, but its row in the SAVE variant is archived — the variant wins
+        final Contentlet liveInDefault = new ContentletDataGen(contentType.id())
+                .languageId(defaultLanguage.getId()).nextPersisted();
+        final Contentlet variantVersion = ContentletDataGen.createNewVersion(liveInDefault, variant, Map.of());
+        ContentletDataGen.archive(variantVersion);
+        new MultiTreeDataGen()
+                .setPage(page).setContainer(container).setContentlet(liveInDefault)
+                .setInstanceID(instanceId).setPersonalization(DOT_PERSONALIZATION_DEFAULT)
+                .setVariant(variant).setTreeOrder(1).nextPersisted();
+
+        final List<MultiTree> incoming = List.of(new MultiTree()
+                .setHtmlPage(page.getIdentifier()).setContainer(container.getIdentifier())
+                .setContentlet(survivor.getIdentifier()).setInstanceId(instanceId)
+                .setVariantId(variant.name()).setTreeOrder(0));
+
+        Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", 0);
+        try {
+            APILocator.getMultiTreeAPI().overridesMultitreesByPersonalization(
+                    page.getIdentifier(),
+                    DOT_PERSONALIZATION_DEFAULT,
+                    incoming,
+                    Optional.of(defaultLanguage.getId()),
+                    variant.name()
+            );
+        } finally {
+            Config.setProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
+        }
+
+        final List<MultiTree> result = APILocator.getMultiTreeAPI().getMultiTreesByPage(page.getIdentifier());
+        assertEquals("Only the surviving contentlet should remain on the variant page", 1, result.size());
+    }
+
+
     // ── Style-properties tests ──────────────────────────────────────────────
 
     /**

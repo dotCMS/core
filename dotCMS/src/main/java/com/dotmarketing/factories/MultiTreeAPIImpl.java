@@ -138,15 +138,38 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     // the language(s) the surrounding query already has in play. Testing deleted (rather than, say,
     // live_inode) is deliberate: working-but-unpublished content is not archived and must still
     // count.
+    // Variant resolution mirrors how dotCMS renders a variant page: use the save variant's own
+    // version row when the contentlet has one, and fall back to DEFAULT only when it does not.
+    // A plain `variant_id IN (?, 'DEFAULT')` would be wrong -- it would let a DEFAULT row keep a
+    // contentlet counted even though the save variant's own row says it is archived.
+    // Content on a variant page normally lives only in DEFAULT: copyMultiTree copies multi_tree
+    // rows into a variant but never the child contentlets, and nothing on the page-edit path
+    // copies content into a variant (copyContentToVariant runs only when promoting BACK to
+    // DEFAULT). Without the fallback the guard finds no version rows at all on a variant save,
+    // `existing` comes back empty, and the whole net-loss check is skipped.
     private static final String NON_ARCHIVED_IN_VARIANT =
             " AND EXISTS (SELECT 1 FROM contentlet_version_info cvi WHERE cvi.identifier = multi_tree.child"
-                    + " AND cvi.variant_id = ? AND cvi.deleted = false)";
+                    + " AND cvi.deleted = false"
+                    + " AND (cvi.variant_id = ?"
+                    + "      OR (cvi.variant_id = '" + DEFAULT_VARIANT.name() + "'"
+                    + "          AND NOT EXISTS (SELECT 1 FROM contentlet_version_info x"
+                    + "                          WHERE x.identifier = multi_tree.child AND x.variant_id = ?))))";
     private static final String NON_ARCHIVED_IN_VARIANT_AND_LANGUAGE =
             " AND EXISTS (SELECT 1 FROM contentlet_version_info cvi WHERE cvi.identifier = multi_tree.child"
-                    + " AND cvi.variant_id = ? AND cvi.lang = ? AND cvi.deleted = false)";
+                    + " AND cvi.lang = ? AND cvi.deleted = false"
+                    + " AND (cvi.variant_id = ?"
+                    + "      OR (cvi.variant_id = '" + DEFAULT_VARIANT.name() + "'"
+                    + "          AND NOT EXISTS (SELECT 1 FROM contentlet_version_info x"
+                    + "                          WHERE x.identifier = multi_tree.child"
+                    + "                            AND x.lang = ? AND x.variant_id = ?))))";
     private static final String NON_ARCHIVED_IN_VARIANT_AND_TWO_LANGUAGES =
             " AND EXISTS (SELECT 1 FROM contentlet_version_info cvi WHERE cvi.identifier = multi_tree.child"
-                    + " AND cvi.variant_id = ? AND (cvi.lang = ? OR cvi.lang = ?) AND cvi.deleted = false)";
+                    + " AND (cvi.lang = ? OR cvi.lang = ?) AND cvi.deleted = false"
+                    + " AND (cvi.variant_id = ?"
+                    + "      OR (cvi.variant_id = '" + DEFAULT_VARIANT.name() + "'"
+                    + "          AND NOT EXISTS (SELECT 1 FROM contentlet_version_info x"
+                    + "                          WHERE x.identifier = multi_tree.child"
+                    + "                            AND (x.lang = ? OR x.lang = ?) AND x.variant_id = ?))))";
 
     private static final String SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT =
             SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + NON_ARCHIVED_IN_VARIANT;
@@ -766,6 +789,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
             // reverting to the unfiltered query — that is the bug this guard had.
             final boolean defaultContentToDefaultLanguageGuard = Config.getBooleanProperty(
                     "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+
             final Set<String> existing;
             if (languageIdOpt.isPresent() && defaultContentToDefaultLanguageGuard) {
                 final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -1833,6 +1857,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 ContainerUUID.UUID_DEFAULT_VALUE,
                 personalization,
                 variantId,
+                variantId,
                 variantId);
         return this.getOriginalContentlets(SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT, params);
     }
@@ -1844,6 +1869,11 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
      * <p>Archived state is per language and per variant — {@code contentlet_version_info} is keyed
      * {@code (identifier, lang, variant_id)} — so a Contentlet archived in one language is still
      * real content in another and must still be counted here.</p>
+     *
+     * <p>Variant resolution follows page rendering: the save variant's own version row wins, and
+     * DEFAULT is consulted only when the Contentlet has no row in that variant. Content on a
+     * variant page normally lives only in DEFAULT, because copying a page into a variant copies
+     * its {@code multi_tree} rows but not the child Contentlets.</p>
      *
      * @param pageId          The ID of the HTML Page.
      * @param personalization The Persona set for the Multi-Tree entry.
@@ -1862,8 +1892,10 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 variantId,
                 pageId,
                 languageId,
+                languageId,
                 variantId,
-                languageId);
+                languageId,
+                variantId);
         return this.getOriginalContentlets(SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_LANGUAGE, params);
     }
 
@@ -1896,9 +1928,12 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 pageId,
                 languageId,
                 secondLanguageId,
+                languageId,
+                secondLanguageId,
                 variantId,
                 languageId,
-                secondLanguageId);
+                secondLanguageId,
+                variantId);
         return this.getOriginalContentlets(SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_TWO_LANGUAGES, params);
     }
 
