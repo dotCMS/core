@@ -134,16 +134,16 @@ and confirm they match the asset's own record.
 - A client narrowing to both the base kind and the specific type in one request must receive one
   merged object, not two partial ones (FR-018).
 - A field that points at an asset that has since been archived or deleted must degrade
-  predictably rather than failing the whole query.
+  predictably rather than failing the whole query (FR-019).
 - A field pointing at an asset in a language the request did not ask for must follow the same
-  language-fallback behavior the rest of content delivery uses.
+  language-fallback behavior the rest of content delivery uses (FR-019).
 - A customer asset type whose property name collides with one of the general asset properties must
   resolve to a single, documented meaning — a client must never silently receive one when it
-  asked for the other.
+  asked for the other (FR-021).
 - A customer who deletes a property that a live client query still asks for must get a clear
-  error naming the missing property.
+  error naming the missing property (FR-020).
 - An asset type the requesting user has no permission to read must not leak its property names or
-  values.
+  values (FR-022).
 
 ## Requirements *(mandatory)*
 
@@ -208,10 +208,12 @@ and confirm they match the asset's own record.
   such. What ships instead is documentation and release communication.
 - **FR-012b**: *(No longer applicable.)* Nothing is retired, so nothing is deferred. The tracking
   item this requirement called for is therefore not opened.
-- **FR-012c**: The two non-additive consequences MUST be announced ahead of the release and MUST
+- **FR-012c**: The non-additive consequences MUST be announced ahead of the release and MUST
   ship with migration guidance: what `__typename` returns now and who depends on it (notably
-  normalized client caches keyed on it), and that a type-kind change from object to interface
-  requires clients generating types from the schema to regenerate.
+  normalized client caches keyed on it); that a type-kind change from object to interface
+  requires clients generating types from the schema to regenerate; and that an asset-pointing
+  field aimed at content that is not an asset now answers `null` where it used to answer the flat
+  view — the one case where a query keeps validating while returning different data (SC-009).
 - **FR-013**: This feature supersedes PR dotCMS/core#35363, which MUST be closed as superseded
   rather than merged. The convenience it aimed at — reading an asset's binary properties without
   descending a level — MUST be **delivered here rather than deferred**: one PR, both limbs of
@@ -233,20 +235,76 @@ and confirm they match the asset's own record.
   asset-pointing field and inside a clause that narrows to a specific type, without the client
   having to repeat itself or choose one place over the other.
 - **FR-016**: A clause that narrows to a type the returned asset does not happen to be MUST NOT
-  fail the request. It contributes nothing and the rest of the response is delivered normally.
-  The response MUST additionally carry a non-fatal warning naming the clause that matched nothing,
-  so a client can tell "this asset wasn't that type" apart from "I named the wrong type".
+  fail the request. It contributes nothing and the rest of the response is delivered normally —
+  this is standard GraphQL behavior and stays so.
+
+  On top of that, the response MUST carry a non-fatal warning for a clause that matched **nothing
+  in the whole response**, so a client can tell "no asset here was that type" apart from "I named
+  the wrong type". Standard GraphQL has no such warning; it is a dotCMS addition and is therefore
+  confined to the place the GraphQL response format reserves for implementation-specific data:
+
+  - **Where**: `extensions.warnings`, an array. `data` and `errors` are never touched, so a client
+    that ignores `extensions` sees exactly a standard response.
+  - **Shape**: one entry per unmatched clause, `{ "path": "BannerCollection.image",
+    "typeCondition": "BannerImages", "message": "No content at this path was of type
+    BannerImages." }`. The path is the field path the clause was written under, not a row index.
+  - **Deduplicated per request, not per row**: a clause is reported only if no content anywhere in
+    the response was of that type. In a mixed collection where some rows match, it produces **no**
+    warning; a clause is never reported once per non-matching row.
+  - **Scope**: inline fragments (`... on X { }`) only. A named fragment spread is not followed, so
+    a warning is never attributed to a path the client did not write.
+  - **Not switchable**: there is no setting to turn it off. It is absent from any response whose
+    clauses all matched or that has no clauses, costs nothing in the latter case, and is inert for
+    a client that does not read `extensions` — so an off-switch would buy nothing.
 - **FR-016a**: This MUST hold across a whole result set, not just a single asset. When one request
   returns many assets of differing types, every asset that matches a clause MUST be returned with
   those properties populated, every asset that does not MUST still be returned without them, and
   the request as a whole MUST succeed. A single non-matching asset MUST NOT suppress the matching
   ones. Warnings MUST identify which clause matched nothing rather than being a single opaque
-  flag on the response.
+  flag on the response, and follow the shape and deduplication rule in FR-016.
 - **FR-017**: A clause that narrows to a type that does not exist at all MUST fail the request.
   This is a client mistake with no valid reading, and failing loudly is correct.
 - **FR-018**: When more than one clause applies to the same returned asset — one narrowing to its
   base kind and another to its specific type — their properties MUST merge into a single result
   object, with no precedence rule needed and no duplication.
+- **FR-019**: *Which* asset a field resolves to MUST be decided exactly as it is today — same
+  live/working selection, same language fallback, same outcome for an archived or deleted target —
+  because the lookup that resolves the reference is unchanged; this feature changes only what can
+  be selected on the result. A target that cannot be resolved (deleted, archived and not visible
+  to the request, or not readable by the caller) MUST answer `null` for that field and MUST NOT
+  fail the rest of the query.
+- **FR-020**: Selecting a property that no longer exists on the type — because the customer
+  deleted it — MUST fail the request with the standard GraphQL validation error, which names both
+  the property and the type (`Field 'campaignName' in type 'BannerImages' is undefined`). It MUST
+  NOT quietly answer `null`, which would be indistinguishable from an empty value.
+- **FR-021**: When a customer asset type defines a property whose name is also one of the general
+  asset properties the asset field offers directly (the flat view's and the binary's), the
+  **customer's property wins on that name**. It existed before this feature and changing what it
+  returns would be the silent change FR-009a forbids. The general meaning stays reachable,
+  unambiguously, through the binary (`asset { }` / `fileAsset { }`). `description` is the one
+  exception: FR-009a already fixes its meaning by how the asset was reached.
+
+  A collision MUST NOT be able to invalidate the schema. A GraphQL interface and every type
+  implementing it must agree on each shared property's type, so a customer `size` stored as text
+  against the general `size` as a number would otherwise reject the **whole** schema and take every
+  GraphQL query on the instance down with it. Therefore:
+  - A general property whose name any asset type on the instance defines with an incompatible type
+    is left off the asset field's shared description for that instance. Selecting it directly on
+    the asset field then fails validation with an error naming it — loud, never different data —
+    while the customer's own property keeps working through its type and the general value stays
+    reachable through the binary.
+  - Creating a **new** asset-type property whose name and type would collide incompatibly MUST be
+    refused when the property is saved, as dotCMS already refuses properties that collide with the
+    general content properties. The build-time rule above exists for data that predates this
+    feature, which cannot be refused retroactively.
+- **FR-022**: Permission-restricted content MUST NOT leak through this feature:
+  - Property values, and the concrete type reported by `__typename`, are only ever returned for an
+    asset the caller can read (FR-008); an unreadable asset answers `null` (FR-019).
+  - Warnings (FR-016) name only type conditions the client itself wrote. They never carry asset
+    content or the type of content the caller could not read.
+  - Which content types and property names the schema describes is unchanged: the schema is
+    built once for all callers, not per user, and already describes every content type today.
+    This feature adds interface membership to those existing types, not new visibility.
 ### Key Entities
 
 - **Asset base types**: the two built-in kinds of asset content in dotCMS — one image-oriented,
@@ -285,10 +343,21 @@ and confirm they match the asset's own record.
   against each on both a DOTASSET-derived and a FILEASSET-derived asset. `description` is included
   and returns the title through an asset-pointing field, the stored value when queried directly —
   the same two answers it gave before.
-- **SC-009**: Zero selections keep working while returning different data. The only value that
-  changes is `__typename`, which reports the resolved content type rather than a constant; it is
-  announced rather than prevented, because holding it fixed would mean naming a type the value
-  does not have.
+- **SC-009**: Zero selections keep working while returning different data, with exactly two
+  exceptions, both announced under FR-012c rather than prevented:
+  - `__typename` reports the resolved content type rather than a constant, because holding it
+    fixed would mean naming a type the value does not have.
+  - An asset-pointing field aimed at content that is **not** an asset answers `null` instead of the
+    flat view. It cannot keep the flat view — handing a non-asset to the asset interface fails the
+    whole request — and a warning was considered and rejected: the flat view of a non-asset had no
+    binary, so what it returned was already meaningless, and the misconfiguration is in stored
+    data, which the client developer reading the warning cannot fix.
+- **SC-010**: Each edge case has a measured outcome: an archived, deleted or unreadable target
+  answers `null` without failing the query (FR-019); a deleted property fails validation with an
+  error naming it (FR-020); an asset type carrying a property that collides with a general asset
+  property — with the same type or a different one — leaves the schema valid and every other query
+  working (FR-021); and no response to a user without read permission on an asset contains
+  that asset's property values or concrete type name (FR-022).
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -347,12 +416,15 @@ What remains is not a field removal and is not what ADR-0022 governs:
 - **The kind of `DotFileasset`** changes from object to interface. Query text is unaffected;
   clients that generate types from the schema must regenerate. This, rather than `__typename`, is
   the item a supported-version floor speaks to.
+- **An asset field aimed at non-asset content** answers `null` instead of the flat view. This one
+  *is* a selection that keeps validating while returning different data, and is recorded as the
+  explicit exception in SC-009 rather than argued away.
 
-Both are covered by FR-012c's announcement and migration guidance.
+All three are covered by FR-012c's announcement and migration guidance.
 
 **Sign-off**: @fmontes and @nollymar were asked to weigh an ADR-0022 exception against the earlier
 breaking design. That request is withdrawn — there is no longer an exception to grant. Their review
-is still wanted on the two items above.
+is still wanted on the three items above.
 
 ### Decision: both meanings of `description` are kept
 
@@ -479,6 +551,6 @@ different names is ever wanted, that is a new question, not leftover scope from 
   issue closes with this feature rather than staying open for a second stage.
 - "Single request" in SC-002 means one GraphQL query from the client's perspective; it makes no
   claim about server-side work.
-- The five surviving flat properties keep their exact present behaviour, including the synthesized
+- The six surviving flat properties keep their exact present behaviour, including the synthesized
   `fileName` that derives rather than stores its value. Correcting it would be a silent change to a
   live contract, which FR-009a forbids.
