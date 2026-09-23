@@ -14,6 +14,8 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.content.index.migration.MirrorStatus;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotcms.publishing.BundlerUtil;
@@ -21,7 +23,9 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -72,6 +76,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 import static org.awaitility.Awaitility.await;
@@ -1145,6 +1150,72 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                             + "the job never leaves the index in a worse state than a successful "
                             + "run would (issue #37321)",
                     crawlCompleted.get());
+        }
+    }
+
+    /**
+     * AC-001, the branch the other connection test cannot reach — the pre-crawl index-completeness
+     * check must not leave a connection bound to the thread.
+     *
+     * <p>{@code incompleteContentIndexWarning()} is advisory and off by default
+     * ({@code SITE_SEARCH_CRAWL_MIN_CONTENT_INDEXED_PERCENT} defaults to 0), so it returns before
+     * touching the database and
+     * {@link #Test_Crawl_Runs_With_No_Connection_And_No_Transaction_Held()} never exercises it. Turn
+     * it on during a migration and it reaches {@code ContentIndexMirrorReconciler.statuses()}, whose
+     * last step is an unannotated {@code new DotConnect().setSQL(...).loadObjectResults()} —
+     * {@code DotConnect} leases from the pool and never closes, relying on an enclosing
+     * {@code @CloseDBIfOpened} that does not exist on that path.</p>
+     *
+     * <p>That matters here more than anywhere else in the job: the check runs immediately before the
+     * publish loop, so a connection left bound is pinned for the whole crawl — the exact shape of
+     * issue #37321, a few lines below where it was removed. Worse, it defeats the fix downstream:
+     * {@code publish()}'s {@code @CloseDBIfOpened} sees {@code isNewConnection == false} and skips
+     * the close, and the audit save's {@code @WrapInTransaction} then works on that same
+     * possibly-dead connection instead of leasing a fresh, pool-validated one.</p>
+     *
+     * <p>The supplier injected here stands in for the reconciler by doing the one thing that
+     * matters — an unannotated read — rather than requiring a real migration with live mirrors.</p>
+     */
+    @Test
+    public void Test_Index_Check_Leaves_No_Connection_Bound_For_The_Crawl() {
+
+        // Exactly what ContentIndexMirrorReconciler.loadDatabaseCountsQuietly() does: a bare
+        // DotConnect with no transaction or connection boundary of its own.
+        final Supplier<List<MirrorStatus>> leakingStatuses = () -> {
+            try {
+                new DotConnect().setSQL("select 1 as one").loadObjectResults();
+            } catch (final DotDataException e) {
+                throw new IllegalStateException(e);
+            }
+            return new ArrayList<>();
+        };
+
+        // Both are required to get past the early returns in incompleteContentIndexWarning():
+        // a positive threshold, and a migration that has actually started. Only the check itself is
+        // invoked — deliberately not a whole crawl, because running one under a non-zero migration
+        // phase pulls OpenSearch into a test that has nothing to do with it.
+        Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, "1");
+        Config.setProperty(MigrationPhase.FLAG_KEY, "1");
+        try {
+            DbConnectionFactory.closeSilently();
+
+            final SiteSearchJobImpl impl = new SiteSearchJobImpl(
+                    APILocator.getIndiciesAPI(), siteSearchAPI, hostAPI, APILocator.getUserAPI(),
+                    siteSearchAuditAPI, Mockito.mock(PublisherAPI.class), leakingStatuses);
+
+            impl.incompleteContentIndexWarning();
+
+            Assert.assertFalse(
+                    "The pre-crawl index-completeness check must not leave a connection bound: it "
+                            + "runs immediately before the publish loop, so anything it leaves "
+                            + "behind is held for the whole crawl, and the audit save then inherits "
+                            + "that connection instead of leasing a fresh one (issue #37321)",
+                    DbConnectionFactory.connectionExists());
+        } finally {
+            Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, null);
+            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+            HibernateUtil.closeSessionSilently();
+            DbConnectionFactory.closeSilently();
         }
     }
 

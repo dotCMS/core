@@ -20,6 +20,7 @@ import com.dotcms.publishing.PublisherAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -245,7 +246,13 @@ public class SiteSearchJobImpl {
                 siteSearchAuditAPI.save(audit);
             }
         } finally {
-            HibernateUtil.closeSession();
+            // Silently, because an exception thrown from a finally REPLACES the one in flight. This
+            // method's whole point is to let a failed audit save reach the caller carrying the
+            // sitesearch_audit SQL — the detail that separates a #36706 column overflow from a dead
+            // socket. closeSession() throws DotHibernateException, and on precisely the dead-socket
+            // path this fix exists for, its flush/commit is what dies. There is no transaction left
+            // to commit here, so the cleanup has nothing worth reporting (issue #37321).
+            HibernateUtil.closeSessionSilently();
         }
         date = DateUtil.getCurrentDate();
         ActivityLogger.logInfo(getClass(), "Job Finished",
@@ -498,17 +505,34 @@ public class SiteSearchJobImpl {
             return Optional.empty();
         }
         final boolean readsOpenSearch = phase.isReadEnabled();
-        return Try.of(() -> contentMirrorStatuses.get().stream()
-                        .map(status -> indexedShortfall(status, readsOpenSearch, threshold))
-                        .flatMap(Optional::stream)
-                        .findFirst())
-                // Swallowed so a diagnostic can never break indexing, but never in silence: whoever
-                // switched this check on did it to learn something, and "no warning" would otherwise be
-                // indistinguishable from "the measurement blew up".
-                .onFailure(e -> Logger.warn(SiteSearchJobImpl.class,
-                        "Could not measure how complete the content index is before this Site Search "
-                                + "crawl; continuing without the check: " + e.getMessage()))
-                .getOrElse(Optional.empty());
+        // Whether the caller already owned a connection decides whether we may close one below.
+        final boolean callerOwnsConnection = DbConnectionFactory.connectionExists();
+        try {
+            return Try.of(() -> contentMirrorStatuses.get().stream()
+                            .map(status -> indexedShortfall(status, readsOpenSearch, threshold))
+                            .flatMap(Optional::stream)
+                            .findFirst())
+                    // Swallowed so a diagnostic can never break indexing, but never in silence: whoever
+                    // switched this check on did it to learn something, and "no warning" would otherwise be
+                    // indistinguishable from "the measurement blew up".
+                    .onFailure(e -> Logger.warn(SiteSearchJobImpl.class,
+                            "Could not measure how complete the content index is before this Site Search "
+                                    + "crawl; continuing without the check: " + e.getMessage()))
+                    .getOrElse(Optional.empty());
+        } finally {
+            // ContentIndexMirrorReconciler ends its work with an unannotated DotConnect count query,
+            // and DotConnect leases from the pool without ever closing — it relies on an enclosing
+            // @CloseDBIfOpened that does not exist on that path. Left alone, the connection stays
+            // bound to this thread, and since this check runs immediately before the crawl it would
+            // be held for hours: exactly the defect this job was just fixed for, and it would also
+            // rob the audit save of its own fresh connection (issue #37321).
+            //
+            // Only what this method caused is released. A caller that already owned a connection
+            // keeps it.
+            if (!callerOwnsConnection) {
+                DbConnectionFactory.closeSilently();
+            }
+        }
     }
 
     /** The shortfall message for one content row, or empty when that row is fine or unmeasured. */
