@@ -250,11 +250,23 @@ export function isSameOriginRelativeUrl(url: string | null | undefined): url is 
     }
 }
 
-/** A dotCMS identifier is a 36-character UUID. */
-const IDENTIFIER_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/**
+ * The two shapes a dotCMS identifier comes in.
+ *
+ * A 36-character UUID, and the 32-hex form with no dashes that older content carries — everything
+ * the starter ships, among other things. Matching only the first is not a stricter reading of the
+ * same rule, it is wrong about the data: on the demo site three of twenty-three pages are the
+ * dashless form, and a caller using this as its gate reported them as moved or deleted without
+ * ever sending a request.
+ *
+ * Both alternatives are anchored and fixed-length, so neither admits a separator, an operator or
+ * whitespace — which is the only property the callers rely on.
+ */
+const IDENTIFIER_PATTERN =
+    /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{32})$/i;
 
 /**
- * Whether a value is shaped like a dotCMS identifier.
+ * Whether a value is shaped like a dotCMS identifier, in either of the two forms above.
  *
  * Meant for values that reach a Lucene query: the search endpoints take a query *string*, so an
  * identifier that arrives from a URL or any other caller-supplied source is concatenated into it.

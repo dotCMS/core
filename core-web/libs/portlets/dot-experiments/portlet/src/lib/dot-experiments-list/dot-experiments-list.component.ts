@@ -1,6 +1,7 @@
 import { EventCreator, Events, injectDispatch } from '@ngrx/signals/events';
 
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     Component,
     computed,
@@ -30,6 +31,7 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import {
     DotExperimentsService,
+    DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService
 } from '@dotcms/data-access';
@@ -50,12 +52,15 @@ import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-
 import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
+    DotFilterBarComponent,
     DotEmptyContainerComponent,
     DotMessagePipe,
+    DotUserFilterComponent,
     PrincipalConfiguration
 } from '@dotcms/ui';
 
 import { DotExperimentListFilterComponent } from '../components/dot-experiment-list-filter/dot-experiment-list-filter.component';
+import { DotExperimentScheduleFilterComponent } from '../components/dot-experiment-schedule-filter/dot-experiment-schedule-filter.component';
 import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     GOAL_LABEL_KEYS,
@@ -63,7 +68,7 @@ import {
     PANEL_LIST_TABLE_STYLE,
     PANEL_SKELETON_COLUMNS,
     LIST_TITLE_KEY,
-    NO_GOAL_PLACEHOLDER,
+    EMPTY_CELL_PLACEHOLDER,
     ROWS_PER_PAGE_OPTIONS,
     SEARCH_DEBOUNCE_MS,
     SKELETON_COLUMNS,
@@ -75,9 +80,11 @@ import {
 import {
     DotExperimentsListSortDirection,
     ExperimentFilterOption,
-    ExperimentRow
+    ExperimentRow,
+    ExperimentsListSchedulePeriod
 } from '../shared/models';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
+import { provideExperimentsFilterFacade } from '../store/dot-experiments-filter-facade';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 import { experimentsListCrumb, putCrumbOnTrail } from '../util/dot-experiments-breadcrumb.util';
@@ -108,7 +115,10 @@ import {
         ToolbarModule,
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
+        DotFilterBarComponent,
         DotExperimentListFilterComponent,
+        DotExperimentScheduleFilterComponent,
+        DotUserFilterComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-list.component.html',
@@ -120,7 +130,10 @@ import {
         DotExperimentsListStore,
         DotExperimentsRouter,
         ConfirmationService,
-        DotExperimentsService
+        DotExperimentsService,
+        // Beside the store it reads, so the chips in this toolbar and the bar's own "Clear all"
+        // resolve the same instance — and the panel's second listing gets its own.
+        provideExperimentsFilterFacade()
     ],
     host: {
         class: 'flex flex-col h-full min-h-0 animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none',
@@ -148,27 +161,14 @@ export class DotExperimentsListComponent {
      */
     readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
     readonly #experimentsRouter = inject(DotExperimentsRouter);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     protected readonly $inPanel = !!this.#panel;
 
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
-    readonly NO_GOAL_PLACEHOLDER = NO_GOAL_PLACEHOLDER;
+    readonly EMPTY_CELL_PLACEHOLDER = EMPTY_CELL_PLACEHOLDER;
     readonly ROWS_PER_PAGE_OPTIONS = ROWS_PER_PAGE_OPTIONS;
-    /** The panel drops the Page column, so it does not need the portlet's 81rem floor. */
+    /** The panel drops the Page column, so it does not need the portlet's 91rem floor. */
     readonly TABLE_STYLE = this.$inPanel ? PANEL_LIST_TABLE_STYLE : LIST_TABLE_STYLE;
-
-    /**
-     * Page sizes to offer, or `null` for none.
-     *
-     * A list that fits in the smallest of them has nothing to page: every option would render the
-     * same single page, so the select is dropped rather than left there doing nothing. PrimeNG only
-     * renders it when this is set, and it already disables the page arrows on a single page — so the
-     * whole bar goes inert together.
-     */
-    readonly $rowsPerPageOptions = computed<number[] | null>(() =>
-        this.store.totalRecords() > Math.min(...ROWS_PER_PAGE_OPTIONS)
-            ? ROWS_PER_PAGE_OPTIONS
-            : null
-    );
     readonly SKELETON_COLUMNS = this.$inPanel ? PANEL_SKELETON_COLUMNS : SKELETON_COLUMNS;
 
     /** Rows currently rendered by the table, already resolved for display. */
@@ -184,6 +184,9 @@ export class DotExperimentsListComponent {
                 pagePath: resolvePagePath(experiment.pageId, pageInfoByPageId),
                 goalLabelKey: goalType ? GOALS_METADATA_MAP[goalType].label : null,
                 variants: variantsCount(experiment.trafficProportion),
+                // Blank folds in with absent: both mean the payload named nobody, and neither is
+                // reachable against a backend carrying #37304.
+                createdByName: experiment.createdByUserName || null,
                 schedule: formatSchedule(experiment.scheduling, scheduleLabels),
                 statusSeverity: STATUS_SEVERITIES[experiment.status] ?? 'secondary',
                 statusLabelKey: STATUS_LABEL_KEYS.get(experiment.status) ?? ''
@@ -286,10 +289,6 @@ export class DotExperimentsListComponent {
     };
 
     /**
-     * Empty-state copy. Resolved once for the same reason as `#scheduleLabels`, and declared
-     * after the injections because field initialisers run in declaration order.
-     */
-    /**
      * The page the list is narrowed to (#37005, FR-021c).
      *
      * `null` when there is no page filter. When there is one but `pageInfoByPageId` cannot resolve
@@ -325,23 +324,33 @@ export class DotExperimentsListComponent {
               };
     });
 
-    /**
-     * Any narrowing in force, as opposed to a site that simply has no experiments.
-     *
-     * A page narrowing by path counts. It arrives in the address rather than from a control here —
-     * `?url=` is the shape of every Universal Visual Editor address — and one that resolves to no
-     * page is the case this exists for: the list has nothing to show and no reason on screen for
-     * it, so it has to read as "nothing matched" with a way out, not as an empty site.
-     *
-     * A narrowing by `pageId` deliberately does not count: that one has its own empty state, which
-     * names the page and offers to create the first experiment for it.
-     */
-    readonly $hasActiveFilters = computed<boolean>(
+    /** The search box and the chips: everything the toolbar itself can narrow by. */
+    readonly #hasToolbarNarrowing = computed<boolean>(
         () =>
             this.store.filter().length > 0 ||
             this.store.selectedStatuses().length > 0 ||
             this.store.selectedGoals().length > 0 ||
-            !!this.store.selectedPageUrl()
+            this.store.selectedCreators().length > 0 ||
+            this.store.scheduleFrom() !== null ||
+            this.store.scheduleTo() !== null
+    );
+
+    /**
+     * A page narrowing that arrived by path and resolved to no page — the dead end.
+     *
+     * It counts as a filter even though no control here set it: `?url=` is the shape of every
+     * Universal Visual Editor address, and one pasted into the list that matches nothing leaves
+     * the screen with nothing to show and no reason on it for that, so it has to read as "nothing
+     * matched" with a way out rather than as an empty site.
+     *
+     * A narrowing by `pageId` deliberately does not count: that one has its own empty state, which
+     * names the page and offers to create the first experiment for it.
+     */
+    readonly #hasDeadEndPageNarrowing = computed<boolean>(() => !!this.store.selectedPageUrl());
+
+    /** Any narrowing in force, as opposed to a site that simply has no experiments. */
+    readonly $hasActiveFilters = computed<boolean>(
+        () => this.#hasToolbarNarrowing() || this.#hasDeadEndPageNarrowing()
     );
 
     /** The table is replaced by an empty state once a settled load has nothing to show. */
@@ -510,18 +519,18 @@ export class DotExperimentsListComponent {
     /**
      * Clears the narrowings the user applied, from the no-results state.
      *
-     * Not the page filter: that one is not the user's — they arrived with it from the editor — and
-     * it lives in the address rather than in a control on this screen. Nothing here can widen it;
-     * see the note on `$pageFilter`.
+     * Two lines rather than one because the search box is a control of *this* component: its model
+     * has to be written here, while the store's own copy of the term, the chips and the page
+     * narrowing all go in the single event.
+     *
+     * The page narrowing goes with them only because this button is on screen beside one that
+     * matched nothing. A narrowing that *is* matching shows the page-scoped empty state instead,
+     * whose action creates an experiment for the page rather than widening the list — see the note
+     * on `$pageFilter`.
      */
     onClearFilters(): void {
         this.$searchTerm.set('');
-        this.#dispatch.statusesChanged([]);
-        this.#dispatch.goalsChanged([]);
-        // Including a page narrowing that matched nothing — the only case where this button is on
-        // screen beside one. A narrowing that *is* matching shows the page-scoped empty state,
-        // whose action creates an experiment for the page rather than widening the list.
-        this.#dispatch.pageNarrowingCleared();
+        this.#dispatch.filtersCleared();
     }
 
     /**
@@ -543,6 +552,30 @@ export class DotExperimentsListComponent {
 
     onStatusesChange(statuses: string[]): void {
         this.#dispatch.statusesChanged(statuses as DotExperimentStatus[]);
+    }
+
+    onCreatorsChange(creatorIds: string[]): void {
+        this.#dispatch.creatorsChanged(creatorIds);
+    }
+
+    /**
+     * The user directory could not be read (FR-012).
+     *
+     * Routed to the screen's shared error reporting, which is the same place a failed list load
+     * goes. The chip cannot do this itself: it lives in `@dotcms/ui`, which cannot reach
+     * `DotHttpErrorManagerService` — that service transitively needs `Router` and
+     * `DotEventsSocket`, absent in the legacy Dojo host. So the chip reports outwards and the
+     * surface decides, exactly as `dot-field-filter-menu` already does.
+     *
+     * The table is deliberately left alone: a directory that will not load says nothing about the
+     * experiments already on screen.
+     */
+    onDirectoryError(error: HttpErrorResponse): void {
+        this.#httpErrorManager.handle(error);
+    }
+
+    onScheduleChange(period: ExperimentsListSchedulePeriod): void {
+        this.#dispatch.scheduleChanged(period);
     }
 
     onGoalsChange(goals: string[]): void {
