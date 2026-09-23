@@ -194,11 +194,9 @@ export class DotVelocityPlaygroundPageComponent {
      */
     onEditorInit(editor: DotMonacoRunShortcutEditor): void {
         ensureVelocityLanguageRegistered();
-        registerDotMonacoRunShortcut(
-            editor,
-            () => this.onRun(),
-            this.#messageService.get('velocityPlayground.action.run')
-        );
+        registerDotMonacoRunShortcut(editor, () => this.onRun(), {
+            label: this.#messageService.get('velocityPlayground.action.run')
+        });
     }
 
     onRun(): void {

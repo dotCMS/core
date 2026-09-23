@@ -330,24 +330,16 @@ export class DotQueryToolPageComponent implements OnInit {
 
     /**
      * Binds `Cmd/Ctrl + Enter` inside the query editor to the same action as the Run button.
+     * The shortcut is ignored while a search is already in flight, where the Run button is
+     * disabled too.
      *
      * @param editor the Monaco editor instance emitted by `ngx-monaco-editor`
      */
     onQueryEditorInit(editor: DotMonacoRunShortcutEditor): void {
-        registerDotMonacoRunShortcut(
-            editor,
-            () => this.onRunShortcut(),
-            this.#messageService.get('queryTool.action.run')
-        );
-    }
-
-    /**
-     * Runs the query from the keyboard shortcut. Ignored while a search is already in flight,
-     * where the Run button is disabled too.
-     */
-    onRunShortcut(): void {
-        if (this.store.isLoading()) return;
-        this.onRun();
+        registerDotMonacoRunShortcut(editor, () => this.onRun(), {
+            label: this.#messageService.get('queryTool.action.run'),
+            canRun: () => !this.store.isLoading()
+        });
     }
 
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {
