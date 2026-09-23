@@ -179,8 +179,8 @@ true — which is the failure mode this entire Rock was created to address.
 - Surfaces found carrying fabricated content so far: `INTEGRATION_TESTS.md` and
   `REST_API_PATTERNS.md` (#37128), `BACKEND_UNIT_TESTS.md` (#37666), `CLI_OVERVIEW.md` (#37664),
   `CICD_PIPELINE.md` (#37711), `.claude/commands/gh-issue-troubleshoot.md` (#37610), five files
-  under `.cursor/rules/` (#37590, #37629, #37715), and `.claude/skills/dot-cicd-diagnose` (item 6,
-  still unfixed). **Every one found by reading. None by any tool.**
+  under `.cursor/rules/` (#37590 and #37629 merged; #37715 open), and
+  `.claude/skills/dot-cicd-diagnose` (item 6, still unfixed). **Every one found by reading. None by any tool.**
 - The shape is consistent: **real API names arranged around a fictional subject.** A reviewer
   spot-checking `WorkflowAPI` gets a hit and moves on, while `WorkflowManager` in the same snippet
   does not exist. `PushContext` is real but an interface, not the record the doc showed.
@@ -218,10 +218,11 @@ hand, by whoever remembers.
   *should* have been rather than what the frontmatter said (fixed in #37629).
 - `doc-updates.mdc` — the rule whose entire job is telling a reader where to update documentation —
   had a glob of `**/*.mdc`, so it never loaded when editing a `.md` (fixed in #37629).
-- `e2e-rules.mdc` was 223 lines restating `core-web/apps/dotcms-ui-e2e/AGENTS.md` rather than
-  pointing at it — the only rule with zero `@docs` pointers — and had drifted into contradicting it
-  on locator strategy while describing a `src/config/` directory that does not exist (folded into a
-  50-line pointer in #37715).
+- `e2e-rules.mdc` is 223 lines restating `core-web/apps/dotcms-ui-e2e/AGENTS.md` rather than
+  pointing at it — the only rule with zero `@docs` pointers — and has drifted into contradicting it
+  on locator strategy while describing a `src/config/` directory that does not exist. **#37715 is
+  open** and folds it to a ~50-line pointer; until that merges the contradiction is still what
+  Cursor loads on every spec edit.
 - The fixes are merged; the process gap is not. Nothing makes a change to `docs/testing/` prompt a
   look at `test-context.mdc`, and the CI gate that exists for skills has no equivalent for rules or
   commands. The reachability check added in #37578 covers `docs/`, not these two directories.
