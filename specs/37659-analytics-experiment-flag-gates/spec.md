@@ -328,11 +328,15 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
   mechanism that other consumers use; wiring it into the same refresh path is an implementation
   error.
   **Breaking change**: the default value for both `FEATURE_FLAG_EXPERIMENTS` and
-  `FEATURE_FLAG_CONTENT_ANALYTICS` MUST change from `true` to `false`. Any deployment
-  that does not explicitly set these flags will have analytics and experiments blocked
-  after this change ships. Because the current customer footprint for these features is
-  small, each active customer MUST be verified before release to confirm their
-  configuration explicitly sets the relevant flag(s) to `true`.
+  `FEATURE_FLAG_CONTENT_ANALYTICS` MUST change from `true` to `false` **system-wide** —
+  for every consumer of these flags across the system, not only the gate introduced by this
+  feature. This ensures a new deployment without explicit flag configuration is fully
+  disabled: no REST access, no analytics event interception, no experiment serving. Changing
+  the default only in the gate would leave other internal consumers active while the API
+  surface is blocked — an inconsistent state that does not represent "feature disabled."
+  Because the current customer footprint for these features is small, each active customer
+  MUST be verified before release to confirm their configuration explicitly sets the relevant
+  flag(s) to `true`.
   Rationale: these are paid features — a restart gives operators an explicit, intentional
   activation step rather than an immediate live toggle. `FEATURE_FLAG_CONTENT_ANALYTICS`
   may be re-defaulted to `true` once the feature is considered broadly available.
