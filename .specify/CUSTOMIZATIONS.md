@@ -369,6 +369,13 @@ It is a parallel assess→fix→test workflow that stores reports under `.specif
 the `/speckit-specify-fix` approach instead so issue-resolution plans are still ADR- and
 legacy-checked. Revisit if the bug extension gains a planning/ADR step.
 
+**No upgrade-safe route exists to fix it.** All ten core commands dispatch extension hooks — that
+is how our mandatory ADR consultation attaches to `/speckit-plan`. The three `bug` commands
+dispatch **none**, and `extensions/bug/extension.yml` declares no `hooks:` block at all, so there
+is nothing to register a `before_bug_fix` against. Adding the gate would mean editing a shipped
+command file, which every other customization here exists to avoid. This is what turns the
+rejection from a preference into a constraint.
+
 **Re-checked at v1.0.9 (2026-09-22): verdict unchanged.** `extensions/bug/extension.yml` still
 provides exactly `speckit.bug.assess`, `speckit.bug.fix` and `speckit.bug.test`, still stores
 reports under `.specify/bugs/<slug>/`, and still has no route into `/speckit-plan`. The single

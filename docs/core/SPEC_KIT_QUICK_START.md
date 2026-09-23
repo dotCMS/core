@@ -52,6 +52,19 @@ You run these in Claude Code; each writes files into `specs/<your-feature>/` and
 the next. Because both entry points converge at `/speckit-plan`, a bug fix gets exactly the
 same ADR and legacy scrutiny as a feature.
 
+> **Looking for `/speckit-bug-assess`, `/speckit-bug-fix` or `/speckit-bug-test`?** They exist in
+> Spec-Kit upstream, and they are **not installed here** — that is a decision, not an oversight.
+> To fix a bug in this repo, use `/speckit-specify-fix`.
+>
+> The upstream commands are a self-contained workflow that goes assess → fix → test and stores its
+> reports under `.specify/bugs/`. It never reaches `/speckit-plan`, so it would skip the mandatory
+> ADR consultation, and it applies the remediation before any test exists, which inverts the TDD
+> gate the constitution calls non-negotiable. Neither gap can be patched from a file we own —
+> unlike the ten core commands, the bug commands dispatch no hooks at all, so there is nothing to
+> register against. Re-checked at v1.0.9; verdict unchanged. Full reasoning in
+> [.specify/CUSTOMIZATIONS.md](../../.specify/CUSTOMIZATIONS.md) → *Alternative considered: the
+> native `bug` extension*.
+
 **The last step is yours to trigger, and that is deliberate.** `/speckit-converge` checks the
 code against the spec you got approved and appends anything still unbuilt to `tasks.md`. When
 implement finishes it *reminds* you to run it — it does not run it for you.
@@ -541,6 +554,7 @@ and it never creates, edits, or commits an ADR.
 | `git add tasks.md` does nothing | Gitignored by design (§8) | Nothing to fix — it's a process artifact |
 | "Feature directory already exists" | Two features created in the same second, or the same `--number` passed twice | Rerun — the timestamp moves. Numbering has been `timestamp` since the v1.0.9 upgrade, so a collision needs two creations inside one second |
 | Implementation ignores the test order | `[GATE]` tasks were edited out of `tasks.md` | Regenerate with `/speckit-tasks`; never delete gate tasks |
+| `/speckit-bug-assess` and friends don't exist | The upstream `bug` extension is deliberately not installed (§1) | Use `/speckit-specify-fix` — it reaches the ADR and TDD gates, which that flow skips |
 | Plan skipped the ADR step | The `before_plan` hook didn't fire | Run `.specify/scripts/bash/adr-context.sh` yourself and fill in the ADR Alignment section. Since v1.0.9 a malformed `.specify/extensions.yml` is reported instead of skipped silently, so check the command's output for a parser error |
 | A `/speckit-*` command stopped asking for the dotCMS sections | A regeneration dropped a customization — it fails by absence, so nothing errors | Run `.specify/scripts/bash/verify-customizations.sh`; it names which one and which requirement it belongs to |
 | Commands can't find the feature after you branch again | `.specify/feature.json` is missing or stale | `export SPECIFY_FEATURE_DIRECTORY=specs/<your-dir>` — the pointer is local and untracked, never committed |
