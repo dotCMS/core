@@ -47,6 +47,18 @@ export const DEFAULT_EXPERIMENTS_LIST_STATUSES: DotExperimentStatus[] = [];
 /** Same as the status filter: nothing pre-selected, so the chip reads as unfiltered. */
 export const DEFAULT_EXPERIMENTS_LIST_GOALS: GOAL_TYPES[] = [];
 
+/** Same as status and goal: nothing pre-selected, so the chip reads as unfiltered. */
+export const DEFAULT_EXPERIMENTS_LIST_CREATORS: string[] = [];
+
+/**
+ * The format the schedule bounds take in the address: a local calendar date.
+ *
+ * A date rather than an instant because that is what a period picked on a calendar means — the
+ * link reopens on the days that were chosen. Carrying an instant would make the calendar show a
+ * different day than the one selected, in any time zone but the writer's (FR-049a).
+ */
+export const SCHEDULE_BOUND_FORMAT = 'yyyy-MM-dd';
+
 /** i18n keys of the goal names, in the order the filter lists them. */
 export const GOAL_LABEL_KEYS = new Map<GOAL_TYPES, string>(
     Object.values(GOAL_TYPES).map((goal) => [goal, GOALS_METADATA_MAP[goal].label])
@@ -105,17 +117,27 @@ export const SKELETON_ROWS: ExperimentRow[] = Array.from(
     () => ({}) as ExperimentRow
 );
 
-/** One skeleton cell per table column. */
-export const SKELETON_COLUMNS = Array.from({ length: 8 }, (_, index) => index);
+/** One skeleton cell per table column. Nine since Created By joined them (#37307). */
+export const SKELETON_COLUMNS = Array.from({ length: 9 }, (_, index) => index);
 
 /**
  * The same skeleton row inside the panel, which renders one column fewer — Page is dropped there
  * (FR-009). A skeleton wider than its header puts a cell outside the table while it loads.
+ *
+ * Derived by dropping one, which holds only while exactly one column differs between the two
+ * surfaces. Created By (#37307) was added to both, so it still holds; a column rendered on one
+ * surface and not the other would break the derivation rather than this number.
  */
 export const PANEL_SKELETON_COLUMNS = SKELETON_COLUMNS.slice(1);
 
-/** Placeholder rendered in the Goal column when no goal is configured. */
-export const NO_GOAL_PLACEHOLDER = '—';
+/**
+ * Rendered in place of a cell whose value the experiment does not carry — a goal that was never
+ * configured, or a creator name from a backend that predates #37304.
+ *
+ * One dash for both, so a reader scanning a column sees the same "nothing here" everywhere rather
+ * than having to learn a per-column convention.
+ */
+export const EMPTY_CELL_PLACEHOLDER = '—';
 
 /**
  * Style of the list table.
@@ -126,30 +148,36 @@ export const NO_GOAL_PLACEHOLDER = '—';
  * zero once the viewport is narrow enough. The `min-width` is the floor that stops it: below that
  * the table stops shrinking and the scroll container takes over horizontally.
  *
- * The value is the sum of the fixed columns (14 + 11 + 7 + 15 + 8 + 8 + 4 = 67rem) plus the floor
- * granted to Name (14rem). Keep it in step with the header widths — a column added or resized
- * there without updating this number silently eats into Name's floor again.
+ * The value is the sum of the fixed columns — Page 14 + Goal 11 + Variants 7 + Created By 10 +
+ * Schedule 15 + Status 8 + Modified 8 + actions 4 = 77rem — plus the floor granted to Name
+ * (14rem). Keep it in step with the header widths: a column added or resized there without
+ * updating this number silently eats into Name's floor again, which is how a wrong value shows up
+ * — not as a broken layout but as a Name column squeezed at a width nobody tests at.
  */
 export const LIST_TABLE_STYLE: Record<string, string> = {
     'table-layout': 'fixed',
-    'min-width': '81rem'
+    'min-width': '91rem'
 };
 
 /**
  * The same table, inside the Experiments panel (#37478).
  *
- * One number differs, and it is not a style choice. `81rem` is what the seven data columns need at
- * their declared widths; the panel drops the Page column (FR-009, `w-56` = 14rem) and gives the
- * space back to the name, so the floor moves with it: 53rem of fixed columns (67 − 14) plus an
- * 11rem floor for Name. Keep both numbers in step with the header widths.
+ * One number differs, and it is not a style choice. `91rem` is what the portlet's eight data
+ * columns need at their declared widths; the panel drops the Page column (FR-009, `w-56` = 14rem)
+ * and gives the space back to the name, so the floor moves with it: 63rem of fixed columns
+ * (77 − 14) plus an 11rem floor for Name. Created By is **not** dropped here (FR-032a), so it is
+ * inside both sums. Keep both numbers in step with the header widths.
+ *
+ * The panel is the narrower of the two and therefore the binding constraint on how wide Created By
+ * can be: every rem given to it is a rem the panel starts scrolling earlier at.
  *
  * This is a scroll threshold, not a layout switch: which layout renders is decided by the mode
  * flag alone, never by measured width (FR-041). Below this the panel scrolls horizontally exactly
- * as the portlet does below `81rem`, which on an 80% panel means a viewport under about 1280px.
+ * as the portlet does below `91rem`, which on an 80% panel means a viewport under about 1480px.
  */
 export const PANEL_LIST_TABLE_STYLE: Record<string, string> = {
     'table-layout': 'fixed',
-    'min-width': '64rem'
+    'min-width': '74rem'
 };
 
 /** Height of the status filter's option list before it scrolls. */
@@ -253,7 +281,6 @@ export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
 /** Read-only banner copy for every other non-DRAFT status. */
 export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-only';
 
-/** Page card's inline error when `?pageId=`/`?url=` named a page that is not there. */
 /**
  * How many rows a page lookup asks for.
  *
@@ -263,6 +290,7 @@ export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-on
  */
 export const PAGE_LOOKUP_LIMIT = 10;
 
+/** Page card's inline error when `?pageId=`/`?url=` named a page that is not there. */
 export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
 
 /**

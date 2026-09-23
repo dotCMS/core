@@ -16,7 +16,9 @@ interface SearchBarProps {
 }
 
 export function BlogListingPage(pageResponse: Parameters<typeof useEditableDotCMSPage>[0]) {
-    const { content = {} } = useEditableDotCMSPage(pageResponse);
+    // `useEditableDotCMSPage` returns undefined while the UVE is still resolving a
+    // draft page, so default before destructuring — same guard as examples/nextjs.
+    const { content = {} } = useEditableDotCMSPage(pageResponse) ?? {};
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Blog[] | null>(null);
     const debouncedSearchQuery = useDebounce(searchQuery, 500);

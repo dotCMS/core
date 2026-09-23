@@ -1,3 +1,5 @@
+import { endOfDay, format, isValid, parse, startOfDay } from 'date-fns';
+
 import { Params } from '@angular/router';
 
 import {
@@ -17,9 +19,14 @@ import {
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
-    DEFAULT_EXPERIMENTS_LIST_STATUSES
+    DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    SCHEDULE_BOUND_FORMAT
 } from '../shared/constants';
-import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/models';
+import {
+    DotExperimentPageInfo,
+    DotExperimentsListViewState,
+    ExperimentsListSchedulePeriod
+} from '../shared/models';
 
 /**
  * Pure helpers behind the experiments list store: URL parsing on the way in, response shaping
@@ -55,6 +62,9 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
         filter: reader.get('filter') ?? '',
         selectedStatuses: parseStatuses(reader.getAll('status')),
         selectedGoals: parseGoals(reader.getAll('goal')),
+        selectedCreators: parseCreators(reader.getAll('created_by')),
+        scheduleFrom: normalizeScheduleBound(reader.get('schedule_from')),
+        scheduleTo: normalizeScheduleBound(reader.get('schedule_to')),
         page: parsePositiveInteger(reader.get('page'), DEFAULT_EXPERIMENTS_LIST_PAGE),
         perPage: parsePositiveInteger(reader.get('per_page'), DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
         orderBy: reader.get('orderby') || DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -77,6 +87,107 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
          */
         languageId: parsePositiveInteger(reader.get('language_id'), null)
     };
+}
+
+/** Inclusive instant bounds of a schedule period. `Infinity` on a side the period leaves open. */
+export interface ScheduleBounds {
+    min: number;
+    max: number;
+}
+
+/**
+ * The period's bounds as instants, or `null` when it constrains nothing.
+ *
+ * Whole local days (FR-021): the lower bound opens at the first instant of its day and the upper
+ * closes at the last. The filter is picked as dates while the data it compares is an instant, so
+ * without this a period of a single day would match only what is scheduled for exactly midnight.
+ *
+ * An open side is `±Infinity` rather than a missing field, so the comparison downstream has no
+ * branches: every start is either inside the pair or outside it.
+ *
+ * Returns `null` for a period with neither bound, and also for one whose end precedes its start —
+ * the caller has to ask {@link isScheduleRangeInverted} about that case and report it, because
+ * applying an impossible period would read as a site with no experiments (FR-021a).
+ */
+export function scheduleBoundsOf(period: ExperimentsListSchedulePeriod): ScheduleBounds | null {
+    const from = parseScheduleBound(period.from);
+    const to = parseScheduleBound(period.to);
+
+    if (!from && !to) {
+        return null;
+    }
+
+    const bounds = {
+        min: from ? startOfDay(from).getTime() : -Infinity,
+        max: to ? endOfDay(to).getTime() : Infinity
+    };
+
+    return bounds.min > bounds.max ? null : bounds;
+}
+
+/**
+ * Whether the period names two real dates in the wrong order.
+ *
+ * Only an address can produce one — picking a range on a calendar cannot — so this is about a
+ * hand-edited or stale link. Kept separate from {@link scheduleBoundsOf} because the two answers
+ * go to different places: the narrowing needs to know not to filter, and the user needs to be told
+ * why nothing changed.
+ */
+export function isScheduleRangeInverted(period: ExperimentsListSchedulePeriod): boolean {
+    const from = parseScheduleBound(period.from);
+    const to = parseScheduleBound(period.to);
+
+    return !!from && !!to && startOfDay(from).getTime() > endOfDay(to).getTime();
+}
+
+/**
+ * Whether the experiment's scheduled start falls inside the period.
+ *
+ * Both shapes of "not scheduled" are excluded (FR-022), and they are not interchangeable:
+ * `scheduling` may be absent altogether, or present carrying a null `startDate`. Reading through
+ * the first shape without care throws; treating the second as scheduled lets it into every period.
+ */
+export function matchesSchedulePeriod(experiment: DotExperiment, bounds: ScheduleBounds): boolean {
+    const startDate = experiment.scheduling?.startDate;
+
+    return startDate != null && startDate >= bounds.min && startDate <= bounds.max;
+}
+
+/**
+ * One schedule bound as a local `Date` at midnight, or `null` when it is absent or unusable.
+ *
+ * Strict about the format rather than handing the string to `new Date()`: that parses far too much
+ * — `2026-6-1`, `June 2026`, an ISO instant — and each of those would silently mean a different day
+ * than the address appears to name. Anything but `SCHEDULE_BOUND_FORMAT` is dropped, which is the
+ * rule `status` and `goal` already follow (FR-048).
+ */
+export function parseScheduleBound(raw: string | null | undefined): Date | null {
+    if (!raw) {
+        return null;
+    }
+
+    const parsed = parse(raw, SCHEDULE_BOUND_FORMAT, new Date());
+
+    // `parse` is lenient about overflow — `2026-02-31` rolls into March — so the round trip is
+    // what proves the address named the day it appears to.
+    return isValid(parsed) && format(parsed, SCHEDULE_BOUND_FORMAT) === raw ? parsed : null;
+}
+
+/** A `Date` as the address carries it. */
+export function formatScheduleBound(date: Date): string {
+    return format(date, SCHEDULE_BOUND_FORMAT);
+}
+
+/**
+ * A bound as the view state holds it: still a string, but one the address could have written.
+ *
+ * Round-tripping through a `Date` is what drops the unusable values, so nothing downstream has to
+ * ask whether a bound it was handed is really a date.
+ */
+function normalizeScheduleBound(raw: string | null | undefined): string | null {
+    const parsed = parseScheduleBound(raw);
+
+    return parsed ? formatScheduleBound(parsed) : null;
 }
 
 /**
@@ -128,6 +239,22 @@ export function parseGoals(rawGoals: string[]): GOAL_TYPES[] {
     return rawGoals
         .map((rawGoal) => rawGoal.toUpperCase() as GOAL_TYPES)
         .filter((goal) => allGoals.includes(goal));
+}
+
+/**
+ * Creator ids from the address, blanks removed.
+ *
+ * Deliberately **not** the rule {@link parseStatuses} and {@link parseGoals} follow. Those narrow
+ * over closed sets, so a value outside the set can only be a mistake and is dropped. A user id is
+ * drawn from an open set — any string can be one — so there is nothing to validate it against
+ * here, and an id this installation does not know is kept rather than discarded. It then matches
+ * no experiment, which is the honest answer to "show me that person's experiments": none.
+ *
+ * Case is preserved: dotCMS user ids are not case-insensitive, and upper-casing them the way the
+ * status parser does would stop them matching anything at all.
+ */
+export function parseCreators(rawCreators: string[]): string[] {
+    return rawCreators.map((rawCreator) => rawCreator.trim()).filter(Boolean);
 }
 
 export function parsePositiveInteger<T extends number | null>(
@@ -210,6 +337,10 @@ export function toQueryParams(
                 : view.selectedGoals,
         pageId: view.selectedPageId || null,
         url: view.selectedPageUrl || null,
+        created_by: view.selectedCreators.length ? view.selectedCreators : null,
+        // Two independent bounds, each omitted when the period leaves that side open (FR-049a).
+        schedule_from: view.scheduleFrom || null,
+        schedule_to: view.scheduleTo || null,
         // Written back so it survives filtering, sorting and paging: `writeUrl` merges, and the
         // back-link reads it from the address rather than from a value held only on entry.
         language_id: view.languageId ? String(view.languageId) : null

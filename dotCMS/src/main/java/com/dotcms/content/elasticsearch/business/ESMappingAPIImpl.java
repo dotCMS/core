@@ -65,6 +65,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
@@ -1114,8 +1115,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT) || field
 							.getFieldContentlet()
 							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER)) {
-						contentletMap.put(keyName, valueObj);
-						contentletMap.put(keyNameText, numFormatter.format(valueObj));
+						loadNumericField(contentletMap, field, structure, valueObj, keyName,
+								keyNameText, numFormatter);
 					} else {
 					    if (valueObj instanceof Date){
                             try {
@@ -1145,6 +1146,66 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				throw new DotDataException(e.getMessage(),e);
 			}
 		}
+	}
+
+	/**
+	 * Emits a field whose <em>storage column</em> is numeric ({@code integerN} / {@code floatN}).
+	 *
+	 * <p>The column, not the field type, decides this branch — and dotCMS allows a
+	 * {@link com.dotcms.contenttype.model.field.TextField} to be backed by a numeric column, as
+	 * its own built-in types do ({@code htmlpageasset.sortOrder}). So the value in hand may be a
+	 * {@link Number} or a numeric {@link String}, and handing a String straight to
+	 * {@code DecimalFormat.format} threw, aborting the whole document (issue #37272).</p>
+	 *
+	 * <p>A value that is already a {@link Number} takes exactly the path it always took — same
+	 * object, same formatter call — so documents for correctly-stored content do not move. A
+	 * String is converted best-effort against the column's own type, so a stored {@code "54"}
+	 * produces a document identical to a natively-stored {@code 54}.</p>
+	 *
+	 * <p>When the value cannot be represented numerically, <strong>both</strong> keys are
+	 * omitted. That pairing is not a preference:</p>
+	 * <ul>
+	 *   <li>The numeric key is skipped rather than defaulted to {@code 0}, because a {@code 0} is
+	 *       indistinguishable from a genuine {@code 0} in range queries, sorts and aggregations.</li>
+	 *   <li>{@code keyNameText} must go with it. {@code toMap}'s post-processing derives
+	 *       {@code <field>_dotraw} from {@code <field>_text}, and falls back to the bare key when
+	 *       that is absent — writing the numeric key alone would therefore produce an
+	 *       <em>unpadded</em> {@code _dotraw}. Since {@code _dotraw} is a {@code keyword} and every
+	 *       sort resolves through it, the fixed-width zero padding is the only reason ordering by
+	 *       a numeric field is numeric rather than lexicographic; an unpadded entry silently
+	 *       reorders results.</li>
+	 * </ul>
+	 *
+	 * @param valueObj the raw value, a {@link Number} or {@link String}
+	 */
+	private void loadNumericField(final Map<String, Object> contentletMap, final Field field,
+			final Structure structure, final Object valueObj, final String keyName,
+			final String keyNameText, final DecimalFormat numFormatter) {
+
+		if (valueObj instanceof Number) {
+			contentletMap.put(keyName, valueObj);
+			contentletMap.put(keyNameText, numFormatter.format(valueObj));
+			return;
+		}
+
+		final boolean floatColumn = field.getFieldContentlet()
+				.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT);
+		final Optional<? extends Number> converted = floatColumn
+				? NumberUtil.toFloatOrEmpty(valueObj)
+				: NumberUtil.toLongOrEmpty(valueObj);
+
+		if (converted.isEmpty()) {
+			Logger.warn(ESMappingAPIImpl.class, String.format(
+					"Field '%s' of Content Type '%s' is stored in the numeric column '%s' but its "
+							+ "value is not numeric; the field is omitted from the index document "
+							+ "for this contentlet. The rest of the contentlet is indexed.",
+					field.getVelocityVarName(), structure.getVelocityVarName(),
+					field.getFieldContentlet()));
+			return;
+		}
+
+		contentletMap.put(keyName, converted.get());
+		contentletMap.put(keyNameText, numFormatter.format(converted.get()));
 	}
 
 	private boolean loadTagsField(final Contentlet contentlet,
