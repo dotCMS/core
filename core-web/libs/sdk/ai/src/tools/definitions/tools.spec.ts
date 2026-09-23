@@ -9,6 +9,8 @@ import { pageVerifyTool } from './page-verify';
 import { searchTool } from './search';
 import { uploadAssetsTool } from './upload-assets';
 
+import { dotcmsConnection, type DotCMSConnection } from '../toolkit/connection';
+import { toolResultText, type CodeToolResult } from '../toolkit/results';
 import { isToolFailure, type ToolFailure } from '../toolkit/tool-runtime';
 
 import type { DotCMSTool } from '../toolkit/types';
@@ -52,9 +54,19 @@ function expectFailure(result: unknown): ToolFailure {
     return result as ToolFailure;
 }
 
-const CREDENTIALS = { url: 'https://demo.dotcms.com', token: 'secret-tok' };
+/** The URL and bearer token of the n-th request fetch saw. */
+function sent(fetchMock: ReturnType<typeof vi.fn>, n = 0): { url: string; auth: string } {
+    const [url, init] = fetchMock.mock.calls[n];
 
-const FACTORIES = {
+    return {
+        url: String(url),
+        auth: ((init as RequestInit).headers as Record<string, string>).Authorization
+    };
+}
+
+const DOTCMS = dotcmsConnection({ url: 'https://demo.dotcms.com', token: 'secret-tok' });
+
+const FACTORIES: Record<string, (connection: DotCMSConnection) => DotCMSTool> = {
     download_assets: downloadAssetsTool,
     execute: executeTool,
     page_create: pageCreateTool,
@@ -70,10 +82,6 @@ describe('tool factories', () => {
     beforeEach(() => {
         fetchMock.mockReset();
         global.fetch = fetchMock as unknown as typeof fetch;
-        // Start every test from an environment with no credentials, so a test only sees the
-        // ones it sets itself.
-        vi.stubEnv('DOTCMS_URL', '');
-        vi.stubEnv('AUTH_TOKEN', '');
     });
 
     afterEach(() => {
@@ -84,13 +92,14 @@ describe('tool factories', () => {
         it.each(Object.entries(FACTORIES))(
             '%s carries the name its description and its siblings expect',
             (name, factory) => {
-                const tool: DotCMSTool = factory();
+                const tool = factory(DOTCMS);
 
                 expect(tool.name).toBe(name);
                 expect(tool.title).toBeTruthy();
                 expect(tool.description.length).toBeGreaterThan(100);
                 expect(typeof tool.inputSchema.safeParse).toBe('function');
                 expect(typeof tool.execute).toBe('function');
+                expect(typeof tool.toModelOutput).toBe('function');
                 expect(Object.keys(tool.annotations).sort()).toEqual([
                     'destructiveHint',
                     'idempotentHint',
@@ -102,7 +111,7 @@ describe('tool factories', () => {
 
         it('marks only the tools that cannot change the instance as read-only', () => {
             const readOnly = Object.entries(FACTORIES)
-                .filter(([, factory]) => (factory() as DotCMSTool).annotations.readOnlyHint)
+                .filter(([, factory]) => factory(DOTCMS).annotations.readOnlyHint)
                 .map(([name]) => name);
 
             expect(readOnly).toEqual(['page_verify', 'search']);
@@ -112,69 +121,116 @@ describe('tool factories', () => {
             // `publish` and `verify` are lenient booleans. A preprocess hides their default from
             // JSON Schema, so without care they were listed as REQUIRED — telling the model it
             // must send an argument that omitting is the normal case for.
-            const schema = z.toJSONSchema(uploadAssetsTool().inputSchema, { io: 'input' }) as {
-                required?: string[];
-            };
+            const schema = z.toJSONSchema(uploadAssetsTool(DOTCMS).inputSchema, {
+                io: 'input'
+            }) as { required?: string[] };
 
             expect(schema.required?.sort()).toEqual(['dest', 'src']);
         });
-
-        it('does not read the environment or touch the network when it is created', async () => {
-            // Created before any credentials exist, then given them: the call must use them. A
-            // server builds its tools at startup, often before its config is final.
-            const tool = pageVerifyTool();
-            vi.stubEnv('DOTCMS_URL', CREDENTIALS.url);
-            vi.stubEnv('AUTH_TOKEN', CREDENTIALS.token);
-            expect(fetchMock).not.toHaveBeenCalled();
-
-            fetchMock.mockResolvedValue(jsonResponse(RENDERED_PAGE));
-            const manifest = await tool.execute({ path: '/about-us' });
-
-            expect(isToolFailure(manifest)).toBe(false);
-        });
     });
 
-    describe('credentials', () => {
-        it('falls back to DOTCMS_URL and AUTH_TOKEN, the names the MCP server has always read', async () => {
-            vi.stubEnv('DOTCMS_URL', 'https://env.dotcms.com');
-            vi.stubEnv('AUTH_TOKEN', 'env-tok');
+    describe('the connection', () => {
+        it('sends the url and token it was given — injected host-side, never through the model', async () => {
             fetchMock.mockResolvedValue(jsonResponse(RENDERED_PAGE));
 
-            await pageVerifyTool().execute({ path: '/about-us' });
+            await pageVerifyTool(DOTCMS).execute({ path: '/about-us' });
 
-            const [url, init] = fetchMock.mock.calls[0];
-            expect(String(url)).toContain('https://env.dotcms.com/api/v1/page/render/about-us');
-            expect((init.headers as Record<string, string>).Authorization).toBe('Bearer env-tok');
+            expect(sent(fetchMock)).toEqual({
+                url: expect.stringContaining('https://demo.dotcms.com/api/v1/page/render/about-us'),
+                auth: 'Bearer secret-tok'
+            });
         });
 
-        it('prefers the options it was given over the environment', async () => {
+        it('never reads credentials from the environment itself', async () => {
+            // The consumer owns its configuration. A host that wants environment variables reads
+            // them in its own resolvers — the SDK knows no variable names.
             vi.stubEnv('DOTCMS_URL', 'https://env.dotcms.com');
             vi.stubEnv('AUTH_TOKEN', 'env-tok');
-            fetchMock.mockResolvedValue(jsonResponse(RENDERED_PAGE));
 
-            await pageVerifyTool(CREDENTIALS).execute({ path: '/about-us' });
-
-            const [url, init] = fetchMock.mock.calls[0];
-            expect(String(url)).toContain('https://demo.dotcms.com/');
-            expect((init.headers as Record<string, string>).Authorization).toBe(
-                'Bearer secret-tok'
+            const empty = dotcmsConnection({ url: '', token: '' });
+            const failure = expectFailure(
+                await pageVerifyTool(empty).execute({ path: '/about-us' })
             );
+
+            expect(failure.code).toBe('CONFIGURATION');
+            expect(fetchMock).not.toHaveBeenCalled();
         });
 
-        it('reports missing credentials as CONFIGURATION, never as a bad call', async () => {
-            const failure = expectFailure(await pageVerifyTool().execute({ path: '/about-us' }));
+        it('reads resolvers on every call, not when the tool is created', async () => {
+            // A rotating token: each call must use whatever the resolver returns right then.
+            let current = 'first-tok';
+            const tool = pageVerifyTool(
+                dotcmsConnection({ url: 'https://demo.dotcms.com', token: async () => current })
+            );
+            fetchMock.mockResolvedValue(jsonResponse(RENDERED_PAGE));
+
+            await tool.execute({ path: '/about-us' });
+            current = 'second-tok';
+            await tool.execute({ path: '/about-us' });
+
+            expect(sent(fetchMock, 0).auth).toBe('Bearer first-tok');
+            expect(sent(fetchMock, 1).auth).toBe('Bearer second-tok');
+        });
+
+        it('boots without credentials and reports each call as CONFIGURATION', async () => {
+            // A host that builds its tools at startup, before its config exists — e.g. a
+            // resolver over an unset environment variable.
+            const unset = dotcmsConnection({ url: () => undefined, token: () => undefined });
+
+            const failure = expectFailure(
+                await pageVerifyTool(unset).execute({ path: '/about-us' })
+            );
 
             expect(failure).toMatchObject({ code: 'CONFIGURATION', retryable: false });
-            expect(failure.error).toContain('DOTCMS_URL / AUTH_TOKEN');
+            expect(failure.error).toContain('dotCMS connection');
             expect(failure.error).toContain('do not look for credentials');
             expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('reports a failing resolver as CONFIGURATION, with its reason', async () => {
+            const broken = dotcmsConnection({
+                url: 'https://demo.dotcms.com',
+                token: async () => {
+                    throw new Error('vault unreachable');
+                }
+            });
+
+            const failure = expectFailure(
+                await pageVerifyTool(broken).execute({ path: '/about-us' })
+            );
+
+            expect(failure.code).toBe('CONFIGURATION');
+            expect(failure.error).toContain('could not resolve its token: vault unreachable');
+        });
+
+        it('reports a tool created without a connection as CONFIGURATION rather than throwing', async () => {
+            // Only reachable from JavaScript or through a cast — TypeScript requires one.
+            const failure = expectFailure(
+                await pageVerifyTool(undefined as never).execute({ path: '/about-us' })
+            );
+
+            expect(failure.code).toBe('CONFIGURATION');
+            expect(failure.error).toContain('created without a dotCMS connection');
+        });
+
+        it('fires the connection’s onCall hook for every request', async () => {
+            const onCall = vi.fn();
+            fetchMock.mockResolvedValue(jsonResponse(RENDERED_PAGE));
+
+            await pageVerifyTool(
+                dotcmsConnection({ url: 'https://demo.dotcms.com', token: 't', onCall })
+            ).execute({ path: '/about-us' });
+
+            expect(onCall).toHaveBeenCalledWith(
+                expect.objectContaining({ method: 'GET', path: '/api/v1/page/render/about-us' })
+            );
         });
     });
 
     describe('execute', () => {
         it('rejects input the schema does not accept, before any request', async () => {
             const failure = expectFailure(
-                await pageVerifyTool(CREDENTIALS).execute({ path: 42 } as never)
+                await pageVerifyTool(DOTCMS).execute({ path: 42 } as never)
             );
 
             expect(failure).toMatchObject({
@@ -189,9 +245,7 @@ describe('tool factories', () => {
         });
 
         it('rejects missing input rather than throwing', async () => {
-            const failure = expectFailure(
-                await executeTool(CREDENTIALS).execute(undefined as never)
-            );
+            const failure = expectFailure(await executeTool(DOTCMS).execute(undefined as never));
 
             expect(failure.code).toBe('VALIDATION');
         });
@@ -200,9 +254,7 @@ describe('tool factories', () => {
             fetchMock.mockImplementation(hangingFetch);
 
             const failure = expectFailure(
-                await pageVerifyTool({ ...CREDENTIALS, requestTimeout: 20 }).execute({
-                    path: '/about-us'
-                })
+                await pageVerifyTool(DOTCMS, { requestTimeout: 20 }).execute({ path: '/about-us' })
             );
 
             expect(failure).toMatchObject({ code: 'TIMEOUT', retryable: true });
@@ -212,9 +264,9 @@ describe('tool factories', () => {
         it('bounds the model’s code in execute with the allow-list, before any request', async () => {
             // `allow` exists only on executeTool: there the MODEL picks the endpoints. The
             // fixed-purpose tools own theirs, so a consumer cannot misconfigure them.
-            const result = await executeTool({ ...CREDENTIALS, allow: ['/api/v1/page'] }).execute({
+            const { result } = (await executeTool(DOTCMS, { allow: ['/api/v1/page'] }).execute({
                 code: "return await api.request({ method: 'DELETE', path: '/api/v1/site/abc' });"
-            });
+            })) as CodeToolResult;
 
             expect(result).toContain('PolicyError');
             expect(result).toContain('/api/v1/site/abc');
@@ -239,9 +291,9 @@ describe('tool factories', () => {
             // makes "read-only" true. The model's write is refused before it reaches the wire.
             fetchMock.mockResolvedValue(jsonResponse({ entity: [] }));
 
-            const result = await searchTool(CREDENTIALS).execute({
+            const { result } = (await searchTool(DOTCMS).execute({
                 code: "return await api.request({ method: 'DELETE', path: '/api/v1/site/abc' });"
-            });
+            })) as CodeToolResult;
 
             expect(result).toContain('PolicyError');
             expect(result).toContain('The search tool can only reach the endpoints it owns');
@@ -253,22 +305,44 @@ describe('tool factories', () => {
         it('resolves a page tool to its manifest object', async () => {
             fetchMock.mockResolvedValue(jsonResponse(RENDERED_PAGE));
 
-            const manifest = await pageVerifyTool(CREDENTIALS).execute({ path: '/about-us' });
+            const manifest = await pageVerifyTool(DOTCMS).execute({ path: '/about-us' });
 
             expect(manifest).toMatchObject({ path: '/about-us', pageRendered: true });
         });
 
-        it('resolves execute to the formatted text of the model’s code', async () => {
-            // Instance context (sites, languages, …) loads before the code runs; an empty answer
-            // for every loader is enough for code that does not read it.
+        it('resolves execute to an object carrying the formatted text of the model’s code', async () => {
+            // An object, not a bare string: Google ADK requires tool results to be objects.
+            // Instance context loads before the code runs; an empty answer for every loader is
+            // enough for code that does not read it.
             fetchMock.mockResolvedValue(jsonResponse({ entity: [] }));
 
-            const result = await executeTool(CREDENTIALS).execute({
-                code: 'return { sum: 1 + 1 };'
-            });
+            const output = await executeTool(DOTCMS).execute({ code: 'return { sum: 1 + 1 };' });
 
-            expect(typeof result).toBe('string');
-            expect(JSON.parse(result as string)).toEqual({ sum: 2 });
+            expect(Object.keys(output as object)).toEqual(['result']);
+            expect(JSON.parse((output as CodeToolResult).result)).toEqual({ sum: 2 });
+        });
+    });
+
+    describe('what the model sees', () => {
+        const codeResult: CodeToolResult = { result: 'line one\nline two' };
+        const manifest = { path: '/about-us', pageRendered: true };
+
+        it('shows a code tool’s text as text, and a manifest as structured JSON', () => {
+            const tool = searchTool(DOTCMS);
+
+            expect(tool.toModelOutput({ output: codeResult })).toEqual({
+                type: 'text',
+                value: 'line one\nline two'
+            });
+            expect(pageVerifyTool(DOTCMS).toModelOutput({ output: manifest as never })).toEqual({
+                type: 'json',
+                value: manifest
+            });
+        });
+
+        it('renders any result as the text an MCP host sends — code text unescaped', () => {
+            expect(toolResultText(codeResult)).toBe('line one\nline two');
+            expect(toolResultText(manifest)).toBe(JSON.stringify(manifest, null, 2));
         });
     });
 });

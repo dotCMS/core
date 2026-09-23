@@ -4,7 +4,9 @@ import { formatSandboxResult } from '../../runtime';
 import { createTool, defineTool } from '../toolkit/create-tool';
 import { CONTEXT_ENDPOINTS } from '../toolkit/endpoints';
 
-import type { DotCMSTool, DotCMSToolOptions } from '../toolkit/types';
+import type { DotCMSConnection } from '../toolkit/connection';
+import type { CodeToolResult } from '../toolkit/results';
+import type { DotCMSTool } from '../toolkit/types';
 
 /**
  * Search only reads the bundled spec plus the instance context, so it gets a short leash —
@@ -23,13 +25,13 @@ const input = z.object({
 
 /**
  * The `search` tool: the model writes JavaScript that explores the bundled OpenAPI spec.
- * Read-only. Resolves to the capped text of the code's result (or its error).
+ * Read-only. Resolves to `{ result }`, the capped text of the code's result (or its error).
  */
-export function searchTool(options: DotCMSToolOptions = {}): DotCMSTool<typeof input, string> {
-    return createTool(definition, options);
+export function searchTool(connection: DotCMSConnection): DotCMSTool<typeof input, CodeToolResult> {
+    return createTool(definition, connection, {});
 }
 
-const definition = defineTool<typeof input, string>({
+const definition = defineTool<typeof input, CodeToolResult>({
     name: 'search',
     title: 'Search dotCMS API Spec',
     inputSchema: input,
@@ -96,7 +98,9 @@ Common recipes:
         const spec = getSpec();
 
         if (!spec || typeof spec !== 'object' || Object.keys(spec).length === 0) {
-            return 'Error: OpenAPI spec is not available. The server may not have been built with a generated spec (run the generate-spec step), so the search tool cannot run.';
+            return {
+                result: 'Error: OpenAPI spec is not available. The server may not have been built with a generated spec (run the generate-spec step), so the search tool cannot run.'
+            };
         }
 
         // The front door injects the instance context AND the `spec` global (includeSpec).
@@ -104,9 +108,11 @@ Common recipes:
 
         const result = await dotcms.run(code);
 
-        return formatSandboxResult(result, {
-            truncationHint:
-                'Use resolveRef(schemaOrName, depth) to expand one schema at a bounded depth.'
-        });
+        return {
+            result: formatSandboxResult(result, {
+                truncationHint:
+                    'Use resolveRef(schemaOrName, depth) to expand one schema at a bounded depth.'
+            })
+        };
     }
 });

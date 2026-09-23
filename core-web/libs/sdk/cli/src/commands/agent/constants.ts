@@ -14,8 +14,8 @@ export const ENTRY_KEY = 'dotcms';
 export const MCP_SERVER_PACKAGE = '@dotcms/mcp-server@latest';
 
 /**
- * Exactly the names the MCP server's tools read — `DOTCMS_URL_ENV` / `AUTH_TOKEN_ENV` in
- * libs/sdk/ai/src/tools/toolkit/create-tool.ts.
+ * Exactly the names the MCP server reads — its dotCMS connection in
+ * apps/mcp-server/src/lib/tools.ts.
  * NOT `DOTCMS_TOKEN` — that mistake yields a server that starts and then fails every call,
  * which is the failure the connection check (FR-024a) exists to catch.
  */

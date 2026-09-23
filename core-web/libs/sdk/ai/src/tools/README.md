@@ -25,7 +25,7 @@ One file per model-facing tool, named after it (`page-create.ts` is the `page_cr
 - `annotations` — MCP's read-only / destructive / idempotent / open-world hints
 - `endpoints` — imported from the operation (see below), except for the two code tools, which have none
 - `handler` — maps the validated input onto one operation call and returns its result
-- the exported factory (`pageCreateTool(options)`)
+- the exported factory (`pageCreateTool(connection, options)`): the connection first, then the tool's own options
 
 No logic lives here. If a handler starts branching, parsing responses or calling `request` itself, that code belongs in an operation.
 
@@ -46,7 +46,9 @@ Generic machinery with no knowledge of any specific dotCMS operation:
 | File | What it owns |
 |---|---|
 | `types.ts` | The public `DotCMSTool` shape and the factory option types |
-| `create-tool.ts` | `defineTool` / `createTool`: input validation, the `DOTCMS_URL` / `AUTH_TOKEN` fallback, turning throws into failures, building the per-tool policy |
+| `connection.ts` | `dotcmsConnection`: the URL, token and observability hooks a consumer hands every tool, with values resolved on each call. The tools never read the environment (lint-enforced) |
+| `create-tool.ts` | `defineTool` / `createTool`: input validation, resolving the connection, turning throws into failures, building the per-tool policy |
+| `results.ts` | The `{ result }` shape of the code tools, `toModelOutput` (AI SDK), and `toolResultText` (MCP and other text transports) |
 | `tool-runtime.ts` | The runtime one call runs on (fresh per call, request deadline), and the `ToolFailure` envelope |
 | `endpoints.ts` | The endpoint pattern language, the policies built from it, and `CONTEXT_ENDPOINTS` (the one list the toolkit owns, because the runtime makes those reads for every tool) |
 | `lenient-boolean.ts` | Zod helpers for input schemas |
@@ -64,7 +66,7 @@ Generic machinery with no knowledge of any specific dotCMS operation:
 ## Adding a tool
 
 1. **Operation.** Add `operations/<name>.ts`: the typed function plus its `<NAME>_ENDPOINTS`. Add `operations/<name>.spec.ts` with a fake runtime, and copy the `seen` + `afterEach(unlistedCalls(...))` guard from `page-verify.spec.ts`.
-2. **Definition.** Add `definitions/<name>.ts`: `defineTool({ name, title, description, inputSchema, annotations, endpoints, handler })` and the factory that calls `createTool(definition, options)`. Add the factory to `FACTORIES` in `definitions/tools.spec.ts`.
+2. **Definition.** Add `definitions/<name>.ts`: `defineTool({ name, title, description, inputSchema, annotations, endpoints, handler })` and the factory that calls `createTool(definition, connection, options)`. Add the factory to `FACTORIES` in `definitions/tools.spec.ts`.
 3. **Export** the factory and the operation from `index.ts`.
 4. **Host it** in the MCP server (`apps/mcp-server/src/tools/<tool_name>.ts`). See `apps/mcp-server/CONTRIBUTING.md`.
 

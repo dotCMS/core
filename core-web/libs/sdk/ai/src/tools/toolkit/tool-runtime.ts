@@ -93,10 +93,9 @@ export function createToolRuntime(
         // descriptions forbid. Say plainly whose problem it is.
         throw new ConfigurationError(
             `The dotCMS tools are not configured: ${errorMessage(error)}. Whoever runs this ` +
-                `server or agent sets the dotCMS URL and token — as the tool's \`url\` / ` +
-                `\`token\` options, or as DOTCMS_URL / AUTH_TOKEN in its environment. This is ` +
-                `not a problem with the call and no argument can fix it — report it and stop; ` +
-                `do not look for credentials.`
+                `server or agent supplies the dotCMS URL and token, through the tools' dotCMS ` +
+                `connection. This is not a problem with the call and no argument can fix it — ` +
+                `report it and stop; do not look for credentials.`
         );
     }
 

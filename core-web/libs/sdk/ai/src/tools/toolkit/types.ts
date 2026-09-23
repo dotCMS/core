@@ -1,5 +1,6 @@
+import type { ToolModelOutput } from './results';
 import type { ToolFailure } from './tool-runtime';
-import type { RequestCallEvent, RuntimeAllow } from '../../runtime';
+import type { RuntimeAllow } from '../../runtime';
 import type { z } from 'zod';
 
 /**
@@ -14,29 +15,14 @@ export interface DotCMSToolAnnotations {
     openWorldHint: boolean;
 }
 
-/**
- * Options every tool factory accepts: where the instance is, and hooks to observe it.
- *
- * Deliberately nothing about WHICH endpoints a tool calls. A fixed-purpose tool owns that —
- * `page_create` knows it needs folders, content types and the workflow fire endpoint — so a
- * consumer never has to know those paths, and cannot break the tool by leaving one out.
- */
-export interface DotCMSToolOptions {
-    /** dotCMS instance URL. Defaults to `DOTCMS_URL` from the environment, read on each call. */
-    url?: string;
-    /**
-     * dotCMS API token. Defaults to `AUTH_TOKEN` from the environment, read on each call.
-     * Injected host-side — it never reaches the model or the sandbox.
-     */
-    token?: string;
-    /** Observability hook fired around each request (token and sensitive bodies are never passed). */
-    onCall?: (event: RequestCallEvent) => void;
-    /** Called when loading instance context (sites, content types, …) fails. */
-    onContextError?: (label: string, error: unknown) => void;
-}
+// Tool options describe the TOOL. Who is calling which instance lives in the connection
+// (`dotcmsConnection`), and which endpoints a fixed-purpose tool calls is the tool's own
+// business — `page_create` knows it needs folders, content types and the workflow fire
+// endpoint, so a consumer never has to know those paths and cannot break the tool by leaving
+// one out.
 
 /** Options for `executeTool`. */
-export interface ExecuteToolOptions extends DotCMSToolOptions {
+export interface ExecuteToolOptions {
     /**
      * Allow-list or policy bounding what the model's code can reach — the same one
      * `createRuntime` takes. The one tool that has it: here the MODEL chooses the endpoints,
@@ -50,14 +36,15 @@ export interface ExecuteToolOptions extends DotCMSToolOptions {
 }
 
 /** Options for the tools that call the API directly: the page and asset tools. */
-export interface RequestToolOptions extends DotCMSToolOptions {
+export interface RequestToolOptions {
     /** Deadline (ms) for each request. Default 30000. */
     requestTimeout?: number;
 }
 
 /**
  * One dotCMS tool, shaped the way the Vercel AI SDK and the MCP TypeScript SDK both expect:
- * pass it straight into AI SDK's `tools`, or into MCP's `registerTool` config.
+ * pass it straight into AI SDK's `tools`, or into MCP's `registerTool` config. Every result is
+ * an object, as Google ADK requires.
  *
  * `execute` never throws. It validates `input` (it comes from the model, so this is the trust
  * boundary), runs the tool, and resolves to the tool's result — or to a {@link ToolFailure}
@@ -80,4 +67,10 @@ export interface DotCMSTool<TInput extends z.ZodObject = z.ZodObject, TResult = 
     readonly inputSchema: TInput;
     readonly annotations: DotCMSToolAnnotations;
     execute(input: unknown): Promise<TResult | ToolFailure>;
+    /**
+     * What the model sees of a result, for frameworks that ask (the AI SDK picks this up on its
+     * own): a code tool's text as text, everything else as JSON. For a text-only transport such
+     * as MCP, use `toolResultText(result)` instead.
+     */
+    toModelOutput(options: { output: TResult | ToolFailure }): ToolModelOutput;
 }

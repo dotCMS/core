@@ -7,6 +7,7 @@ import {
 } from '../operations/assets-transfer';
 import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 
+import type { DotCMSConnection } from '../toolkit/connection';
 import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
 
 const definition = defineTool({
@@ -74,7 +75,8 @@ a JSON manifest — never the file bytes.`,
  * never pass through the model. Needs Node or Bun. Resolves to a {@link DownloadAssetsManifest}.
  */
 export function downloadAssetsTool(
+    connection: DotCMSConnection,
     options: RequestToolOptions = {}
 ): DotCMSTool<typeof definition.inputSchema, DownloadAssetsManifest> {
-    return createTool(definition, options);
+    return createTool(definition, connection, options);
 }

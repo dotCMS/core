@@ -8,6 +8,7 @@ import {
 import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 import { lenientBoolean } from '../toolkit/lenient-boolean';
 
+import type { DotCMSConnection } from '../toolkit/connection';
 import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
 
 const definition = defineTool({
@@ -90,7 +91,8 @@ tool, then reference them from a container/template via \`#dotParse\`.`,
  * never pass through the model. Needs Node or Bun. Resolves to an {@link UploadAssetsManifest}.
  */
 export function uploadAssetsTool(
+    connection: DotCMSConnection,
     options: RequestToolOptions = {}
 ): DotCMSTool<typeof definition.inputSchema, UploadAssetsManifest> {
-    return createTool(definition, options);
+    return createTool(definition, connection, options);
 }

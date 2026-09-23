@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { formatSandboxResult } from '../../runtime';
 import { createTool, defineTool } from '../toolkit/create-tool';
 
+import type { DotCMSConnection } from '../toolkit/connection';
+import type { CodeToolResult } from '../toolkit/results';
 import type { DotCMSTool, ExecuteToolOptions } from '../toolkit/types';
 
 /** Sandbox wall-clock timeout for `execute` when the factory is given none. */
@@ -19,13 +21,16 @@ const input = z.object({
 
 /**
  * The `execute` tool: the model writes JavaScript, and it runs in the sandbox against the
- * dotCMS API. Resolves to the capped text of the code's result (or its error).
+ * dotCMS API. Resolves to `{ result }`, the capped text of the code's result (or its error).
  */
-export function executeTool(options: ExecuteToolOptions = {}): DotCMSTool<typeof input, string> {
-    return createTool(definition, options);
+export function executeTool(
+    connection: DotCMSConnection,
+    options: ExecuteToolOptions = {}
+): DotCMSTool<typeof input, CodeToolResult> {
+    return createTool(definition, connection, options);
 }
 
-const definition = defineTool<typeof input, string, ExecuteToolOptions>({
+const definition = defineTool<typeof input, CodeToolResult, ExecuteToolOptions>({
     name: 'execute',
     title: 'Execute dotCMS API Call',
     inputSchema: input,
@@ -149,9 +154,11 @@ Helper utilities available: pick(arr, fields), table(arr), count(arr, field), su
 
         const result = await dotcms.run(code); // code === the model's output
 
-        return formatSandboxResult(result, {
-            truncationHint:
-                'Return only the fields you need — use pick(arr, fields) and first(arr, n).'
-        });
+        return {
+            result: formatSandboxResult(result, {
+                truncationHint:
+                    'Return only the fields you need — use pick(arr, fields) and first(arr, n).'
+            })
+        };
     }
 });

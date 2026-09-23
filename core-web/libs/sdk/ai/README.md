@@ -76,42 +76,55 @@ The same seven tools dotCMS's own MCP server ships, packaged for yours. You brin
 
 | Factory | Tool name | What it does | Read-only | Resolves to |
 |---|---|---|---|---|
-| `searchTool` | `search` | Model-written JS explores the bundled OpenAPI spec | yes | text |
-| `executeTool` | `execute` | Model-written JS calls the dotCMS API in the sandbox | no | text |
+| `searchTool` | `search` | Model-written JS explores the bundled OpenAPI spec | yes | `{ result: string }` |
+| `executeTool` | `execute` | Model-written JS calls the dotCMS API in the sandbox | no | `{ result: string }` |
 | `pageCreateTool` | `page_create` | Creates and publishes a page, creating its folder first so the URL cannot collapse | no | `CreatePageManifest` |
 | `pagePlaceContentTool` | `page_place_content` | Places contentlets into page slots without wiping the slots it didn't touch | no | `PagePlaceContentManifest` |
 | `pageVerifyTool` | `page_verify` | Renders a page and diagnoses empty slots, swallowed VTL errors and stale cache | yes | `VerifyPageManifest` |
 | `uploadAssetsTool` | `upload_assets` | Streams a local directory into dotCMS as file assets | no | `UploadAssetsManifest` |
 | `downloadAssetsTool` | `download_assets` | Streams dotCMS file assets to a local directory | no | `DownloadAssetsManifest` |
 
-Import the tools you want, and call each factory. That's the whole API. Most tool packages in the AI SDK ecosystem work this way.
+Create one **connection**, the dotCMS instance and identity the tools act as, then call a factory for each tool you want, passing the connection. Most tool packages in the AI SDK ecosystem work this way.
 
 ```ts
 import { generateText } from 'ai';
-import { pageCreateTool, pageVerifyTool, searchTool } from '@dotcms/ai/tools';
+import { dotcmsConnection, pageCreateTool, pageVerifyTool, searchTool } from '@dotcms/ai/tools';
+
+const dotcms = dotcmsConnection({ url: 'https://demo.dotcms.com', token });
 
 const result = await generateText({
     model,
     prompt: 'Create a /books page and check that it renders',
     tools: {
-        search: searchTool(),
-        page_create: pageCreateTool(),
-        page_verify: pageVerifyTool()
+        search: searchTool(dotcms),
+        page_create: pageCreateTool(dotcms),
+        page_verify: pageVerifyTool(dotcms)
     }
 });
 ```
 
-Each tool is a plain object — `name`, `title`, `description`, `inputSchema` (Zod), `annotations` (MCP's read-only/destructive/idempotent/open-world hints) and `execute` — shaped the way both the Vercel AI SDK and the MCP TypeScript SDK expect, so there is nothing to adapt. The package has no dependency on either.
+Each tool is a plain object — `name`, `title`, `description`, `inputSchema` (Zod), `annotations` (MCP's read-only/destructive/idempotent/open-world hints), `execute` and `toModelOutput` — shaped the way the Vercel AI SDK and the MCP TypeScript SDK expect. Every result is an object, as Google ADK requires. The package depends on none of them.
 
-**Configuration.** With no options, a tool reads `DOTCMS_URL` and `AUTH_TOKEN` from the environment — the same variables the dotCMS MCP server uses. Pass them explicitly to override:
+**The connection.** You supply the URL and token; the tools never go looking for them. Either value may be a string or a resolver. A resolver is read on every call, which covers rotating tokens, secrets managers, and hosts that read their own configuration lazily:
 
 ```ts
-const dotcms = { url, token };
+const dotcms = dotcmsConnection({
+    url: 'https://demo.dotcms.com',
+    token: () => secrets.get('dotcms-token'),     // string | () => string | undefined | Promise<…>
+    onCall: (event) => tracer.record(event),       // optional: fired around every request
+    onContextError: (label, error) => log(label, error)
+});
+```
 
+A connection holds no state and makes no request. A host serving many users, such as a remote MCP server with per-user OAuth or an agent with one session per user, creates one connection per session with that user's token, and builds its tools from it.
+
+**Tool options** describe the tool, not the caller. They go in the factory's second argument:
+
+```ts
 const tools = {
     page_create: pageCreateTool(dotcms),
-    page_verify: pageVerifyTool({ ...dotcms, requestTimeout: 10_000 }),
-    execute: executeTool({ ...dotcms, allow: ['/api/v1/content', '/api/content/_search'] })
+    page_verify: pageVerifyTool(dotcms, { requestTimeout: 10_000 }),
+    execute: executeTool(dotcms, { allow: ['/api/v1/content', '/api/content/_search'] })
 };
 ```
 
@@ -121,8 +134,6 @@ The exception is `execute`, where the *model* chooses the endpoints. `executeToo
 
 | Option | Tools | Default |
 |---|---|---|
-| `url`, `token` | all | `DOTCMS_URL`, `AUTH_TOKEN` — the token never reaches the model or the sandbox |
-| `onCall`, `onContextError` | all | as in `createRuntime` |
 | `allow` | `executeTool` | none — the model's code may call any endpoint the token allows (the other tools are always limited to their own endpoints) |
 | `timeout` | `executeTool` | 45000 ms sandbox wall-clock |
 | `includeStacks` | `executeTool` | false — host stack traces are withheld from the model |
@@ -130,7 +141,9 @@ The exception is `execute`, where the *model* chooses the endpoints. `executeToo
 
 **`execute` never throws.** It validates the input against `inputSchema` (it comes from the model, so this is the trust boundary), runs the tool, and resolves to the result in the table above — or to a `ToolFailure`: `{ ok: false, code, retryable, error, status? }`. The `retryable` flag is there because a model cannot `instanceof` its way through a failure; it needs to be told whether trying again can help. `isToolFailure(result)` tells the two apart.
 
-**Nothing happens at creation.** A factory does no I/O and reads nothing — the environment is read and the credentials checked on each call. So a host started without a token still boots and lists its tools, and every call answers with a `CONFIGURATION` failure instead of the host crashing. Each call also builds a fresh runtime, so instance context (sites, content types, languages) is never stale from one call to the next.
+**Nothing happens at creation.** Neither `dotcmsConnection` nor a factory does any I/O; the connection is resolved and checked on each call. So a host started before its credentials exist still boots and lists its tools, and every call answers with a `CONFIGURATION` failure instead of the host crashing. That covers an empty value, a resolver returning `undefined`, and a resolver that throws. Each call also builds a fresh runtime, so instance context (sites, content types, languages) is never stale from one call to the next.
+
+**What the model sees.** In the AI SDK, `toModelOutput` is picked up automatically: `search`/`execute` reach the model as plain text, and manifests as structured JSON. A text-only transport such as MCP uses `toolResultText(result)`, which applies the same rule: code text unescaped, everything else pretty-printed JSON.
 
 **Register each tool under its `name`.** The descriptions refer to their siblings by these names ("use the `search` tool first", "prefer `page_create`"). A tool registered under another name still works, but the model is pointed at one that does not exist.
 
@@ -140,18 +153,53 @@ The tool object is already a valid `registerTool` config. All that's left is MCP
 
 ```ts
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { pageVerifyTool, searchTool, type DotCMSTool } from '@dotcms/ai/tools';
+import {
+    dotcmsConnection,
+    pageVerifyTool,
+    searchTool,
+    toolResultText,
+    type DotCMSTool
+} from '@dotcms/ai/tools';
 
+const dotcms = dotcmsConnection({ url, token });
 const server = new McpServer({ name: 'my-server', version: '1.0.0' });
-const tools: DotCMSTool[] = [searchTool(), pageVerifyTool()];
+const tools: DotCMSTool[] = [searchTool(dotcms), pageVerifyTool(dotcms)];
 
 for (const tool of tools) {
-    server.registerTool(tool.name, tool, async (args) => {
-        const result = await tool.execute(args);
-        return { content: [{ type: 'text', text: typeof result === 'string' ? result : JSON.stringify(result, null, 2) }] };
-    });
+    server.registerTool(tool.name, tool, async (args) => ({
+        content: [{ type: 'text', text: toolResultText(await tool.execute(args)) }]
+    }));
 }
 ```
+
+### With Google ADK
+
+ADK's `FunctionTool` takes the Zod schema directly as `parameters`:
+
+```ts
+import { FunctionTool, LlmAgent } from '@google/adk';
+import { dotcmsConnection, pageVerifyTool, searchTool, type DotCMSTool } from '@dotcms/ai/tools';
+
+const dotcms = dotcmsConnection({ url, token });
+const tools: DotCMSTool[] = [searchTool(dotcms), pageVerifyTool(dotcms)];
+
+const agent = new LlmAgent({
+    model: 'gemini-flash-latest',
+    name: 'dotcms_agent',
+    instruction: 'Help authors manage their dotCMS site.',
+    tools: tools.map(
+        (t) =>
+            new FunctionTool({
+                name: t.name,
+                description: t.description,
+                parameters: t.inputSchema,
+                execute: (input) => t.execute(input)
+            })
+    )
+});
+```
+
+The schemas are Zod 4. Your framework and `@dotcms/ai` must resolve the **same** Zod install, which a normal install does. If you pin a second copy, TypeScript will reject `inputSchema` where the framework expects its own Zod type.
 
 ### With a framework that takes JSON Schema
 
@@ -159,9 +207,10 @@ The Anthropic and OpenAI SDKs, n8n and others take JSON Schema rather than Zod. 
 
 ```ts
 import { z } from 'zod';
-import { pageVerifyTool, searchTool, type DotCMSTool } from '@dotcms/ai/tools';
+import { dotcmsConnection, pageVerifyTool, searchTool, type DotCMSTool } from '@dotcms/ai/tools';
 
-const tools: DotCMSTool[] = [searchTool(), pageVerifyTool()];
+const dotcms = dotcmsConnection({ url, token });
+const tools: DotCMSTool[] = [searchTool(dotcms), pageVerifyTool(dotcms)];
 const definitions = tools.map((t) => ({
     name: t.name,
     description: t.description,

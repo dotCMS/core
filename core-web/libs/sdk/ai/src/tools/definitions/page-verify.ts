@@ -8,6 +8,7 @@ import {
 } from '../operations/page-verify';
 import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 
+import type { DotCMSConnection } from '../toolkit/connection';
 import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
 
 const definition = defineTool({
@@ -114,7 +115,8 @@ call). This verifies DEFAULT-variant rendering — the render endpoint does not 
  * error, stale cache, not assembled. Read-only. Resolves to a {@link VerifyPageManifest}.
  */
 export function pageVerifyTool(
+    connection: DotCMSConnection,
     options: RequestToolOptions = {}
 ): DotCMSTool<typeof definition.inputSchema, VerifyPageManifest> {
-    return createTool(definition, options);
+    return createTool(definition, connection, options);
 }

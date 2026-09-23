@@ -90,6 +90,23 @@ export default [
         }
     },
     {
+        // The consumer owns configuration: credentials arrive through the dotCMS connection,
+        // never from ambient environment variables the tools go looking for.
+        files: ['src/tools/**/*.ts'],
+        ignores: ['src/tools/**/*.spec.ts'],
+        rules: {
+            'no-restricted-properties': [
+                'error',
+                {
+                    object: 'process',
+                    property: 'env',
+                    message:
+                        'The tools never read the environment. Configuration comes from the consumer, through dotcmsConnection({ url, token }).'
+                }
+            ]
+        }
+    },
+    {
         files: ['src/tools/operations/**/*.ts'],
         rules: {
             'no-restricted-imports': [

@@ -15,6 +15,11 @@
  * it may import it (lint-enforced).
  */
 
+// ---- The connection every tool is given ------------------------------------------------
+
+export { dotcmsConnection } from './toolkit/connection';
+export type { DotCMSConnection, DotCMSConnectionConfig, Resolvable } from './toolkit/connection';
+
 // ---- Model-facing tools --------------------------------------------------------------
 
 export { executeTool } from './definitions/execute';
@@ -28,7 +33,6 @@ export { downloadAssetsTool } from './definitions/download-assets';
 export type {
     DotCMSTool,
     DotCMSToolAnnotations,
-    DotCMSToolOptions,
     ExecuteToolOptions,
     RequestToolOptions
 } from './toolkit/types';
@@ -36,6 +40,10 @@ export type {
 // What every tool resolves to on failure, and the guard to tell it from a normal result.
 export { isToolFailure } from './toolkit/tool-runtime';
 export type { ToolFailure } from './toolkit/tool-runtime';
+
+// Rendering a result for a text-only transport (MCP), and the code tools' result shape.
+export { toolResultText } from './toolkit/results';
+export type { CodeToolResult, ToolModelOutput } from './toolkit/results';
 
 // ---- Direct operations -----------------------------------------------------------------
 

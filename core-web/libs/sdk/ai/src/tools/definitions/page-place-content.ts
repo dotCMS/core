@@ -8,6 +8,7 @@ import {
 } from '../operations/page-place-content';
 import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 
+import type { DotCMSConnection } from '../toolkit/connection';
 import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
 
 // A slot address: a 1-based index into the page's real slots, OR a container reference. `instance`
@@ -164,7 +165,8 @@ existing contentlets into slots.`,
  * every slot it was not asked to touch. Resolves to a {@link PagePlaceContentManifest}.
  */
 export function pagePlaceContentTool(
+    connection: DotCMSConnection,
     options: RequestToolOptions = {}
 ): DotCMSTool<typeof definition.inputSchema, PagePlaceContentManifest> {
-    return createTool(definition, options);
+    return createTool(definition, connection, options);
 }

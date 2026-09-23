@@ -51,7 +51,7 @@ Configure the MCP server via the `env` block in your MCP client config:
 
 ## Architecture Overview
 
-This is a **Model Context Protocol (MCP) server** for dotCMS, built with [xmcp](https://xmcp.dev) (rspack-based framework). It is a thin host: every tool — its description, input schema, annotations and behavior — comes from **`@dotcms/ai/tools`** (`libs/sdk/ai/src/tools/`), the same tool set any consumer can register in their own MCP server or agent. This app only reads the environment and adapts each tool to xmcp's file convention.
+This is a **Model Context Protocol (MCP) server** for dotCMS, built with [xmcp](https://xmcp.dev) (rspack-based framework). It is a thin host: every tool — its description, input schema, annotations and behavior — comes from **`@dotcms/ai/tools`** (`libs/sdk/ai/src/tools/`), the same tool set any consumer can register in their own MCP server or agent. This app only builds the dotCMS connection from its environment and adapts each tool to xmcp's file convention.
 
 ### Core Architecture
 
@@ -71,7 +71,7 @@ export { schema, metadata };
 export default handler;
 ```
 
-**Wiring** (`src/lib/tools.ts`) — `xmcpTool(factory)` calls a `@dotcms/ai/tools` factory with this server's options (`SANDBOX_TIMEOUT`, context-error logging) and maps the tool onto xmcp's exports, turning a manifest or failure into the JSON text the server has always returned. It passes no `url` / `token`: the tools read `DOTCMS_URL` / `AUTH_TOKEN` themselves, on each call, so a server started without credentials still boots and answers every call with a `CONFIGURATION` failure.
+**Wiring** (`src/lib/tools.ts`) — the one place that reads `DOTCMS_URL` / `AUTH_TOKEN`. It builds a `dotcmsConnection` whose `url` / `token` are resolvers over them, read on each call, so a server started without credentials still boots and answers every call with a `CONFIGURATION` failure. `xmcpTool(factory)` calls a `@dotcms/ai/tools` factory with that connection and this server's options (`SANDBOX_TIMEOUT`), and maps the tool onto xmcp's exports. `toolResultText` turns each result into the text this server has always returned. The SDK itself never reads the environment.
 
 **Tool logic** — lives in `@dotcms/ai`, not here:
 - `libs/sdk/ai/src/tools/definitions/` — the tools: each one's name, description, Zod input and handler

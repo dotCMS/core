@@ -7,6 +7,7 @@ import {
 } from '../operations/page-create';
 import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 
+import type { DotCMSConnection } from '../toolkit/connection';
 import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
 
 const definition = defineTool({
@@ -109,7 +110,8 @@ fields beyond the common set, or need to fire a non-PUBLISH workflow action.`,
  * the URL lands where it was asked for. Resolves to a {@link CreatePageManifest}.
  */
 export function pageCreateTool(
+    connection: DotCMSConnection,
     options: RequestToolOptions = {}
 ): DotCMSTool<typeof definition.inputSchema, CreatePageManifest> {
-    return createTool(definition, options);
+    return createTool(definition, connection, options);
 }
