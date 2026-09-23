@@ -152,7 +152,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Breadcrumbs](docs/frontend/BREADCRUMBS.md) — GlobalStore breadcrumb trail
 
 ### Testing
-- [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — JUnit, integration patterns
+- [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — Surefire in `:dotcms-core`, Mockito setup, naming (there is no category/tag mechanism), running and debugging
 - [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — Running/debugging tests, MainSuite registration, API testing, database setup
 - [E2E Tests](docs/testing/E2E_TESTS.md) — Playwright, user workflows
 
