@@ -112,7 +112,8 @@ const dotcms = dotcmsConnection({
     url: 'https://demo.dotcms.com',
     token: () => secrets.get('dotcms-token'),     // string | () => string | undefined | Promise<…>
     onCall: (event) => tracer.record(event),       // optional: fired around every request
-    onContextError: (label, error) => log(label, error)
+    onContextError: (label, error) => log(label, error),
+    onResolveError: (field, error) => log(`dotCMS ${field} resolver failed`, error)
 });
 ```
 
@@ -151,7 +152,7 @@ Paths are compared after symlinks resolve: a link inside the root that points ou
 
 **`execute` never throws.** It validates the input against `inputSchema` (it comes from the model, so this is the trust boundary), runs the tool, and resolves to the result in the table above — or to a `ToolFailure`: `{ ok: false, code, retryable, error, status? }`. The `retryable` flag is there because a model cannot `instanceof` its way through a failure; it needs to be told whether trying again can help. `isToolFailure(result)` tells the two apart.
 
-**Nothing happens at creation.** Neither `dotcmsConnection` nor a factory does any I/O; the connection is resolved and checked on each call. So a host started before its credentials exist still boots and lists its tools, and every call answers with a `CONFIGURATION` failure instead of the host crashing. That covers an empty value, a resolver returning `undefined`, and a resolver that throws. Each call also builds a fresh runtime, so instance context (sites, content types, languages) is never stale from one call to the next.
+**Nothing happens at creation.** Neither `dotcmsConnection` nor a factory does any I/O; the connection is resolved and checked on each call. So a host started before its credentials exist still boots and lists its tools, and every call answers with a `CONFIGURATION` failure instead of the host crashing. That covers an empty value, a resolver returning `undefined`, and a resolver that throws. When a resolver throws, the model is told only that the connection could not be resolved. A secrets manager's error can carry paths, key names or hostnames, so the real error goes to the connection's `onResolveError` hook, and to the failure's `cause`, instead. Each call also builds a fresh runtime, so instance context (sites, content types, languages) is never stale from one call to the next.
 
 **What the model sees.** Each tool decides how its results reach the model. `search`/`execute` declare a text form, and the rest are shown as structured JSON (so is any failure). In the AI SDK, the tool's `toModelOutput` is picked up automatically. A text-only transport such as MCP calls the tool's own `toText(result)`, which applies the same rule: code text unescaped, everything else pretty-printed JSON.
 

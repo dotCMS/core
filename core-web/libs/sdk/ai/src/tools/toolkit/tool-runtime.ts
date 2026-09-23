@@ -59,9 +59,17 @@ export const MAX_ERROR_CHARS = 2_000;
 export class ConfigurationError extends Error {
     readonly code = 'CONFIGURATION' as const;
 
-    constructor(message: string) {
+    /**
+     * `cause` carries the underlying error for the HOST (e.g. what a token resolver threw). It
+     * is never part of the message, which is what reaches the model.
+     */
+    constructor(message: string, options?: { cause?: unknown }) {
         super(message);
         this.name = 'ConfigurationError';
+        if (options?.cause !== undefined) {
+            // Standard ES2022 `cause`, assigned defensively for older lib targets.
+            (this as { cause?: unknown }).cause = options.cause;
+        }
     }
 }
 

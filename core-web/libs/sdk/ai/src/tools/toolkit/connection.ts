@@ -1,4 +1,4 @@
-import { ConfigurationError, errorMessage } from './tool-runtime';
+import { ConfigurationError } from './tool-runtime';
 
 import type { RequestCallEvent } from '../../runtime';
 
@@ -20,6 +20,12 @@ export interface DotCMSConnectionConfig {
     onCall?: (event: RequestCallEvent) => void;
     /** Called when loading instance context (sites, content types, …) fails. */
     onContextError?: (label: string, error: unknown) => void;
+    /**
+     * Called when a `url` / `token` resolver throws — the host's view of the failure. The model
+     * is only told the connection could not be resolved: a resolver's own error (a secrets
+     * manager's message) can carry paths, key names or identifiers, so its detail comes here.
+     */
+    onResolveError?: (field: 'url' | 'token', error: unknown) => void;
 }
 
 /**
@@ -57,7 +63,11 @@ export function isDotCMSConnection(value: unknown): value is DotCMSConnection {
     );
 }
 
-async function resolveValue(label: string, value: Resolvable<string>): Promise<string> {
+async function resolveValue(
+    field: 'url' | 'token',
+    value: Resolvable<string>,
+    config: DotCMSConnectionConfig
+): Promise<string> {
     if (typeof value !== 'function') {
         return value;
     }
@@ -66,11 +76,19 @@ async function resolveValue(label: string, value: Resolvable<string>): Promise<s
         return (await value()) ?? '';
     } catch (error) {
         // The host's resolver failed (a secrets manager down, say). That is the host's problem,
-        // not the call's — reported as CONFIGURATION, with the resolver's own reason.
+        // not the call's — reported as CONFIGURATION. The resolver's own error goes to the host
+        // (the hook, and `cause`), never into the message the model reads.
+        try {
+            config.onResolveError?.(field, error);
+        } catch {
+            // A throwing hook must not turn a readable CONFIGURATION failure into something else.
+        }
         throw new ConfigurationError(
-            `The dotCMS connection could not resolve its ${label}: ${errorMessage(error)}. This ` +
-                `is not a problem with the call and no argument can fix it — report it and stop; ` +
-                `do not look for credentials.`
+            `The dotCMS connection could not resolve its ${field}. The reason is withheld from ` +
+                `the tool result; whoever runs this server or agent can see it through the ` +
+                `connection's onResolveError hook. This is not a problem with the call and no ` +
+                `argument can fix it — report it and stop; do not look for credentials.`,
+            { cause: error }
         );
     }
 }
@@ -93,8 +111,8 @@ export async function resolveConnection(
     }
 
     const [url, token] = await Promise.all([
-        resolveValue('url', connection.config.url),
-        resolveValue('token', connection.config.token)
+        resolveValue('url', connection.config.url, connection.config),
+        resolveValue('token', connection.config.token, connection.config)
     ]);
 
     return { url, token, config: connection.config };

@@ -188,20 +188,63 @@ describe('tool factories', () => {
             expect(fetchMock).not.toHaveBeenCalled();
         });
 
-        it('reports a failing resolver as CONFIGURATION, with its reason', async () => {
-            const broken = dotcmsConnection({
-                url: 'https://demo.dotcms.com',
-                token: async () => {
-                    throw new Error('vault unreachable');
-                }
+        describe('a failing resolver', () => {
+            // A secrets manager's error can carry paths, key names or identifiers — it must reach
+            // the host, never the model's context.
+            const SECRET_DETAIL = 'vault read failed: secret/prod/dotcms-admin-token (10.0.3.7)';
+            const vaultDown = () => {
+                throw new Error(SECRET_DETAIL);
+            };
+
+            it('is reported as CONFIGURATION without the resolver’s own message', async () => {
+                const broken = dotcmsConnection({
+                    url: 'https://demo.dotcms.com',
+                    token: vaultDown
+                });
+
+                const failure = expectFailure(
+                    await pageVerifyTool(broken).execute({ path: '/about-us' })
+                );
+
+                expect(failure).toMatchObject({ code: 'CONFIGURATION', retryable: false });
+                expect(failure.error).toContain('could not resolve its token');
+                expect(JSON.stringify(failure)).not.toContain('secret/prod');
+                expect(JSON.stringify(failure)).not.toContain('10.0.3.7');
+                expect(fetchMock).not.toHaveBeenCalled();
             });
 
-            const failure = expectFailure(
-                await pageVerifyTool(broken).execute({ path: '/about-us' })
-            );
+            it('hands the host the real error through onResolveError', async () => {
+                const onResolveError = vi.fn();
+                const broken = dotcmsConnection({
+                    url: 'https://demo.dotcms.com',
+                    token: vaultDown,
+                    onResolveError
+                });
 
-            expect(failure.code).toBe('CONFIGURATION');
-            expect(failure.error).toContain('could not resolve its token: vault unreachable');
+                await pageVerifyTool(broken).execute({ path: '/about-us' });
+
+                expect(onResolveError).toHaveBeenCalledWith(
+                    'token',
+                    expect.objectContaining({ message: SECRET_DETAIL })
+                );
+            });
+
+            it('still reports CONFIGURATION when the hook itself throws', async () => {
+                const broken = dotcmsConnection({
+                    url: 'https://demo.dotcms.com',
+                    token: vaultDown,
+                    onResolveError: () => {
+                        throw new Error('logger down');
+                    }
+                });
+
+                const failure = expectFailure(
+                    await pageVerifyTool(broken).execute({ path: '/about-us' })
+                );
+
+                expect(failure.code).toBe('CONFIGURATION');
+                expect(failure.error).not.toContain('logger down');
+            });
         });
 
         it('reports a tool created without a connection as CONFIGURATION rather than throwing', async () => {
