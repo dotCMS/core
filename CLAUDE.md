@@ -156,6 +156,10 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — Running/debugging tests, MainSuite registration, API testing, database setup
 - [E2E Tests](docs/testing/E2E_TESTS.md) — Playwright, user workflows
 
+### CLI (`tools/dotcms-cli`)
+- [CLI Overview](docs/cli/CLI_OVERVIEW.md) — Quarkus + PicocLI architecture, module layout, command patterns. **Compiles to a lower `maven.compiler.release` than the core modules** — read the property before using modern syntax
+- [CLI Build System](docs/cli/CLI_BUILD_SYSTEM.md) — Maven profiles (`dist`, `native`, `release`), Quarkus dev mode, native image, testcontainers
+
 ### Infrastructure
 - [Docker Build Process](docs/infrastructure/DOCKER_BUILD_PROCESS.md) — Container setup, optimization
 
