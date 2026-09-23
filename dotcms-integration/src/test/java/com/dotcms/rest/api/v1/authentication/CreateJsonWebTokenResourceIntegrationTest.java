@@ -19,7 +19,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.LocaleUtil;
 import java.util.Locale;
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -46,18 +45,19 @@ public class CreateJsonWebTokenResourceIntegrationTest {
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
         final String userId = "dotcms.org.1";
         final String pass   = "pass";
-        final ServletContext context = mock(ServletContext.class);
         final User user = mock(User.class);
         final String token = "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiJpWEtweXU2QmtzcWI0MHZNa3VSUVF3PT0iLCJpYXQiOjE0NzEyODM4MjYsInN1YiI6IntcbiAgXCJ1c2VySWRcIjogXCJpWEtweXU2QmtzcWI0MHZNa3VSUVF3XFx1MDAzZFxcdTAwM2RcIixcbiAgXCJsYXN0TW9kaWZpZWRcIjogMTQ3MDg2NjM1NDAwMCxcbiAgXCJjb21wYW55SWRcIjogXCJkb3RjbXMub3JnXCJcbn0iLCJpc3MiOiJpWEtweXU2QmtzcWI0MHZNa3VSUVF3PT0iLCJleHAiOjE0NzI0OTM0MjZ9.YEtN28ENfpNRnugTFjZoiANlnnura5T5R0Pagi9wiC4";
         final JsonWebTokenUtils jsonWebTokenUtils = mock(JsonWebTokenUtils.class);
         final SecurityLoggerServiceAPI securityLoggerServiceAPI = mock(SecurityLoggerServiceAPI.class);
 
         LocaleUtil.setUserWebAPI(userWebAPI);
-        Config.CONTEXT = context;
 
         final Locale locale = new Locale.Builder().setLanguage("en").setRegion("CR").build();
         user.setLocale(locale);
-        when(context.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
+        // Stub the shared test ServletContext instead of replacing Config.CONTEXT: a replacement
+        // leaks into every later test in the suite JVM (FileUtil.getRealPath stops resolving
+        // /WEB-INF files, so the portlet registry loses every shipped portlet).
+        when(Config.CONTEXT.getInitParameter("company_id")).thenReturn(RestUtilTest.DEFAULT_COMPANY);
         when(request.getLocale()).thenReturn(locale); //
         when(request.getSession(false)).thenReturn(session); //
         when(request.getSession()).thenReturn(session); //
