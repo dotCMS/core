@@ -1,12 +1,21 @@
-import { Editor } from '@tinymce/tinymce-react';
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 
 import { DotCMSBasicContentlet, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { sendMessageToUVE, getUVEState } from '@dotcms/uve';
 import { __TINYMCE_PATH_ON_DOTCMS__ } from '@dotcms/uve/internal';
 
-import { DotCMSEditableTextProps, TINYMCE_CONFIG } from './utils';
+import { DotCMSEditableTextProps } from './utils';
+
+import type { TinyMCEEditorInstance } from './TinyMCEEditor';
+
+/**
+ * TinyMCE is only ever rendered once the UVE is in edit mode, so the integration is split
+ * into its own chunk and fetched at that point. Importing it statically put the whole editor
+ * — and the TinyMCE React wrapper — into every consumer bundle, including live-mode pages
+ * that can never show it.
+ */
+const TinyMCEEditor = lazy(() => import('./TinyMCEEditor'));
 
 /**
  * Allows inline edit content pulled from dotCMS API using TinyMCE editor
@@ -41,7 +50,7 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
     contentlet,
     fieldName
 }: Readonly<DotCMSEditableTextProps<T>>) {
-    const editorRef = useRef<Editor['editor'] | null>(null);
+    const editorRef = useRef<TinyMCEEditorInstance | null>(null);
     const [scriptSrc, setScriptSrc] = useState('');
     const [initEditor, setInitEditor] = useState(false);
     const [content, setContent] = useState(contentlet?.[fieldName] || '');
@@ -177,15 +186,16 @@ export function DotCMSEditableText<T extends DotCMSBasicContentlet>({
                 outline: '2px solid #006ce7',
                 borderRadius: '4px'
             }}>
-            <Editor
-                tinymceScriptSrc={scriptSrc}
-                inline={true}
-                onInit={(_, editor) => (editorRef.current = editor)}
-                init={TINYMCE_CONFIG[mode]}
-                initialValue={content as string}
-                onMouseDown={onMouseDown}
-                onFocusOut={onFocusOut}
-            />
+            <Suspense fallback={<span dangerouslySetInnerHTML={{ __html: content }} />}>
+                <TinyMCEEditor
+                    scriptSrc={scriptSrc}
+                    mode={mode}
+                    initialValue={content as string}
+                    onEditorInit={(editor) => (editorRef.current = editor)}
+                    onMouseDown={onMouseDown}
+                    onFocusOut={onFocusOut}
+                />
+            </Suspense>
         </div>
     );
 }

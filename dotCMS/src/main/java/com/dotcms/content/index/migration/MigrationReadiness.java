@@ -47,11 +47,15 @@ public record MigrationReadiness(
      * @param safeToRollback whether it is safe to downgrade — false when any index's Elasticsearch
      *                       copy is missing, behind its OpenSearch counterpart, or has an unmeasurable
      *                       count on either engine, because a downgrade routes reads back to Elasticsearch
-     *                       and would silently drop that delta until a reindex
+     *                       and would silently drop that delta until a reindex. Also false when the
+     *                       mandatory content pair could not be resolved at all: with no rows to compare,
+     *                       "nothing shows Elasticsearch behind" is vacuously true (issue #37635)
      * @param outOfSyncCount how many indices need attention <em>in the current phase</em> (missing
      *                       counterpart or count drift). In Phase 0 an OpenSearch counterpart that does not
      *                       exist yet is the expected state — it is built during dual-write — so it is not
-     *                       counted here
+     *                       counted here. <strong>A 0 here is not on its own an all-clear</strong>: it
+     *                       counts drift among the rows that exist, so read it together with
+     *                       {@code blockers}, which is non-empty when nothing could be measured
      * @param summary        one human-readable sentence describing the overall state
      * @param blockers       per-index reasons that make advancing unsafe (empty when safe)
      */

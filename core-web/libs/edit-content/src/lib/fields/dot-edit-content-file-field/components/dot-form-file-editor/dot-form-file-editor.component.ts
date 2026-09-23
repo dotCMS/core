@@ -22,7 +22,11 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
 
-import { DotMessagePipe, DotFieldValidationMessageComponent } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotFieldValidationMessageComponent,
+    DotFieldRequiredDirective
+} from '@dotcms/ui';
 
 import { FormFileEditorStore } from './store/form-file-editor.store';
 
@@ -58,6 +62,7 @@ const DIALOG_SIZE_TRANSITION = 'width 250ms ease, height 250ms ease, border-radi
 @Component({
     selector: 'dot-form-file-editor',
     imports: [
+        DotFieldRequiredDirective,
         DotMessagePipe,
         ReactiveFormsModule,
         DotFieldValidationMessageComponent,

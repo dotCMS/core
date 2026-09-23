@@ -2,14 +2,11 @@
 @let showLabel = $showLabel();
 @let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="fieldHasError">
+<dot-card-field [hasError]="fieldHasError" [isRequired]="isRequired">
     @if (showLabel) {
-        <dot-card-field-label
-            [variableName]="field.variable"
-            [isRequired]="isRequired"
-            [hint]="field.hint">
+        <label dotCardFieldLabel [variableName]="field.variable" [isRequired]="isRequired">
             {{ field.name }}
-        </dot-card-field-label>
+        </label>
     }
     <dot-card-field-content>
         @if (isNewBlockEditorEnabled()) {
@@ -29,4 +26,19 @@
                 [field]="field" />
         }
     </dot-card-field-content>
+    @if ((fieldHasError && isRequired) || field.hint) {
+        <dot-card-field-footer>
+            @if (fieldHasError && isRequired) {
+                <small class="p-field-error">
+                    {{ 'dot.edit.content.form.field.required' | dm }}
+                </small>
+            }
+
+            @if (field.hint) {
+                <small class="p-field-hint" [attr.data-testId]="'hint-' + field.variable">
+                    {{ field.hint }}
+                </small>
+            }
+        </dot-card-field-footer>
+    }
 </dot-card-field>

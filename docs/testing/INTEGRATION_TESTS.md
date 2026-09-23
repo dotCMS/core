@@ -32,8 +32,8 @@ dotcms-integration/
 For JUnit4 tests that need `@DataProvider`-style parameterization (from the
 `com.tngtech.junit.dataprovider` library — a real dependency declared in
 `dotcms-integration/pom.xml`), annotate the class with one of these two `@RunWith` runners:
-- **`DataProviderRunner`** (`com.tngtech.java.junit.dataprovider.DataProviderRunner`): plain data-provider-driven parameterized tests, no CDI container — **68 real usages** in this module (e.g. `LanguageUtilTest.java`)
-- **`DataProviderWeldRunner`** (`com.dotcms.DataProviderWeldRunner`): same, but extends `DataProviderRunner` to additionally spin up a real Weld CDI container so test classes can be resolved as CDI beans — **40 real usages**. This is a CDI-aware superset, not a replacement for the plain runner; both stay in active use for different needs.
+- **`DataProviderRunner`** (`com.tngtech.java.junit.dataprovider.DataProviderRunner`): plain data-provider-driven parameterized tests, no CDI container — **68 real usages** (`@RunWith(DataProviderRunner.class)`) in this module (e.g. `LanguageUtilTest.java`)
+- **`DataProviderWeldRunner`** (`com.dotcms.DataProviderWeldRunner`): same, but extends `DataProviderRunner` to additionally spin up a real Weld CDI container so test classes can be resolved as CDI beans — **~41 real usages**. This is a CDI-aware superset, not a replacement for the plain runner; both stay in active use for different needs.
 
 ### Naming: use the `Test` suffix, not `IT` ⚠️
 
@@ -45,32 +45,60 @@ plus `**/QuickSuite.java` and `**/OpenSearchUpgradeSuite.java` in their profiles
 is driven entirely by suite registration and never by the class-name suffix. Surefire is skipped
 in this module, so a `*Test` name here can't be mistaken for a unit test either.
 
-Match the siblings already in your package — the module is ~654 `*Test.java` to ~12 `*IT.java`.
+Match the siblings already in your package — the module is ~680 `*Test.java` to ~19 `*IT.java`.
 
 ### Registering Tests in a MainSuite (CI gate) ⚠️
 
-CI runs integration tests **only** through the JUnit `@SuiteClasses` aggregator suites
-(`MainSuite1a`, `MainSuite1b`, `MainSuite2a`, `MainSuite2b`, `MainSuite3a` in
-`dotcms-integration/src/test/java/com/dotcms/`). **A new test class that is not listed in one
-of these suites compiles fine but is silently never executed in CI** — green build, zero
-coverage. This is easy to miss because the class runs locally via `-Dit.test=MyTestClass`.
+CI runs integration tests **only** through the JUnit `@SuiteClasses` aggregator suites in
+`dotcms-integration/src/test/java/com/dotcms/` — currently `MainSuite1a`, `MainSuite1b`,
+`MainSuite2a`, `MainSuite2b`, `MainSuite3a` (plus `Junit5Suite1` and `OpenSearchUpgradeSuite`,
+see below). **This set isn't fixed** — a new `MainSuite3b` (or beyond) may get added later as the
+module grows; check `dotcms-integration/src/test/java/com/dotcms/MainSuite*.java` for the
+current list rather than assuming this doc's names are exhaustive or permanent. **A new test
+class that is not listed in one of these suites compiles fine but is silently never executed in
+CI** — green build, zero coverage. This is easy to miss because the class runs locally via
+`-Dit.test=MyTestClass`.
 
 When you add a new integration test class, register it:
 
-1. Pick a suite — group it with sibling tests in the same package. The v1 asset tests live in
-   `MainSuite2b`, so a new v2 asset test goes there too.
-2. Add **both** the `import` (in alphabetical order) and the `Foo.class,` entry inside
-   `@SuiteClasses({ ... })`.
+1. **Pick the suite with the shortest current CI runtime** — not by package/feature grouping.
+   The `MainSuite*` jobs (currently five — see the note above on this list growing over time)
+   run in parallel in CI, so the goal is to keep their wall-clock times roughly balanced; adding
+   to whichever suite already finishes fastest keeps the overall PR build time down. **Don't
+   hardcode a specific suite name as "the fast one" in this doc or in memory** — suite runtimes
+   shift over time as tests are added/removed elsewhere, so check current timings before each new
+   registration. The real way to check: pull job start/completion times from **at least 3 recent,
+   independent PR CI runs** (not just one — a single run can be skewed by runner contention or
+   noise, and durations should agree before you trust them) —
+   ```bash
+   gh pr view <recent-PR-number> --repo dotCMS/core --json statusCheckRollup \
+     -q '.statusCheckRollup[] | select(.name? and (.name | test("Integration Tests"))) | "\(.name) \(.startedAt) \(.completedAt)"'
+   ```
+   repeated across 3 different recent PR numbers, and compute the duration of each `MainSuite*`
+   job in each (ignore `Junit5Suite1` and `OpenSearchUpgradeSuite` — those are structurally
+   different, purpose-built suites, not general destinations for a new JUnit4 test). Add the new
+   test to whichever `MainSuite*` is consistently fastest across the samples. If every current
+   `MainSuite*` is consistently near-saturated and none is meaningfully faster, that's a signal a
+   new `MainSuite` class may be needed — that's a call for whoever owns the CI/test infra, not
+   something to decide unilaterally from a PR sample.
+2. Add the `import` (alphabetized, matching the file's existing import block) **and** append the
+   `Foo.class,` entry to the **end** of the `@SuiteClasses({ ... })` list — the real
+   `@SuiteClasses` lists are not alphabetized or grouped by feature/package at all; new tests are
+   consistently appended at the end.
 
 ```java
+// Say the check in step 1 found MainSuite2b currently has the shortest CI runtime —
+// register the new class there: import alphabetized with the rest, class entry appended
+// at the end of the @SuiteClasses list. (MyNewFeatureIntegrationTest below is a placeholder —
+// don't copy an existing suite member as your "new" entry, or you'll register it twice.)
 // MainSuite2b.java
-import com.dotcms.rest.api.v2.asset.WebAssetResourceV2IntegrationTest; // sorted with siblings
+import com.dotcms.myfeature.MyNewFeatureIntegrationTest; // alphabetized import
 ...
 @SuiteClasses({
     ...
-    WebAssetHelperIntegrationTest.class,
-    WebAssetResourceV2IntegrationTest.class,   // <-- register here or it won't run in CI
-    ...
+    RoleResourceUsersIntegrationTest.class,
+    com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
+    MyNewFeatureIntegrationTest.class,   // <-- appended at the end
 })
 ```
 
@@ -127,7 +155,7 @@ public class MyResourceIntegrationTest extends IntegrationTestBase {
 
     @Before
     public void setup() {
-        contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+        contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
         contentletAPI = APILocator.getContentletAPI();
     }
 
@@ -181,6 +209,17 @@ public class MyResourceIntegrationTest extends IntegrationTestBase {
 ```java
 public class ContentletAPITest extends IntegrationTestBase {
 
+    private ContentletAPI contentletAPI;
+    private User systemUser;
+    private Language defaultLanguage;
+
+    @Before
+    public void setup() {
+        contentletAPI = APILocator.getContentletAPI();
+        systemUser = APILocator.systemUser();
+        defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+    }
+
     @Test
     public void testContentletLifecycle() throws Exception {
         // Create content type
@@ -190,7 +229,7 @@ public class ContentletAPITest extends IntegrationTestBase {
         Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentType.id());
         contentlet.setStringProperty("title", "Test Title");
-        contentlet.setHost(defaultHost);
+        contentlet.setHost(Host.SYSTEM_HOST);
         contentlet.setLanguageId(defaultLanguage.getId());
 
         // Save
@@ -205,9 +244,15 @@ public class ContentletAPITest extends IntegrationTestBase {
         // Delete
         contentletAPI.delete(contentlet, systemUser, false);
 
-        // Verify deletion
-        assertFalse(contentletAPI.findByIdentifier(contentlet.getIdentifier(),
-            defaultLanguage.getId(), false, systemUser, false).isPresent());
+        // Verify deletion — findContentletByIdentifier throws DotContentletStateException
+        // when nothing is found; it returns a Contentlet directly, never an Optional/null
+        try {
+            contentletAPI.findContentletByIdentifier(contentlet.getIdentifier(),
+                false, defaultLanguage.getId(), systemUser, false);
+            fail("Contentlet should have been deleted");
+        } catch (DotContentletStateException expected) {
+            // expected — content no longer exists
+        }
     }
 }
 ```
@@ -216,10 +261,20 @@ public class ContentletAPITest extends IntegrationTestBase {
 ```java
 public class WorkflowAPITest extends IntegrationTestBase {
 
+    private WorkflowAPI workflowAPI;
+    private User systemUser;
+
+    @Before
+    public void setup() {
+        workflowAPI = APILocator.getWorkflowAPI();
+        systemUser = APILocator.systemUser();
+    }
+
     @Test
     public void testWorkflowFiresOnCheckin() throws Exception {
         // Given
-        Contentlet contentlet = createTestContentlet();
+        ContentType contentType = createTestContentType();
+        Contentlet contentlet = createTestContentlet(contentType);
 
         // When — fires the contentlet's default workflow scheme as part of checkin
         WorkflowProcessor processor = workflowAPI.fireWorkflowPreCheckin(contentlet, systemUser);
@@ -480,7 +535,7 @@ public class TestDataManager {
             .name(name)
             .build();
 
-        contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
         createdContentTypes.add(contentType.id());
         return contentType;
     }
@@ -538,7 +593,7 @@ public void testCreateUser() throws Exception {
     // Test operations
 
     // Cleanup
-    APILocator.getUserAPI().delete(user, systemUser, false);
+    APILocator.getUserAPI().delete(user, APILocator.systemUser(), false);
 }
 ```
 

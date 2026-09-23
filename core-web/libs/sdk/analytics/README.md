@@ -1,6 +1,15 @@
 # @dotcms/analytics
 
-Content Analytics SDK for tracking content-aware events in dotCMS-powered React applications.
+Content Analytics SDK for tracking content-aware events in dotCMS-powered applications.
+
+## Entrypoints
+
+| Import | Contains | Use it when |
+| --- | --- | --- |
+| `@dotcms/analytics` | The framework-neutral engine: `initializeContentAnalytics`, `getAnalyticsConfig`, and the shared types. No React, no Next.js. | You are not using React, or you want to drive analytics yourself. |
+| `@dotcms/analytics/react` | `DotContentAnalytics` and `useContentAnalytics`, including the Next.js App Router integration. | You are using React. This is what the rest of this guide uses. |
+
+> **Upgrading?** The package root used to re-export the React bindings, so `@dotcms/analytics` and `@dotcms/analytics/react` resolved to the same module. The root is now framework-neutral. If you imported `useContentAnalytics` or `DotContentAnalytics` from the root, add `/react` to the specifier — see [MIGRATION.md](./MIGRATION.md).
 
 ## Which SDK Version Should I Use?
 
