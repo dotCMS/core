@@ -364,17 +364,12 @@ There is nothing to commit — the spec is regenerated at build time. CI builds 
 
 #### Building against a local dotCMS instance
 
-The `search` tool exposes whatever endpoints are in the bundled `spec.json`, so to describe your
-**local** instance you must regenerate the spec as part of the build.
+The `search` tool exposes whatever endpoints are in the bundled `spec.json`, so to describe your **local** instance you must regenerate the spec as part of the build.
 
 > [!IMPORTANT]
-> Don't run `generate-spec` and then `build` as two separate steps. The `build` target re-runs
-> `generate-spec` itself (via `dependsOn`), and with no source set it falls back to the demo
-> instance — overwriting the spec you just generated. Pass the source so the build's own
-> `generate-spec` uses it.
+> Don't run `generate-spec` and then `build` as two separate steps. The `build` target re-runs `generate-spec` itself (via `dependsOn`), and with no source set it falls back to the demo instance — overwriting the spec you just generated. Pass the source so the build's own `generate-spec` uses it.
 
-Set `DOTCMS_SPEC_URL` — it's an environment variable, so it flows into the `generate-spec` task
-that `build` runs automatically (a CLI `--` arg would not). One command:
+Set `DOTCMS_SPEC_URL` — it's an environment variable, so it flows into the `generate-spec` task that `build` runs automatically (a CLI `--` arg would not). One command:
 
 ```bash
 # Regenerate the spec from your local instance AND build, in one step
@@ -440,37 +435,40 @@ The built server works with both `node` and `bun` — the correct sandbox is sel
 ### Project Structure
 
 ```
-apps/mcp-server/                         # MCP server (thin xmcp wrappers)
+apps/mcp-server/                  # MCP server (thin xmcp host)
 ├── src/
-│   ├── tools/
-│   │   ├── search.ts       # API spec exploration tool
-│   │   ├── execute.ts      # API execution tool
-│   │   ├── download_assets.ts
-│   │   └── upload_assets.ts
+│   ├── tools/                    # One 3-line file per tool — xmcp loads every module here
+│   │   ├── search.ts
+│   │   ├── execute.ts
+│   │   ├── page_create.ts
+│   │   ├── page_place_content.ts
+│   │   ├── page_verify.ts
+│   │   ├── upload_assets.ts
+│   │   └── download_assets.ts
 │   ├── lib/
-│   │   └── assets-transfer.ts
-│   └── prompts/            # Prompt templates (xmcp convention)
-├── xmcp.config.ts          # xmcp bundler configuration
-├── jest.config.ts          # Test configuration
-└── project.json            # Nx project configuration
+│   │   └── tools.ts              # Reads the env, adapts @dotcms/ai/tools to xmcp
+│   └── smoke/
+│       └── server-boot.spec.ts   # Boots the built bundle over stdio
+├── xmcp.config.ts                # xmcp bundler configuration
+├── vite.config.mts               # Test configuration (Vitest)
+└── project.json                  # Nx project configuration
 
-libs/sdk/ai/                      # Portable runtime primitives
+libs/sdk/ai/                      # @dotcms/ai — where the tools actually live
 ├── scripts/
-│   └── generate-spec.ts    # OpenAPI spec processor (run manually to refresh)
+│   └── generate-spec.ts          # OpenAPI spec processor (run by build/serve/test)
 ├── src/
-│   ├── lib/
-│   │   ├── executor.ts     # Sandbox executor orchestration
-│   │   ├── http-client.ts  # Authenticated HTTP adapter
-│   │   ├── spec.ts         # OpenAPI spec loader
-│   │   ├── types.ts        # TypeScript type definitions
-│   │   └── sandbox/        # Sandbox isolation (dual-runtime)
-│   │       ├── index.ts        # Runtime detection factory
-│   │       ├── interface.ts    # Sandbox interface
-│   │       ├── bun-worker.ts   # Bun Web Worker sandbox
-│   │       └── node-worker.ts  # Node.js worker_threads sandbox
+│   ├── tools/                    # @dotcms/ai/tools — the tool set this server registers
+│   │   ├── definitions/          # Each tool's name, description, input schema and handler
+│   │   ├── create-tools.ts       # createTool() — what every tool factory is built with
+│   │   ├── page-*.ts             # Page operations (create, place content, verify)
+│   │   └── assets-transfer.ts    # Upload/download operations
+│   ├── runtime.ts                # @dotcms/ai/runtime — createRuntime()
+│   ├── adapter/                  # @dotcms/ai/adapter — authenticated HTTP, instance context
+│   ├── sandbox/                  # @dotcms/ai/sandbox — dual-runtime worker sandbox
+│   ├── spec/                     # @dotcms/ai/spec — the OpenAPI spec loader
 │   └── generated/
-│       └── spec.json       # Build-generated, git-ignored (lives in libs/sdk/ai)
-└── project.json            # Nx project configuration
+│       └── spec.json             # Build-generated, git-ignored
+└── project.json                  # Nx project configuration
 ```
 
 ### Key Architecture Patterns
@@ -518,12 +516,12 @@ pnpm nx run sdk-ai:generate-spec
 
 ### Contributing Guidelines
 
-When adding new MCP tools:
+The tools themselves live in [`@dotcms/ai/tools`](../../libs/sdk/ai/README.md#ready-made-tools--dotcmsaitools), so every host gets them, not just this server. When adding a new MCP tool:
 
-1. Create a new `.ts` file in `src/tools/`
-2. Export `schema` (Zod), `metadata` (ToolMetadata), and a default handler
-3. xmcp auto-discovers the tool — no registration needed
-4. Add tests and documentation
+1. Define it and its factory in `libs/sdk/ai/src/tools/definitions/` with `defineTool` and `createTool`, export the factory from `libs/sdk/ai/src/tools/index.ts`, and test it there
+2. Add `src/tools/<tool_name>.ts` here — `xmcpTool(yourTool)`, like the existing ones
+3. Add the name to the expected tool list in `src/smoke/server-boot.spec.ts`
+4. Never put a spec file under `src/tools/` — xmcp loads every module there as a tool
 
 ## Security Best Practices
 

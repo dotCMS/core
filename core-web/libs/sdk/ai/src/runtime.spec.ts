@@ -69,6 +69,27 @@ describe('createRuntime.request (direct, no worker)', () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it.each([
+        ['a dot-segment', '/api/v1/site/../contenttype'],
+        ['an encoded dot-segment', '/api/v1/site/%2e%2e/contenttype'],
+        ['a backslash dot-segment', '/api/v1/site/..\\contenttype']
+    ])('judges the resolved path, so %s cannot escape the allow-list', async (_label, path) => {
+        // Each of these starts with the allowed prefix, and each is sent by `fetch` as
+        // `/api/v1/contenttype`. Checked as raw strings they all passed.
+        const dotcms = createRuntime({
+            url: 'https://demo.dotcms.com',
+            token: 't',
+            allow: ['/api/v1/site']
+        });
+
+        const error = await dotcms.request({ path }).catch((e: unknown) => e);
+
+        expect(error).toBeInstanceOf(PolicyError);
+        expect((error as PolicyError).path).toBe('/api/v1/contenttype');
+        expect((error as PolicyError).message).toContain('resolves to /api/v1/contenttype');
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('allows a call whose path matches an allow-list prefix', async () => {
         fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
         const dotcms = createRuntime({

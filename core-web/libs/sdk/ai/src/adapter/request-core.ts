@@ -45,8 +45,27 @@ export interface RequestOptions {
  * A policy hook consulted before a request reaches the wire. Return `false` (or throw) to
  * reject. The single place a caller-owned allow-list plugs in — both verbs honor it because
  * both flow through `requestCore`.
+ *
+ * `path` is the RESOLVED path — dot-segments, encoded dots and backslashes already collapsed
+ * the way the URL that is sent will collapse them — so a policy never has to defend against
+ * `/allowed/../elsewhere` itself.
  */
 export type RequestPolicy = (req: { method: string; path: string }) => boolean | void;
+
+/**
+ * Normalize an `allow` setting into the policy the request core consults: a list of path
+ * prefixes (a request is allowed when its resolved path starts with any of them), or a
+ * predicate used as-is. The one place that meaning is defined, so every caller that accepts
+ * `allow` reads it the same way.
+ */
+export function toRequestPolicy(
+    allow: string[] | RequestPolicy | undefined
+): RequestPolicy | undefined {
+    if (!allow) return undefined;
+    if (typeof allow === 'function') return allow;
+    const prefixes = allow;
+    return ({ path }) => prefixes.some((prefix) => path.startsWith(prefix));
+}
 
 /** Host-side context the request core needs. Auth lives here, never in the caller's code. */
 export interface RequestCoreContext {
@@ -321,23 +340,32 @@ export async function requestCore(
             throw new ValidationError('options.path must not be an absolute URL');
         }
 
+        // Build the URL BEFORE the policy check, so the policy judges the path that will
+        // actually be requested. `new URL` resolves dot-segments, percent-encoded dots and
+        // backslashes: checked as a raw string, `/api/v1/content/../site/x` passed an
+        // allow-list for `/api/v1/content` and then requested `/api/v1/site/x`.
+        const url = new URL(urlPath, ctx.baseUrl);
+        const resolvedPath = url.pathname;
+        const described =
+            resolvedPath === urlPath ? urlPath : `${urlPath} (resolves to ${resolvedPath})`;
+
         // Policy / allow-list check — before anything touches the wire.
         if (ctx.policy) {
             let allowed: boolean | void;
             try {
-                allowed = ctx.policy({ method, path: urlPath });
+                allowed = ctx.policy({ method, path: resolvedPath });
             } catch (err) {
                 throw new PolicyError(
                     err instanceof Error ? err.message : String(err),
                     method,
-                    urlPath
+                    resolvedPath
                 );
             }
             if (allowed === false) {
                 throw new PolicyError(
-                    `Request ${method} ${urlPath} rejected by policy`,
+                    `Request ${method} ${described} rejected by policy`,
                     method,
-                    urlPath
+                    resolvedPath
                 );
             }
         }
@@ -347,8 +375,7 @@ export async function requestCore(
             throw new AbortError(`Request ${method} ${urlPath} was aborted before it started`);
         }
 
-        // Build URL with query params.
-        const url = new URL(urlPath, ctx.baseUrl);
+        // Add query params.
         if (options.query) {
             for (const [key, value] of Object.entries(options.query)) {
                 url.searchParams.set(key, String(value));

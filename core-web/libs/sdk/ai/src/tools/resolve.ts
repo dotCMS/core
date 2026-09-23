@@ -1,6 +1,6 @@
-import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
+import { errorMessage } from './tool-runtime';
 
-import { errorMessage } from './runtime';
+import { HttpError, type DotCMSRuntime } from '../runtime';
 
 /**
  * Resolution of the instance references a caller can name: sites and languages.
@@ -175,8 +175,8 @@ async function siteNotFoundMessage(dotcms: DotCMSRuntime, wanted: string): Promi
             `which usually means the one-time context load failed (a transient error or a ` +
             `permissions problem), NOT that the instance has no sites. A direct lookup was ` +
             `also tried and did not find it. Verify the site exists and that the configured ` +
-            `token can read it; if the site is correct, reconnecting the MCP server reloads ` +
-            `the context.`
+            `token can read it; if the site is correct, retrying the call reloads the ` +
+            `context — every tool call starts from a fresh runtime.`
         );
     }
 

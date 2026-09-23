@@ -1,8 +1,17 @@
 import { vi } from 'vitest';
 
-import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
-
+import { PAGE_VERIFY_ENDPOINTS } from './definitions/page-verify';
+import { unlistedCalls } from './endpoints';
 import { buildManifest, MAX_INCLUDED_HTML_CHARS, verifyPage } from './page-verify';
+
+import { HttpError, type DotCMSRuntime, type RequestOptions } from '../runtime';
+
+// Every request the fake below sees. After each test, all of them must be endpoints the
+// page_verify tool owns — otherwise the operation works here and is refused in production.
+const seen: RequestOptions[] = [];
+afterEach(() => {
+    expect(unlistedCalls(PAGE_VERIFY_ENDPOINTS, seen.splice(0))).toEqual([]);
+});
 
 const DEFAULT_CONTAINER = '//demo.dotcms.com/application/containers/default/';
 
@@ -251,6 +260,7 @@ describe('verifyPage', () => {
     function fakeRuntime(over?: { render?: unknown; sites?: unknown[]; renderThrows?: unknown }) {
         const calls: Array<{ path: string; query?: unknown }> = [];
         const request = vi.fn(async (options: RequestOptions) => {
+            seen.push(options);
             calls.push({ path: options.path, query: options.query });
             if (options.path.startsWith('/api/v1/page/render')) {
                 if (over?.renderThrows) {

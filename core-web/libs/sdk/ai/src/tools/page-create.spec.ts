@@ -1,9 +1,18 @@
 import { vi } from 'vitest';
 
-import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
-
+import { PAGE_CREATE_ENDPOINTS } from './definitions/page-create';
+import { unlistedCalls } from './endpoints';
 import { createPage } from './page-create';
 import { splitUrlPath } from './page-path';
+
+import type { DotCMSRuntime, RequestOptions } from '../runtime';
+
+// Every request the fakes below see. After each test, all of them must be endpoints the
+// page_create tool owns — otherwise the operation works here and is refused in production.
+const seen: RequestOptions[] = [];
+afterEach(() => {
+    expect(unlistedCalls(PAGE_CREATE_ENDPOINTS, seen.splice(0))).toEqual([]);
+});
 
 describe('splitUrlPath', () => {
     it('splits a path with an explicit leaf into folder + leaf', () => {
@@ -133,6 +142,7 @@ describe('createPage', () => {
         const sites = handlers.sites ?? [DEMO_SITE];
         const calls: Array<{ method?: string; path: string; body?: unknown; query?: unknown }> = [];
         const request = vi.fn(async (options: RequestOptions) => {
+            seen.push(options);
             calls.push({
                 method: options.method,
                 path: options.path,

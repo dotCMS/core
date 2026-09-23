@@ -1,6 +1,6 @@
-import { AbortError, HttpError, PolicyError, TimeoutError } from '@dotcms/ai/runtime';
+import { errorMessage, MAX_ERROR_CHARS, toolFailure, type ToolFailure } from './tool-runtime';
 
-import { errorMessage, MAX_ERROR_CHARS, toolFailure, type ToolFailure } from './runtime';
+import { AbortError, HttpError, PolicyError, TimeoutError } from '../runtime';
 
 /** Parse what a tool handler actually returns — a JSON string, not an object. */
 function parse(result: string): ToolFailure {
@@ -41,7 +41,7 @@ describe('toolFailure', () => {
 
         expect(failure.ok).toBe(false);
         expect(failure.operation).toBe('page_verify');
-        expect(failure.error).toContain('[MCP Server - page_verify]');
+        expect(failure.error).toContain('[dotCMS - page_verify]');
         expect(failure.error).toContain('nope');
         expect(failure.code).toBe('UNKNOWN');
     });

@@ -1,8 +1,8 @@
-import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
-
 import { LayoutRow } from './page-common';
 import { normalizePagePath } from './page-path';
 import { resolveSite } from './resolve';
+
+import { HttpError, type DotCMSRuntime } from '../runtime';
 
 /** Render modes the verify tool supports. LIVE = published; WORKING = latest saved (pre-publish). */
 export type VerifyMode = 'LIVE' | 'WORKING';

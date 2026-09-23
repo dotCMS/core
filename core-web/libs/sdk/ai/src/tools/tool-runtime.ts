@@ -5,18 +5,38 @@ import {
     isDotCMSError,
     TimeoutError,
     type DotCMSRuntime,
+    type DotCMSRuntimeConfig,
     type RequestOptions
-} from '@dotcms/ai/runtime';
+} from '../runtime';
 
 /**
- * Wall-clock deadline applied to every direct `dotcms.request()` a lib tool makes.
+ * Wall-clock deadline applied to every direct `dotcms.request()` a tool makes.
  *
  * `createRuntime`'s `timeout` bounds `run()` only; `request()` is documented as having no
- * surrounding timeout of its own. Without a deadline a wedged instance hangs the MCP call
+ * surrounding timeout of its own. Without a deadline a wedged instance hangs the tool call
  * forever — the model gets no error, no result, and no way to tell the difference from slow
  * work — and `TIMEOUT`, the one unambiguously retryable code, could never be produced.
  */
-const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+
+/**
+ * The runtime settings a tool host supplies once. Everything else a tool needs (its sandbox
+ * timeout, whether it gets the `spec` global) is decided per tool, not by the host.
+ */
+export type ToolRuntimeConfig = Pick<
+    DotCMSRuntimeConfig,
+    'url' | 'token' | 'allow' | 'onCall' | 'onContextError' | 'includeStacks'
+>;
+
+/** What an individual tool asks of the runtime it is handed for one call. */
+export interface ToolRuntimeOptions {
+    /** Sandbox wall-clock timeout (ms) for `run()`. */
+    timeout?: number;
+    /** Inject the OpenAPI `spec` global into `run()`. */
+    includeSpec?: boolean;
+    /** Deadline (ms) for each direct `request()`. Default {@link DEFAULT_REQUEST_TIMEOUT_MS}. */
+    requestTimeout?: number;
+}
 
 /**
  * Cap on any single error string handed back to the model.
@@ -29,7 +49,7 @@ const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 export const MAX_ERROR_CHARS = 2_000;
 
 /**
- * The server is misconfigured — a deployment problem, not a bad tool call.
+ * The tool host is misconfigured — a deployment problem, not a bad tool call.
  *
  * Carries its own `code` so it lands in {@link ToolFailure} as `CONFIGURATION` rather than
  * `UNKNOWN`, which is what lets the model tell "I called this wrong" from "this server
@@ -45,39 +65,38 @@ export class ConfigurationError extends Error {
 }
 
 /**
- * Build a runtime from the MCP server's environment. One place owns the `DOTCMS_URL` /
- * `AUTH_TOKEN` reading, the default session id, the standard context-error logging, and the
- * per-request deadline — so every tool (`execute`, `search`, `download_assets`,
- * `upload_assets`) constructs the runtime the same way instead of re-deriving it (and
- * silently drifting on which options they set).
+ * Build the runtime one tool call runs against. One place owns the per-request deadline —
+ * so every tool constructs its runtime the same way instead of re-deriving it (and silently
+ * drifting on which options they set).
+ *
+ * Called once per tool invocation, deliberately: the runtime owns its context cache, so a
+ * fresh runtime is what lets the next call see sites, content types or languages the
+ * previous call created. That is also why no session id is threaded through — a runtime
+ * that lives for one call has nothing to key a cache on.
  */
-export function runtimeFromEnv(
-    sessionId?: string,
-    opts?: { timeout?: number; includeSpec?: boolean; requestTimeout?: number }
+export function createToolRuntime(
+    config: ToolRuntimeConfig,
+    opts?: ToolRuntimeOptions
 ): DotCMSRuntime {
     let runtime: DotCMSRuntime;
     try {
         runtime = createRuntime({
-            url: process.env.DOTCMS_URL ?? '',
-            token: process.env.AUTH_TOKEN ?? '',
-            sessionId: sessionId ?? '__default__',
+            ...config,
             timeout: opts?.timeout,
-            includeSpec: opts?.includeSpec,
-            onContextError: (label, error) => {
-                console.error(`[context] failed to load ${label}: ${errorMessage(error)}`);
-            }
+            includeSpec: opts?.includeSpec
         });
     } catch (error) {
-        // `createRuntime` throws e.g. "token is required" when DOTCMS_URL / AUTH_TOKEN are
-        // unset. Raw, that reads to a model as a problem with ITS call — and the transfer
-        // tools' own descriptions tell it "you do NOT need a dotCMS token, never go looking
-        // for them", so a server misconfiguration would push it toward exactly the
-        // credential-hunting those descriptions forbid. Say plainly whose problem it is.
+        // `createRuntime` throws e.g. "token is required" when the host passed no token.
+        // Raw, that reads to a model as a problem with ITS call — and the transfer tools' own
+        // descriptions tell it "you do NOT need a dotCMS token, never go looking for them", so
+        // a host misconfiguration would push it toward exactly the credential-hunting those
+        // descriptions forbid. Say plainly whose problem it is.
         throw new ConfigurationError(
-            `The MCP server is not configured: ${errorMessage(error)}. DOTCMS_URL and ` +
-                `AUTH_TOKEN are set in the MCP client's server config, by the operator. This ` +
-                `is not a problem with the tool call and no argument can fix it — report it ` +
-                `and stop; do not look for credentials.`
+            `The dotCMS tools are not configured: ${errorMessage(error)}. Whoever runs this ` +
+                `server or agent sets the dotCMS URL and token — as the tool's \`url\` / ` +
+                `\`token\` options, or as DOTCMS_URL / AUTH_TOKEN in its environment. This is ` +
+                `not a problem with the call and no argument can fix it — report it and stop; ` +
+                `do not look for credentials.`
         );
     }
 
@@ -183,30 +202,48 @@ export interface ToolFailure {
 }
 
 /**
- * Build the failure payload a tool handler returns.
+ * Build the failure a tool returns instead of throwing.
  *
- * Owns the `[MCP Server - <operation>]` prefix convention in one place rather than as a
+ * Owns the `[dotCMS - <operation>]` prefix convention in one place rather than as a
  * template string at each throw site, and preserves the typed detail (`code`, `status`,
  * `retryable`) that flattening to `.message` used to discard.
  *
  * Deliberately NOT a parallel error hierarchy: `formatSandboxResult` remains the layer for
- * sandbox results (`execute`/`search` already use it). This is only for the direct-request
- * tools, which have no sandbox result to format.
+ * sandbox results (`execute`/`search` already use it). This is only for failures a tool
+ * call raises outside a sandbox result — a direct request, invalid arguments, a host
+ * misconfiguration.
  */
-export function toolFailure(
+export function toToolFailure(
     operation: string,
     error: unknown,
     extra?: Record<string, unknown>
-): string {
-    const failure: ToolFailure = {
+): ToolFailure {
+    return {
         ok: false,
         operation,
-        error: `[MCP Server - ${operation}]: ${errorMessage(error)}`,
+        error: `[dotCMS - ${operation}]: ${errorMessage(error)}`,
         code: errorCode(error),
         retryable: isRetryable(error),
         ...(error instanceof HttpError ? { status: error.status } : {}),
         ...extra
     };
+}
 
-    return JSON.stringify(failure, null, 2);
+/** {@link toToolFailure}, rendered as the JSON string a text-only transport hands the model. */
+export function toolFailure(
+    operation: string,
+    error: unknown,
+    extra?: Record<string, unknown>
+): string {
+    return JSON.stringify(toToolFailure(operation, error, extra), null, 2);
+}
+
+/** Whether a tool result is a {@link ToolFailure} rather than the tool's normal result. */
+export function isToolFailure(value: unknown): value is ToolFailure {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        (value as { ok?: unknown }).ok === false &&
+        typeof (value as { code?: unknown }).code === 'string'
+    );
 }

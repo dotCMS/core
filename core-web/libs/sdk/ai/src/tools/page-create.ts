@@ -1,14 +1,14 @@
+import { isContentLive } from './page-common';
+import { splitUrlPath } from './page-path';
+import { resolveLanguageId, resolveSite } from './resolve';
+import { errorMessage } from './tool-runtime';
+
 import {
     HttpError,
     type ContentTypeSummary,
     type DotCMSRuntime,
     type RequestOptions
-} from '@dotcms/ai/runtime';
-
-import { isContentLive } from './page-common';
-import { splitUrlPath } from './page-path';
-import { resolveLanguageId, resolveSite } from './resolve';
-import { errorMessage } from './runtime';
+} from '../runtime';
 
 /** The default page content type when the caller does not name one. */
 export const DEFAULT_PAGE_CONTENT_TYPE = 'htmlpageasset';

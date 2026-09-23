@@ -1,11 +1,20 @@
 import { vi } from 'vitest';
 
-import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
-
+import { PAGE_PLACE_CONTENT_ENDPOINTS } from './definitions/page-place-content';
+import { unlistedCalls } from './endpoints';
 import {
     placeContent as placeContentImpl,
     type PagePlaceContentOptions
 } from './page-place-content';
+
+import { HttpError, type DotCMSRuntime, type RequestOptions } from '../runtime';
+
+// Every request the fake below sees. After each test, all of them must be endpoints the
+// page_place_content tool owns — otherwise the operation works here and is refused in production.
+const seen: RequestOptions[] = [];
+afterEach(() => {
+    expect(unlistedCalls(PAGE_PLACE_CONTENT_ENDPOINTS, seen.splice(0))).toEqual([]);
+});
 
 /**
  * A page with two slots on the default file container (uuids "1" and "2") and one system-container
@@ -73,6 +82,7 @@ function fakeRuntime(overrides?: {
 }) {
     const calls: Array<{ method?: string; path: string; body?: unknown; query?: unknown }> = [];
     const request = vi.fn(async (options: RequestOptions) => {
+        seen.push(options);
         calls.push({
             method: options.method,
             path: options.path,

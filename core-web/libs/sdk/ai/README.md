@@ -12,7 +12,7 @@ Safety isn't a setting you turn on; it's the shape of the runtime:
 
 - **Your token never enters the sandbox.** Auth is injected on the host side; the executing code cannot read it.
 - **Adapters are the only way out.** Sandbox code reaches the network/host *only* through an adapter you grant — direct `fetch`/`require`/`process.env` are removed.
-- **You decide the surface.** An allow-list (or typed `defineAdapter` operations) bounds what any code — model-written or not — can reach. Expose `scan` and `read`; never expose `delete`.
+- **You decide the surface.** An allow-list (or typed `defineAdapter` operations) bounds what any code — model-written or not — can reach. Expose `scan` and `read`; never expose `delete`. The allow-list judges the path that is actually requested, after dot-segments and encoded dots resolve, so `/allowed/../elsewhere` cannot slip past a prefix.
 
 ## Install
 
@@ -22,31 +22,19 @@ npm install @dotcms/ai
 
 ## Which SDK Version Should I Use?
 
-dotCMS SDKs are published in lockstep with dotCMS itself: every `@dotcms/*` package ships
-at the **exact same version number** as the dotCMS release it was built for (e.g. dotCMS
-`26.7.14-1` → `@dotcms/client@26.7.14-1`, `@dotcms/react@26.7.14-1`, and so on).
+dotCMS SDKs are published in lockstep with dotCMS itself: every `@dotcms/*` package ships at the **exact same version number** as the dotCMS release it was built for (e.g. dotCMS `26.7.14-1` → `@dotcms/client@26.7.14-1`, `@dotcms/react@26.7.14-1`, and so on).
 
 **Simple rule of thumb: use the SDK version that matches your dotCMS instance's version.**
 
-You don't have to upgrade the SDK every time dotCMS releases a new version (or vice versa).
-Most releases don't change anything the SDKs rely on, so an older SDK usually keeps working
-fine against a newer dotCMS instance. Occasionally, though, a release does include a real
-breaking change — and if your SDK is older than that point, it will stop working correctly.
+You don't have to upgrade the SDK every time dotCMS releases a new version (or vice versa). Most releases don't change anything the SDKs rely on, so an older SDK usually keeps working fine against a newer dotCMS instance. Occasionally, though, a release does include a real breaking change — and if your SDK is older than that point, it will stop working correctly.
 
-You don't need to track this yourself: your dotCMS instance always knows the oldest SDK
-version it still supports, and the SDK checks itself against it automatically. If you're
-using an SDK that's too old, you'll see a clear warning in your console telling you to
-upgrade.
+You don't need to track this yourself: your dotCMS instance always knows the oldest SDK version it still supports, and the SDK checks itself against it automatically. If you're using an SDK that's too old, you'll see a clear warning in your console telling you to upgrade.
 
-**Recommendation:** pin your SDKs to the same version as your dotCMS instance, and only bump
-them when you upgrade dotCMS — or when the console tells you to.
+**Recommendation:** pin your SDKs to the same version as your dotCMS instance, and only bump them when you upgrade dotCMS — or when the console tells you to.
 
-> **On an LTS release?** LTS releases don't currently get their own matching SDK version.
-> Until that's addressed, use the SDK version published for the closest regular release at
-> or before your LTS version.
+> **On an LTS release?** LTS releases don't currently get their own matching SDK version. Until that's addressed, use the SDK version published for the closest regular release at or before your LTS version.
 >
-> Want more background on how dotCMS releases and support windows work? See
-> [Release & Support Lifecycle](https://dev.dotcms.com/docs/release-support-lifecycle).
+> Want more background on how dotCMS releases and support windows work? See [Release & Support Lifecycle](https://dev.dotcms.com/docs/release-support-lifecycle).
 
 ## The front door — one runtime, two verbs
 
@@ -76,8 +64,134 @@ await dotcms.run(code);       // SANDBOXED — a model wrote `code`.
 | `@dotcms/ai/sandbox` | Power users / custom adapters | `createSandbox`, `defineAdapter`, `Executor`, types, errors | **fully generic, lint-enforced** |
 | `@dotcms/ai/adapter` | Power users | `dotcmsAdapter`, `requestCore`, context loading + cache | dotCMS-specific |
 | `@dotcms/ai/spec` | The search use case | the OpenAPI spec (opt-in; keeps the ~400KB off the default path) | dotCMS-specific |
+| `@dotcms/ai/tools` | Hosts building their own MCP server or agent | one factory per tool (`searchTool`, `executeTool`, `pageCreateTool`, …), and the operations behind them (`createPage`, `placeContent`, `verifyPage`, `uploadAssets`, `downloadAssets`) | dotCMS-specific, **top layer, lint-enforced** |
 
 `@dotcms/ai` is a pure namespace — there is no bare import; everything is reached through a subpath. It is an **umbrella** for growth: future AI surfaces (RAG, embeddings, custom agents, harness) land as new subpaths under the same package.
+
+The layers only point one way: `tools` builds on `runtime`, which builds on `adapter` and `sandbox`. Lint rules keep `sandbox` free of dotCMS code, and keep everything beneath `tools` from importing it, so a bare `@dotcms/ai/runtime` import never pulls in the tool descriptions or `node:fs`.
+
+## Ready-made tools — `@dotcms/ai/tools`
+
+The same seven tools dotCMS's own MCP server ships, packaged for yours. You bring the host (an MCP server, an agent loop, a workflow node); the tools bring the tuned descriptions, the validated input schemas and the sharp-edge handling behind each one.
+
+| Factory | Tool name | What it does | Read-only | Resolves to |
+|---|---|---|---|---|
+| `searchTool` | `search` | Model-written JS explores the bundled OpenAPI spec | yes | text |
+| `executeTool` | `execute` | Model-written JS calls the dotCMS API in the sandbox | no | text |
+| `pageCreateTool` | `page_create` | Creates and publishes a page, creating its folder first so the URL cannot collapse | no | `CreatePageManifest` |
+| `pagePlaceContentTool` | `page_place_content` | Places contentlets into page slots without wiping the slots it didn't touch | no | `PagePlaceContentManifest` |
+| `pageVerifyTool` | `page_verify` | Renders a page and diagnoses empty slots, swallowed VTL errors and stale cache | yes | `VerifyPageManifest` |
+| `uploadAssetsTool` | `upload_assets` | Streams a local directory into dotCMS as file assets | no | `UploadAssetsManifest` |
+| `downloadAssetsTool` | `download_assets` | Streams dotCMS file assets to a local directory | no | `DownloadAssetsManifest` |
+
+Import the tools you want, and call each factory. That's the whole API. Most tool packages in the AI SDK ecosystem work this way.
+
+```ts
+import { generateText } from 'ai';
+import { pageCreateTool, pageVerifyTool, searchTool } from '@dotcms/ai/tools';
+
+const result = await generateText({
+    model,
+    prompt: 'Create a /books page and check that it renders',
+    tools: {
+        search: searchTool(),
+        page_create: pageCreateTool(),
+        page_verify: pageVerifyTool()
+    }
+});
+```
+
+Each tool is a plain object — `name`, `title`, `description`, `inputSchema` (Zod), `annotations` (MCP's read-only/destructive/idempotent/open-world hints) and `execute` — shaped the way both the Vercel AI SDK and the MCP TypeScript SDK expect, so there is nothing to adapt. The package has no dependency on either.
+
+**Configuration.** With no options, a tool reads `DOTCMS_URL` and `AUTH_TOKEN` from the environment — the same variables the dotCMS MCP server uses. Pass them explicitly to override:
+
+```ts
+const dotcms = { url, token };
+
+const tools = {
+    page_create: pageCreateTool(dotcms),
+    page_verify: pageVerifyTool({ ...dotcms, requestTimeout: 10_000 }),
+    execute: executeTool({ ...dotcms, allow: ['/api/v1/content', '/api/content/_search'] })
+};
+```
+
+You never tell a tool which endpoints to call — each tool owns that, and **enforces** it. Every fixed-purpose tool declares exactly the endpoints it calls, method and path, and any other request is refused with a `POLICY` failure before it reaches the wire. `page_create` knows it needs folders, content types and the workflow fire endpoint, so you don't have to list them and can't break it by leaving one out. A bug in `page_verify`, or a page path shaped to climb elsewhere, still can't get past the render and site endpoints. This covers `search` too: its sandbox gets the same `api` adapter as `execute`, and its allow-list (the context reads, nothing else) is what makes it read-only.
+
+The exception is `execute`, where the *model* chooses the endpoints. `executeTool` takes `allow`, the same allow-list `createRuntime` takes, to bound what the model's code can reach. The context reads behind the `sites` / `contentTypes` / `languages` / `currentUser` globals are always permitted, `GET` only, so a narrow list never silently empties them.
+
+| Option | Tools | Default |
+|---|---|---|
+| `url`, `token` | all | `DOTCMS_URL`, `AUTH_TOKEN` — the token never reaches the model or the sandbox |
+| `onCall`, `onContextError` | all | as in `createRuntime` |
+| `allow` | `executeTool` | none — the model's code may call any endpoint the token allows (the other tools are always limited to their own endpoints) |
+| `timeout` | `executeTool` | 45000 ms sandbox wall-clock |
+| `includeStacks` | `executeTool` | false — host stack traces are withheld from the model |
+| `requestTimeout` | page and asset tools | 30000 ms per request |
+
+**`execute` never throws.** It validates the input against `inputSchema` (it comes from the model, so this is the trust boundary), runs the tool, and resolves to the result in the table above — or to a `ToolFailure`: `{ ok: false, code, retryable, error, status? }`. The `retryable` flag is there because a model cannot `instanceof` its way through a failure; it needs to be told whether trying again can help. `isToolFailure(result)` tells the two apart.
+
+**Nothing happens at creation.** A factory does no I/O and reads nothing — the environment is read and the credentials checked on each call. So a host started without a token still boots and lists its tools, and every call answers with a `CONFIGURATION` failure instead of the host crashing. Each call also builds a fresh runtime, so instance context (sites, content types, languages) is never stale from one call to the next.
+
+**Register each tool under its `name`.** The descriptions refer to their siblings by these names ("use the `search` tool first", "prefer `page_create`"). A tool registered under another name still works, but the model is pointed at one that does not exist.
+
+### With the MCP TypeScript SDK
+
+The tool object is already a valid `registerTool` config. All that's left is MCP's text envelope:
+
+```ts
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { pageVerifyTool, searchTool, type DotCMSTool } from '@dotcms/ai/tools';
+
+const server = new McpServer({ name: 'my-server', version: '1.0.0' });
+const tools: DotCMSTool[] = [searchTool(), pageVerifyTool()];
+
+for (const tool of tools) {
+    server.registerTool(tool.name, tool, async (args) => {
+        const result = await tool.execute(args);
+        return { content: [{ type: 'text', text: typeof result === 'string' ? result : JSON.stringify(result, null, 2) }] };
+    });
+}
+```
+
+### With a framework that takes JSON Schema
+
+The Anthropic and OpenAI SDKs, n8n and others take JSON Schema rather than Zod. Render it from the **input** side, so fields with a default stay optional. Otherwise the model is told it must send every one of them:
+
+```ts
+import { z } from 'zod';
+import { pageVerifyTool, searchTool, type DotCMSTool } from '@dotcms/ai/tools';
+
+const tools: DotCMSTool[] = [searchTool(), pageVerifyTool()];
+const definitions = tools.map((t) => ({
+    name: t.name,
+    description: t.description,
+    input_schema: z.toJSONSchema(t.inputSchema, { io: 'input' })
+}));
+
+// …when the model asks for a tool:
+const result = await tools.find((t) => t.name === block.name)?.execute(block.input);
+```
+
+### Choosing the surface
+
+The surface is exactly what you import and register. Expose `search` and `page_verify` (the two read-only tools), and the model cannot create or delete anything — both are held to `GET`s by their own allow-lists, not just by their annotations. Each fixed-purpose tool can only reach its own endpoints. `execute` is the open-ended one, so bound it with `allow`, or leave it out.
+
+### The operations behind the tools
+
+The tools are formatting on top of typed operations, which are exported too. They are the direct path, the tool-level counterpart of `request()`: use them when **you** write the call. Typed options go in, a typed manifest comes out, and errors are thrown from the one hierarchy above.
+
+```ts
+import { createRuntime } from '@dotcms/ai/runtime';
+import { createPage, placeContent, verifyPage } from '@dotcms/ai/tools';
+
+const dotcms = createRuntime({ url, token });
+
+const page = await createPage({ dotcms, site: 'demo.dotcms.com', urlPath: '/books', title: 'Books', template: templateId });
+await placeContent({ dotcms, path: page.fullPath, site: 'demo.dotcms.com', slots: [{ slot: 1, contentlets: [bookId] }] });
+const report = await verifyPage({ dotcms, path: page.fullPath, site: 'demo.dotcms.com' });
+```
+
+A runtime from `createRuntime` has no per-request deadline, unlike the one each tool call builds — pass a `signal` to `request` if you need one. `uploadAssets` and `downloadAssets` read and write the local file system, so they need Node or Bun.
 
 ## Custom, typed operations — `defineAdapter`
 
@@ -113,7 +227,7 @@ await sandbox.run(`return (await a11y.scan({ url: 'https://demo.dotcms.com/' }))
 
 ## Error model
 
-A single typed hierarchy, surfaced identically from `request()` and `run()` (one `requestCore`): `ValidationError`, `PolicyError`, `HttpError` (carries status + body), `TimeoutError`, `AbortError`, `SandboxError`, `RuntimeError` — all subclasses of `DotCMSError`, each with a stable `code` and a serializable `toJSON()`. The model-facing string an MCP tool builds is *formatting on top of* this model.
+A single typed hierarchy, surfaced identically from `request()` and `run()` (one `requestCore`): `ValidationError`, `PolicyError`, `HttpError` (carries status + body), `TimeoutError`, `AbortError`, `SandboxError`, `RuntimeError` — all subclasses of `DotCMSError`, each with a stable `code` and a serializable `toJSON()`. The model-facing string an MCP tool builds is *formatting on top of* this model — in `@dotcms/ai/tools` that formatting is the `ToolFailure` every tool resolves to on failure, which adds the `retryable` flag a model needs to decide whether to try again.
 
 ```ts
 import { isDotCMSError, HttpError } from '@dotcms/ai/runtime';
@@ -139,9 +253,7 @@ The governance above is **capability confinement for trusted code generators** �
 
 ## Regenerating the spec
 
-`src/generated/spec.json` is **build-generated and git-ignored** — it is NOT committed. The
-`build`/`test`/`serve` targets run `sdk-ai:generate-spec` automatically (via `dependsOn`), so
-you rarely run it by hand; do so only to refresh the local copy or inspect the output.
+`src/generated/spec.json` is **build-generated and git-ignored** — it is NOT committed. The `build`/`test`/`serve` targets run `sdk-ai:generate-spec` automatically (via `dependsOn`), so you rarely run it by hand; do so only to refresh the local copy or inspect the output.
 
 ```bash
 # Defaults to https://demo.dotcms.com/api/openapi.json
@@ -151,11 +263,7 @@ pnpm nx run sdk-ai:generate-spec
 pnpm nx run sdk-ai:generate-spec -- http://localhost:8080/api/openapi.json
 ```
 
-The script filters the spec to the endpoints in `ALLOWED_PREFIXES` (see `scripts/spec-transform.ts`),
-keeps request/response `$ref`s, and prunes `components.schemas` to just the schemas those endpoints
-reference. Keeping `$ref`s (rather than dereferencing) dedupes shared schemas and keeps the file
-small (~400KB). The output is compact JSON (machine-read only) — use `jq` to inspect it. Because the
-spec is regenerated at build time, there is nothing to commit.
+The script filters the spec to the endpoints in `ALLOWED_PREFIXES` (see `scripts/spec-transform.ts`), keeps request/response `$ref`s, and prunes `components.schemas` to just the schemas those endpoints reference. Keeping `$ref`s (rather than dereferencing) dedupes shared schemas and keeps the file small (~400KB). The output is compact JSON (machine-read only) — use `jq` to inspect it. Because the spec is regenerated at build time, there is nothing to commit.
 
 ## Commands
 

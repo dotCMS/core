@@ -1,9 +1,9 @@
-import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
-
 import { LayoutRow } from './page-common';
 import { normalizePagePath } from './page-path';
 import { resolveSite } from './resolve';
-import { errorMessage } from './runtime';
+import { errorMessage } from './tool-runtime';
+
+import { HttpError, type DotCMSRuntime } from '../runtime';
 
 /** The default variant when the caller does not name one. */
 export const DEFAULT_VARIANT = 'DEFAULT';

@@ -2,11 +2,66 @@ import { constants } from 'node:fs';
 import { access, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 
-import { type DotCMSRuntime, isBinaryResponseEnvelope } from '@dotcms/ai/runtime';
-
 import { isContentLive } from './page-common';
-import { errorMessage } from './runtime';
-type OverwriteMode = 'skip' | 'overwrite' | 'error';
+import { errorMessage } from './tool-runtime';
+
+import { type DotCMSRuntime, isBinaryResponseEnvelope } from '../runtime';
+
+/** What `downloadAssets` does when a destination file already exists. */
+export type OverwriteMode = 'skip' | 'overwrite' | 'error';
+
+export interface DownloadAssetsOptions {
+    dotcms: DotCMSRuntime;
+    /** dotCMS folder or asset path, optionally host-qualified (`//host/path`). */
+    path: string;
+    /** Absolute local directory the files are written into. */
+    dest: string;
+    /** Include files in nested folders. */
+    recursive: boolean;
+    overwrite: OverwriteMode;
+    /** Comma-separated glob filter, e.g. `*.vtl,*.scss`. */
+    include?: string;
+}
+
+/** What `downloadAssets` returns — never the file bytes, only where they landed. */
+export interface DownloadAssetsManifest {
+    path: string;
+    dest: string;
+    count: number;
+    bytes: number;
+    files: AssetManifestFile[];
+    failures: AssetManifestFailure[];
+    skipped: AssetManifestSkipped[];
+    warnings: string[];
+}
+
+export interface UploadAssetsOptions {
+    dotcms: DotCMSRuntime;
+    /** Absolute local directory the files are read from. */
+    src: string;
+    /** Host-qualified destination folder, e.g. `//demo.dotcms.com/application/themes/travel`. */
+    dest: string;
+    /** Comma-separated glob filter, matched against each path relative to `src`. */
+    include?: string;
+    /** Publish (`/api/v2/assets/publish`) rather than only save. */
+    publish: boolean;
+    /** After publishing, confirm each asset reports live. */
+    verify: boolean;
+}
+
+/** What `uploadAssets` returns — never the file bytes, only what landed and what did not. */
+export interface UploadAssetsManifest {
+    src: string;
+    dest: string;
+    count: number;
+    bytes: number;
+    files: AssetManifestFile[];
+    failures: AssetManifestFailure[];
+    skipped: AssetManifestSkipped[];
+    /** Published assets that did not report live when verified. */
+    notLive: AssetManifestFile[];
+    warnings: string[];
+}
 
 export interface AssetManifestFile {
     path: string;
@@ -40,7 +95,7 @@ const SEARCH_LIMIT = 500;
 /**
  * Bounds on a single enumeration. `/application` on a large site can hold tens of
  * thousands of assets, and every one enumerated is then downloaded one at a time with an
- * open file handle — so an unbounded walk is both an unbounded MCP call and unbounded load
+ * open file handle — so an unbounded walk is both an unbounded tool call and unbounded load
  * on the instance. A realistic theme is 100–500 files, so these are far above any genuine
  * use while still being a ceiling. Hitting either is reported, never silent.
  */
@@ -65,14 +120,14 @@ const MIME_BY_EXT: Record<string, string> = {
     '.woff2': 'font/woff2'
 };
 
-export async function downloadAssets(options: {
-    dotcms: DotCMSRuntime;
-    path: string;
-    dest: string;
-    recursive: boolean;
-    overwrite: OverwriteMode;
-    include?: string;
-}) {
+/**
+ * Download a dotCMS asset, or every asset under a folder, to a local directory. Relative
+ * paths are preserved, and one failed file is recorded in the manifest rather than aborting
+ * the batch.
+ */
+export async function downloadAssets(
+    options: DownloadAssetsOptions
+): Promise<DownloadAssetsManifest> {
     const input = normalizeDotCMSPath(options.path);
     const dest = await prepareWritableDir(options.dest);
     const files: AssetManifestFile[] = [];
@@ -184,14 +239,12 @@ async function writeDownloadedFile(
     return { kind: 'written', file: { path: options.rel, bytes: bytes.byteLength, identifier } };
 }
 
-export async function uploadAssets(options: {
-    dotcms: DotCMSRuntime;
-    src: string;
-    dest: string;
-    include?: string;
-    publish: boolean;
-    verify: boolean;
-}) {
+/**
+ * Upload every file under a local directory as dotCMS file assets, preserving relative
+ * paths. Files are saved or published one at a time; a failed file is recorded in the
+ * manifest rather than aborting the batch.
+ */
+export async function uploadAssets(options: UploadAssetsOptions): Promise<UploadAssetsManifest> {
     const src = await prepareReadableDir(options.src);
     const dest = normalizeDotCMSPath(options.dest);
 
@@ -330,7 +383,7 @@ async function enumerateAssets(
         // Termination guard, NOT an optimisation. If the backend ignores or clamps `offset`,
         // every page comes back full of the same identifiers: `page.length < SEARCH_LIMIT`
         // never fires, `seen` de-dupes so `assets` stops growing, and the loop spins forever
-        // issuing identical POSTs — an MCP call that never returns while the instance takes
+        // issuing identical POSTs — a tool call that never returns while the instance takes
         // sustained load. A page that adds nothing new means we are not advancing, whatever
         // the backend thinks it is doing.
         if (seen.size === seenBefore) {

@@ -4,7 +4,8 @@ import {
     type RequestCallEvent,
     type RequestOptions,
     type RequestPolicy,
-    requestCore
+    requestCore,
+    toRequestPolicy
 } from './adapter/request-core';
 import { serializeError } from './sandbox/errors';
 import { Executor } from './sandbox/executor';
@@ -63,14 +64,6 @@ export interface DotCMSRuntime {
 const DEFAULT_TIMEOUT_MS = 15000;
 const DEFAULT_SESSION_ID = '__default__';
 
-/** Normalize the `allow` config into the policy predicate the request core understands. */
-function toPolicy(allow: RuntimeAllow | undefined): RequestPolicy | undefined {
-    if (!allow) return undefined;
-    if (typeof allow === 'function') return allow;
-    const prefixes = allow;
-    return ({ path }) => prefixes.some((prefix) => path.startsWith(prefix));
-}
-
 /**
  * The front door. One runtime, two verbs.
  *
@@ -88,7 +81,7 @@ export function createRuntime(config: DotCMSRuntimeConfig): DotCMSRuntime {
 
     const sessionId = config.sessionId ?? DEFAULT_SESSION_ID;
     const timeout = config.timeout ?? DEFAULT_TIMEOUT_MS;
-    const policy = toPolicy(config.allow);
+    const policy = toRequestPolicy(config.allow);
 
     // The runtime OWNS its context cache instance (keyed on sessionId+url internally), so two
     // runtimes for different instances never collide on a shared module singleton.

@@ -4,9 +4,15 @@ import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
-
 import { downloadAssets, uploadAssets } from './assets-transfer';
+import { DOWNLOAD_ASSETS_ENDPOINTS } from './definitions/download-assets';
+import { UPLOAD_ASSETS_ENDPOINTS } from './definitions/upload-assets';
+import { unlistedCalls } from './endpoints';
+
+import type { DotCMSRuntime, RequestOptions } from '../runtime';
+
+/** Every request the fake sees; each describe checks it against its own tool's endpoints. */
+const seen: RequestOptions[] = [];
 
 /**
  * Exercises `uploadAssets` / `downloadAssets` end to end against a fake runtime and a real
@@ -33,6 +39,7 @@ function fakeRuntime(options?: FakeOptions) {
     let uploadCount = 0;
 
     const request = vi.fn(async (opts: RequestOptions) => {
+        seen.push(opts);
         calls.push(opts);
 
         const custom = options?.onRequest?.(opts);
@@ -78,6 +85,11 @@ function callsTo(calls: RequestOptions[], path: string): number {
 
 describe('uploadAssets', () => {
     let src: string;
+
+    // Everything an upload requests must be an endpoint the upload_assets tool owns.
+    afterEach(() => {
+        expect(unlistedCalls(UPLOAD_ASSETS_ENDPOINTS, seen.splice(0))).toEqual([]);
+    });
 
     beforeEach(async () => {
         src = await mkdtemp(join(tmpdir(), 'dot-upload-'));
@@ -332,6 +344,11 @@ describe('uploadAssets', () => {
 
 describe('downloadAssets', () => {
     let dest: string;
+
+    // Everything a download requests must be an endpoint the download_assets tool owns.
+    afterEach(() => {
+        expect(unlistedCalls(DOWNLOAD_ASSETS_ENDPOINTS, seen.splice(0))).toEqual([]);
+    });
 
     beforeEach(async () => {
         dest = await mkdtemp(join(tmpdir(), 'dot-download-'));

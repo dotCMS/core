@@ -9,8 +9,9 @@
  * any configuration, for every user. That is exactly what shipped as @dotcms/mcp-server@0.1.0
  * (issue #37337).
  *
- * The rule this enforces: tests for tool code live in `src/lib/` next to the logic they
- * cover, never in `src/tools/`.
+ * The rule this enforces: tests for tool code live next to the logic they cover — in
+ * `libs/sdk/ai/src/tools/` (`@dotcms/ai/tools`), where the tools are defined — never in
+ * `src/tools/`.
  */
 import { readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -30,7 +31,7 @@ if (offenders.length > 0) {
             'xmcp loads every module under src/tools/ as a tool at startup, so a test file there',
             'is bundled into the published package and crashes the server on boot for every user.',
             '',
-            'Move these out of src/tools/ — put the logic and its test in src/lib/:',
+            'Move these out of src/tools/ — tool logic and its tests live in libs/sdk/ai/src/tools/:',
             ...offenders.map((file) => `  ✗ ${file}`),
             ''
         ].join('\n')
