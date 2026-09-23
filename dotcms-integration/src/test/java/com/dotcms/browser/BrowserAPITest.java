@@ -1382,13 +1382,21 @@ public class BrowserAPITest extends IntegrationTestBase {
             assertTrue("Should contain AND operator", result.contains(" AND "));
         }
 
-        // Test Case 5: Filter with special characters
+        // Test Case 5: Filter with special characters.
+        //
+        // CHANGED by issue #37532 (FR-027, SC-002's enumerated carve-out). "&" is a Lucene
+        // query_string reserved character; before that fix it survived into the query unescaped —
+        // exactly the defect the issue reports, just with a different symbol than the customer's
+        // ":"/"("/"/". It must now appear backslash-escaped rather than raw, which is what "handles"
+        // it means here: the term is matched literally instead of altering the query's structure.
         BrowserQuery querySpecialChars = BrowserQuery.builder()
                 .withFilter("test & special")
                 .build();
         result = browserAPIImpl.buildBaseESQuery(querySpecialChars);
         assertNotNull("Result should not be null", result);
-        assertTrue("Should handle special characters in filter", result.contains("test & special"));
+        assertTrue("Should handle special characters in filter", result.contains("test \\& special"));
+        assertFalse("The raw, unescaped '&' must not survive into the query",
+                result.contains("test & special"));
 
         // Test Case 6: Empty string filter
         BrowserQuery queryEmptyFilter = BrowserQuery.builder()
@@ -1980,7 +1988,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .ignoreSiteForFolders(true)
                 .respectFrontEndRoles(false) // <-- This is key for this test!
                 .withUser(limitedUser)
-                .forceSystemHost(false)
+                .systemHostMode(SystemHostMode.EXCLUDE)
                 .showContent(true)
                 .showFiles(false)
                 .showFolders(false)
@@ -2080,7 +2088,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .ignoreSiteForFolders(true)
                 .respectFrontEndRoles(false)
                 .withUser(limitedUser)
-                .forceSystemHost(false)
+                .systemHostMode(SystemHostMode.EXCLUDE)
                 .showContent(true)
                 .contentCursor(0)
                 .showFiles(false)
@@ -2240,6 +2248,444 @@ public class BrowserAPITest extends IntegrationTestBase {
         } finally {
             Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY,
                     BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A folder holds enough content to exceed
+     *     {@code BROWSER_DB_MAX_SCAN_ROWS} (intentionally lowered for the test, along with
+     *     {@code BROWSER_CONTENT_CHUNK_SIZE} so the fixture actually spans multiple chunks --
+     *     otherwise a small fixture fits in the default 900-row chunk and the whole thing gets
+     *     ES-filtered before the scan-limit check ever runs), with no content-type filter
+     *     applied. The one item whose title matches the free-text filter is the newest of the
+     *     batch, so under the default ascending {@code mod_date} scan order it is scanned
+     *     last -- in a chunk past the lowered scan limit.</li>
+     *     <li><b>Expected Result:</b> The unfiltered global search must still return the
+     *     matching item. Before the fix for
+     *     <a href="https://github.com/dotCMS/core/issues/37211">#37211</a>, the row-count-only
+     *     scan cutoff drops it silently.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_unfilteredTextSearch_findsMatchPastScanLimit() throws Exception {
+        final int chunkSize = 5;
+        final int scanLimit = 15;
+        final int fillerCount = 20;
+
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY, scanLimit);
+        Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", chunkSize);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+            final var contentType = new ContentTypeDataGen()
+                    .host(host)
+                    .folder(folder)
+                    .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                    .nextPersisted();
+
+            // Filler items created first -- oldest mod_date, scanned first under the default
+            // ascending order, all safely inside the scan limit.
+            for (int i = 0; i < fillerCount; i++) {
+                new ContentletDataGen(contentType)
+                        .setProperty("title", "Filler " + i)
+                        .host(host)
+                        .folder(folder)
+                        .setPolicy(IndexPolicy.WAIT_FOR)
+                        .nextPersisted();
+            }
+
+            // The matching item is created LAST -- newest mod_date, scanned last, past the
+            // lowered scan limit -- reproducing "a just-uploaded item is missing from search".
+            final Contentlet capybara = new ContentletDataGen(contentType)
+                    .setProperty("title", "Capybara Image")
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+
+            final BrowserQuery query = BrowserQuery.builder()
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .withFilter("Capybara")
+                    .useElasticsearchFiltering(true) // Content Drive always sets this (ContentDriveHelper) --
+                                                      // the bug only reproduces on the ES-routed path, never
+                                                      // the plain DB ILIKE fallback used when this is false.
+                    .showContent(true)
+                    .showFiles(false)
+                    .showFolders(false)
+                    .showLinks(false)
+                    .showDotAssets(false)
+                    .showWorking(true)
+                    .showArchived(false)
+                    .maxResults(100)
+                    .contentCursor(0)
+                    .build();
+
+            final PaginatedContents result = browserAPI.getPaginatedContents(query);
+
+            assertNotNull("Result must not be null", result);
+            final Set<String> foundInodes = result.list.stream()
+                    .map(item -> (String) item.get("inode"))
+                    .collect(Collectors.toSet());
+            assertTrue("Unfiltered global search must find a match that exists past the scan "
+                            + "limit (issue #37211) -- found: " + foundInodes,
+                    foundInodes.contains(capybara.getInode()));
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+            Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Two content types each hold one item matching the same
+     *     free-text filter. An unfiltered global search is compared against the same search
+     *     narrowed to a single content type.</li>
+     *     <li><b>Expected Result:</b> The content-type-filtered result is a subset of the
+     *     unfiltered result -- it drops the other type's match but introduces nothing the
+     *     unfiltered search didn't already find (AC-002 of
+     *     <a href="https://github.com/dotCMS/core/issues/37211">#37211</a>).</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_contentTypeFilter_onlyNarrowsUnfilteredMatches() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        final var typeA = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+        final var typeB = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        final Contentlet matchA = new ContentletDataGen(typeA)
+                .setProperty("title", "Capybara from Type A")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+        final Contentlet matchB = new ContentletDataGen(typeB)
+                .setProperty("title", "Capybara from Type B")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final BrowserQuery unfilteredQuery = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("Capybara")
+                .useElasticsearchFiltering(true)
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .maxResults(100)
+                .contentCursor(0)
+                .build();
+
+        final PaginatedContents unfiltered = browserAPI.getPaginatedContents(unfilteredQuery);
+        final Set<String> unfilteredInodes = unfiltered.list.stream()
+                .map(item -> (String) item.get("inode"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Unfiltered search must find the Type A match", unfilteredInodes.contains(matchA.getInode()));
+        assertTrue("Unfiltered search must find the Type B match", unfilteredInodes.contains(matchB.getInode()));
+
+        final BrowserQuery typeAFilteredQuery = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("Capybara")
+                .withContentTypes(Set.of(typeA.id()))
+                .useElasticsearchFiltering(true)
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .maxResults(100)
+                .contentCursor(0)
+                .build();
+
+        final PaginatedContents typeAFiltered = browserAPI.getPaginatedContents(typeAFilteredQuery);
+        final Set<String> filteredInodes = typeAFiltered.list.stream()
+                .map(item -> (String) item.get("inode"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Type-A-filtered search must still find the Type A match",
+                filteredInodes.contains(matchA.getInode()));
+        assertFalse("Type-A-filtered search must drop the Type B match",
+                filteredInodes.contains(matchB.getInode()));
+        assertTrue("Filtered result must be a subset of the unfiltered result -- it must not "
+                        + "introduce items the unfiltered search didn't find",
+                unfilteredInodes.containsAll(filteredInodes));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A folder holds more content than the (lowered) scan limit,
+     *     none of it matching the free-text filter at all.</li>
+     *     <li><b>Expected Result:</b> The search still completes within a bounded time and
+     *     returns no matches -- fixing the silent-drop defect
+     *     (<a href="https://github.com/dotCMS/core/issues/37211">#37211</a>) must not regress
+     *     into an unconditional full-table scan (see PR #37395 and siblings for the original
+     *     scan-cost concern the row cap was introduced to address).</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_unfilteredTextSearch_noMatchStaysBounded() throws Exception {
+        final int chunkSize = 5;
+        final int scanLimit = 15;
+        final int fillerCount = 20;
+        final long boundedMillis = 30_000L;
+
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY, scanLimit);
+        Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", chunkSize);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+            final var contentType = new ContentTypeDataGen()
+                    .host(host)
+                    .folder(folder)
+                    .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                    .nextPersisted();
+
+            for (int i = 0; i < fillerCount; i++) {
+                new ContentletDataGen(contentType)
+                        .setProperty("title", "Filler " + i)
+                        .host(host)
+                        .folder(folder)
+                        .setPolicy(IndexPolicy.WAIT_FOR)
+                        .nextPersisted();
+            }
+
+            final BrowserQuery query = BrowserQuery.builder()
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .withFilter("NoSuchTermAnywhere")
+                    .useElasticsearchFiltering(true)
+                    .showContent(true)
+                    .showFiles(false)
+                    .showFolders(false)
+                    .showLinks(false)
+                    .showDotAssets(false)
+                    .showWorking(true)
+                    .showArchived(false)
+                    .maxResults(100)
+                    .contentCursor(0)
+                    .build();
+
+            final long start = System.currentTimeMillis();
+            final PaginatedContents result = browserAPI.getPaginatedContents(query);
+            final long elapsed = System.currentTimeMillis() - start;
+
+            assertNotNull("Result must not be null", result);
+            assertEquals("No item matches the filter term", 0, result.contentCount);
+            assertTrue("A non-matching scan must still complete within a bounded time ("
+                            + elapsed + "ms) -- fixing #37211 must not reintroduce an "
+                            + "unconditional full-table scan",
+                    elapsed < boundedMillis);
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+            Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> {@code BROWSER_DB_MAX_SCAN_TIME_MILLIS} is set to an
+     *     effectively-zero budget (1 ms) so the ES-narrowed scan's <em>time</em> cutoff -- not
+     *     DB exhaustion, not the row-count guard rail -- fires after the very first chunk, with
+     *     a matching item still unscanned several chunks later. This exercises the mechanism
+     *     itself (found in review: the earlier scan-limit tests only ever exhaust the DB
+     *     naturally, so none of them actually drive {@code scanBudgetExhausted} to
+     *     {@code true} via elapsed time).</li>
+     *     <li><b>Expected Result:</b> Page 1 stops after one chunk with {@code hasMoreContent}
+     *     true and a partial-progress cursor; the match is not yet in that page. Resuming from
+     *     that cursor with a normal time budget reaches the match -- proving the time-cutoff
+     *     path produces a valid, resumable cursor rather than silently losing coverage.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_timeBudgetExhausted_resumesFromCursor() throws Exception {
+        final int chunkSize = 5;
+        final int fillerCount = 15;
+        final long tinyTimeBudgetMillis = 1L;
+
+        Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", chunkSize);
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY, tinyTimeBudgetMillis);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+            final var contentType = new ContentTypeDataGen()
+                    .host(host)
+                    .folder(folder)
+                    .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                    .nextPersisted();
+
+            for (int i = 0; i < fillerCount; i++) {
+                new ContentletDataGen(contentType)
+                        .setProperty("title", "Filler " + i)
+                        .host(host)
+                        .folder(folder)
+                        .setPolicy(IndexPolicy.WAIT_FOR)
+                        .nextPersisted();
+            }
+            final Contentlet match = new ContentletDataGen(contentType)
+                    .setProperty("title", "Wombat Image")
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+
+            final BrowserQuery firstQuery = BrowserQuery.builder()
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .withFilter("Wombat")
+                    .useElasticsearchFiltering(true)
+                    .showContent(true)
+                    .showFiles(false)
+                    .showFolders(false)
+                    .showLinks(false)
+                    .showDotAssets(false)
+                    .showWorking(true)
+                    .showArchived(false)
+                    .maxResults(100)
+                    .contentCursor(0)
+                    .build();
+
+            final PaginatedContents firstPage = browserAPI.getPaginatedContents(firstQuery);
+
+            assertNotNull("First page must not be null", firstPage);
+            assertTrue("The 1ms time budget must cut the scan short before the match's chunk "
+                    + "is reached", firstPage.hasMoreContent);
+            assertTrue("nextContentCursor must reflect partial progress (> 0 and <= filler count, "
+                            + "not the full dataset) -- was: " + firstPage.nextContentCursor,
+                    firstPage.nextContentCursor > 0 && firstPage.nextContentCursor <= fillerCount);
+            final Set<String> firstPageInodes = firstPage.list.stream()
+                    .map(item -> (String) item.get("inode"))
+                    .collect(Collectors.toSet());
+            assertFalse("The match must not appear in the time-cutoff page",
+                    firstPageInodes.contains(match.getInode()));
+
+            // Resume from the returned cursor with a normal time budget so the scan can finish.
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT);
+            final BrowserQuery secondQuery = BrowserQuery.builder()
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .withFilter("Wombat")
+                    .useElasticsearchFiltering(true)
+                    .showContent(true)
+                    .showFiles(false)
+                    .showFolders(false)
+                    .showLinks(false)
+                    .showDotAssets(false)
+                    .showWorking(true)
+                    .showArchived(false)
+                    .maxResults(100)
+                    .contentCursor(firstPage.nextContentCursor)
+                    .build();
+
+            final PaginatedContents secondPage = browserAPI.getPaginatedContents(secondQuery);
+            final Set<String> secondPageInodes = secondPage.list.stream()
+                    .map(item -> (String) item.get("inode"))
+                    .collect(Collectors.toSet());
+
+            assertTrue("Resuming from the time-cutoff cursor must reach the match in a later "
+                    + "chunk", secondPageInodes.contains(match.getInode()));
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT);
+            Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Every item in the fixture matches the free-text filter, and
+     *     {@code BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP} is lowered well below the fixture's row
+     *     count while {@code BROWSER_DB_MAX_SCAN_TIME_MILLIS} is left generous, so only the row
+     *     hard cap -- not the time budget, not running out of matches -- can terminate the
+     *     ES-narrowed scan (found in review: the co-bound added alongside the time budget had no
+     *     test of its own).</li>
+     *     <li><b>Expected Result:</b> The scan stops at the hard cap with {@code hasMoreContent}
+     *     true, proving the ES path is not left with an effectively unbounded row ceiling once
+     *     the row-count-based cutoff was replaced by a time budget.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_esRowHardCap_stopsRunawayScanUnderGenerousTimeBudget()
+            throws Exception {
+        final int chunkSize = 5;
+        final int hardCap = 15;
+        final int fillerCount = 20;
+
+        Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", chunkSize);
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_KEY, hardCap);
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY,
+                BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+            final var contentType = new ContentTypeDataGen()
+                    .host(host)
+                    .folder(folder)
+                    .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                    .nextPersisted();
+
+            for (int i = 0; i < fillerCount; i++) {
+                new ContentletDataGen(contentType)
+                        .setProperty("title", "AllMatchTerm " + i)
+                        .host(host)
+                        .folder(folder)
+                        .setPolicy(IndexPolicy.WAIT_FOR)
+                        .nextPersisted();
+            }
+
+            final BrowserQuery query = BrowserQuery.builder()
+                    .withHostOrFolderId(folder.getIdentifier())
+                    .withFilter("AllMatchTerm")
+                    .withContentTypes(Set.of(contentType.id()))
+                    .useElasticsearchFiltering(true)
+                    .showContent(true)
+                    .showFiles(false)
+                    .showFolders(false)
+                    .showLinks(false)
+                    .showDotAssets(false)
+                    .showWorking(true)
+                    .showArchived(false)
+                    .maxResults(100)
+                    .contentCursor(0)
+                    .build();
+
+            final PaginatedContents result = browserAPI.getPaginatedContents(query);
+
+            assertNotNull("Result must not be null", result);
+            assertTrue("The row hard cap must stop the scan before it reaches the end of the "
+                            + "fixture (20 items) -- hasMoreContent should be true",
+                    result.hasMoreContent);
+            assertTrue("nextContentCursor must reflect the hard cap having fired (>= hard cap, "
+                            + "< full fixture size) -- was: " + result.nextContentCursor,
+                    result.nextContentCursor >= hardCap && result.nextContentCursor < fillerCount);
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_ES_HARD_CAP_DEFAULT);
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_TIME_MILLIS_DEFAULT);
+            Config.setProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
         }
     }
 
@@ -2650,6 +3096,73 @@ public class BrowserAPITest extends IntegrationTestBase {
         return file;
     }
 
+    /**
+     * Isolation test for issue #37479 / #37532 (FR-024, SC-008): the search scope and the
+     * literal-text escaping fix live entirely inside {@link BrowserAPIImpl}'s Elasticsearch text
+     * branch, which is reachable only when {@link BrowserQuery#useElasticsearchFiltering} is set.
+     * {@link com.dotcms.rest.api.v1.drive.ContentDriveHelper} is the only caller in the codebase
+     * that ever sets it (verified by grep against {@code main} at spec time); every other consumer
+     * of {@link BrowserAPI#getFolderContentList(BrowserQuery)} — the assets REST API
+     * ({@code WebAssetHelper}), the legacy admin browser ({@code BrowserAjax}) and the Velocity
+     * viewtool ({@code DotCMSMacroWebAPI}) — builds a {@link BrowserQuery} without it and is
+     * therefore routed to the SQL {@code ILIKE} path this feature never touches.
+     *
+     * <p>This test does not call those three classes directly (they carry their own request/servlet
+     * dependencies that do not belong in a {@code BrowserAPI} test). It instead reproduces the one
+     * property that makes them safe: a {@link BrowserQuery} built the way they build it — a text
+     * filter set, {@code useElasticsearchFiltering} left at its default {@code false} — must return
+     * a result identical to what the same query returned before this feature existed. A term
+     * carrying Lucene reserved characters is deliberately used as the probe: it is exactly the input
+     * class this feature changes behaviour for on the ES path, so an unchanged result here is the
+     * strongest available evidence that the SQL path was never touched.</p>
+     */
+    @Test
+    public void searchScopeAndEscapingFix_doNotReachTheSqlFilterPath_usedByEveryOtherCaller()
+            throws DotDataException, DotSecurityException, IOException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+
+        // A reserved-character term the ES-side fix specifically targets (#37532): if the SQL path
+        // were somehow affected, escaping or not would change which of these two rows comes back.
+        final String punctuatedTitle = "ABC (XETRA: DB) / sqlpath" + System.nanoTime();
+        final Contentlet withPunctuation = new ContentletDataGen(
+                TestDataUtils.getWikiLikeContentType().id())
+                .setProperty("title", punctuatedTitle)
+                .folder(folder)
+                .host(site)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .showContent(true)
+                .showFolders(false)
+                .showWorking(true)
+                .withFilter(punctuatedTitle)
+                // Deliberately NOT calling useElasticsearchFiltering(true) or searchScope(...): this
+                // is the exact shape WebAssetHelper, BrowserAjax and DotCMSMacroWebAPI build today.
+                .build();
+
+        assertFalse("A BrowserQuery built the way the other callers build it must not opt into ES "
+                        + "filtering on its own — that is what keeps them off the path this feature "
+                        + "changes",
+                query.useElasticsearchFiltering);
+
+        final List<Treeable> results = browserAPI.getFolderContentList(query);
+        final Set<String> identifiers =
+                results.stream().map(Treeable::getIdentifier).collect(Collectors.toSet());
+
+        // The SQL ILIKE path (BrowserAPIImpl#appendFilterQuery) matches substrings of the whole
+        // serialized contentlet case-insensitively, so a title match here is expected — the point
+        // is that it neither throws nor silently drops the row, which is what a leak from the ES
+        // fix into this path would look like.
+        assertTrue("A caller that never opts into ES filtering must still find a reserved-character "
+                        + "title via the ordinary SQL path, unaffected by the Title-scope or "
+                        + "literal-text changes",
+                identifiers.contains(withPunctuation.getIdentifier()));
+    }
+
     // --- Issue #37186 (User Story 1): warm-up eliminates the concurrent thundering herd ------
     //
     // Freshly-created users are guaranteed cache-misses on their first resolution, so no manual
@@ -2989,13 +3502,19 @@ public class BrowserAPITest extends IntegrationTestBase {
     /**
      * <ul>
      *     <li><b>Given Scenario:</b> A content type whose title-source field is itself a WYSIWYG
-     *     field (its variable is literally {@code "title"}) (T033, AC-008).</li>
-     *     <li><b>Expected Result:</b> The listing's {@code title} key is the correct, untruncated
-     *     title -- not derived from the same map entry the long-text preview strategy truncates.</li>
+     *     field (its variable is literally {@code "title"}) (T033, AC-008, revised per issue
+     *     #37185 QA follow-up).</li>
+     *     <li><b>Expected Result:</b> The listing's {@code title} key is trimmed to a &lt;=150-char
+     *     plain-text preview like any other in-scope long-text field -- {@link Contentlet#getTitle()}
+     *     returns that field's raw value verbatim (no HTML stripping, no length bound) and it is
+     *     the same map entry, so leaving it untouched would carry the full, untruncated title
+     *     through the listing response, exactly the payload bloat this strategy exists to remove.
+     *     Previously this test asserted the opposite (an untruncated title); that assertion pinned
+     *     the bug a live QA repro against a "long-text title" content type caught.</li>
      * </ul>
      */
     @Test
-    public void test_getPaginatedContents_wysiwygTitleField_titleKeyStaysUntruncated() throws Exception {
+    public void test_getPaginatedContents_wysiwygTitleField_titleKeyIsTrimmedLikeAnyLongTextField() throws Exception {
         final String uniqueId = UUIDGenerator.shorty();
         final Host site = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().site(site).nextPersisted();
@@ -3031,8 +3550,14 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Must find the created contentlet in the listing"));
 
-        assertEquals("The title key must equal Contentlet#getTitle(), untruncated",
-                contentlet.getTitle(), row.get("title"));
+        final Object value = row.get("title");
+        assertTrue("The title value must be a String", value instanceof String);
+        final String preview = (String) value;
+        assertTrue("The title key must be trimmed to <=150 chars", preview.length() <= 150);
+        assertFalse("The title preview must not contain HTML tags",
+                preview.contains("<") || preview.contains(">"));
+        assertTrue("A title long enough to be truncated must carry the truncation marker",
+                preview.endsWith("…"));
     }
 
     // issue #37184 -- FR-002 single-pass eligibility (BrowserAPIImpl#isSinglePassEligible).
@@ -3978,7 +4503,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .ignoreSiteForFolders(true)
                 .respectFrontEndRoles(false)
                 .withUser(limitedUser)
-                .forceSystemHost(false)
+                .systemHostMode(SystemHostMode.EXCLUDE)
                 .showFiles(true)
                 .showWorking(true)
                 .build();

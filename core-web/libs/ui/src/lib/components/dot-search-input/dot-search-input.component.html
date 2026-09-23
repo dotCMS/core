@@ -1,5 +1,5 @@
 <p-iconfield iconPosition="left">
-    <p-inputicon class="pi pi-search" />
+    <p-inputicon [pt]="ICON_PT" class="pi pi-search" />
     <input
         #input
         pInputText
@@ -9,10 +9,12 @@
         [attr.aria-label]="$placeholder() | dm"
         autocomplete="off"
         class="w-full"
+        [dt]="$inputDt()"
         [attr.data-testId]="$testId()"
         [formControl]="searchControl" />
     @if ($text().length) {
         <p-inputicon
+            [pt]="ICON_PT"
             class="pi pi-times p-input-icon-right"
             data-testId="search-icon-clear"
             (click)="searchControl.reset()" />

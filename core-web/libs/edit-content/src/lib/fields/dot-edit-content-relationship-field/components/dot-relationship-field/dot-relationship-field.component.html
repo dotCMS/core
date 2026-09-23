@@ -233,12 +233,17 @@
                 <td
                     [attr.colspan]="$totalColumns()"
                     class="border-t border-t-(--p-datatable-border-color) px-4 py-3">
-                    <!-- The count belongs on "Show all" and not on "Show less": expanding is the
-                         decision that needs a number — how much is hidden — while collapsing always
-                         returns to the same first page. -->
+                    <!-- The count goes on "Show all" only: expanding is the decision that needs a
+                         number, collapsing always returns to the same first page.
+
+                         Icon and label stay plain content. `isIconOnly` is
+                         `iconSignal && !labelSignal`, so marking just one of them with
+                         `pButtonIcon` / `pButtonLabel` collapses the button to 2.75rem. -->
                     <button
                         type="button"
-                        class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-sm font-normal text-primary-500 hover:underline"
+                        [text]="true"
+                        pButton
+                        size="small"
                         [attr.aria-expanded]="showingAll"
                         data-testid="relationship-show-all"
                         (click)="store.toggleShowAll()">

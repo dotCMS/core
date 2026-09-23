@@ -1020,10 +1020,17 @@ describe('EditEmaEditorComponent', () => {
                 // in place — replacing it wholesale (as the outer mock does for the wrapper)
                 // breaks jsdom's own async iframe `load` event plumbing for later tests.
                 const realContentWindow = spectator.component.iframe?.nativeElement.contentWindow;
+                if (!realContentWindow) {
+                    throw new Error(
+                        'expected the real jsdom iframe contentWindow to be present — check the outer beforeEach'
+                    );
+                }
                 postMessageSpy = vi
                     .spyOn(realContentWindow, 'postMessage')
                     .mockImplementation(() => undefined);
-                patchState(store, { isClientReady: true });
+                // Spectator store type doesn't satisfy WritableStateSource but runtime works —
+                // same cast withPage.spec.ts's patchStoreState helper documents.
+                patchState(store as Parameters<typeof patchState>[0], { isClientReady: true });
                 postMessageSpy.mockClear();
             });
 
@@ -1092,7 +1099,11 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should never touch the iframe for a TRADITIONAL page regardless of source (regression)', () => {
-                patchState(store, { pageType: PageType.TRADITIONAL });
+                // Spectator store type doesn't satisfy WritableStateSource but runtime works —
+                // same cast withPage.spec.ts's patchStoreState helper documents.
+                patchState(store as Parameters<typeof patchState>[0], {
+                    pageType: PageType.TRADITIONAL
+                });
                 store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
                 spectator.flushEffects();
 
