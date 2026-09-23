@@ -127,6 +127,34 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
     private static final String SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_TWO_LANGUAGES =
             SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + " AND child IN (SELECT DISTINCT identifier FROM contentlet, multi_tree " +
                     "WHERE multi_tree.child = contentlet.identifier AND multi_tree.parent1 = ? AND (language_id = ? OR language_id = ?))";
+    // Net-loss guard SQL (issue #37377). These mirror the SELECT_CHILD_BY_PARENT* queries above
+    // but additionally require the contentlet to have at least one NON-ARCHIVED version in scope.
+    // They exist as separate constants on purpose: the originals feed
+    // refreshContentletReferenceCount(), whose cached figure counts every multi_tree row including
+    // archived ones, so narrowing them would leave that cache permanently stale.
+    //
+    // "Archived" is contentlet_version_info.deleted, and that table is keyed
+    // (identifier, lang, variant_id) — so the check is scoped to the variant being saved, and to
+    // the language(s) the surrounding query already has in play. Testing deleted (rather than, say,
+    // live_inode) is deliberate: working-but-unpublished content is not archived and must still
+    // count.
+    private static final String NON_ARCHIVED_IN_VARIANT =
+            " AND EXISTS (SELECT 1 FROM contentlet_version_info cvi WHERE cvi.identifier = multi_tree.child"
+                    + " AND cvi.variant_id = ? AND cvi.deleted = false)";
+    private static final String NON_ARCHIVED_IN_VARIANT_AND_LANGUAGE =
+            " AND EXISTS (SELECT 1 FROM contentlet_version_info cvi WHERE cvi.identifier = multi_tree.child"
+                    + " AND cvi.variant_id = ? AND cvi.lang = ? AND cvi.deleted = false)";
+    private static final String NON_ARCHIVED_IN_VARIANT_AND_TWO_LANGUAGES =
+            " AND EXISTS (SELECT 1 FROM contentlet_version_info cvi WHERE cvi.identifier = multi_tree.child"
+                    + " AND cvi.variant_id = ? AND (cvi.lang = ? OR cvi.lang = ?) AND cvi.deleted = false)";
+
+    private static final String SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT =
+            SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT + NON_ARCHIVED_IN_VARIANT;
+    private static final String SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_LANGUAGE =
+            SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_LANGUAGE + NON_ARCHIVED_IN_VARIANT_AND_LANGUAGE;
+    private static final String SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_TWO_LANGUAGES =
+            SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_TWO_LANGUAGES + NON_ARCHIVED_IN_VARIANT_AND_TWO_LANGUAGES;
+
     private static final String SELECT_NOT_EMPTY_CONTENTLET_STYLES_BY_PAGE =
             SELECT_ALL + "WHERE parent1 = ? AND style_properties IS NOT NULL";
 
@@ -726,28 +754,33 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
         // The DB SELECT is skipped entirely when the payload is non-empty AND threshold is -1.
         final int threshold = Config.getIntProperty("MULTITREE_NET_LOSS_THRESHOLD", -1);
         if (multiTrees.isEmpty() || threshold >= 0) {
-            // Mirror the downstream DELETE branching so the guard counts the same rows that will
-            // be removed. When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true and the requested language
-            // differs from the default, the DELETE targets both languages — use the two-language
-            // overload so default-language-only contentlets are not invisible to the guard.
+            // Follow the same language scoping as the downstream DELETE, so the guard measures the
+            // same slice of the page. When DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE=true and the
+            // requested language differs from the default, the DELETE targets both languages — use
+            // the two-language form so default-language-only contentlets stay visible to the guard.
+            //
+            // The guard counts only NON-ARCHIVED content, which is deliberately NOT the same set of
+            // rows the DELETE removes (issue #37377). An archived contentlet can still hold a stale
+            // multi_tree row; the DELETE clears that row, but losing it is not a loss of content, so
+            // counting it would reject legitimate saves. Do not "restore consistency" here by
+            // reverting to the unfiltered query — that is the bug this guard had.
             final boolean defaultContentToDefaultLanguageGuard = Config.getBooleanProperty(
                     "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
             final Set<String> existing;
             if (languageIdOpt.isPresent() && defaultContentToDefaultLanguageGuard) {
                 final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
                 if (defaultLanguageId == languageIdOpt.get()) {
-                    existing = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
-                            personalization, variantId, languageIdOpt.get());
+                    existing = this.getNonArchivedContentlets(pageId, personalization, variantId,
+                            languageIdOpt.get());
                 } else {
-                    existing = this.getOriginalContentlets(pageId, personalization, variantId,
+                    existing = this.getNonArchivedContentlets(pageId, personalization, variantId,
                             languageIdOpt.get(), defaultLanguageId);
                 }
             } else if (languageIdOpt.isPresent()) {
-                existing = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
-                        personalization, variantId, languageIdOpt.get());
+                existing = this.getNonArchivedContentlets(pageId, personalization, variantId,
+                        languageIdOpt.get());
             } else {
-                existing = this.getOriginalContentlets(pageId, ContainerUUID.UUID_DEFAULT_VALUE,
-                        personalization, variantId);
+                existing = this.getNonArchivedContentlets(pageId, personalization, variantId);
             }
             if (!existing.isEmpty()) {
                 final int netLoss = existing.size() - multiTrees.size();
@@ -759,7 +792,7 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                         .collect(Collectors.toSet());
                 if (multiTrees.isEmpty()) {
                     Logger.warn(this, String.format(
-                            "Empty save payload would wipe %d existing contentlet(s) from page '%s' " +
+                            "Empty save payload would wipe %d non-archived contentlet(s) from page '%s' " +
                             "(personalization='%s', variantId='%s', language=%d). " +
                             "Contentlets at risk: %s",
                             existing.size(), pageId, personalization, variantId,
@@ -1772,6 +1805,101 @@ public class MultiTreeAPIImpl implements MultiTreeAPI {
                 pageId, languageId, secondLanguageId);
         return this.getOriginalContentlets(
                 SELECT_CHILD_BY_PARENT_RELATION_PERSONALIZATION_VARIANT_TWO_LANGUAGES, params);
+    }
+
+    /**
+     * Returns the IDs of the Contentlets currently on an HTML Page that are <b>not archived</b>, for
+     * the given personalization and variant, across every language.
+     *
+     * <p>This serves the net-loss guard in
+     * {@link #overridesMultitreesByPersonalization(String, String, List, Optional, String)} and is
+     * deliberately <b>not</b> interchangeable with {@code getOriginalContentlets(...)}. Those
+     * methods feed {@link #refreshContentletReferenceCount(Set, List)}, whose cached figure counts
+     * every {@code multi_tree} row — archived ones included — so they must stay unfiltered or the
+     * cache goes stale. The guard, by contrast, is measuring how much real content a save would
+     * remove, and an archived contentlet is not real content.</p>
+     *
+     * @param pageId          The ID of the HTML Page.
+     * @param personalization The Persona set for the Multi-Tree entry.
+     * @param variantId       The ID of the selected Contentlet Variant.
+     *
+     * @return The IDs of the non-archived Contentlets on the page.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getNonArchivedContentlets(final String pageId, final String personalization,
+            final String variantId) throws DotDataException {
+        final List<Object> params = List.of(pageId,
+                ContainerUUID.UUID_DEFAULT_VALUE,
+                personalization,
+                variantId,
+                variantId);
+        return this.getOriginalContentlets(SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT, params);
+    }
+
+    /**
+     * Returns the IDs of the Contentlets currently on an HTML Page that are <b>not archived in the
+     * given language</b>, for the given personalization and variant.
+     *
+     * <p>Archived state is per language and per variant — {@code contentlet_version_info} is keyed
+     * {@code (identifier, lang, variant_id)} — so a Contentlet archived in one language is still
+     * real content in another and must still be counted here.</p>
+     *
+     * @param pageId          The ID of the HTML Page.
+     * @param personalization The Persona set for the Multi-Tree entry.
+     * @param variantId       The ID of the selected Contentlet Variant.
+     * @param languageId      The language the page is being saved in.
+     *
+     * @return The IDs of the non-archived Contentlets on the page.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getNonArchivedContentlets(final String pageId, final String personalization,
+            final String variantId, final long languageId) throws DotDataException {
+        final List<Object> params = List.of(pageId,
+                ContainerUUID.UUID_DEFAULT_VALUE,
+                personalization,
+                variantId,
+                pageId,
+                languageId,
+                variantId,
+                languageId);
+        return this.getOriginalContentlets(SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_LANGUAGE, params);
+    }
+
+    /**
+     * Returns the IDs of the Contentlets currently on an HTML Page that are <b>not archived in
+     * either of two languages</b>, for the given personalization and variant.
+     *
+     * <p>Used when {@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE} is enabled and the requested language
+     * is not the site default. Page rendering falls back to the default language, so a Contentlet
+     * live in <i>either</i> language is on the page and counts; only one archived in both is
+     * excluded.</p>
+     *
+     * @param pageId           The ID of the HTML Page.
+     * @param personalization  The Persona set for the Multi-Tree entry.
+     * @param variantId        The ID of the selected Contentlet Variant.
+     * @param languageId       The requested Language ID.
+     * @param secondLanguageId The fallback (default) Language ID.
+     *
+     * @return The IDs of the non-archived Contentlets on the page.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private Set<String> getNonArchivedContentlets(final String pageId, final String personalization,
+            final String variantId, final long languageId, final long secondLanguageId)
+            throws DotDataException {
+        final List<Object> params = List.of(pageId,
+                ContainerUUID.UUID_DEFAULT_VALUE,
+                personalization,
+                variantId,
+                pageId,
+                languageId,
+                secondLanguageId,
+                variantId,
+                languageId,
+                secondLanguageId);
+        return this.getOriginalContentlets(SELECT_NON_ARCHIVED_CHILD_BY_PARENT_PERSONALIZATION_VARIANT_TWO_LANGUAGES, params);
     }
 
     /**
