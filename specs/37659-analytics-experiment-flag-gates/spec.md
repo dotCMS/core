@@ -150,8 +150,6 @@ feature-disabled message appears in the expected error envelope on a running ser
 
 ### Edge Cases
 
-- What happens if the flag state changes while a request is in flight? The flag state is read
-  at request entry; the in-flight request completes under the flag state it started with.
 - What happens if `context.experiments` is present but empty (null, empty object, empty array)?
   Treated the same as absent — no experiment context to strip or validate.
 - What if `event_type` is missing from the payload when analytics=OFF, experiments=ON? The
@@ -207,13 +205,15 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
     validation passes, and the existing `400` behavior is not changed by this feature.
 - **FR-002**: When `FEATURE_FLAG_EXPERIMENTS=true`, all experiment endpoints MUST continue to
   function as they do today with no behavioral change.
-- **FR-002a**: `GET /api/v1/experiments/health` MUST verify that the experiments and analytics
-  configuration is properly set up for the current site and return one of three states:
+- **FR-002a**: `GET /api/v1/experiments/health` already produces one of three states via
+  existing health check logic — this behavior is not new and requires no changes:
   - `OK` — required credentials are configured and the analytics backend is reachable.
   - `NOT_CONFIGURED` — no analytics configuration has been set up for the site.
   - `CONFIGURATION_ERROR` — configuration exists but is incomplete (missing required
     credentials) or the analytics backend is unreachable.
-  When `FEATURE_FLAG_EXPERIMENTS=false`, this endpoint returns `403` per FR-001.
+  **What is new**: when `FEATURE_FLAG_EXPERIMENTS=false`, this endpoint MUST return `403`
+  per FR-001 — the gate on top of the existing health check is the only addition this
+  feature makes to this endpoint.
   > **Note**: The Experiments portlet UI calls this endpoint to decide whether to render the
   > experiments interface. A response of `OK` enables the UI; `NOT_CONFIGURED` or
   > `CONFIGURATION_ERROR` causes the UI to display an error message to the operator instead.
@@ -240,6 +240,22 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
   > **Note**: The Analytics portlet UI calls this endpoint to decide whether to render the
   > analytics interface. A response of `OK` enables the UI; `NOT_CONFIGURED` or
   > `CONFIGURATION_ERROR` causes the UI to display an error message to the operator instead.
+  **UI changes required as part of this feature:**
+  - The Analytics portlet health check client MUST be updated to consume the new three-state
+    response (OK / NOT_CONFIGURED / CONFIGURATION_ERROR) instead of the current
+    `entity.available` boolean mapping.
+  - When the backend returns `NOT_CONFIGURED`, the Analytics portlet MUST display a message
+    communicating that Analytics is an advanced feature and directing the operator to contact
+    their Customer Success representative for more information.
+    Example: *"Analytics is an advanced feature that enables you to collect and analyze user
+    behavior data. Please contact your Customer Success representative for more information."*
+  - When the backend returns `CONFIGURATION_ERROR`, the Analytics portlet MUST display a
+    message directing the operator to check their Analytics configuration or contact dotCMS
+    Support.
+    Example: *"Please check your Analytics configuration, or contact dotCMS Support for
+    assistance."*
+  - The Analytics portlet error component already contains the message keys for these states;
+    they become reachable once the health check client passes the backend states through.
 - **FR-004**: `GET /api/v1/analytics/content/siteauth/generate/{siteId}` MUST return `403`
   only when BOTH `FEATURE_FLAG_CONTENT_ANALYTICS=false` AND `FEATURE_FLAG_EXPERIMENTS=false`.
 - **FR-005**: The siteauth endpoint MUST be accessible whenever EITHER
@@ -283,9 +299,20 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
 
 **Flag state refresh**
 
-- **FR-011**: A server restart is required for flag changes to take effect on the gate
-  enforcement introduced by this feature. Live toggling without a restart is intentionally
-  not supported. Live flag changes MUST NOT alter gate behavior on a running instance.
+- **FR-011**: Both `FEATURE_FLAG_EXPERIMENTS` and `FEATURE_FLAG_CONTENT_ANALYTICS` currently
+  support runtime changes without a server restart — an administrator can toggle them in the
+  dotCMS configuration system and other parts of the system react immediately. The gate
+  introduced by this feature MUST NOT use that capability. The gate MUST read each flag value
+  exactly once — at server startup — and hold that value for the entire lifetime of the running
+  instance. A runtime configuration change MUST NOT alter the gate decision without a server
+  restart, regardless of the mechanism used to make that change. This is a deliberate design
+  choice: these are paid features, and activation or deactivation MUST require an explicit,
+  intentional restart by an operator.
+  Other existing consumers of these flags (for example, experiment feature-enablement logic
+  elsewhere in the system) continue to react to configuration changes without a restart — this
+  divergent state is intentional and accepted. The gate MUST be isolated from any live-refresh
+  mechanism that other consumers use; wiring it into the same refresh path is an implementation
+  error.
   **Breaking change**: the default value for both `FEATURE_FLAG_EXPERIMENTS` and
   `FEATURE_FLAG_CONTENT_ANALYTICS` MUST change from `true` to `false`. Any deployment
   that does not explicitly set these flags will have analytics and experiments blocked
@@ -361,6 +388,9 @@ Elasticsearch/OpenSearch index mapping changes are introduced.
   that existing customers have), behavior must be identical to today — no requests that
   currently succeed may be broken. The gate enforcement is additive: it restricts disabled
   states, not the enabled state.
+  **Accepted exception — `GET /api/v1/analytics/health`**: the response shape of this
+  endpoint changes even when the flag is `true` (see FR-003a). The Analytics portlet frontend
+  MUST be updated as part of this feature to consume the new response format.
 - **Known related decisions**: Both flags currently support live toggling in other areas of the
   system. This feature must disable that live-toggle behavior for the gate enforcement so that
   activating or deactivating these paid features requires a deliberate restart. The plan phase
