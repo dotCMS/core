@@ -150,37 +150,16 @@ public class SiteSearchJobImpl {
      * Runs one Site Search crawl: prepares the job from its Quartz detail, publishes every
      * configured host into the search index, and records a {@link SiteSearchAudit} row for the run.
      *
-     * <p><strong>There is deliberately no transaction around this method.</strong> There used to be
-     * — {@code HibernateUtil.startTransaction()} on entry, {@code closeSession()} in the finally —
-     * which leased one pooled connection for the crawl's entire duration. On a large site that is
-     * hours, and the connection goes quiet for long stretches (most obviously while the publisher
-     * reads bundled files off disk and pushes documents, which issues essentially no SQL). HikariCP
-     * never validates or retires an <em>in-use</em> connection and pgjdbc's {@code tcpKeepAlive}
-     * defaults to false, so any stateful device between dotCMS and Postgres could silently evict the
-     * idle TCP flow — and the audit insert below, the job's only write, was the first statement to
-     * touch the dead socket. It failed, and the failure was swallowed (issue #37321).</p>
-     *
-     * <p>The transaction bought nothing in exchange. The audit insert is a single row; the job
-     * detail is persisted by Quartz on its own connection; the crawl's real output goes to the
-     * search engine, which no Postgres transaction covers and none could roll back. What it did
-     * cost was a transaction held open for hours, pinning the {@code xmin} horizon and suppressing
-     * autovacuum across the whole database, not just Site Search tables.</p>
-     *
-     * <p>Without it, {@code SiteSearchAuditAPIImpl.save()}'s {@code @WrapInTransaction} is the
-     * outermost boundary and opens its own short transaction on a freshly leased, pool-validated
-     * connection — which is what makes the row survive a socket that died mid-crawl.
-     * {@code closeSession()} is still called in the finally: it no longer commits anything, but it
-     * closes a connection left behind by unannotated code and clears the listener lists.</p>
-     *
-     * <p><strong>This depends on the crawl phase staying read-only against Postgres.</strong> The
-     * one write reachable from the bundlers, {@code FileAssetBundler}'s
-     * {@code savePushedAssetForAllEnv(...)}, is gated behind
-     * {@link com.dotcms.publishing.PublisherConfig#shouldManageDependencies()} →
-     * {@code isStatic()}, and {@code SiteSearchConfig} never sets it. Calling {@code setStatic(true)}
-     * on a Site Search config would put a per-asset write back inside an untransacted crawl — see
-     * {@code SiteSearchJobImplTest#Test_SiteSearchConfig_Stays_Non_Static_So_The_Crawl_Writes_Nothing},
-     * which fails if that ever changes. Do not add Postgres writes to the crawl phase; a
-     * mid-crawl progress row would reintroduce exactly the held connection this removed.</p>
+     * <p><strong>Deliberately not transactional, and it must stay that way.</strong> The crawl runs
+     * for hours on a large site while touching Postgres only at the end, so wrapping it held one
+     * pooled connection open throughout — long enough to be evicted unnoticed, taking the closing
+     * audit insert with it. The audit save's own {@code @WrapInTransaction} is the transaction
+     * boundary instead. Two things not to do here: do not reintroduce a transaction around the
+     * crawl, and do not add Postgres writes to the crawl phase — the read-only assumption that makes
+     * this safe is guarded by
+     * {@code SiteSearchJobImplTest#Test_SiteSearchConfig_Stays_Non_Static_So_The_Crawl_Writes_Nothing}.
+     * Full rationale, including why the transaction protected nothing: issue #37321 and
+     * {@code specs/37321-site-search-job-db-conn/spec.md}.</p>
      *
      * @param jobContext the Quartz context carrying this run's job detail and fire time
      * @throws DotDataException if the audit row cannot be saved — deliberately not swallowed, since
