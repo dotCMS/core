@@ -8,7 +8,7 @@ import {
 import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 
 import type { DotCMSConnection } from '../toolkit/connection';
-import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
+import type { AssetToolOptions, DotCMSTool } from '../toolkit/types';
 
 const definition = defineTool({
     name: 'download_assets',
@@ -20,7 +20,12 @@ const definition = defineTool({
             .describe(
                 'dotCMS folder or asset path to download, e.g. /application/themes/travel or //demo.dotcms.com/application/themes/travel/css/styles.scss'
             ),
-        dest: z.string().min(1).describe('Absolute local directory the server writes files into'),
+        dest: z
+            .string()
+            .min(1)
+            .describe(
+                'Absolute local directory the server writes files into. Must be inside the directory the server allows; a path outside it fails and names that directory.'
+            ),
         recursive: z.boolean().default(true).describe('Include files in nested folders'),
         overwrite: z
             .enum(['skip', 'overwrite', 'error'])
@@ -58,9 +63,10 @@ a JSON manifest — never the file bytes.`,
         openWorldHint: true
     },
     endpoints: DOWNLOAD_ASSETS_ENDPOINTS,
-    async handler(args, ctx: ToolContext<RequestToolOptions>): Promise<DownloadAssetsManifest> {
+    async handler(args, ctx: ToolContext<AssetToolOptions>): Promise<DownloadAssetsManifest> {
         return downloadAssets({
             dotcms: ctx.runtime(),
+            root: ctx.options.root,
             path: args.path,
             dest: args.dest,
             recursive: args.recursive,
@@ -73,10 +79,11 @@ a JSON manifest — never the file bytes.`,
 /**
  * The `download_assets` tool: streams dotCMS file assets to a local directory — the bytes
  * never pass through the model. Needs Node or Bun. Resolves to a {@link DownloadAssetsManifest}.
+ * `options.root` bounds which local directories the model may write into.
  */
 export function downloadAssetsTool(
     connection: DotCMSConnection,
-    options: RequestToolOptions = {}
+    options: AssetToolOptions
 ): DotCMSTool<typeof definition.inputSchema, DownloadAssetsManifest> {
     return createTool(definition, connection, options);
 }

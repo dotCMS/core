@@ -1,10 +1,16 @@
 import {
     AbortError,
     HttpError,
+    NetworkError,
     PolicyError,
     RuntimeError,
     ValidationError
 } from '../sandbox/errors';
+
+/** Whether `err` is fetch's abort rejection (a DOMException named "AbortError"). */
+function isAbortError(err: unknown): boolean {
+    return !!err && typeof err === 'object' && (err as { name?: string }).name === 'AbortError';
+}
 
 /**
  * The single shared request core.
@@ -418,7 +424,18 @@ export async function requestCore(
             fetchOptions.body = JSON.stringify(options.body);
         }
 
-        const response = await fetch(url.toString(), fetchOptions);
+        // Only `fetch()` itself is guarded here: anything it throws that is not an abort is a
+        // network-level failure by definition (the fetch spec rejects with a TypeError), and
+        // left raw it surfaced as an opaque "fetch failed" the model read as permanent.
+        let response: Response;
+        try {
+            response = await fetch(url.toString(), fetchOptions);
+        } catch (err) {
+            if (isAbortError(err)) {
+                throw err;
+            }
+            throw new NetworkError(method, urlPath, err);
+        }
 
         const contentType = response.headers.get('content-type') || '';
 
@@ -447,7 +464,7 @@ export async function requestCore(
         return result;
     } catch (err) {
         // Normalize fetch's AbortError (a DOMException with name "AbortError") into our typed one.
-        if (err && typeof err === 'object' && (err as { name?: string }).name === 'AbortError') {
+        if (isAbortError(err)) {
             const aborted = new AbortError(`Request ${method} ${urlPath} was aborted`);
             emit(undefined, false, aborted.code);
             throw aborted;

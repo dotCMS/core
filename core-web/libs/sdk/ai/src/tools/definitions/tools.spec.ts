@@ -67,13 +67,13 @@ function sent(fetchMock: ReturnType<typeof vi.fn>, n = 0): { url: string; auth: 
 const DOTCMS = dotcmsConnection({ url: 'https://demo.dotcms.com', token: 'secret-tok' });
 
 const FACTORIES: Record<string, (connection: DotCMSConnection) => DotCMSTool> = {
-    download_assets: downloadAssetsTool,
+    download_assets: (connection) => downloadAssetsTool(connection, { root: '/' }),
     execute: executeTool,
     page_create: pageCreateTool,
     page_place_content: pagePlaceContentTool,
     page_verify: pageVerifyTool,
     search: searchTool,
-    upload_assets: uploadAssetsTool
+    upload_assets: (connection) => uploadAssetsTool(connection, { root: '/' })
 };
 
 describe('tool factories', () => {
@@ -121,7 +121,7 @@ describe('tool factories', () => {
             // `publish` and `verify` are lenient booleans. A preprocess hides their default from
             // JSON Schema, so without care they were listed as REQUIRED — telling the model it
             // must send an argument that omitting is the normal case for.
-            const schema = z.toJSONSchema(uploadAssetsTool(DOTCMS).inputSchema, {
+            const schema = z.toJSONSchema(uploadAssetsTool(DOTCMS, { root: '/' }).inputSchema, {
                 io: 'input'
             }) as { required?: string[] };
 

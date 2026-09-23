@@ -3,6 +3,7 @@ import {
     createRuntime,
     HttpError,
     isDotCMSError,
+    NetworkError,
     TimeoutError,
     type DotCMSRuntime,
     type DotCMSRuntimeConfig,
@@ -17,7 +18,7 @@ import {
  * forever — the model gets no error, no result, and no way to tell the difference from slow
  * work — and `TIMEOUT`, the one unambiguously retryable code, could never be produced.
  */
-export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 
 /**
  * The runtime settings a tool host supplies once. Everything else a tool needs (its sandbox
@@ -158,7 +159,9 @@ export function errorMessage(error: unknown): string {
  * succeeded or retries one that never can.
  */
 function isRetryable(error: unknown): boolean {
-    if (error instanceof TimeoutError) {
+    // A deadline hit, or a request that never got a response (refused, reset, DNS): the
+    // instance may be restarting or briefly unreachable, and the same call can succeed.
+    if (error instanceof TimeoutError || error instanceof NetworkError) {
         return true;
     }
     if (error instanceof HttpError) {
@@ -226,15 +229,6 @@ export function toToolFailure(
         ...(error instanceof HttpError ? { status: error.status } : {}),
         ...extra
     };
-}
-
-/** {@link toToolFailure}, rendered as the JSON string a text-only transport hands the model. */
-export function toolFailure(
-    operation: string,
-    error: unknown,
-    extra?: Record<string, unknown>
-): string {
-    return JSON.stringify(toToolFailure(operation, error, extra), null, 2);
 }
 
 /** Whether a tool result is a {@link ToolFailure} rather than the tool's normal result. */

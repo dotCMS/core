@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -11,9 +11,8 @@ import {
     uploadAssets
 } from './assets-transfer';
 
+import { ValidationError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
 import { unlistedCalls } from '../toolkit/endpoints';
-
-import type { DotCMSRuntime, RequestOptions } from '../../runtime';
 
 /** Every request the fake sees; each describe checks it against its own tool's endpoints. */
 const seen: RequestOptions[] = [];
@@ -344,6 +343,73 @@ describe('uploadAssets', () => {
         expect(manifest.warnings.join(' ')).toMatch(/0 bytes[\s\S]*single newline/);
         expect(empty?.bytes).toBe(1);
     });
+
+    describe('with a root', () => {
+        // `src` comes from the model. The root is what stops a hosted server's upload_assets
+        // from reading any directory the process can — and then serving it back through dotCMS.
+        let root: string;
+
+        beforeEach(async () => {
+            root = await mkdtemp(join(tmpdir(), 'dot-root-'));
+        });
+
+        afterEach(async () => {
+            await rm(root, { recursive: true, force: true });
+        });
+
+        it('uploads from a directory inside the root', async () => {
+            const inside = join(root, 'theme');
+            await mkdir(inside);
+            await writeFile(join(inside, 'style.css'), '.a{}');
+            const { runtime } = fakeRuntime();
+
+            const manifest = await uploadAssets({
+                dotcms: runtime,
+                root,
+                src: inside,
+                dest: SITE,
+                publish: true,
+                verify: false
+            });
+
+            expect(manifest.count).toBe(1);
+        });
+
+        it('refuses a src outside the root before reading or requesting anything', async () => {
+            const { runtime, calls } = fakeRuntime();
+
+            const error = await uploadAssets({
+                dotcms: runtime,
+                root,
+                src, // a sibling temp dir, outside the root
+                dest: SITE,
+                publish: true,
+                verify: false
+            }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(ValidationError);
+            expect((error as Error).message).toContain('`src` must be inside');
+            expect(calls).toEqual([]);
+        });
+
+        it('refuses a src that is a symlink inside the root pointing out of it', async () => {
+            const link = join(root, 'looks-inside');
+            await symlink(src, link);
+            const { runtime, calls } = fakeRuntime();
+
+            const error = await uploadAssets({
+                dotcms: runtime,
+                root,
+                src: link,
+                dest: SITE,
+                publish: true,
+                verify: false
+            }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(ValidationError);
+            expect(calls).toEqual([]);
+        });
+    });
 });
 
 describe('downloadAssets', () => {
@@ -481,5 +547,102 @@ describe('downloadAssets', () => {
         // Two searches: the first yields 500 new ids, the second adds none and breaks.
         expect(callsTo(calls, '/api/content/_search')).toBe(2);
         expect(manifest.count).toBe(500);
+    });
+
+    describe('with a root', () => {
+        // `dest` comes from the model, and so do the asset contents. The root is what stops a
+        // hosted server's download_assets from planting files in any directory it can write.
+        let root: string;
+        const THEME = '//demo.dotcms.com/application/themes/travel';
+        const ONE_ASSET = [{ identifier: 'a1', path: `${THEME}/style.css` }];
+
+        beforeEach(async () => {
+            root = await mkdtemp(join(tmpdir(), 'dot-root-'));
+        });
+
+        afterEach(async () => {
+            await rm(root, { recursive: true, force: true });
+        });
+
+        it('downloads into a directory inside the root, creating it', async () => {
+            const { runtime } = searchRuntime(ONE_ASSET);
+            const inside = join(root, 'new', 'theme');
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                root,
+                path: THEME,
+                dest: inside,
+                recursive: true,
+                overwrite: 'overwrite'
+            });
+
+            expect(manifest.count).toBe(1);
+            expect(await readFile(join(inside, 'style.css'), 'utf8')).toBe('body');
+        });
+
+        it('refuses a dest outside the root, and creates nothing there', async () => {
+            const { runtime, calls } = searchRuntime(ONE_ASSET);
+            const outside = join(dest, 'would-be-created'); // `dest` is a sibling temp dir
+
+            const error = await downloadAssets({
+                dotcms: runtime,
+                root,
+                path: THEME,
+                dest: outside,
+                recursive: true,
+                overwrite: 'overwrite'
+            }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(ValidationError);
+            expect((error as Error).message).toContain('`dest` must be inside');
+            await expect(stat(outside)).rejects.toThrow();
+            expect(calls).toEqual([]);
+        });
+
+        it('refuses a dest reached through a symlinked directory, before creating anything', async () => {
+            // root/escape -> a directory outside the root. `root/escape/new` looks inside as a
+            // string; mkdir would have created `new` OUTSIDE.
+            await symlink(dest, join(root, 'escape'));
+            const { runtime } = searchRuntime(ONE_ASSET);
+
+            const error = await downloadAssets({
+                dotcms: runtime,
+                root,
+                path: THEME,
+                dest: join(root, 'escape', 'new'),
+                recursive: true,
+                overwrite: 'overwrite'
+            }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(ValidationError);
+            await expect(stat(join(dest, 'new'))).rejects.toThrow();
+        });
+
+        it('refuses to write through a symlink planted inside dest', async () => {
+            // An existing root/theme/style.css -> a file outside. writeFile follows the link, so
+            // the download would have overwritten the outside file.
+            const theme = join(root, 'theme');
+            await mkdir(theme);
+            const victim = join(dest, 'victim.txt');
+            await writeFile(victim, 'untouched');
+            await symlink(victim, join(theme, 'style.css'));
+            const { runtime } = searchRuntime(ONE_ASSET);
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                root,
+                path: THEME,
+                dest: theme,
+                recursive: true,
+                overwrite: 'overwrite'
+            });
+
+            expect(manifest.count).toBe(0);
+            expect(manifest.failures).toEqual([
+                { path: 'style.css', error: expect.stringContaining('symlink') }
+            ]);
+            expect(await readFile(victim, 'utf8')).toBe('untouched');
+        });
     });
 });

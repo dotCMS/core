@@ -9,13 +9,18 @@ import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool
 import { lenientBoolean } from '../toolkit/lenient-boolean';
 
 import type { DotCMSConnection } from '../toolkit/connection';
-import type { DotCMSTool, RequestToolOptions } from '../toolkit/types';
+import type { AssetToolOptions, DotCMSTool } from '../toolkit/types';
 
 const definition = defineTool({
     name: 'upload_assets',
     title: 'Upload dotCMS Assets',
     inputSchema: z.object({
-        src: z.string().min(1).describe('Absolute local directory the server reads files from'),
+        src: z
+            .string()
+            .min(1)
+            .describe(
+                'Absolute local directory the server reads files from. Must be inside the directory the server allows; a path outside it fails and names that directory.'
+            ),
         dest: z
             .string()
             .min(1)
@@ -74,9 +79,10 @@ tool, then reference them from a container/template via \`#dotParse\`.`,
         openWorldHint: true
     },
     endpoints: UPLOAD_ASSETS_ENDPOINTS,
-    async handler(args, ctx: ToolContext<RequestToolOptions>): Promise<UploadAssetsManifest> {
+    async handler(args, ctx: ToolContext<AssetToolOptions>): Promise<UploadAssetsManifest> {
         return uploadAssets({
             dotcms: ctx.runtime(),
+            root: ctx.options.root,
             src: args.src,
             dest: args.dest,
             include: args.include,
@@ -89,10 +95,11 @@ tool, then reference them from a container/template via \`#dotParse\`.`,
 /**
  * The `upload_assets` tool: streams a local directory into dotCMS as file assets — the bytes
  * never pass through the model. Needs Node or Bun. Resolves to an {@link UploadAssetsManifest}.
+ * `options.root` bounds which local directories the model may read from.
  */
 export function uploadAssetsTool(
     connection: DotCMSConnection,
-    options: RequestToolOptions = {}
+    options: AssetToolOptions
 ): DotCMSTool<typeof definition.inputSchema, UploadAssetsManifest> {
     return createTool(definition, connection, options);
 }

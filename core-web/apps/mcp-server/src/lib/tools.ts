@@ -3,14 +3,14 @@ import { type ToolMetadata } from 'xmcp';
 import {
     dotcmsConnection,
     toolResultText,
+    type AssetToolOptions,
     type DotCMSConnection,
     type DotCMSTool,
-    type ExecuteToolOptions,
-    type RequestToolOptions
+    type ExecuteToolOptions
 } from '@dotcms/ai/tools';
 
 /** Every tool option this server may pass; each factory reads only its own. */
-type ServerToolOptions = ExecuteToolOptions & RequestToolOptions;
+type ServerToolOptions = ExecuteToolOptions & AssetToolOptions;
 
 /** Cap on a context-load error echoed to stderr — a dotCMS 5xx body is a full HTML page. */
 const MAX_LOGGED_ERROR_CHARS = 2_000;
@@ -34,9 +34,14 @@ const DOTCMS: DotCMSConnection = dotcmsConnection({
     }
 });
 
-/** Tool options this server sets. Only `execute` reads `timeout`; the others ignore it. */
+/** Tool options this server sets; each factory reads only its own. */
 const SERVER_OPTIONS: ServerToolOptions = {
-    timeout: Number(process.env.SANDBOX_TIMEOUT) || undefined
+    // `execute`'s sandbox timeout.
+    timeout: Number(process.env.SANDBOX_TIMEOUT) || undefined,
+    // The asset tools' filesystem boundary. `/` — the whole disk — deliberately: this is a
+    // local stdio server, the model acts as the user who started it, and moving a theme in or
+    // out of any directory they name is the feature. A hosted server would set a workspace.
+    root: '/'
 };
 
 /**

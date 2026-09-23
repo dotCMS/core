@@ -41,6 +41,18 @@ export interface RequestToolOptions {
     requestTimeout?: number;
 }
 
+/** Options for `uploadAssetsTool` and `downloadAssetsTool`, which touch the local disk. */
+export interface AssetToolOptions extends RequestToolOptions {
+    /**
+     * The local directory the model's `src` / `dest` must stay inside — symlinks resolved.
+     * Required, because the paths come from the model: without a boundary a hosted server's
+     * `upload_assets` reads any directory the process can, and `download_assets` writes into
+     * any directory it can. `'/'` is the explicit "whole disk" choice, for a local agent acting
+     * as its own user.
+     */
+    root: string;
+}
+
 /**
  * One dotCMS tool, shaped the way the Vercel AI SDK and the MCP TypeScript SDK both expect:
  * pass it straight into AI SDK's `tools`, or into MCP's `registerTool` config. Every result is

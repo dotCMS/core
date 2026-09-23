@@ -1,7 +1,7 @@
 import { vi } from 'vitest';
 
 import { createRuntime } from './runtime';
-import { HttpError, PolicyError } from './sandbox/errors';
+import { AbortError, HttpError, NetworkError, PolicyError } from './sandbox/errors';
 
 /** Build a minimal JSON Response stub. */
 function jsonResponse(body: unknown, init?: { ok?: boolean; status?: number }): Response {
@@ -54,6 +54,32 @@ describe('createRuntime.request (direct, no worker)', () => {
         const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
 
         await expect(dotcms.request({ path: '/api/v1/missing' })).rejects.toBeInstanceOf(HttpError);
+    });
+
+    it('maps a request that never got a response to a typed NetworkError', async () => {
+        // What undici throws for a refused connection: a TypeError with the reason under cause.
+        fetchMock.mockRejectedValue(
+            Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } })
+        );
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+
+        const error = await dotcms.request({ path: '/api/v1/site' }).catch((e: unknown) => e);
+
+        expect(error).toBeInstanceOf(NetworkError);
+        expect(error).toMatchObject({
+            code: 'NETWORK',
+            reason: 'ECONNREFUSED',
+            path: '/api/v1/site'
+        });
+    });
+
+    it('still reports an aborted request as AbortError, not a network failure', async () => {
+        fetchMock.mockRejectedValue(
+            Object.assign(new Error('The operation was aborted'), { name: 'AbortError' })
+        );
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+
+        await expect(dotcms.request({ path: '/api/v1/site' })).rejects.toBeInstanceOf(AbortError);
     });
 
     it('rejects a call that fails the allow-list with a PolicyError, before any fetch', async () => {

@@ -2,6 +2,7 @@ import { constants } from 'node:fs';
 import { access, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 
+import { assertInsideRoot, assertWritableInsideRoot } from './shared/local-root';
 import { isContentLive } from './shared/page-common';
 
 import { type DotCMSRuntime, isBinaryResponseEnvelope } from '../../runtime';
@@ -43,6 +44,11 @@ export interface DownloadAssetsOptions {
     overwrite: OverwriteMode;
     /** Comma-separated glob filter, e.g. `*.vtl,*.scss`. */
     include?: string;
+    /**
+     * Directory `dest`, and every file written, must stay inside — after symlinks resolve.
+     * Omit only when YOU chose `dest`; the `download_assets` tool always sets it.
+     */
+    root?: string;
 }
 
 /** What `downloadAssets` returns — never the file bytes, only where they landed. */
@@ -69,6 +75,11 @@ export interface UploadAssetsOptions {
     publish: boolean;
     /** After publishing, confirm each asset reports live. */
     verify: boolean;
+    /**
+     * Directory `src` must be inside — after symlinks resolve. Omit only when YOU chose `src`;
+     * the `upload_assets` tool always sets it.
+     */
+    root?: string;
 }
 
 /** What `uploadAssets` returns — never the file bytes, only what landed and what did not. */
@@ -151,7 +162,7 @@ export async function downloadAssets(
     options: DownloadAssetsOptions
 ): Promise<DownloadAssetsManifest> {
     const input = normalizeDotCMSPath(options.path);
-    const dest = await prepareWritableDir(options.dest);
+    const dest = await prepareWritableDir(options.dest, options.root);
     const files: AssetManifestFile[] = [];
     const failures: AssetManifestFailure[] = [];
     const skipped: AssetManifestSkipped[] = [];
@@ -167,7 +178,7 @@ export async function downloadAssets(
     ) => {
         try {
             const result = await writeDownloadedFile(
-                { dest, rel, overwrite: options.overwrite },
+                { dest, rel, overwrite: options.overwrite, root: options.root },
                 await fetchBytes(),
                 identifier
             );
@@ -242,11 +253,14 @@ type WriteResult =
     | { kind: 'skipped'; skip: AssetManifestSkipped };
 
 async function writeDownloadedFile(
-    options: { rel: string; dest: string; overwrite: OverwriteMode },
+    options: { rel: string; dest: string; overwrite: OverwriteMode; root?: string },
     bytes: Buffer,
     identifier?: string
 ): Promise<WriteResult> {
     const outputPath = safeJoin(options.dest, options.rel);
+    // `safeJoin` keeps the path inside `dest` as a string; this keeps the WRITE inside the root
+    // — a symlinked directory or file already inside `dest` would otherwise redirect it.
+    await assertWritableInsideRoot(options.root, outputPath);
     if (await exists(outputPath)) {
         if (options.overwrite === 'skip') {
             return { kind: 'skipped', skip: { path: options.rel, reason: 'exists' } };
@@ -267,7 +281,7 @@ async function writeDownloadedFile(
  * manifest rather than aborting the batch.
  */
 export async function uploadAssets(options: UploadAssetsOptions): Promise<UploadAssetsManifest> {
-    const src = await prepareReadableDir(options.src);
+    const src = await prepareReadableDir(options.src, options.root);
     const dest = normalizeDotCMSPath(options.dest);
 
     if (!dest.siteQualified) {
@@ -728,19 +742,21 @@ function looksLikeAssetPath(path: string): boolean {
     return extname(path) !== '';
 }
 
-async function prepareWritableDir(dest: string): Promise<string> {
+async function prepareWritableDir(dest: string, root: string | undefined): Promise<string> {
     if (!isAbsolute(dest)) {
         throw new Error(`Destination must be an absolute path: ${dest}`);
     }
 
     const resolved = resolve(dest);
+    // Checked BEFORE mkdir, so a refused `dest` creates nothing — not even its parents.
+    await assertInsideRoot(root, 'dest', resolved);
     await mkdir(resolved, { recursive: true });
     await access(resolved, constants.W_OK);
 
     return resolved;
 }
 
-async function prepareReadableDir(src: string): Promise<string> {
+async function prepareReadableDir(src: string, root: string | undefined): Promise<string> {
     if (!isAbsolute(src)) {
         throw new Error(`Source must be an absolute path: ${src}`);
     }
@@ -751,6 +767,7 @@ async function prepareReadableDir(src: string): Promise<string> {
         throw new Error(`Source must be a directory: ${src}`);
     }
 
+    await assertInsideRoot(root, 'src', resolved);
     await access(resolved, constants.R_OK);
 
     return resolved;

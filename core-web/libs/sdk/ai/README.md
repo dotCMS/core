@@ -138,6 +138,16 @@ The exception is `execute`, where the *model* chooses the endpoints. `executeToo
 | `timeout` | `executeTool` | 45000 ms sandbox wall-clock |
 | `includeStacks` | `executeTool` | false — host stack traces are withheld from the model |
 | `requestTimeout` | page and asset tools | 30000 ms per request |
+| `root` | asset tools — **required** | none — the local directory the model's `src` / `dest` must stay inside, symlinks resolved |
+
+**The asset tools need a `root`.** `uploadAssetsTool` and `downloadAssetsTool` touch the local disk, with paths the model chooses. Without a boundary, a hosted server's `upload_assets` would read any directory the process can (and serve it back through dotCMS), and `download_assets` would write into any directory it can. Name the workspace the model may use:
+
+```ts
+uploadAssetsTool(dotcms, { root: '/srv/agent-workspace' })
+downloadAssetsTool(dotcms, { root: '/srv/agent-workspace' })
+```
+
+Paths are compared after symlinks resolve: a link inside the root that points out of it is refused, and so is a download that would write through a symlink. `root: '/'` is the explicit whole-disk choice, for a local agent acting as its own user. The dotCMS MCP server uses it.
 
 **`execute` never throws.** It validates the input against `inputSchema` (it comes from the model, so this is the trust boundary), runs the tool, and resolves to the result in the table above — or to a `ToolFailure`: `{ ok: false, code, retryable, error, status? }`. The `retryable` flag is there because a model cannot `instanceof` its way through a failure; it needs to be told whether trying again can help. `isToolFailure(result)` tells the two apart.
 
@@ -276,7 +286,7 @@ await sandbox.run(`return (await a11y.scan({ url: 'https://demo.dotcms.com/' }))
 
 ## Error model
 
-A single typed hierarchy, surfaced identically from `request()` and `run()` (one `requestCore`): `ValidationError`, `PolicyError`, `HttpError` (carries status + body), `TimeoutError`, `AbortError`, `SandboxError`, `RuntimeError` — all subclasses of `DotCMSError`, each with a stable `code` and a serializable `toJSON()`. The model-facing string an MCP tool builds is *formatting on top of* this model — in `@dotcms/ai/tools` that formatting is the `ToolFailure` every tool resolves to on failure, which adds the `retryable` flag a model needs to decide whether to try again.
+A single typed hierarchy, surfaced identically from `request()` and `run()` (one `requestCore`): `ValidationError`, `PolicyError`, `HttpError` (carries status + body), `NetworkError` (no response at all: refused, reset, DNS), `TimeoutError`, `AbortError`, `SandboxError`, `RuntimeError` — all subclasses of `DotCMSError`, each with a stable `code` and a serializable `toJSON()`. The model-facing string an MCP tool builds is *formatting on top of* this model — in `@dotcms/ai/tools` that formatting is the `ToolFailure` every tool resolves to on failure, which adds the `retryable` flag a model needs to decide whether to try again.
 
 ```ts
 import { isDotCMSError, HttpError } from '@dotcms/ai/runtime';
