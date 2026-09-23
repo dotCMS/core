@@ -5,7 +5,7 @@ import { Mocked, vi } from 'vitest';
 import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 /* eslint-disable @nx/enforce-module-boundaries */
 
@@ -141,8 +141,10 @@ describe('DotPublishingQueueShellComponent', () => {
                 spectator.detectChanges();
             }
 
-            function allowRemoveOfLastOpen(): boolean {
-                const config = dialogService.open.mock.calls.at(-1)?.[1];
+            function allowRemoveOfLastOpen(): boolean | undefined {
+                const config = dialogService.open.mock.calls.at(-1)?.[1] as
+                    | DynamicDialogConfig<{ allowRemove: boolean }>
+                    | undefined;
 
                 return config?.data?.allowRemove;
             }
