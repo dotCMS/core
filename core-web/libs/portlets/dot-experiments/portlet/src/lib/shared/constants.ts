@@ -281,7 +281,6 @@ export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
 /** Read-only banner copy for every other non-DRAFT status. */
 export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-only';
 
-/** Page card's inline error when `?pageId=`/`?url=` named a page that is not there. */
 /**
  * How many rows a page lookup asks for.
  *
@@ -291,6 +290,7 @@ export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-on
  */
 export const PAGE_LOOKUP_LIMIT = 10;
 
+/** Page card's inline error when `?pageId=`/`?url=` named a page that is not there. */
 export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
 
 /**

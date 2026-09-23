@@ -289,10 +289,6 @@ export class DotExperimentsListComponent {
     };
 
     /**
-     * Empty-state copy. Resolved once for the same reason as `#scheduleLabels`, and declared
-     * after the injections because field initialisers run in declaration order.
-     */
-    /**
      * The page the list is narrowed to (#37005, FR-021c).
      *
      * `null` when there is no page filter. When there is one but `pageInfoByPageId` cannot resolve

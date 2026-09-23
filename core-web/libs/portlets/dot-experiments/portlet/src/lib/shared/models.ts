@@ -27,7 +27,6 @@ export interface DotExperimentPageInfo {
     host: string;
 }
 
-/** The URL-backed slice of the list view: filter, status selection, paging and sort. */
 /**
  * The page the Experiments panel is scoped to, handed down by the UVE shell (#37478).
  *
@@ -40,6 +39,12 @@ export interface DotExperimentsListPanelScope {
     languageId: number | null;
 }
 
+/**
+ * Everything about the list that lives in the address rather than in memory.
+ *
+ * Deliberately not a list of the fields: they are below, and an enumeration in the summary is one
+ * more place to forget when a filter is added.
+ */
 export interface DotExperimentsListViewState {
     filter: string;
     /**
@@ -326,6 +331,18 @@ export interface WeightedVariant {
 }
 
 /**
+ * Which bounded slices currently hold a value worth sending.
+ *
+ * The bounds themselves live in the form's schema, so validity is read off the field tree rather
+ * than re-derived here: an out-of-range allocation or an out-of-window end date is shown on screen
+ * and simply not sent.
+ */
+export interface ConfigureFormValidity {
+    trafficAllocation: boolean;
+    scheduling: boolean;
+}
+
+/**
  * Everything the Configure screen edits, as one model.
  *
  * The screen is a single signal form: the shell owns this model and the rules over it, and each
@@ -338,18 +355,6 @@ export interface WeightedVariant {
  * one `trafficProportion` key. Holding them here is what makes "they add up to 100" a cross-field
  * rule of the form rather than a sum recomputed wherever it happens to be needed.
  */
-/**
- * Which bounded slices currently hold a value worth sending.
- *
- * The bounds themselves live in the form's schema, so validity is read off the field tree rather
- * than re-derived here: an out-of-range allocation or an out-of-window end date is shown on screen
- * and simply not sent.
- */
-export interface ConfigureFormValidity {
-    trafficAllocation: boolean;
-    scheduling: boolean;
-}
-
 export interface ConfigureFormModel {
     name: string;
     description: string;
