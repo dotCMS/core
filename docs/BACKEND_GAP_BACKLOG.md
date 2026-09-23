@@ -178,16 +178,22 @@ true — which is the failure mode this entire Rock was created to address.
 
 - Surfaces found carrying fabricated content so far: `INTEGRATION_TESTS.md` and
   `REST_API_PATTERNS.md` (#37128), `BACKEND_UNIT_TESTS.md` (#37666), `CLI_OVERVIEW.md` (#37664),
-  `CICD_PIPELINE.md` (#37711), `.claude/commands/gh-issue-troubleshoot.md` (#37610), four files
-  under `.cursor/rules/` (#37590, #37629), and `.claude/skills/dot-cicd-diagnose` (item 6, still
-  unfixed). **Every one found by reading. None by any tool.**
+  `CICD_PIPELINE.md` (#37711), `.claude/commands/gh-issue-troubleshoot.md` (#37610), five files
+  under `.cursor/rules/` (#37590, #37629, #37715), and `.claude/skills/dot-cicd-diagnose` (item 6,
+  still unfixed). **Every one found by reading. None by any tool.**
 - The shape is consistent: **real API names arranged around a fictional subject.** A reviewer
   spot-checking `WorkflowAPI` gets a hit and moves on, while `WorkflowManager` in the same snippet
   does not exist. `PushContext` is real but an interface, not the record the doc showed.
   `HealthStateManager` is real but has `getLivenessHealth()`, not `getLivenessResponse()`.
-- `CICD_PIPELINE.md` showed a sharper variant worth designing against: its **prose was accurate**
-  — phase model, zero-trust design, artifact strategy all matched — and only the YAML blocks were
-  invented. A reader skims the text, trusts it, and copies the part that is wrong.
+- Two variants are worth designing against, because a naive "does this symbol exist" check would
+  miss both. `CICD_PIPELINE.md`'s **prose was accurate** — phase model, zero-trust design, artifact
+  strategy all matched — and only the YAML blocks were invented, so a reader skims the text, trusts
+  it, and copies the part that is wrong. And `e2e-rules.mdc` (#37715) was not invented from nothing
+  but **duplicated from a real doc and then drifted**: it told readers to *always* use `data-testid`
+  and *never* CSS selectors, where its source of truth
+  (`core-web/apps/dotcms-ui-e2e/AGENTS.md`) puts `getByRole` first and permits CSS inside the Dojo
+  iframe, which is where `data-testid` does not exist. Every symbol in it resolved; the guidance was
+  still wrong, and the Cursor rule auto-loads while the doc has to be opened deliberately.
 - Existing gates do not catch any of this: `skill-lint` checks frontmatter, the reachability check
   (#37578) catches unreachable files, and CI compiles production code — but no doc example is ever
   compiled or resolved.
@@ -212,9 +218,13 @@ hand, by whoever remembers.
   *should* have been rather than what the frontmatter said (fixed in #37629).
 - `doc-updates.mdc` — the rule whose entire job is telling a reader where to update documentation —
   had a glob of `**/*.mdc`, so it never loaded when editing a `.md` (fixed in #37629).
+- `e2e-rules.mdc` was 223 lines restating `core-web/apps/dotcms-ui-e2e/AGENTS.md` rather than
+  pointing at it — the only rule with zero `@docs` pointers — and had drifted into contradicting it
+  on locator strategy while describing a `src/config/` directory that does not exist (folded into a
+  50-line pointer in #37715).
 - The fixes are merged; the process gap is not. Nothing makes a change to `docs/testing/` prompt a
   look at `test-context.mdc`, and the CI gate that exists for skills has no equivalent for rules or
-  commands.
+  commands. The reachability check added in #37578 covers `docs/`, not these two directories.
 
 ## 10. The Rock's Own Ownership Split Omitted 10 Files — Size: S (decision, not a content fix)
 
