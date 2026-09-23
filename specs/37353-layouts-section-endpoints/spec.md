@@ -104,8 +104,9 @@ list and from every role and user that held it.
 6. **Given** a blank name, a name over 255 characters or an icon over 255 characters, **When**
    a section is created or updated with it, **Then** the request is rejected as invalid.
 7. **Given** the Getting Started section, **When** it is renamed or its icon is changed,
-   **Then** the change is saved like any other section's; **When** it is deleted, **Then** the
-   request is rejected as invalid and the section is intact.
+   **Then** the change is saved like any other section's and is still there after any user
+   switches Getting Started on or off; **When** it is deleted, **Then** the request is rejected
+   as invalid and the section is intact.
 8. **Given** a section is created, renamed, re-iconed or deleted, **When** an admin has another
    session open, **Then** that session's navigation reflects the change without a hard reload.
 
@@ -139,7 +140,9 @@ an unknown id and confirm the section is untouched.
    offer, such as the hidden old Languages tool, **When** it is saved, **Then** it is accepted,
    so an existing section that holds such a tool can still be reordered.
 5. **Given** an empty list, **When** it is saved to a section, **Then** the section is kept with
-   no tools and drops out of the menu until it holds a tool again.
+   no tools and drops out of the menu until it holds a tool again; **When** it is saved to the
+   Getting Started section, **Then** the request is rejected as invalid and the section keeps
+   its tools, because a user who switches Getting Started on must find something in it.
 6. **Given** a section id no section has, **When** a tool list is saved to it, **Then** the
    response is not found.
 7. **Given** a tool list is saved, **When** an admin has another session open, **Then** that
@@ -169,9 +172,10 @@ confirm it matches; send a list missing one id and confirm nothing moved.
    an id, **When** it is saved, **Then** the request is rejected as invalid, the message names
    the problem, and no position changes.
 3. **Given** the Getting Started section, **When** it is placed anywhere in the order, **Then**
-   its new position is saved like any other section's.
+   its new position is saved like any other section's and is still there after any user
+   switches Getting Started on or off.
 4. **Given** the order is changed, **When** an admin has another session open, **Then** that
-   session's navigation reflects the new order without a hard reload.
+   session's navigation reflects the new order without a hard reload, after a single refresh.
 
 ---
 
@@ -210,8 +214,18 @@ everything, the third passes everything.
 
 ### Edge Cases
 
-- **Getting Started cannot be deleted.** It is the product's own onboarding section, so the
-  delete is refused; every other write treats it like any section, as the legacy screen does.
+- **Getting Started is the product's own onboarding section.** It is identified by its fixed
+  id, or, on an install where no section has that id, by its name. The product resolves it
+  whenever a user switches Getting Started on or off; that lookup must find the section as the
+  admin left it and must not rewrite it, otherwise every edit made here would be undone at the
+  next switch. Delete and an empty tool list are refused, so the section always exists and
+  always holds something to show. Rename, icon, position and tool changes are allowed and
+  persist.
+- **Two admins saving the same name at once.** The application check and the database
+  uniqueness rule both guard the name; whichever one trips, the loser gets the same invalid
+  response as an ordinary duplicate.
+- **Reorder is one step.** Every position is written together, so a failure changes nothing and
+  open sessions receive a single refresh rather than one per section.
 - **Tools in a section that the catalog does not offer.** A section may hold a registered tool
   the catalog hides (the old Languages tool under its hiding configuration) or an id whose tool
   is no longer registered (a removed plugin). The read returns both. The tool-list write accepts
@@ -264,26 +278,39 @@ everything, the third passes everything.
 - **FR-005**: A section name MUST be present after trimming, at most 255 characters, and unique
   among sections by exact comparison. An icon MUST be at most 255 characters and MAY be empty. A
   violation MUST be rejected as invalid with a message the screen can display, and nothing MUST
-  be written.
+  be written. A duplicate detected by the database's own uniqueness rule, when two writes race,
+  MUST be reported as the same invalid response, never as a server error.
 - **FR-006**: The system MUST allow a section to be deleted. Deletion MUST remove the section,
   its tool list and every grant of it to a role or a user, leaving no reference behind.
 - **FR-007**: The system MUST allow the position of every section to be rewritten from one full
   ordered list of section ids. The list MUST contain every existing section id exactly once;
   otherwise the request MUST be rejected as invalid, the message MUST name the problem, and no
-  position MUST change. Positions MUST be written strictly increasing in the order sent.
+  position MUST change. Positions MUST be written strictly increasing in the order sent, as
+  one step: either every position changes or none does, and open sessions MUST receive one
+  refresh for the whole reorder.
 - **FR-008**: The system MUST allow the ordered set of tools in one section to be replaced from
   one full ordered list of tool ids. Every id MUST name a registered tool that the product allows
   in a section and MUST appear once; otherwise the request MUST be rejected as invalid, the
   message MUST name the offending id, and the section MUST be unchanged. An empty list MUST be
-  accepted. Registered tools the catalog hides MUST be accepted.
+  accepted for every section other than Getting Started. Registered tools the catalog hides
+  MUST be accepted.
 - **FR-009**: The Getting Started section MUST be returned by the read and MUST accept every
-  write except delete, which MUST be refused as invalid, leaving the section intact.
+  write except delete and an empty tool list, both refused as invalid, leaving the section
+  intact. For these refusals Getting Started is identified by its fixed id, or by its name when
+  no section has that id.
+- **FR-018**: The product's own Getting Started lookup, used when a user switches Getting
+  Started on or off, MUST resolve the section by its fixed id; if no section has that id, by
+  the name "Getting Started", adopting that section as it is; and only if neither exists MUST
+  it create the section with its default name, icon, position and welcome tool. When the
+  resolved section holds no tools, the lookup MUST restore the welcome tool and change nothing
+  else. The lookup MUST NOT change the name, icon or position of an existing section.
 - **FR-010**: Any write that names a section id no section has MUST respond not found and change
   nothing.
 - **FR-011**: The delete, reorder and tool-list writes MUST respond with the full section list
   as the read would return it after the write.
 - **FR-012**: After every successful write, open admin sessions MUST reflect the change in their
-  navigation without a hard reload, as they do after the legacy screen's writes.
+  navigation without a hard reload, as they do after the legacy screen's writes, with one
+  refresh per write.
 - **FR-013**: The read MUST require an authenticated backend user who either holds a granted
   section containing `tools` or `tools-beta`, or is a CMS Administrator. Any other caller MUST
   be refused as unauthorized with no section data.
@@ -304,7 +331,8 @@ everything, the third passes everything.
 
 - **Section**: A named, ordered group of tools shown in the admin left navigation. Has an id, a
   name unique among sections, an icon, a position in the navigation, and an ordered list of tool
-  ids. Getting Started is the product's own onboarding section and cannot be deleted here.
+  ids. Getting Started is the product's own onboarding section, identified by its fixed id;
+  it cannot be deleted or emptied here.
 - **Tool reference**: A tool id held by a section, in a position within that section. Refers to
   a tool that ships with the product, a custom content tool, or occasionally a tool that is no
   longer registered.
@@ -328,8 +356,11 @@ everything, the third passes everything.
 - **SC-003**: 100% of tool lists saved through this feature are read back in the order they were
   sent, across every node.
 - **SC-004**: 100% of invalid writes (duplicate name, blank or over-long name, unknown id,
-  non-placeable or duplicated tool id, incomplete or duplicated reorder list, deleting
-  Getting Started) leave every section exactly as it was.
+  non-placeable or duplicated tool id, incomplete or duplicated reorder list, deleting or
+  emptying Getting Started, a duplicate name that reaches the database) leave every section
+  exactly as it was.
+- **SC-009**: 100% of rename, icon, position and tool changes made to Getting Started here are
+  still in place after a user switches Getting Started on or off.
 - **SC-005**: 100% of writes by a caller who is not a CMS Administrator, and 100% of reads and
   writes by a caller with neither Tools nor Tools (Beta) nor the administrator fallback, are
   refused with nothing written and no section data returned, and every write refused for lack
@@ -347,16 +378,21 @@ everything, the third passes everything.
 
 - **Existing behavior touched**: The section management surface, which today is part of the
   older Roles & Tools admin area, and the section services in the legacy package tree that the
-  Dojo tab and the modern Roles endpoints already share. Those services are read and called, not
-  rewritten. The Dojo tab, its remoting methods, and the modern Roles reads of sections are not
-  modified. The new resource is added alongside them.
+  Dojo tab and the modern Roles endpoints already share. Those services are called, with two
+  small additions: the Getting Started lookup resolves by fixed id instead of by name and no
+  longer rebuilds an existing section (FR-018), and a single-step reorder that writes every
+  position together and notifies once (FR-007). The Dojo tab, its remoting methods, and the
+  modern Roles reads of sections are not modified. The new resource is added alongside them.
 - **Backward-compatibility expectations**: No existing endpoint or screen changes contract. No
   stored data changes shape; the reorder write only rewrites position numbers that already exist,
   and the tool-list write uses the same storage the legacy screen uses. Rolling back is safe: a
-  section created or reordered here is an ordinary section to the older release. The one
-  behaviour this feature is stricter about than the legacy screen is refusing to delete Getting
-  Started. Sections with no tools are new: the legacy dialog requires at least one tool. The
-  legacy screen is left as it is.
+  section created or reordered here is an ordinary section to the older release, which would
+  merely resume resetting Getting Started to its defaults on the next switch. The Getting
+  Started lookup change also makes the legacy screen's edits to that section persist, which is
+  what that screen always appeared to do. The behaviours this feature is stricter about than
+  the legacy screen are refusing to delete or empty Getting Started. Sections with no tools are
+  otherwise new: the legacy dialog requires at least one tool. The legacy screen is left as it
+  is.
 - **Known related decisions**: On 2026-09-17 it was decided, and recorded on #37353,
   that section writes require the CMS Administrator role in addition to the Tools portlet,
   following the modern operations that grant sections to roles and users, while reads and the
@@ -373,8 +409,12 @@ everything, the third passes everything.
 - **Wire names follow the frontend model**: `id`, `name`, `icon`, `tabOrder`, `portletIds`,
   plus `portletTitles` aligned by index with `portletIds`. `icon` is the section's stored
   description and `tabOrder` its stored position, as the issue's field mapping states.
-- **Getting Started follows the issue text**: listed like any section, editable like any
-  section, delete refused.
+- **Getting Started is editable and durable** (decided 2026-09-23 after spec review): listed
+  like any section; rename, icon, position and tools editable; delete and an empty tool list
+  refused. The product's lookup is corrected to resolve by fixed id so those edits survive
+  (FR-018). Its name is not reserved: identity is the id, and the ordinary uniqueness rule
+  already prevents two sections sharing a name. The My Account and Users toggles keep their
+  static "Show Getting Started" label whatever the section is renamed to.
 - **Positions are rewritten, not preserved.** Reorder assigns strictly increasing positions in
   list order and create appends after the current maximum. The absolute numbers are not part of
   the contract; only their order is.
@@ -398,6 +438,8 @@ everything, the third passes everything.
 - **Concurrency is last-writer-wins**, as recorded under Known related decisions.
 - **Tests are written first**, per the constitution: integration tests covering the read's
   order and titles, each write's happy path, every invalid-input rejection leaving data
-  untouched, the delete removing grants, the refused Getting Started delete, the order round-trip of
+  untouched, the delete removing grants, the refused Getting Started delete and empty list, the
+  Getting Started lookup (edits survive a switch, adoption by name, creation when missing,
+  welcome tool restored when empty), the single-refresh reorder, the order round-trip of
   tools and of sections, and every gate combination in User Story 5, all registered in a
   `MainSuite` so they run in CI. Which suite and the exact fixtures are decided in the plan.
