@@ -1744,17 +1744,21 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 .reindexLive(Optional.empty())
                 .build());
 
-        // Purge leftover legacy ES content-index rows (NULL version) from the indicies table:
-        // old live/working plus any transient reindex_live/reindex_working that predate Phase 3.
-        // ES is decommissioned, so these rows are pure orphans — without this the table would
-        // accumulate stale ES rows on every Phase-3 reindex (#36077). DB-only: never contacts the
-        // ES cluster (which may be down). Best-effort — the OS promotion above already succeeded
-        // and must not be undone by a housekeeping failure. Physical ES index deletion is left to
-        // the scheduled DeleteInactiveLiveWorkingIndicesJob.
+        // Purge leftover legacy ES reindex slots (NULL version) from the indicies table — the
+        // transient reindex_live/reindex_working rows that predate Phase 3, which used to accumulate
+        // one pair per reindex (#36077). DB-only: never contacts the ES cluster (which may be down).
+        // Best-effort — the OS promotion above already succeeded and must not be undone by a
+        // housekeeping failure.
+        //
+        // The active ES live/working pointers are NOT purged, on purpose. They name the Elasticsearch
+        // index that still holds the pre-migration content — an index this phase can never delete, so
+        // it outlives the migration — and nothing else records its name. Dropping the pointer here
+        // would strand it permanently and force a rollback to rebuild from scratch, which is exactly
+        // what a reindex (the documented repair at this phase) must not cause (#37635).
         try {
-            versionedIndicesAPI.removeLegacyIndices();
+            versionedIndicesAPI.removeLegacyReindexIndices();
         } catch (Exception cleanupEx) {
-            Logger.warn(this, "Phase 3 switchover: could not purge legacy ES indicies rows", cleanupEx);
+            Logger.warn(this, "Phase 3 switchover: could not purge legacy ES reindex rows", cleanupEx);
         }
 
         // Async: optimize the newly active OS indices (merge segments, adjust replicas).

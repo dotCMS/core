@@ -355,11 +355,16 @@ describe('DotFormComponent', () => {
             expect(container?.classList.contains('max-w-206')).toBe(false);
             expect(container?.classList.contains('mx-auto')).toBe(true);
 
+            // The vertical rhythm comes from the global `.form .fields` rule (#37460), so the
+            // stacking containers carry `fields` rather than a gap of their own. Only the
+            // horizontal gap between columns is still written here — `space-y` has no x axis.
+            expect(container?.classList.contains('fields')).toBe(true);
+
             const row = spectator.query(byTestId('row'));
             const column = spectator.query(byTestId('column'));
-            expect(row?.classList.contains('gap-9')).toBe(true);
-            expect(row?.classList.contains('mb-5')).toBe(true);
-            expect(column?.classList.contains('gap-8')).toBe(true);
+            expect(row?.classList.contains('gap-5')).toBe(true);
+            expect(row?.classList.contains('mb-5')).toBe(false);
+            expect(column?.classList.contains('fields')).toBe(true);
         });
 
         it('should apply the narrower max-width for a single-column layout (every row has exactly one column)', () => {

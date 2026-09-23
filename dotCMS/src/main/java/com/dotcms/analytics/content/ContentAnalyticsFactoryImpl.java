@@ -5,7 +5,7 @@ import com.dotcms.analytics.query.AnalyticsQueryParser;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
-import com.dotcms.cube.CubeJSResultSet;
+import com.dotcms.cube.AnalyticsResultSet;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -91,9 +91,9 @@ public class ContentAnalyticsFactoryImpl implements ContentAnalyticsFactory {
         }
     }
 
-    private ReportResponse toReportResponse(final CubeJSResultSet cubeJSResultSet) {
+    private ReportResponse toReportResponse(final AnalyticsResultSet analyticsResultSet) {
 
-        return new ReportResponse(StreamSupport.stream(cubeJSResultSet.spliterator(), false).collect(Collectors.toList()));
+        return new ReportResponse(StreamSupport.stream(analyticsResultSet.spliterator(), false).collect(Collectors.toList()));
     }
 
 
