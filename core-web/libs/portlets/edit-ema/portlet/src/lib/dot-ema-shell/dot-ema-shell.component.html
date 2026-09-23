@@ -43,13 +43,14 @@
             <i class="pi pi-exclamation-triangle"></i>
             <span class="inline leading-6" data-testid="experiment-banner-content">
                 {{ $experimentWarningKey() | dm }}
-                <button
-                    class="inline-flex cursor-pointer items-center text-primary-600 underline hover:text-primary-700"
+                <p-button
+                    [link]="true"
+                    [label]="'uve.shell.experiment.view.experiment' | dm"
+                    size="small"
                     type="button"
+                    styleClass="p-0 align-baseline underline"
                     data-testid="experiment-banner-link"
-                    (click)="onExperimentBannerLink()">
-                    {{ 'uve.shell.experiment.view.experiment' | dm }}
-                </button>
+                    (click)="onExperimentBannerLink()" />
             </span>
         </div>
     </p-message>
