@@ -46,9 +46,15 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -1092,6 +1098,45 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     }
 
     /**
+     * Given: a customer asset type whose own {@code width} is text, against the binary's numeric
+     * {@code width}.
+     * When: the schema is built.
+     * Then: a warning is logged naming the content type and the property.
+     *
+     * <p>FR-021. The collision silently changes what every asset field offers on the instance —
+     * {@code width} disappears from the asset interface — and renaming the customer's field is an
+     * administrator's decision, so the log line is the only way that administrator finds out.
+     */
+    @Test
+    public void test_incompatibleCollision_isLoggedAtSchemaBuild() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final org.apache.logging.log4j.core.Logger providerLogger =
+                (org.apache.logging.log4j.core.Logger) LogManager.getLogger(
+                        ContentAPIGraphQLTypesProvider.class);
+        final CapturingAppender appender = new CapturingAppender();
+        appender.start();
+        providerLogger.addAppender(appender);
+        try {
+            addTextProperty(assetType, "width");
+
+            APILocator.getGraphqlAPI().invalidateSchema();
+            APILocator.getGraphqlAPI().getSchema(systemUser);
+
+            final boolean logged = appender.events.stream().anyMatch(event ->
+                    Level.WARN.equals(event.level())
+                            && event.message().contains("'width'")
+                            && event.message().contains("'" + assetType.variable() + "'"));
+            assertTrue("the collision must be logged as a warning naming the property and the "
+                    + "content type. Captured: " + appender.events, logged);
+        } finally {
+            providerLogger.removeAppender(appender);
+            appender.stop();
+            APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
      * Given: a customer asset type with a text field named {@code sha256}, the same GraphQL type as
      * the binary's hash.
      * When: {@code sha256} is selected directly on the asset field.
@@ -1347,5 +1392,29 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                 .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
         ContentletDataGen.publish(content);
         return content;
+    }
+
+    /** Collects the level and formatted message of every event logged to the logger it is on. */
+    private static final class CapturingAppender extends AbstractAppender {
+
+        private final List<CapturedEvent> events = new CopyOnWriteArrayList<>();
+
+        private CapturingAppender() {
+            super("AssetSubtypeAccessTestAppender", null, null, true, Property.EMPTY_ARRAY);
+        }
+
+        @Override
+        public void append(final LogEvent event) {
+            events.add(new CapturedEvent(event.getLevel(),
+                    event.getMessage().getFormattedMessage()));
+        }
+    }
+
+    private record CapturedEvent(Level level, String message) {
+
+        @Override
+        public String toString() {
+            return level + " " + message;
+        }
     }
 }
