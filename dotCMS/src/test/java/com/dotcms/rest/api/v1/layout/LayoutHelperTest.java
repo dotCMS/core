@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
+
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.LayoutNameAlreadyExistsException;
 import com.dotmarketing.exception.DotDataException;
@@ -54,6 +55,11 @@ public class LayoutHelperTest {
         // Resolver behaves like LanguageUtil.get: returns the key itself on a miss.
         final BiFunction<User, String, String> resolver = (u, key) -> titles.getOrDefault(key, key);
         helper = new LayoutHelper(layoutApi, portletApi, resolver);
+    }
+
+    /** The 400's displayable text lives in the response entity, not in getMessage(). */
+    private static String errorText(final BadRequestException e) {
+        return String.valueOf(e.getResponse().getEntity()) + " " + e.getResponse().getHeaderString("error-message");
     }
 
     // ==================== helpers ====================
@@ -156,5 +162,303 @@ public class LayoutHelperTest {
         final List<SectionView> views = helper.toViews(layouts, user);
 
         assertEquals(List.of("b", "a", "c"), views.stream().map(SectionView::id).toList());
+    }
+
+    // ==================== US2: name, icon, position, duplicate mapping ====================
+
+    /**
+     * Method to test: {@link LayoutHelper#validateName(String)}
+     * Given: a name with surrounding whitespace
+     * Expected: the trimmed name
+     */
+    @Test
+    public void validateName_trims() {
+        assertEquals("Marketing", helper.validateName("  Marketing  "));
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateName(String)}
+     * Given: null, empty or whitespace-only names
+     * Expected: rejected as invalid
+     */
+    @Test
+    public void validateName_rejectsBlank() {
+        for (final String blank : new String[]{null, "", "   "}) {
+            try {
+                helper.validateName(blank);
+                fail("blank name accepted: [" + blank + "]");
+            } catch (final BadRequestException expected) {
+                // ok
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateName(String)}
+     * Given: a 256-character name (255 is the column limit)
+     * Expected: rejected as invalid; 255 characters accepted
+     */
+    @Test
+    public void validateName_rejects256Chars() {
+        assertEquals(255, helper.validateName("n".repeat(255)).length());
+        try {
+            helper.validateName("n".repeat(256));
+            fail("256-character name accepted");
+        } catch (final BadRequestException expected) {
+            // ok
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateIcon(String)}
+     * Given: a null or empty icon
+     * Expected: the empty string, accepted
+     */
+    @Test
+    public void validateIcon_allowsEmpty() {
+        assertEquals("", helper.validateIcon(null));
+        assertEquals("", helper.validateIcon(""));
+        assertEquals("campaign", helper.validateIcon("campaign"));
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateIcon(String)}
+     * Given: a 256-character icon
+     * Expected: rejected as invalid
+     */
+    @Test
+    public void validateIcon_rejects256Chars() {
+        try {
+            helper.validateIcon("i".repeat(256));
+            fail("256-character icon accepted");
+        } catch (final BadRequestException expected) {
+            // ok
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#nextTabOrder(List)}
+     * Given: existing sections with positions -320000, 5 and 12
+     * Expected: 13
+     */
+    @Test
+    public void nextTabOrder_isMaxPlusOne() {
+        final List<Layout> existing = List.of(layout("gs", "GS", "", -320000), layout("a", "A", "", 5),
+                layout("b", "B", "", 12));
+        assertEquals(13, helper.nextTabOrder(existing));
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#nextTabOrder(List)}
+     * Given: no sections
+     * Expected: 1
+     */
+    @Test
+    public void nextTabOrder_isOne_whenNoSections() {
+        assertEquals(1, helper.nextTabOrder(List.of()));
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#saveOrDuplicate(Layout)}
+     * Given: the layout API fails with a data exception caused by a SQL unique violation (state 23505)
+     * Expected: reported as the duplicate-name error, so the caller answers 400 not 500
+     */
+    @Test
+    public void duplicateFromDatabase_isReportedAsLayoutNameAlreadyExists() throws Exception {
+        final DotDataException dbFailure = new DotDataException("insert failed",
+                new SQLException("duplicate key value violates unique constraint \"cms_layout_name_parent\"", "23505"));
+        doThrow(dbFailure).when(layoutApi).saveLayout(any(Layout.class));
+
+        try {
+            helper.saveOrDuplicate(layout("x", "Marketing", "", 1));
+            fail("unique violation not mapped");
+        } catch (final LayoutNameAlreadyExistsException expected) {
+            assertTrue(expected.getMessage().contains("Marketing"));
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#saveOrDuplicate(Layout)}
+     * Given: the layout API fails for an unrelated reason
+     * Expected: the failure propagates unchanged
+     */
+    @Test
+    public void otherDatabaseFailure_propagates() throws Exception {
+        final DotDataException dbFailure = new DotDataException("connection lost", new SQLException("boom", "08006"));
+        doThrow(dbFailure).when(layoutApi).saveLayout(any(Layout.class));
+
+        try {
+            helper.saveOrDuplicate(layout("x", "Marketing", "", 1));
+            fail("unrelated failure swallowed");
+        } catch (final LayoutNameAlreadyExistsException wrong) {
+            fail("unrelated failure mapped to duplicate name");
+        } catch (final RuntimeException | DotDataException expected) {
+            // ok: propagated (wrapped or not), never as a duplicate
+        }
+    }
+
+    // ==================== US3: tool list validation ====================
+
+    private void placeable(final String... ids) {
+        for (final String id : ids) {
+            registered(id, null);
+            when(portletApi.canAddPortletToLayout(id)).thenReturn(true);
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateToolIds(List)}
+     * Given: ids of registered, placeable portlets
+     * Expected: accepted, order preserved
+     */
+    @Test
+    public void validateToolIds_acceptsRegisteredPlaceable() {
+        placeable("templates", "containers");
+        assertEquals(List.of("templates", "containers"), helper.validateToolIds(List.of("templates", "containers")));
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateToolIds(List)}
+     * Given: an id no portlet is registered under
+     * Expected: rejected, message names the id
+     */
+    @Test
+    public void validateToolIds_rejectsUnknown_namingId() {
+        placeable("templates");
+        try {
+            helper.validateToolIds(List.of("templates", "gone-plugin"));
+            fail("unknown id accepted");
+        } catch (final BadRequestException expected) {
+            assertTrue(errorText(expected).contains("gone-plugin"));
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateToolIds(List)}
+     * Given: a registered portlet the product marks as not placeable in a section
+     * Expected: rejected, message names the id
+     */
+    @Test
+    public void validateToolIds_rejectsNotPlaceable_namingId() {
+        registered("my-account", null);
+        when(portletApi.canAddPortletToLayout("my-account")).thenReturn(false);
+        try {
+            helper.validateToolIds(List.of("my-account"));
+            fail("non-placeable id accepted");
+        } catch (final BadRequestException expected) {
+            assertTrue(errorText(expected).contains("my-account"));
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateToolIds(List)}
+     * Given: the same id twice
+     * Expected: rejected, message names the id
+     */
+    @Test
+    public void validateToolIds_rejectsDuplicate_namingId() {
+        placeable("templates");
+        try {
+            helper.validateToolIds(List.of("templates", "templates"));
+            fail("duplicate id accepted");
+        } catch (final BadRequestException expected) {
+            assertTrue(errorText(expected).contains("templates"));
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateToolIds(List)}
+     * Given: an empty list
+     * Expected: accepted
+     */
+    @Test
+    public void validateToolIds_acceptsEmpty() {
+        assertEquals(List.of(), helper.validateToolIds(List.of()));
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateToolIds(List)}
+     * Given: the old Languages tool, registered and placeable though the catalog hides it
+     * Expected: accepted, because validation is about registration and placeability, not catalog membership
+     */
+    @Test
+    public void validateToolIds_acceptsLanguages_whenRegisteredAndPlaceable() {
+        placeable("languages");
+        assertEquals(List.of("languages"), helper.validateToolIds(List.of("languages")));
+    }
+
+    // ==================== US4: reorder validation and positions ====================
+
+    private static List<Layout> three() {
+        return List.of(layout("a", "A", "", 1), layout("b", "B", "", 2), layout("c", "C", "", 3));
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateOrder(List, List)}
+     * Given: exactly the existing ids, in any order
+     * Expected: accepted
+     */
+    @Test
+    public void validateOrder_acceptsExactSet() {
+        helper.validateOrder(List.of("c", "a", "b"), three());
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateOrder(List, List)}
+     * Given: a list that omits an existing id
+     * Expected: rejected, message names the missing id
+     */
+    @Test
+    public void validateOrder_rejectsMissingId_namingIt() {
+        try {
+            helper.validateOrder(List.of("c", "a"), three());
+            fail("missing id accepted");
+        } catch (final BadRequestException expected) {
+            assertTrue(errorText(expected).contains("b"));
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateOrder(List, List)}
+     * Given: a list with an id no section has
+     * Expected: rejected, message names the unknown id
+     */
+    @Test
+    public void validateOrder_rejectsUnknownId_namingIt() {
+        try {
+            helper.validateOrder(List.of("c", "a", "b", "zz"), three());
+            fail("unknown id accepted");
+        } catch (final BadRequestException expected) {
+            assertTrue(errorText(expected).contains("zz"));
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#validateOrder(List, List)}
+     * Given: a list that repeats an id
+     * Expected: rejected, message names the repeated id
+     */
+    @Test
+    public void validateOrder_rejectsDuplicateId_namingIt() {
+        try {
+            helper.validateOrder(List.of("a", "a", "b", "c"), three());
+            fail("duplicate id accepted");
+        } catch (final BadRequestException expected) {
+            assertTrue(errorText(expected).contains("a"));
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#positions(List)}
+     * Given: a validated order
+     * Expected: 1-based positions in list order
+     */
+    @Test
+    public void positions_assignOneBasedPositionsInListOrder() {
+        final Map<String, Integer> positions = helper.positions(List.of("c", "a", "b"));
+        assertEquals(Integer.valueOf(1), positions.get("c"));
+        assertEquals(Integer.valueOf(2), positions.get("a"));
+        assertEquals(Integer.valueOf(3), positions.get("b"));
+        assertEquals(3, positions.size());
     }
 }

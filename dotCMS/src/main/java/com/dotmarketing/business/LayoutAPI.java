@@ -4,6 +4,7 @@
 package com.dotmarketing.business;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -122,10 +123,26 @@ public interface LayoutAPI {
 	String GETTING_STARTED_LAYOUT_NAME = "Getting Started";
 
 	/**
-	 * returns or create the getting started layout
-	 * @return
+	 * Resolves the product's Getting Started section: by {@link #GETTING_STARTED_LAYOUT_ID}; if no
+	 * section has that id, by {@link #GETTING_STARTED_LAYOUT_NAME}, adopting that section as it is;
+	 * and only when neither exists, creates it with its default name, icon, position and welcome
+	 * tool. A resolved section that holds no tools gets the welcome tool back. The name, icon and
+	 * position of an existing section are never rewritten.
+	 *
+	 * @return the Getting Started section, with its tools populated
 	 */
     Layout findGettingStartedLayout();
+
+	/**
+	 * Rewrites the navigation position of several sections in one transaction: either every
+	 * position is written or none is. Evicts each section from the layout cache and notifies open
+	 * sessions once.
+	 *
+	 * @param tabOrderByLayoutId the new position of each section, keyed by section id; every id
+	 *                           must name an existing section
+	 * @throws DotDataException if an id names no section or the write fails; nothing is written
+	 */
+	void setTabOrders(Map<String, Integer> tabOrderByLayoutId) throws DotDataException;
 
     /**
      * Adds a layout to a user (using the user's role)
