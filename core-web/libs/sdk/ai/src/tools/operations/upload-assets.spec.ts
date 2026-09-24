@@ -100,6 +100,24 @@ describe('uploadAssets', () => {
         expect(callsTo(calls, '/api/v2/assets/publish')).toBe(2);
     });
 
+    it('streams each file from disk as a Blob, never as base64 in memory', async () => {
+        const { runtime, calls } = fakeRuntime();
+
+        await uploadAssets({ dotcms: runtime, src, dest: SITE, publish: true, verify: false });
+
+        const parts = calls
+            .filter((call) => call.path === '/api/v2/assets/publish')
+            .map((call) => call.formData?.['file'] as { name: string; data?: string; blob?: Blob });
+        expect(parts.map((part) => part.data)).toEqual([undefined, undefined]);
+        const sent = await Promise.all(
+            parts.map(async (part) => [part.name, await part.blob?.text()])
+        );
+        expect(Object.fromEntries(sent)).toEqual({
+            'main.vtl': '#set($x = 1)',
+            'style.css': '.a{color:red}'
+        });
+    });
+
     it('records a per-file failure without abandoning the rest of the batch', async () => {
         let seen = 0;
         const { runtime } = fakeRuntime({
@@ -300,8 +318,8 @@ describe('uploadAssets', () => {
         const { runtime } = fakeRuntime({
             onRequest: (opts) => {
                 if (opts.path === '/api/v2/assets/publish') {
-                    const data = (opts.formData as { file?: { data?: string } })?.file?.data;
-                    if (data === '') {
+                    const blob = (opts.formData as { file?: { blob?: Blob } })?.file?.blob;
+                    if (blob?.size === 0) {
                         throw new Error('HTTP 400 empty body rejected');
                     }
                 }

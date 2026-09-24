@@ -81,7 +81,7 @@ The same seven tools dotCMS's own MCP server ships, packaged for yours. You brin
 | `pageCreateTool` | `page_create` | Creates and publishes a page, creating its folder first so the URL cannot collapse | no | `CreatePageManifest` |
 | `pagePlaceContentTool` | `page_place_content` | Places contentlets into page slots without wiping the slots it didn't touch | no | `PagePlaceContentManifest` |
 | `pageVerifyTool` | `page_verify` | Renders a page and diagnoses empty slots, swallowed VTL errors and stale cache | yes | `VerifyPageManifest` |
-| `uploadAssetsTool` | `upload_assets` | Streams a local directory into dotCMS as file assets | no | `UploadAssetsManifest` |
+| `uploadAssetsTool` | `upload_assets` | Uploads a local directory into dotCMS as file assets | no | `UploadAssetsManifest` |
 | `downloadAssetsTool` | `download_assets` | Streams dotCMS file assets to a local directory | no | `DownloadAssetsManifest` |
 
 Create one **connection**, the dotCMS instance and identity the tools act as, then call a factory for each tool you want, passing the connection. Most tool packages in the AI SDK ecosystem work this way.
@@ -138,7 +138,7 @@ The exception is `execute`, where the *model* chooses the endpoints. `executeToo
 | `allow` | `executeTool` | none — the model's code may call any endpoint the token allows (the other tools are always limited to their own endpoints) |
 | `timeout` | `executeTool` | 45000 ms sandbox wall-clock |
 | `includeStacks` | `executeTool` | false — host stack traces are withheld from the model |
-| `requestTimeout` | page and asset tools | 30000 ms per request |
+| `requestTimeout` | page and asset tools | 30000 ms per request; for the asset tools that is per file, transfer included |
 | `root` | asset tools — **required** | none — the local directory the model's `src` / `dest` must stay inside, symlinks resolved |
 
 **The asset tools need a `root`.** `uploadAssetsTool` and `downloadAssetsTool` touch the local disk, with paths the model chooses. Without a boundary, a hosted server's `upload_assets` would read any directory the process can (and serve it back through dotCMS), and `download_assets` would write into any directory it can. Name the workspace the model may use:
@@ -149,6 +149,13 @@ downloadAssetsTool(dotcms, { root: '/srv/agent-workspace' })
 ```
 
 Paths are compared after symlinks resolve: a link inside the root that points out of it is refused, and so is a download that would write through a symlink. `root: '/'` is the explicit whole-disk choice, for a local agent acting as its own user. The dotCMS MCP server uses it.
+
+**File size.** The two directions differ:
+
+- **Downloads stream.** Each file's bytes go from the response straight to disk, a chunk at a time, so memory stays flat whatever the file's size (measured: a 200 MB asset with under 40 MB of growth). A file lands under a temporary name and is renamed into place only once complete, so a broken transfer never leaves a partial file or damages the one it was replacing.
+- **Uploads hold each file in memory once.** The file is opened as a disk-backed Blob and never copied or base64-encoded by the tool, but `fetch` gathers a request body into memory before sending it: measured on Node 22, a 1 GB file costs about 1 GB. **The largest file you can upload is bounded by the memory of the process running the tool.** Files go one at a time, so a batch costs its largest file, not its total. No cap is enforced; a file too large for the process fails when the process runs out of memory.
+
+Both directions are also bounded by `requestTimeout`, which covers each file's whole transfer: raise it for large files on a slow link.
 
 **`execute` never throws.** It validates the input against `inputSchema` (it comes from the model, so this is the trust boundary), runs the tool, and resolves to the result in the table above — or to a `ToolFailure`: `{ ok: false, code, retryable, error, status? }`. The `retryable` flag is there because a model cannot `instanceof` its way through a failure; it needs to be told whether trying again can help. `isToolFailure(result)` tells the two apart.
 

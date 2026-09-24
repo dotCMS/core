@@ -222,7 +222,8 @@ export { isBinaryResponseEnvelope } from './adapter/request-core';
 export type {
     BinaryResponseEnvelope,
     RequestOptions,
-    RequestCallEvent
+    RequestCallEvent,
+    ResponseBodyInfo
 } from './adapter/request-core';
 
 // Instance-context types injected into `run(code)` as globals.

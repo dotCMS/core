@@ -1,6 +1,10 @@
 import { vi } from 'vitest';
 import { z } from 'zod';
 
+import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { downloadAssetsTool } from './download-assets';
 import { executeTool } from './execute';
 import { pageCreateTool } from './page-create';
@@ -333,6 +337,59 @@ describe('tool factories', () => {
 
             expect(failure).toMatchObject({ code: 'TIMEOUT', retryable: true });
             expect(failure.error).toContain('20ms deadline');
+        });
+
+        it('keeps the deadline on a download while its body is still arriving', async () => {
+            // The asset answers at once and then stalls mid-body. The bytes stream to disk
+            // inside the request, so the same deadline ends the transfer — and the file that
+            // never finished is not left behind.
+            const dir = await mkdtemp(join(tmpdir(), 'dot-deadline-'));
+            fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+                if (String(url).includes('/api/content/_search')) {
+                    return jsonResponse({
+                        entity: {
+                            jsonObjectView: {
+                                contentlets: [
+                                    { identifier: 'a1', path: '//demo.dotcms.com/app/big.bin' }
+                                ]
+                            }
+                        }
+                    });
+                }
+
+                const body = new ReadableStream<Uint8Array>({
+                    start(controller) {
+                        controller.enqueue(new Uint8Array([1, 2, 3]));
+                        init?.signal?.addEventListener('abort', () =>
+                            controller.error(new DOMException('aborted', 'AbortError'))
+                        );
+                    }
+                });
+
+                return {
+                    ok: true,
+                    status: 200,
+                    statusText: 'OK',
+                    headers: { get: () => 'application/octet-stream' },
+                    body
+                } as unknown as Response;
+            });
+
+            try {
+                const manifest = (await downloadAssetsTool(DOTCMS, {
+                    root: dir,
+                    requestTimeout: 20
+                }).execute({ path: '//demo.dotcms.com/app', dest: dir })) as {
+                    failures: Array<{ path: string; error: string }>;
+                };
+
+                expect(manifest.failures).toEqual([
+                    { path: 'big.bin', error: expect.stringContaining('20ms deadline') }
+                ]);
+                expect(await readdir(dir)).toEqual([]);
+            } finally {
+                await rm(dir, { recursive: true, force: true });
+            }
         });
 
         it('bounds the model’s code in execute with the allow-list, before any request', async () => {

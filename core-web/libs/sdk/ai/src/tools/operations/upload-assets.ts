@@ -1,5 +1,5 @@
-import { constants } from 'node:fs';
-import { access, readdir, readFile, stat } from 'node:fs/promises';
+import * as fs from 'node:fs';
+import { access, readdir, stat } from 'node:fs/promises';
 import { basename, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 
 import {
@@ -191,19 +191,19 @@ async function uploadOneAsset(
     destPath: string,
     publish: boolean
 ): Promise<UploadOneResult> {
-    const bytes = await readFile(file.abs);
+    const type = mimeFor(file.rel);
 
-    const put = (data: Buffer) =>
+    // The file travels as a disk-backed Blob, so nothing here reads, copies or base64-encodes
+    // it. `fetch` still gathers the request body before sending, so each upload holds one
+    // copy of its file in memory — the documented upload size limitation. (It held about
+    // four: the read, its base64 string, the decode, and the Blob built from it.)
+    const put = (blob: Blob) =>
         dotcms.request({
             method: 'PUT',
             path: publish ? '/api/v2/assets/publish' : '/api/v2/assets/save',
             formData: {
                 path: destPath,
-                file: {
-                    name: basename(file.rel),
-                    type: mimeFor(file.rel),
-                    data: data.toString('base64')
-                }
+                file: { name: basename(file.rel), type, blob }
             }
         }) as Promise<{ entity?: { identifier?: string } }>;
 
@@ -211,13 +211,13 @@ async function uploadOneAsset(
     let warning: string | undefined;
     try {
         // Upload the real content, 0-byte included.
-        response = await put(bytes);
+        response = await put(await fileBlob(file.abs, type));
     } catch (error) {
         // Fallback: if (and only if) dotCMS rejects a 0-byte body, retry with a single
         // newline so the file still lands instead of being dropped. The demo postloop.vtl
         // indicates 0-byte is accepted, so this path is expected to be unused.
-        if (bytes.byteLength === 0) {
-            response = await put(Buffer.from('\n'));
+        if (file.bytes === 0) {
+            response = await put(new Blob(['\n'], { type }));
             // The remote asset now DIFFERS from the source: 1 byte where the source has 0.
             // Reporting a clean success would leave the caller unable to see that, and for
             // an empty VTL or CSS partial the difference is invisible until something
@@ -417,11 +417,30 @@ async function prepareReadableDir(src: string, root: string | undefined): Promis
     }
 
     await assertInsideRoot(root, 'src', resolved);
-    await access(resolved, constants.R_OK);
+    await access(resolved, fs.constants.R_OK);
 
     return resolved;
 }
 
 function mimeFor(path: string): string {
     return MIME_BY_EXT[extname(path).toLowerCase()] || 'application/octet-stream';
+}
+
+/** The subset of Bun's global this module uses, when it runs under Bun. */
+interface BunFileApi {
+    file(path: string, options?: { type?: string }): Blob;
+}
+
+/**
+ * A Blob whose bytes stay on disk until something reads them. Node has `fs.openAsBlob`
+ * (from 19.8; the package requires 20). Under Bun, `Bun.file` is the same thing and does
+ * not depend on how complete Bun's `node:fs` is.
+ */
+async function fileBlob(path: string, type: string): Promise<Blob> {
+    const bun = (globalThis as { Bun?: BunFileApi }).Bun;
+    if (bun) {
+        return bun.file(path, { type });
+    }
+
+    return fs.openAsBlob(path, { type });
 }

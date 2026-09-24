@@ -26,8 +26,22 @@ function isAbortError(err: unknown): boolean {
 interface FileFieldDescriptor {
     name: string; // filename, e.g. "logo.png"
     type: string; // MIME type, e.g. "image/png"
-    data?: string; // base64-encoded content (mutually exclusive with url)
-    url?: string; // URL to fetch content from (mutually exclusive with data)
+    data?: string; // base64-encoded content (exactly one of data, url, blob)
+    url?: string; // URL to fetch content from
+    // Content as a Blob, sent as-is. Host-side callers pass a file-backed one
+    // (`fs.openAsBlob`), so the caller never reads, copies or base64-encodes the file.
+    // `fetch` itself still gathers a request body into memory before sending it (measured
+    // on Node 22: one full copy, for FormData and stream bodies alike), so an upload costs
+    // about its own size in memory. `data` exists for sandboxed code, whose values cross a
+    // serialization boundary a disk-backed Blob cannot.
+    blob?: Blob;
+}
+
+/** What a response-body sink is told about the body it receives. */
+export interface ResponseBodyInfo {
+    contentType: string;
+    /** From `Content-Length`, when the server sent one. */
+    contentLength?: number;
 }
 
 type FormDataFieldValue = string | FileFieldDescriptor;
@@ -45,6 +59,13 @@ export interface RequestOptions {
     // survive the JSON.stringify boundary in the consuming sandbox. Set 'base64' to
     // force the binary path regardless of the declared content-type.
     responseType?: 'auto' | 'base64';
+    // Host only: hand a successful response's body stream to this sink instead of decoding
+    // it, and resolve to whatever the sink returns. The body is never buffered, and the
+    // request's deadline and abort signal stay in force until the sink settles — so a
+    // transfer cannot outlive the deadline that bounds it. Error responses never reach the
+    // sink; they are read and thrown as `HttpError` as usual. Sandboxed code cannot pass
+    // one: a function does not cross into the worker.
+    onBody?: (body: ReadableStream<Uint8Array>, info: ResponseBodyInfo) => Promise<unknown>;
 }
 
 /**
@@ -106,7 +127,9 @@ function isFileDescriptor(value: unknown): value is FileFieldDescriptor {
         value !== null &&
         typeof obj.name === 'string' &&
         typeof obj.type === 'string' &&
-        (typeof obj.data === 'string' || typeof obj.url === 'string')
+        (typeof obj['data'] === 'string' ||
+            typeof obj['url'] === 'string' ||
+            obj['blob'] instanceof Blob)
     );
 }
 
@@ -267,6 +290,10 @@ async function resolveFileDescriptor(
     desc: FileFieldDescriptor,
     signal?: AbortSignal
 ): Promise<Blob> {
+    if (desc.blob) {
+        // `slice` re-labels without copying, so a disk-backed Blob stays on disk.
+        return desc.blob.type ? desc.blob : desc.blob.slice(0, desc.blob.size, desc.type);
+    }
     if (desc.data) {
         const binary = Buffer.from(desc.data, 'base64');
         return new Blob([new Uint8Array(binary)], { type: desc.type });
@@ -303,8 +330,13 @@ async function resolveFileDescriptor(
         }
     }
     throw new ValidationError(
-        `File descriptor "${desc.name}" must have either "data" (base64) or "url"`
+        `File descriptor "${desc.name}" must have "data" (base64), "url" or "blob"`
     );
+}
+
+/** The body of a response that has none (`response.body` is null for a 204, say). */
+function emptyBody(): ReadableStream<Uint8Array> {
+    return new ReadableStream({ start: (controller) => controller.close() });
 }
 
 /**
@@ -455,7 +487,16 @@ export async function requestCore(
         const forceBinary = options.responseType === 'base64';
 
         let result: unknown;
-        if (!forceBinary && contentType.includes('application/json')) {
+        if (options.onBody) {
+            // Awaited HERE, inside the request, so the caller's signal and deadline keep
+            // covering the body until the sink has consumed it.
+            const declared = response.headers.get('content-length');
+            const declaredLength = declared === null ? NaN : Number(declared);
+            result = await options.onBody(response.body ?? emptyBody(), {
+                contentType,
+                contentLength: Number.isFinite(declaredLength) ? declaredLength : undefined
+            });
+        } else if (!forceBinary && contentType.includes('application/json')) {
             result = await response.json();
         } else if (!forceBinary && isTextualContentType(contentType)) {
             result = await response.text();

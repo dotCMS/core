@@ -194,6 +194,117 @@ describe('createRuntime.request (direct, no worker)', () => {
     });
 });
 
+describe('createRuntime.request — streaming file bodies (host only)', () => {
+    // A file goes to dotCMS and comes back out without ever being held whole in memory: the
+    // upload hands `fetch` a Blob it reads as it sends, the download hands the body stream
+    // to a sink that writes it. Neither is reachable from sandboxed code — a Blob the host
+    // opened from disk and a function are both things only the host can supply.
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        global.fetch = fetchMock as unknown as typeof fetch;
+    });
+
+    /** A 200 response whose body is `chunks`, and whose decoders fail the test if used. */
+    function streamResponse(chunks: string[], signal?: AbortSignal | null, hang = false) {
+        const encoder = new TextEncoder();
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                signal?.addEventListener('abort', () =>
+                    controller.error(new DOMException('The operation was aborted', 'AbortError'))
+                );
+                for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
+                if (!hang) controller.close();
+            }
+        });
+        const unused = () => {
+            throw new Error('the body was decoded instead of streamed');
+        };
+
+        return {
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            headers: {
+                get: (n: string) =>
+                    n.toLowerCase() === 'content-type' ? 'application/octet-stream' : null
+            },
+            body,
+            json: vi.fn(unused),
+            text: vi.fn(unused),
+            arrayBuffer: vi.fn(unused)
+        } as unknown as Response;
+    }
+
+    /** Everything a stream yields, as text. */
+    async function readAll(stream: ReadableStream<Uint8Array>): Promise<string> {
+        return new Response(stream).text();
+    }
+
+    it('sends a Blob file field as the multipart file part, unchanged', async () => {
+        fetchMock.mockResolvedValue(jsonResponse({ entity: { identifier: 'a-1' } }));
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+
+        await dotcms.request({
+            method: 'PUT',
+            path: '/api/v2/assets/publish',
+            formData: {
+                path: '//demo.dotcms.com/application/style.css',
+                file: { name: 'style.css', type: 'text/css', blob: new Blob(['.a{color:red}']) }
+            }
+        });
+
+        const form = fetchMock.mock.calls[0][1].body as FormData;
+        const part = form.get('file') as File;
+        expect(part.name).toBe('style.css');
+        expect(await part.text()).toBe('.a{color:red}');
+    });
+
+    it('hands a successful body to onBody and resolves to what it returns', async () => {
+        const response = streamResponse(['hello ', 'world']);
+        fetchMock.mockResolvedValue(response);
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+
+        const result = await dotcms.request({
+            path: '/api/v2/assets/a-1',
+            onBody: async (body, info) => ({ text: await readAll(body), type: info.contentType })
+        });
+
+        expect(result).toEqual({ text: 'hello world', type: 'application/octet-stream' });
+        expect(response.arrayBuffer).not.toHaveBeenCalled();
+    });
+
+    it('reports an error response as HttpError without calling onBody', async () => {
+        fetchMock.mockResolvedValue(jsonResponse({ message: 'nope' }, { ok: false, status: 404 }));
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+        const onBody = vi.fn();
+
+        await expect(
+            dotcms.request({ path: '/api/v2/assets/missing', onBody })
+        ).rejects.toBeInstanceOf(HttpError);
+        expect(onBody).not.toHaveBeenCalled();
+    });
+
+    it('keeps the abort signal in force until the sink has consumed the body', async () => {
+        // The body is still arriving when the caller aborts. Had the request settled at the
+        // headers, the transfer would carry on unbounded after the deadline had "fired".
+        fetchMock.mockImplementation(async (_url: string, init: RequestInit) =>
+            streamResponse(['partial'], init.signal, true)
+        );
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 20);
+
+        const pending = dotcms.request(
+            { path: '/api/v2/assets/a-1', onBody: (body) => readAll(body) },
+            { signal: controller.signal }
+        );
+
+        await expect(pending).rejects.toBeInstanceOf(AbortError);
+    });
+});
+
 describe('createRuntime.run — context-load timeout', () => {
     const fetchMock = vi.fn();
 

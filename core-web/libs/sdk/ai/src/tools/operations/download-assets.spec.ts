@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 
-import { mkdir, mkdtemp, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -26,6 +26,15 @@ interface FakeOptions {
     onRequest?: (options: RequestOptions) => unknown;
 }
 
+/** An asset body the fake serves as a stream — and only to a request that asked to stream. */
+interface FakeBody {
+    fakeBody: () => ReadableStream<Uint8Array>;
+}
+
+function isFakeBody(value: unknown): value is FakeBody {
+    return typeof (value as FakeBody | undefined)?.fakeBody === 'function';
+}
+
 function fakeRuntime(options?: FakeOptions) {
     const calls: RequestOptions[] = [];
 
@@ -33,21 +42,52 @@ function fakeRuntime(options?: FakeOptions) {
         seen.push(opts);
         calls.push(opts);
 
-        return options?.onRequest?.(opts) ?? {};
+        const out = options?.onRequest?.(opts);
+        if (isFakeBody(out)) {
+            // The real core hands a successful body to `onBody`. An asset read without one
+            // would be buffering the whole file, which is exactly what this operation must not do.
+            if (!opts.onBody) {
+                throw new Error('asset bytes must be streamed through onBody, not buffered');
+            }
+            return opts.onBody(out.fakeBody(), { contentType: 'text/css' });
+        }
+
+        return out ?? {};
     });
 
     return { runtime: { request } as unknown as DotCMSRuntime, calls };
 }
 
-/** The binary envelope `downloadAssetBytes` expects back from an asset read. */
-function binary(text: string) {
-    const base64 = Buffer.from(text, 'utf8').toString('base64');
-
+/** An asset read that streams `text`. */
+function binary(text: string): FakeBody {
     return {
-        __dotcmsBinary: true as const,
-        contentType: 'text/css',
-        base64,
-        byteLength: Buffer.byteLength(text)
+        fakeBody: () =>
+            new ReadableStream({
+                start(controller) {
+                    controller.enqueue(new TextEncoder().encode(text));
+                    controller.close();
+                }
+            })
+    };
+}
+
+/** An asset read that streams `first`, then fails — a connection dropped mid-transfer. */
+function brokenBody(first: string): FakeBody {
+    return {
+        fakeBody: () => {
+            let sent = false;
+
+            return new ReadableStream({
+                pull(controller) {
+                    if (!sent) {
+                        sent = true;
+                        controller.enqueue(new TextEncoder().encode(first));
+                        return;
+                    }
+                    controller.error(new Error('socket hang up'));
+                }
+            });
+        }
     };
 }
 
@@ -103,6 +143,69 @@ describe('downloadAssets', () => {
 
         expect(manifest.count).toBe(1);
         expect(await readFile(join(dest, 'style.css'), 'utf8')).toBe('body');
+    });
+
+    it('skips an existing file without downloading its bytes', async () => {
+        await writeFile(join(dest, 'style.css'), 'local');
+        const { runtime, calls } = searchRuntime([
+            { identifier: 'a1', path: '//demo.dotcms.com/application/themes/travel/style.css' }
+        ]);
+
+        const manifest = await downloadAssets({
+            dotcms: runtime,
+            path: '//demo.dotcms.com/application/themes/travel',
+            dest,
+            recursive: true,
+            overwrite: 'skip'
+        });
+
+        expect(manifest.skipped).toEqual([{ path: 'style.css', reason: 'exists' }]);
+        expect(callsTo(calls, '/api/v2/assets/a1')).toBe(0);
+        expect(await readFile(join(dest, 'style.css'), 'utf8')).toBe('local');
+    });
+
+    it('leaves no partial file when a transfer breaks, and keeps the file it would replace', async () => {
+        // The bytes land in a temporary file that is renamed into place only once complete.
+        // Written in place, a dropped connection would truncate the existing file to whatever
+        // had arrived — the one outcome worse than not downloading at all.
+        await writeFile(join(dest, 'style.css'), 'the good copy');
+        const { runtime } = fakeRuntime({
+            onRequest: (opts) => {
+                if (opts.path === '/api/content/_search') {
+                    return {
+                        entity: {
+                            jsonObjectView: {
+                                contentlets: [
+                                    {
+                                        identifier: 'a1',
+                                        path: '//demo.dotcms.com/application/style.css'
+                                    }
+                                ]
+                            }
+                        }
+                    };
+                }
+                if (opts.path?.startsWith('/api/v2/assets/')) {
+                    return brokenBody('.half{');
+                }
+
+                return undefined;
+            }
+        });
+
+        const manifest = await downloadAssets({
+            dotcms: runtime,
+            path: '//demo.dotcms.com/application',
+            dest,
+            recursive: true,
+            overwrite: 'overwrite'
+        });
+
+        expect(manifest.failures).toEqual([
+            { path: 'style.css', error: expect.stringContaining('socket hang up') }
+        ]);
+        expect(await readFile(join(dest, 'style.css'), 'utf8')).toBe('the good copy');
+        expect(await readdir(dest)).toEqual(['style.css']);
     });
 
     it('explains a zero-match instead of reporting an empty success', async () => {

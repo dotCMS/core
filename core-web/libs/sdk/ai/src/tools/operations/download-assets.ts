@@ -1,6 +1,7 @@
+import { randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
-import { access, mkdir, writeFile } from 'node:fs/promises';
-import { basename, extname, isAbsolute, posix, relative, resolve, sep } from 'node:path';
+import { access, mkdir, open, rename, rm } from 'node:fs/promises';
+import { basename, dirname, extname, isAbsolute, posix, relative, resolve, sep } from 'node:path';
 
 import {
     normalizeDotCMSPath,
@@ -13,7 +14,7 @@ import {
 import { includeMatcher } from './shared/glob';
 import { assertInsideRoot, assertWritableInsideRoot } from './shared/local-root';
 
-import { type DotCMSRuntime, isBinaryResponseEnvelope, ValidationError } from '../../runtime';
+import { type DotCMSRuntime, ValidationError } from '../../runtime';
 import { type Endpoint } from '../toolkit/endpoints';
 import { errorMessage } from '../toolkit/tool-runtime';
 
@@ -96,15 +97,12 @@ export async function downloadAssets(
 
     // Each download is wrapped in the same try/catch so one failure records a failure and
     // doesn't abort the batch — both the single-asset path and the folder loop go through it.
-    const download = async (
-        rel: string,
-        fetchBytes: () => Promise<Buffer>,
-        identifier?: string
-    ) => {
+    const download = async (rel: string, source: () => AssetSource, identifier?: string) => {
         try {
-            const result = await writeDownloadedFile(
+            const result = await saveAsset(
+                options.dotcms,
                 { dest, rel, overwrite: options.overwrite, root: options.root },
-                await fetchBytes(),
+                source(),
                 identifier
             );
             if (result.kind === 'written') files.push(result.file);
@@ -115,12 +113,10 @@ export async function downloadAssets(
     };
 
     if (directAssetPath) {
-        await download(basename(input.path), () =>
-            downloadAssetBytes(options.dotcms, {
-                path: '/api/v2/assets',
-                query: { path: assetQueryPath(input) }
-            })
-        );
+        await download(basename(input.path), () => ({
+            path: '/api/v2/assets',
+            query: { path: assetQueryPath(input) }
+        }));
     } else {
         const { assets, truncated } = await enumerateAssets(
             options.dotcms,
@@ -154,9 +150,7 @@ export async function downloadAssets(
                     if (!identifier || !relativeAssetPath(input.path, assetPath)) {
                         throw new Error('Asset is missing identifier or path');
                     }
-                    return downloadAssetBytes(options.dotcms, {
-                        path: `/api/v2/assets/${encodeURIComponent(identifier)}`
-                    });
+                    return { path: `/api/v2/assets/${encodeURIComponent(identifier)}` };
                 },
                 identifier
             );
@@ -179,27 +173,89 @@ type WriteResult =
     | { kind: 'written'; file: AssetManifestFile }
     | { kind: 'skipped'; skip: AssetManifestSkipped };
 
-async function writeDownloadedFile(
-    options: { rel: string; dest: string; overwrite: OverwriteMode; root?: string },
-    bytes: Buffer,
+/** The read that returns an asset's bytes: by identifier, or by path query. */
+interface AssetSource {
+    path: string;
+    query?: Record<string, string>;
+}
+
+/**
+ * Save one asset to disk, streaming its bytes straight from the response into the file.
+ *
+ * Everything that can refuse the write is decided BEFORE the request: the path, the root, and
+ * the overwrite mode — so `skip` never transfers bytes it would throw away.
+ */
+async function saveAsset(
+    dotcms: DotCMSRuntime,
+    target: { rel: string; dest: string; overwrite: OverwriteMode; root?: string },
+    source: AssetSource,
     identifier?: string
 ): Promise<WriteResult> {
-    const outputPath = safeJoin(options.dest, options.rel);
+    const outputPath = safeJoin(target.dest, target.rel);
     // `safeJoin` keeps the path inside `dest` as a string; this keeps the WRITE inside the root
     // — a symlinked directory or file already inside `dest` would otherwise redirect it.
-    await assertWritableInsideRoot(options.root, outputPath);
+    await assertWritableInsideRoot(target.root, outputPath);
     if (await exists(outputPath)) {
-        if (options.overwrite === 'skip') {
-            return { kind: 'skipped', skip: { path: options.rel, reason: 'exists' } };
+        if (target.overwrite === 'skip') {
+            return { kind: 'skipped', skip: { path: target.rel, reason: 'exists' } };
         }
-        if (options.overwrite === 'error') {
+        if (target.overwrite === 'error') {
             throw new Error('Destination file already exists');
         }
     }
 
-    await mkdir(resolve(outputPath, '..'), { recursive: true });
-    await writeFile(outputPath, bytes);
-    return { kind: 'written', file: { path: options.rel, bytes: bytes.byteLength, identifier } };
+    const bytes = (await dotcms.request({
+        ...source,
+        onBody: (body) => writeBodyToFile(outputPath, body)
+    })) as number;
+
+    return { kind: 'written', file: { path: target.rel, bytes, identifier } };
+}
+
+/**
+ * Write a response body to `outputPath` and return how many bytes it held.
+ *
+ * The bytes go to a temporary file beside the target, renamed over it only once the body is
+ * complete. Written in place, a transfer that broke halfway would leave the target truncated —
+ * and, with `overwrite`, would have already destroyed the good copy it was replacing. The
+ * temporary file is opened exclusively (`wx`), so it is never an existing file or a planted
+ * symlink; the rename replaces the target's directory entry rather than writing through it.
+ */
+async function writeBodyToFile(
+    outputPath: string,
+    body: ReadableStream<Uint8Array>
+): Promise<number> {
+    await mkdir(dirname(outputPath), { recursive: true });
+    const partial = `${outputPath}.${randomUUID()}.part`;
+    const reader = body.getReader();
+    let bytes = 0;
+
+    try {
+        const file = await open(partial, 'wx');
+        try {
+            for (;;) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                // Awaiting each write is the backpressure: the next chunk is not read until
+                // this one is on disk, so memory holds one chunk, not the file.
+                await file.write(value);
+                bytes += value.byteLength;
+            }
+        } finally {
+            await file.close();
+        }
+
+        if (bytes === 0) {
+            throw new Error('Downloaded asset was empty');
+        }
+        await rename(partial, outputPath);
+
+        return bytes;
+    } catch (error) {
+        await reader.cancel().catch(() => undefined);
+        await rm(partial, { force: true });
+        throw error;
+    }
 }
 
 /**
@@ -270,25 +326,6 @@ async function enumerateAssets(
 
     // Out of pages on a full one: there are results left that this walk did not read.
     return { assets, truncated: true };
-}
-
-/** Fetch an asset's raw bytes — by identifier (`/api/v2/assets/{id}`) or by path query. */
-async function downloadAssetBytes(
-    dotcms: DotCMSRuntime,
-    request: { path: string; query?: Record<string, string> }
-): Promise<Buffer> {
-    const response = await dotcms.request({ ...request, responseType: 'base64' });
-
-    if (!isBinaryResponseEnvelope(response)) {
-        throw new Error('Expected a binary asset response');
-    }
-
-    const bytes = Buffer.from(response.base64, 'base64');
-    if (bytes.byteLength === 0) {
-        throw new Error('Downloaded asset was empty');
-    }
-
-    return bytes;
 }
 
 /** The path to send to the `/api/v2/assets?path=` query — host-qualified when available. */

@@ -49,7 +49,7 @@ const definition = defineTool({
 ALWAYS use this tool to put files into dotCMS — do NOT hand-roll uploads with the \`execute\`
 tool, a direct API call, or a custom script. This is the supported path and it is strictly
 better for two reasons:
-  1. File bytes are read from disk by the server and streamed straight to dotCMS — they NEVER
+  1. File bytes are read from disk by the server and sent straight to dotCMS — they NEVER
      pass through your context. Use this whenever you'd otherwise inline file content (e.g. large
      VTL/CSS blobs) into a tool call; it keeps that content out of the conversation entirely.
   2. Auth is already configured on the server. You do NOT need a dotCMS token, a \`.env\` file, or
@@ -93,9 +93,12 @@ tool, then reference them from a container/template via \`#dotParse\`.`,
 });
 
 /**
- * The `upload_assets` tool: streams a local directory into dotCMS as file assets — the bytes
+ * The `upload_assets` tool: uploads a local directory into dotCMS as file assets — the bytes
  * never pass through the model. Needs Node or Bun. Resolves to an {@link UploadAssetsManifest}.
  * `options.root` bounds which local directories the model may read from.
+ *
+ * Each file is held in memory once while it is sent (`fetch` buffers request bodies), so the
+ * largest file you can upload is bounded by the memory of the process running the tool.
  */
 export function uploadAssetsTool(
     connection: DotCMSConnection,

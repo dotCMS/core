@@ -268,7 +268,7 @@ return pick(result.contentlets, ['identifier', 'title', 'modDate'])
 }
 ```
 
-The tool enumerates file assets with `/api/content/_search`, downloads bytes with `/api/v2/assets/{identifier}` through the server-side runtime, writes files under `dest`, and preserves relative folder structure. File bytes are not returned to the model.
+The tool enumerates file assets with `/api/content/_search`, downloads bytes with `/api/v2/assets/{identifier}` through the server-side runtime, writes files under `dest`, and preserves relative folder structure. File bytes are not returned to the model. Each file streams to disk, so memory stays flat whatever its size, and lands under a temporary name renamed into place once complete, so a broken transfer leaves no partial file.
 
 ### Upload Assets
 
@@ -287,6 +287,8 @@ The tool enumerates file assets with `/api/content/_search`, downloads bytes wit
 ```
 
 The upload destination must be host-qualified. When `publish` and `verify` are true, the tool checks live status with `/api/v1/content/{identifier}` and retries publish for files that did not become live.
+
+**File size limitation:** each file is held in memory once while it is sent, because `fetch` buffers request bodies. The largest file you can upload is bounded by the memory available to the server process. Files go one at a time, so a batch costs its largest file, not its total. No cap is enforced.
 
 ### Pre-loaded Instance Context
 
