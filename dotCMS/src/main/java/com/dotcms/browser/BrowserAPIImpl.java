@@ -968,6 +968,20 @@ public class BrowserAPIImpl implements BrowserAPI {
     static final String BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY = "BROWSER_SINGLE_PASS_CHUNK_SIZE";
     static final int BROWSER_SINGLE_PASS_CHUNK_SIZE_DEFAULT = 7_000;
 
+    // Longest query_string the index server accepts, mirroring its
+    // search.query.max_query_string_length setting (OpenSearch 2.19.4+/3.3.0+, default 32000).
+    // Every ES sub-query carries "+inode:(id1 OR id2 ...)" for its DB candidates, so batches are
+    // sized against this as well as against the boolean-clause limit; without it a full
+    // clause-sized batch (~876 inodes) is ~35 KB and is rejected (issue #37695). Set it to the
+    // cluster's value if an operator changed that setting. Values <= 0 fall back to the default.
+    // Public so tests outside this package can lower it.
+    public static final String BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY = "BROWSER_ES_MAX_QUERY_STRING_LENGTH";
+    public static final int BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT = 32_000;
+
+    // Share of BROWSER_ES_MAX_QUERY_STRING_LENGTH a sub-query may use, leaving room for any
+    // server-side rewriting of the query we cannot see.
+    static final double ES_QUERY_STRING_LENGTH_SAFETY_RATIO = 0.95;
+
     /**
      * Represents content items under a specific parent along with the total count.
      * This class is immutable and holds a list of content items and their total results count.
@@ -1022,6 +1036,37 @@ public class BrowserAPIImpl implements BrowserAPI {
             // Split into multiple ES queries to respect the clause limit
             return processMultipleESQueries(browserQuery, inodes, maxInodesPerESQuery, startTime);
         }
+    }
+
+    /**
+     * Splits an ordered list of candidate inodes into the batches that become ES sub-queries.
+     * Each batch is sent as {@code " +inode:(id1 OR id2 ...) " + baseQuery} inside a
+     * {@code query_string}, so a batch must stay within both the boolean-clause cap and the
+     * index server's maximum query-string length.
+     *
+     * <p>The batches are consecutive slices of {@code inodes}: joined back together they give the
+     * input, in the same order. Every batch holds at least one inode, at most
+     * {@code maxInodesByClauses} inodes, and produces a query string of at most
+     * {@code maxQueryLength} characters. If the base query leaves no room for even the longest
+     * inode, no batch can be built and the result is empty.</p>
+     *
+     * <p>STUB (issue #37695, TDD Red phase): currently splits by {@code maxInodesByClauses} only,
+     * exactly as {@link #processMultipleESQueries} does today, ignoring both lengths.</p>
+     *
+     * @param inodes             Candidate inodes, in DB order.
+     * @param baseQueryLength    Length of the base query the inode restriction is prepended to.
+     * @param maxQueryLength     Longest query string a sub-query may produce.
+     * @param maxInodesByClauses Most inodes a sub-query may hold under the boolean-clause limit.
+     * @return The batches, in order; empty when {@code inodes} is empty or nothing fits.
+     */
+    @VisibleForTesting
+    static List<List<String>> partitionInodesForES(final List<String> inodes, final int baseQueryLength,
+            final int maxQueryLength, final int maxInodesByClauses) {
+        final List<List<String>> batches = new ArrayList<>();
+        for (int i = 0; i < inodes.size(); i += maxInodesByClauses) {
+            batches.add(inodes.subList(i, Math.min(i + maxInodesByClauses, inodes.size())));
+        }
+        return batches;
     }
 
     /**
