@@ -7,17 +7,15 @@
     "tags": [],
     "targets": {
         "build": {
-            "executor": "@nx/angular:package",
+            "executor": "nx:run-commands",
             "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
             "defaultConfiguration": "production",
             "options": {
-                "project": "libs/sdk/angular/ng-package.json",
-                "tsConfig": "libs/sdk/angular/tsconfig.lib.json"
+                "command": "node libs/sdk/angular/toolchain/build.mjs",
+                "cwd": "{workspaceRoot}"
             },
             "configurations": {
-                "production": {
-                    "tsConfig": "libs/sdk/angular/tsconfig.lib.prod.json"
-                },
+                "production": {},
                 "development": {}
             }
         }

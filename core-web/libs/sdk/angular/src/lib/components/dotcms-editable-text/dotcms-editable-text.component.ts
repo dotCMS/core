@@ -45,7 +45,9 @@ interface DotEditableTextEditor {
     templateUrl: './dotcms-editable-text.component.html',
     styleUrl: './dotcms-editable-text.component.css',
     imports: [EditorComponent],
-    changeDetection: ChangeDetectionStrategy.Eager,
+    // Default, not Eager: Eager does not exist in Angular 19, the oldest version this SDK
+    // is built with and supports (libs/sdk/angular/toolchain/README.md). Both mean check-always.
+    changeDetection: ChangeDetectionStrategy.Default,
     providers: [
         {
             provide: TINYMCE_SCRIPT_SRC,

@@ -20,7 +20,9 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
     selector: 'dotcms-block-editor-renderer-block',
     templateUrl: './dotcms-block-editor-item.component.html',
     styleUrls: ['./dotcms-block-editor-item.component.scss'],
-    changeDetection: ChangeDetectionStrategy.Eager,
+    // Default, not Eager: Eager does not exist in Angular 19, the oldest version this SDK
+    // is built with and supports (libs/sdk/angular/toolchain/README.md). Both mean check-always.
+    changeDetection: ChangeDetectionStrategy.Default,
     imports: [
         NgTemplateOutlet,
         NgComponentOutlet,

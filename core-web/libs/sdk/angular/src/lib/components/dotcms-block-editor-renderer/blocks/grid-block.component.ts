@@ -9,7 +9,9 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
 @Component({
     selector: 'dotcms-block-editor-renderer-grid-block',
     imports: [NgComponentOutlet],
-    changeDetection: ChangeDetectionStrategy.Eager,
+    // Default, not Eager: Eager does not exist in Angular 19, the oldest version this SDK
+    // is built with and supports (libs/sdk/angular/toolchain/README.md). Both mean check-always.
+    changeDetection: ChangeDetectionStrategy.Default,
     template: `
         <div
             data-type="gridBlock"

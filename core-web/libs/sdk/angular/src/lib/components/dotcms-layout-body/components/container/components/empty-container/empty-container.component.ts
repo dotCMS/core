@@ -14,7 +14,9 @@ import { DotCMSStore } from '../../../../../../store/dotcms.store';
 @Component({
     selector: 'dotcms-empty-container',
     imports: [NgStyle],
-    changeDetection: ChangeDetectionStrategy.Eager,
+    // Default, not Eager: Eager does not exist in Angular 19, the oldest version this SDK
+    // is built with and supports (libs/sdk/angular/toolchain/README.md). Both mean check-always.
+    changeDetection: ChangeDetectionStrategy.Default,
     template: `
         @if ($isDevMode()) {
             <div [ngStyle]="emptyContainerStyle" data-testid="empty-container">
