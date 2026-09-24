@@ -290,6 +290,46 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     }
 
     /**
+     * Given: an asset type already in the schema, and a query already served from it.
+     * When: the customer adds a property to that existing type, and an asset stores a value in it.
+     * Then: the property is readable through an Image field, with no administrative step between.
+     *
+     * <p>FR-005 / SC-004. Unlike the fixture helpers, this test deliberately does NOT call
+     * {@code invalidateSchema()}: the only thing refreshing the schema is what production relies
+     * on, {@code ContentTypeAndFieldsModsListeners} reacting to the field being saved. Every other
+     * test invalidates by hand, so without this one a broken listener would go unnoticed while
+     * customers stopped seeing new properties until a restart.
+     */
+    @Test
+    public void test_propertyAddedToExistingAssetType_isReadableWithoutManualInvalidation()
+            throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final ContentType holder = newHolderType();
+
+        // Serve a query first, so the schema is built and cached before the property exists.
+        final Contentlet before = newHolderContent(holder, IMAGE_FIELD_VAR,
+                newAssetOf(assetType, "Before"));
+        queryCompanion(holder, before, IMAGE_FIELD_VAR,
+                String.format("... on %s { %s }", assetType.variable(), CUSTOM_PROPERTY_VAR));
+
+        final String addedVar = "adSize" + System.nanoTime();
+        APILocator.getContentTypeFieldAPI().save(FieldBuilder.builder(TextField.class)
+                .name(addedVar).variable(addedVar)
+                .contentTypeId(assetType.id()).dataType(DataTypes.TEXT).indexed(true)
+                .build(), systemUser);
+
+        final Contentlet after = newHolderContent(holder, IMAGE_FIELD_VAR,
+                newAssetOf(assetType, "After", Map.of(addedVar, "300x250")));
+
+        final Map<String, Object> image = queryCompanion(holder, after, IMAGE_FIELD_VAR,
+                String.format("... on %s { %s }", assetType.variable(), addedVar));
+
+        assertEquals("a property added to an existing asset type must be readable without any "
+                        + "manual schema invalidation",
+                "300x250", image.get(addedVar));
+    }
+
+    /**
      * Given: an Image field and its companion, selected together.
      * When: the flat properties and a narrowing clause are requested at the <b>same level</b>.
      * Then: both come back, and the flat properties are unchanged.
