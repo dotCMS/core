@@ -1,7 +1,7 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Mock, vi } from 'vitest';
 
-import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -23,7 +23,8 @@ describe('OverlayEditContentHost', () => {
                 titleCache: vi.fn().mockReturnValue({ 'inode-a': 'A', 'inode-b': 'B' }),
                 registerTitle: vi.fn()
             }),
-            mockProvider(DynamicDialogConfig, { data: undefined })
+            mockProvider(DynamicDialogConfig, { data: undefined }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() })
         ]
     });
 
@@ -60,6 +61,14 @@ describe('OverlayEditContentHost', () => {
                 inode: 'inode-9',
                 contentTypeId: 'Blog'
             });
+        });
+    });
+
+    describe('leaveDeletedContent', () => {
+        it('closes the overlay', () => {
+            host.leaveDeletedContent('SimpleWidget');
+
+            expect(spectator.inject(DynamicDialogRef).close).toHaveBeenCalled();
         });
     });
 

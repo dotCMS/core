@@ -2,7 +2,7 @@ import { Subject } from 'rxjs';
 
 import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 
-import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -41,6 +41,7 @@ import {
 export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #relatedNav = inject(DotRelatedContentNavigationStore);
     readonly #config = inject(DynamicDialogConfig, { optional: true });
+    readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
     readonly #saved$ = new Subject<DotCMSContentlet>();
 
@@ -116,6 +117,11 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         // host re-navigates; the overlay has no route, so it reloads via the in-place
         // navigation stream (mirrors reloadContent). The trail is left untouched.
         this.#navigation$.next({ inode });
+    }
+
+    leaveDeletedContent(_contentType: string): void {
+        // The overlay has no listing to return to; just close it.
+        this.#dialogRef?.close();
     }
 
     goToRelatedContent(current: DotRelatedContentCrumb, target: DotRelatedContentCrumb): void {

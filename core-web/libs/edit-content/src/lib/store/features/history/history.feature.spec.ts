@@ -194,6 +194,7 @@ describe('HistoryFeature', () => {
         setContentTitle: vi.fn(),
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
+        leaveDeletedContent: vi.fn(),
         goToRestoredVersion: vi.fn()
     };
 
@@ -490,14 +491,14 @@ describe('HistoryFeature', () => {
             expect(store.pushPublishHistory()).toEqual(expectedSorted);
         }));
 
-        it('should handle errors and update error state', fakeAsync(() => {
-            const error = new HttpErrorResponse({ error: 'Test error', status: 500 });
+        it('should set the error state without opening the global error dialog', fakeAsync(() => {
+            const error = new HttpErrorResponse({ error: 'Test error', status: 404 });
             dotEditContentService.getPushPublishHistory.mockReturnValue(throwError(() => error));
 
             store.loadPushPublishHistory({ identifier: 'test-identifier', page: 1 });
             tick();
 
-            expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+            expect(dotHttpErrorManagerService.handle).not.toHaveBeenCalled();
             expect(store.pushPublishHistoryStatus().status).toBe(ComponentStatus.ERROR);
         }));
     });
