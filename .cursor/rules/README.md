@@ -17,7 +17,8 @@ Project rules live in `.cursor/rules/`. Cursor applies them according to the rul
 - **frontend-context.mdc** – Globs: `core-web/**/*.{ts,tsx,html,scss,css}`. Nx monorepo, Angular, SDK, docs/frontend index.
 - **java-context.mdc** – Globs: `**/*.java`, `**/pom.xml`, `dotCMS/src/**/*`. Config, Logger, Maven.
 - **test-context.mdc** – Globs: `**/*.spec.ts`, `**/*Test.java`, etc. Spectator, data-testid.
-- **doc-updates.mdc** – Globs: `**/*.md`, `docs/**/*`. Where to update docs, DRY.
+- **doc-updates.mdc** – Globs: `**/*.md`, `**/*.mdc`, `CLAUDE.md`, `docs/**/*`. Where to update docs, DRY.
+- **e2e-rules.mdc** – Globs: `core-web/apps/dotcms-ui-e2e/**/*.spec.ts`. Page Object Model conventions for E2E tests.
 
 ## Best practices (Cursor docs)
 

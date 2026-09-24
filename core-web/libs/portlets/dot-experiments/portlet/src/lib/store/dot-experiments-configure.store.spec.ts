@@ -1,10 +1,11 @@
 import { Dispatcher, Events, provideDispatcher } from '@ngrx/signals/events';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { concat, of, Subject, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { ActivatedRoute, convertToParamMap, ParamMap, Params, Router } from '@angular/router';
 
 import {
@@ -32,12 +33,14 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 
 import { dotExperimentsConfigureApiEvents } from './dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from './dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from './dot-experiments-configure.store';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     PAGE_LOOKUP_LIMIT,
     DEFAULT_TRAFFIC_ALLOCATION,
@@ -90,6 +93,7 @@ const buildGoals = (goal: Partial<Goal> = {}): Goals => ({
 const buildExperiment = (experiment: Partial<DotExperiment> = {}): DotExperiment => ({
     id: EXPERIMENT_ID,
     pageId: PAGE.pageId,
+    createdBy: 'dotcms.org.1',
     name: 'Alpha campaign',
     description: 'Checkout funnel rework',
     status: DotExperimentStatus.DRAFT,
@@ -156,21 +160,21 @@ describe('DotExperimentsConfigureStore', () => {
     let store: InstanceType<typeof DotExperimentsConfigureStore>;
     let dispatcher: Dispatcher;
     let events: Events;
-    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
 
-    const getById = jest.fn();
-    const add = jest.fn();
-    const patchExperiment = jest.fn();
-    const addVariant = jest.fn();
-    const editVariant = jest.fn();
-    const removeVariant = jest.fn();
-    const start = jest.fn();
-    const stop = jest.fn();
-    const cancelSchedule = jest.fn();
-    const contentSearchGet = jest.fn();
-    const searchPages = jest.fn();
-    const messageGet = jest.fn();
-    const navigate = jest.fn();
+    const getById = vi.fn();
+    const add = vi.fn();
+    const patchExperiment = vi.fn();
+    const addVariant = vi.fn();
+    const editVariant = vi.fn();
+    const removeVariant = vi.fn();
+    const start = vi.fn();
+    const stop = vi.fn();
+    const cancelSchedule = vi.fn();
+    const contentSearchGet = vi.fn();
+    const searchPages = vi.fn();
+    const messageGet = vi.fn();
+    const navigate = vi.fn();
 
     /** `GlobalStore` is root-provided; only the two signals this store reads are stubbed. */
     const globalStoreMock = {
@@ -216,6 +220,9 @@ describe('DotExperimentsConfigureStore', () => {
         mockProvider(DotMessageService, { get: messageGet }),
         { provide: GlobalStore, useValue: globalStoreMock },
         { provide: Router, useValue: { navigate } },
+        // Real, not mocked: these tests assert where the post-create swap lands, and this is what
+        // decides it.
+        DotExperimentsRouter,
         { provide: ActivatedRoute, useValue: activatedRouteStub }
     ];
 
@@ -249,7 +256,7 @@ describe('DotExperimentsConfigureStore', () => {
         events = spectator.inject(Events);
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
-        ) as jest.Mocked<DotHttpErrorManagerService>;
+        ) as Mocked<DotHttpErrorManagerService>;
         spectator.flushEffects();
     };
 
@@ -336,7 +343,7 @@ describe('DotExperimentsConfigureStore', () => {
      * Makes a call hang until the test answers it, which is the only way to observe the state
      * the store is in *while* a request is in flight.
      */
-    const pendingCall = (call: jest.Mock): Subject<DotExperiment> => {
+    const pendingCall = (call: Mock): Subject<DotExperiment> => {
         const settled = new Subject<DotExperiment>();
         call.mockReturnValue(settled);
 
@@ -347,8 +354,8 @@ describe('DotExperimentsConfigureStore', () => {
         new HttpErrorResponse({ status, error });
 
     beforeEach(() => {
-        jest.resetAllMocks();
-        jest.useFakeTimers();
+        vi.resetAllMocks();
+        vi.useFakeTimers();
 
         routeParams = {};
         routeQueryParams = {};
@@ -373,7 +380,7 @@ describe('DotExperimentsConfigureStore', () => {
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('loading an existing experiment', () => {
@@ -584,28 +591,6 @@ describe('DotExperimentsConfigureStore', () => {
             dispatcher.dispatch(pageEvents.pageSelected({ ...PAGE, pageId: 'page-2' }));
 
             expect(add).toHaveBeenCalledTimes(1);
-        });
-
-        it('should replace /new with the created experiment url', () => {
-            const created = buildExperiment({ id: 'exp-created' });
-            // Both calls answer with the same draft: the follow-up PATCH replacing it with some
-            // other experiment is the fixture talking, not the store.
-            add.mockReturnValue(of(created));
-            patchExperiment.mockReturnValue(of(created));
-            initNew();
-
-            createDraft(VALID_DRAFT.name, created);
-
-            expect(store.experiment()).toEqual(created);
-            expect(store.isNew()).toBe(false);
-            expect(navigate).toHaveBeenCalledWith(['..', created.id, 'configuration'], {
-                relativeTo: activatedRouteStub,
-                replaceUrl: true,
-                // The page narrowing the screen was opened with has to survive the swap: it is
-                // what the back arrow returns to, and what a reload of the new address rebuilds
-                // the chip and the editor link from (#37005).
-                queryParamsHandling: 'preserve'
-            });
         });
 
         it('should keep the typed draft on the screen when the creation fails', () => {
@@ -2287,7 +2272,7 @@ describe('DotExperimentsConfigureStore', () => {
 
         interface VariantFailureCase {
             action: string;
-            call: jest.Mock;
+            call: Mock;
             dispatch: () => void;
         }
 
@@ -2435,13 +2420,9 @@ describe('DotExperimentsConfigureStore', () => {
     });
 
     /**
-     * The weights themselves are the form's, not the store's: the Variants card writes them into its
-     * slice — Split Evenly included (AC23) — and they arrive here as `formEdited` like any other
-     * edit. What the store still owns is the *state* they produce.
-     */
-    /**
-     * The weights are a slice of the form, not state the store keeps: the card owns the rows and
-     * the store's only say is whether they are in a state worth sending.
+     * The weights are the form's, not the store's: the Variants card writes them into its slice —
+     * Split Evenly included (AC23) — and they arrive here as `formEdited` like any other edit. What
+     * the store still owns is whether they are in a state worth sending.
      */
     describe('weights (AC25)', () => {
         /** A split as the card reports it: the whole set of rows, not the one that changed. */
@@ -2637,6 +2618,119 @@ describe('DotExperimentsConfigureStore', () => {
             dispatcher.dispatch(pageEvents.startRequested());
 
             expect(start).toHaveBeenCalledTimes(1);
+        });
+    });
+    /**
+     * The configuration screen inside the UVE panel (#37478).
+     *
+     * Everything about what a configuration *is* stays identical — the same store, the same
+     * autosave, the same validation (FR-040). What changes is where it learns which experiment it
+     * is about, and what happens after one is created: in the portlet both answers are the
+     * address, and in the panel the address belongs to the editor.
+     */
+    describe('panel mode (#37478)', () => {
+        let panelExperimentId: WritableSignal<string | null>;
+        let panelPageId: WritableSignal<string | null>;
+        let panelLanguageId: WritableSignal<number | null>;
+        const showConfigure = vi.fn();
+
+        const createInPanel = createServiceFactory({
+            service: DotExperimentsConfigureStore,
+            providers: [
+                mockProvider(DotExperimentsService, {
+                    getById,
+                    add,
+                    patch: patchExperiment,
+                    addVariant,
+                    editVariant,
+                    removeVariant,
+                    start,
+                    stop,
+                    cancelSchedule
+                }),
+                ...surroundingProviders(),
+                {
+                    provide: DotExperimentsPanelStore,
+                    useValue: {
+                        get experimentId() {
+                            return panelExperimentId;
+                        },
+                        get pageId() {
+                            return panelPageId;
+                        },
+                        get languageId() {
+                            return panelLanguageId;
+                        },
+                        showConfigure
+                    }
+                }
+            ]
+        });
+
+        const initPanelStore = () => {
+            // The editor's address is never empty, and in the portlet these very keys are what the
+            // store reads. Left populated on purpose: a panel that still read them would pass a
+            // test run against a bare route.
+            routeParams = { experimentId: 'from-the-address' };
+            routeQueryParams = { pageId: 'page-from-address', language_id: '9' };
+            spectator = createInPanel();
+            store = spectator.service;
+            dispatcher = spectator.inject(Dispatcher);
+            events = spectator.inject(Events);
+            spectator.flushEffects();
+        };
+
+        beforeEach(() => {
+            panelExperimentId = signal<string | null>(null);
+            panelPageId = signal<string | null>(PAGE.pageId);
+            panelLanguageId = signal<number | null>(1);
+            showConfigure.mockClear();
+            navigate.mockClear();
+        });
+
+        it('should take the experiment from the panel, not from the route', () => {
+            panelExperimentId.set(EXPERIMENT_ID);
+
+            initPanelStore();
+
+            expect(getById).toHaveBeenCalledWith(EXPERIMENT_ID);
+            expect(getById).not.toHaveBeenCalledWith('from-the-address');
+        });
+
+        /**
+         * Followed rather than read once, for the same reason the portlet follows `paramMap`: the
+         * panel swaps one experiment for another without destroying the screen, so a store that
+         * snapshotted its id would keep showing the experiment the editor left.
+         */
+        it('should follow the panel to another experiment', () => {
+            panelExperimentId.set(EXPERIMENT_ID);
+            initPanelStore();
+            getById.mockClear();
+
+            panelExperimentId.set('exp-other');
+            spectator.flushEffects();
+
+            expect(getById).toHaveBeenCalledWith('exp-other');
+        });
+
+        /**
+         * FR-015, FR-024. Asserted through the lookup the prefill actually makes, not through the
+         * event that asks for it: the query is what carries the page and the language, and it is
+         * where reading the wrong source would show up.
+         */
+        it('should prefill creation from the page in hand, not from the address', () => {
+            initPanelStore();
+
+            expect(contentSearchGet).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: expect.stringContaining(PAGE.pageId)
+                })
+            );
+            expect(contentSearchGet).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    query: expect.stringContaining('page-from-address')
+                })
+            );
         });
     });
 });

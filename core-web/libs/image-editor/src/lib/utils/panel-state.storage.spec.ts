@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { getStoredPanelState, savePanelState } from './panel-state.storage';
 
 import { IMAGE_EDITOR_PANEL_STATE_KEY } from '../image-editor.constants';
@@ -8,7 +10,7 @@ const ALL_OPEN = ['adjust', 'transform', 'fileinfo', 'history'];
 describe('panel-state.storage', () => {
     afterEach(() => {
         localStorage.clear();
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('getStoredPanelState', () => {
@@ -54,7 +56,7 @@ describe('panel-state.storage', () => {
         });
 
         it('does not throw when storage is unavailable', () => {
-            jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
                 throw new Error('QuotaExceededError');
             });
 

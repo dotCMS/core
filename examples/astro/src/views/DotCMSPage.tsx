@@ -12,12 +12,12 @@ export const DotCMSPage = ({
   pageResponse: DotCMSCustomPageResponse;
 }) => {
   const { pageAsset, content } =
-    useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse);
+    useEditableDotCMSPage<DotCMSCustomPageResponse>(pageResponse) ?? {};
 
-  const { layout } = pageAsset;
+  const layout = pageAsset?.layout;
 
-  const showHeader = layout.header && content;
-  const showFooter = layout.footer && content;
+  const showHeader = layout?.header && content;
+  const showFooter = layout?.footer && content;
 
   return (
     <div className="flex flex-col min-h-screen gap-6 bg-slate-50">

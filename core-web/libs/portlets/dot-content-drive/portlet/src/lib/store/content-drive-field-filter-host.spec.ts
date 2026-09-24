@@ -1,4 +1,5 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
+import { Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -28,7 +29,7 @@ const field = (overrides: Partial<DotCMSContentTypeField> = {}): DotCMSContentTy
 describe('provideContentDriveFieldFilterHost', () => {
     let spectator: SpectatorService<unknown>;
     let host: DotFieldFilterHost;
-    let store: jest.Mocked<
+    let store: Mocked<
         Pick<
             InstanceType<typeof DotContentDriveStore>,
             | 'addUserSearchableField'
@@ -47,10 +48,10 @@ describe('provideContentDriveFieldFilterHost', () => {
             mockProvider(DotContentDriveStore, {
                 userSearchableActive: activeFields,
                 userSearchableFields: fields,
-                addUserSearchableField: jest.fn(),
-                setUserSearchableFields: jest.fn(),
-                setShowInListFields: jest.fn(),
-                clearUserSearchableFilters: jest.fn()
+                addUserSearchableField: vi.fn(),
+                setUserSearchableFields: vi.fn(),
+                setShowInListFields: vi.fn(),
+                clearUserSearchableFilters: vi.fn()
             })
         ]
     });
@@ -63,7 +64,7 @@ describe('provideContentDriveFieldFilterHost', () => {
         store = spectator.inject(DotContentDriveStore, true) as never;
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should expose the store signals the chips read', () => {
         activeFields.set(['body']);

@@ -26,6 +26,13 @@ import { withHistory } from '../history/withHistory';
  * @export
  * @interface PageLoadingConfigState
  */
+/**
+ * Where a `pageAssetResponse` actually came from. Tracked explicitly on the response itself
+ * so consumers (the headless iframe push gate, chiefly) never have to infer provenance from
+ * side-signals like `requestMetadata` presence — see dotCMS/core#37097.
+ */
+export type PageAssetSource = 'rest' | 'graphql';
+
 export interface PageLoadingConfigState {
     isClientReady: boolean;
     requestMetadata: {
@@ -35,18 +42,21 @@ export interface PageLoadingConfigState {
     pageAssetResponse: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
+        source?: PageAssetSource;
     };
 }
 
 export type PageClientResponse = {
     pageAsset: DotCMSPageAsset;
     content?: Record<string, unknown>;
+    source?: PageAssetSource;
     requestMetadata: { query: string; variables: Record<string, string> } | null;
 };
 
 export type PageSnapshot =
     | (DotCMSPageAsset & {
           content?: Record<string, unknown>;
+          source?: PageAssetSource;
           requestMetadata?: { query: string; variables: Record<string, string> } | null;
           clientResponse?: PageClientResponse | null;
       })
@@ -74,6 +84,7 @@ export interface WithPageMethods extends PageComputed {
     pageAssetResponse: () => {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
+        source?: PageAssetSource;
     } | null;
     isClientReady: () => boolean;
 
@@ -91,10 +102,15 @@ export interface WithPageMethods extends PageComputed {
      * request metadata.
      */
     resetRequestMetadata: () => void;
-    /** Updates page asset (and optionally content). Omit content to merge; include content to replace. */
+    /**
+     * Updates page asset (and optionally content). Omit content to merge; include content to
+     * replace. Omit source to inherit the current response's source (e.g. a mutate-in-place
+     * edit); include it to set it explicitly (every genuine REST/GraphQL fetch must).
+     */
     setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
+        source?: PageAssetSource;
     }) => void;
     resetClientConfiguration: () => void;
     /**
@@ -165,9 +181,11 @@ export function withPage() {
                 setPageAsset: (payload) => {
                     const current = store.pageAssetResponse();
                     const content = 'content' in payload ? payload.content : current?.content;
+                    const source = 'source' in payload ? payload.source : current?.source;
                     const nextResponse = {
                         pageAsset: payload.pageAsset,
-                        ...(content !== undefined && { content })
+                        ...(content !== undefined && { content }),
+                        ...(source !== undefined && { source })
                     };
                     patchState(store, {
                         pageAssetResponse: nextResponse,
@@ -246,6 +264,7 @@ export function withPage() {
                 return {
                     ...asset,
                     content: response.content,
+                    source: response.source,
                     requestMetadata,
                     clientResponse
                 };

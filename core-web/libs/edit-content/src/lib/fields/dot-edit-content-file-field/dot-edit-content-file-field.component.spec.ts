@@ -1,5 +1,6 @@
-import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
-import { of, Subject, throwError } from 'rxjs';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
+import { EMPTY, of, Subject, throwError } from 'rxjs';
+import { Mock, MockInstance, Mocked, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -56,7 +57,7 @@ export class MockFormComponent {
 }
 
 const mockLauncher = {
-    open: jest.fn().mockReturnValue(of(null))
+    open: vi.fn().mockReturnValue(of(null))
 };
 
 /** The AssetPicker needs a site to browse. */
@@ -70,7 +71,7 @@ const SITE_MOCK: DotSite = {
 describe('DotFileFieldComponent', () => {
     let spectator: SpectatorHost<DotFileFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof FileFieldStore>;
-    let uploadService: jest.Mocked<DotFileFieldUploadService>;
+    let uploadService: Mocked<DotFileFieldUploadService>;
     let dialogLauncher: LegacyDialogImageEditorLauncher;
     let dojoLauncher: LegacyDojoImageEditorLauncher;
 
@@ -88,7 +89,7 @@ describe('DotFileFieldComponent', () => {
         // the module level so the harness can resolve them, then spy per test.
         providers: [
             mockProvider(DotSiteService, {
-                getCurrentSite: jest.fn().mockReturnValue(of(SITE_MOCK))
+                getCurrentSite: vi.fn().mockReturnValue(of(SITE_MOCK))
             }),
             FileFieldStore,
             DialogService,
@@ -98,14 +99,19 @@ describe('DotFileFieldComponent', () => {
             mockProvider(DotWorkflowActionsFireService),
             provideHttpClient(),
             provideHttpClientTesting(),
-            mockProvider(DotUploadFileService),
+            // DotFileFieldUploadService (provided for real above) pipes this straight
+            // through; a bare mockProvider returns undefined and it dereferences
+            // nothing. Tests that exercise an upload set their own value.
+            mockProvider(DotUploadFileService, {
+                uploadDotAssetWithContent: vi.fn(() => EMPTY)
+            }),
             mockProvider(DotUploadService),
             mockProvider(DotContentletService),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockReturnValue('Test Message')
+                get: vi.fn().mockReturnValue('Test Message')
             }),
             mockProvider(DotAiConfigService, {
-                checkPluginInstallation: jest.fn().mockReturnValue(of(true))
+                checkPluginInstallation: vi.fn().mockReturnValue(of(true))
             }),
             // Angular Edit Content host: the launcher is what makes "Select Existing File" open the
             // AssetPicker. Its legacy-host counterpart is
@@ -128,11 +134,11 @@ describe('DotFileFieldComponent', () => {
         uploadService = spectator.inject(
             DotFileFieldUploadService,
             true
-        ) as jest.Mocked<DotFileFieldUploadService>;
+        ) as Mocked<DotFileFieldUploadService>;
         dialogLauncher = spectator.inject(LegacyDialogImageEditorLauncher, true);
         dojoLauncher = spectator.inject(LegacyDojoImageEditorLauncher, true);
-        jest.spyOn(dialogLauncher, 'open').mockImplementation(mockLauncher.open);
-        jest.spyOn(dojoLauncher, 'open').mockImplementation(mockLauncher.open);
+        vi.spyOn(dialogLauncher, 'open').mockImplementation(mockLauncher.open);
+        vi.spyOn(dojoLauncher, 'open').mockImplementation(mockLauncher.open);
     };
 
     describe('FileField', () => {
@@ -159,7 +165,7 @@ describe('DotFileFieldComponent', () => {
         });
 
         it('should call initLoad with proper params', () => {
-            const spyInitLoad = jest.spyOn(store, 'initLoad');
+            const spyInitLoad = vi.spyOn(store, 'initLoad');
 
             spectator.detectChanges();
 
@@ -173,9 +179,9 @@ describe('DotFileFieldComponent', () => {
 
         it('should call getAssetData when an value is set', () => {
             const mockContentlet = NEW_FILE_MOCK.entity;
-            jest.spyOn(uploadService, 'getContentById').mockReturnValue(of(mockContentlet));
+            vi.spyOn(uploadService, 'getContentById').mockReturnValue(of(mockContentlet));
 
-            const spyGetAssetData = jest.spyOn(store, 'getAssetData');
+            const spyGetAssetData = vi.spyOn(store, 'getAssetData');
 
             spectator.component.writeValue(mockContentlet.identifier);
             spectator.detectChanges();
@@ -186,9 +192,9 @@ describe('DotFileFieldComponent', () => {
 
         it('should does not call getAssetData when an null value', () => {
             const mockContentlet = NEW_FILE_MOCK.entity;
-            jest.spyOn(uploadService, 'getContentById').mockReturnValue(of(mockContentlet));
+            vi.spyOn(uploadService, 'getContentById').mockReturnValue(of(mockContentlet));
 
-            const spyGetAssetData = jest.spyOn(store, 'getAssetData');
+            const spyGetAssetData = vi.spyOn(store, 'getAssetData');
 
             spectator.component.writeValue(null);
             spectator.detectChanges();
@@ -198,7 +204,7 @@ describe('DotFileFieldComponent', () => {
 
         it('should have a preview with a proper content', () => {
             const mockContentlet = NEW_FILE_MOCK.entity;
-            jest.spyOn(uploadService, 'getContentById').mockReturnValue(of(mockContentlet));
+            vi.spyOn(uploadService, 'getContentById').mockReturnValue(of(mockContentlet));
 
             spectator.component.writeValue(mockContentlet.identifier);
 
@@ -210,11 +216,11 @@ describe('DotFileFieldComponent', () => {
         describe('fileDropped event', () => {
             it('should call to handleUploadFile when and proper file', () => {
                 const mockContentlet = NEW_FILE_MOCK.entity;
-                jest.spyOn(uploadService, 'uploadFile').mockReturnValue(
+                vi.spyOn(uploadService, 'uploadFile').mockReturnValue(
                     of({ source: 'contentlet', file: mockContentlet })
                 );
 
-                const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
+                const spyHandleUploadFile = vi.spyOn(store, 'handleUploadFile');
 
                 const mockEvent: DropZoneFileEvent = {
                     file: new File([''], 'filename', { type: 'text/html' }),
@@ -235,7 +241,7 @@ describe('DotFileFieldComponent', () => {
             });
 
             it('should not call to handleUploadFile when a null file', () => {
-                const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
+                const spyHandleUploadFile = vi.spyOn(store, 'handleUploadFile');
 
                 const mockEvent: DropZoneFileEvent = {
                     file: null,
@@ -255,7 +261,7 @@ describe('DotFileFieldComponent', () => {
             });
 
             it('should set a proper error message with a invalid file', () => {
-                const spySetUIMessage = jest.spyOn(store, 'setUIMessage');
+                const spySetUIMessage = vi.spyOn(store, 'setUIMessage');
 
                 const mockEvent: DropZoneFileEvent = {
                     file: new File([''], 'filename', { type: 'text/html' }),
@@ -277,7 +283,7 @@ describe('DotFileFieldComponent', () => {
 
         describe('fileSelected event', () => {
             it('should call to handleUploadFile with proper file', () => {
-                const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
+                const spyHandleUploadFile = vi.spyOn(store, 'handleUploadFile');
 
                 const file = new File([''], 'filename', { type: 'text/html' });
                 spectator.detectChanges();
@@ -288,7 +294,7 @@ describe('DotFileFieldComponent', () => {
             });
 
             it('should not call to handleUploadFile when a null file', () => {
-                const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
+                const spyHandleUploadFile = vi.spyOn(store, 'handleUploadFile');
                 spectator.detectChanges();
                 spectator.component.fileSelected([] as unknown as FileList);
 
@@ -325,7 +331,7 @@ describe('DotFileFieldComponent', () => {
 
             it('should prevent file selection when disabled', () => {
                 spectator.detectChanges();
-                const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
+                const spyHandleUploadFile = vi.spyOn(store, 'handleUploadFile');
 
                 spectator.component.setDisabledState(true);
                 const mockFiles = {
@@ -340,7 +346,7 @@ describe('DotFileFieldComponent', () => {
 
             it('should prevent file drop when disabled', () => {
                 spectator.detectChanges();
-                const spyHandleUploadFile = jest.spyOn(store, 'handleUploadFile');
+                const spyHandleUploadFile = vi.spyOn(store, 'handleUploadFile');
 
                 spectator.component.setDisabledState(true);
 
@@ -363,7 +369,7 @@ describe('DotFileFieldComponent', () => {
             it('should prevent opening dialogs when disabled', () => {
                 spectator.detectChanges();
                 const dialogService = spectator.inject(DialogService, true);
-                const spyDialogOpen = jest.spyOn(dialogService, 'open');
+                const spyDialogOpen = vi.spyOn(dialogService, 'open');
 
                 spectator.component.setDisabledState(true);
 
@@ -444,8 +450,8 @@ describe('DotFileFieldComponent', () => {
         beforeEach(() => setup(BINARY_FIELD_MOCK, contentlet));
 
         it('should hydrate from the contentlet metadata instead of fetching an asset by id', () => {
-            const spyGetAssetData = jest.spyOn(store, 'getAssetData');
-            const spySetFromContentlet = jest.spyOn(store, 'setFileFromContentlet');
+            const spyGetAssetData = vi.spyOn(store, 'getAssetData');
+            const spySetFromContentlet = vi.spyOn(store, 'setFileFromContentlet');
 
             spectator.detectChanges();
 
@@ -472,7 +478,7 @@ describe('DotFileFieldComponent', () => {
         it('should not call onChange with empty string when reopening saved content', () => {
             setup(BINARY_FIELD_MOCK, contentlet);
 
-            const onChange = jest.fn();
+            const onChange = vi.fn();
             spectator.component.registerOnChange(onChange);
 
             spectator.component.writeValue(savedValue);
@@ -485,7 +491,7 @@ describe('DotFileFieldComponent', () => {
         it('should call onChange when the user uploads a new file', () => {
             setup(BINARY_FIELD_MOCK, contentlet);
 
-            const onChange = jest.fn();
+            const onChange = vi.fn();
             spectator.component.registerOnChange(onChange);
 
             spectator.component.writeValue(savedValue);
@@ -504,7 +510,7 @@ describe('DotFileFieldComponent', () => {
         it('should sync writeValue to the store immediately', () => {
             setup(BINARY_FIELD_MOCK, contentlet);
 
-            const spySetValue = jest.spyOn(store, 'setValue');
+            const spySetValue = vi.spyOn(store, 'setValue');
 
             spectator.component.writeValue(savedValue);
 
@@ -591,7 +597,9 @@ describe('DotFileFieldComponent', () => {
 
             setImagePreview(true);
 
-            const spyApply = jest.spyOn(store, 'applyEditedImage').mockImplementation();
+            const spyApply = vi
+                .spyOn(store, 'applyEditedImage')
+                .mockImplementation(() => undefined);
 
             spectator.component.onEditImage();
 
@@ -615,8 +623,8 @@ describe('DotFileFieldComponent', () => {
             store = spectator.component.store;
             dialogLauncher = spectator.inject(LegacyDialogImageEditorLauncher, true);
             dojoLauncher = spectator.inject(LegacyDojoImageEditorLauncher, true);
-            jest.spyOn(dialogLauncher, 'open').mockImplementation(mockLauncher.open);
-            jest.spyOn(dojoLauncher, 'open').mockImplementation(mockLauncher.open);
+            vi.spyOn(dialogLauncher, 'open').mockImplementation(mockLauncher.open);
+            vi.spyOn(dojoLauncher, 'open').mockImplementation(mockLauncher.open);
             spectator.detectChanges();
 
             setImagePreview(true);
@@ -634,7 +642,7 @@ describe('DotFileFieldComponent', () => {
          * value per test rather than mutating a signal.
          */
         const setSite = (site: DotSite | null) =>
-            (spectator.inject(DotSiteService).getCurrentSite as jest.Mock).mockReturnValue(
+            (spectator.inject(DotSiteService).getCurrentSite as Mock).mockReturnValue(
                 site ? of(site) : of(null)
             );
 
@@ -644,9 +652,9 @@ describe('DotFileFieldComponent', () => {
             spectator.detectChanges();
 
             const dialogService = spectator.inject(DialogService, true);
-            const spyOpen = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const spyOpen = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of(undefined),
-                close: jest.fn()
+                close: vi.fn()
             } as unknown as DynamicDialogRef);
 
             spectator.component.showSelectExistingFileDialog();
@@ -655,11 +663,11 @@ describe('DotFileFieldComponent', () => {
         };
 
         /** The picker config the dialog was opened with. */
-        const configOf = (spyOpen: jest.SpyInstance): DotAssetPickerConfig =>
+        const configOf = (spyOpen: MockInstance): DotAssetPickerConfig =>
             spyOpen.mock.calls[0][1].data as DotAssetPickerConfig;
 
         /** The `DialogService.open` options, minus the picker config. */
-        const optionsOf = (spyOpen: jest.SpyInstance) => spyOpen.mock.calls[0][1];
+        const optionsOf = (spyOpen: MockInstance) => spyOpen.mock.calls[0][1];
 
         it('should open the AssetPicker, not the browser selector', () => {
             const spyOpen = openPicker(FILE_FIELD_MOCK);
@@ -779,7 +787,7 @@ describe('DotFileFieldComponent', () => {
                 setSite(null);
 
                 const dialogService = spectator.inject(DialogService, true);
-                const spyOpen = jest.spyOn(dialogService, 'open');
+                const spyOpen = vi.spyOn(dialogService, 'open');
 
                 spectator.component.showSelectExistingFileDialog();
 
@@ -792,16 +800,16 @@ describe('DotFileFieldComponent', () => {
                 // only the second is reachable, leaving the first live and able to write a value.
                 const site$ = new Subject<DotSite>();
                 setup(FILE_FIELD_MOCK);
-                (spectator.inject(DotSiteService).getCurrentSite as jest.Mock).mockReturnValue(
+                (spectator.inject(DotSiteService).getCurrentSite as Mock).mockReturnValue(
                     site$.asObservable()
                 );
                 spectator.detectChanges();
 
-                const spyOpen = jest
+                const spyOpen = vi
                     .spyOn(spectator.inject(DialogService, true), 'open')
                     .mockReturnValue({
                         onClose: of(undefined),
-                        close: jest.fn()
+                        close: vi.fn()
                     } as unknown as DynamicDialogRef);
 
                 spectator.component.showSelectExistingFileDialog();
@@ -817,11 +825,11 @@ describe('DotFileFieldComponent', () => {
                 spectator.detectChanges();
 
                 // Released on cancel too, or the button is dead for the rest of the session.
-                const spyOpen = jest
+                const spyOpen = vi
                     .spyOn(spectator.inject(DialogService, true), 'open')
                     .mockReturnValue({
                         onClose: of(undefined),
-                        close: jest.fn()
+                        close: vi.fn()
                     } as unknown as DynamicDialogRef);
 
                 spectator.component.showSelectExistingFileDialog();
@@ -833,7 +841,7 @@ describe('DotFileFieldComponent', () => {
             it('should allow a retry after the site lookup failed', () => {
                 setup(FILE_FIELD_MOCK);
                 const siteService = spectator.inject(DotSiteService);
-                const getCurrentSite = siteService.getCurrentSite as jest.Mock;
+                const getCurrentSite = siteService.getCurrentSite as Mock;
                 getCurrentSite.mockReturnValue(throwError(() => new Error('no site')));
                 spectator.detectChanges();
 
@@ -855,10 +863,10 @@ describe('DotFileFieldComponent', () => {
                 setSite(SITE_MOCK);
                 spectator.detectChanges();
 
-                const spySetPreview = jest.spyOn(spectator.component.store, 'setPreviewFile');
-                jest.spyOn(spectator.inject(DialogService, true), 'open').mockReturnValue({
+                const spySetPreview = vi.spyOn(spectator.component.store, 'setPreviewFile');
+                vi.spyOn(spectator.inject(DialogService, true), 'open').mockReturnValue({
                     onClose: of(asset),
-                    close: jest.fn()
+                    close: vi.fn()
                 } as unknown as DynamicDialogRef);
 
                 spectator.component.showSelectExistingFileDialog();
@@ -871,10 +879,10 @@ describe('DotFileFieldComponent', () => {
                 setSite(SITE_MOCK);
                 spectator.detectChanges();
 
-                const spySetPreview = jest.spyOn(spectator.component.store, 'setPreviewFile');
-                jest.spyOn(spectator.inject(DialogService, true), 'open').mockReturnValue({
+                const spySetPreview = vi.spyOn(spectator.component.store, 'setPreviewFile');
+                vi.spyOn(spectator.inject(DialogService, true), 'open').mockReturnValue({
                     onClose: of(undefined),
-                    close: jest.fn()
+                    close: vi.fn()
                 } as unknown as DynamicDialogRef);
 
                 spectator.component.showSelectExistingFileDialog();

@@ -34,7 +34,6 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -455,7 +454,7 @@ public class UserResource implements Serializable {
 						   @Parameter(description = "Filter users by user ID, first name, last name, email address, or full name -- or parts of any of them") @QueryParam(UserPaginator.QUERY_PARAM) final String filter,
 						   @Parameter(description = "Page number for pagination") @DefaultValue("0") @QueryParam(PaginationUtil.PAGE) final int page,
 						   @Parameter(description = "Number of items per page") @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
-						   @Parameter(description = "Column name for sorting results") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
+						   @Parameter(description = "Field to sort by. Supported: `firstName` (ties broken by last name), `emailAddress`, `lastLoginDate` (users without a recorded login sort last). Unsupported values fall back to the default order (full name ascending)") @QueryParam(PaginationUtil.ORDER_BY) String orderBy,
 						   @Parameter(description = "Sorting direction: ASC or DESC") @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) String direction,
 						   @Parameter(description = "Include anonymous user in results") @QueryParam(UserPaginator.INCLUDE_ANONYMOUS) boolean includeAnonymous,
 						   @Parameter(description = "Include default user in results") @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
@@ -495,7 +494,11 @@ public class UserResource implements Serializable {
 			extraParams.put(UserPaginator.INCLUDE_ROLES_PARAM, true);
 		}
 
+		// Validated last so an invalid direction never changes the status a rejected request already gets above.
+		// UserPaginator reads ordering from the FilteringParams keys, not from the PaginationUtil orderBy/direction
+		// arguments, so the direction is passed here too (same wiring as RoleResource#loadUsersByRoleId).
 		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
+		extraParams.put(UserAPI.FilteringParams.ORDER_DIRECTION_PARAM, UserAPI.FilteringParams.sqlDirection(orderDirection));
 		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
 	}
 

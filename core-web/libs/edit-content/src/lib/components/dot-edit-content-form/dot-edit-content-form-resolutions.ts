@@ -22,7 +22,9 @@ import { getRelationshipFromContentlet } from '../../utils/relationshipFromConte
  * @returns {*} The resolved value for the field.
  */
 export type FnResolutionValue<T> = (
-    contentlet: DotCMSContentlet,
+    // Null for new content — nothing has been saved yet, so every resolver either guards on this
+    // or reaches for the field's default value.
+    contentlet: DotCMSContentlet | null,
     field: DotCMSContentTypeField,
     queryParams?: EditContentQueryParams,
     isManualTranslation?: boolean
@@ -51,6 +53,41 @@ const defaultResolutionFn: FnResolutionValue<string> = (
     if (contentlet) {
         return contentlet[field.variable] ?? field.defaultValue;
     }
+    return isManualTranslation ? null : field.defaultValue;
+};
+
+/**
+ * Resolves a Checkbox or Multi-Select field, whose value is a set of selected options.
+ *
+ * For a contentlet that has already been saved the stored value is authoritative: a field the
+ * user cleared comes back with its key absent from the payload, and that absence means "nothing
+ * selected", not "no value supplied". Falling back to `field.defaultValue` there re-checks a box
+ * the user deliberately cleared, and saving that screen writes the default back to the database.
+ *
+ * The default still seeds the form when there is no contentlet yet — new content — which is the
+ * only point a Content Type default is meant to apply.
+ *
+ * Returns `null`, not `''`, for the cleared case. `getFinalCastedValue` flattens these two field
+ * types with `split(',')`, which turns `''` into `['']` — an array of length one that Angular's
+ * `Validators.required` accepts, so a required field would pass validation with nothing selected.
+ * `null` survives that path untouched and stays empty.
+ *
+ * Scoped to these two types only, matching what already shipped on the backend. The same
+ * re-application of a default to saved content is still live for every other field type on
+ * `defaultResolutionFn` — that is remaining exposure, not intended behaviour.
+ *
+ * @see https://github.com/dotCMS/core/issues/35416
+ */
+const selectionResolutionFn: FnResolutionValue<string | null> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (contentlet) {
+        return contentlet[field.variable] ?? null;
+    }
+
     return isManualTranslation ? null : field.defaultValue;
 };
 
@@ -288,7 +325,7 @@ export const resolutionValue: Record<
     [FIELD_TYPES.FILE]: defaultResolutionFn,
     [FIELD_TYPES.IMAGE]: defaultResolutionFn,
     [FIELD_TYPES.BLOCK_EDITOR]: blockEditorResolutionFn,
-    [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,
+    [FIELD_TYPES.CHECKBOX]: selectionResolutionFn,
     [FIELD_TYPES.CONSTANT]: defaultResolutionFn,
     [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,
     [FIELD_TYPES.DATE]: dateResolutionFn,
@@ -298,7 +335,7 @@ export const resolutionValue: Record<
     [FIELD_TYPES.HOST_FOLDER]: hostFolderResolutionFn,
     [FIELD_TYPES.JSON]: defaultResolutionFn,
     [FIELD_TYPES.KEY_VALUE]: keyValueResolutionFn,
-    [FIELD_TYPES.MULTI_SELECT]: defaultResolutionFn,
+    [FIELD_TYPES.MULTI_SELECT]: selectionResolutionFn,
     [FIELD_TYPES.RADIO]: defaultResolutionFn,
     [FIELD_TYPES.SELECT]: selectResolutionFn,
     [FIELD_TYPES.TAG]: defaultResolutionFn,

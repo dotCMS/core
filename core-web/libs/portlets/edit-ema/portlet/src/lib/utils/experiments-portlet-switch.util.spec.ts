@@ -1,4 +1,5 @@
 import { of, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -24,16 +25,16 @@ import { readExperimentsPortletSwitch } from './experiments-portlet-switch.util'
  * 3. **It reads its own key**, never the visitor-facing experiments kill-switch.
  */
 describe('readExperimentsPortletSwitch', () => {
-    let propertiesService: jest.Mocked<
+    let propertiesService: Mocked<
         Pick<DotPropertiesService, 'getKey' | 'getFreshFeatureFlag' | 'getFeatureFlag'>
     >;
 
     beforeEach(() => {
         propertiesService = {
-            getKey: jest.fn(),
-            getFreshFeatureFlag: jest.fn(),
-            getFeatureFlag: jest.fn()
-        } as unknown as jest.Mocked<
+            getKey: vi.fn(),
+            getFreshFeatureFlag: vi.fn(),
+            getFeatureFlag: vi.fn()
+        } as unknown as Mocked<
             Pick<DotPropertiesService, 'getKey' | 'getFreshFeatureFlag' | 'getFeatureFlag'>
         >;
 
@@ -47,8 +48,7 @@ describe('readExperimentsPortletSwitch', () => {
     /**
      * The endpoint answers strings; a boolean is accepted too, since the resource coerces some.
      *
-     * Asserted synchronously rather than through `done`: `of(...)` emits on subscribe, and
-     * `it.each` does not hand the callback a `done` argument.
+     * Asserted synchronously rather than awaited: `of(...)` emits on subscribe.
      */
     it.each([
         ['true', true],
@@ -75,53 +75,60 @@ describe('readExperimentsPortletSwitch', () => {
      * stock build cannot produce that — the property is declared, whitelisted and boolean-typed —
      * but the guarantee should not rest on config wiring.
      */
-    it('should resolve false when the response does not carry the key', (done) => {
-        propertiesService.getKey.mockReturnValue(of(FEATURE_FLAG_NOT_FOUND));
+    it('should resolve false when the response does not carry the key', () =>
+        new Promise<void>((resolve) => {
+            propertiesService.getKey.mockReturnValue(of(FEATURE_FLAG_NOT_FOUND));
 
-        read().subscribe((value) => {
-            expect(value).toBe(false);
-            done();
-        });
-    });
+            read().subscribe((value) => {
+                expect(value).toBe(false);
+                resolve();
+            });
+        }));
 
-    it('should read FEATURE_FLAG_EXPERIMENTS_PORTLET, not the experiments kill-switch', (done) => {
-        propertiesService.getKey.mockReturnValue(of('false'));
+    it('should read FEATURE_FLAG_EXPERIMENTS_PORTLET, not the experiments kill-switch', () =>
+        new Promise<void>((resolve) => {
+            propertiesService.getKey.mockReturnValue(of('false'));
 
-        read().subscribe(() => {
-            expect(propertiesService.getKey).toHaveBeenCalledWith(
-                FeaturedFlags.FEATURE_FLAG_EXPERIMENTS_PORTLET
-            );
-            expect(propertiesService.getKey).not.toHaveBeenCalledWith(
-                FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
-            );
-            done();
-        });
-    });
+            read().subscribe(() => {
+                expect(propertiesService.getKey).toHaveBeenCalledWith(
+                    FeaturedFlags.FEATURE_FLAG_EXPERIMENTS_PORTLET
+                );
+                expect(propertiesService.getKey).not.toHaveBeenCalledWith(
+                    FeaturedFlags.LOAD_FRONTEND_EXPERIMENTS
+                );
+                resolve();
+            });
+        }));
 
     // FR-015. The failure must be swallowed into `false`, not propagated: an editor whose config
     // read failed still gets a working Experiments navigation item, pointing at the legacy screens.
-    it('should resolve false when the read fails, rather than erroring', (done) => {
-        propertiesService.getKey.mockReturnValue(throwError(() => new Error('config read failed')));
+    it('should resolve false when the read fails, rather than erroring', () =>
+        new Promise<void>((resolve, reject) => {
+            propertiesService.getKey.mockReturnValue(
+                throwError(() => new Error('config read failed'))
+            );
 
-        read().subscribe({
-            next: (value) => {
-                expect(value).toBe(false);
-                done();
-            },
-            error: () => done.fail('the switch read must not propagate the error (FR-015)')
-        });
-    });
+            read().subscribe({
+                next: (value) => {
+                    expect(value).toBe(false);
+                    resolve();
+                },
+                error: () =>
+                    reject(new Error('the switch read must not propagate the error (FR-015)'))
+            });
+        }));
 
     // SC-002. Asserting the *absence* of the memoizing readers as well as the presence of the raw
     // one: a helper that called both would pass a presence-only assertion while still serving a
     // stale value from the cache.
-    it('should read uncached so an operator flip lands on the next gesture', (done) => {
-        propertiesService.getKey.mockReturnValue(of('false'));
+    it('should read uncached so an operator flip lands on the next gesture', () =>
+        new Promise<void>((resolve) => {
+            propertiesService.getKey.mockReturnValue(of('false'));
 
-        read().subscribe(() => {
-            expect(propertiesService.getKey).toHaveBeenCalledTimes(1);
-            expect(propertiesService.getFeatureFlag).not.toHaveBeenCalled();
-            done();
-        });
-    });
+            read().subscribe(() => {
+                expect(propertiesService.getKey).toHaveBeenCalledTimes(1);
+                expect(propertiesService.getFeatureFlag).not.toHaveBeenCalled();
+                resolve();
+            });
+        }));
 });

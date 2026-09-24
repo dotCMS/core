@@ -1,11 +1,17 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { Component, input } from '@angular/core';
 import { ActivatedRoute, Params, provideRouter, Router } from '@angular/router';
 
-import { Confirmation, ConfirmationService, MenuItem } from 'primeng/api';
+import { Confirmation, ConfirmationService, ConfirmEventType, MenuItem } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
@@ -14,11 +20,13 @@ import {
     DotExperiment,
     DotExperimentStatus
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigureHeaderComponent } from './dot-experiments-configure-header.component';
 
+import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
 import { STATUS_LABEL_KEYS } from '../../../shared/constants';
 import { DotExperimentConfigurePage, ExperimentListAction } from '../../../shared/models';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
@@ -94,24 +102,34 @@ const allowedActionsFor = (status: DotExperimentStatus): Record<ExperimentListAc
     );
 
 const createStoreMock = () => ({
-    experiment: jest.fn().mockReturnValue(EXPERIMENT),
-    draftName: jest.fn().mockReturnValue(EXPERIMENT.name),
-    selectedPage: jest.fn().mockReturnValue(SELECTED_PAGE),
-    $status: jest.fn().mockReturnValue(DotExperimentStatus.DRAFT),
-    $allowedActions: jest.fn().mockReturnValue(allowedActionsFor(DotExperimentStatus.DRAFT))
+    experiment: vi.fn().mockReturnValue(EXPERIMENT),
+    draftName: vi.fn().mockReturnValue(EXPERIMENT.name),
+    selectedPage: vi.fn().mockReturnValue(SELECTED_PAGE),
+    $status: vi.fn().mockReturnValue(DotExperimentStatus.DRAFT),
+    $allowedActions: vi.fn().mockReturnValue(allowedActionsFor(DotExperimentStatus.DRAFT)),
+    $hasUnsavedChanges: vi.fn().mockReturnValue(false)
 });
 
 describe('DotExperimentsConfigureHeaderComponent', () => {
     let spectator: Spectator<DotExperimentsConfigureHeaderComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
+    /** Panel mode is the presence of this store; `null` is the portlet. */
+    let panelStore: { backToList: Mock; showResults: Mock } | null;
     /** The address the screen arrived on, as `ActivatedRoute` reports it. */
     let routeQueryParams: Params;
-    let dispatch: jest.SpyInstance;
-    let confirm: jest.SpyInstance;
+    let dispatch: MockInstance;
+    let confirm: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigureHeaderComponent,
         componentImports: [[DotAddToBundleComponent, MockAddToBundleComponent]],
+        // Component-level: the module injector is built once per test file, so a module provider
+        // would freeze `panelStore` at whatever the first `createComponent` saw.
+        componentProviders: [
+            // Real: these tests assert where a door leads, and this is what decides.
+            DotExperimentsRouter,
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore }
+        ],
         providers: [
             provideRouter([{ path: 'experiments', children: [] }]),
             provideLocationMocks(),
@@ -174,17 +192,18 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        panelStore = null;
         routeQueryParams = {};
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
         const confirmationService = spectator.inject(ConfirmationService, true);
-        confirm = jest
+        confirm = vi
             .spyOn(confirmationService, 'confirm')
-            .mockReturnValue(confirmationService) as jest.SpyInstance;
+            .mockReturnValue(confirmationService) as MockInstance;
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('title', () => {
@@ -249,7 +268,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
         it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.ENDED])(
             'should open the results screen for %s',
             (status) => {
-                const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+                const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
                 renderWith(status);
 
                 const button = spectator
@@ -274,7 +293,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
          */
         it('should carry the page narrowing across to Results', () => {
             routeQueryParams = { pageId: 'page-1', language_id: '2' };
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
             renderWith(DotExperimentStatus.RUNNING);
 
             clickButton('experiments-configure-results-btn');
@@ -302,7 +321,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
             expect(spectator.query(byTestId('experiments-configure-stop-btn'))).not.toBeNull();
         });
 
-        // One status per test: the store mock's signals are plain `jest.fn()`s, so a second
+        // One status per test: the store mock's signals are plain `vi.fn()`s, so a second
         // `renderWith` in the same test would not recompute what the header derives from them.
         it.each([
             DotExperimentStatus.DRAFT,
@@ -424,7 +443,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
     describe('back', () => {
         it('should leave for the experiments list', () => {
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
             spectator.detectChanges();
 
             clickButton('experiments-configure-back-btn');
@@ -442,7 +461,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
          */
         it('should return to the list still narrowed to the page it arrived with', () => {
             routeQueryParams = { pageId: 'page-1', language_id: '2' };
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
             spectator.detectChanges();
 
             clickButton('experiments-configure-back-btn');
@@ -454,7 +473,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
         it('should carry no language when the address brought none', () => {
             routeQueryParams = { pageId: 'page-1' };
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
             spectator.detectChanges();
 
             clickButton('experiments-configure-back-btn');
@@ -468,7 +487,7 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
             // `url` and `section` are this screen's own arrival hints; echoing them would put
             // dead params on the list's address, which it then writes back on every filter change.
             routeQueryParams = { pageId: 'page-1', url: '/index', section: 'variants' };
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
             spectator.detectChanges();
 
             clickButton('experiments-configure-back-btn');
@@ -476,6 +495,91 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
             expect(navigate).toHaveBeenCalledWith(['/experiments'], {
                 queryParams: { pageId: 'page-1' }
             });
+        });
+    });
+    /**
+     * The header's two doors inside the UVE panel (#37478). Both stay where they lead; neither
+     * costs the editor the page any more (FR-008, FR-013, FR-025b).
+     */
+    describe('panel mode (#37478)', () => {
+        const inPanel = () => {
+            panelStore = { backToList: vi.fn(), showResults: vi.fn() };
+            spectator = createComponent();
+            spectator.detectChanges();
+        };
+
+        it('should return to the list as a view, not a navigation', async () => {
+            inPanel();
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+
+            await spectator.component.onBackToList();
+
+            expect(panelStore?.backToList).toHaveBeenCalledTimes(1);
+            expect(navigate).not.toHaveBeenCalled();
+        });
+
+        /**
+         * FR-019. Back in the panel is not a navigation, so `experimentsUnsavedChangesGuard` never
+         * fires on it — the prompt has to be raised here or the editor loses everything typed
+         * since the last Save Draft to a stray click on an arrow.
+         */
+        it('should ask before leaving unsaved work, and stay put when the answer is no', async () => {
+            inPanel();
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            // "Keep Editing" — the primary action, which cancels the departure.
+            confirm.mockImplementation((options: Confirmation) => options.accept?.());
+
+            await spectator.component.onBackToList();
+
+            expect(confirm).toHaveBeenCalledTimes(1);
+            expect(panelStore?.backToList).not.toHaveBeenCalled();
+        });
+
+        it('should leave once the editor chooses to discard', async () => {
+            inPanel();
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            confirm.mockImplementation((options: Confirmation) =>
+                options.reject?.(ConfirmEventType.REJECT)
+            );
+
+            await spectator.component.onBackToList();
+
+            expect(panelStore?.backToList).toHaveBeenCalledTimes(1);
+        });
+
+        /**
+         * A dismissal is not an answer. PrimeNG funnels the X, ESC and a mask click through the
+         * same `reject` callback as the secondary button, and reading them alike would throw the
+         * work away on a mis-click.
+         */
+        it('should treat a dismissal as staying, not as discarding', async () => {
+            inPanel();
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            confirm.mockImplementation((options: Confirmation) =>
+                options.reject?.(ConfirmEventType.CANCEL)
+            );
+
+            await spectator.component.onBackToList();
+
+            expect(panelStore?.backToList).not.toHaveBeenCalled();
+        });
+
+        /** In the portlet the router navigation raises the guard; asking twice is the bug. */
+        it('should not ask in the portlet, where the guard already does', async () => {
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            await spectator.component.onBackToList();
+
+            expect(confirm).not.toHaveBeenCalled();
+        });
+
+        it('should open results in the panel', () => {
+            inPanel();
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+
+            spectator.component.onViewResults();
+
+            expect(panelStore?.showResults).toHaveBeenCalledWith(storeMock.experiment().id);
+            expect(navigate).not.toHaveBeenCalled();
         });
     });
 });

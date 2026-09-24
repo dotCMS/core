@@ -261,7 +261,8 @@ public class ExperimentsResourceIntegrationTest {
                 .build();
 
         return resource.update(getHttpRequest(), response, experiment.id().orElseThrow(), form)
-                .getEntity();
+                .getEntity()
+                .getExperiment();
     }
 
     /**

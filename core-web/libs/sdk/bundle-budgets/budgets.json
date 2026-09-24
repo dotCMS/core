@@ -1,0 +1,7 @@
+{
+    "$comment": "Gzip ceiling, in bytes, for each probe in src/probes.ts. These are guard rails, not targets: raise one only with a measurement and a reason in the PR. Refresh the numbers with `npx tsx libs/sdk/bundle-budgets/src/measure.ts`.",
+    "react-layout-only": 7500,
+    "react-hook-only": 5200,
+    "analytics-neutral": 25000,
+    "uve-only": 3700
+}

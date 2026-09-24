@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
@@ -29,7 +30,7 @@ describe('DotUsersReplacementPickerComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
-                getUsersPaginated: jest.fn()
+                getUsersPaginated: vi.fn()
             })
         ]
     });
@@ -45,7 +46,7 @@ describe('DotUsersReplacementPickerComponent', () => {
                 props: { excludedUserIds: ['user-2'] }
             });
             const service = spectator.inject(DotUsersService, true);
-            (service.getUsersPaginated as jest.Mock).mockReturnValue(
+            (service.getUsersPaginated as Mock).mockReturnValue(
                 of({
                     entity: candidates,
                     errors: [],
@@ -65,7 +66,7 @@ describe('DotUsersReplacementPickerComponent', () => {
         it('forwards the query as the `filter` param and asks for the first page', () => {
             spectator = createComponent();
             const service = spectator.inject(DotUsersService, true);
-            (service.getUsersPaginated as jest.Mock).mockReturnValue(
+            (service.getUsersPaginated as Mock).mockReturnValue(
                 of({
                     entity: [],
                     errors: [],
@@ -98,7 +99,7 @@ describe('DotUsersReplacementPickerComponent', () => {
                 i18nMessagesMap: Record<string, string>;
                 pagination: { currentPage: number; perPage: number; totalEntries: number };
             }>();
-            (service.getUsersPaginated as jest.Mock).mockReturnValue(gate);
+            (service.getUsersPaginated as Mock).mockReturnValue(gate);
 
             spectator.component['onSearch'](searchEvent('ada'));
 
@@ -121,12 +122,28 @@ describe('DotUsersReplacementPickerComponent', () => {
         it('surfaces an error flag when the service fails and clears suggestions', () => {
             spectator = createComponent();
             const service = spectator.inject(DotUsersService, true);
-            (service.getUsersPaginated as jest.Mock).mockReturnValue(
+
+            // Seed suggestions through a successful search first — the
+            // component reads `$suggestions` off the store as a computed
+            // since #37298 extracted the HTTP into
+            // `DotUsersReplacementPickerStore`, so it can no longer be
+            // `.set()` directly.
+            (service.getUsersPaginated as Mock).mockReturnValueOnce(
+                of({
+                    entity: [createFakeUser({ userId: 'stale-1' })],
+                    errors: [],
+                    messages: [],
+                    permissions: [],
+                    i18nMessagesMap: {},
+                    pagination: { currentPage: 1, perPage: 10, totalEntries: 1 }
+                })
+            );
+            spectator.component['onSearch'](searchEvent('warm'));
+            expect(spectator.component['$suggestions']().map((u) => u.userId)).toEqual(['stale-1']);
+
+            (service.getUsersPaginated as Mock).mockReturnValueOnce(
                 throwError(() => new Error('boom'))
             );
-
-            spectator.component['$suggestions'].set([createFakeUser()]);
-
             spectator.component['onSearch'](searchEvent('ada'));
 
             expect(spectator.component['$hasError']()).toBe(true);
@@ -137,14 +154,14 @@ describe('DotUsersReplacementPickerComponent', () => {
         it('recovers the error flag when a subsequent query succeeds', () => {
             spectator = createComponent();
             const service = spectator.inject(DotUsersService, true);
-            (service.getUsersPaginated as jest.Mock).mockReturnValueOnce(
+            (service.getUsersPaginated as Mock).mockReturnValueOnce(
                 throwError(() => new Error('boom'))
             );
 
             spectator.component['onSearch'](searchEvent('ada'));
             expect(spectator.component['$hasError']()).toBe(true);
 
-            (service.getUsersPaginated as jest.Mock).mockReturnValueOnce(
+            (service.getUsersPaginated as Mock).mockReturnValueOnce(
                 of({
                     entity: [createFakeUser({ userId: 'user-1' })],
                     errors: [],
@@ -171,12 +188,12 @@ describe('DotUsersReplacementPickerComponent', () => {
                 i18nMessagesMap: Record<string, string>;
                 pagination: { currentPage: number; perPage: number; totalEntries: number };
             }>();
-            (service.getUsersPaginated as jest.Mock).mockReturnValueOnce(stale);
+            (service.getUsersPaginated as Mock).mockReturnValueOnce(stale);
 
             spectator.component['onSearch'](searchEvent('slow'));
 
             const fresh = createFakeUser({ userId: 'fresh-1' });
-            (service.getUsersPaginated as jest.Mock).mockReturnValueOnce(
+            (service.getUsersPaginated as Mock).mockReturnValueOnce(
                 of({
                     entity: [fresh],
                     errors: [],

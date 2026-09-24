@@ -1,6 +1,7 @@
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { DotAiContentService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotAIImageOrientation, DotAIImageResponse } from '@dotcms/dotcms-models';
@@ -32,7 +33,7 @@ describe('withAiImage', () => {
 
     let spectator: SpectatorService<InstanceType<typeof TestStore>>;
     let store: InstanceType<typeof TestStore>;
-    let service: jest.Mocked<DotAiContentService>;
+    let service: Mocked<DotAiContentService>;
 
     const createService = createServiceFactory({
         service: TestStore,
@@ -42,13 +43,13 @@ describe('withAiImage', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        service = spectator.inject(DotAiContentService) as jest.Mocked<DotAiContentService>;
+        service = spectator.inject(DotAiContentService) as Mocked<DotAiContentService>;
     });
 
     describe('generateImage (FR-037)', () => {
         it('should store the result and publish NOTHING', () => {
-            service.generateImage = jest.fn().mockReturnValue(of(generated()));
-            service.createAndPublishContentlet = jest.fn();
+            service.generateImage = vi.fn().mockReturnValue(of(generated()));
+            service.createAndPublishContentlet = vi.fn();
 
             store.generateImage('a cat');
 
@@ -59,7 +60,7 @@ describe('withAiImage', () => {
         });
 
         it('should expose the provider rewritten prompt', () => {
-            service.generateImage = jest.fn().mockReturnValue(of(generated()));
+            service.generateImage = vi.fn().mockReturnValue(of(generated()));
 
             store.generateImage('a cat');
 
@@ -70,7 +71,7 @@ describe('withAiImage', () => {
             // Not read from the selector at render time: the user can change it afterwards,
             // and the frame must keep matching the picture already on screen.
             store.setOrientation(DotAIImageOrientation.VERTICAL);
-            service.generateImage = jest.fn().mockReturnValue(of(generated()));
+            service.generateImage = vi.fn().mockReturnValue(of(generated()));
 
             store.generateImage('a cat');
 
@@ -78,7 +79,7 @@ describe('withAiImage', () => {
         });
 
         it('should ignore an empty prompt', () => {
-            service.generateImage = jest.fn();
+            service.generateImage = vi.fn();
 
             store.generateImage('   ');
 
@@ -88,7 +89,7 @@ describe('withAiImage', () => {
         it('should report a failure and leave nothing half-rendered', () => {
             // The service rejects with a string, not an HttpErrorResponse, so the shared
             // handler has no status to dispatch on — routing it there made the failure silent.
-            service.generateImage = jest.fn().mockReturnValue(throwError(() => 'boom'));
+            service.generateImage = vi.fn().mockReturnValue(throwError(() => 'boom'));
 
             store.generateImage('a cat');
 
@@ -99,10 +100,10 @@ describe('withAiImage', () => {
         });
 
         it('should clear a previous failure when asked again', () => {
-            service.generateImage = jest.fn().mockReturnValue(throwError(() => 'boom'));
+            service.generateImage = vi.fn().mockReturnValue(throwError(() => 'boom'));
             store.generateImage('a cat');
 
-            service.generateImage = jest.fn().mockReturnValue(of(generated()));
+            service.generateImage = vi.fn().mockReturnValue(of(generated()));
             store.generateImage('a cat');
 
             expect(store.imageError()).toBeNull();
@@ -111,13 +112,13 @@ describe('withAiImage', () => {
 
     describe('saveImage', () => {
         beforeEach(() => {
-            service.generateImage = jest.fn().mockReturnValue(of(generated()));
+            service.generateImage = vi.fn().mockReturnValue(of(generated()));
             store.generateImage('a cat');
         });
 
         it('should publish once even on a double click (exhaustMap, FR-035)', () => {
             const pending = new Subject();
-            service.createAndPublishContentlet = jest.fn().mockReturnValue(pending);
+            service.createAndPublishContentlet = vi.fn().mockReturnValue(pending);
 
             store.saveImage();
             store.saveImage();
@@ -126,7 +127,7 @@ describe('withAiImage', () => {
         });
 
         it('should mark the image published on success', () => {
-            service.createAndPublishContentlet = jest.fn().mockReturnValue(of({ contentlet: {} }));
+            service.createAndPublishContentlet = vi.fn().mockReturnValue(of({ contentlet: {} }));
 
             store.saveImage();
 
@@ -134,7 +135,7 @@ describe('withAiImage', () => {
         });
 
         it('should keep the image on screen when publishing fails (FR-040)', () => {
-            service.createAndPublishContentlet = jest.fn().mockReturnValue(throwError(() => 'no'));
+            service.createAndPublishContentlet = vi.fn().mockReturnValue(throwError(() => 'no'));
 
             store.saveImage();
 
@@ -146,7 +147,7 @@ describe('withAiImage', () => {
         });
 
         it('should do nothing when there is no image', () => {
-            service.createAndPublishContentlet = jest.fn();
+            service.createAndPublishContentlet = vi.fn();
             patchState(store, { image: null });
 
             store.saveImage();
@@ -156,7 +157,7 @@ describe('withAiImage', () => {
     });
 
     it('should expose the same-origin asset url used for preview and download (FR-038)', () => {
-        service.generateImage = jest.fn().mockReturnValue(of(generated()));
+        service.generateImage = vi.fn().mockReturnValue(of(generated()));
 
         store.generateImage('a cat');
 

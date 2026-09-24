@@ -1,4 +1,5 @@
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ConfirmationService } from 'primeng/api';
 import { Table } from 'primeng/table';
@@ -38,7 +39,8 @@ const messageServiceMock = new MockDotMessageService({
     'keyValue.clear_all.message': 'Every key and value in this field will be removed.',
     'keyValue.clear_all.accept': 'Clear',
     'keyValue.clear_all.reject': 'Cancel',
-    'keyValue.action.load_more': 'Load more',
+    'keyValue.action.show_all': 'Show all',
+    'keyValue.action.show_less': 'Show less',
     Delete: 'Delete',
     Reorder: 'Reorder',
     add: 'Add'
@@ -157,8 +159,8 @@ describe('DotKeyValueComponent', () => {
 
     describe('list operations', () => {
         it('should prepend a new pair and report it', () => {
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
             const newVariable = { key: 'newKey', value: 'newValue', hidden: false };
 
             spectator.component.saveVariable(newVariable);
@@ -169,8 +171,8 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should replace a pair in place and report both versions', () => {
-            const updateSpy = jest.spyOn(spectator.component.update, 'emit');
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const updateSpy = vi.spyOn(spectator.component.update, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
             const updated = { ...mockKeyValue[0], value: 'changed' };
 
             spectator.component.updateKeyValue(updated, 0);
@@ -184,8 +186,8 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should remove a pair and report it', () => {
-            const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const deleteSpy = vi.spyOn(spectator.component.delete, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.component.deleteVariable(0);
             spectator.detectChanges();
@@ -195,7 +197,7 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should wire the rows so a row-level delete removes that row', () => {
-            const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
+            const deleteSpy = vi.spyOn(spectator.component.delete, 'emit');
 
             spectator.click(spectator.queryAll(byTestId('dot-key-value-delete-button'))[0]);
             spectator.detectChanges();
@@ -222,7 +224,7 @@ describe('DotKeyValueComponent', () => {
         };
 
         it('should publish the list in the order PrimeNG left it', () => {
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             primengDropsRow(1, 0);
 
@@ -285,8 +287,8 @@ describe('DotKeyValueComponent', () => {
             // Field Variables persists row by row through `save`, so every pair has to
             // reach it; the other two consumers take the whole array from `updatedList`.
             create({ variables: [] });
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const saveSpy = vi.spyOn(spectator.component.save, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.component.saveVariables([
                 { key: 'A', value: '1' },
@@ -303,7 +305,7 @@ describe('DotKeyValueComponent', () => {
 
         it('should do nothing for an empty block', () => {
             create({ variables: [{ key: 'a', value: '1' }] });
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.component.saveVariables([]);
 
@@ -313,17 +315,17 @@ describe('DotKeyValueComponent', () => {
     });
 
     describe('the footer row', () => {
-        it('should be present even with no rows to page through', () => {
+        it('should be present even with nothing to expand', () => {
             create({ variables: [{ key: 'a', value: '1' }] });
 
             expect(spectator.query(byTestId('dot-key-value-footer-row'))).toBeTruthy();
             expect(spectator.query(byTestId('dot-key-value-clear-all'))).toBeTruthy();
-            // Only the paging control is conditional.
-            expect(spectator.query(byTestId('dot-key-value-load-more'))).toBeFalsy();
+            // Only the Show all toggle is conditional.
+            expect(spectator.query(byTestId('dot-key-value-show-all'))).toBeFalsy();
         });
 
         it('should go away entirely on an empty list', () => {
-            // Nothing to clear and nothing to page through, so the whole foot goes
+            // Nothing to clear and nothing to expand, so the whole foot goes
             // rather than sitting there with a dead button in it.
             create({ variables: [] });
 
@@ -342,14 +344,14 @@ describe('DotKeyValueComponent', () => {
 
         /** Runs whatever the component handed the confirmation service. */
         const accept = () => {
-            const request = jest.mocked(confirmation.confirm).mock.calls[0][0];
+            const request = vi.mocked(confirmation.confirm).mock.calls[0][0];
             request.accept();
             spectator.detectChanges();
         };
 
         it('should ask before removing anything', () => {
-            jest.spyOn(confirmation, 'confirm').mockImplementation();
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => confirmation);
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.click(byTestId('dot-key-value-clear-all'));
 
@@ -360,7 +362,7 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should empty the list once confirmed', () => {
-            jest.spyOn(confirmation, 'confirm').mockImplementation();
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => confirmation);
             spectator.click(byTestId('dot-key-value-clear-all'));
 
             accept();
@@ -372,9 +374,9 @@ describe('DotKeyValueComponent', () => {
         it('should report every removed pair and the empty list once', () => {
             // Field Variables deletes row by row through `delete`; the other consumers
             // take the whole array from `updatedList`.
-            jest.spyOn(confirmation, 'confirm').mockImplementation();
-            const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
-            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => confirmation);
+            const deleteSpy = vi.spyOn(spectator.component.delete, 'emit');
+            const listSpy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.click(byTestId('dot-key-value-clear-all'));
             accept();
@@ -389,7 +391,7 @@ describe('DotKeyValueComponent', () => {
             // itself — a consumer calling it directly must not get an empty dialog.
             create({ variables: [] });
             confirmation = spectator.inject(ConfirmationService);
-            jest.spyOn(confirmation, 'confirm').mockImplementation();
+            vi.spyOn(confirmation, 'confirm').mockImplementation(() => confirmation);
 
             spectator.component.confirmClearAll();
 
@@ -424,7 +426,7 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should not publish a reorder even if one reaches the handler', () => {
-            const updated = jest.fn();
+            const updated = vi.fn();
             spectator.output('updatedList').subscribe(updated);
 
             spectator.component.onRowReorder();
@@ -452,19 +454,19 @@ describe('DotKeyValueComponent', () => {
             expect(spectator.query(byTestId('dot-key-value-footer-row'))).toBeFalsy();
         });
 
-        it('should still page a long list', () => {
-            // Reading 200 generated entries is easier in pages; that is not an edit.
+        it('should still collapse a long list behind the toggle', () => {
+            // Reading 200 generated entries is easier collapsed; that is not an edit.
             create({
                 readOnly: true,
                 variables: Array.from({ length: 50 }, (_, i) => ({ key: `k${i}`, value: `v${i}` }))
             });
 
-            expect(spectator.query(byTestId('dot-key-value-load-more'))).toBeTruthy();
+            expect(spectator.query(byTestId('dot-key-value-show-all'))).toBeTruthy();
             expect(spectator.query(byTestId('dot-key-value-clear-all'))).toBeFalsy();
         });
     });
 
-    describe('paging long lists', () => {
+    describe('showing a long list in full', () => {
         const manyPairs = (count: number): DotKeyValue[] =>
             Array.from({ length: count }, (_, i) => ({
                 key: `key-${String(i).padStart(3, '0')}`,
@@ -478,7 +480,7 @@ describe('DotKeyValueComponent', () => {
             create({ variables: manyPairs(40) });
 
             expect(renderedKeys()).toHaveLength(40);
-            expect(spectator.query(byTestId('dot-key-value-load-more'))).toBeFalsy();
+            expect(spectator.query(byTestId('dot-key-value-show-all'))).toBeFalsy();
         });
 
         it('should render only the first page of a longer list', () => {
@@ -486,41 +488,56 @@ describe('DotKeyValueComponent', () => {
 
             expect(renderedKeys()).toHaveLength(40);
             expect(renderedKeys()[0]).toBe('key-000');
-            expect(spectator.query(byTestId('dot-key-value-load-more')).textContent).toContain(
-                'Load more'
+            expect(spectator.query(byTestId('dot-key-value-show-all'))?.textContent).toContain(
+                'Show all'
             );
         });
 
-        it('should reveal the next page on each click, in order', () => {
+        it('should state how many rows there are in total, not how many are hidden', () => {
+            // Expanding is the decision that needs a number; the count is the whole list,
+            // matching `dot-relationship-field`.
             create({ variables: manyPairs(95) });
 
-            spectator.click(byTestId('dot-key-value-load-more'));
-            spectator.detectChanges();
-            expect(renderedKeys()).toHaveLength(80);
-            expect(renderedKeys()[79]).toBe('key-079');
-
-            spectator.click(byTestId('dot-key-value-load-more'));
-            spectator.detectChanges();
-            expect(renderedKeys()).toHaveLength(95);
-        });
-
-        it('should drop the control once nothing is left to reveal', () => {
-            create({ variables: manyPairs(50) });
-
-            spectator.click(byTestId('dot-key-value-load-more'));
-            spectator.detectChanges();
-
-            expect(renderedKeys()).toHaveLength(50);
-            expect(spectator.query(byTestId('dot-key-value-load-more'))).toBeFalsy();
-        });
-
-        it('should keep the same label whatever is left to reveal', () => {
-            // Matches the site/folder selector, which never states a count.
-            create({ variables: manyPairs(50) });
-
-            expect(spectator.query(byTestId('dot-key-value-load-more')).textContent).toContain(
-                'Load more'
+            expect(spectator.query(byTestId('dot-key-value-show-all'))?.textContent).toContain(
+                '95'
             );
+        });
+
+        it('should reveal the whole list in a single click', () => {
+            create({ variables: manyPairs(95) });
+
+            spectator.click(byTestId('dot-key-value-show-all'));
+            spectator.detectChanges();
+
+            expect(renderedKeys()).toHaveLength(95);
+            expect(renderedKeys()[94]).toBe('key-094');
+        });
+
+        it('should collapse back to the first page on a second click', () => {
+            create({ variables: manyPairs(95) });
+
+            spectator.click(byTestId('dot-key-value-show-all'));
+            spectator.detectChanges();
+            spectator.click(byTestId('dot-key-value-show-all'));
+            spectator.detectChanges();
+
+            expect(renderedKeys()).toHaveLength(40);
+            expect(spectator.query(byTestId('dot-key-value-show-all'))?.textContent).toContain(
+                'Show all'
+            );
+        });
+
+        it('should swap the label and the expanded state once open', () => {
+            create({ variables: manyPairs(95) });
+
+            spectator.click(byTestId('dot-key-value-show-all'));
+            spectator.detectChanges();
+
+            const toggle = spectator.query(byTestId('dot-key-value-show-all'));
+            expect(toggle?.textContent).toContain('Show less');
+            // No count on the way back: collapsing always returns to the same first page.
+            expect(toggle?.textContent).not.toContain('95');
+            expect(toggle?.getAttribute('aria-expanded')).toBe('true');
         });
 
         it('should keep the whole list bound to the table, not just the rendered part', () => {
@@ -533,7 +550,7 @@ describe('DotKeyValueComponent', () => {
 
         it('should still emit the whole list when a visible row is removed', () => {
             create({ variables: manyPairs(95) });
-            const spy = jest.spyOn(spectator.component.updatedList, 'emit');
+            const spy = vi.spyOn(spectator.component.updatedList, 'emit');
 
             spectator.component.deleteVariable(0);
 
@@ -541,23 +558,23 @@ describe('DotKeyValueComponent', () => {
             expect(spy.mock.calls[0][0]).toHaveLength(94);
         });
 
-        it('should keep the revealed rows when the consumer re-feeds the list', () => {
+        it('should stay expanded when the consumer re-feeds the list', () => {
             /*
              * The regression this guards: Field Variables and Apps hand back a fresh
-             * array on every edit, so deriving the count from the input collapsed the
-             * table to the first page as soon as anything changed — 45 rows back down
-             * to 40 on a single delete.
+             * array on every edit, so deriving the expanded state from the input
+             * collapsed the table as soon as anything changed — 95 rows back down to 40
+             * on a single delete.
              */
             create({ variables: manyPairs(95) });
-            spectator.click(byTestId('dot-key-value-load-more'));
+            spectator.click(byTestId('dot-key-value-show-all'));
             spectator.detectChanges();
-            expect(renderedKeys()).toHaveLength(80);
+            expect(renderedKeys()).toHaveLength(95);
 
             // A new array, as those two consumers produce on every change.
             spectator.setInput('variables', manyPairs(94));
             spectator.detectChanges();
 
-            expect(renderedKeys()).toHaveLength(80);
+            expect(renderedKeys()).toHaveLength(94);
         });
     });
 

@@ -1,5 +1,6 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mocked } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
 
@@ -7,7 +8,7 @@ import { DotActionUrlService } from './dot-action-url.service';
 
 describe('DotActionUrlService', () => {
     let spectator: SpectatorService<DotActionUrlService>;
-    let httpClientMock: jest.Mocked<HttpClient>;
+    let httpClientMock: Mocked<HttpClient>;
     const createService = createServiceFactory({
         service: DotActionUrlService,
         mocks: [HttpClient]
@@ -15,7 +16,7 @@ describe('DotActionUrlService', () => {
 
     beforeEach(() => {
         spectator = createService();
-        httpClientMock = spectator.inject(HttpClient) as jest.Mocked<HttpClient>;
+        httpClientMock = spectator.inject(HttpClient) as Mocked<HttpClient>;
     });
 
     it('should get the URL to create a contentlet', () => {
@@ -44,15 +45,16 @@ describe('DotActionUrlService', () => {
         );
     });
 
-    it('should propagate the error when the request fails', (done) => {
-        const error = new Error('Not Found');
-        httpClientMock.get.mockReturnValue(throwError(() => error));
+    it('should propagate the error when the request fails', () =>
+        new Promise<void>((done) => {
+            const error = new Error('Not Found');
+            httpClientMock.get.mockReturnValue(throwError(() => error));
 
-        spectator.service.getCreateContentletUrl('unknownType').subscribe({
-            error: (e) => {
-                expect(e).toBe(error);
-                done();
-            }
-        });
-    });
+            spectator.service.getCreateContentletUrl('unknownType').subscribe({
+                error: (e) => {
+                    expect(e).toBe(error);
+                    done();
+                }
+            });
+        }));
 });

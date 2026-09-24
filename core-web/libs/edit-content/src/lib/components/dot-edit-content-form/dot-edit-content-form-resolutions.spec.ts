@@ -1,3 +1,5 @@
+import { Mock, vi } from 'vitest';
+
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSClazzes,
@@ -12,8 +14,8 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { attachOrderedFields, parsePreservingKeyOrder } from '../../utils/key-value-order.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
 
-jest.mock('../../utils/relationshipFromContentlet', () => ({
-    getRelationshipFromContentlet: jest.fn()
+vi.mock('../../utils/relationshipFromContentlet', () => ({
+    getRelationshipFromContentlet: vi.fn()
 }));
 
 // Ensure resolutionValue is properly initialized before each test
@@ -76,7 +78,7 @@ describe('DotEditContentFormResolutions', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Restore resolutionValue to its original state before each test
         // This prevents test contamination from other tests
@@ -110,6 +112,69 @@ describe('DotEditContentFormResolutions', () => {
         it('should return null when contentlet is null and isManualTranslation is true', () => {
             const result = resolutionValue[FIELD_TYPES.TEXTAREA](null, mockField, undefined, true);
             expect(result).toBeNull();
+        });
+    });
+
+    // A Checkbox or Multi-Select the user cleared comes back from the API with its key absent.
+    // On saved content that absence means "nothing selected", so the Content Type default must
+    // not be re-applied — otherwise the box re-checks itself and a save writes the default back.
+    // See https://github.com/dotCMS/core/issues/35416
+    describe('selectionResolutionFn', () => {
+        const SELECTION_FIELD_TYPES = [FIELD_TYPES.CHECKBOX, FIELD_TYPES.MULTI_SELECT] as const;
+
+        const CLAZZ_BY_FIELD_TYPE = {
+            [FIELD_TYPES.CHECKBOX]: DotCMSClazzes.CHECKBOX,
+            [FIELD_TYPES.MULTI_SELECT]: DotCMSClazzes.MULTI_SELECT
+        } as const;
+
+        describe.each(SELECTION_FIELD_TYPES)('%s', (fieldType) => {
+            // Built per field type rather than shared: the resolver ignores fieldType/clazz today,
+            // but a fixture that claims to be a Checkbox while carrying TEXT metadata would start
+            // lying the moment this moves behind getFinalCastedValue, which dispatches on fieldType.
+            const selectionField: DotCMSContentTypeField = {
+                ...mockField,
+                variable: 'showOnMenu',
+                defaultValue: 'true',
+                fieldType,
+                clazz: CLAZZ_BY_FIELD_TYPE[fieldType]
+            };
+
+            // null, not '': getFinalCastedValue flattens these types with split(','), and ''
+            // would become [''] — length 1, which Validators.required accepts.
+            it('should return null when the key is absent on a saved contentlet', () => {
+                const contentlet = createFakeContentlet({ identifier: 'saved-123' });
+                delete contentlet[selectionField.variable];
+                // createFakeContentlet does not set this key, so the delete is defensive —
+                // assert it so the test fails loudly if the fake ever grows one.
+                expect(contentlet[selectionField.variable]).toBeUndefined();
+
+                const result = resolutionValue[fieldType](contentlet, selectionField);
+
+                expect(result).toBeNull();
+            });
+
+            it('should return the stored value when the contentlet has one', () => {
+                const contentlet = createFakeContentlet({
+                    identifier: 'saved-123',
+                    [selectionField.variable]: 'true'
+                });
+
+                const result = resolutionValue[fieldType](contentlet, selectionField);
+
+                expect(result).toBe('true');
+            });
+
+            it('should return the defaultValue for new content', () => {
+                const result = resolutionValue[fieldType](null, selectionField);
+
+                expect(result).toBe('true');
+            });
+
+            it('should return null for new content during manual translation', () => {
+                const result = resolutionValue[fieldType](null, selectionField, undefined, true);
+
+                expect(result).toBeNull();
+            });
         });
     });
 
@@ -387,7 +452,7 @@ describe('DotEditContentFormResolutions', () => {
         const mockRelationships = [{ identifier: 'id1' }, { identifier: 'id2' }];
 
         beforeEach(() => {
-            (getRelationshipFromContentlet as jest.Mock).mockReturnValue(mockRelationships);
+            (getRelationshipFromContentlet as Mock).mockReturnValue(mockRelationships);
         });
 
         it('should join relationship identifiers with commas', () => {
@@ -404,7 +469,7 @@ describe('DotEditContentFormResolutions', () => {
         });
 
         it('should handle empty relationships', () => {
-            (getRelationshipFromContentlet as jest.Mock).mockReturnValue([]);
+            (getRelationshipFromContentlet as Mock).mockReturnValue([]);
             const result = resolutionValue[FIELD_TYPES.RELATIONSHIP](mockContentlet, mockField);
             expect(result).toBe('');
         });
@@ -478,13 +543,13 @@ describe('DotEditContentFormResolutions', () => {
                 FIELD_TYPES.BINARY,
                 FIELD_TYPES.FILE,
                 FIELD_TYPES.IMAGE,
-                FIELD_TYPES.CHECKBOX,
+                // CHECKBOX and MULTI_SELECT have their own resolver — for saved content an
+                // absent key means "nothing selected", so no default is applied.
                 FIELD_TYPES.CONSTANT,
                 FIELD_TYPES.CUSTOM_FIELD,
                 FIELD_TYPES.HIDDEN,
                 FIELD_TYPES.JSON,
                 // KEY_VALUE has its own resolver — it recovers the response's key order.
-                FIELD_TYPES.MULTI_SELECT,
                 FIELD_TYPES.RADIO,
                 FIELD_TYPES.TAG,
                 FIELD_TYPES.TEXTAREA,
@@ -494,6 +559,17 @@ describe('DotEditContentFormResolutions', () => {
             defaultFieldTypes.forEach((fieldType) => {
                 expect(resolutionValue[fieldType]).toBe(resolutionValue[FIELD_TYPES.TEXTAREA]);
             });
+        });
+
+        // Keeps the table above self-checking: without this, removing CHECKBOX and MULTI_SELECT
+        // from the default list leaves only a comment recording where they went.
+        it('should route CHECKBOX and MULTI_SELECT to their own shared resolver', () => {
+            expect(resolutionValue[FIELD_TYPES.CHECKBOX]).toBe(
+                resolutionValue[FIELD_TYPES.MULTI_SELECT]
+            );
+            expect(resolutionValue[FIELD_TYPES.CHECKBOX]).not.toBe(
+                resolutionValue[FIELD_TYPES.TEXTAREA]
+            );
         });
 
         describe('blockEditorResolutionFn', () => {

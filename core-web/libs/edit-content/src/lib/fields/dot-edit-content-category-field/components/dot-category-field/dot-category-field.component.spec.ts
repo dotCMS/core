@@ -4,9 +4,10 @@ import {
     mockProvider,
     SpectatorHost,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -56,7 +57,7 @@ describe('DotCategoryFieldComponent', () => {
         componentViewProviders: [
             CategoryFieldStore,
             mockProvider(CategoriesService, {
-                getSelectedHierarchy: jest.fn().mockReturnValue(of(CATEGORY_HIERARCHY_MOCK))
+                getSelectedHierarchy: vi.fn().mockReturnValue(of(CATEGORY_HIERARCHY_MOCK))
             })
         ],
         detectChanges: false
@@ -85,6 +86,24 @@ describe('DotCategoryFieldComponent', () => {
                 service = spectator.inject(CategoriesService, true);
             });
 
+            /**
+             * AC-209 — this widget's value is a collection, so there is no single control for
+             * `<label for>` to reach. The widget itself is the named thing, via aria-labelledby
+             * pointing at the field label. No aria-required: ARIA defines it on radiogroup, not on
+             * a plain group.
+             */
+            it('should expose itself as a group named by the field label', () => {
+                // `role` is a static host attribute, applied at creation; aria-labelledby is a
+                // binding and needs a change-detection pass, which this suite's setup does not run.
+                spectator.detectChanges();
+
+                expect(spectator.element.getAttribute('role')).toBe('group');
+                expect(spectator.element.getAttribute('aria-labelledby')).toBe(
+                    'label-' + CATEGORY_FIELD_MOCK.variable
+                );
+                expect(spectator.element.getAttribute('aria-required')).toBeNull();
+            });
+
             it('should render a button for selecting categories', () => {
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('show-dialog-btn'))).not.toBeNull();
@@ -111,7 +130,7 @@ describe('DotCategoryFieldComponent', () => {
             it('should invoke `clearAllSelected` method when the `Clear all` button is clicked', () => {
                 spectator.detectChanges();
                 const clearAllBtn = spectator.query(byTestId('clear-all-btn'));
-                const clearAllSelectedSpy = jest.spyOn(spectator.component, 'clearAllSelected');
+                const clearAllSelectedSpy = vi.spyOn(spectator.component, 'clearAllSelected');
                 expect(clearAllBtn).not.toBeNull();
 
                 spectator.click(clearAllBtn);
@@ -130,7 +149,7 @@ describe('DotCategoryFieldComponent', () => {
                 // directly is more reliable in this test harness than reading the
                 // value back off the shared host FormGroup (see the disabled tests
                 // at the bottom of this file for the same limitation).
-                const onChangeSpy = jest.spyOn(
+                const onChangeSpy = vi.spyOn(
                     spectator.component as unknown as { onChange: (value: unknown) => void },
                     'onChange'
                 );
@@ -260,7 +279,7 @@ describe('DotCategoryFieldComponent', () => {
         it('should invoke `showCategoriesDialog` method when the select button is clicked', () => {
             spectator.detectChanges();
             const selectBtn = spectator.query(byTestId('show-dialog-btn'));
-            const showCategoriesDialogSpy = jest.spyOn(spectator.component, 'openCategoriesDialog');
+            const showCategoriesDialogSpy = vi.spyOn(spectator.component, 'openCategoriesDialog');
             expect(selectBtn).not.toBeNull();
 
             spectator.click(selectBtn);
@@ -292,7 +311,7 @@ describe('DotCategoryFieldComponent', () => {
             expect(spectator.query(DotCategoryFieldDialogComponent)).not.toBeNull();
         });
 
-        xit('should remove DotCategoryFieldDialogComponent when `closedDialog` emit', fakeAsync(async () => {
+        it.skip('should remove DotCategoryFieldDialogComponent when `closedDialog` emit', fakeAsync(async () => {
             spectator.detectChanges();
             spectator.component.ngOnInit();
             spectator.detectChanges();

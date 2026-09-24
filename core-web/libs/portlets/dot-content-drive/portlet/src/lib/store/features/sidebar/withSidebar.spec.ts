@@ -1,7 +1,7 @@
-import { describe, it, expect } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/vitest';
 import { NEVER, of, Subject } from 'rxjs';
+import { Mocked, describe, expect, it, vi } from 'vitest';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
@@ -10,7 +10,7 @@ import { createFakeFolderSearchView, createFakeSite } from '@dotcms/utils-testin
 
 import { withSidebar } from './withSidebar';
 
-import { SYSTEM_HOST } from '../../../shared/constants';
+import { ROOT_PATH, SYSTEM_HOST, SYSTEM_HOST_PATH } from '../../../shared/constants';
 import {
     DotContentDriveSortOrder,
     DotContentDriveState,
@@ -86,7 +86,7 @@ export const sidebarStoreMock = signalStore(
 describe('withSidebar', () => {
     let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
     let store: InstanceType<typeof sidebarStoreMock>;
-    let folderService: jest.Mocked<DotFolderService>;
+    let folderService: Mocked<DotFolderService>;
 
     // What `createSiteNode` produces for the mocked site: the row that stands for the site.
     const siteNode: DotFolderTreeNodeItem = createSiteNode(mockSite);
@@ -107,7 +107,7 @@ describe('withSidebar', () => {
         service: sidebarStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                searchFolders: jest.fn().mockReturnValue(searchResult([]))
+                searchFolders: vi.fn().mockReturnValue(searchResult([]))
             })
         ]
     });
@@ -132,11 +132,17 @@ describe('withSidebar', () => {
             createFakeFolderSearchView({ id: 'b', name: 'blog', path: '/' })
         ];
 
-        beforeEach((done) => {
-            folderService.searchFolders.mockReturnValue(searchResult(rootViews));
-            store.loadFolders();
-            setTimeout(done, 0);
-        });
+        // A returned promise, not a `done` parameter: Vitest rejects the callback style
+        // outright with "done() callback is deprecated, use promise instead", and the
+        // hook then never completed — every test in this describe timed out.
+        beforeEach(
+            () =>
+                new Promise<void>((done) => {
+                    folderService.searchFolders.mockReturnValue(searchResult(rootViews));
+                    store.loadFolders();
+                    setTimeout(done, 0);
+                })
+        );
 
         afterEach(() => {
             // The mock is created once with the factory, so a return value set here would otherwise
@@ -169,19 +175,20 @@ describe('withSidebar', () => {
 
     describe('methods', () => {
         describe('loadFolders', () => {
-            it('should load folders for current site and path', (done) => {
-                store.loadFolders();
+            it('should load folders for current site and path', () =>
+                new Promise<void>((done) => {
+                    store.loadFolders();
 
-                // Wait for async operations to complete
-                setTimeout(() => {
-                    expect(folderService.searchFolders).toHaveBeenCalledWith(
-                        expect.objectContaining({ siteId: mockSite.identifier })
-                    );
-                    expect(store.sidebarLoading()).toBe(false);
-                    expect(store.folders()).toContainEqual(siteNodeWithChildren());
-                    done();
-                }, 0);
-            });
+                    // Wait for async operations to complete
+                    setTimeout(() => {
+                        expect(folderService.searchFolders).toHaveBeenCalledWith(
+                            expect.objectContaining({ siteId: mockSite.identifier })
+                        );
+                        expect(store.sidebarLoading()).toBe(false);
+                        expect(store.folders()).toContainEqual(siteNodeWithChildren());
+                        done();
+                    }, 0);
+                }));
 
             it('should flag loading while a reload is in flight', () => {
                 // Only the initial state used to set this, so a site change left the previous
@@ -195,17 +202,18 @@ describe('withSidebar', () => {
                 expect(store.sidebarLoading()).toBe(true);
             });
 
-            it('should handle empty folder response', (done) => {
-                folderService.searchFolders.mockReturnValue(searchResult([]));
+            it('should handle empty folder response', () =>
+                new Promise<void>((done) => {
+                    folderService.searchFolders.mockReturnValue(searchResult([]));
 
-                store.loadFolders();
+                    store.loadFolders();
 
-                setTimeout(() => {
-                    expect(store.sidebarLoading()).toBe(false);
-                    expect(store.folders()).toContainEqual(siteNodeWithChildren());
-                    done();
-                }, 0);
-            });
+                    setTimeout(() => {
+                        expect(store.sidebarLoading()).toBe(false);
+                        expect(store.folders()).toContainEqual(siteNodeWithChildren());
+                        done();
+                    }, 0);
+                }));
 
             // Two triggers can call this concurrently on a cold load: the feature's own `onInit`
             // and the sidebar component's `currentSite` effect. Without cancellation both writes
@@ -223,88 +231,97 @@ describe('withSidebar', () => {
                 const labelsInTree = () =>
                     (store.folders()[0]?.children ?? []).map((child) => child.label);
 
-                it('should keep the newer result when the older one resolves last', (done) => {
-                    const stale = new Subject<{
-                        folders: FolderSearchView[];
-                        pagination: DotPagination;
-                    }>();
+                it('should keep the newer result when the older one resolves last', () =>
+                    new Promise<void>((done) => {
+                        const stale = new Subject<{
+                            folders: FolderSearchView[];
+                            pagination: DotPagination;
+                        }>();
 
-                    folderService.searchFolders.mockReturnValue(stale);
-                    store.loadFolders();
+                        folderService.searchFolders.mockReturnValue(stale);
+                        store.loadFolders();
 
-                    folderService.searchFolders.mockReturnValue(searchResult([viewNamed('fresh')]));
-                    store.loadFolders();
+                        folderService.searchFolders.mockReturnValue(
+                            searchResult([viewNamed('fresh')])
+                        );
+                        store.loadFolders();
 
-                    // The first request answers only now, after the second already has.
-                    stale.next({ folders: [viewNamed('stale')], pagination: EMPTY_PAGINATION });
-                    stale.complete();
+                        // The first request answers only now, after the second already has.
+                        stale.next({ folders: [viewNamed('stale')], pagination: EMPTY_PAGINATION });
+                        stale.complete();
 
-                    setTimeout(() => {
-                        expect(labelsInTree()).toEqual(['/fresh/']);
-                        done();
-                    }, 0);
-                });
+                        setTimeout(() => {
+                            expect(labelsInTree()).toEqual(['/fresh/']);
+                            done();
+                        }, 0);
+                    }));
 
-                it('should settle loading once, on the newer result', (done) => {
-                    folderService.searchFolders.mockReturnValue(NEVER);
-                    store.loadFolders();
+                it('should settle loading once, on the newer result', () =>
+                    new Promise<void>((done) => {
+                        folderService.searchFolders.mockReturnValue(NEVER);
+                        store.loadFolders();
 
-                    folderService.searchFolders.mockReturnValue(searchResult([viewNamed('fresh')]));
-                    store.loadFolders();
+                        folderService.searchFolders.mockReturnValue(
+                            searchResult([viewNamed('fresh')])
+                        );
+                        store.loadFolders();
 
-                    setTimeout(() => {
-                        expect(store.sidebarLoading()).toBe(false);
-                        done();
-                    }, 0);
-                });
+                        setTimeout(() => {
+                            expect(store.sidebarLoading()).toBe(false);
+                            done();
+                        }, 0);
+                    }));
             });
         });
 
         describe('loadChildFolders', () => {
-            it('should load child folders for a specific path', (done) => {
-                const testPath = '/documents/images/';
-                const host = 'demo.dotcms.com';
+            it('should load child folders for a specific path', () =>
+                new Promise<void>((done) => {
+                    const testPath = '/documents/images/';
+                    const host = 'demo.dotcms.com';
 
-                folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
+                    folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
 
-                store.loadChildFolders(testPath, host).subscribe((result) => {
-                    expect(result.folders).toHaveLength(2);
-                    expect(folderService.searchFolders).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            siteId: mockSite.identifier,
-                            path: testPath,
-                            recursive: false
-                        })
-                    );
-                    done();
-                });
-            });
+                    store.loadChildFolders(testPath, host).subscribe((result) => {
+                        expect(result.folders).toHaveLength(2);
+                        expect(folderService.searchFolders).toHaveBeenCalledWith(
+                            expect.objectContaining({
+                                siteId: mockSite.identifier,
+                                path: testPath,
+                                recursive: false
+                            })
+                        );
+                        done();
+                    });
+                }));
 
-            it('should transform folders into tree nodes correctly', (done) => {
-                const testPath = '/documents/';
+            it('should transform folders into tree nodes correctly', () =>
+                new Promise<void>((done) => {
+                    const testPath = '/documents/';
 
-                folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
+                    folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
 
-                store.loadChildFolders(testPath).subscribe((result) => {
-                    expect(result.folders).toHaveLength(2);
-                    expect(result.folders[0]).toHaveProperty('key');
-                    expect(result.folders[0]).toHaveProperty('label');
-                    expect(result.folders[0]).toHaveProperty('data');
-                    expect(result.folders[0].data.type).toBe('folder');
-                    done();
-                });
-            });
+                    store.loadChildFolders(testPath).subscribe((result) => {
+                        expect(result.folders).toHaveLength(2);
+                        expect(result.folders[0]).toHaveProperty('key');
+                        expect(result.folders[0]).toHaveProperty('label');
+                        expect(result.folders[0]).toHaveProperty('data');
+                        expect(result.folders[0].data!.type).toBe('folder');
+                        done();
+                    });
+                }));
 
-            it('should thread the requested page through to the search endpoint', (done) => {
-                folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
+            it('should thread the requested page through to the search endpoint', () =>
+                new Promise<void>((done) => {
+                    folderService.searchFolders.mockReturnValue(searchResult(mockChildViews));
 
-                store.loadChildFolders('/documents/', 'demo.dotcms.com', 3).subscribe(() => {
-                    expect(folderService.searchFolders).toHaveBeenCalledWith(
-                        expect.objectContaining({ path: '/documents/', page: 3 })
-                    );
-                    done();
-                });
-            });
+                    store.loadChildFolders('/documents/', 'demo.dotcms.com', 3).subscribe(() => {
+                        expect(folderService.searchFolders).toHaveBeenCalledWith(
+                            expect.objectContaining({ path: '/documents/', page: 3 })
+                        );
+                        done();
+                    });
+                }));
 
             it('should not need to call loadChildFolders when node already has children', () => {
                 // Create a node that already has children
@@ -418,7 +435,7 @@ describe('withSidebar', () => {
 describe('withSidebar - null site scenarios', () => {
     let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
     let store: InstanceType<typeof sidebarStoreMock>;
-    let folderService: jest.Mocked<DotFolderService>;
+    let folderService: Mocked<DotFolderService>;
 
     const nullSiteStoreMock = signalStore(
         withState<DotContentDriveState>({
@@ -433,7 +450,7 @@ describe('withSidebar - null site scenarios', () => {
         service: nullSiteStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                searchFolders: jest.fn().mockReturnValue(searchResult(mockChildViews))
+                searchFolders: vi.fn().mockReturnValue(searchResult(mockChildViews))
             })
         ]
     });
@@ -455,7 +472,7 @@ describe('withSidebar - null site scenarios', () => {
 describe('withSidebar - system host scenarios', () => {
     let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
     let store: InstanceType<typeof sidebarStoreMock>;
-    let folderService: jest.Mocked<DotFolderService>;
+    let folderService: Mocked<DotFolderService>;
 
     const systemHostStoreMock = signalStore(
         withState<DotContentDriveState>({
@@ -470,7 +487,7 @@ describe('withSidebar - system host scenarios', () => {
         service: systemHostStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                searchFolders: jest.fn().mockReturnValue(searchResult(mockChildViews))
+                searchFolders: vi.fn().mockReturnValue(searchResult(mockChildViews))
             })
         ]
     });
@@ -493,7 +510,7 @@ describe('withSidebar - system host scenarios', () => {
 describe('withSidebar - undefined path scenarios', () => {
     let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
     let store: InstanceType<typeof sidebarStoreMock>;
-    let folderService: jest.Mocked<DotFolderService>;
+    let folderService: Mocked<DotFolderService>;
 
     const undefinedPathStoreMock = signalStore(
         withState<DotContentDriveState>({
@@ -507,7 +524,7 @@ describe('withSidebar - undefined path scenarios', () => {
         service: undefinedPathStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                searchFolders: jest.fn().mockReturnValue(searchResult(mockChildViews))
+                searchFolders: vi.fn().mockReturnValue(searchResult(mockChildViews))
             })
         ]
     });
@@ -519,14 +536,101 @@ describe('withSidebar - undefined path scenarios', () => {
     });
 
     describe('loadFolders with undefined path', () => {
-        it('should handle undefined path correctly', (done) => {
-            store.loadFolders();
+        it('should handle undefined path correctly', () =>
+            new Promise<void>((done) => {
+                store.loadFolders();
 
-            setTimeout(() => {
-                expect(folderService.searchFolders).toHaveBeenCalled();
-                expect(store.sidebarLoading()).toBe(false);
-                done();
-            }, 0);
-        });
+                setTimeout(() => {
+                    expect(folderService.searchFolders).toHaveBeenCalled();
+                    expect(store.sidebarLoading()).toBe(false);
+                    done();
+                }, 0);
+            }));
+    });
+});
+
+describe('withSidebar - a location that is not a folder', () => {
+    let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
+    let store: InstanceType<typeof sidebarStoreMock>;
+    let folderService: Mocked<DotFolderService>;
+
+    // System Host belongs to no site, so it is nowhere in this site's hierarchy. It reaches the
+    // sidebar as a location like any other, which is what made it look like a folder path.
+    const systemHostLocationStoreMock = signalStore(
+        withState<DotContentDriveState>({
+            ...initialState,
+            path: SYSTEM_HOST_PATH
+        }),
+        withSidebar()
+    );
+
+    const createService = createServiceFactory({
+        service: systemHostLocationStoreMock,
+        providers: [
+            mockProvider(DotFolderService, {
+                searchFolders: vi.fn().mockReturnValue(searchResult([]))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        folderService = spectator.inject(DotFolderService);
+    });
+
+    it('should not go looking for it among the site folders', () => {
+        // The site's own root level is still fetched — the tree shows this site's folders whatever
+        // location is open. What must not happen is resolving the location itself as a folder: it
+        // was turned into `/SYSTEM_HOST/` and queried, a folder nobody has, so the request could
+        // only ever come back empty.
+        expect(folderService.searchFolders).not.toHaveBeenCalledWith(
+            expect.objectContaining({ path: '/SYSTEM_HOST/' })
+        );
+    });
+
+    it('should leave the tree with nothing selected', () => {
+        // The failing behaviour, and the one the user sees: the hierarchy load fell back to the
+        // site row, so the site root and System Host both looked selected at once. Worse, the
+        // shell syncs the location from the selected node, so that row then rewrote the location
+        // to the site root and bounced the user straight back out of System Host.
+        expect(store.selectedNode()).toBeUndefined();
+    });
+});
+
+describe('withSidebar - the site root as a location', () => {
+    let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
+    let store: InstanceType<typeof sidebarStoreMock>;
+
+    const rootPathStoreMock = signalStore(
+        withState<DotContentDriveState>({
+            ...initialState,
+            path: ROOT_PATH
+        }),
+        withSidebar()
+    );
+
+    const createService = createServiceFactory({
+        service: rootPathStoreMock,
+        providers: [
+            mockProvider(DotFolderService, {
+                searchFolders: vi.fn().mockReturnValue(searchResult([]))
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+    });
+
+    it('should keep the site row selected once the location settles', () => {
+        // The tree marks its site row with an empty path, while the site root as a *location* is
+        // `/`. Looking the location up literally finds no node, so the sync that keeps the tree in
+        // step with the location read that as "nothing here" and cleared the selection every time
+        // the user was at the site root.
+        spectator.flushEffects();
+
+        expect(store.selectedNode()?.data?.id).toBe(mockSite.identifier);
     });
 });

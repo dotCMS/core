@@ -1,5 +1,5 @@
 ---
-description: "Testing with Spectator, Jest, data-testid, integration tests. Use when writing or editing *.spec.ts, *Test.java, or test files."
+description: "Testing with Spectator, Vitest, data-testid, integration tests. Use when writing or editing *.spec.ts, *Test.java, or test files."
 globs: **/*.spec.ts, **/*.test.ts, **/test/**/*, **/*Test.java
 alwaysApply: false
 ---
@@ -19,6 +19,7 @@ alwaysApply: false
 
 ## Backend (Java)
 - DotConnect for DB; APILocator for services. Structure: *Test.java (unit), *IT.java (integration).
+- **Suite registration (CRITICAL)**: a new integration test class must be registered in one of the `@SuiteClasses` aggregator suites, or it compiles, passes review and is **silently never run in CI** — green build, zero coverage. It still runs locally via `-Dit.test=`, which is why this is easy to miss. Which suite to pick is a live decision, not a fixed list: read `@docs/testing/INTEGRATION_TESTS.md` → "Registering Tests in a MainSuite (CI gate)" before registering. Don't hardcode suite names here — the set grows, and the choice depends on current CI timings.
 
 ## Commands
 ```bash
@@ -34,4 +35,4 @@ Replace `<project>` with the Nx project (e.g. `dotcms-ui`, `sdk-angular`, `edit-
 ## On-demand
 - `@docs/frontend/TESTING_FRONTEND.md`
 - `@docs/testing/BACKEND_UNIT_TESTS.md`
-- `@docs/testing/INTEGRATION_TESTS.md`
+- `@docs/testing/INTEGRATION_TESTS.md` — suite registration, running/debugging from IntelliJ

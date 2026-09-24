@@ -1,9 +1,11 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { EMPTY, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
+import { Button } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
@@ -24,7 +26,7 @@ const makeFile = (name: string): File => new File(['content'], name);
 
 const makeDragEvent = (files: File[]): DragEvent => {
     const dataTransfer = { files: files as unknown as FileList };
-    return { preventDefault: jest.fn(), dataTransfer } as unknown as DragEvent;
+    return { preventDefault: vi.fn(), dataTransfer } as unknown as DragEvent;
 };
 
 describe('DotPluginsListComponent', () => {
@@ -38,33 +40,54 @@ describe('DotPluginsListComponent', () => {
             mockProvider(DialogService),
             mockProvider(DotMessageService, { get: (key: string) => key }),
             mockProvider(DotOsgiService, {
-                getInstalledBundles: jest.fn().mockReturnValue(of({ entity: [] })),
-                getAvailablePlugins: jest.fn().mockReturnValue(of({ entity: [] })),
-                uploadBundles: jest.fn().mockReturnValue(of({})),
-                deploy: jest.fn().mockReturnValue(of({})),
-                processExports: jest.fn().mockReturnValue(of({}))
+                getInstalledBundles: vi.fn().mockReturnValue(of({ entity: [] })),
+                getAvailablePlugins: vi.fn().mockReturnValue(of({ entity: [] })),
+                uploadBundles: vi.fn().mockReturnValue(of({})),
+                deploy: vi.fn().mockReturnValue(of({})),
+                processExports: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService),
             ConfirmationService,
-            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
-            mockProvider(DotEventsSocket, { on: jest.fn().mockReturnValue(EMPTY) }),
+            mockProvider(DotMessageDisplayService, { push: vi.fn() }),
+            mockProvider(DotEventsSocket, { on: vi.fn().mockReturnValue(EMPTY) }),
             mockProvider(ActivatedRoute, {
                 snapshot: { data: { pushPublishEnvironments: [], isEnterprise: false } }
             }),
-            mockProvider(DotPushPublishDialogService, { open: jest.fn() })
+            mockProvider(DotPushPublishDialogService, { open: vi.fn() })
         ],
         shallow: true
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createComponent();
         component = spectator.component;
     });
 
+    describe('refresh button', () => {
+        const refreshButton = () =>
+            spectator
+                .queryAll(Button)
+                .find((button) => button.el.nativeElement.dataset.testid === 'plugins-refresh-btn');
+
+        it('should render with the primary treatment instead of the grey secondary one', () => {
+            spectator.detectChanges();
+            const button = refreshButton();
+            expect(button).toBeDefined();
+            expect(button?.severity).toBeUndefined();
+        });
+
+        it('should be labelled with the plugins.refresh key', () => {
+            spectator.detectChanges();
+            const label = spectator.query('[data-testid="plugins-refresh-btn"]')?.textContent;
+            expect(label).toContain('plugins.refresh');
+            expect(label).not.toContain('plugins.refresh-table');
+        });
+    });
+
     describe('drag and drop', () => {
         it('should show drop overlay while dragging and hide it when drag leaves', () => {
-            const event = { preventDefault: jest.fn(), dataTransfer: null } as unknown as DragEvent;
+            const event = { preventDefault: vi.fn(), dataTransfer: null } as unknown as DragEvent;
             component.onDragEnter(event);
             expect(component.isDragging()).toBe(true);
 
@@ -79,7 +102,7 @@ describe('DotPluginsListComponent', () => {
         });
 
         it('should keep isDragging true until all nested dragenter events have a matching dragleave', () => {
-            const event = { preventDefault: jest.fn(), dataTransfer: null } as unknown as DragEvent;
+            const event = { preventDefault: vi.fn(), dataTransfer: null } as unknown as DragEvent;
             component.onDragEnter(event);
             component.onDragEnter(event);
             component.onDragLeave(event);
@@ -92,7 +115,7 @@ describe('DotPluginsListComponent', () => {
             const jarFile = makeFile('plugin.jar');
             const txtFile = makeFile('readme.txt');
             const event = makeDragEvent([jarFile, txtFile]);
-            jest.spyOn(component.store, 'uploadBundles');
+            vi.spyOn(component.store, 'uploadBundles');
             component.isDragging.set(true);
 
             component.onDrop(event);
@@ -105,8 +128,8 @@ describe('DotPluginsListComponent', () => {
             const event = makeDragEvent([makeFile('readme.txt')]);
             const dotMessageDisplayService =
                 spectator.debugElement.injector.get(DotMessageDisplayService);
-            jest.spyOn(dotMessageDisplayService, 'push');
-            jest.spyOn(component.store, 'uploadBundles');
+            vi.spyOn(dotMessageDisplayService, 'push');
+            vi.spyOn(component.store, 'uploadBundles');
 
             component.onDrop(event);
 
@@ -120,8 +143,8 @@ describe('DotPluginsListComponent', () => {
             const event = makeDragEvent([]);
             const dotMessageDisplayService =
                 spectator.debugElement.injector.get(DotMessageDisplayService);
-            jest.spyOn(component.store, 'uploadBundles');
-            jest.spyOn(dotMessageDisplayService, 'push');
+            vi.spyOn(component.store, 'uploadBundles');
+            vi.spyOn(dotMessageDisplayService, 'push');
 
             component.onDrop(event);
 
@@ -131,10 +154,10 @@ describe('DotPluginsListComponent', () => {
     });
 
     describe('context menu', () => {
-        const mockShowSpy = jest.fn();
+        const mockShowSpy = vi.fn();
 
         const openContextMenu = (bundle: object) => {
-            jest.spyOn(component, 'contextMenu').mockReturnValue({
+            vi.spyOn(component, 'contextMenu').mockReturnValue({
                 show: mockShowSpy
             } as never);
             component.onContextMenu(new MouseEvent('contextmenu'), bundle as never);
@@ -186,7 +209,7 @@ describe('DotPluginsListComponent', () => {
             it('should open a confirmation dialog when process exports is triggered', () => {
                 const confirmationService =
                     spectator.debugElement.injector.get(ConfirmationService);
-                const confirmSpy = jest.spyOn(confirmationService, 'confirm');
+                const confirmSpy = vi.spyOn(confirmationService, 'confirm');
                 openContextMenu({
                     jarFile: 'test.jar',
                     symbolicName: 'test-bundle',
@@ -204,10 +227,10 @@ describe('DotPluginsListComponent', () => {
             it('should call processExports with the jar file name when confirmed', () => {
                 const confirmationService =
                     spectator.debugElement.injector.get(ConfirmationService);
-                jest.spyOn(confirmationService, 'confirm').mockImplementation(({ accept }) =>
+                vi.spyOn(confirmationService, 'confirm').mockImplementation(({ accept }) =>
                     accept?.()
                 );
-                jest.spyOn(component.store, 'processExports');
+                vi.spyOn(component.store, 'processExports');
                 openContextMenu({
                     jarFile: 'test.jar',
                     symbolicName: 'test-bundle',
@@ -301,7 +324,7 @@ describe('DotPluginsListComponent', () => {
             });
 
             it('should call store.deploy with the jar file name', () => {
-                jest.spyOn(component.store, 'deploy');
+                vi.spyOn(component.store, 'deploy');
                 openContextMenu({
                     jarFile: 'new-plugin.jar',
                     symbolicName: 'new-plugin.jar',

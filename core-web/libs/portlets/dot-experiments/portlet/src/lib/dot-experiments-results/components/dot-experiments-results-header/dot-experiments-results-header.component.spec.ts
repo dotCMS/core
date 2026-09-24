@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
 import { ActivatedRoute, Params, provideRouter, Router } from '@angular/router';
@@ -7,10 +8,12 @@ import { ConfirmationService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsResultsHeaderComponent } from './dot-experiments-results-header.component';
 
+import { DotExperimentsRouter } from '../../../services/dot-experiments-router.service';
 import { DotExperimentsResultsStore } from '../../../store/dot-experiments-results.store';
 
 const EXPERIMENT = {
@@ -28,10 +31,10 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const createStoreMock = () => ({
-    experiment: jest.fn().mockReturnValue(EXPERIMENT),
-    page: jest.fn().mockReturnValue(null),
-    $status: jest.fn().mockReturnValue(DotExperimentStatus.RUNNING),
-    $isSaving: jest.fn().mockReturnValue(false)
+    experiment: vi.fn().mockReturnValue(EXPERIMENT),
+    page: vi.fn().mockReturnValue(null),
+    $status: vi.fn().mockReturnValue(DotExperimentStatus.RUNNING),
+    $isSaving: vi.fn().mockReturnValue(false)
 });
 
 /**
@@ -47,10 +50,19 @@ describe('DotExperimentsResultsHeaderComponent', () => {
     let storeMock: ReturnType<typeof createStoreMock>;
     /** The address the screen arrived on, as `ActivatedRoute` reports it. */
     let routeQueryParams: Params;
-    let navigate: jest.SpyInstance;
+    let navigate: MockInstance;
+    /** Panel mode is the presence of this store; `null` is the portlet. */
+    let panelStore: { backToList: Mock; showConfigure: Mock } | null;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsResultsHeaderComponent,
+        // Component-level: the module injector is built once per file, so a module provider would
+        // freeze `panelStore` at whatever the first `createComponent` saw.
+        componentProviders: [
+            // Real: these tests assert where a door leads, and this is what decides.
+            DotExperimentsRouter,
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore }
+        ],
         providers: [
             provideRouter([{ path: 'experiments', children: [] }]),
             provideLocationMocks(),
@@ -81,9 +93,10 @@ describe('DotExperimentsResultsHeaderComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        panelStore = null;
         routeQueryParams = {};
         spectator = createComponent();
-        navigate = jest.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+        navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
         spectator.detectChanges();
     });
 
@@ -129,6 +142,36 @@ describe('DotExperimentsResultsHeaderComponent', () => {
                 ['/experiments', EXPERIMENT.id, 'configuration'],
                 { queryParams: { pageId: 'page-1', language_id: '2' } }
             );
+        });
+    });
+    /**
+     * The results header inside the UVE panel (#37478). Back and Configuration keep leading where
+     * they led; neither is a navigation any more (FR-025b).
+     */
+    describe('panel mode (#37478)', () => {
+        const inPanel = () => {
+            panelStore = { backToList: vi.fn(), showConfigure: vi.fn() };
+            spectator = createComponent();
+            navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+            spectator.detectChanges();
+        };
+
+        it('should return to the list as a view', () => {
+            inPanel();
+
+            spectator.component.onBackToList();
+
+            expect(panelStore?.backToList).toHaveBeenCalledTimes(1);
+            expect(navigate).not.toHaveBeenCalled();
+        });
+
+        it('should open the configuration in the panel', () => {
+            inPanel();
+
+            spectator.component.onConfiguration();
+
+            expect(panelStore?.showConfigure).toHaveBeenCalledWith(storeMock.experiment().id);
+            expect(navigate).not.toHaveBeenCalled();
         });
     });
 });

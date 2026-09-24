@@ -1,12 +1,14 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -22,6 +24,9 @@ import { DotContentDriveNavigationService } from '../../../shared/services/dot-c
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
 const SELECTED_VARIABLE = 'Blog';
+
+// Real signal: the component reads it in a computed, and a vi.fn cannot invalidate one.
+const systemHostSelected = signal(false);
 
 describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
     let spectator: Spectator<DotContentDriveDialogContentTypeSelectorComponent>;
@@ -41,17 +46,18 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
         ],
         providers: [
             mockProvider(DotContentDriveStore, {
-                closeDialog: jest.fn(),
-                currentSite: jest
+                closeDialog: vi.fn(),
+                currentSite: vi
                     .fn()
                     .mockReturnValue({ hostname: 'demo.dotcms.com', identifier: 'site-1' }),
-                path: jest.fn().mockReturnValue('/about-us/'),
-                selectedNode: jest
+                path: vi.fn().mockReturnValue('/about-us/'),
+                selectedNode: vi
                     .fn()
-                    .mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } })
+                    .mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } }),
+                $systemHostSelected: systemHostSelected
             }),
             mockProvider(DotContentDriveNavigationService, {
-                createContent: jest.fn()
+                createContent: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -74,7 +80,7 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('palette preferences', () => {

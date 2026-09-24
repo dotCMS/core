@@ -1,6 +1,7 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
+import { Mock, MockInstance, vi } from 'vitest';
 
 import { Injector, signal, WritableSignal } from '@angular/core';
 import { disabled, form, max, min } from '@angular/forms/signals';
@@ -19,6 +20,7 @@ import {
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     Variant
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { AngularAssetPickerLauncher, DotAssetPickerComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -118,14 +120,16 @@ const createStoreMock = () => ({
 describe('DotExperimentsConfigurePageComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurePageComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
+    /** Panel mode is the presence of this store; `null` is the portlet. */
+    let panelStore: Record<string, never> | null;
+    let dispatch: MockInstance;
     /** What the AssetPicker closes with. */
     let dialogClosed: Subject<DotCMSContentlet | undefined>;
     /** What the Change Page confirmation closes with: `true` once the variants are gone. */
     let changePageClosed: Subject<true | undefined>;
     /** The reference the card holds on to, so a test can see it being closed. */
-    let changePageRef: { onClose: Subject<true | undefined>; close: jest.Mock };
-    let dialogService: { open: jest.Mock };
+    let changePageRef: { onClose: Subject<true | undefined>; close: Mock };
+    let dialogService: { open: Mock };
     let siteDetails: WritableSignal<DotSite | null>;
     let trafficAllocation: WritableSignal<number>;
 
@@ -133,15 +137,15 @@ describe('DotExperimentsConfigurePageComponent', () => {
     beforeAll(() => {
         Object.defineProperty(window, 'matchMedia', {
             writable: true,
-            value: jest.fn().mockImplementation((query: string) => ({
+            value: vi.fn().mockImplementation((query: string) => ({
                 matches: false,
                 media: query,
                 onchange: null,
-                addListener: jest.fn(),
-                removeListener: jest.fn(),
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn(),
-                dispatchEvent: jest.fn()
+                addListener: vi.fn(),
+                removeListener: vi.fn(),
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn(),
+                dispatchEvent: vi.fn()
             }))
         });
     });
@@ -158,6 +162,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
         // launcher, which is what turns the press into an open picker.
         componentProviders: [
             { provide: DialogService, useFactory: () => dialogService },
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
             AngularAssetPickerLauncher
         ],
         detectChanges: false
@@ -213,6 +218,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        panelStore = null;
         dialogClosed = new Subject<DotCMSContentlet | undefined>();
         changePageClosed = new Subject<true | undefined>();
         siteDetails = signal<DotSite | null>(SITE_MOCK);
@@ -220,24 +226,24 @@ describe('DotExperimentsConfigurePageComponent', () => {
         // is closed with is what its `onClose` emits.
         changePageRef = {
             onClose: changePageClosed,
-            close: jest.fn((result?: true) => changePageClosed.next(result))
+            close: vi.fn((result?: true) => changePageClosed.next(result))
         };
         dialogService = {
             // The card opens two different dialogs, and the Change Page one hands over to the
             // picker: a single stream would have each of them hearing the other's answer.
-            open: jest.fn((component: unknown) =>
+            open: vi.fn((component: unknown) =>
                 component === DotExperimentsChangePageDialogComponent
                     ? changePageRef
                     : { onClose: dialogClosed }
             )
         };
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
         mountWith();
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
         document.querySelectorAll('.p-tooltip').forEach((tooltip) => tooltip.remove());
     });
 
@@ -693,6 +699,55 @@ describe('DotExperimentsConfigurePageComponent', () => {
             spectator.detectChanges();
 
             expect(trafficInput().disabled).toBe(true);
+        });
+    });
+    /**
+     * The Page card inside the UVE panel (#37478).
+     *
+     * FR-014, FR-014a, D12. The page is not a choice here — it is the page open in the editor, and
+     * the panel is scoped to it. Offering to change it would let the editor point the experiment at
+     * a page they are not looking at, and leave the panel listing a different page's experiments
+     * than the one being configured.
+     */
+    describe('panel mode (#37478)', () => {
+        const inPanel = () => {
+            panelStore = {};
+            spectator = createComponent();
+            // The panel always arrives with a page: it is the one open in the editor.
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            mountWith();
+        };
+
+        it('should not offer to change the page', () => {
+            inPanel();
+
+            expect(spectator.query(byTestId('experiments-configure-page-select-btn'))).toBeNull();
+        });
+
+        /** FR-014a. A control that is simply missing reads as broken; this says why it is not there. */
+        it('should say why the page is fixed', () => {
+            inPanel();
+
+            expect(
+                spectator.query(byTestId('experiments-configure-page-fixed-hint'))
+            ).not.toBeNull();
+        });
+
+        /** The allocation control shared the button's row, so it must survive losing it. */
+        it('should keep the traffic allocation control', () => {
+            inPanel();
+
+            expect(spectator.query(byTestId('experiments-configure-traffic-input'))).not.toBeNull();
+        });
+
+        it('should still offer the button in portlet mode (FR-042)', () => {
+            spectator = createComponent();
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            mountWith();
+
+            expect(
+                spectator.query(byTestId('experiments-configure-page-select-btn'))
+            ).not.toBeNull();
         });
     });
 });

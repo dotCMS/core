@@ -1,12 +1,25 @@
 import { Dispatcher, EventCreator } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, MockInstance, vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { provideLocationMocks } from '@angular/common/testing';
+import { inject } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 
 import { ConfirmationService, Confirmation, MenuItem } from 'primeng/api';
+import { Table } from 'primeng/table';
 
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     AllowedActionsByExperimentStatus,
@@ -17,11 +30,14 @@ import {
     GOAL_TYPES,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
+import { DOT_FILTER_FACADE, isCanonicalChipOrder } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -29,10 +45,16 @@ import {
     DEFAULT_EXPERIMENTS_LIST_PAGE,
     DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    EMPTY_CELL_PLACEHOLDER,
+    EXPERIMENTS_LIST_SORT_FIELDS,
+    LIST_TABLE_STYLE,
+    PANEL_LIST_TABLE_STYLE,
     ROWS_PER_PAGE_OPTIONS,
+    SKELETON_COLUMNS,
     SEARCH_DEBOUNCE_MS
 } from '../shared/constants';
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
+import { createExperimentsFilterFacade } from '../store/dot-experiments-filter-facade';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 
@@ -133,42 +155,58 @@ const messageServiceMock = new MockDotMessageService({
 
 /**
  * The store is provided by the component itself, so it is replaced through
- * `componentProviders`. Signals are plain `jest.fn()` return values: the component only
+ * `componentProviders`. Signals are plain `vi.fn()` return values: the component only
  * reads them, and every test decides the values before the component is created.
  */
 const createStoreMock = () => ({
-    healthStatus: jest.fn().mockReturnValue(HealthStatusTypes.OK),
-    isMisconfigured: jest.fn().mockReturnValue(false),
-    pagedExperiments: jest.fn().mockReturnValue([] as DotExperiment[]),
-    pageInfoByPageId: jest.fn().mockReturnValue(PAGE_INFO),
-    statusCounts: jest.fn().mockReturnValue(EMPTY_STATUS_COUNTS),
-    selectedStatuses: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_STATUSES),
-    goalCounts: jest.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
-    selectedGoals: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
-    filter: jest.fn().mockReturnValue(''),
-    selectedPageId: jest.fn().mockReturnValue(null),
-    selectedPageUrl: jest.fn().mockReturnValue(null),
-    languageId: jest.fn().mockReturnValue(null),
-    status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
-    page: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
-    perPage: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
-    orderBy: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
-    direction: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_DIRECTION),
-    totalRecords: jest.fn().mockReturnValue(0)
+    healthStatus: vi.fn().mockReturnValue(HealthStatusTypes.OK),
+    isMisconfigured: vi.fn().mockReturnValue(false),
+    pagedExperiments: vi.fn().mockReturnValue([] as DotExperiment[]),
+    pageInfoByPageId: vi.fn().mockReturnValue(PAGE_INFO),
+    statusCounts: vi.fn().mockReturnValue(EMPTY_STATUS_COUNTS),
+    selectedStatuses: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_STATUSES),
+    goalCounts: vi.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
+    selectedGoals: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
+    selectedCreators: vi.fn().mockReturnValue([]),
+    scheduleFrom: vi.fn().mockReturnValue(null),
+    scheduleTo: vi.fn().mockReturnValue(null),
+    isScheduleRangeUnusable: vi.fn().mockReturnValue(false),
+    filter: vi.fn().mockReturnValue(''),
+    selectedPageId: vi.fn().mockReturnValue(null),
+    selectedPageUrl: vi.fn().mockReturnValue(null),
+    languageId: vi.fn().mockReturnValue(null),
+    status: vi.fn().mockReturnValue(ComponentStatus.LOADED),
+    page: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
+    perPage: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
+    orderBy: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
+    direction: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_DIRECTION),
+    totalRecords: vi.fn().mockReturnValue(0)
 });
 
 describe('DotExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
     /** Where the trail is written; the component only ever appends its own crumb. */
     let globalStore: {
-        addNewBreadcrumb: jest.Mock;
-        setLastBreadcrumb: jest.Mock;
-        lastBreadcrumb: jest.Mock;
+        addNewBreadcrumb: Mock;
+        setLastBreadcrumb: Mock;
+        lastBreadcrumb: Mock;
     };
     let storeMock: ReturnType<typeof createStoreMock>;
-    let dispatch: jest.SpyInstance;
-    let confirm: jest.SpyInstance;
-    let navigate: jest.SpyInstance;
+    /**
+     * Panel mode is the *presence* of this store, so it is provided either way and holds `null`
+     * for the portlet — exactly the `#panel === null` the contract tests. A per-test provider
+     * override cannot be used: TestBed is already instantiated by the time a test runs.
+     */
+    let panelStore: {
+        pageId: Mock;
+        languageId: Mock;
+        showConfigure: Mock;
+        showResults: Mock;
+        showCreate: Mock;
+    } | null;
+    let dispatch: MockInstance;
+    let confirm: MockInstance;
+    let navigate: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsListComponent,
@@ -176,13 +214,30 @@ describe('DotExperimentsListComponent', () => {
         // `ConfirmationService` has to be re-declared here (`p-confirmDialog` needs it).
         componentProviders: [
             { provide: DotExperimentsListStore, useFactory: () => storeMock },
-            ConfirmationService
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore },
+            // The real one, not a mock: these tests assert where a door leads, and the service is
+            // the thing that decides. Mocking it would leave them asserting that a method was
+            // called.
+            DotExperimentsRouter,
+            ConfirmationService,
+            // The real facade over the mocked store: `dot-filter-bar` reads
+            // `$hasNonDefaultFilters` off it and "Clear all" dispatches through it, so a mock here
+            // would test the mock rather than the seam.
+            {
+                provide: DOT_FILTER_FACADE,
+                useFactory: () =>
+                    createExperimentsFilterFacade(
+                        storeMock as unknown as InstanceType<typeof DotExperimentsListStore>,
+                        inject(Dispatcher)
+                    )
+            }
         ],
         providers: [
             provideRouter([{ path: 'experiments', children: [] }]),
             provideLocationMocks(),
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotMessageDisplayService),
+            mockProvider(DotHttpErrorManagerService),
             mockProvider(DotPushPublishDialogService),
             // Not `mockProvider`: `GlobalStore` is a signal store, so its methods live on the
             // instance rather than the prototype and Spectator's auto-mock finds none of them.
@@ -253,32 +308,33 @@ describe('DotExperimentsListComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        panelStore = null;
         globalStore = {
-            addNewBreadcrumb: jest.fn(),
-            setLastBreadcrumb: jest.fn(),
-            lastBreadcrumb: jest.fn().mockReturnValue(null)
+            addNewBreadcrumb: vi.fn(),
+            setLastBreadcrumb: vi.fn(),
+            lastBreadcrumb: vi.fn().mockReturnValue(null)
         };
         spectator = createComponent();
-        dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
 
         // `p-confirmDialog` needs the real service (it subscribes to its streams), so the
         // confirmation is intercepted instead of mocked away.
         const confirmationService = spectator.inject(ConfirmationService, true);
-        confirm = jest
+        confirm = vi
             .spyOn(confirmationService, 'confirm')
-            .mockReturnValue(confirmationService) as jest.SpyInstance;
+            .mockReturnValue(confirmationService) as MockInstance;
         // The Configure screen is a real route of the portlet, so navigation is intercepted
         // rather than let through to a component this spec does not render.
-        navigate = jest.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
+        navigate = vi.spyOn(spectator.inject(Router), 'navigate').mockResolvedValue(true);
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('search', () => {
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         const type = (text: string) =>
             spectator.typeInElement(
@@ -301,7 +357,7 @@ describe('DotExperimentsListComponent', () => {
             // It settles a Resource, so the timer alone is not enough — microtasks have to
             // drain too, hence the async variant. The dispatch then lands in an effect on the
             // next pass, rather than inside the timer callback as the rxjs version did.
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             expect(dispatchedEvents()).toContainEqual(
@@ -317,7 +373,7 @@ describe('DotExperimentsListComponent', () => {
 
             type('summer');
             spectator.detectChanges();
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             expect(dispatchedEvents()).not.toContainEqual(
@@ -417,7 +473,7 @@ describe('DotExperimentsListComponent', () => {
             }
         );
 
-        // One status per test: the store mock's signals are plain `jest.fn()`s, so a second
+        // One status per test: the store mock's signals are plain `vi.fn()`s, so a second
         // `renderRowWith` in the same test would not recompute the row.
         it('should offer archive in the kebab once the experiment has ended', () => {
             renderRowWith(DotExperimentStatus.ENDED);
@@ -1002,6 +1058,316 @@ describe('DotExperimentsListComponent', () => {
             expect(table).not.toBeNull();
             expect(table.style.tableLayout).toBe('fixed');
         });
+
+        /**
+         * FR-034. Not a cosmetic number. With `table-layout: fixed` the floor is the only thing
+         * stopping the one elastic column, Name, from shrinking towards zero on a narrow viewport;
+         * below it the scroll container takes over instead. Each surface's floor is the sum of the
+         * fixed columns it renders plus the floor Name is granted, and the sums are written out in
+         * the constants' own docblocks.
+         *
+         * Pinned because a wrong floor is silent: the table simply scrolls a little too early, or
+         * squeezes Name a little too far, at a width nobody happens to test at. A column added or
+         * resized without revisiting the arithmetic fails here.
+         */
+        it('should floor each surface at the width its own column set needs', () => {
+            expect(LIST_TABLE_STYLE['min-width']).toBe('91rem');
+            expect(PANEL_LIST_TABLE_STYLE['min-width']).toBe('74rem');
+        });
+    });
+
+    describe('created by column (#37307)', () => {
+        /** One row whose creator name is whatever the payload carried — including nothing. */
+        const renderRowCreatedBy = (createdByUserName?: string): DotExperiment => {
+            const experiment = {
+                ...experimentWith(DotExperimentStatus.DRAFT),
+                createdByUserName
+            };
+            storeMock.pagedExperiments.mockReturnValue([experiment]);
+            storeMock.totalRecords.mockReturnValue(1);
+            spectator.detectChanges();
+
+            return experiment;
+        };
+
+        const cell = () => spectator.query(byTestId('experiment-created-by'));
+
+        /**
+         * FR-029, FR-029a. #37304 resolves the name on the server and never sends null, absent or
+         * blank: a resolvable creator gives their trimmed full name, the system user gives
+         * `System`, and every unresolvable case — deleted user, orphaned reference, no name set,
+         * failed lookup — gives `unknown`. All three arrive as ordinary strings, so the column's
+         * whole job is to print them.
+         *
+         * Asserted as one table because the failure being guarded against is the screen deciding
+         * that `unknown` looks like an error and re-mapping it — to the id, to a placeholder, or
+         * to copy of its own. Two unresolvable creators reading identically is the accepted cost
+         * of matching what Content Drive publishes for the same question.
+         */
+        it.each(['Jane Doe', 'System', 'unknown'])(
+            'should render %s exactly as delivered',
+            (createdByUserName) => {
+                renderRowCreatedBy(createdByUserName);
+
+                expect(cell()?.textContent?.trim()).toBe(createdByUserName);
+            }
+        );
+
+        /** FR-030, as Name and Page already do: truncate, and let hover carry the rest. */
+        it('should keep the full name reachable when it does not fit', () => {
+            const createdByUserName = 'Bartholomew Featherstonehaugh-Montgomery';
+            renderRowCreatedBy(createdByUserName);
+
+            expect(cell()?.className).toContain('truncate');
+            expect(cell()?.getAttribute('title')).toBe(createdByUserName);
+        });
+
+        /**
+         * FR-031. Reachable only against a backend older than #37304, which is why it is pinned
+         * rather than assumed impossible: the cell must not print `undefined`.
+         */
+        it('should show the placeholder when the payload carries no name', () => {
+            renderRowCreatedBy(undefined);
+
+            expect(cell()?.textContent?.trim()).toBe(EMPTY_CELL_PLACEHOLDER);
+        });
+
+        /** FR-029a again, from the other side: the id is not a name and must not stand in. */
+        it('should not fall back to the creator id', () => {
+            const experiment = renderRowCreatedBy(undefined);
+
+            expect(cell()?.textContent).not.toContain(experiment.createdBy);
+        });
+
+        /**
+         * FR-034a. Every other column sorts, so the absence has to be asserted rather than left
+         * to be noticed. The sort field values double as the `orderby` URL param and as the
+         * comparator keys, so a sortable creator column would reach into the address contract this
+         * feature otherwise leaves alone.
+         */
+        it('should not be sortable', () => {
+            renderRowCreatedBy('Jane Doe');
+
+            const header = spectator.query(byTestId('experiments-header-created-by'));
+
+            expect(header).not.toBeNull();
+            expect(header?.className).not.toContain('p-datatable-sortable-column');
+            expect(header?.querySelector('p-sorticon')).toBeNull();
+        });
+
+        it('should not add a creator to the sortable field set', () => {
+            expect(Object.values(EXPERIMENTS_LIST_SORT_FIELDS)).not.toContain('createdBy');
+        });
+
+        /**
+         * FR-033. The skeleton is a plain run of `<td>`, so a count that drifts from the header
+         * pushes a cell outside the table for as long as the first load takes. Counted off what
+         * actually rendered rather than off the constant, so the constant and the header cannot
+         * agree with each other while both disagree with the DOM.
+         */
+        it('should draw one skeleton cell per rendered column', () => {
+            storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+            spectator.detectChanges();
+
+            const headers = spectator.queryAll('table.p-datatable-table thead th');
+            const loadingRow = spectator.query(byTestId('experiments-loading-row'));
+
+            expect(headers).toHaveLength(9);
+            expect(loadingRow?.querySelectorAll('td')).toHaveLength(headers.length);
+        });
+    });
+
+    describe('the created by filter (#37307)', () => {
+        it('should dispatch the chosen creators', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onCreatorsChange(['dotcms.org.1', 'dotcms.org.2']);
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1', 'dotcms.org.2'])
+            );
+        });
+
+        it('should dispatch an empty selection when the chip is cleared', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onCreatorsChange([]);
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.creatorsChanged([])
+            );
+        });
+    });
+
+    describe('a directory that will not load (#37307)', () => {
+        it('should route the failure to the screen shared error reporting', () => {
+            const failure = new HttpErrorResponse({ status: 403 });
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onDirectoryError(failure);
+
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(
+                failure
+            );
+        });
+
+        it('should leave the rows on screen', () => {
+            // A directory that will not load says nothing about the experiments already listed.
+            const experiment = renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onDirectoryError(new HttpErrorResponse({ status: 500 }));
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiment-name'))?.textContent).toContain(
+                experiment.name
+            );
+        });
+    });
+
+    describe('the schedule filter (#37307)', () => {
+        const PERIOD = { from: '2026-06-01', to: '2026-06-30' };
+
+        it('should render the chip in the toolbar', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.query(byTestId('experiments-schedule-filter'))).not.toBeNull();
+        });
+
+        it('should dispatch the picked period', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onScheduleChange(PERIOD);
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.scheduleChanged(PERIOD)
+            );
+        });
+
+        it('should dispatch a cleared period as two open bounds', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            spectator.component.onScheduleChange({ from: null, to: null });
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.scheduleChanged({ from: null, to: null })
+            );
+        });
+
+        it.each([
+            ['both bounds', '2026-06-01', '2026-06-30'],
+            ['only a lower bound', '2026-06-01', null],
+            ['only an upper bound', null, '2026-06-30']
+        ])('should treat %s as an active filter', (_label, from, to) => {
+            // Otherwise a period that matches nothing reaches the "this site has no experiments"
+            // state, which offers no way out, instead of "nothing matched", which does.
+            storeMock.scheduleFrom.mockReturnValue(from);
+            storeMock.scheduleTo.mockReturnValue(to);
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.component.$hasActiveFilters()).toBe(true);
+        });
+
+        it('should read as unfiltered while no period is in force', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.component.$hasActiveFilters()).toBe(false);
+        });
+
+        describe('the shared filter bar (#37307)', () => {
+            const chipIds = () =>
+                spectator
+                    .queryAll('[data-filter-chip]')
+                    .map((chip) => chip.getAttribute('data-filter-chip') as string);
+
+            it('should render the four chips inside the shared bar', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(spectator.query(byTestId('dot-filter-bar'))).not.toBeNull();
+                expect(chipIds()).toEqual(['status', 'goal', 'schedule', 'createdBy']);
+            });
+
+            /**
+             * The rule the shared constant exists for: two toolbars offering the same chips in
+             * different orders cost an editor a re-orientation on every switch. A surface may omit
+             * chips, never reorder them — asserted per toolbar because the bar projects its content
+             * and cannot enforce it.
+             */
+            it('should render them in canonical order', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(isCanonicalChipOrder(chipIds())).toBe(true);
+            });
+
+            it('should offer no way to clear while nothing is filtered', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(spectator.query(byTestId('clear-all-filters'))).toBeNull();
+            });
+
+            it('should offer clearing once a chip is in force', () => {
+                storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.RUNNING]);
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(spectator.query(byTestId('clear-all-filters'))).not.toBeNull();
+            });
+
+            /**
+             * The chip-scoped event, in one dispatch. Not `filtersCleared`: this button is on
+             * screen while the list is working, and that event also widens a page narrowing the
+             * user never set — see the reducer note on `chipFiltersCleared`.
+             */
+            it('should clear what the chips own in one dispatch from the bar', () => {
+                storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.RUNNING]);
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                spectator.click(
+                    spectator
+                        .query(byTestId('clear-all-filters'))
+                        ?.querySelector('button') as HTMLElement
+                );
+
+                expect(dispatchedEvents()).toContainEqual(
+                    dotExperimentsListPageEvents.chipFiltersCleared()
+                );
+                expect(dispatchedEvents()).not.toContainEqual(
+                    dotExperimentsListPageEvents.filtersCleared()
+                );
+            });
+
+            /**
+             * The bar's own signal asks "is anything worth clearing", which is not the question the
+             * empty state asks. A page narrowing that arrived in the address and matched nothing is an
+             * active filter for the empty state — it is why nothing is showing — but it is not the
+             * user's to clear from this row.
+             */
+            it('should not offer clearing for a page narrowing the address brought', () => {
+                storeMock.selectedPageUrl.mockReturnValue('/asdasd');
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(spectator.component.$hasActiveFilters()).toBe(true);
+                expect(spectator.query(byTestId('clear-all-filters'))).toBeNull();
+            });
+        });
+
+        /**
+         * FR-021a. Reported in the toolbar rather than inside the chip's popover, because only an
+         * address can produce an inverted range: the user arrives with the chip closed and no
+         * reason to open it. A message behind a click is not a report.
+         */
+        it('should say so in the toolbar when the address inverts the range', () => {
+            storeMock.isScheduleRangeUnusable.mockReturnValue(true);
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(
+                spectator.query(byTestId('experiments-schedule-range-error'))?.textContent
+            ).toContain('experiments.list.filter.schedule.invalid-range');
+        });
+
+        it('should show no range error while the period is usable', () => {
+            renderRowWith(DotExperimentStatus.DRAFT);
+
+            expect(spectator.query(byTestId('experiments-schedule-range-error'))).toBeNull();
+        });
     });
 
     describe('filters', () => {
@@ -1038,12 +1404,12 @@ describe('DotExperimentsListComponent', () => {
 
     describe('search clear', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             // The component is created without an initial render, so the toolbar has to be
             // rendered before anything can be typed into it.
             spectator.detectChanges();
         });
-        afterEach(() => jest.useRealTimers());
+        afterEach(() => vi.useRealTimers());
 
         const searchInput = () =>
             spectator.query(byTestId('experiments-search-input')) as HTMLInputElement;
@@ -1068,7 +1434,7 @@ describe('DotExperimentsListComponent', () => {
 
             // `NgModel` pushes the model back to the input on a microtask, so the DOM value is
             // one tick behind the signal.
-            await jest.advanceTimersByTimeAsync(0);
+            await vi.advanceTimersByTimeAsync(0);
             spectator.detectChanges();
 
             expect(searchInput().value).toBe('');
@@ -1082,7 +1448,7 @@ describe('DotExperimentsListComponent', () => {
             spectator.typeInElement('alpha', searchInput());
             spectator.detectChanges();
             storeMock.filter.mockReturnValue('alpha');
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             spectator.click(spectator.query(byTestId('experiments-search-clear')) as HTMLElement);
@@ -1090,7 +1456,7 @@ describe('DotExperimentsListComponent', () => {
 
             // Clearing writes the same signal typing does, so it settles through the debounce
             // rather than dispatching straight away.
-            await jest.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
+            await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS);
             spectator.detectChanges();
 
             expect(dispatchedEvents()).toContainEqual(
@@ -1101,7 +1467,9 @@ describe('DotExperimentsListComponent', () => {
 
     describe('paginator', () => {
         it('should render the content-drive paginator shape: a page report, prev and next only', () => {
-            renderRowWith(DotExperimentStatus.DRAFT);
+            storeMock.pagedExperiments.mockReturnValue([experimentWith(DotExperimentStatus.DRAFT)]);
+            storeMock.totalRecords.mockReturnValue(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
+            spectator.detectChanges();
 
             const paginator = spectator.query('p-paginator');
 
@@ -1243,17 +1611,83 @@ describe('DotExperimentsListComponent', () => {
         const rowsPerPageSelect = () =>
             spectator.query('.p-paginator .p-select, .p-paginator p-select');
 
-        it('should offer no page size while everything fits in the smallest one', () => {
-            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS));
-
-            // Every option would render the same single page, and the arrows are already disabled.
-            expect(rowsPerPageSelect()).toBeNull();
-        });
+        const paginator = () => spectator.query('p-paginator') as HTMLElement | null;
 
         it('should offer the page sizes once there is more than one page to reach', () => {
             renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
 
             expect(rowsPerPageSelect()).not.toBeNull();
+        });
+
+        /**
+         * FR-036. Nothing here is new — the default and the three options already agree with
+         * Content Drive. The point of pinning them is that the agreement is the whole requirement:
+         * two listings in one admin disagreeing about what a page is would be a defect nobody
+         * would think to look for, and a later edit to either number is silent.
+         */
+        it('should page in twenties and offer twenties, forties and sixties', () => {
+            expect(ROWS_PER_PAGE_OPTIONS).toEqual([20, 40, 60]);
+            expect(DEFAULT_EXPERIMENTS_LIST_PER_PAGE).toBe(20);
+            // The paginator opens on the option its dropdown shows first.
+            expect(DEFAULT_EXPERIMENTS_LIST_PER_PAGE).toBe(Math.min(...ROWS_PER_PAGE_OPTIONS));
+        });
+
+        /**
+         * FR-037. Content Drive's rule read literally would show the paginator always: it shows
+         * one unconditionally because its table is genuinely server-paged, and this table is
+         * flagged as paged while holding every row. What it means is "no paginator when there is
+         * nothing to page", and this listing knows its own true total, so it can say so. A bar
+         * reading "Page 1" with both arrows dead is furniture.
+         */
+        it('should show no paginator while the whole result set fits on one page', () => {
+            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS));
+
+            // PrimeNG hides the bar rather than removing it, so the element is still there and
+            // asking whether it exists would pass either way.
+            expect(paginator()?.style.display).toBe('none');
+        });
+
+        it('should show the paginator once there is a second page to reach', () => {
+            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
+
+            expect(paginator()?.style.display).not.toBe('none');
+        });
+
+        /**
+         * FR-035. The table scrolls (`scrollHeight="flex"`) inside a wrapper that hides its
+         * overflow, so an overlay rendered in place is clipped by an ancestor: the rows-per-page
+         * panel opens cut off with only the first option reachable. Content Drive hit this on the
+         * same configuration and its template says so in a comment.
+         *
+         * Asserted on the binding, which is weaker than it looks like it should be, and
+         * deliberately: PrimeNG moves the overlay into the body from inside the open animation,
+         * and jsdom fires no animation events, so the node stays nested no matter what this is
+         * set to. Confirmed by walking the parent chain — it read
+         * `p-overlay < p-select < p-paginator < p-table` with `appendTo` set. So the placement
+         * itself is not observable here; what this catches is the attribute being dropped.
+         */
+        it('should send the page-size overlay to the body so it cannot be clipped', () => {
+            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
+
+            const table = spectator.query(Table);
+
+            expect(table?.paginatorDropdownAppendTo).toBe('body');
+        });
+
+        /**
+         * FR-038. PrimeNG's `lazyLoadOnInit` defaults to true, so the table asks for its first
+         * page by itself; the risk the requirement guards against is a second ask arriving beside
+         * it once the flag is written out explicitly. Green from the start, which is the answer
+         * the requirement wanted rather than an assumption.
+         */
+        it('should ask for the first page exactly once on entry', () => {
+            renderWith(Math.min(...ROWS_PER_PAGE_OPTIONS) + 1);
+
+            const pageChanges = dispatchedEvents().filter(
+                ({ type }) => type === dotExperimentsListPageEvents.pageChanged.type
+            );
+
+            expect(pageChanges).toHaveLength(1);
         });
     });
 
@@ -1315,7 +1749,7 @@ describe('DotExperimentsListComponent', () => {
             spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
 
             expect(dispatchedEvents().map(({ type }) => type)).toContain(
-                dotExperimentsListPageEvents.pageNarrowingCleared.type
+                dotExperimentsListPageEvents.filtersCleared.type
             );
         });
 
@@ -1333,6 +1767,11 @@ describe('DotExperimentsListComponent', () => {
             expect(emptyTitle()).toContain('experiments.list.no-results.title');
         });
 
+        /**
+         * One event, not one per control. What each narrowing is reset *to* is the store's
+         * business and is asserted there; what the component owes is a single intent, so the row
+         * set and the address are never derived from a half-cleared view state.
+         */
         it('should offer a way out of the filtered empty state', () => {
             storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.SCHEDULED]);
             storeMock.selectedGoals.mockReturnValue([GOAL_TYPES.EXIT_RATE]);
@@ -1341,10 +1780,39 @@ describe('DotExperimentsListComponent', () => {
             spectator.component.onClearFilters();
 
             expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListPageEvents.statusesChanged([])
+                dotExperimentsListPageEvents.filtersCleared()
             );
+        });
+
+        it('should clear the filters with one dispatch rather than one per control', () => {
+            storeMock.selectedStatuses.mockReturnValue([DotExperimentStatus.SCHEDULED]);
+            storeMock.selectedGoals.mockReturnValue([GOAL_TYPES.EXIT_RATE]);
+            storeMock.selectedCreators.mockReturnValue(['dotcms.org.1']);
+            renderEmpty();
+            const before = dispatchedEvents().length;
+
+            spectator.component.onClearFilters();
+
+            expect(dispatchedEvents().length - before).toBe(1);
+        });
+
+        it('should treat a creator selection as an active filter (#37307)', () => {
+            // Selecting someone with no experiments must reach the "nothing matched" state, which
+            // offers a way out — not the "this site has no experiments" one, which does not.
+            storeMock.selectedCreators.mockReturnValue(['dotcms.org.1']);
+            renderEmpty();
+
+            expect(emptyTitle()).toContain('experiments.list.no-results.title');
+        });
+
+        it('should clear the creator selection from the empty state action (#37307)', () => {
+            storeMock.selectedCreators.mockReturnValue(['dotcms.org.1']);
+            renderEmpty();
+
+            spectator.component.onClearFilters();
+
             expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsListPageEvents.goalsChanged([])
+                dotExperimentsListPageEvents.filtersCleared()
             );
         });
 
@@ -1354,6 +1822,341 @@ describe('DotExperimentsListComponent', () => {
 
             // Skeletons, not "no experiments" — the answer is not in yet.
             expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+        });
+    });
+    /**
+     * T023/T023a — the list rendered inside the UVE panel (#37478).
+     *
+     * Panel mode is the presence of `DotExperimentsPanelStore` and nothing else. The screen is the
+     * same one the portlet renders (FR-040): what changes is the layout and the two things the
+     * panel has no business doing — narrowing by a page it already is, and writing a breadcrumb
+     * for a screen the editor never navigated to.
+     */
+    describe('panel mode (#37478)', () => {
+        /** Re-creates the component with the panel store present; the branch is chosen at
+         * injection time, not from an input, so it cannot be flipped on a live component. */
+        const createInPanel = () => {
+            panelStore = {
+                pageId: vi.fn().mockReturnValue(PAGE_ID),
+                languageId: vi.fn().mockReturnValue(1),
+                showConfigure: vi.fn(),
+                showResults: vi.fn(),
+                showCreate: vi.fn()
+            };
+
+            return createComponent({ detectChanges: false });
+        };
+
+        /** Renders one row in the panel. */
+        const renderPanelRow = (status = DotExperimentStatus.DRAFT): DotExperiment => {
+            const experiment = experimentWith(status);
+            storeMock.pagedExperiments.mockReturnValue([experiment]);
+            storeMock.totalRecords.mockReturnValue(1);
+            spectator = createInPanel();
+            spectator.detectChanges();
+
+            return experiment;
+        };
+
+        describe('layout', () => {
+            /**
+             * FR-040, D7, SC-015. The panel renders the portlet's table, not a second list built
+             * beside it: same `p-table`, same rows, same paginator, sorting and lazy load. What
+             * differs is the column set and the width floor that follows from it — a presentation,
+             * which is all D7 allows to vary.
+             */
+            it('should render the same table the portlet does', () => {
+                renderPanelRow();
+
+                expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
+                expect(spectator.queryAll(byTestId('experiment-row'))).toHaveLength(1);
+            });
+
+            /** FR-009. The panel *is* the page, so a column repeating it on every row is noise. */
+            it('should not render the page column', () => {
+                renderPanelRow();
+
+                expect(spectator.query(byTestId('experiment-page'))).toBeNull();
+                expect(spectator.query(byTestId('experiment-name'))).not.toBeNull();
+            });
+
+            /**
+             * The floor has to follow the column set. `81rem` is what the portlet's seven data
+             * columns need; leaving it here would scroll the panel horizontally for a column it no
+             * longer renders.
+             */
+            it('should drop the portlet width floor with the column', () => {
+                renderPanelRow();
+
+                expect(spectator.component.TABLE_STYLE).toEqual(PANEL_LIST_TABLE_STYLE);
+                expect(spectator.component.TABLE_STYLE['min-width']).not.toBe(
+                    LIST_TABLE_STYLE['min-width']
+                );
+            });
+
+            /** A skeleton wider than its header puts a cell outside the table while it loads. */
+            it('should match the skeleton row to the column set', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.component.SKELETON_COLUMNS).toHaveLength(
+                    SKELETON_COLUMNS.length - 1
+                );
+            });
+
+            /**
+             * FR-033. The panel's count is derived from the portlet's by dropping one, which is
+             * only correct while exactly one column differs between the two. Created By adds a
+             * column to both, so the derivation has to be re-checked rather than assumed — and
+             * counting the rendered DOM is the only assertion that notices if it stops holding.
+             */
+            it('should draw one skeleton cell per column the panel renders', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                const headers = spectator.queryAll('table.p-datatable-table thead th');
+                const loadingRow = spectator.query(byTestId('experiments-loading-row'));
+
+                expect(headers).toHaveLength(8);
+                expect(loadingRow?.querySelectorAll('td')).toHaveLength(headers.length);
+            });
+
+            /**
+             * FR-032a. Unlike Page, Created By is not hidden here: the panel is one page, so a
+             * Page column repeats itself on every row, while the creator differs row to row and
+             * answers the same question the portlet's column does. So the panel gains a column
+             * rather than staying where #37478 left it.
+             */
+            it('should render the created by column, unlike the page column', () => {
+                renderPanelRow();
+
+                expect(spectator.query(byTestId('experiment-created-by'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiment-page'))).toBeNull();
+            });
+
+            /**
+             * T023a / FR-041 — the assertion that makes the column set a decision rather than a
+             * coincidence.
+             *
+             * `PANEL_WIDTH` is a proportion of the viewport, so the panel is wider on a large
+             * monitor than on a laptop. Nothing about what it renders may follow from that: the
+             * same build has to drop the same column at 1024px and at 2560px. Asserted from both
+             * sides of the portlet's own 81rem boundary, so a width query cannot pass.
+             */
+            it.each([
+                { label: 'far below the 81rem floor', innerWidth: 1024 },
+                { label: 'far above the 81rem floor', innerWidth: 2560 }
+            ])('should render the same columns at a viewport $label', ({ innerWidth }) => {
+                const original = window.innerWidth;
+                Object.defineProperty(window, 'innerWidth', {
+                    value: innerWidth,
+                    configurable: true
+                });
+
+                try {
+                    renderPanelRow();
+
+                    expect(spectator.query(byTestId('experiments-table'))).not.toBeNull();
+                    expect(spectator.query(byTestId('experiment-page'))).toBeNull();
+                    expect(spectator.component.TABLE_STYLE).toEqual(PANEL_LIST_TABLE_STYLE);
+                } finally {
+                    Object.defineProperty(window, 'innerWidth', {
+                        value: original,
+                        configurable: true
+                    });
+                }
+            });
+
+            it('should keep the page column and the portlet floor in portlet mode (FR-042)', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(spectator.query(byTestId('experiment-page'))).not.toBeNull();
+                expect(spectator.component.TABLE_STYLE).toEqual(LIST_TABLE_STYLE);
+            });
+        });
+
+        /**
+         * FR-026–FR-029 and SC-008. Four different answers, and the one that matters is that none
+         * of them is allowed to look like "this page has no experiments" — the misreport that would
+         * quietly tell an editor their work is not there.
+         */
+        describe('the four states stay distinguishable', () => {
+            it('should show skeletons, not the empty state, while loading', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADING);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-loading-row'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+            });
+
+            it('should report a failed load with a retry, not as an empty page', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.ERROR);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-error'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+            });
+
+            it('should report a misconfigured analytics app on its own', () => {
+                storeMock.isMisconfigured.mockReturnValue(true);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-misconfiguration'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-empty-state'))).toBeNull();
+            });
+
+            it('should show the empty state only when the page really has none', () => {
+                storeMock.status.mockReturnValue(ComponentStatus.LOADED);
+                storeMock.pagedExperiments.mockReturnValue([]);
+                storeMock.totalRecords.mockReturnValue(0);
+                spectator = createInPanel();
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-empty-state'))).not.toBeNull();
+                expect(spectator.query(byTestId('experiments-error'))).toBeNull();
+            });
+        });
+
+        /**
+         * FR-033, D8, SC-012. A breadcrumb is a record of where the editor navigated, and opening
+         * the panel is not navigation — the editor never left the page. Pushing one here would put
+         * "Experiments" on the trail of a page the editor is still standing on.
+         */
+        describe('breadcrumbs', () => {
+            it('should push no crumb in panel mode', () => {
+                renderPanelRow();
+
+                expect(globalStore.addNewBreadcrumb).not.toHaveBeenCalled();
+            });
+
+            it('should still push one in portlet mode', () => {
+                renderRowWith(DotExperimentStatus.DRAFT);
+
+                expect(globalStore.addNewBreadcrumb).toHaveBeenCalled();
+            });
+        });
+
+        /**
+         * FR-008, FR-013, D7. The point of the panel: reaching a configuration must not cost the
+         * editor the page. In the portlet these are routes; in the panel they are view changes on
+         * a store, and nothing navigates.
+         */
+        describe('opening a configuration without leaving the page', () => {
+            it('should show the configuration in the panel when a row is clicked', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.DRAFT);
+
+                spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+
+                expect(panelStore?.showConfigure).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            it('should show the configuration from the kebab', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.DRAFT);
+
+                runMenuItem(MENU_ITEM.configure);
+
+                expect(panelStore?.showConfigure).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            it('should show results in the panel from the kebab', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.RUNNING);
+
+                runMenuItem(MENU_ITEM.results);
+
+                expect(panelStore?.showResults).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            /**
+             * A RUNNING experiment's row leads to its results rather than its configuration, in
+             * both modes. The difference is only whether that costs the editor the page.
+             */
+            it('should show results in the panel when a running row is clicked', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.RUNNING);
+
+                spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+
+                expect(panelStore?.showResults).toHaveBeenCalledWith(experiment.id);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            /**
+             * FR-006a, FR-007, D11. The empty state's offer and the toolbar button are the same
+             * door, and in the panel it opens a view — a page with no experiments is a starting
+             * point, not a reason to leave the editor.
+             */
+            it('should start a new experiment in the panel', () => {
+                renderPanelRow();
+
+                spectator.component.onNewExperiment();
+
+                expect(panelStore?.showCreate).toHaveBeenCalledTimes(1);
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            /**
+             * The whole contract in one assertion: no door out of the panel's list is a
+             * navigation. Written as a sweep rather than per door so a door added later fails
+             * here instead of shipping as the one that still ejects the editor.
+             */
+            it('should never navigate, whichever door is taken', () => {
+                const experiment = renderPanelRow(DotExperimentStatus.DRAFT);
+
+                spectator.component.onConfigure(experiment);
+                spectator.component.onViewResults(experiment);
+                spectator.component.onNewExperiment();
+                spectator.component.onEmptyAction();
+
+                expect(navigate).not.toHaveBeenCalled();
+            });
+
+            it('should still navigate in portlet mode (FR-042)', () => {
+                const experiment = renderRowWith(DotExperimentStatus.DRAFT);
+
+                spectator.click(spectator.query(byTestId('experiment-row')) as HTMLElement);
+
+                expect(navigate).toHaveBeenCalledWith(
+                    ['/experiments', experiment.id, 'configuration'],
+                    expect.anything()
+                );
+            });
+        });
+
+        /**
+         * FR-011, D9. Both dialogs are opened by the row, not by the route, so they work in the
+         * panel — where no resolver has run and no route data exists. Worth asserting because the
+         * cheap way to reach an experiment's identifier is through the route, and that way would
+         * pass in the portlet and fail silently here.
+         */
+        describe('row actions that do not need a route', () => {
+            it('should open push publish from a panel row', () => {
+                const experiment = renderPanelRow();
+                const pushPublishDialogService = spectator.inject(
+                    DotPushPublishDialogService,
+                    true
+                );
+
+                runMenuItem(MENU_ITEM.pushPublish);
+
+                expect(pushPublishDialogService.open).toHaveBeenCalledWith(
+                    expect.objectContaining({ assetIdentifier: experiment.id })
+                );
+            });
+
+            it('should open add to bundle from a panel row', () => {
+                const experiment = renderPanelRow();
+
+                runMenuItem(MENU_ITEM.addToBundle);
+
+                expect(spectator.component.$addToBundleAssetId()).toBe(experiment.id);
+            });
         });
     });
 });

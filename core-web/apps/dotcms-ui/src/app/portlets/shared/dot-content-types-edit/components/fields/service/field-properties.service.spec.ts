@@ -1,4 +1,5 @@
 import { Observable, of as observableOf } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Validators } from '@angular/forms';
@@ -38,7 +39,7 @@ class TestFieldService {
 }
 
 class TestDotPropertiesService {
-    getKey = jest.fn().mockReturnValue(observableOf(FEATURE_FLAG_NOT_FOUND));
+    getKey = vi.fn().mockReturnValue(observableOf(FEATURE_FLAG_NOT_FOUND));
 }
 
 let fieldPropertiesService: FieldPropertyService;
@@ -153,7 +154,7 @@ describe('FieldPropertyService', () => {
     describe('constructor', () => {
         it('should add newRenderMode property to custom fields', fakeAsync(() => {
             const customFieldService = new TestFieldService();
-            customFieldService.loadFieldTypes = jest.fn().mockReturnValue(
+            customFieldService.loadFieldTypes = vi.fn().mockReturnValue(
                 observableOf([
                     {
                         clazz: DotCMSClazzes.CUSTOM_FIELD,

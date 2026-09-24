@@ -5,4 +5,6 @@ export interface Template {
     theme: string;
     title: string;
     layout?: Record<string, unknown>;
+    drawed?: boolean;
+    body?: string;
 }

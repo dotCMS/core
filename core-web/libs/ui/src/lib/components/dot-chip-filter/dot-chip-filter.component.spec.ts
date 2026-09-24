@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -133,7 +134,7 @@ describe('DotChipFilterComponent', () => {
 
     describe('outputs', () => {
         it('should emit clicked on host click', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('clicked').subscribe(handler);
             spectator.click(spectator.element);
             expect(handler).toHaveBeenCalled();
@@ -146,14 +147,14 @@ describe('DotChipFilterComponent', () => {
             spectator.element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
 
         it('should emit clicked on Enter keydown', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('clicked').subscribe(handler);
             pressKey('Enter');
             expect(handler).toHaveBeenCalled();
         });
 
         it('should emit clicked on Space keydown', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('clicked').subscribe(handler);
             pressKey(' ');
             expect(handler).toHaveBeenCalled();
@@ -163,7 +164,7 @@ describe('DotChipFilterComponent', () => {
             spectator.setInput('selections', ['Blog']);
             spectator.detectChanges();
 
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('removed').subscribe(handler);
             spectator.click(byTestId('chip-remove'));
             expect(handler).toHaveBeenCalled();
@@ -173,7 +174,7 @@ describe('DotChipFilterComponent', () => {
             spectator.setInput('selections', ['Blog']);
             spectator.detectChanges();
 
-            const clickedHandler = jest.fn();
+            const clickedHandler = vi.fn();
             spectator.output('clicked').subscribe(clickedHandler);
             spectator.click(byTestId('chip-remove'));
             expect(clickedHandler).not.toHaveBeenCalled();
@@ -183,7 +184,7 @@ describe('DotChipFilterComponent', () => {
             spectator.setInput('selections', ['Blog']);
             spectator.detectChanges();
 
-            const clickedHandler = jest.fn();
+            const clickedHandler = vi.fn();
             spectator.output('clicked').subscribe(clickedHandler);
 
             const removeBtn = spectator.query(byTestId('chip-remove')) as HTMLElement;
@@ -197,7 +198,7 @@ describe('DotChipFilterComponent', () => {
             spectator.setInput('selections', ['Blog']);
             spectator.detectChanges();
 
-            const clickedHandler = jest.fn();
+            const clickedHandler = vi.fn();
             spectator.output('clicked').subscribe(clickedHandler);
 
             const removeBtn = spectator.query(byTestId('chip-remove')) as HTMLElement;
@@ -253,7 +254,7 @@ describe('DotChipFilterComponent', () => {
             spectator.setInput('toggled', true);
             spectator.detectChanges();
 
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('removed').subscribe(handler);
             spectator.click(byTestId('chip-remove'));
 
@@ -267,6 +268,47 @@ describe('DotChipFilterComponent', () => {
             spectator.setInput('toggled', toggled);
 
             expect(spectator.element.getAttribute('aria-pressed')).toBe(expected);
+        });
+    });
+
+    describe('the loading state', () => {
+        /**
+         * Ahead of the values on purpose: while the labels are still being resolved the only thing
+         * that could go after the title is the raw values, which are identifiers the user never
+         * chose.
+         */
+        it('should replace the values with a spinner while loading', () => {
+            spectator.setInput('selections', ['dotcms.org.1']);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-values'))).toBeFalsy();
+            expect(spectator.query(byTestId('chip-loading'))).toBeTruthy();
+        });
+
+        /**
+         * New markup, so Material Symbols rather than PrimeIcons (ANGULAR_STANDARDS) — and the
+         * house spinner specifically, which is `progress_activity` spun by Tailwind. Asserted on
+         * the text content because that is where a Material Symbol's name lives.
+         */
+        it('should draw the house spinner rather than a PrimeIcon', () => {
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const spinner = spectator.query(byTestId('chip-loading'));
+
+            expect(spinner?.textContent?.trim()).toBe('progress_activity');
+            expect(spinner).toHaveClass('material-symbols-outlined');
+            expect(spinner).toHaveClass('animate-spin');
+        });
+
+        it('should show the values again once loading ends', () => {
+            spectator.setInput('selections', ['Blog']);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-loading'))).toBeFalsy();
+            expect(getValues()).toContain('Blog');
         });
     });
 

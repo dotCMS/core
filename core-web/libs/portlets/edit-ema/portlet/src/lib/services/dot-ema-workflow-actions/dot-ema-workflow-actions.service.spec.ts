@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injectable } from '@angular/core';
 
@@ -185,90 +186,96 @@ describe('DotEmaWorkflowActionsService', () => {
     });
 
     describe('handleWorkflowAction', () => {
-        it('should open with the correct data', (done) => {
-            jest.spyOn(dotWizardService, 'open');
-            jest.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
-                of(dotcmsContentletMock)
-            );
-            spectator.service.handleWorkflowAction({ ...mockWAEvent }).subscribe(() => {
-                expect(dotWizardService.open).toHaveBeenCalledWith(mockWizardInput);
+        it('should open with the correct data', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(dotWizardService, 'open');
+                vi.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
+                    of(dotcmsContentletMock)
+                );
+                spectator.service.handleWorkflowAction({ ...mockWAEvent }).subscribe(() => {
+                    expect(dotWizardService.open).toHaveBeenCalledWith(mockWizardInput);
 
-                done();
-            });
-            dotWizardService.output$({ ...mockWizardOutputData });
-        });
-
-        it('should fire the workflow action with the correct data, execute the callback and send a message on output', (done) => {
-            jest.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
-                of(dotcmsContentletMock)
-            );
-
-            spectator.service.handleWorkflowAction({ ...mockWAEvent }).subscribe(() => {
-                expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
-                    inode: mockWAEvent.inode,
-                    actionId: mockWAEvent.workflow.id,
-                    data: mockWizardOutputTransformedData
-                });
-                done();
-            });
-            dotWizardService.output$({ ...mockWizardOutputData });
-        });
-
-        it('should fire BULK action with the correct data, execute the callback and send a message on output', (done) => {
-            const mockBulkResponse: DotActionBulkResult = {
-                skippedCount: 1,
-                successCount: 2,
-                fails: []
-            };
-
-            const mockBulkRequest: DotActionBulkRequestOptions = {
-                workflowActionId: '44d4d4cd-c812-49db-adb1-1030be73e69a',
-                additionalParams: {
-                    assignComment: {
-                        comment: mockWizardOutputData.comments,
-                        assign: mockWizardOutputData.assign
-                    },
-                    pushPublish: {
-                        whereToSend: '37fe23d5-588d-4c61-a9ea-70d01e913344',
-                        iWantTo: 'publishexpire',
-                        expireDate: '2020-08-11',
-                        expireTime: '19-59',
-                        publishDate: '2020-08-05',
-                        publishTime: '17-59',
-                        filterKey: 'Intelligent.yml',
-                        timezoneId: 'America/Costa_Rica'
-                    },
-                    additionalParamsMap: {
-                        _path_to_move: mockWizardOutputData.pathToMove
-                    }
-                },
-                query: 'query'
-            };
-
-            jest.spyOn(dotWorkflowActionsFireService, 'bulkFire').mockReturnValue(
-                of(mockBulkResponse)
-            );
-
-            const embeddedFunction = jest.fn();
-
-            spectator.service
-                .handleWorkflowAction(
-                    {
-                        ...mockWAEvent,
-                        selectedInodes: 'query'
-                    },
-                    embeddedFunction
-                )
-                .subscribe(() => {
-                    expect(dotWorkflowActionsFireService.bulkFire).toHaveBeenCalledWith(
-                        mockBulkRequest
-                    );
-
-                    expect(embeddedFunction).toHaveBeenCalledWith('fireActionLoadingIndicator', []);
                     done();
                 });
-            dotWizardService.output$({ ...mockWizardOutputData });
-        });
+                dotWizardService.output$({ ...mockWizardOutputData });
+            }));
+
+        it('should fire the workflow action with the correct data, execute the callback and send a message on output', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(dotWorkflowActionsFireService, 'fireTo').mockReturnValue(
+                    of(dotcmsContentletMock)
+                );
+
+                spectator.service.handleWorkflowAction({ ...mockWAEvent }).subscribe(() => {
+                    expect(dotWorkflowActionsFireService.fireTo).toHaveBeenCalledWith({
+                        inode: mockWAEvent.inode,
+                        actionId: mockWAEvent.workflow.id,
+                        data: mockWizardOutputTransformedData
+                    });
+                    done();
+                });
+                dotWizardService.output$({ ...mockWizardOutputData });
+            }));
+
+        it('should fire BULK action with the correct data, execute the callback and send a message on output', () =>
+            new Promise<void>((done) => {
+                const mockBulkResponse: DotActionBulkResult = {
+                    skippedCount: 1,
+                    successCount: 2,
+                    fails: []
+                };
+
+                const mockBulkRequest: DotActionBulkRequestOptions = {
+                    workflowActionId: '44d4d4cd-c812-49db-adb1-1030be73e69a',
+                    additionalParams: {
+                        assignComment: {
+                            comment: mockWizardOutputData.comments,
+                            assign: mockWizardOutputData.assign
+                        },
+                        pushPublish: {
+                            whereToSend: '37fe23d5-588d-4c61-a9ea-70d01e913344',
+                            iWantTo: 'publishexpire',
+                            expireDate: '2020-08-11',
+                            expireTime: '19-59',
+                            publishDate: '2020-08-05',
+                            publishTime: '17-59',
+                            filterKey: 'Intelligent.yml',
+                            timezoneId: 'America/Costa_Rica'
+                        },
+                        additionalParamsMap: {
+                            _path_to_move: mockWizardOutputData.pathToMove
+                        }
+                    },
+                    query: 'query'
+                };
+
+                vi.spyOn(dotWorkflowActionsFireService, 'bulkFire').mockReturnValue(
+                    of(mockBulkResponse)
+                );
+
+                const embeddedFunction = vi.fn();
+
+                spectator.service
+                    .handleWorkflowAction(
+                        {
+                            ...mockWAEvent,
+                            selectedInodes: 'query'
+                        },
+                        embeddedFunction
+                    )
+                    .subscribe(() => {
+                        expect(dotWorkflowActionsFireService.bulkFire).toHaveBeenCalledWith(
+                            mockBulkRequest
+                        );
+
+                        expect(embeddedFunction).toHaveBeenCalledWith(
+                            'fireActionLoadingIndicator',
+                            []
+                        );
+                        done();
+                    });
+                dotWizardService.output$({ ...mockWizardOutputData });
+            }));
     });
 
     describe('checkPublishEnvironments', () => {
@@ -277,21 +284,22 @@ describe('DotEmaWorkflowActionsService', () => {
                 expect(flag).toEqual(true);
             });
         });
-        it('should return false and display a notification is there are no environments ', (done) => {
-            jest.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
-            jest.spyOn(messageService, 'add');
+        it('should return false and display a notification is there are no environments ', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
+                vi.spyOn(messageService, 'add');
 
-            spectator.service.checkPublishEnvironments().subscribe((flag: boolean) => {
-                expect(flag).toEqual(false);
-                expect(messageService.add).toHaveBeenCalledWith({
-                    life: 3000,
-                    detail: 'publisher_dialog_environment_mandatory',
-                    summary: 'Workflow Action',
-                    severity: 'error'
+                spectator.service.checkPublishEnvironments().subscribe((flag: boolean) => {
+                    expect(flag).toEqual(false);
+                    expect(messageService.add).toHaveBeenCalledWith({
+                        life: 3000,
+                        detail: 'publisher_dialog_environment_mandatory',
+                        summary: 'Workflow Action',
+                        severity: 'error'
+                    });
+                    done();
                 });
-                done();
-            });
-        });
+            }));
     });
 
     describe('containsPushPublish', () => {

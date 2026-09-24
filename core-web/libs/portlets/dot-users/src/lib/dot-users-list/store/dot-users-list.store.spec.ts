@@ -1,13 +1,15 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
+
+import { HttpErrorResponse } from '@angular/common/http';
 
 import {
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotMessageService,
-    DotRolesService
+    DotMessageService
 } from '@dotcms/data-access';
-import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersListStore } from './dot-users-list.store';
@@ -64,22 +66,19 @@ const MOCK_RESPONSE = {
 describe('DotUsersListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotUsersListStore>>;
     let store: InstanceType<typeof DotUsersListStore>;
-    let usersService: jest.Mocked<DotUsersService>;
+    let usersService: Mocked<DotUsersService>;
 
     const createService = createServiceFactory({
         service: DotUsersListStore,
         providers: [
             mockProvider(DotUsersService, {
-                getUsersPaginated: jest.fn().mockReturnValue(of(MOCK_RESPONSE)),
-                deleteUser: jest.fn().mockReturnValue(of({})),
-                createUser: jest.fn().mockReturnValue(of(MOCK_USERS[0])),
-                updateUser: jest.fn().mockReturnValue(of(MOCK_USERS[0]))
-            }),
-            mockProvider(DotRolesService, {
-                getForUser: jest.fn().mockReturnValue(of([]))
+                getUsersPaginated: vi.fn().mockReturnValue(of(MOCK_RESPONSE)),
+                deleteUser: vi.fn().mockReturnValue(of({})),
+                createUser: vi.fn().mockReturnValue(of(MOCK_USERS[0])),
+                updateUser: vi.fn().mockReturnValue(of(MOCK_USERS[0]))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
+            mockProvider(DotMessageDisplayService, { push: vi.fn() }),
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }
         ]
     });
@@ -87,17 +86,17 @@ describe('DotUsersListStore', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        usersService = spectator.inject(DotUsersService) as jest.Mocked<DotUsersService>;
-        // Clear call history from other tests (mockProvider's jest.fn() is shared).
+        usersService = spectator.inject(DotUsersService) as Mocked<DotUsersService>;
+        // Clear call history from other tests (mockProvider's vi.fn() is shared).
         // Implementations set via mockReturnValue are preserved.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         usersService.getUsersPaginated.mockReturnValue(of(MOCK_RESPONSE));
         usersService.deleteUser.mockReturnValue(of({}));
         usersService.createUser.mockReturnValue(of(MOCK_USERS[0]));
         usersService.updateUser.mockReturnValue(of(MOCK_USERS[0]));
     });
 
-    it('loadUsers passes the current state as query params', () => {
+    it('loadUsers passes the current state as query params (opts into includeRoles)', () => {
         store.loadUsers();
 
         expect(usersService.getUsersPaginated).toHaveBeenCalledWith({
@@ -106,26 +105,117 @@ describe('DotUsersListStore', () => {
             page: 1,
             perPage: 20,
             orderBy: 'lastLoginDate',
-            direction: 'DESC'
+            direction: 'DESC',
+            // #37236: the list opts into inline roles on every load;
+            // the store's 403 handler downgrades to `false` when the
+            // viewer lacks the required portlet gate.
+            includeRoles: true
         });
         expect(store.users()).toEqual(MOCK_USERS);
         expect(store.totalRecords()).toBe(2);
-        expect(store.status()).toBe('loaded');
+        expect(store.status()).toBe(ComponentStatus.LOADED);
     });
 
-    it('resolves each row roles through the shared roles service', () => {
-        const rolesService = spectator.inject(DotRolesService);
-        (rolesService.getForUser as jest.Mock).mockImplementation((userId: string) =>
-            of([{ id: `role-${userId}`, name: 'Publisher', roleKey: 'PUBLISHER' }])
-        );
+    describe('includeRoles fast path (#37236)', () => {
+        it('reads role names from the inline `roles` field on every row', () => {
+            usersService.getUsersPaginated.mockReturnValueOnce(
+                of({
+                    ...MOCK_RESPONSE,
+                    entity: [
+                        {
+                            ...MOCK_USERS[0],
+                            roles: [
+                                {
+                                    id: 'r-1',
+                                    name: 'CMS Administrator',
+                                    roleKey: 'CMS Administrator'
+                                },
+                                {
+                                    id: 'r-2',
+                                    name: 'Back-end User',
+                                    roleKey: 'DOTCMS_BACK_END_USER'
+                                }
+                            ]
+                        },
+                        {
+                            ...MOCK_USERS[1],
+                            roles: []
+                        }
+                    ]
+                })
+            );
 
-        store.loadUsers();
+            store.loadUsers();
 
-        // One lookup per row, and the result actually lands in state — before
-        // this the store fell through to the real root service and the roles
-        // column was never exercised.
-        expect(rolesService.getForUser).toHaveBeenCalledTimes(MOCK_USERS.length);
-        expect(store.userRoles()[MOCK_USERS[0].userId]).toEqual(['Publisher']);
+            expect(store.userRoles()).toEqual({
+                'dotcms.org.1': ['CMS Administrator', 'Back-end User'],
+                'dotcms.org.2': []
+            });
+        });
+
+        it('leaves the Roles column empty when a row omits `roles` (no per-user fetch)', () => {
+            // Envelope without the `roles` field — happens when the
+            // viewer's 403 fallback stripped `includeRoles=true`. We no
+            // longer fan out N per-user requests; the cell just stays
+            // empty for that viewer.
+            const strippedRow = { ...MOCK_USERS[0] };
+            delete (strippedRow as Partial<(typeof MOCK_USERS)[0]>).roles;
+            usersService.getUsersPaginated.mockReturnValueOnce(
+                of({ ...MOCK_RESPONSE, entity: [strippedRow] })
+            );
+
+            store.loadUsers();
+
+            expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(1);
+            expect(store.userRoles()).toEqual({ 'dotcms.org.1': [] });
+        });
+
+        it('retries without includeRoles when the backend gates the flag with 403', () => {
+            usersService.getUsersPaginated
+                .mockReturnValueOnce(
+                    throwError(
+                        () =>
+                            new HttpErrorResponse({
+                                status: 403,
+                                statusText: 'Forbidden',
+                                url: '/api/v1/users/filter?includeRoles=true'
+                            })
+                    )
+                )
+                .mockReturnValueOnce(of({ ...MOCK_RESPONSE, entity: [MOCK_USERS[0]] }));
+
+            store.loadUsers();
+
+            expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(2);
+            expect(usersService.getUsersPaginated).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({ includeRoles: true })
+            );
+            expect(usersService.getUsersPaginated).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ includeRoles: false })
+            );
+            // No inline roles in the downgraded response — column stays empty.
+            expect(store.userRoles()).toEqual({ 'dotcms.org.1': [] });
+        });
+
+        it('does NOT retry on non-403 errors — they bubble up to the error state', () => {
+            usersService.getUsersPaginated.mockReturnValueOnce(
+                throwError(
+                    () =>
+                        new HttpErrorResponse({
+                            status: 500,
+                            statusText: 'Server Error',
+                            url: '/api/v1/users/filter?includeRoles=true'
+                        })
+                )
+            );
+
+            store.loadUsers();
+
+            expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(1);
+            expect(store.status()).toBe(ComponentStatus.ERROR);
+        });
     });
 
     it('setRoleFilter should reset page and trigger a reload with roleKey', () => {
@@ -290,7 +380,7 @@ describe('DotUsersListStore', () => {
         store.setFilter('will-error');
         spectator.flushEffects();
 
-        expect(store.status()).toBe('error');
+        expect(store.status()).toBe(ComponentStatus.ERROR);
         expect(errorManager.handle).toHaveBeenCalled();
     });
 
@@ -334,7 +424,7 @@ describe('DotUsersListStore', () => {
         });
 
         expect(errorManager.handle).toHaveBeenCalled();
-        expect(store.status()).toBe('loaded');
+        expect(store.status()).toBe(ComponentStatus.LOADED);
     });
 
     it('updateUser should call the service, push a success toast, and reload the list', () => {

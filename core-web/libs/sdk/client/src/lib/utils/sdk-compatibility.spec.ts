@@ -1,3 +1,5 @@
+import { MockInstance, vi } from 'vitest';
+
 import {
     checkSdkCompatibility,
     compareVersions,
@@ -39,13 +41,13 @@ describe('compareVersions', () => {
 });
 
 describe('checkSdkCompatibility', () => {
-    let errorSpy: jest.SpyInstance;
-    let warnSpy: jest.SpyInstance;
+    let errorSpy: MockInstance;
+    let warnSpy: MockInstance;
 
     beforeEach(() => {
         resetSdkCompatibilityWarnings();
-        errorSpy = jest.spyOn(console, 'error').mockImplementation();
-        warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+        errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
     });
 
     afterEach(() => {

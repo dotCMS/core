@@ -54,11 +54,30 @@ export const monacoMock = {
                 endColumn: 1
             }),
             executeEdits: () => {},
-            focus: () => {}
+            focus: () => {},
+            addAction: () => ({ dispose: () => {} })
         }),
         setModelLanguage: () => {},
         createModel: () => ({
+            uri: { path: '/some/path' },
             dispose: () => {}
+        }),
+        // The two remaining members @materia-ui/ngx-monaco-editor reaches for. Its
+        // `initEditor` / diff paths call these, and a missing one surfaces only as
+        // `ReferenceError: monaco is not defined` from a lifecycle hook — an error rxjs
+        // reports asynchronously, so it stayed invisible under Jest.
+        getModels: () => [],
+        createDiffEditor: () => ({
+            setModel: () => {},
+            dispose: () => {},
+            onDidChangeModelContent: () => ({ dispose: () => {} }),
+            onDidChangeModelDecorations: () => ({ dispose: () => {} }),
+            onDidBlurEditorText: () => ({ dispose: () => {} }),
+            getValue: () => '',
+            setValue: () => {},
+            getModel: () => null,
+            updateOptions: () => {},
+            layout: () => {}
         }),
         setTheme: () => {},
         getModelMarkers: (model: object) => {
@@ -82,6 +101,9 @@ export const monacoMock = {
         registerDefinitionProvider: () => {},
         setMonarchTokensProvider: () => {}
     },
+    // Keybinding constants, with Monaco's real values, for editors that register shortcuts.
+    KeyMod: { CtrlCmd: 2048, Shift: 1024, Alt: 512, WinCtrl: 256 },
+    KeyCode: { Enter: 3, Escape: 9 },
     Uri: {
         parse: () => ({}),
         file: () => ({})

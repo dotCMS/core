@@ -1,5 +1,7 @@
-import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { WINDOW } from '@dotcms/utils';
@@ -26,7 +28,8 @@ describe('NativeFieldComponent', () => {
             {
                 provide: DotEditContentStore,
                 useValue: {
-                    setFieldVisibility: jest.fn()
+                    hasAttemptedSubmit: signal(false),
+                    setFieldVisibility: vi.fn()
                 }
             }
         ]
@@ -259,7 +262,7 @@ describe('NativeFieldComponent', () => {
 
         it('should destroy form bridge on component destroy', () => {
             const api = window['DotCustomFieldApi'];
-            const destroySpy = jest.spyOn(api, 'destroy');
+            const destroySpy = vi.spyOn(api, 'destroy');
 
             spectator.fixture.destroy();
 

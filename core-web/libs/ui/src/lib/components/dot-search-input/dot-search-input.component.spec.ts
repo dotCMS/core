@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -29,12 +30,12 @@ describe('DotSearchInputComponent', () => {
     };
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         spectator = createComponent();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('placeholder', () => {
@@ -52,35 +53,35 @@ describe('DotSearchInputComponent', () => {
 
     describe('debounced emission', () => {
         it('should not emit before the debounce window closes', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             type('blog');
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE - 1);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE - 1);
 
             expect(handler).not.toHaveBeenCalled();
         });
 
         it('should emit the term once the debounce window closes', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             type('blog');
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             expect(handler).toHaveBeenCalledWith('blog');
         });
 
         it('should emit only the last term typed within the window', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             type('b');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             type('bl');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             type('blog');
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             expect(handler).toHaveBeenCalledTimes(1);
             expect(handler).toHaveBeenCalledWith('blog');
@@ -90,33 +91,33 @@ describe('DotSearchInputComponent', () => {
             spectator.setInput('debounceTime', 50);
             spectator.detectChanges();
 
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             type('blog');
-            jest.advanceTimersByTime(50);
+            vi.advanceTimersByTime(50);
 
             expect(handler).toHaveBeenCalledWith('blog');
         });
 
         it('should trim the emitted term', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             type('  blog  ');
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             expect(handler).toHaveBeenCalledWith('blog');
         });
 
         it('should not re-emit a term the host already has', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             type('blog');
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
             type('blog ');
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             expect(handler).toHaveBeenCalledTimes(1);
         });
@@ -131,22 +132,22 @@ describe('DotSearchInputComponent', () => {
         });
 
         it('should not echo an emission back when the host pushes a value', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             spectator.setInput('value', 'blog');
             spectator.detectChanges();
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             expect(handler).not.toHaveBeenCalled();
         });
 
         it('should emit again after the host clears a term the user re-types', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             type('blog');
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             // Host echoes the term back, then clears the filter (e.g. "clear all")
             spectator.setInput('value', 'blog');
@@ -155,10 +156,27 @@ describe('DotSearchInputComponent', () => {
             spectator.detectChanges();
 
             type('blog');
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             expect(handler).toHaveBeenNthCalledWith(1, 'blog');
             expect(handler).toHaveBeenNthCalledWith(2, 'blog');
+        });
+    });
+
+    // `{}` is truthy, so a default of `{}` made PrimeNG's BaseComponent load a scoped stylesheet
+    // and register a theme-change listener for every consumer, including the ones (AssetPicker)
+    // that pass no override at all. `undefined` is the only default that actually skips that path.
+    describe('inputDt', () => {
+        it('should default to undefined rather than an empty object', () => {
+            expect(spectator.component.$inputDt()).toBeUndefined();
+        });
+
+        it('should pass through an explicit override', () => {
+            const dt = { border: { radius: '0' } };
+            spectator.setInput('inputDt', dt);
+            spectator.detectChanges();
+
+            expect(spectator.component.$inputDt()).toEqual(dt);
         });
     });
 
@@ -174,18 +192,40 @@ describe('DotSearchInputComponent', () => {
         });
 
         it('should clear the input and emit an empty term', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             type('blog');
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             spectator.click(byTestId('search-icon-clear'));
             spectator.detectChanges();
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             expect(getInput().value).toBe('');
             expect(handler).toHaveBeenLastCalledWith('');
+        });
+    });
+
+    // Inside a `p-inputgroup` (Content Drive's search bar), PrimeNG raises the focused field to
+    // the icons' own z-index, and the rule lands because the group turns the icon field into a
+    // flex container — flex items honor z-index without positioning. The field comes later in
+    // the DOM, so once focused its opaque background painted the magnifier away the moment the
+    // user clicked in. The icons sit one step above through PT's inline style, which beats the
+    // injected stylesheet unconditionally; outside an input group the value changes nothing.
+    describe('icon stacking', () => {
+        it('should pin the magnifier above the field', () => {
+            const icon = spectator.query('.p-inputicon') as HTMLElement;
+
+            expect(icon.style.zIndex).toBe('2');
+        });
+
+        it('should pin the clear icon above the field too', () => {
+            type('blog');
+
+            const icon = spectator.query(byTestId('search-icon-clear')) as HTMLElement;
+
+            expect(icon.style.zIndex).toBe('2');
         });
     });
 
@@ -208,11 +248,11 @@ describe('DotSearchInputComponent', () => {
         });
 
         it('should not emit when focused', () => {
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('search').subscribe(handler);
 
             spectator.component.focus();
-            jest.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
+            vi.advanceTimersByTime(DEFAULT_SEARCH_DEBOUNCE);
 
             expect(handler).not.toHaveBeenCalled();
         });

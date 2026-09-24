@@ -79,7 +79,7 @@
         <vipsffm.libpath.args></vipsffm.libpath.args>
 
         <maven.deploy.skip>false</maven.deploy.skip>
-        <tomcat.version>9.0.120</tomcat.version>
+        <tomcat.version>9.0.122</tomcat.version>
         <!-- Add any properties here that are to have defaults and overrides set in the environment properties -->
         <!--suppress UnresolvedMavenProperty -->
         <mvn.environment.name>${ext.mvn.environment.name}</mvn.environment.name>
@@ -1991,6 +1991,13 @@
         </profile>
     </profiles>
     <repositories>
+        <!--
+            dotCMS releases are published to the BunnyCDN S3 repository under
+            libs-release by .github/scripts/publish-to-s3/publish.sh. Shared
+            snapshots are not published and there is no libs-snapshot root.
+            Maven Central remains the default remote for third-party artifacts,
+            so no Maven Central redirect is needed here.
+        -->
         <repository>
             <releases>
                 <enabled>true</enabled>
@@ -1999,47 +2006,24 @@
                 <enabled>false</enabled>
             </snapshots>
             <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
-        </repository>
-        <repository>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>dotcms-libs-snapshot-local</id>
-            <name>IDotCMS libs Snapshots</name>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
+            <url>https://dotcms-repo.b-cdn.net/libs-release</url>
         </repository>
     </repositories>
     <pluginRepositories>
         <pluginRepository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
             <id>dotcms-libs</id>
-            <url>https://repo.dotcms.com/artifactory/libs-release</url>
-        </pluginRepository>
-        <pluginRepository>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>dotcms-libs-snapshot</id>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot</url>
+            <url>https://dotcms-repo.b-cdn.net/libs-release</url>
         </pluginRepository>
     </pluginRepositories>
-    <distributionManagement>
-        <repository>
-            <id>dotcms-libs-local</id>
-            <name>DotCMS libs Release</name>
-            <url>https://repo.dotcms.com/artifactory/libs-release-local</url>
-        </repository>
-        <snapshotRepository>
-            <id>dotcms-libs-snapshot-local</id>
-            <name>IDotCMS libs Snapshots</name>
-            <url>https://repo.dotcms.com/artifactory/libs-snapshot-local</url>
-        </snapshotRepository>
-    </distributionManagement>
-
+    <!--
+        Publishing to the S3-compatible repository is handled by
+        .github/scripts/publish-to-s3/publish.sh, so there is no Artifactory
+        distribution target here anymore.
+    -->
 </project>

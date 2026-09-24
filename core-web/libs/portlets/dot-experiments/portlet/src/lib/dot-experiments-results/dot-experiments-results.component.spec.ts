@@ -1,6 +1,7 @@
 import { provideDispatcher } from '@ngrx/signals/events';
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
@@ -14,6 +15,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsResultsComponent } from './dot-experiments-results.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import { DotExperimentsResultsStore } from '../store/dot-experiments-results.store';
 
 const NOT_STARTED_COPY = 'This Experiment has not started collecting sessions yet.';
@@ -38,7 +40,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.results.empty.unavailable.description': UNAVAILABLE_COPY
 });
 
-/** Real signals rather than `jest.fn()`, for the reason the summary-table spec gives. */
+/** Real signals rather than `vi.fn()`, for the reason the summary-table spec gives. */
 const createStoreMock = () => ({
     /** No experiment yet, which is also what the screen holds while the load is in flight. */
     experiment: signal<DotExperiment | null>(null),
@@ -67,14 +69,14 @@ const createGlobalStoreMock = () => {
 
     return {
         trail,
-        addNewBreadcrumb: jest.fn((crumb: MenuItem) => {
+        addNewBreadcrumb: vi.fn((crumb: MenuItem) => {
             trail.push(crumb);
         }),
-        setLastBreadcrumb: jest.fn((crumb: MenuItem) => {
+        setLastBreadcrumb: vi.fn((crumb: MenuItem) => {
             trail[trail.length - 1] = crumb;
         }),
-        breadcrumbs: jest.fn(() => [...trail]),
-        lastBreadcrumb: jest.fn(() => trail.at(-1) ?? null)
+        breadcrumbs: vi.fn(() => [...trail]),
+        lastBreadcrumb: vi.fn(() => trail.at(-1) ?? null)
     };
 };
 
@@ -89,6 +91,8 @@ describe('DotExperimentsResultsComponent', () => {
         // dropping it takes away a real dependency rather than just swapping the store.
         componentProviders: [
             { provide: DotExperimentsResultsStore, useFactory: () => storeMock },
+            // Real: these tests assert where a door leads, and this is what decides.
+            DotExperimentsRouter,
             ConfirmationService
         ],
         providers: [
@@ -156,6 +160,7 @@ describe('DotExperimentsResultsComponent', () => {
             component: DotExperimentsResultsComponent,
             componentProviders: [
                 { provide: DotExperimentsResultsStore, useFactory: () => storeMock },
+                DotExperimentsRouter,
                 ConfirmationService
             ],
             providers: [

@@ -1,7 +1,7 @@
-import { inject } from '@angular/core';
+import { inject, Signal } from '@angular/core';
 import { CanDeactivateFn, RouterStateSnapshot } from '@angular/router';
 
-import { ConfirmEventType } from 'primeng/api';
+import { ConfirmationService, ConfirmEventType } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
@@ -24,6 +24,10 @@ import { CONFIGURATION_SEGMENT, NEW_EXPERIMENT_SEGMENT } from '../shared/constan
  *
  * A save that just succeeded needs no flag to bypass the prompt: settling the form is what makes
  * the screen clean, so the guard finds nothing to warn about.
+ *
+ * The prompt itself lives in {@link confirmLeavingUnsavedChanges}, because the panel needs the same
+ * question and has no route to hang a guard on. All this adds is the one thing that *is* routing:
+ * the creation redirect, which only exists as a pair of URLs.
  */
 export const experimentsUnsavedChangesGuard: CanDeactivateFn<DotExperimentsConfigureComponent> = (
     component,
@@ -35,14 +39,48 @@ export const experimentsUnsavedChangesGuard: CanDeactivateFn<DotExperimentsConfi
         return true;
     }
 
-    const dotMessageService = inject(DotMessageService);
+    return confirmLeavingUnsavedChanges(component, inject(DotMessageService));
+};
 
-    if (!component.store.$hasUnsavedChanges()) {
+/**
+ * Whoever is holding unsaved work and can raise the dialog over it.
+ *
+ * Structural on purpose: the Configure screen, its header and the panel reach this from three
+ * different places in the tree, and only two members are common to all of them. The
+ * `ConfirmationService` matters as much as the store — it is provided by the Configure component,
+ * so an injector below it resolves the instance whose `<p-confirmDialog>` is actually rendered,
+ * and one resolved from anywhere else would ask into a dialog nobody can see.
+ */
+export interface UnsavedWorkSource {
+    store: { $hasUnsavedChanges: Signal<boolean> };
+    confirmationService: ConfirmationService;
+}
+
+/**
+ * The same question, asked without a route to hang it on.
+ *
+ * The panel has no `canDeactivate`: closing it is a click on an X, a mask or Escape, and going
+ * Back inside it changes a store field rather than a URL. Router-shaped protection reaches none of
+ * those, so the prompt has to be callable directly — and it has to be *this* prompt, not a second
+ * one worded and behaved almost the same. What the editor loses is identical either way.
+ *
+ * Resolves `true` when it is safe to proceed: nothing unsaved, or the editor chose to discard.
+ *
+ * @param component the Configure screen holding the work — its store answers what is unsaved, and
+ * its `ConfirmationService` is the instance whose `<p-confirmDialog>` is actually on screen
+ * @param dotMessageService injected by the caller, which is in an injection context where this is
+ * not
+ */
+export function confirmLeavingUnsavedChanges(
+    source: UnsavedWorkSource,
+    dotMessageService: DotMessageService
+): boolean | Promise<boolean> {
+    if (!source.store.$hasUnsavedChanges()) {
         return true;
     }
 
     return new Promise<boolean>((resolve) => {
-        component.confirmationService.confirm({
+        source.confirmationService.confirm({
             key: CONFIGURATION_CONFIRM_DIALOG_KEY,
             header: dotMessageService.get('experiments.configure.unsaved.title'),
             message: dotMessageService.get('experiments.configure.unsaved.message'),
@@ -65,7 +103,7 @@ export const experimentsUnsavedChangesGuard: CanDeactivateFn<DotExperimentsConfi
             reject: (type?: ConfirmEventType) => resolve(type === ConfirmEventType.REJECT)
         });
     });
-};
+}
 
 /**
  * Whether this is the screen redirecting itself off `new` once the POST answered.

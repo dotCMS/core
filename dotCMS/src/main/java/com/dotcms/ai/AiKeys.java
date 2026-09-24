@@ -40,6 +40,7 @@ public class AiKeys {
     public static final String SITE = "site";
     public static final String CREATED = "created";
     public static final String CONFIG_HOST = "configHost";
+    public static final String CONFIG_HOST_INHERITED = "configHostInherited";
     public static final String MODDATE = "moddate";
     public static final String DISTANCE = "distance";
     public static final String EXTRACTED_TEXT = "extractedText";

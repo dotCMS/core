@@ -1,4 +1,5 @@
 import { createHostFactory, SpectatorHost } from '@openng/spectator';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -123,23 +124,26 @@ describe('DotEditContentKeyValueComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should update form value when DotKeyValueComponent emits updatedList', (done) => {
-            const control = spectator.hostComponent.formGroup.get(KEY_VALUE_FIELD_MOCK.variable);
+        it('should update form value when DotKeyValueComponent emits updatedList', () =>
+            new Promise<void>((done) => {
+                const control = spectator.hostComponent.formGroup.get(
+                    KEY_VALUE_FIELD_MOCK.variable
+                );
 
-            control.valueChanges.subscribe((value) => {
-                // JSON text, not an object, so key order survives.
-                expect(JSON.parse(value)).toEqual({ key14: 'value14' });
-                done();
-            });
+                control!.valueChanges.subscribe((value) => {
+                    // JSON text, not an object, so key order survives.
+                    expect(JSON.parse(value)).toEqual({ key14: 'value14' });
+                    done();
+                });
 
-            const dotKeyValue = spectator.query(DotKeyValueComponent);
-            dotKeyValue.updatedList.emit([{ key: 'key14', hidden: false, value: 'value14' }]);
-            expect(control.touched).toBeTruthy();
-        });
+                const dotKeyValue = spectator.query(DotKeyValueComponent);
+                dotKeyValue!.updatedList.emit([{ key: 'key14', hidden: false, value: 'value14' }]);
+                expect(control!.touched).toBeTruthy();
+            }));
 
         it('should call updateField method when DotKeyValueComponent emits updatedList', () => {
             const keyValueField = spectator.query(DotKeyValueFieldComponent);
-            const updateFieldSpy = jest.spyOn(keyValueField, 'updateField');
+            const updateFieldSpy = vi.spyOn(keyValueField!, 'updateField');
             spectator.triggerEventHandler(DotKeyValueComponent, 'updatedList', [
                 { key: 'testKey', hidden: false, value: 'testValue' }
             ]);
@@ -260,8 +264,8 @@ describe('DotEditContentKeyValueComponent', () => {
 
         it('should report the pairs as ordered JSON and call onChange', () => {
             // Mock the callbacks
-            const mockOnChange = jest.fn();
-            const mockOnTouched = jest.fn();
+            const mockOnChange = vi.fn();
+            const mockOnTouched = vi.fn();
 
             // Register the mock callbacks
             const keyValueField = spectator.query(DotKeyValueFieldComponent);
@@ -281,8 +285,8 @@ describe('DotEditContentKeyValueComponent', () => {
 
         it('should handle empty array correctly', () => {
             // Mock the callbacks
-            const mockOnChange = jest.fn();
-            const mockOnTouched = jest.fn();
+            const mockOnChange = vi.fn();
+            const mockOnTouched = vi.fn();
 
             // Register the mock callbacks
             const keyValueField = spectator.query(DotKeyValueFieldComponent);
@@ -294,5 +298,78 @@ describe('DotEditContentKeyValueComponent', () => {
             expect(JSON.parse(mockOnChange.mock.calls[0][0])).toEqual({});
             expect(mockOnTouched).toHaveBeenCalled();
         });
+    });
+});
+
+/**
+ * AC-209 — naming a widget whose value is a collection.
+ *
+ * Key/Value has no single control either: the visible inputs are the two boxes used to ADD a pair,
+ * while the field's value is the list they build. So the widget as a whole becomes the named thing,
+ * exactly as a checkbox set does.
+ *
+ * No aria-required, for the same reason as the checkbox group: ARIA defines that attribute on
+ * radiogroup, not on a plain `group`.
+ */
+describe('DotEditContentKeyValueComponent — group semantics (AC-209)', () => {
+    let spectator: SpectatorHost<DotEditContentKeyValueComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentKeyValueComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false,
+        componentMocks: [DotKeyValueComponent],
+        providers: [
+            ConfirmationService,
+            { provide: DotMessageService, useValue: new MockDotMessageService({}) }
+        ]
+    });
+
+    const render = (required: boolean) => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-key-value [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [KEY_VALUE_FIELD_MOCK.variable]: new FormControl({})
+                    }),
+                    field: { ...KEY_VALUE_FIELD_MOCK, required },
+                    contentlet: createFakeContentlet({ [KEY_VALUE_FIELD_MOCK.variable]: {} })
+                }
+            }
+        );
+        spectator.detectChanges();
+
+        // Throwing rather than returning `T | null` keeps every caller's assertion honest: with
+        // an optional chain, the `aria-required` assertion below would pass just as happily if the
+        // widget never rendered at all.
+        const widget = spectator.query('dot-key-value-field');
+        if (!widget) {
+            throw new Error('the key-value widget did not render');
+        }
+
+        return widget;
+    };
+
+    it('should expose the widget as a group', () => {
+        expect(render(true).getAttribute('role')).toBe('group');
+    });
+
+    it('should name the group from the field label', () => {
+        const widget = render(true);
+
+        expect(widget.getAttribute('aria-labelledby')).toBe(
+            'label-' + KEY_VALUE_FIELD_MOCK.variable
+        );
+        expect(spectator.query('label[dotCardFieldLabel]')?.id).toBe(
+            'label-' + KEY_VALUE_FIELD_MOCK.variable
+        );
+    });
+
+    it('should not put aria-required on a plain group, which ARIA does not define it on', () => {
+        expect(render(true).getAttribute('aria-required')).toBeNull();
     });
 });

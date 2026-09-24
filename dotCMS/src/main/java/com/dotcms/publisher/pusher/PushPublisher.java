@@ -47,7 +47,6 @@ import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.ResourceResponse;
-import com.dotcms.rest.RestClientBuilder;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsFailureEvent;
 import com.dotcms.system.event.local.type.pushpublish.AllPushPublishEndpointsSuccessEvent;
@@ -581,13 +580,14 @@ public class PushPublisher extends Publisher {
 	}
 
 	/**
-	 * Returns an instance of the REST {@link Client} used to access Push Publishing end-points and
-	 * retrieve their information.
+	 * Returns an instance of the REST {@link Client} used to send bundles to Push Publishing
+	 * end-points. Built by {@link PushPublishClientFactory}, so connection attempts are bounded by
+	 * the configured connect timeout instead of waiting for the operating system to give up.
 	 *
 	 * @return The REST {@link Client}.
 	 */
 	private Client getRestClient() {
-		return RestClientBuilder.newClient();
+		return PushPublishClientFactory.newClient();
 	}
 
 	/**

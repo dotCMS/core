@@ -1,7 +1,7 @@
-import { describe, expect } from '@jest/globals';
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { describe, expect, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -11,11 +11,15 @@ import {
     DotPropertiesService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { withFlags } from '@dotcms/store';
 import { UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
-import { DotLanguagesServiceMock, mockWorkflowsActions } from '@dotcms/utils-testing';
+import {
+    DotLanguagesServiceMock,
+    getExperimentMock,
+    mockWorkflowsActions
+} from '@dotcms/utils-testing';
 
 import { withView } from './toolbar/withView';
 import { withEditor } from './withEditor';
@@ -88,7 +92,7 @@ describe('withEditor', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+                getFeatureFlags: vi.fn().mockReturnValue(of(false))
             }),
             {
                 provide: DotPageApiService,
@@ -96,7 +100,7 @@ describe('withEditor', () => {
                     get: () => of({}),
                     getClientPage: () => of({}),
                     getGraphQLPage: () => of({}),
-                    save: jest.fn()
+                    save: vi.fn()
                 }
             },
             {
@@ -196,6 +200,155 @@ describe('withEditor', () => {
                 store.setPageAsset({ pageAsset: lockedByCurrentUser });
 
                 expect(store.editorHasAccessToEditMode()).toBe(true);
+            });
+
+            /**
+             * #37308 — a live experiment no longer freezes the page.
+             *
+             * This computed refused edit mode whenever `pageExperiment` was RUNNING or SCHEDULED,
+             * and nothing in this file ever asserted it: the guard shipped uncovered, so removing
+             * it would have been invisible to the suite in either direction.
+             *
+             * The two "still" cases below are the point of the exercise. The condition being
+             * dropped sat in an `if` beside the permission check and ahead of the lock check, so
+             * the risk is not that the experiment term survives — it is that a neighbour leaves
+             * with it and the page becomes editable for someone holding neither permission nor
+             * the lock.
+             */
+            describe('with a live experiment on the page', () => {
+                const experimentIn = (status: DotExperimentStatus) => ({
+                    ...getExperimentMock(0),
+                    status
+                });
+
+                it('should return true when the experiment is running', () => {
+                    patchStoreState(store, {
+                        uveCurrentUser: mockCurrentUser,
+                        pageExperiment: experimentIn(DotExperimentStatus.RUNNING)
+                    });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+                    expect(store.editorHasAccessToEditMode()).toBe(true);
+                });
+
+                it('should return true when the experiment is scheduled', () => {
+                    patchStoreState(store, {
+                        uveCurrentUser: mockCurrentUser,
+                        pageExperiment: experimentIn(DotExperimentStatus.SCHEDULED)
+                    });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+                    expect(store.editorHasAccessToEditMode()).toBe(true);
+                });
+
+                it('should still return false when the page is locked by another user', () => {
+                    patchStoreState(store, {
+                        uveCurrentUser: mockCurrentUser,
+                        pageExperiment: experimentIn(DotExperimentStatus.RUNNING)
+                    });
+                    store.setPageAsset({ pageAsset: lockedByAnotherUser });
+
+                    expect(store.editorHasAccessToEditMode()).toBe(false);
+                });
+
+                it('should still return false when the user lacks edit permission', () => {
+                    patchStoreState(store, {
+                        uveCurrentUser: mockCurrentUser,
+                        pageExperiment: experimentIn(DotExperimentStatus.RUNNING)
+                    });
+                    store.setPageAsset({
+                        pageAsset: {
+                            ...MOCK_RESPONSE_HEADLESS,
+                            page: { ...MOCK_RESPONSE_HEADLESS.page, canEdit: false }
+                        }
+                    });
+
+                    expect(store.editorHasAccessToEditMode()).toBe(false);
+                });
+            });
+        });
+
+        /**
+         * Layout editing during a live experiment (#37308, US4).
+         *
+         * The page behind the experiment — not one of its variants — is unblocked by the same
+         * change. Asserted through `editorCanEditLayout`, the public capability that gates the
+         * Layout screen and its nav item; the `hasPermissionToEditLayout` behind it is local to the
+         * feature and not reachable from the store.
+         *
+         * This is the riskier of the two removals: `editorHasAccessToEditMode` drops a term
+         * from an `if`, but this one drops a term from a four-way `&&`, and taking a neighbour with
+         * it would hand layout editing to someone with no permission, a hand-coded template, or
+         * someone else's lock. Hence the three "still" cases.
+         */
+        describe('editorCanEditLayout', () => {
+            const experimentIn = (status: DotExperimentStatus) => ({
+                ...getExperimentMock(0),
+                status
+            });
+
+            const advancedTemplatePage = {
+                ...MOCK_RESPONSE_HEADLESS,
+                template: { ...MOCK_RESPONSE_HEADLESS.template, drawed: false }
+            };
+
+            const lockedByAnother = {
+                ...MOCK_RESPONSE_HEADLESS,
+                page: {
+                    ...MOCK_RESPONSE_HEADLESS.page,
+                    canEdit: true,
+                    locked: true,
+                    lockedBy: 'another-user',
+                    lockedByName: 'Another User'
+                }
+            };
+
+            it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED])(
+                'should allow layout editing while the experiment is %s',
+                (status) => {
+                    patchStoreState(store, {
+                        uveCurrentUser: mockCurrentUser,
+                        pageExperiment: experimentIn(status)
+                    });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+                    expect(store.editorCanEditLayout()).toBe(true);
+                }
+            );
+
+            it('should still refuse an advanced template, for the template and not the experiment', () => {
+                patchStoreState(store, {
+                    uveCurrentUser: mockCurrentUser,
+                    pageExperiment: experimentIn(DotExperimentStatus.RUNNING)
+                });
+                store.setPageAsset({ pageAsset: advancedTemplatePage });
+
+                expect(store.editorCanEditLayout()).toBe(false);
+            });
+
+            it('should still refuse a page locked by another user', () => {
+                patchStoreState(store, {
+                    uveCurrentUser: mockCurrentUser,
+                    pageExperiment: experimentIn(DotExperimentStatus.RUNNING)
+                });
+                store.setPageAsset({ pageAsset: lockedByAnother });
+
+                expect(store.editorCanEditLayout()).toBe(false);
+            });
+
+            it('should still refuse a user without edit permission', () => {
+                patchStoreState(store, {
+                    uveCurrentUser: mockCurrentUser,
+                    pageExperiment: experimentIn(DotExperimentStatus.RUNNING)
+                });
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        page: { ...MOCK_RESPONSE_HEADLESS.page, canEdit: false }
+                    }
+                });
+
+                expect(store.editorCanEditLayout()).toBe(false);
             });
         });
 
@@ -547,7 +700,7 @@ describe('withEditor', () => {
             // Unskip this when this discussion is resolved: https://github.com/ngrx/platform/discussions/4627
             describe.skip('page dependency', () => {
                 it('should call page when it is a headless page', () => {
-                    const spy = jest.spyOn(store, 'pageAsset');
+                    const spy = vi.spyOn(store, 'pageAsset');
                     patchStoreState(store, { pageType: PageType.HEADLESS });
                     store.$iframeURL();
 
@@ -555,7 +708,7 @@ describe('withEditor', () => {
                 });
 
                 it('should call page when it is a traditional page', () => {
-                    const spy = jest.spyOn(store, 'pageAsset');
+                    const spy = vi.spyOn(store, 'pageAsset');
 
                     patchStoreState(store, { pageType: PageType.TRADITIONAL });
 

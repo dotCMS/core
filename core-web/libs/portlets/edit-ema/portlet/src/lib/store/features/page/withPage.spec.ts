@@ -1,7 +1,7 @@
-import { describe, expect, it } from '@jest/globals';
 import { patchState, signalStore, withState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -45,7 +45,7 @@ describe('withPage', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of(false))
+                getFeatureFlags: vi.fn().mockReturnValue(of(false))
             }),
             {
                 provide: DotPageApiService,
@@ -53,7 +53,7 @@ describe('withPage', () => {
                     get: () => of({}),
                     getClientPage: () => of({}),
                     getGraphQLPage: () => of({}),
-                    save: jest.fn()
+                    save: vi.fn()
                 }
             }
         ]
@@ -138,6 +138,52 @@ describe('withPage', () => {
             // Everything else stays untouched
             expect(store.isClientReady()).toBe(true);
             expect(store.pageAssetResponse()).not.toBeNull();
+        });
+    });
+
+    describe('pageAssetResponse.source', () => {
+        const mockPageAsset = { page: { identifier: 'p1' } } as Parameters<
+            typeof store.setPageAsset
+        >[0]['pageAsset'];
+
+        it('should set source to rest when the payload specifies it', () => {
+            store.setPageAsset({ pageAsset: mockPageAsset, source: 'rest' });
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should set source to graphql when the payload specifies it', () => {
+            store.setPageAsset({ pageAsset: mockPageAsset, source: 'graphql' });
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+
+        it('should inherit the current source when the payload omits it', () => {
+            store.setPageAsset({ pageAsset: mockPageAsset, source: 'graphql' });
+
+            // A mutate-in-place update (e.g. an optimistic edit or layout change) that
+            // does not pass `source` must not silently reclassify GraphQL-sourced data as REST.
+            store.setPageAsset({
+                pageAsset: { ...mockPageAsset, layout: {} } as Parameters<
+                    typeof store.setPageAsset
+                >[0]['pageAsset']
+            });
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+
+        it('should leave source undefined (not invent a value) when the payload omits it and there is no current response to inherit from', () => {
+            store.setPageAsset({ pageAsset: mockPageAsset });
+
+            expect(store.pageAssetResponse()?.source).toBeUndefined();
+        });
+
+        it('should clear source along with the rest of pageAssetResponse on resetClientConfiguration', () => {
+            store.setPageAsset({ pageAsset: mockPageAsset, source: 'graphql' });
+
+            store.resetClientConfiguration();
+
+            expect(store.pageAssetResponse()).toBeNull();
         });
     });
 
