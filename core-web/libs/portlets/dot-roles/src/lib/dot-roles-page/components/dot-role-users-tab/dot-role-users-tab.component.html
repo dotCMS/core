@@ -3,13 +3,14 @@
 <!--
     Users tab layout — a full-height flex column so the members table can own
     its own scroll region and the paginator stays pinned at the bottom of the
-    tab (mirrors publishing-queue-beta). The banner and Grant button sit above
+    tab (mirrors publishing-queue-beta). The banner and the toolbar sit above
     the table at their natural heights; the table zone claims the remaining
     space with `flex-1 min-h-0 overflow-hidden`, and the `p-table`'s own
     `[scrollable]/scrollHeight="flex"` places the scroll on the tbody so the
-    header and pagination footer stay pinned.
+    header and pagination footer stay pinned. No gap: the toolbar sits flush on
+    the table header, as in the other portlets' toolbar-above-table layout.
 -->
-<div class="flex h-full flex-col gap-4">
+<div class="flex h-full flex-col">
     @if (role && !store.canGrantUsers()) {
         <div
             class="bg-amber-100 px-6 py-3 text-sm text-amber-800"
@@ -18,16 +19,38 @@
         </div>
     }
 
-    <div class="flex justify-end gap-2 px-6 first:pt-4">
-        <button
-            pButton
-            type="button"
-            [disabled]="!store.canGrantUsers()"
-            (click)="grantPanel.toggle($event)"
-            data-testid="grant-user-btn">
-            {{ 'roles.users.grant' | dm }}
-        </button>
-    </div>
+    <!-- Same toolbar chrome as the Users and Plugins portlets. -->
+    <p-toolbar class="shrink-0 justify-start gap-1 border-x-0! border-t-0! px-3">
+        <div class="flex w-full items-center gap-4 py-3">
+            <p-iconfield iconPosition="left">
+                <p-inputicon>
+                    <span
+                        class="material-symbols-rounded text-xl! leading-none!"
+                        aria-hidden="true">
+                        search
+                    </span>
+                </p-inputicon>
+                <input
+                    pInputText
+                    type="text"
+                    autocomplete="off"
+                    class="w-80"
+                    [ngModel]="$memberSearch()"
+                    (ngModelChange)="onMemberSearch($event)"
+                    [placeholder]="'roles.users.filter.placeholder' | dm"
+                    [attr.aria-label]="'roles.users.filter.placeholder' | dm"
+                    data-testid="members-search-input" />
+            </p-iconfield>
+
+            <p-button
+                class="ml-auto"
+                [label]="'roles.users.add' | dm"
+                [outlined]="true"
+                [disabled]="!store.canGrantUsers()"
+                (onClick)="grantPanel.toggle($event)"
+                data-testid="add-user-btn" />
+        </div>
+    </p-toolbar>
 
     <!--
         Table zone: `flex-1 min-h-0 overflow-hidden` bounds the p-table so its
@@ -68,9 +91,14 @@
                 </ng-template>
             </p-table>
         } @else if (store.membersStatus() === 'ERROR') {
-            <p class="m-0 px-6 text-sm text-red-700" data-testid="members-error">
+            <p class="m-0 px-6 py-4 text-sm text-red-700" data-testid="members-error">
                 {{ 'roles.error.load-failed' | dm }}
             </p>
+        } @else if (store.members().length === 0 && store.membersFilter()) {
+            <dot-empty-container
+                [configuration]="$noSearchResultsConfig()"
+                [hideContactUsLink]="true"
+                data-testid="members-search-empty" />
         } @else if (store.members().length === 0) {
             <dot-empty-container
                 [configuration]="$emptyMembersConfig()"
@@ -115,7 +143,7 @@
                     @let highlighted = member.userId === $highlightUserId();
                     <!--
                         `just-granted` highlight: the row that was added via
-                        Grant to User gets a soft primary background for the
+                        Add User gets a soft primary background for the
                         duration of `GRANT_HIGHLIGHT_DURATION_MS` so the admin
                         can find it in a long list. `ease-in-out` on the color
                         transition softens both edges of the fade; `!` beats

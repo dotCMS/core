@@ -73,8 +73,16 @@ export interface DotRolesState {
     selectedRoleStatus: DotRolesStatus;
     /** Active tab on the right-hand detail area. */
     activeTab: DotRoleTab;
-    /** Members of the selected role. */
+    /** Members of the selected role, narrowed by `membersFilter` when set. */
     members: DotRoleMember[];
+    /** Search term typed into the Users tab; sent to the backend as `filter`. */
+    membersFilter: string;
+    /**
+     * Total users granted the selected role, direct and inherited, ignoring
+     * `membersFilter`. Drives the header's "N users", which must not shrink
+     * while searching — which is why it is not `members.length`.
+     */
+    memberCount: number;
     /**
      * Tool groups rendered by the Tools tab: the full catalog, each row
      * annotated with whether the selected role gets it and from where.
@@ -98,6 +106,8 @@ const initialState: DotRolesState = {
     selectedRoleStatus: 'INIT',
     activeTab: 'users',
     members: [],
+    membersFilter: '',
+    memberCount: 0,
     toolGroups: [],
     toolGroupsStatus: 'INIT',
     toolGroupsSaving: false,
@@ -109,7 +119,7 @@ const initialState: DotRolesState = {
 export const DotRolesStore = signalStore(
     withState<DotRolesState>(initialState),
 
-    withComputed(({ roles, searchResults, selectedRoleId, selectedRole, members, toolGroups }) => ({
+    withComputed(({ roles, searchResults, selectedRoleId, selectedRole, toolGroups }) => ({
         /** Alias for `roles` — the tree comes nested from the wire response. */
         roleTree: computed(() => roles()),
 
@@ -128,9 +138,6 @@ export const DotRolesStore = signalStore(
 
         /** True while the tree is showing search results (filter length >= 3). */
         isSearching: computed(() => searchResults() !== null),
-
-        /** Total users granted this role. */
-        memberCount: computed(() => members().length),
 
         /**
          * Tool groups effectively granted — direct plus inherited. Drives the
@@ -298,11 +305,127 @@ export const DotRolesStore = signalStore(
             )
         );
 
-        // Ancestor-walk + parallel fan-out that populates `members`. Wrapped
-        // in `rxMethod` so `switchMap` cancels prior invocations when the
-        // user switches roles quickly — otherwise an earlier chain could
-        // resolve *after* a later one and overwrite `members` with stale
-        // data. Also used post-grant / post-remove to refresh the list.
+        /**
+         * Effective membership of a role: one `GET /v1/roles/{id}/users` per
+         * role in its ancestor chain, merged and de-duplicated. Each user is
+         * tagged with the CLOSEST role that grants them, so a direct grant
+         * wins over an inherited one.
+         *
+         * `filter` is forwarded to every request, so a search narrows
+         * inherited members the same way as direct ones.
+         *
+         * Returns `null` when the role is not in any tree we can see: there is
+         * no way to know which ancestors to ask, and fanning out to the role
+         * alone would pass a direct-grants-only roster off as the complete one.
+         */
+        const fetchRoster = (role: { id: string }, filter: string) => {
+            // Under active search, ancestors of the picked role may live only
+            // in `searchResults` (the lazy tree hasn't loaded that branch
+            // yet). Merge both — prefer the copy that has `parent` populated
+            // so the ancestor walk can actually climb, since
+            // `unwrapLegacySearchNode` nodes don't carry `parent`.
+            const searchTree = store.isSearching() ? (store.searchResults() ?? []) : [];
+            const chain = collectAncestorChain(
+                mergeTreesForLookup(store.roles(), searchTree),
+                role
+            );
+            if (chain.length === 0) {
+                return null;
+            }
+
+            const requests = chain.map((node) =>
+                rolesService.getUsers(node.id, filter).pipe(
+                    map((users) => ({
+                        failed: false,
+                        members: users.map<DotRoleMember>((u) => ({
+                            userId: u.userId,
+                            firstName: u.firstName ?? '',
+                            lastName: u.lastName ?? '',
+                            emailAddress: u.emailAddress ?? '',
+                            grantedFromRoleId: node.id,
+                            grantedFromRoleName: node.name
+                        }))
+                    })),
+                    catchError((error) => {
+                        httpErrorManager.handle(error);
+
+                        // Unknown, not empty — see `unverified` below.
+                        return of({ failed: true, members: [] as DotRoleMember[] });
+                    })
+                )
+            );
+
+            return forkJoin(requests).pipe(
+                map((batches) => {
+                    const byUserId = new Map<string, DotRoleMember>();
+                    for (const batch of batches) {
+                        for (const member of batch.members) {
+                            if (!byUserId.has(member.userId)) {
+                                byUserId.set(member.userId, member);
+                            }
+                        }
+                    }
+
+                    return {
+                        members: Array.from(byUserId.values()),
+                        // Same rule as loadToolGroups: an ancestor we could not
+                        // query is not an ancestor with no members. A silently
+                        // short roster is worse than a visible failure when the
+                        // admin is auditing who has access.
+                        unverified: batches.some((batch) => batch.failed)
+                    };
+                })
+            );
+        };
+
+        /**
+         * Writes the counts derived from a COMPLETE (unfiltered) roster: the
+         * header's "N users" and the tree badge.
+         *
+         * The badge exists because `userCount` ships with the role payload and
+         * is never refreshed by a grant or a revoke, so without this a role
+         * that just got its first user keeps showing no badge at all. It counts
+         * DIRECT grants only, matching what the backend puts in that field, and
+         * is skipped when a check failed: a count derived from a partial answer
+         * would replace a stale number with a wrong one.
+         */
+        const syncMemberCounts = (
+            roleId: string,
+            members: DotRoleMember[],
+            unverified: boolean
+        ): void => {
+            const directCount = unverified
+                ? null
+                : members.filter((m) => m.grantedFromRoleId === roleId).length;
+
+            patchState(store, {
+                memberCount: members.length,
+                ...(directCount === null
+                    ? {}
+                    : {
+                          roles: patchNodeUserCount(store.roles(), roleId, directCount),
+                          // While a search is active the tree renders
+                          // `searchResults`, not `roles` — patching only the
+                          // cache would leave the badge stale on exactly the
+                          // path most admins use to reach a role.
+                          ...(store.isSearching()
+                              ? {
+                                    searchResults: patchNodeUserCount(
+                                        store.searchResults() ?? [],
+                                        roleId,
+                                        directCount
+                                    )
+                                }
+                              : {})
+                      })
+            });
+        };
+
+        // Populates `members` for the current `membersFilter`. Wrapped in
+        // `rxMethod` so `switchMap` cancels prior invocations when the user
+        // switches roles or keeps typing — otherwise an earlier chain could
+        // resolve *after* a later one and overwrite `members` with stale data.
+        // Also used post-grant / post-remove to refresh the list.
         const loadMembers = rxMethod<{ id: string; silent?: boolean }>(
             pipe(
                 // Same rule as loadToolGroups: `silent` reconciles in the
@@ -315,61 +438,16 @@ export const DotRolesStore = signalStore(
                     }
                 }),
                 switchMap((role) => {
-                    // Under active search, ancestors of the picked role may
-                    // live only in `searchResults` (the lazy tree hasn't
-                    // loaded that branch yet). Merge both — prefer the copy
-                    // that has `parent` populated so the ancestor walk can
-                    // actually climb, since `unwrapLegacySearchNode` nodes
-                    // don't carry `parent`.
-                    const searchTree = store.isSearching() ? (store.searchResults() ?? []) : [];
-                    const chain = collectAncestorChain(
-                        mergeTreesForLookup(store.roles(), searchTree),
-                        role
-                    );
-                    // An empty chain means the role isn't in any tree we can
-                    // see, so there is no way to know which ancestors to ask.
-                    // Fanning out to the role alone would render a
-                    // direct-grants-only roster as the complete one — the same
-                    // "could not verify shown as not granted" failure the
-                    // per-ancestor guard below exists to prevent, one level up.
-                    if (chain.length === 0) {
+                    const filter = store.membersFilter();
+                    const roster$ = fetchRoster(role, filter);
+                    if (!roster$) {
                         patchState(store, { membersStatus: 'ERROR' });
 
                         return EMPTY;
                     }
 
-                    const requests = chain.map((node) =>
-                        rolesService.getUsers(node.id).pipe(
-                            map((users) => ({
-                                failed: false,
-                                members: users.map<DotRoleMember>((u) => ({
-                                    userId: u.userId,
-                                    firstName: u.firstName ?? '',
-                                    lastName: u.lastName ?? '',
-                                    emailAddress: u.emailAddress ?? '',
-                                    grantedFromRoleId: node.id,
-                                    grantedFromRoleName: node.name
-                                }))
-                            })),
-                            catchError((error) => {
-                                httpErrorManager.handle(error);
-
-                                // Unknown, not empty — see the `failed` check below.
-                                return of({ failed: true, members: [] as DotRoleMember[] });
-                            })
-                        )
-                    );
-
-                    return forkJoin(requests).pipe(
-                        tap((batches) => {
-                            const byUserId = new Map<string, DotRoleMember>();
-                            for (const batch of batches) {
-                                for (const member of batch.members) {
-                                    if (!byUserId.has(member.userId)) {
-                                        byUserId.set(member.userId, member);
-                                    }
-                                }
-                            }
+                    return roster$.pipe(
+                        tap(({ members, unverified }) => {
                             // Same guard as loadToolGroups: a response for a
                             // role the admin already navigated away from must
                             // not repaint the current role's member list.
@@ -377,57 +455,17 @@ export const DotRolesStore = signalStore(
                                 return;
                             }
 
-                            // Same rule as loadToolGroups: an ancestor we could
-                            // not query is not an ancestor with no members. A
-                            // silently short roster is worse than a visible
-                            // failure when the admin is auditing who has access.
-                            const unverified = batches.some((batch) => batch.failed);
-                            const members = Array.from(byUserId.values());
-
-                            // Keep the tree badge honest. `userCount` ships with
-                            // the role payload and is never refreshed by a grant
-                            // or a revoke, so without this it stays at whatever
-                            // it was when the tree loaded — most visibly, a role
-                            // that just got its first user keeps showing no badge
-                            // at all, since the badge hides at zero.
-                            //
-                            // Counts DIRECT grants only, matching what the
-                            // backend puts in that field. Skipped when a check
-                            // failed: writing a count derived from a partial
-                            // answer would replace a stale number with a wrong
-                            // one.
-                            const directCount = unverified
-                                ? null
-                                : members.filter((m) => m.grantedFromRoleId === role.id).length;
-
                             patchState(store, {
                                 members,
-                                membersStatus: unverified ? 'ERROR' : 'LOADED',
-                                ...(directCount === null
-                                    ? {}
-                                    : {
-                                          roles: patchNodeUserCount(
-                                              store.roles(),
-                                              role.id,
-                                              directCount
-                                          ),
-                                          // While a search is active the tree
-                                          // renders `searchResults`, not
-                                          // `roles` — patching only the cache
-                                          // would leave the badge stale on
-                                          // exactly the path most admins use to
-                                          // reach a role.
-                                          ...(store.isSearching()
-                                              ? {
-                                                    searchResults: patchNodeUserCount(
-                                                        store.searchResults() ?? [],
-                                                        role.id,
-                                                        directCount
-                                                    )
-                                                }
-                                              : {})
-                                      })
+                                membersStatus: unverified ? 'ERROR' : 'LOADED'
                             });
+
+                            // A filtered roster is a subset — counting it would
+                            // make the header and the badge shrink as the admin
+                            // types.
+                            if (!filter) {
+                                syncMemberCounts(role.id, members, unverified);
+                            }
                         }),
                         catchError((error) => {
                             httpErrorManager.handle(error);
@@ -439,6 +477,46 @@ export const DotRolesStore = signalStore(
                 })
             )
         );
+
+        /**
+         * Refreshes the counts after a grant or a revoke made while a search is
+         * active. The reload that follows those actions is filtered, so on its
+         * own it would leave the header and the badge at their old values.
+         */
+        const loadMemberCounts = rxMethod<{ id: string }>(
+            pipe(
+                switchMap((role) => {
+                    const roster$ = fetchRoster(role, '');
+                    if (!roster$) {
+                        return EMPTY;
+                    }
+
+                    return roster$.pipe(
+                        tap(({ members, unverified }) => {
+                            if (store.selectedRoleId() === role.id) {
+                                syncMemberCounts(role.id, members, unverified);
+                            }
+                        }),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+
+                            return EMPTY;
+                        })
+                    );
+                })
+            )
+        );
+
+        /**
+         * Reloads the selected role's members after a grant or a revoke, and
+         * its counts too when the reload alone cannot provide them.
+         */
+        const reconcileMembers = (roleId: string): void => {
+            loadMembers({ id: roleId, silent: true });
+            if (store.membersFilter()) {
+                loadMemberCounts({ id: roleId });
+            }
+        };
 
         /**
          * Populate the Tools tab.
@@ -580,6 +658,9 @@ export const DotRolesStore = signalStore(
                     selectedRoleStatus: roleId ? 'LOADING' : 'INIT',
                     members: [],
                     membersStatus: 'INIT',
+                    // A search typed for one role means nothing on the next.
+                    membersFilter: '',
+                    memberCount: 0,
                     toolGroups: [],
                     toolGroupsStatus: 'INIT',
                     // A save still in flight belongs to the role we are leaving.
@@ -624,6 +705,28 @@ export const DotRolesStore = signalStore(
              */
             loadMembers(role: { id: string; silent?: boolean }): void {
                 loadMembers({ id: role.id, silent: role.silent });
+            },
+
+            /**
+             * Narrow the Users tab to members matching `filter` and reload them.
+             *
+             * The term goes to the backend with every request of the ancestor
+             * fan-out, so inherited members are matched too. Silent: the rows
+             * on screen stay put while the next set loads, instead of the table
+             * blinking to a skeleton on every keystroke.
+             */
+            setMembersFilter(filter: string): void {
+                const term = filter.trim();
+                if (term === store.membersFilter()) {
+                    return;
+                }
+
+                patchState(store, { membersFilter: term });
+
+                const roleId = store.selectedRoleId();
+                if (roleId) {
+                    loadMembers({ id: roleId, silent: true });
+                }
             },
 
             loadToolGroups(role: { id: string }): void {
@@ -888,6 +991,8 @@ export const DotRolesStore = signalStore(
                             // effect, hence the explicit load.
                             members: [],
                             membersStatus: 'INIT',
+                            membersFilter: '',
+                            memberCount: 0,
                             toolGroups: [],
                             toolGroupsStatus: 'INIT',
                             toolGroupsSaving: false
@@ -1016,7 +1121,9 @@ export const DotRolesStore = signalStore(
                                 selectedRoleId: null,
                                 selectedRole: null,
                                 members: [],
-                                membersStatus: 'INIT'
+                                membersStatus: 'INIT',
+                                membersFilter: '',
+                                memberCount: 0
                             });
                         }
                     }
@@ -1055,7 +1162,7 @@ export const DotRolesStore = signalStore(
                     // dispatch would cancel the current role's members load and
                     // then be thrown away by the sink guard, stranding the tab.
                     if (store.selectedRoleId() === role.id) {
-                        loadMembers({ id: role.id, silent: true });
+                        reconcileMembers(role.id);
                     }
 
                     return result;
@@ -1101,8 +1208,13 @@ export const DotRolesStore = signalStore(
                     if (store.selectedRoleId() === role.id) {
                         if (result.removedUserIds.length > 0) {
                             const removed = new Set(result.removedUserIds);
+                            const members = store.members().filter((m) => !removed.has(m.userId));
                             patchState(store, {
-                                members: store.members().filter((m) => !removed.has(m.userId))
+                                members,
+                                // Unfiltered, the pruned list IS the roster, so
+                                // the header can follow at once rather than
+                                // waiting on the reload.
+                                ...(store.membersFilter() ? {} : { memberCount: members.length })
                             });
                         }
 
@@ -1112,7 +1224,7 @@ export const DotRolesStore = signalStore(
                         // granting them. Silent: the rows are already on screen
                         // (minus the optimistic prune), so the skeleton would
                         // only blink them away and back.
-                        loadMembers({ id: role.id, silent: true });
+                        reconcileMembers(role.id);
                     }
 
                     return result;

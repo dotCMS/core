@@ -266,7 +266,7 @@ describe('DotRolesStore', () => {
         it('should load members by role id, with no roleKey branching (#37070)', () => {
             store.loadMembers(SELECTED_ROLE);
 
-            expect(service.getUsers).toHaveBeenCalledWith('r-eco');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
             expect(store.members()).toHaveLength(2);
             expect(store.membersStatus()).toBe('LOADED');
         });
@@ -307,8 +307,8 @@ describe('DotRolesStore', () => {
             store.selectRole('r-eco');
             store.loadMembers({ id: 'r-eco' });
 
-            expect(service.getUsers).toHaveBeenCalledWith('r-eco');
-            expect(service.getUsers).toHaveBeenCalledWith('r-categories');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
+            expect(service.getUsers).toHaveBeenCalledWith('r-categories', '');
 
             const members = store.members();
             expect(members).toHaveLength(2);
@@ -724,6 +724,104 @@ describe('DotRolesStore', () => {
 
         it('should compute total memberCount', () => {
             expect(store.memberCount()).toBe(2);
+        });
+    });
+
+    describe('member search', () => {
+        const JANE = { userId: 'u-9', firstName: 'Jane', lastName: 'Doe', emailAddress: 'j@x' };
+
+        beforeEach(() => {
+            store.loadRootRoles();
+            store.selectRole('r-eco');
+            store.loadMembers(SELECTED_ROLE);
+            vi.clearAllMocks();
+        });
+
+        it('should send the trimmed term to every role in the ancestor chain', () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+
+            store.setMembersFilter('  jane ');
+
+            expect(store.membersFilter()).toBe('jane');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', 'jane');
+            expect(service.getUsers).toHaveBeenCalledWith('r-categories', 'jane');
+            expect(store.members().map((m) => m.userId)).toEqual(['u-9']);
+        });
+
+        it('should reload silently, keeping the current rows instead of the skeleton', () => {
+            service.getUsers.mockReturnValue(NEVER);
+
+            store.setMembersFilter('jane');
+
+            expect(store.membersStatus()).toBe('LOADED');
+            expect(store.members()).toHaveLength(2);
+        });
+
+        it('should not reload for a term it already holds', () => {
+            store.setMembersFilter('jane');
+            vi.clearAllMocks();
+
+            store.setMembersFilter('jane ');
+
+            expect(service.getUsers).not.toHaveBeenCalled();
+        });
+
+        it('should keep the header count at the full roster while filtered', () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+
+            store.setMembersFilter('jane');
+
+            expect(store.members()).toHaveLength(1);
+            expect(store.memberCount()).toBe(2);
+        });
+
+        it('should not rewrite the tree badge from a filtered roster', () => {
+            const badgeBefore = findRole(store.roles(), 'r-eco')?.userCount;
+            service.getUsers.mockReturnValue(of([]));
+
+            store.setMembersFilter('nobody');
+
+            expect(findRole(store.roles(), 'r-eco')?.userCount).toBe(badgeBefore);
+        });
+
+        it('should bring the full list back when the term is cleared', () => {
+            store.setMembersFilter('jane');
+            service.getUsers.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
+
+            store.setMembersFilter('');
+
+            expect(service.getUsers).toHaveBeenLastCalledWith(expect.any(String), '');
+            expect(store.members()).toHaveLength(2);
+        });
+
+        it('should drop the term when another role is selected', () => {
+            store.setMembersFilter('jane');
+
+            store.selectRole('r-snow');
+
+            expect(store.membersFilter()).toBe('');
+        });
+
+        it('should refresh the header count after a grant made while filtered', async () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+            store.setMembersFilter('jane');
+            service.getUsers.mockImplementation((_roleId: string, filter?: string) =>
+                of(filter ? [JANE] : [...MOCK_USER_FILTER_RESULTS, JANE])
+            );
+
+            await store.grantUserToRole('u-9');
+
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', 'jane');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
+            expect(store.members()).toHaveLength(1);
+            expect(store.memberCount()).toBe(3);
+        });
+
+        it('should only reload the list after a grant made without a search', async () => {
+            await store.grantUserToRole('u-9');
+
+            expect(service.getUsers).toHaveBeenCalledTimes(2);
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
         });
     });
 

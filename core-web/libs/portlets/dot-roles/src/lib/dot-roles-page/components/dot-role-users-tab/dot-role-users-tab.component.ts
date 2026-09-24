@@ -8,11 +8,15 @@ import { ConfirmationService } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
+import { InputTextModule } from 'primeng/inputtext';
 import { ListboxFilterEvent, ListboxModule } from 'primeng/listbox';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, debounceTime, switchMap, tap } from 'rxjs/operators';
@@ -31,6 +35,9 @@ import { DotRolesStore } from '../../store/dot-roles.store';
 /** How long the "just granted" row highlight stays before fading out. */
 const GRANT_HIGHLIGHT_DURATION_MS = 3000;
 
+/** Idle time before a typed member search is sent. Matches the other listing search boxes. */
+const MEMBER_SEARCH_DEBOUNCE_MS = 300;
+
 // Members are paginated client-side. `GET /v1/roles/{roleId}/users` (#37070)
 // is server-paged, but the rows shown here are the *union* of the selected
 // role's direct grants and everything inherited from its ancestors, merged
@@ -48,6 +55,10 @@ const MEMBERS_DEFAULT_ROWS_PER_PAGE = 20;
         ButtonModule,
         TableModule,
         TagModule,
+        ToolbarModule,
+        IconFieldModule,
+        InputIconModule,
+        InputTextModule,
         ListboxModule,
         PopoverModule,
         TooltipModule,
@@ -76,6 +87,20 @@ export class DotRoleUsersTabComponent {
         icon: 'group',
         iconStyle: 'material-symbols-rounded'
     }));
+
+    protected readonly $noSearchResultsConfig = computed<PrincipalConfiguration>(() => ({
+        title: this.#messageService.get('roles.users.filter.empty.title'),
+        icon: 'search_off',
+        iconStyle: 'material-symbols-rounded'
+    }));
+
+    /**
+     * What is typed in the toolbar's search box. Kept here rather than bound to
+     * the store's `membersFilter`, which is trimmed and debounced: writing that
+     * back into the input would eat the space the admin just typed.
+     */
+    protected readonly $memberSearch = signal('');
+    readonly #memberSearchInput$ = new Subject<string>();
 
     protected readonly rowsPerPageOptions = MEMBERS_ROWS_PER_PAGE_OPTIONS;
     protected readonly defaultRowsPerPage = MEMBERS_DEFAULT_ROWS_PER_PAGE;
@@ -109,6 +134,21 @@ export class DotRoleUsersTabComponent {
             }
             untracked(() => this.store.loadMembers({ id: selectedRole.id }));
         });
+
+        // The store drops the search when another role is selected; clear the
+        // box to match. Keyed on the id so saving an edit to the same role —
+        // which replaces `selectedRole` — leaves the search alone.
+        effect(() => {
+            this.store.selectedRoleId();
+            untracked(() => this.$memberSearch.set(''));
+        });
+
+        // No `distinctUntilChanged`: after a role switch the store has already
+        // dropped the term, so retyping it must go through. The store skips a
+        // term equal to the one it holds.
+        this.#memberSearchInput$
+            .pipe(debounceTime(MEMBER_SEARCH_DEBOUNCE_MS), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((term) => this.store.setMembersFilter(term));
 
         // `catchError → of([])` keeps the outer subscription alive after a
         // failed request so the next keystroke still triggers a search.
@@ -156,6 +196,11 @@ export class DotRoleUsersTabComponent {
         this.$suggestionsLoading.set(true);
         this.$userSuggestions.set([]);
         this.#userSearchInput$.next('');
+    }
+
+    protected onMemberSearch(term: string): void {
+        this.$memberSearch.set(term);
+        this.#memberSearchInput$.next(term);
     }
 
     protected onGrantSearch(event: ListboxFilterEvent): void {

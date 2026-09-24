@@ -3,7 +3,7 @@
 @if (store.selectedRoleStatus() === 'LOADING' && !role) {
     <!--
         Skeleton mirrors the real header layout: two-line text block on
-        the left, Edit Role button on the right. Same heights and
+        the left, round actions button on the right. Same heights and
         paddings as the loaded state so the panel doesn't jump when the
         fetch resolves.
     -->
@@ -16,7 +16,7 @@
                 <p-skeleton height="0.875rem" width="14rem" />
             </div>
         </div>
-        <p-skeleton height="2rem" width="6rem" />
+        <p-skeleton shape="circle" size="2.75rem" />
     </header>
 } @else if (role) {
     <header class="flex items-center justify-between gap-4 border-b border-surface-200 px-6 py-4">
@@ -45,14 +45,30 @@
             }
         </div>
 
-        <button
-            pButton
-            type="button"
-            (click)="onEditRole()"
-            data-testid="edit-role-btn"
+        <p-button
+            [rounded]="true"
             [outlined]="true"
-            [disabled]="!store.canModifyRole()">
-            {{ 'roles.action.edit' | dm }}
-        </button>
+            styleClass="w-11 h-11 p-0"
+            (onClick)="actionsMenu.toggle($event)"
+            [attr.aria-label]="'roles.header.actions' | dm"
+            data-testid="role-actions-btn">
+            <ng-template #icon>
+                <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">
+                    more_vert
+                </span>
+            </ng-template>
+        </p-button>
     </header>
 }
+
+<p-menu
+    #actionsMenu
+    [model]="$actionsMenuItems()"
+    [popup]="true"
+    appendTo="body"
+    data-testid="role-actions-menu" />
+
+<p-confirmDialog
+    [draggable]="false"
+    [style]="{ width: '500px' }"
+    data-testid="header-delete-confirm-dialog" />

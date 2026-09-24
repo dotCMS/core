@@ -11,6 +11,7 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
+import { Popover } from 'primeng/popover';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -21,13 +22,15 @@ import { DotRolesPortletService } from '../../../services/dot-roles-portlet.serv
 import { DotRolesStore } from '../../store/dot-roles.store';
 
 const MESSAGES = {
-    'roles.users.grant': 'Grant to User',
+    'roles.users.add': 'Add User',
+    'roles.users.filter.placeholder': 'Search user',
+    'roles.users.filter.empty.title': 'No users match your search',
     'roles.users.remove': 'Remove',
     'roles.users.confirm.remove.header': 'Remove user',
     'roles.users.confirm.remove.message': 'Remove {0}?',
     'roles.action.cancel': 'Cancel',
     'roles.users.empty.title': 'No users',
-    'roles.users.empty.copy': 'Grant a user',
+    'roles.users.empty.copy': 'Add a user',
     'roles.users.search.placeholder': 'Search',
     'roles.users.column.name': 'Name',
     'roles.users.column.email': 'Email',
@@ -56,8 +59,10 @@ describe('DotRoleUsersTabComponent', () => {
                 }),
                 selectedRoleId: vi.fn().mockReturnValue('r-eco'),
                 selectedRoleStatus: vi.fn().mockReturnValue('LOADED'),
+                membersFilter: vi.fn().mockReturnValue(''),
                 canGrantUsers: vi.fn().mockReturnValue(true),
                 loadMembers: vi.fn(),
+                setMembersFilter: vi.fn(),
                 grantUserToRole: vi.fn().mockResolvedValue(null),
                 removeUsersFromRole: vi.fn().mockResolvedValue(null)
             }),
@@ -79,6 +84,13 @@ describe('DotRoleUsersTabComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+        // `mockProvider` builds its vi.fn()s once at factory scope, so a return
+        // value set by one test would otherwise become every later test's.
+        const store = spectator.inject(DotRolesStore, true);
+        (store.members as Mock).mockReturnValue([]);
+        (store.membersFilter as Mock).mockReturnValue('');
+        (store.canGrantUsers as Mock).mockReturnValue(true);
+        vi.clearAllMocks();
     });
 
     it('should render the empty state when there are no members', () => {
@@ -161,9 +173,81 @@ describe('DotRoleUsersTabComponent', () => {
         expect(spectator.query(byTestId('bulk-remove-btn'))).toBeNull();
     });
 
-    it('should render the Grant to User button', () => {
+    describe('toolbar', () => {
+        it('should replace Grant to User with a search box and an outlined Add User', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('grant-user-btn'))).toBeNull();
+            expect(spectator.query(byTestId('members-search-input'))).toBeTruthy();
+
+            const addBtn = spectator.query(byTestId('add-user-btn'))?.querySelector('button');
+            expect(addBtn?.textContent).toContain('Add User');
+            expect(addBtn?.classList).toContain('p-button-outlined');
+            expect(addBtn?.disabled).toBe(false);
+        });
+
+        it('should disable Add User and keep the notice when the role cannot be granted', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            (store.canGrantUsers as Mock).mockReturnValue(false);
+            spectator.detectChanges();
+
+            const addBtn = spectator.query(byTestId('add-user-btn'))?.querySelector('button');
+            expect(addBtn?.disabled).toBe(true);
+            expect(spectator.query(byTestId('cannot-grant-notice'))).toBeTruthy();
+        });
+
+        it('should open the user picker from Add User', () => {
+            spectator.detectChanges();
+            const popover = spectator.query(Popover);
+            expect(popover).toBeTruthy();
+            const toggle = vi.spyOn(popover as Popover, 'toggle').mockReturnValue(undefined);
+
+            const addBtn = spectator.query(byTestId('add-user-btn'))?.querySelector('button');
+            spectator.click(addBtn as HTMLElement);
+
+            expect(toggle).toHaveBeenCalled();
+        });
+    });
+
+    describe('member search', () => {
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
+
+        it('should send the typed term to the store once typing pauses', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            spectator.detectChanges();
+
+            spectator.typeInElement('jan', byTestId('members-search-input'));
+            spectator.typeInElement('jane', byTestId('members-search-input'));
+            vi.advanceTimersByTime(299);
+            expect(store.setMembersFilter).not.toHaveBeenCalled();
+
+            vi.advanceTimersByTime(1);
+            expect(store.setMembersFilter).toHaveBeenCalledTimes(1);
+            expect(store.setMembersFilter).toHaveBeenCalledWith('jane');
+        });
+
+        it('should send an emptied box so the full list comes back', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            spectator.detectChanges();
+
+            spectator.typeInElement('jane', byTestId('members-search-input'));
+            vi.advanceTimersByTime(300);
+            spectator.typeInElement('', byTestId('members-search-input'));
+            vi.advanceTimersByTime(300);
+
+            expect(store.setMembersFilter).toHaveBeenLastCalledWith('');
+        });
+    });
+
+    it('should show a no-results state, not the no-members one, when a search matches nobody', () => {
+        const store = spectator.inject(DotRolesStore, true);
+        (store.membersFilter as Mock).mockReturnValue('zzz');
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('grant-user-btn'))).toBeTruthy();
+        expect(spectator.query(byTestId('members-search-empty'))).toBeTruthy();
+        expect(spectator.query(byTestId('members-empty'))).toBeNull();
+        // The toolbar stays, so the admin can change or clear the search.
+        expect(spectator.query(byTestId('members-search-input'))).toBeTruthy();
     });
 });

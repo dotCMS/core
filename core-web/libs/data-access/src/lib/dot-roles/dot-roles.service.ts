@@ -252,11 +252,17 @@ export class DotRolesService {
      * directly granted this role" only. Callers needing effective membership
      * walk the ancestor chain themselves — see {@link ROLE_MEMBERS_PAGE_SIZE}
      * for why each role is pulled whole.
+     *
+     * @param roleId role whose direct grants are listed
+     * @param filter optional search term; the backend matches it against the
+     *        user id, first name, last name, email and full name
      */
-    getUsers(roleId: string): Observable<DotRoleUserResult[]> {
+    getUsers(roleId: string, filter?: string): Observable<DotRoleUserResult[]> {
+        const term = filter?.trim();
         const url =
             `/api/v1/roles/${encodeURIComponent(roleId)}/users` +
-            `?per_page=${ROLE_MEMBERS_PAGE_SIZE}`;
+            `?per_page=${ROLE_MEMBERS_PAGE_SIZE}` +
+            (term ? `&filter=${encodeURIComponent(term)}` : '');
 
         return this.http
             .get<DotCMSResponse<DotRoleUserResult[]>>(url)

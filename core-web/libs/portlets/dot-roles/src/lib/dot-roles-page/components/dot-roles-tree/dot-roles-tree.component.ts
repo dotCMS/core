@@ -21,12 +21,13 @@ import {
 
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotFolderTreeComponent, DotMessagePipe, DotTruncatedLabelComponent } from '@dotcms/ui';
 
 import { DotRolesAddComponent } from '../../../dot-roles-add/dot-roles-add.component';
 import { DotRolesEditComponent } from '../../../dot-roles-edit/dot-roles-edit.component';
 import { DotRoleNode } from '../../../models/dot-roles.models';
+import { DotRoleDeleteService } from '../../../services/dot-role-delete.service';
 import { DotRolesStore } from '../../store/dot-roles.store';
 import { collectAncestorChain } from '../../store/dot-roles.tree-utils';
 
@@ -52,7 +53,7 @@ interface DotRolePrimeTreeNode extends TreeNode {
         DotTruncatedLabelComponent,
         DotMessagePipe
     ],
-    providers: [DialogService, ConfirmationService],
+    providers: [DialogService, ConfirmationService, DotRoleDeleteService],
     templateUrl: './dot-roles-tree.component.html',
     host: { class: 'flex flex-col flex-1 min-h-0 p-4 gap-3' }
 })
@@ -60,9 +61,8 @@ export class DotRolesTreeComponent {
     protected readonly store = inject(DotRolesStore);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dialogService = inject(DialogService);
-    readonly #confirmationService = inject(ConfirmationService);
     readonly #messageService = inject(DotMessageService);
-    readonly #alertService = inject(DotAlertConfirmService);
+    readonly #roleDelete = inject(DotRoleDeleteService);
     readonly #filterInput$ = new Subject<string>();
 
     /**
@@ -347,31 +347,7 @@ export class DotRolesTreeComponent {
             return;
         }
 
-        this.#confirmationService.confirm({
-            message: this.#messageService.get('roles.confirm.delete.message', node.data.name),
-            header: this.#messageService.get('roles.confirm.delete.header'),
-            acceptLabel: this.#messageService.get('roles.action.delete'),
-            rejectLabel: this.#messageService.get('roles.action.cancel'),
-            rejectButtonStyleClass: 'p-button-text',
-            defaultFocus: 'reject',
-            closable: true,
-            closeOnEscape: true,
-            position: 'center',
-            accept: async () => {
-                const result = await this.store.deleteRole(node.data.id);
-                // `result === null` → HTTP error already surfaced by the
-                // shared error manager. `result.deleted === false` → the BE
-                // accepted the request but refused to delete (hierarchy
-                // constraint, workflow reference); surface an alert so the
-                // user gets feedback instead of a silent no-op.
-                if (result && result.deleted === false) {
-                    this.#alertService.alert({
-                        header: this.#messageService.get('roles.confirm.delete.header'),
-                        message: this.#messageService.get('roles.delete.rejected')
-                    });
-                }
-            }
-        });
+        this.#roleDelete.confirmDelete(node.data);
     }
 
     #toTreeNodes(nodes: DotRoleNode[], expandAll = false): DotRolePrimeTreeNode[] {
