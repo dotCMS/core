@@ -246,7 +246,7 @@ export function withWorkflow() {
                                 !!firedAction?.hasDeleteActionlet ||
                                 !!firedAction?.hasDestroyActionlet;
 
-                            if (deletesContent) {
+                            if (deletesContent && currentContentlet) {
                                 return workflowActionsFireService.fireTo(options).pipe(
                                     tapResponse({
                                         next: () => {

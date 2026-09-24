@@ -65,10 +65,29 @@ describe('OverlayEditContentHost', () => {
     });
 
     describe('leaveDeletedContent', () => {
-        it('closes the overlay', () => {
+        it('closes a DialogService dialog through its ref', () => {
             host.leaveDeletedContent('SimpleWidget');
 
             expect(spectator.inject(DynamicDialogRef).close).toHaveBeenCalled();
+        });
+
+        it('emits left$ so overlays without a dialog ref (side panel) can close', () => {
+            const leftSpy = vi.fn();
+            host.left$.subscribe(leftSpy);
+
+            host.leaveDeletedContent('SimpleWidget');
+
+            expect(leftSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('stops reporting saves once the content is deleted', () => {
+            const savedSpy = vi.fn();
+            host.saved$.subscribe(savedSpy);
+
+            host.leaveDeletedContent('SimpleWidget');
+            host.reportSaved({ inode: 'x', title: 't' } as DotCMSContentlet);
+
+            expect(savedSpy).not.toHaveBeenCalled();
         });
     });
 
@@ -179,5 +198,28 @@ describe('OverlayEditContentHost', () => {
                 { inode: 'inode-b', title: 'B' }
             ]);
         });
+    });
+});
+
+describe('OverlayEditContentHost without a dialog ref (side panel injector)', () => {
+    const createHostWithoutRef = createServiceFactory({
+        service: OverlayEditContentHost,
+        providers: [
+            mockProvider(DotRelatedContentNavigationStore, {
+                appendToTrail: vi.fn(),
+                titleCache: vi.fn().mockReturnValue({}),
+                registerTitle: vi.fn()
+            }),
+            mockProvider(DynamicDialogConfig, { data: undefined })
+        ]
+    });
+
+    it('still emits left$ and does not throw', () => {
+        const hostWithoutRef = createHostWithoutRef().service;
+        const leftSpy = vi.fn();
+        hostWithoutRef.left$.subscribe(leftSpy);
+
+        expect(() => hostWithoutRef.leaveDeletedContent('SimpleWidget')).not.toThrow();
+        expect(leftSpy).toHaveBeenCalledTimes(1);
     });
 });

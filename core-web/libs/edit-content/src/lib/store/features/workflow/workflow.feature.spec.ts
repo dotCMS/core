@@ -26,6 +26,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { withWorkflow } from './workflow.feature';
 
+import { CurrentContentActionsWithScheme } from '../../../models/dot-edit-content-field.type';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import {
@@ -37,6 +38,8 @@ import {
 import { parseCurrentActions } from '../../../utils/workflows.utils';
 import { initialRootState } from '../../edit-content.store';
 import { withContent } from '../content/content.feature';
+
+type DeleteFlags = { hasDeleteActionlet?: boolean; hasDestroyActionlet?: boolean };
 
 describe('WorkflowFeature', () => {
     let spectator: SpectatorService<any>;
@@ -72,10 +75,12 @@ describe('WorkflowFeature', () => {
             withContent(),
             withWorkflow(),
             withMethods((store) => ({
-                updateContent: (content) => {
+                updateContent: (content: DotCMSContentlet) => {
                     patchState(store, { contentlet: content });
                 },
-                setCurrentContentActions: (currentContentActions) => {
+                setCurrentContentActions: (
+                    currentContentActions: CurrentContentActionsWithScheme
+                ) => {
                     patchState(store, { currentContentActions });
                 }
             }))
@@ -192,10 +197,7 @@ describe('WorkflowFeature', () => {
             describe('when the action deletes the content', () => {
                 const deletedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '123' };
 
-                const withDeletingAction = (flags: {
-                    hasDeleteActionlet?: boolean;
-                    hasDestroyActionlet?: boolean;
-                }) => {
+                const withDeletingAction = (flags: DeleteFlags) => {
                     store.updateContent(deletedContentlet);
                     store.setCurrentContentActions({
                         'scheme-1': [{ ...MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB[0], ...flags }]
@@ -211,7 +213,7 @@ describe('WorkflowFeature', () => {
                     ['Destroy', { hasDestroyActionlet: true }]
                 ])(
                     'should leave the editor without reloading the content after %s',
-                    fakeAsync((_name, flags) => {
+                    fakeAsync((_name: string, flags: DeleteFlags) => {
                         withDeletingAction(flags);
                         workflowActionsFireService.fireTo.mockReturnValue(
                             of({} as DotCMSContentlet)
