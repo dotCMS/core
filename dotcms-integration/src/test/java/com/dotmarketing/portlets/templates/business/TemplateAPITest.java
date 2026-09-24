@@ -11,10 +11,12 @@ import static org.mockito.Mockito.*;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
+import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
@@ -67,6 +69,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Note: If you dont find a test over here, check {@link com.dotcms.rest.api.v1.template.TemplateResourceTest}
@@ -290,6 +293,60 @@ public class TemplateAPITest extends IntegrationTestBase {
 
         assertNotNull(containerUUIDS);
         assertEquals(0, containerUUIDS.size());
+    }
+
+    /**
+     * Method to test: {@link TemplateAPIImpl#getContainersUUIDFromDrawTemplateBody(String)}
+     * Given Scenario: A request and a response are bound to the thread locals, as they are during a
+     *                 LIVE page render, and the Template body both writes a request attribute and
+     *                 calls $response.sendError(404) -- the shape of the Advanced Template reported
+     *                 in issue #37386.
+     * ExpectedResult: The Containers are still harvested, but the live request is not mutated and
+     *                 the live response is never touched, so the visitor cannot be served the 404
+     *                 that the body asks for.
+     */
+    @Test
+    public void getContainersUUIDFromDrawTemplateBodyDoesNotTouchLiveRequestOrResponse() throws Exception {
+
+        final HttpServletRequest liveRequest =
+                new FakeHttpRequest(host.getHostname(), "/issue-37386-test-page").request();
+        final HttpServletResponse liveResponse = mock(HttpServletResponse.class);
+
+        // Mirrors the Advanced Template from the issue. The increment is its own #set because
+        // Velocity cannot parse an arithmetic expression inside a method call's argument list.
+        final String templateBody =
+                "#set($n = $request.getAttribute(\"parseCount\"))\n" +
+                "#if(!$n)\n" +
+                "#set($n = 0)\n" +
+                "#end\n" +
+                "#set($n = $n + 1)\n" +
+                "#set($ignore = $request.setAttribute(\"parseCount\", $n))\n" +
+                "#parseContainer('f4a02846-7ca4-4e08-bf07-a61366bbacbb','1552493847863')\n" +
+                "$response.sendError(404)\n";
+
+        try {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(liveRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(liveResponse);
+
+            final List<ContainerUUID> containerUUIDS =
+                    APILocator.getTemplateAPI().getContainersUUIDFromDrawTemplateBody(templateBody);
+
+            // Harvesting still works
+            assertNotNull(containerUUIDS);
+            assertEquals(1, containerUUIDS.size());
+            assertEquals("f4a02846-7ca4-4e08-bf07-a61366bbacbb", containerUUIDS.get(0).getIdentifier());
+            assertEquals("1552493847863", containerUUIDS.get(0).getUUID());
+
+            // ..but it is invisible to the visitor's request and response
+            assertNull("Container harvesting must not write to the live request",
+                    liveRequest.getAttribute("parseCount"));
+            verify(liveResponse, never()).sendError(anyInt());
+            verify(liveResponse, never()).sendError(anyInt(), anyString());
+            verify(liveResponse, never()).setStatus(anyInt());
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(null);
+        }
     }
 
     /**
