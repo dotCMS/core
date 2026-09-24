@@ -263,10 +263,19 @@ public record MirrorStatus(
      */
     public static String unmeasuredAdvice(final String what, final String name, final EngineCopy es,
             final EngineCopy os) {
-        final String engines = !es.wasRead() && !os.wasRead()
-                ? "Neither Elasticsearch nor OpenSearch"
-                : (!es.wasRead() ? ELASTICSEARCH : OPENSEARCH);
-        final String reason = !es.wasRead() ? es.unavailableReason() : os.unavailableReason();
+        final String engines;
+        final String reason;
+        if (!es.wasRead() && !os.wasRead()) {
+            engines = "Both Elasticsearch and OpenSearch";
+            reason = ELASTICSEARCH + ": " + es.unavailableReason() + "; " + OPENSEARCH + ": "
+                    + os.unavailableReason();
+        } else if (!es.wasRead()) {
+            engines = ELASTICSEARCH;
+            reason = es.unavailableReason();
+        } else {
+            engines = OPENSEARCH;
+            reason = os.unavailableReason();
+        }
         return String.format("%s could not be reached (%s), so the two copies of %s '%s' could not "
                 + "be compared. Restore access and re-run this check; do not rebuild the index on the "
                 + "strength of this reading.", engines, reason, what, name);

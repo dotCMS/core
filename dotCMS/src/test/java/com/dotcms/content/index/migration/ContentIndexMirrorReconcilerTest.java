@@ -583,5 +583,9 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         assertEquals(Verdict.UNMEASURED, mirrors.statuses().get(0).verdict());
         assertFalse(mirrors.statuses().get(0).es().wasRead());
         assertFalse(mirrors.statuses().get(0).os().wasRead());
+        final String advice = mirrors.statuses().get(0).recommendation();
+        assertTrue(advice, advice.startsWith("Both Elasticsearch and OpenSearch could not be reached"));
+        assertTrue(advice, advice.contains("Elasticsearch: es down"));
+        assertTrue(advice, advice.contains("OpenSearch: os down"));
     }
 }
