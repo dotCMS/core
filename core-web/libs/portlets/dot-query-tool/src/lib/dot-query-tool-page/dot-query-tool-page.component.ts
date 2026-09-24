@@ -51,7 +51,10 @@ import {
     DotClipboardUtil,
     DotEmptyContainerComponent,
     DotMessagePipe,
-    PrincipalConfiguration
+    DotMonacoRunShortcutEditor,
+    getDotMonacoRunShortcutLabel,
+    PrincipalConfiguration,
+    registerDotMonacoRunShortcut
 } from '@dotcms/ui';
 import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
 
@@ -115,6 +118,9 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #contentSearch = inject(DotContentSearchService);
     readonly #destroyRef = inject(DestroyRef);
     readonly #injector = inject(Injector);
+
+    /** Keyboard shortcut shown in the Run button tooltip (`⌘ + Enter` / `Ctrl + Enter`). */
+    readonly runShortcutLabel = getDotMonacoRunShortcutLabel(this.#document.defaultView?.navigator);
 
     #lastSyncedUrl: string | null = null;
 
@@ -320,6 +326,20 @@ export class DotQueryToolPageComponent implements OnInit {
         if (!this.store.query().trim()) return;
         this.store.resetOffset();
         this.store.runSearch();
+    }
+
+    /**
+     * Binds `Cmd/Ctrl + Enter` inside the query editor to the same action as the Run button.
+     * The shortcut is ignored while a search is already in flight, where the Run button is
+     * disabled too.
+     *
+     * @param editor the Monaco editor instance emitted by `ngx-monaco-editor`
+     */
+    onQueryEditorInit(editor: DotMonacoRunShortcutEditor): void {
+        registerDotMonacoRunShortcut(editor, () => this.onRun(), {
+            label: this.#messageService.get('queryTool.action.run'),
+            canRun: () => !this.store.isLoading()
+        });
     }
 
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {

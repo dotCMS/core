@@ -31,11 +31,7 @@
 
         <div class="ml-auto flex gap-2">
             @if (store.selectedTags().length > 0) {
-                <p-button
-                    severity="danger"
-                    [outlined]="true"
-                    (onClick)="confirmDelete()"
-                    data-testid="tag-delete-btn">
+                <p-button [text]="true" (onClick)="confirmDelete()" data-testid="tag-delete-btn">
                     <span
                         class="material-symbols-rounded text-xl! leading-none!"
                         aria-hidden="true">

@@ -631,10 +631,18 @@ describe('EditEmaEditorComponent', () => {
                 expect(toolbar).not.toBeNull();
             });
 
-            it('should hide components when the store changes for a variant', () => {
-                // Dialog may remain in DOM when appended to body
-                const componentsToHide = ['palette', 'dropzone', 'contentlet-tools'];
-
+            /**
+             * Reversed by #37308 — this used to assert the opposite.
+             *
+             * The name said "for a variant", but no variant term ever gated these: they sit under
+             * `editorCanEditContent()`, and what hid them was the RUNNING experiment this spec's
+             * `DotExperimentsService` mock returns for `i-have-a-running-experiment`. That guard is
+             * gone, so the editing tools a variant fix actually needs — the palette to add with, the
+             * dropzone to drop on, the contentlet tools to edit with — are present while the
+             * experiment runs. The shell's warning banner is what tells the editor the run's results
+             * will now mix data from before and after the change.
+             */
+            it('should keep the palette while a variant experiment is running', () => {
                 spectator.detectChanges();
 
                 spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
@@ -643,6 +651,12 @@ describe('EditEmaEditorComponent', () => {
                 pageApi().pageLoad({
                     url: 'index',
                     language_id: '5',
+                    // Carried deliberately. `editorCanEditContent` is
+                    // `editorHasAccessToEditMode() && viewMode === EDIT`, and this call replaces the
+                    // params the describe set up — so omitting the mode hides the palette for a
+                    // reason that has nothing to do with the experiment, and the assertion stops
+                    // testing what it names.
+                    mode: UVE_MODE.EDIT,
                     [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
                     variantName: 'hello-there',
                     experimentId: 'i-have-a-running-experiment'
@@ -650,9 +664,10 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                componentsToHide.forEach((testId) => {
-                    expect(spectator.query(byTestId(testId))).toBeNull();
-                });
+                // Only the palette: `contentlet-tools` needs a hovered contentlet area and
+                // `dropzone` needs active drag bounds, so neither renders in a static fixture
+                // whatever this guard does.
+                expect(spectator.query(byTestId('palette'))).not.toBeNull();
             });
 
             it('should show the editor components when there is a running experiement and initialize the editor in a default variant', async () => {

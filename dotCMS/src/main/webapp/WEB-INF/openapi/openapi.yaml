@@ -1541,14 +1541,17 @@ paths:
   /inference/v1/models:
     get:
       description: "Returns the models the resolved site has configured for chat,\
-        \ including every entry of a fallback chain, in configured order — the first\
-        \ is the site's primary model. The list is exactly the set of values the chat\
-        \ completions endpoint accepts as \"model\": there is no implicit default\
-        \ and no reserved alias, and nothing synthetic is added. No model provider\
-        \ is contacted. A site with no AI configuration, on an instance with none\
-        \ at the system level either, returns an empty data array rather than another\
-        \ site's models. Every response reports the serving site in the X-dotCMS-Resolved-Site\
-        \ header."
+        \ embeddings and image generation, including every entry of a chat fallback\
+        \ chain, in configured order with chat first — the first entry is the site's\
+        \ primary chat model. Each entry reports in \"type\" which operation accepts\
+        \ it: \"chat\", \"embedding\" or \"image\". A name configured for more than\
+        \ one operation is listed once, with the type of the first of those in that\
+        \ order. The list is exactly the set of values this family accepts as \"model\"\
+        : there is no implicit default and no reserved alias, and nothing synthetic\
+        \ is added. No model provider is contacted. A site with no AI configuration,\
+        \ on an instance with none at the system level either, returns an empty data\
+        \ array rather than another site's models. Every response reports the serving\
+        \ site in the X-dotCMS-Resolved-Site header."
       operationId: listInferenceModels
       parameters:
       - in: query
@@ -31902,6 +31905,19 @@ components:
           type: string
           description: Owner
           example: dotcms
+        type:
+          type: string
+          description: "The operation this model serves: chat completions, embeddings\
+            \ or image generation. Taken from the section of the site's configuration\
+            \ the model is listed in; a model listed in more than one section reports\
+            \ the first, in the order chat, embeddings, image. Any other operation\
+            \ refuses the model with a 404 unless the site configured it for that\
+            \ operation too."
+          enum:
+          - chat
+          - embedding
+          - image
+          example: chat
     MoveFieldsForm:
       type: object
     MulitreeView:

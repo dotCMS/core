@@ -72,6 +72,7 @@ import {
 import { DotcmsConfigService, LoginService, Site, SiteService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
+    DotExperimentStatus,
     DotPageToolUrlParams,
     FEATURE_FLAG_NOT_FOUND,
     FeaturedFlags
@@ -90,6 +91,7 @@ import {
     DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotcmsConfigServiceMock,
+    getExperimentMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -1564,6 +1566,181 @@ describe('DotEmaShellComponent', () => {
 
             expect(spectator.query(byTestId('message'))).toBeNull();
             expect(spectator.query(byTestId('ema-nav-bar'))).not.toBeNull();
+        });
+    });
+
+    /**
+     * The experiment warning banner (#37308).
+     *
+     * A live experiment no longer freezes the page, so the fact that one is running has to stay on
+     * screen while the editor works. A confirmation is answered once; this condition persists, and
+     * an editor back from a coffee break has no other way to know the run is still live.
+     *
+     * Deliberately unlike the lock banner in one respect: no close button and no dismissal state.
+     * Everything else about it mirrors that banner, including sitting above the body wrapper.
+     */
+    describe('Experiment banner (#37308)', () => {
+        const detectChangesAndFlush = async () => {
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+        };
+
+        // No spy restoration here, deliberately, matching the Lock banner describe above.
+        // `dotPageApiService` is shared across this file, and the suite installs its own mock on
+        // it; calling `mockRestore` on a spy layered over that removes *both* and hands later
+        // tests the real service. The Experiments panel tests below fail exactly that way. A
+        // blanket `vi.restoreAllMocks()` is worse still — it also resets the module-level
+        // `dotPropertiesServiceMock.getKey` those tests need to turn the switch on.
+
+        /** Reaches the component's protected banner signals. */
+        const bannerOf = (component: DotEmaShellComponent) =>
+            component as unknown as {
+                $showExperimentBanner: () => boolean;
+                $experimentWarningKey: () => string;
+            };
+
+        /** Puts an experiment of the given status on the page the shell is showing. */
+        const withExperiment = async (status: DotExperimentStatus | null) => {
+            await detectChangesAndFlush();
+            patchState(writableStore(), {
+                pageExperiment: status ? { ...getExperimentMock(0), status } : null
+            });
+            spectator.detectChanges();
+        };
+
+        it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED])(
+            'should render the banner while the experiment is %s',
+            async (status) => {
+                await withExperiment(status);
+
+                expect(spectator.query(byTestId('experiment-banner'))).not.toBeNull();
+            }
+        );
+
+        it.each([
+            DotExperimentStatus.DRAFT,
+            DotExperimentStatus.ENDED,
+            DotExperimentStatus.ARCHIVED
+        ])('should not render the banner for a %s experiment', async (status) => {
+            await withExperiment(status);
+
+            expect(spectator.query(byTestId('experiment-banner'))).toBeNull();
+        });
+
+        it('should not render the banner when the page has no experiment, or the lookup failed', async () => {
+            // The two are indistinguishable by design: a failed fetch leaves `pageExperiment`
+            // empty, and the banner must not invent a warning it cannot justify.
+            await withExperiment(null);
+
+            expect(spectator.query(byTestId('experiment-banner'))).toBeNull();
+        });
+
+        it('should use a different message key for running and scheduled', async () => {
+            // Asserted on the key the component selects, not on rendered text: this spec's
+            // DotMessageService mock answers every key with the same string, so comparing what
+            // appears on screen would pass for a banner using one shared message for both.
+            await withExperiment(DotExperimentStatus.RUNNING);
+            const running = bannerOf(spectator.component).$experimentWarningKey();
+
+            await withExperiment(DotExperimentStatus.SCHEDULED);
+            const scheduled = bannerOf(spectator.component).$experimentWarningKey();
+
+            // A running experiment is already measuring; a scheduled one has nothing yet to mix.
+            expect(running).toBe('uve.shell.experiment.running.edit.warning');
+            expect(scheduled).toBe('uve.shell.experiment.scheduled.edit.warning');
+        });
+
+        it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED])(
+            'should not reuse the legacy keys that claim results are invalidated (%s)',
+            async (status) => {
+                await withExperiment(status);
+
+                // The legacy strings say the edit "may invalidate any results already collected".
+                // It does not, and saying so would push editors back to the workaround this issue
+                // exists to remove. The wording of the new keys is reviewed against
+                // `Language.properties`; what is checkable here is that the banner does not reach
+                // for the old ones.
+                const key = bannerOf(spectator.component).$experimentWarningKey();
+
+                expect(key).not.toBe('experiment.running.edit.confirmation');
+                expect(key).not.toBe('experiment.running.edit.lock.confirmation.note');
+                expect(key.startsWith('uve.shell.experiment.')).toBe(true);
+            }
+        );
+
+        it('should offer no way to dismiss it', async () => {
+            await withExperiment(DotExperimentStatus.RUNNING);
+
+            const banner = spectator.query(byTestId('experiment-banner'));
+
+            // `expect(...).not.toBeNull()` does not narrow the type, so assert before reaching in.
+            if (!banner) {
+                throw new Error('experiment banner should be rendered');
+            }
+
+            // The condition outlives any click, so there is nothing a close button could
+            // truthfully mean.
+            expect(banner.querySelector('[data-testid="close-message"]')).toBeNull();
+        });
+
+        it('should render below the lock banner when both apply', async () => {
+            vi.spyOn(dotPageApiService, 'get').mockReturnValue(
+                of({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: 'other-user-id',
+                        lockedByName: 'Another User',
+                        canLock: true
+                    }
+                })
+            );
+            await withExperiment(DotExperimentStatus.RUNNING);
+
+            const lock = spectator.query(byTestId('message'));
+            const experiment = spectator.query(byTestId('experiment-banner'));
+
+            if (!lock || !experiment) {
+                throw new Error('both banners should be rendered when the page is locked');
+            }
+
+            // Order is a guaranteed property, not an accident of template layout: the lock is
+            // what stops them editing at all, so it has to be read first.
+            const position = lock.compareDocumentPosition(experiment);
+            expect(Boolean(position & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+        });
+
+        it('should render for a user who can read the page but not edit it', async () => {
+            vi.spyOn(dotPageApiService, 'get').mockReturnValue(
+                of({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: { ...MOCK_RESPONSE_HEADLESS.page, canEdit: false }
+                })
+            );
+            await withExperiment(DotExperimentStatus.RUNNING);
+
+            // The warning describes the page's state, not the viewer's rights.
+            expect(spectator.query(byTestId('experiment-banner'))).not.toBeNull();
+        });
+
+        it('should open the experiments panel in place, without navigating', async () => {
+            await withExperiment(DotExperimentStatus.RUNNING);
+            const panel = spectator.inject(DotExperimentsPanelStore, true);
+            // Stubbed rather than called through. What is under test is the shell's handler, not
+            // the store's own transition — and letting the real `openResults` run actually opens
+            // the panel, which loads its lazy chunk and leaves the module-level chunk mock in a
+            // state the Experiments panel tests further down depend on.
+            const openResults = vi.spyOn(panel, 'openResults').mockImplementation(() => undefined);
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+
+            spectator.click(byTestId('experiment-banner-link'));
+
+            expect(openResults).toHaveBeenCalledWith(getExperimentMock(0).id);
+            // Leaving the page to look at the run would defeat the point of being able to edit
+            // during it.
+            expect(navigate).not.toHaveBeenCalled();
         });
     });
 
