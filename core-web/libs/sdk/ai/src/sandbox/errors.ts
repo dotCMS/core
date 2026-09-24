@@ -142,7 +142,7 @@ export class NetworkError extends DotCMSError {
         this.reason = reason;
     }
 
-    detail(): Record<string, unknown> {
+    override detail(): Record<string, unknown> {
         return { method: this.method, path: this.path, reason: this.reason };
     }
 }

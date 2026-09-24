@@ -291,8 +291,8 @@ describe('verifyPage', () => {
         const m = await verifyPage({ dotcms: runtime, path: '/about-us' });
 
         const render = calls.find((c) => c.path.startsWith('/api/v1/page/render'));
-        expect((render?.query as Record<string, unknown>)?.host_id).toBeUndefined();
-        expect((render?.query as Record<string, unknown>)?.mode).toBe('LIVE');
+        expect((render?.query as Record<string, unknown>)?.['host_id']).toBeUndefined();
+        expect((render?.query as Record<string, unknown>)?.['mode']).toBe('LIVE');
         expect(m.site).toBe('(default)');
     });
 
@@ -306,7 +306,7 @@ describe('verifyPage', () => {
         });
 
         const render = calls.find((c) => c.path.startsWith('/api/v1/page/render'));
-        expect((render?.query as Record<string, unknown>)?.host_id).toBe('site-uuid-2');
+        expect((render?.query as Record<string, unknown>)?.['host_id']).toBe('site-uuid-2');
         expect(m.site).toBe('other.example.com');
     });
 
@@ -316,7 +316,7 @@ describe('verifyPage', () => {
         await verifyPage({ dotcms: runtime, path: '/x', site: 'site-uuid-2' });
 
         const render = calls.find((c) => c.path.startsWith('/api/v1/page/render'));
-        expect((render?.query as Record<string, unknown>)?.host_id).toBe('site-uuid-2');
+        expect((render?.query as Record<string, unknown>)?.['host_id']).toBe('site-uuid-2');
     });
 
     it('throws a clear error for an unknown site', async () => {
@@ -333,8 +333,8 @@ describe('verifyPage', () => {
         await verifyPage({ dotcms: runtime, path: '/x', languageId: 2, mode: 'WORKING' });
 
         const render = calls.find((c) => c.path.startsWith('/api/v1/page/render'));
-        expect((render?.query as Record<string, unknown>)?.language_id).toBe(2);
-        expect((render?.query as Record<string, unknown>)?.mode).toBe('WORKING');
+        expect((render?.query as Record<string, unknown>)?.['language_id']).toBe(2);
+        expect((render?.query as Record<string, unknown>)?.['mode']).toBe('WORKING');
     });
 
     it('surfaces a 404 render as a manifest verdict, not a throw', async () => {

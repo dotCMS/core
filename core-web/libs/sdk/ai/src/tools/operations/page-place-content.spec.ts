@@ -455,8 +455,8 @@ describe('placeContent', () => {
 
         const read = calls.find((c) => c.path.startsWith('/api/v1/page/json'));
         const write = calls.find((c) => /\/content$/.test(c.path));
-        expect((read?.query as Record<string, unknown>)?.language_id).toBe(2);
-        expect((write?.query as Record<string, unknown>)?.variantName).toBe('my-variant');
-        expect((write?.query as Record<string, unknown>)?.language_id).toBe(2);
+        expect((read?.query as Record<string, unknown>)?.['language_id']).toBe(2);
+        expect((write?.query as Record<string, unknown>)?.['variantName']).toBe('my-variant');
+        expect((write?.query as Record<string, unknown>)?.['language_id']).toBe(2);
     });
 });

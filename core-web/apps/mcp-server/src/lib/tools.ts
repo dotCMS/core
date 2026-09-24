@@ -23,8 +23,8 @@ const MAX_LOGGED_ERROR_CHARS = 2_000;
  * CONFIGURATION failure instead of crashing.
  */
 const DOTCMS: DotCMSConnection = dotcmsConnection({
-    url: () => process.env.DOTCMS_URL,
-    token: () => process.env.AUTH_TOKEN,
+    url: () => process.env['DOTCMS_URL'],
+    token: () => process.env['AUTH_TOKEN'],
     onContextError: (label, error) => {
         const message = error instanceof Error ? error.message : String(error);
         console.error(
@@ -36,7 +36,7 @@ const DOTCMS: DotCMSConnection = dotcmsConnection({
 /** Tool options this server sets; each factory reads only its own. */
 const SERVER_OPTIONS: ServerToolOptions = {
     // `execute`'s sandbox timeout.
-    timeout: Number(process.env.SANDBOX_TIMEOUT) || undefined,
+    timeout: Number(process.env['SANDBOX_TIMEOUT']) || undefined,
     // The asset tools' filesystem boundary. `/` — the whole disk — deliberately: this is a
     // local stdio server, the model acts as the user who started it, and moving a theme in or
     // out of any directory they name is the feature. A hosted server would set a workspace.

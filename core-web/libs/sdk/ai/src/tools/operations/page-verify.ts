@@ -161,7 +161,7 @@ export async function verifyPage(options: VerifyPageOptions): Promise<VerifyPage
         mode
     };
     if (resolvedSite) {
-        query.host_id = resolvedSite.identifier;
+        query['host_id'] = resolvedSite.identifier;
     }
 
     const { status, body } = await renderPage(options.dotcms, uri, query);

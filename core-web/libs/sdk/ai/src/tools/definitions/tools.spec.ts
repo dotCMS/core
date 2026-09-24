@@ -60,7 +60,7 @@ function sent(fetchMock: ReturnType<typeof vi.fn>, n = 0): { url: string; auth: 
 
     return {
         url: String(url),
-        auth: ((init as RequestInit).headers as Record<string, string>).Authorization
+        auth: ((init as RequestInit).headers as Record<string, string>)['Authorization']
     };
 }
 
