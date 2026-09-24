@@ -13,16 +13,25 @@ import {
 } from './shared/asset-common';
 import { includeMatcher } from './shared/glob';
 import { assertInsideRoot, assertWritableInsideRoot } from './shared/local-root';
+import {
+    RESOLVE_ENDPOINTS,
+    resolveDefaultSite,
+    resolveSite,
+    type ResolvedSite
+} from './shared/resolve';
 
-import { type DotCMSRuntime, ValidationError } from '../../runtime';
-import { type Endpoint } from '../toolkit/endpoints';
-import { errorMessage } from '../toolkit/tool-runtime';
+import { HttpError, type DotCMSRuntime, ValidationError } from '../../runtime';
+import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
+import { errorMessage, withMessage } from '../toolkit/tool-runtime';
 
 /**
  * Every endpoint `downloadAssets` calls — all reads. The `download_assets` tool enforces
  * exactly this list, and `download-assets.spec.ts` checks every request against it.
  */
 export const DOWNLOAD_ASSETS_ENDPOINTS: readonly Endpoint[] = [
+    // A folder search is scoped to one site, so the site is resolved first.
+    ...CONTEXT_ENDPOINTS,
+    ...RESOLVE_ENDPOINTS,
     'POST /api/content/_search',
     'GET /api/v2/assets',
     'GET /api/v2/assets/{identifier}'
@@ -31,10 +40,22 @@ export const DOWNLOAD_ASSETS_ENDPOINTS: readonly Endpoint[] = [
 /** What `downloadAssets` does when a destination file already exists. */
 export type OverwriteMode = 'skip' | 'overwrite' | 'error';
 
+/**
+ * What `path` names. `'asset'` and `'folder'` say so outright. `'auto'` guesses from the last
+ * segment (an extension means an asset) and, when that reading finds nothing, tries the other:
+ * so a folder named `v1.2` and an asset named `robots` both work without the caller knowing.
+ */
+export type DownloadKind = 'auto' | 'asset' | 'folder';
+
 export interface DownloadAssetsOptions {
     dotcms: DotCMSRuntime;
-    /** dotCMS folder or asset path, optionally host-qualified (`//host/path`). */
+    /**
+     * dotCMS folder or asset path, optionally host-qualified (`//host/path`). A folder is
+     * searched on that one site; a path with no host means the default site.
+     */
     path: string;
+    /** Whether `path` is one asset or a folder. Default `'auto'`; see {@link DownloadKind}. */
+    kind?: DownloadKind;
     /** Absolute local directory the files are written into. */
     dest: string;
     /** Include files in nested folders. */
@@ -93,33 +114,57 @@ export async function downloadAssets(
     const failures: AssetManifestFailure[] = [];
     const skipped: AssetManifestSkipped[] = [];
     const warnings: string[] = [];
-    const directAssetPath = looksLikeAssetPath(input.path);
+    const kind = options.kind ?? 'auto';
+    const reading = kind === 'auto' ? (looksLikeAssetPath(input.path) ? 'asset' : 'folder') : kind;
+
+    const record = (result: WriteResult) => {
+        if (result.kind === 'written') files.push(result.file);
+        else skipped.push(result.skip);
+    };
+    const target = (rel: string) => ({
+        dest,
+        rel,
+        overwrite: options.overwrite,
+        root: options.root
+    });
 
     // Each download is wrapped in the same try/catch so one failure records a failure and
     // doesn't abort the batch — both the single-asset path and the folder loop go through it.
     const download = async (rel: string, source: () => AssetSource, identifier?: string) => {
         try {
-            const result = await saveAsset(
-                options.dotcms,
-                { dest, rel, overwrite: options.overwrite, root: options.root },
-                source(),
-                identifier
-            );
-            if (result.kind === 'written') files.push(result.file);
-            else skipped.push(result.skip);
+            record(await saveAsset(options.dotcms, target(rel), source(), identifier));
         } catch (error) {
             failures.push({ path: rel, error: errorMessage(error) });
         }
     };
 
-    if (directAssetPath) {
-        await download(basename(input.path), () => ({
-            path: '/api/v2/assets',
-            query: { path: assetQueryPath(input) }
-        }));
-    } else {
+    // `path` read as ONE asset. Resolves false only when there is no asset there (404), which
+    // is what lets `auto` try the folder reading instead; any other failure is recorded.
+    const oneAsset = async (): Promise<boolean> => {
+        const rel = basename(input.path);
+        try {
+            record(
+                await saveAsset(options.dotcms, target(rel), {
+                    path: '/api/v2/assets',
+                    query: { path: assetQueryPath(input) }
+                })
+            );
+        } catch (error) {
+            if (error instanceof HttpError && error.status === 404) {
+                return false;
+            }
+            failures.push({ path: rel, error: errorMessage(error) });
+        }
+
+        return true;
+    };
+
+    // `path` read as a FOLDER, searched on its one site. Resolves false when it holds nothing.
+    const folder = async (): Promise<boolean> => {
+        const site = await siteOf(options.dotcms, options.path, input);
         const { assets, truncated } = await enumerateAssets(
             options.dotcms,
+            site.identifier,
             input.path,
             options.recursive,
             options.include
@@ -133,10 +178,6 @@ export async function downloadAssets(
                     `${MAX_ENUMERATED_ASSETS} assets), so the download is INCOMPLETE. Narrow it ` +
                     `with a subfolder path and run again.`
             );
-        } else if (assets.length === 0) {
-            // Only when the walk reached the end: after a cap, zero matches says nothing
-            // about whether the path is right.
-            warnings.push(zeroMatchWarning(options.path, input));
         }
 
         for (const asset of assets) {
@@ -155,6 +196,19 @@ export async function downloadAssets(
                 identifier
             );
         }
+
+        // After a cap, the folder is not empty: it simply was not read to the end.
+        return assets.length > 0 || truncated;
+    };
+
+    let found: boolean;
+    if (reading === 'asset') {
+        found = (await oneAsset()) || (kind === 'auto' && (await folder()));
+    } else {
+        found = (await folder()) || (kind === 'auto' && (await oneAsset()));
+    }
+    if (!found) {
+        warnings.push(zeroMatchWarning(options.path, input));
     }
 
     return sortManifest({
@@ -267,6 +321,7 @@ interface EnumerateResult {
 
 async function enumerateAssets(
     dotcms: DotCMSRuntime,
+    siteId: string,
     folder: string,
     recursive: boolean,
     include?: string
@@ -283,7 +338,9 @@ async function enumerateAssets(
             method: 'POST',
             path: '/api/content/_search',
             body: {
-                query: `+baseType:4 +path:${folder}/*`,
+                // `+conhost` keeps the walk on one site. Without it, `/shared` matched every
+                // site's `/shared`, and same-named files overwrote or skipped each other locally.
+                query: `+baseType:4 +conhost:${siteId} +path:${folder}/*`,
                 sort: 'path asc',
                 limit: SEARCH_LIMIT,
                 offset
@@ -341,24 +398,67 @@ function zeroMatchWarning(
     rawInput: string,
     parsed: { siteQualified?: string; path: string }
 ): string {
-    const base = `No assets matched "${parsed.path}" — check the path. The result is empty, not a success.`;
+    return (
+        `No assets matched "${parsed.path}" — check the path. The result is empty, not a ` +
+        `success.${siteReadingNote(rawInput, parsed)}`
+    );
+}
+
+/** The hostname a `//host/path` input names. */
+function siteHost(parsed: { siteQualified?: string; path: string }): string {
+    return (parsed.siteQualified ?? '').slice(
+        2,
+        (parsed.siteQualified ?? '').length - parsed.path.length
+    );
+}
+
+/**
+ * How a `//`-prefixed input was read, for a message about it — empty for any other input.
+ * `//application/themes` reads `application` as the SITE, the common mistake: saying so, and
+ * what to write instead, is what lets the caller correct it rather than retry it.
+ */
+function siteReadingNote(
+    rawInput: string,
+    parsed: { siteQualified?: string; path: string }
+): string {
     const trimmed = rawInput.trim();
-    if (trimmed.startsWith('//')) {
-        const site = parsed.siteQualified?.slice(
-            2,
-            parsed.siteQualified.length - parsed.path.length
-        );
-        // The plain-path form is the input with one leading slash removed — i.e. the FULL path
-        // including the segment that "//" consumed as the site (e.g. "//application/themes" → "/application/themes").
-        const asPlainPath = trimmed.slice(1).replace(/\/+$/, '');
-        return (
-            `${base} Note: "${rawInput}" was read as site="${site}", path="${parsed.path}" ` +
-            `(a leading "//" treats the first segment as the dotCMS site). ` +
-            `If you meant a path on the default site, use "${asPlainPath}"; ` +
-            `if you meant a host-qualified path, keep "//<site>/<path>".`
-        );
+    if (!trimmed.startsWith('//')) {
+        return '';
     }
-    return base;
+
+    // The plain-path form is the input with one leading slash removed — i.e. the FULL path
+    // including the segment that "//" consumed as the site (e.g. "//application/themes" → "/application/themes").
+    const asPlainPath = trimmed.slice(1).replace(/\/+$/, '');
+
+    return (
+        ` Note: "${rawInput}" was read as site="${siteHost(parsed)}", path="${parsed.path}" ` +
+        `(a leading "//" treats the first segment as the dotCMS site). ` +
+        `If you meant a path on the default site, use "${asPlainPath}"; ` +
+        `if you meant a host-qualified path, keep "//<site>/<path>".`
+    );
+}
+
+/**
+ * The one site a folder is searched on: the `//host` the input names, or the default site.
+ * An unknown host is the caller's input being wrong (VALIDATION), and says how it was read.
+ */
+async function siteOf(
+    dotcms: DotCMSRuntime,
+    rawInput: string,
+    parsed: { siteQualified?: string; path: string }
+): Promise<ResolvedSite> {
+    if (!parsed.siteQualified) {
+        return resolveDefaultSite(dotcms);
+    }
+
+    try {
+        return await resolveSite(dotcms, siteHost(parsed));
+    } catch (error) {
+        if (error instanceof ValidationError) {
+            throw withMessage(error, `${error.message}${siteReadingNote(rawInput, parsed)}`);
+        }
+        throw error;
+    }
 }
 
 function relativeAssetPath(folder: string, assetPath: string): string {

@@ -109,6 +109,32 @@ export async function resolveSite(dotcms: DotCMSRuntime, site: string): Promise<
     throw new ValidationError(await siteNotFoundMessage(dotcms, wanted));
 }
 
+/**
+ * The instance's default site — what a path with no `//host` prefix means.
+ *
+ * The session cache first; then `GET /api/v1/site/defaultSite`, so a failed context load does
+ * not leave the caller unscoped. A failure of that read propagates as the instance error it is:
+ * falling back to "no site" would silently widen whatever the caller was about to scope.
+ */
+export async function resolveDefaultSite(dotcms: DotCMSRuntime): Promise<ResolvedSite> {
+    const { sites } = await safeContext(dotcms);
+    const cached = sites.find((entry) => entry.isDefault);
+    if (cached) {
+        return { identifier: cached.identifier, hostname: cached.hostname };
+    }
+
+    const live = toResolvedSite(
+        entityOf(await dotcms.request({ path: '/api/v1/site/defaultSite' }))
+    );
+    if (!live) {
+        throw new Error(
+            'The instance did not return a default site (GET /api/v1/site/defaultSite).'
+        );
+    }
+
+    return live;
+}
+
 async function siteFromCache(
     dotcms: DotCMSRuntime,
     wanted: string

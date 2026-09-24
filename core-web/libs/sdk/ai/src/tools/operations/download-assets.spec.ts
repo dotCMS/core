@@ -6,7 +6,7 @@ import { join } from 'node:path';
 
 import { DOWNLOAD_ASSETS_ENDPOINTS, downloadAssets } from './download-assets';
 
-import { ValidationError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
+import { HttpError, ValidationError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
 import { unlistedCalls } from '../toolkit/endpoints';
 
 /** Every request the fake sees, checked against the download_assets tool's endpoints. */
@@ -51,11 +51,35 @@ function fakeRuntime(options?: FakeOptions) {
             }
             return opts.onBody(out.fakeBody(), { contentType: 'text/css' });
         }
+        if (opts.onBody && out === undefined) {
+            // An asset read the test did not set up: there is no asset there.
+            throw new HttpError(404, 'Not Found', `no asset at ${opts.path}`);
+        }
 
         return out ?? {};
     });
 
-    return { runtime: { request } as unknown as DotCMSRuntime, calls };
+    // Two sites, so a search that is not scoped to one would visibly reach the other.
+    const loadContext = vi.fn(async () => ({
+        contentTypes: [],
+        sites: SITES,
+        languages: [],
+        currentUser: null
+    }));
+
+    return { runtime: { request, loadContext } as unknown as DotCMSRuntime, calls };
+}
+
+const SITES = [
+    { identifier: 'site-demo', hostname: 'demo.dotcms.com', isDefault: true, archived: false },
+    { identifier: 'site-other', hostname: 'other.dotcms.com', isDefault: false, archived: false }
+];
+
+/** The site identifier a `_search` query is scoped to, if any. */
+function conhostOf(opts: RequestOptions): string | undefined {
+    const query = (opts.body as { query?: string } | undefined)?.query ?? '';
+
+    return /\+conhost:(\S+)/.exec(query)?.[1];
 }
 
 /** An asset read that streams `text`. */
@@ -317,6 +341,198 @@ describe('downloadAssets', () => {
         expect(manifest.count).toBe(500);
         // Stopping here never reached the end of the folder, so it must not read as complete.
         expect(manifest.warnings.join(' ')).toMatch(/INCOMPLETE/);
+    });
+
+    describe('which site', () => {
+        // Both sites have a /shared folder. A search scoped only by path would return both
+        // sites' files, and two `a.css` would then overwrite (or skip) each other on disk.
+        const BY_SITE: Record<string, Array<{ identifier: string; path: string }>> = {
+            'site-demo': [{ identifier: 'd1', path: '//demo.dotcms.com/shared/a.css' }],
+            'site-other': [
+                { identifier: 'o1', path: '//other.dotcms.com/shared/a.css' },
+                { identifier: 'o2', path: '//other.dotcms.com/shared/b.css' }
+            ]
+        };
+
+        function twoSiteRuntime() {
+            return fakeRuntime({
+                onRequest: (opts) => {
+                    if (opts.path === '/api/content/_search') {
+                        const site = conhostOf(opts);
+                        const contentlets = site
+                            ? (BY_SITE[site] ?? [])
+                            : Object.values(BY_SITE).flat();
+
+                        return { entity: { jsonObjectView: { contentlets } } };
+                    }
+                    if (opts.path?.startsWith('/api/v2/assets/')) {
+                        return binary(opts.path);
+                    }
+
+                    return undefined;
+                }
+            });
+        }
+
+        it('searches only the site a host-qualified path names', async () => {
+            const { runtime, calls } = twoSiteRuntime();
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//other.dotcms.com/shared',
+                dest,
+                recursive: true,
+                overwrite: 'error'
+            });
+
+            expect(manifest.files.map((file) => file.identifier).sort()).toEqual(['o1', 'o2']);
+            expect(manifest.failures).toEqual([]);
+            const search = calls.find((call) => call.path === '/api/content/_search');
+            expect(conhostOf(search as RequestOptions)).toBe('site-other');
+        });
+
+        it('scopes a plain path to the default site', async () => {
+            const { runtime } = twoSiteRuntime();
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '/shared',
+                dest,
+                recursive: true,
+                overwrite: 'error'
+            });
+
+            expect(manifest.files.map((file) => file.identifier)).toEqual(['d1']);
+        });
+
+        it('reports an unknown site as VALIDATION, keeping the leading-"//" hint', async () => {
+            // `//application/themes` reads `application` as the site: the common mistake, so
+            // the refusal still says how the input was read and what to write instead.
+            const { runtime } = twoSiteRuntime();
+
+            const error = await downloadAssets({
+                dotcms: runtime,
+                path: '//application/themes',
+                dest,
+                recursive: true,
+                overwrite: 'overwrite'
+            }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(ValidationError);
+            expect((error as Error).message).toMatch(
+                /leading "\/\/"[\s\S]*"\/application\/themes"/
+            );
+        });
+    });
+
+    describe('asset or folder', () => {
+        /** A read by path answers `pathAsset` (or 404); a search answers `folder`'s assets. */
+        function kindRuntime(options: {
+            pathAsset?: string;
+            folder?: Array<{ identifier: string; path: string }>;
+        }) {
+            return fakeRuntime({
+                onRequest: (opts) => {
+                    if (opts.path === '/api/content/_search') {
+                        return {
+                            entity: { jsonObjectView: { contentlets: options.folder ?? [] } }
+                        };
+                    }
+                    if (opts.path === '/api/v2/assets') {
+                        if (!options.pathAsset) {
+                            throw new HttpError(404, 'Not Found', 'no asset at that path');
+                        }
+                        return binary(options.pathAsset);
+                    }
+                    if (opts.path?.startsWith('/api/v2/assets/')) {
+                        return binary('from the folder');
+                    }
+
+                    return undefined;
+                }
+            });
+        }
+
+        const DOTTED = [{ identifier: 'v1', path: '//demo.dotcms.com/themes/v1.2/site.css' }];
+
+        it('treats a dotted name as a folder when told kind: "folder"', async () => {
+            const { runtime, calls } = kindRuntime({ folder: DOTTED });
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/themes/v1.2',
+                kind: 'folder',
+                dest,
+                recursive: true,
+                overwrite: 'overwrite'
+            });
+
+            expect(manifest.files.map((file) => file.path)).toEqual(['site.css']);
+            expect(callsTo(calls, '/api/v2/assets')).toBe(0);
+        });
+
+        it('treats an extensionless name as one asset when told kind: "asset"', async () => {
+            const { runtime, calls } = kindRuntime({ pathAsset: 'User-agent: *' });
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/robots',
+                kind: 'asset',
+                dest,
+                recursive: true,
+                overwrite: 'overwrite'
+            });
+
+            expect(await readFile(join(dest, 'robots'), 'utf8')).toBe('User-agent: *');
+            expect(manifest.count).toBe(1);
+            expect(callsTo(calls, '/api/content/_search')).toBe(0);
+        });
+
+        it('auto: falls back to a folder when a dotted name is not an asset', async () => {
+            const { runtime } = kindRuntime({ folder: DOTTED });
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/themes/v1.2',
+                dest,
+                recursive: true,
+                overwrite: 'overwrite'
+            });
+
+            expect(manifest.files.map((file) => file.path)).toEqual(['site.css']);
+            expect(manifest.failures).toEqual([]);
+        });
+
+        it('auto: falls back to one asset when an extensionless folder is empty', async () => {
+            const { runtime } = kindRuntime({ pathAsset: 'User-agent: *' });
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/robots',
+                dest,
+                recursive: true,
+                overwrite: 'overwrite'
+            });
+
+            expect(await readFile(join(dest, 'robots'), 'utf8')).toBe('User-agent: *');
+            expect(manifest.warnings).toEqual([]);
+        });
+
+        it('auto: still explains a miss when the path is neither', async () => {
+            const { runtime } = kindRuntime({});
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/nothing-here',
+                dest,
+                recursive: true,
+                overwrite: 'overwrite'
+            });
+
+            expect(manifest.count).toBe(0);
+            expect(manifest.failures).toEqual([]);
+            expect(manifest.warnings.join(' ')).toMatch(/No assets matched/);
+        });
     });
 
     describe('with a filter', () => {

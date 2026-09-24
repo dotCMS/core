@@ -81,6 +81,7 @@ export { downloadAssets } from './operations/download-assets';
 export type {
     DownloadAssetsManifest,
     DownloadAssetsOptions,
+    DownloadKind,
     OverwriteMode
 } from './operations/download-assets';
 

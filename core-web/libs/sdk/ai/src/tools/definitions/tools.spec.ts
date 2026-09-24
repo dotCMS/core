@@ -398,6 +398,20 @@ describe('tool factories', () => {
                         }
                     });
                 }
+                if (!String(url).includes('/api/v2/assets/')) {
+                    // The site lookup and context reads the folder search is scoped by.
+                    return jsonResponse({
+                        entity: String(url).includes('/api/v1/site')
+                            ? [
+                                  {
+                                      identifier: 'site-demo',
+                                      hostname: 'demo.dotcms.com',
+                                      isDefault: true
+                                  }
+                              ]
+                            : []
+                    });
+                }
 
                 const body = new ReadableStream<Uint8Array>({
                     start(controller) {

@@ -268,7 +268,7 @@ return pick(result.contentlets, ['identifier', 'title', 'modDate'])
 }
 ```
 
-The tool enumerates file assets with `/api/content/_search`, downloads bytes with `/api/v2/assets/{identifier}` through the server-side runtime, writes files under `dest`, and preserves relative folder structure. File bytes are not returned to the model. Each file streams to disk, so memory stays flat whatever its size, and lands under a temporary name renamed into place once complete, so a broken transfer leaves no partial file.
+A folder is searched on the one site its path names (`//host/...`), or the default site for a plain path, so same-named folders on other sites never mix in. `kind` (`auto`, `asset`, `folder`) says whether `path` is one asset or a folder. The default `auto` guesses from the extension, and tries the other reading when the first finds nothing: a folder named `v1.2` or an asset named `robots` still works. The tool enumerates file assets with `/api/content/_search`, downloads bytes with `/api/v2/assets/{identifier}` through the server-side runtime, writes files under `dest`, and preserves relative folder structure. File bytes are not returned to the model. Each file streams to disk, so memory stays flat whatever its size, and lands under a temporary name renamed into place once complete, so a broken transfer leaves no partial file.
 
 ### Upload Assets
 

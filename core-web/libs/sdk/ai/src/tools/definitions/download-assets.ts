@@ -18,7 +18,13 @@ const definition = defineTool({
             .string()
             .min(1)
             .describe(
-                'dotCMS folder or asset path to download, e.g. /application/themes/travel or //demo.dotcms.com/application/themes/travel/css/styles.scss'
+                'dotCMS folder or asset path to download, e.g. /application/themes/travel or //demo.dotcms.com/application/themes/travel/css/styles.scss. A folder is searched on the one site the path names; a path with no //host means the default site.'
+            ),
+        kind: z
+            .enum(['auto', 'asset', 'folder'])
+            .default('auto')
+            .describe(
+                'Whether `path` is one asset or a folder. "auto" (default) guesses from the name — an extension means an asset — and tries the other reading when the first finds nothing. Pass "folder" for a folder whose name has a dot (e.g. /themes/v1.2), "asset" for a file with no extension (e.g. /robots).'
             ),
         dest: z
             .string()
@@ -68,6 +74,7 @@ a JSON manifest — never the file bytes.`,
             dotcms: ctx.runtime(),
             root: ctx.options.root,
             path: args.path,
+            kind: args.kind,
             dest: args.dest,
             recursive: args.recursive,
             overwrite: args.overwrite,
