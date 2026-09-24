@@ -4,7 +4,7 @@ import { RESOLVE_ENDPOINTS, resolveSite } from './shared/resolve';
 
 import { HttpError, ValidationError, type DotCMSRuntime } from '../../runtime';
 import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
-import { errorMessage } from '../toolkit/tool-runtime';
+import { errorMessage, withMessage } from '../toolkit/tool-runtime';
 
 /**
  * Every endpoint `placeContent` calls — the `page_place_content` tool enforces exactly this
@@ -604,12 +604,14 @@ async function postContent(
     } catch (error) {
         const message = errorMessage(error);
 
+        // Each explanation is added to the save's own error (`withMessage`), never a new one:
+        // its class and status are what tell the model whether a retry can help.
         if (error instanceof HttpError && error.status === 409) {
-            throw withCause(
+            throw withMessage(
+                error,
                 'Page content save was rejected as a net-loss conflict (the change would remove more ' +
                     'content than allowed, or the page changed underneath this write). Re-read the page ' +
-                    `and retry. Original error: ${message}`,
-                error
+                    `and retry. Original error: ${message}`
             );
         }
 
@@ -618,31 +620,16 @@ async function postContent(
         // the model cannot tell that the fix is a different container or a different content
         // type — so it retries the identical call and fails identically.
         if (error instanceof HttpError && error.status === 400) {
-            throw withCause(
+            throw withMessage(
+                error,
                 'Page content save was rejected (HTTP 400). The usual cause is a contentlet whose ' +
                     'CONTENT TYPE is not permitted in the container it was placed in — check the ' +
                     "container's allowed content types and either place a permitted type or choose " +
                     'a different container. Retrying this same call unchanged will fail the same ' +
-                    `way. Original error: ${message}`,
-                error
+                    `way. Original error: ${message}`
             );
         }
 
-        throw withCause(`Failed to save page content: ${message}`, error);
+        throw withMessage(error, `Failed to save page content: ${message}`);
     }
-}
-
-/**
- * An `Error` carrying the original as `cause`.
- *
- * Written by assignment rather than `new Error(msg, { cause })` because that constructor
- * overload needs the ES2022 lib and this project targets lower. Threading the cause matters:
- * without it the typed `HttpError` — and with it `code` and `status` — is flattened to a
- * message here and can never reach the tool boundary that reports `retryable`.
- */
-function withCause(message: string, cause: unknown): Error {
-    const error = new Error(message);
-    (error as Error & { cause?: unknown }).cause = cause;
-
-    return error;
 }

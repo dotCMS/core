@@ -8,6 +8,7 @@ import {
 
 import { HttpError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
 import { unlistedCalls } from '../toolkit/endpoints';
+import { toToolFailure } from '../toolkit/tool-runtime';
 
 // Every request the fake below sees. After each test, all of them must be endpoints the
 // page_place_content tool owns — otherwise the operation works here and is refused in production.
@@ -441,6 +442,38 @@ describe('placeContent', () => {
             })
         ).rejects.toThrow(/Failed to save page content/i);
     });
+
+    it.each([
+        [409, 'Conflict', false],
+        [400, 'Bad Request', false],
+        [500, 'Server Error', true]
+    ])(
+        'keeps a failed save a typed HttpError %d, so the model is told HTTP and whether to retry',
+        async (status, statusText, retryable) => {
+            // The clearer message is added to the save's OWN error. Wrapped in a plain Error,
+            // every one of these reached the model as UNKNOWN, not retryable — a 500 worth
+            // retrying looked permanent, and a 409 lost its status.
+            const { runtime } = fakeRuntime({
+                onPost: () => {
+                    throw new HttpError(status, statusText, 'body');
+                }
+            });
+
+            const error = await placeContent({
+                dotcms: runtime,
+                path: '/about-us',
+                slots: [{ slot: 1, contentlets: ['a'] }]
+            }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(HttpError);
+            expect((error as HttpError).status).toBe(status);
+            expect(toToolFailure('page_place_content', error)).toMatchObject({
+                code: 'HTTP',
+                status,
+                retryable
+            });
+        }
+    );
 
     it('passes variantName and languageId through to both the read and the write', async () => {
         const { runtime, calls } = fakeRuntime();

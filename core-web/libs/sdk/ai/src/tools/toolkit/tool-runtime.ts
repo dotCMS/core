@@ -160,6 +160,24 @@ export function errorMessage(error: unknown): string {
 }
 
 /**
+ * Give a caught error a clearer message, and return that SAME error for the caller to throw.
+ *
+ * For an operation that explains a failure in its own terms ("the save was rejected as a
+ * net-loss conflict…") before rethrowing. Wrapping it in a new `Error` instead loses the
+ * error's class, and with it the `code`, the HTTP `status` and whether a retry can help: a 503
+ * worth retrying reaches the model as `UNKNOWN`, not retryable. Only a non-`Error` throw, which
+ * has no class to keep, becomes a plain `Error`.
+ */
+export function withMessage(error: unknown, message: string): Error {
+    if (error instanceof Error) {
+        error.message = message;
+        return error;
+    }
+
+    return new Error(message);
+}
+
+/**
  * Whether re-issuing the same call could plausibly succeed.
  *
  * This is the single most useful thing a tool can tell the calling model, and the one it

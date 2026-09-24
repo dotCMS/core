@@ -10,7 +10,7 @@ import {
     type RequestOptions
 } from '../../runtime';
 import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
-import { errorMessage } from '../toolkit/tool-runtime';
+import { errorMessage, withMessage } from '../toolkit/tool-runtime';
 
 /**
  * Every endpoint `createPage` calls — the `page_create` tool enforces exactly this list, and
@@ -626,14 +626,8 @@ async function fireCreate(
             `${created}Re-running this call after fixing the input is SAFE: folder creation ` +
             `is idempotent, so no duplicate folder is made.`;
         // Add the note to the fire's OWN error rather than wrapping it: its class is what says
-        // whether to retry — a 503 or a timeout is worth another try, a 400 is not — and a
-        // plain Error would report every one of them as UNKNOWN.
-        const message = `${errorMessage(error)}\n\n${note}`;
-        if (error instanceof Error) {
-            error.message = message;
-            throw error;
-        }
-        throw new Error(message);
+        // whether to retry — a 503 or a timeout is worth another try, a 400 is not.
+        throw withMessage(error, `${errorMessage(error)}\n\n${note}`);
     }
 }
 
