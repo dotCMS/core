@@ -2578,9 +2578,10 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
-                it("onLockChanged should refresh workflow actions using the PAGE's inode, not the edited contentlet's (PR #37713 review)", async () => {
-                    // The edited contentlet (inode 'contentlet-inode-123') is NOT the page itself
-                    // (inode '123-i') — this is the pencil/edit-in-place case, not Page Properties.
+                it('onLockChanged uses the page inode (#37713)', async () => {
+                    // The edited contentlet (inode 'contentlet-inode-123') is NOT the page
+                    // itself (inode '123-i') — the pencil/edit-in-place case, not Page
+                    // Properties.
                     store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
 
                     const dotContentTypeService =
@@ -2623,7 +2624,9 @@ describe('EditEmaEditorComponent', () => {
                         MOCK_RESPONSE_HEADLESS.page as unknown as DotCMSContentlet
                     );
 
-                    expect(workflowFetchSpy).toHaveBeenCalledWith(MOCK_RESPONSE_HEADLESS.page.inode);
+                    expect(workflowFetchSpy).toHaveBeenCalledWith(
+                        MOCK_RESPONSE_HEADLESS.page.inode
+                    );
                     expect(workflowFetchSpy).not.toHaveBeenCalledWith('contentlet-inode-123');
                 });
 
