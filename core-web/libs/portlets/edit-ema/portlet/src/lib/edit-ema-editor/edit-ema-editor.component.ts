@@ -1295,7 +1295,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 });
             },
             [NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION]: () => {
-                this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
+                const pageInode = this.uveStore.pageAsset()?.page?.inode;
+                if (pageInode) {
+                    this.uveStore.workflowFetch(pageInode);
+                }
 
                 if (detail.payload?.isLockAction) {
                     // Lock/unlock in the legacy content-edit dialog updates the contentlet
@@ -1304,7 +1307,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     // renders its OWN <dot-edit-ema-dialog> instance — the one actually used
                     // for Page Properties while a page is open — separate from the shell's,
                     // which already handles this same event on ITS OWN dialog instance.
-                    this.uveStore.pageReload();
+                    this.uveStore['pageReload']();
                 }
             }
         })[detail.name];
@@ -1420,7 +1423,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             mode: 'edit',
             contentletInode: contentlet.inode,
             onLockChanged: () => {
-                this.uveStore.pageReload();
+                this.uveStore['pageReload']();
                 // pageReload() doesn't mint a new inode on a lock/unlock, so the $inode-keyed
                 // effect that normally refreshes workflowActions never re-fires — refresh it
                 // explicitly here too (mirrors the legacy dialog's UPDATE_WORKFLOW_ACTION handling).
@@ -1428,7 +1431,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 // every openContentForEdit() caller (Page Properties, but also the pencil/
                 // edit-in-place flow and VTL edit for a contentlet that isn't the page), and
                 // workflowFetch always writes into the page's own workflowActions.
-                this.uveStore.workflowFetch(this.uveStore.pageAsset()?.page?.inode);
+                const pageInode = this.uveStore.pageAsset()?.page?.inode;
+                if (pageInode) {
+                    this.uveStore.workflowFetch(pageInode);
+                }
             },
             onContentSaved: () => {
                 this.uveStore.pageReload();

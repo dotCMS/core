@@ -524,7 +524,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     // Lock/unlock in the legacy content-edit dialog updates the contentlet
                     // directly and never touches UVEStore — reload so $lockOptions
                     // (page.locked/lockedBy) reflects the change immediately.
-                    this.uveStore.pageReload();
+                    this.uveStore['pageReload']();
                 }
 
                 break;

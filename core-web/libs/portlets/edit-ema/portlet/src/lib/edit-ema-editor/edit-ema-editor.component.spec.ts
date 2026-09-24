@@ -3607,7 +3607,7 @@ describe('EditEmaEditorComponent', () => {
                         }),
                         actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
                         clientAction: DotCMSUVEAction.NOOP,
-                        form: null
+                        form: null!
                     })?.();
 
                     expect(workflowFetchSpy).toHaveBeenCalled();
@@ -3626,7 +3626,7 @@ describe('EditEmaEditorComponent', () => {
                         }),
                         actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
                         clientAction: DotCMSUVEAction.NOOP,
-                        form: null
+                        form: null!
                     })?.();
 
                     expect(workflowFetchSpy).toHaveBeenCalled();
