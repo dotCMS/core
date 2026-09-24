@@ -4544,6 +4544,34 @@ paths:
       summary: Update existing folder
       tags:
       - Web Assets
+  /v1/assets/folders/_bulkdelete:
+    post:
+      description: |-
+        Accepts a list of folder paths and answers `202` with a job handle **before any folder is deleted**. The run is asynchronous, queued to the `folderBulkDelete` queue, and each folder's delete is recursive and permanent, exactly as the single-folder delete already is. Follow the run with `GET /api/v1/jobs/{jobId}/status`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and watch it with `GET /api/v1/jobs/{jobId}/monitor`. The submitting author is notified on any terminal state.
+
+        One folder failing does not abort the run: every remaining folder is still attempted, and each failure is reported by path with a machine-readable reason.
+      operationId: bulkDeleteFolders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FolderBulkDeleteForm"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFolderBulkDeleteSubmitView"
+          description: Run queued
+        "400":
+          description: "No paths submitted, or more paths than the configured maximum"
+        "403":
+          description: The caller is not entitled to use this operation
+        "409":
+          description: A submitted path overlaps an in-flight run's paths
+      summary: "Delete several folders from one submission, asynchronously"
+      tags:
+      - Web Assets
   /v1/assets/folders/_delete:
     post:
       description: Permanently delete a folder and all its contents from the system
@@ -29659,6 +29687,37 @@ components:
           type: string
         type:
           type: string
+    FolderBulkDeleteForm:
+      type: object
+      properties:
+        assetPaths:
+          type: array
+          description: "The selected folders, in the same site-qualified path form\
+            \ the single-folder delete accepts"
+          example:
+          - //demo.dotcms.com/old-projects/
+          items:
+            type: string
+            description: "The selected folders, in the same site-qualified path form\
+              \ the single-folder delete accepts"
+            example: "[\"//demo.dotcms.com/old-projects/\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+    FolderBulkDeleteSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statusUrl:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     FolderDeletionRequestForm:
       type: object
       properties:
@@ -34687,6 +34746,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/FileAssetView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFolderBulkDeleteSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/FolderBulkDeleteSubmitResponse"
         errors:
           type: array
           items:
