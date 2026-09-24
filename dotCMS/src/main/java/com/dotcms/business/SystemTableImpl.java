@@ -2,7 +2,7 @@ package com.dotcms.business;
 
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
-import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
+import com.dotcms.util.ObfuscationUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.db.HibernateUtil;
@@ -69,7 +69,7 @@ class SystemTableImpl implements SystemTable {
     @WrapInTransaction
     public void set(final String key, final String value) {
 
-        SecurityLogger.logInfo(this.getClass(), "Saving system table value for key:" + key + "=" + JVMInfoResource.obfuscateIfNeeded(
+        SecurityLogger.logInfo(this.getClass(), "Saving system table value for key:" + key + "=" + ObfuscationUtil.obfuscateIfNeeded(
                 key,value));
 
         Try.run(()-> this.systemTableFactory.saveOrUpdate(key, value))
