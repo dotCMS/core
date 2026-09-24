@@ -23,6 +23,9 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.graphql.DotGraphQLContext;
+import com.dotcms.graphql.InterfaceType;
+import com.dotcms.graphql.datafetcher.AssetBinaryPropertyDataFetcher;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -35,9 +38,17 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
 import graphql.ExecutionResult;
+import graphql.GraphQLError;
+import graphql.execution.MergedField;
+import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.DataFetchingEnvironmentImpl;
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -214,7 +225,8 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
 
     /**
      * Given: an asset behind an Image field.
-     * When: the asset's own identity is requested — identifier, inode, live state, title.
+     * When: the asset's own identity is requested — identifier, inode, site, URL mapping, live
+     * state, title.
      * Then: each is returned and matches the asset's record.
      *
      * <p>None of these are on the flat view, so an Image field cannot currently tell a client
@@ -229,7 +241,8 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
 
         final Map<String, Object> assetContent =
-                queryCompanion(holder, content, IMAGE_COMPANION, "identifier inode live title");
+                queryCompanion(holder, content, IMAGE_COMPANION,
+                        "identifier inode host { identifier } urlMap live title");
 
         assertEquals("the asset's identifier must be reachable",
                 asset.getIdentifier(), assetContent.get("identifier"));
@@ -237,6 +250,12 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                 asset.getInode(), assetContent.get("inode"));
         assertEquals("the asset's live state must be reachable", true, assetContent.get("live"));
         assertNotNull("the asset's title must be reachable", assetContent.get("title"));
+        assertEquals("the asset's site must be reachable", site.getIdentifier(),
+                ((Map<String, Object>) assetContent.get("host")).get("identifier"));
+        // A DotAsset type has no URL map pattern, so the value is null; what FR-004 requires is
+        // that the property can be selected through the asset field at all.
+        assertTrue("the asset's URL mapping must be selectable",
+                assetContent.containsKey("urlMap"));
     }
 
     /**
@@ -458,26 +477,68 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     }
 
     /**
-     * Given: two users, one able to read a restricted asset and one not.
-     * When: both query the same field pointing at it.
-     * Then: only the permitted one gets it back.
+     * Given: an asset, and every binary property that is flattened onto it.
+     * When: all of them are resolved within one request.
+     * Then: the binary is derived exactly once for that asset — and once more for a second asset.
      *
-     * <p>FR-008, framed as the guarantee that actually matters: the new description must resolve
-     * <b>as the calling user</b> and never escalate. Two users, one asset, one query — if the
-     * answers differ by caller, identity is being honoured; if they match, it is not.
+     * <p>FR-013b / SC-006. The per-asset count at the asset-field level does not cover this: each
+     * flattened property has its own fetcher call, and it is the per-request cache inside
+     * {@link AssetBinaryPropertyDataFetcher} that keeps those calls from each running the full
+     * transformer. Counted with a subclass, never timed.
+     */
+    @Test
+    public void test_binaryIsDerivedOncePerAssetPerRequest() throws Exception {
+        final Contentlet first = newAssetOf(newDotAssetSubtype(), "DerivedOnce");
+        final Contentlet second = newAssetOf(newDotAssetSubtype(), "DerivedOnceMore");
+
+        final AtomicInteger derivations = new AtomicInteger();
+        final AssetBinaryPropertyDataFetcher fetcher = new AssetBinaryPropertyDataFetcher() {
+            @Override
+            protected Map<String, Object> derive(final Contentlet contentlet) {
+                derivations.incrementAndGet();
+                return super.derive(contentlet);
+            }
+        };
+
+        final DotGraphQLContext context = DotGraphQLContext.createServletContext()
+                .with(systemUser).build();
+        final List<String> properties = List.of("name", "size", "mime", "versionPath", "idPath",
+                "path", "sha256", "isImage", "width", "height");
+
+        for (final String property : properties) {
+            fetcher.get(environmentFor(first, property, context));
+        }
+        assertEquals("ten binary properties of one asset must cost one derivation",
+                1, derivations.get());
+        assertNotNull("and the cached derivation must still answer",
+                fetcher.get(environmentFor(first, "name", context)));
+
+        for (final String property : properties) {
+            fetcher.get(environmentFor(second, property, context));
+        }
+        assertEquals("a second asset costs exactly one more", 2, derivations.get());
+    }
+
+    /**
+     * Given: two users who can both read the holder content, only one of whom can read the asset
+     * its Image field points at.
+     * When: both query that field.
+     * Then: the permitted user gets the asset back, and the other gets the row with the asset field
+     * {@code null} — neither its values nor its concrete type.
      *
-     * <p>Deliberately not framed as "a published asset must be unreadable". Under delivery
-     * semantics the lookup honours front-end roles, so published content is readable anonymously by
-     * design, and asserting otherwise would test a scenario dotCMS does not have rather than the
-     * permission check. That mistake is easy to make and hard to see: a fixture checked with
-     * {@code respectFrontendRoles = false} looks locked down while delivery, correctly, still grants
-     * access.
+     * <p>FR-008 / FR-022: the asset must resolve <b>as the calling user</b> and never escalate.
      *
-     * <p>Two fixture traps, both documented in {@code WebAssetResourceV2IntegrationTest}: the list
-     * form of {@code permissionAPI.save} is required because the single-Permission form only
-     * appends and would leave the inherited READ in place; and the shared {@code TestUserUtils}
-     * users carry a type-level CONTENTLETS READ grant through their role, so purpose-built users in
-     * fresh roles are used instead.
+     * <p>Every precondition is asserted rather than branched on. An earlier version skipped its
+     * final assertion when the second user turned out to read the asset anyway, and read the
+     * field from a row that user might not see at all — either way it could pass without ever
+     * observing a denial. Both users are therefore granted the holder explicitly, the asset is
+     * granted to one role only, and the test fails loudly if the fixture does not hold.
+     *
+     * <p>Two fixture traps: {@code permissionAPI.save} only adds grants, so the anonymous READ that
+     * {@code permissionIndividually} copies from the parent must be revoked explicitly (see
+     * {@link #permitReadOnly}); and the shared {@code TestUserUtils} users carry a type-level
+     * CONTENTLETS READ grant through their role, so purpose-built users in fresh roles are used
+     * instead.
      */
     @Test
     public void test_assetResolvesAsTheCallingUser() throws Exception {
@@ -489,47 +550,46 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
 
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         final Role permittedRole = new RoleDataGen().nextPersisted();
+        final Role otherRole = new RoleDataGen().nextPersisted();
 
-        // Replace inherited permissions on the asset with a single grant to one role, so the only
-        // difference between the two users below is whether they hold it.
-        permissionAPI.permissionIndividually(
-                permissionAPI.findParentPermissionable(asset), asset, systemUser);
-        permissionAPI.save(
-                List.of(new Permission(asset.getPermissionId(), permittedRole.getId(),
-                        PermissionAPI.PERMISSION_READ, true)),
-                asset, systemUser, false);
+        // The asset: readable by one role only.
+        permitReadOnly(asset, List.of(permittedRole));
+        // The holder: readable by both, so the only difference between the users is the asset.
+        permitReadOnly(content, List.of(permittedRole, otherRole));
 
-        final User permittedUser =
-                new UserDataGen().roles(permittedRole).nextPersisted();
-        final User otherUser =
-                new UserDataGen().roles(new RoleDataGen().nextPersisted()).nextPersisted();
+        final User permittedUser = new UserDataGen().roles(permittedRole).nextPersisted();
+        final User otherUser = new UserDataGen().roles(otherRole).nextPersisted();
 
-        // Check the fixture the way the product asks, not a way that merely looks strict: the
-        // lookup behind an asset field honours front-end roles.
-        assertTrue("fixture problem: the permitted user cannot read the asset, so a difference "
-                        + "below would prove nothing",
+        // Checked the way the product asks: the lookup behind an asset field honours front-end
+        // roles, so these must hold with respectFrontendRoles = true.
+        assertTrue("fixture problem: the permitted user cannot read the asset",
                 permissionAPI.doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ,
                         permittedUser, true));
+        assertFalse("fixture problem: the other user can read the asset, so a denial below "
+                        + "could never be observed",
+                permissionAPI.doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ,
+                        otherUser, true));
+        assertTrue("fixture problem: the other user cannot read the holder content, so the row "
+                        + "would be missing rather than its asset field denied",
+                permissionAPI.doesUserHavePermission(content, PermissionAPI.PERMISSION_READ,
+                        otherUser, true));
 
         final String query = String.format(
-                "{ %sCollection(query: \"+identifier:%s\") { %s { fileName } } }",
+                "{ %sCollection(query: \"+identifier:%s\") { identifier %s { __typename fileName } } }",
                 holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
 
-        final Object seenByPermitted = assetFieldFor(query, permittedUser, holder);
-        final Object seenByOther = assetFieldFor(query, otherUser, holder);
+        final Map<String, Object> permittedRow = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, permittedUser), holder);
+        final Map<String, Object> otherRow = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, otherUser), holder);
 
-        assertNotNull("the user holding the grant must see the asset", seenByPermitted);
-
-        // The asset is published, so delivery may legitimately serve it to the second user through
-        // the anonymous role. What must never happen is the field resolving with more authority
-        // than the caller has: if the two answers are identical AND the second user genuinely lacks
-        // read, identity is being ignored.
-        if (!permissionAPI.doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ,
-                otherUser, true)) {
-            assertEquals("the asset field resolved with more authority than its caller: a user "
-                            + "without read on the asset received it anyway",
-                    null, seenByOther);
-        }
+        assertNotNull("the user holding the grant must see the asset",
+                permittedRow.get(IMAGE_FIELD_VAR));
+        assertEquals("the other user must still receive the row",
+                content.getIdentifier(), otherRow.get("identifier"));
+        assertEquals("the asset field resolved with more authority than its caller: a user "
+                        + "without read on the asset received it, or its concrete type, anyway",
+                null, otherRow.get(IMAGE_FIELD_VAR));
     }
 
     /**
@@ -648,6 +708,219 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                 rendered.contains("SecretValue"));
         assertFalse("nor the asset's identifier",
                 rendered.contains(asset.getIdentifier()));
+    }
+
+    /**
+     * Given: clauses on the interfaces an asset implements rather than on its concrete type.
+     * When: the query runs.
+     * Then: the clauses contribute their data and no warning is produced.
+     *
+     * <p>Resolved content only knows its concrete type, so a check comparing names alone reports
+     * every interface clause as unmatched. {@code ... on DotFileasset} is the form the migration
+     * guide recommends to existing clients, so that false warning would appear on every one of
+     * their responses.
+     */
+    @Test
+    public void test_clauseOnAnInterfaceTheAssetImplements_producesNoWarning() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "ThroughInterface");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { "
+                        + "... on %s { fileName } ... on %s { identifier } } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
+                InterfaceType.ASSET_INTERFACE_NAME, InterfaceType.DOTASSET_INTERFACE_NAME);
+
+        final ExecutionResult result = GraphqlQueryRunner.executeWithWarnings(query, systemUser);
+
+        assertTrue("the request must succeed: " + result.getErrors(),
+                result.getErrors().isEmpty());
+        final Map<String, Object> image = (Map<String, Object>) firstRow(result.getData(), holder)
+                .get(IMAGE_FIELD_VAR);
+        assertNotNull("fixture problem: the asset field resolved to nothing", image);
+        assertEquals("the interface clause must have contributed its data",
+                asset.getIdentifier(), image.get("identifier"));
+        assertTrue("a clause on an interface the asset implements matched, so it must not be "
+                        + "reported. Warnings were: " + GraphqlQueryRunner.warningsOf(result),
+                GraphqlQueryRunner.warningsOf(result).isEmpty());
+    }
+
+    /**
+     * Given: a clause naming a type that does not exist anywhere in the schema.
+     * When: the query runs.
+     * Then: the request fails, naming the type.
+     *
+     * <p>Locks existing graphql-java behaviour: unlike a clause on a real type that happened not to
+     * match, this is a client mistake with no valid reading, and it must stay loud.
+     */
+    @Test
+    public void test_clauseOnANonExistentType_failsTheRequest() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "NoSuchType");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final String missingType = "NoSuchAssetType" + System.nanoTime();
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { "
+                        + "fileName ... on %s { title } } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR, missingType);
+
+        final List<GraphQLError> errors =
+                GraphqlQueryRunner.executeAndExpectFailure(query, systemUser);
+
+        assertTrue("the error must name the type the client wrote: " + errors,
+                errors.toString().contains(missingType));
+    }
+
+    /**
+     * Given: one clause on the asset's base-type interface and another on its concrete type.
+     * When: both apply to the same asset.
+     * Then: their properties merge into a single object.
+     */
+    @Test
+    public void test_baseTypeAndConcreteTypeClauses_mergeIntoOneObject() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Merged");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final Map<String, Object> image = queryCompanion(holder, content, IMAGE_FIELD_VAR,
+                String.format("... on %s { identifier } ... on %s { %s }",
+                        InterfaceType.DOTASSET_INTERFACE_NAME, assetType.variable(),
+                        CUSTOM_PROPERTY_VAR));
+
+        assertEquals("the base-type clause's property must be on the object",
+                asset.getIdentifier(), image.get("identifier"));
+        assertEquals("and so must the concrete clause's, on the same object",
+                "Merged", image.get(CUSTOM_PROPERTY_VAR));
+    }
+
+    /**
+     * Given: a result set whose asset fields point at content of two different types, and a clause
+     * on only one of them.
+     * When: the query runs.
+     * Then: matching rows carry the clause's properties, the other rows are still returned without
+     * them, the request succeeds, and no warning is produced because the clause matched somewhere.
+     */
+    @Test
+    public void test_mixedResultSet_populatesMatchesAndKeepsTheRest() throws Exception {
+        final ContentType matchingType = newDotAssetSubtype();
+        final ContentType otherType = newDotAssetSubtype();
+        final Contentlet matchingAsset = newAssetOf(matchingType, "Matching");
+        final Contentlet otherAsset = newAssetOf(otherType, "Other");
+
+        final ContentType holder = newHolderType();
+        final Contentlet matchingRow = newHolderContent(holder, IMAGE_FIELD_VAR, matchingAsset);
+        final Contentlet otherRow = newHolderContent(holder, IMAGE_FIELD_VAR, otherAsset);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+contentType:%s\") { identifier %s { "
+                        + "fileName ... on %s { %s } } } }",
+                holder.variable(), holder.variable(), IMAGE_FIELD_VAR,
+                matchingType.variable(), CUSTOM_PROPERTY_VAR);
+
+        final ExecutionResult result = GraphqlQueryRunner.executeWithWarnings(query, systemUser);
+
+        assertTrue("one non-matching row must not fail the request: " + result.getErrors(),
+                result.getErrors().isEmpty());
+
+        final List<Map<String, Object>> rows = (List<Map<String, Object>>)
+                ((Map<String, Object>) result.getData()).get(holder.variable() + "Collection");
+        assertEquals("both rows must be returned", 2, rows.size());
+
+        final Map<String, Map<String, Object>> imageByRow = new HashMap<>();
+        rows.forEach(row -> imageByRow.put((String) row.get("identifier"),
+                (Map<String, Object>) row.get(IMAGE_FIELD_VAR)));
+
+        final Map<String, Object> matchingImage = imageByRow.get(matchingRow.getIdentifier());
+        final Map<String, Object> otherImage = imageByRow.get(otherRow.getIdentifier());
+        assertNotNull("the matching row's asset must resolve", matchingImage);
+        assertNotNull("the non-matching row's asset must still resolve", otherImage);
+        assertEquals("the matching asset carries the clause's property",
+                "Matching", matchingImage.get(CUSTOM_PROPERTY_VAR));
+        assertFalse("the non-matching asset does not",
+                otherImage.containsKey(CUSTOM_PROPERTY_VAR));
+        assertNotNull("but still carries what was selected outside the clause",
+                otherImage.get("fileName"));
+        assertTrue("the clause matched one row, so it must not be reported. Warnings were: "
+                        + GraphqlQueryRunner.warningsOf(result),
+                GraphqlQueryRunner.warningsOf(result).isEmpty());
+    }
+
+    /**
+     * Given: an asset field whose target has since been archived.
+     * When: the field is selected.
+     * Then: it answers {@code null} and the rest of the query is unaffected.
+     */
+    @Test
+    public void test_fieldPointingAtArchivedAsset_resolvesToNullWithoutError() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Archived");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        ContentletDataGen.unpublish(asset, false);
+        ContentletDataGen.archive(asset);
+
+        assertTargetResolvesToNull(holder, content);
+    }
+
+    /**
+     * Given: an asset field whose target has since been deleted.
+     * When: the field is selected.
+     * Then: it answers {@code null} and the rest of the query is unaffected.
+     */
+    @Test
+    public void test_fieldPointingAtDeletedAsset_resolvesToNullWithoutError() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Deleted");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        ContentletDataGen.destroy(asset, false);
+
+        assertTargetResolvesToNull(holder, content);
+    }
+
+    /**
+     * Given: a query selecting a property the customer has since deleted from the asset type.
+     * When: it runs.
+     * Then: the request fails with the standard validation error naming the property and the type.
+     *
+     * <p>Answering {@code null} instead would be indistinguishable from an empty value.
+     */
+    @Test
+    public void test_selectingADeletedProperty_failsNamingPropertyAndType() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Doomed");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        APILocator.getContentTypeFieldAPI().delete(APILocator.getContentTypeFieldAPI()
+                .byContentTypeIdAndVar(assetType.id(), CUSTOM_PROPERTY_VAR));
+        APILocator.getGraphqlAPI().invalidateSchema();
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { ... on %s { %s } } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
+                assetType.variable(), CUSTOM_PROPERTY_VAR);
+
+        final String errors =
+                GraphqlQueryRunner.executeAndExpectFailure(query, systemUser).toString();
+
+        assertTrue("the error must name the deleted property: " + errors,
+                errors.contains(CUSTOM_PROPERTY_VAR));
+        assertTrue("and the type it was selected on: " + errors,
+                errors.contains(assetType.variable()));
     }
 
     /**
@@ -839,13 +1112,63 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
 
     // ---------------------------------------------------------------- helpers
 
-    /** Runs {@code query} as {@code user} and returns the asset field of the single row, if any. */
-    private Object assetFieldFor(final String query, final User user, final ContentType holder)
+    /** Asserts the holder's asset field answers {@code null} while the holder itself is returned. */
+    private void assertTargetResolvesToNull(final ContentType holder, final Contentlet content)
             throws Exception {
-        final Map<String, Object> data = GraphqlQueryRunner.executeAndExpectSuccess(query, user);
-        final List<Map<String, Object>> rows =
-                (List<Map<String, Object>>) data.get(holder.variable() + "Collection");
-        return null == rows || rows.isEmpty() ? null : rows.get(0).get(IMAGE_FIELD_VAR);
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { identifier %s { fileName } } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
+
+        final Map<String, Object> row = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder);
+
+        assertEquals("the rest of the row must still be delivered",
+                content.getIdentifier(), row.get("identifier"));
+        assertEquals("an unresolvable target must answer null", null, row.get(IMAGE_FIELD_VAR));
+    }
+
+    /**
+     * Replaces the inherited permissions on {@code contentlet} with READ for exactly
+     * {@code roles}, and reindexes it so collection queries filter by the new grant.
+     *
+     * <p>{@code permissionIndividually} copies every inherited grant onto the contentlet --
+     * including CMS Anonymous's READ -- and {@code save} only adds to what is there, so each copied
+     * grant for a role outside {@code roles} is revoked explicitly: an individual permission saved
+     * with no bits is deleted. Locked roles cannot be edited and are left alone.
+     */
+    private void permitReadOnly(final Contentlet contentlet, final List<Role> roles)
+            throws Exception {
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        permissionAPI.permissionIndividually(
+                permissionAPI.findParentPermissionable(contentlet), contentlet, systemUser);
+
+        final Set<String> keep = roles.stream().map(Role::getId).collect(Collectors.toSet());
+        for (final Permission copied : permissionAPI.getPermissions(contentlet, true, true)) {
+            final Role role = APILocator.getRoleAPI().loadRoleById(copied.getRoleId());
+            if (!keep.contains(role.getId()) && role.isEditPermissions()) {
+                permissionAPI.save(new Permission(copied.getType(), contentlet.getPermissionId(),
+                        role.getId(), 0, true), contentlet, systemUser, false);
+            }
+        }
+
+        permissionAPI.save(roles.stream()
+                        .map(role -> new Permission(contentlet.getPermissionId(), role.getId(),
+                                PermissionAPI.PERMISSION_READ, true))
+                        .collect(Collectors.toList()),
+                contentlet, systemUser, false);
+        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        APILocator.getContentletAPI().refresh(contentlet);
+    }
+
+    /** A fetcher environment resolving {@code property} on {@code source} within {@code context}. */
+    private DataFetchingEnvironment environmentFor(final Contentlet source, final String property,
+            final DotGraphQLContext context) {
+        return DataFetchingEnvironmentImpl.newDataFetchingEnvironment()
+                .source(source)
+                .context(context)
+                .mergedField(MergedField.newMergedField(new graphql.language.Field(property))
+                        .build())
+                .build();
     }
 
     /** Runs a query selecting {@code selection} on {@code companionField} and returns that object. */

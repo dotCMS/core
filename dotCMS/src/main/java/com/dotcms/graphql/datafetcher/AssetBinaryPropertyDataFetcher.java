@@ -7,6 +7,7 @@ import com.dotcms.graphql.DotGraphQLContext;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformer;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import java.util.Collections;
@@ -69,8 +70,13 @@ public class AssetBinaryPropertyDataFetcher implements DataFetcher<Object> {
         });
     }
 
+    /**
+     * Runs the full transformer pipeline for one contentlet. Visible for testing so a test can count
+     * how often it runs, which is the cost property the per-request cache exists to guarantee.
+     */
+    @VisibleForTesting
     @SuppressWarnings("unchecked")
-    private Map<String, Object> derive(final Contentlet contentlet) {
+    protected Map<String, Object> derive(final Contentlet contentlet) {
         final String binaryVar = DOTASSET == contentlet.getContentType().baseType()
                 ? "asset"
                 : FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR;

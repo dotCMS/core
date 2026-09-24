@@ -14,6 +14,11 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldComplete
 import graphql.language.Field;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -62,6 +67,11 @@ public class UnmatchedTypeConditionInstrumentation extends SimpleInstrumentation
         /** Type name -> the field paths it was written under. */
         private final Map<String, Set<String>> declared = new LinkedHashMap<>();
         private final Set<String> resolved = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        private volatile GraphQLSchema schema;
+
+        void useSchema(final GraphQLSchema schema) {
+            this.schema = schema;
+        }
 
         void declare(final String typeName, final String path) {
             declared.computeIfAbsent(typeName, key -> new LinkedHashSet<>()).add(path);
@@ -79,7 +89,7 @@ public class UnmatchedTypeConditionInstrumentation extends SimpleInstrumentation
         List<Map<String, Object>> unmatched() {
             final List<Map<String, Object>> warnings = new ArrayList<>();
             declared.forEach((typeName, paths) -> {
-                if (resolved.contains(typeName)) {
+                if (isSatisfied(typeName)) {
                     return;
                 }
                 paths.forEach(path -> warnings.add(Map.of(
@@ -88,6 +98,32 @@ public class UnmatchedTypeConditionInstrumentation extends SimpleInstrumentation
                         "message", "No content at this path was of type " + typeName + ".")));
             });
             return warnings;
+        }
+
+        /**
+         * Whether some resolved content satisfied the condition. A condition on a concrete type is
+         * satisfied by content of exactly that type; one on an interface or union -- `DotFileasset`,
+         * `DotAssetBaseType`, `DotContentlet` -- by content of any type implementing it. Resolved
+         * content only ever records its concrete type, so without the second check every abstract
+         * condition would be reported as unmatched even when it contributed data.
+         */
+        private boolean isSatisfied(final String typeName) {
+            if (resolved.contains(typeName)) {
+                return true;
+            }
+            if (null == schema) {
+                return false;
+            }
+            final GraphQLType conditionType = schema.getType(typeName);
+            if (!(conditionType instanceof GraphQLInterfaceType)
+                    && !(conditionType instanceof GraphQLUnionType)) {
+                return false;
+            }
+            return resolved.stream()
+                    .map(schema::getObjectType)
+                    .filter(Objects::nonNull)
+                    .anyMatch(objectType -> schema.isPossibleType(
+                            (GraphQLNamedType) conditionType, objectType));
         }
     }
 
@@ -105,6 +141,7 @@ public class UnmatchedTypeConditionInstrumentation extends SimpleInstrumentation
         // whole document — means a warning is never attributed to a query that did not run.
         final State state = parameters.getInstrumentationState();
         if (null != state && null != parameters.getExecutionContext()) {
+            state.useSchema(parameters.getExecutionContext().getGraphQLSchema());
             collectTypeConditions(parameters.getExecutionContext().getOperationDefinition(),
                     "", state);
         }

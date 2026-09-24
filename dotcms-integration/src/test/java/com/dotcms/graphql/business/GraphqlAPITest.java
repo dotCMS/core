@@ -84,6 +84,7 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
@@ -819,13 +820,17 @@ public class GraphqlAPITest extends IntegrationTestBase {
                 // An asset-pointing field is now described by the asset interface rather than by
                 // a flat object type, so a client can narrow to the concrete content type the
                 // field actually points at. The interface keeps the name clients already write in
-                // `... on DotFileasset` clauses, and still carries the long-standing flat
-                // properties -- minus `description`, whose meaning differs between the flat view
-                // (the contentlet title) and the content answering it. See #34540.
+                // `... on DotFileasset` clauses, and still carries all six long-standing flat
+                // properties. See #34540.
                 assertEquals(InterfaceType.ASSET_INTERFACE_NAME,
                         ((GraphQLNamedSchemaElement) fileFieldDefinition.getType()).getName());
                 assertEquals(InterfaceType.ASSET_INTERFACE_NAME,
                         ((GraphQLNamedSchemaElement) imageFieldDefinition.getType()).getName());
+
+                assertTrue(areFileassetFieldsPresent(
+                        (GraphQLFieldsContainer) fileFieldDefinition.getType()));
+                assertTrue(areFileassetFieldsPresent(
+                        (GraphQLFieldsContainer) imageFieldDefinition.getType()));
             } finally {
                 APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
             }
@@ -981,12 +986,12 @@ public class GraphqlAPITest extends IntegrationTestBase {
      * {@code DotFileasset}, so any such addition failed here rather than where the change was
      * made. Presence is the contract; the type is free to expose more.
      */
-    private boolean areFileassetFieldsPresent(final GraphQLObjectType objectType) {
+    private boolean areFileassetFieldsPresent(final GraphQLFieldsContainer fieldsContainer) {
         final List<String> fileAssetFields = list(FILEASSET_FILE_NAME_FIELD_VAR,
                 FILEASSET_DESCRIPTION_FIELD_VAR, FILEASSET_FILEASSET_FIELD_VAR,
                 FILEASSET_METADATA_FIELD_VAR, FILEASSET_SHOW_ON_MENU_FIELD_VAR,
                 FILEASSET_SORT_ORDER_FIELD_VAR);
-        final Set<String> actualFields = objectType.getFieldDefinitions().stream()
+        final Set<String> actualFields = fieldsContainer.getFieldDefinitions().stream()
                 .map(GraphQLFieldDefinition::getName).collect(Collectors.toSet());
         return actualFields.containsAll(fileAssetFields);
     }

@@ -3,6 +3,8 @@ package com.dotcms.graphql.datafetcher;
 import com.dotcms.graphql.DotGraphQLContext;
 import com.dotcms.graphql.InterfaceType;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -41,9 +43,23 @@ public class FileFieldDataFetcher implements DataFetcher<Contentlet> {
             Logger.debug(this, ()-> "Fetching file field for contentlet: " + contentlet.getIdentifier() + " field: " + var +
                     " fileAssetIdentifier: " + fileAssetIdentifier);
 
-            Optional<Contentlet> fileAsContentOptional = APILocator.getContentletAPI()
-                .findContentletByIdentifierOrFallback(fileAssetIdentifier, contentlet.isLive(), contentlet.getLanguageId(),
-                    user, true);
+            final Optional<Contentlet> fileAsContentOptional;
+            try {
+                fileAsContentOptional = APILocator.getContentletAPI()
+                    .findContentletByIdentifierOrFallback(fileAssetIdentifier, contentlet.isLive(), contentlet.getLanguageId(),
+                        user, true);
+            } catch (final DotContentletStateException e) {
+                if (!isPermissionDenied(e)) {
+                    throw e;
+                }
+                // The caller cannot read the referenced asset. That is an expected outcome of
+                // delivery, not a fault: the field answers null like any other unresolvable target,
+                // rather than adding an error entry to the response and an ERROR line with a stack
+                // trace to the log for every row that points at it. See #34540.
+                Logger.debug(FileFieldDataFetcher.class, () -> "Field '" + var
+                        + "' points at an asset the caller cannot read: " + fileAssetIdentifier);
+                return null;
+            }
 
             Contentlet resolved = null;
 
@@ -77,5 +93,18 @@ public class FileFieldDataFetcher implements DataFetcher<Contentlet> {
             Logger.error(this, e.getMessage(), e);
             throw e;
         }
+    }
+
+    /**
+     * The content lookup reports a permission failure wrapped in a
+     * {@link DotContentletStateException}; any other cause is a genuine fault and is not hidden.
+     */
+    private static boolean isPermissionDenied(final Throwable exception) {
+        for (Throwable cause = exception.getCause(); null != cause; cause = cause.getCause()) {
+            if (cause instanceof DotSecurityException) {
+                return true;
+            }
+        }
+        return false;
     }
 }
