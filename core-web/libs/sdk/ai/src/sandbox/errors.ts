@@ -40,6 +40,9 @@ export abstract class DotCMSError extends Error {
 
     constructor(message: string, options?: { cause?: unknown }) {
         super(message);
+        // A fallback only: every subclass declares its own `name`. The class name cannot be
+        // trusted — a bundler minifies it, and the built MCP server showed the model
+        // "b: …" for a PolicyError. A new subclass must declare `override readonly name`.
         this.name = new.target.name;
         if (options?.cause !== undefined) {
             // Standard ES2022 `cause`, but assigned defensively for older lib targets.
@@ -67,6 +70,7 @@ export abstract class DotCMSError extends Error {
 
 /** Adapter input failed validation, or request options were malformed. */
 export class ValidationError extends DotCMSError {
+    override readonly name = 'ValidationError';
     readonly code = 'VALIDATION' as const;
     /** Field-level issues, when the source was a Zod (or similar) schema. */
     readonly issues?: unknown[];
@@ -83,6 +87,7 @@ export class ValidationError extends DotCMSError {
 
 /** The allow-list / policy rejected the call before it reached the network. */
 export class PolicyError extends DotCMSError {
+    override readonly name = 'PolicyError';
     readonly code = 'POLICY' as const;
     readonly method: string;
     readonly path: string;
@@ -100,6 +105,7 @@ export class PolicyError extends DotCMSError {
 
 /** dotCMS responded with a non-2xx status. Carries the status and the (text) body. */
 export class HttpError extends DotCMSError {
+    override readonly name = 'HttpError';
     readonly code = 'HTTP' as const;
     readonly status: number;
     readonly statusText: string;
@@ -123,6 +129,7 @@ export class HttpError extends DotCMSError {
  * error) because the two call for opposite reactions: this one is usually worth retrying.
  */
 export class NetworkError extends DotCMSError {
+    override readonly name = 'NetworkError';
     readonly code = 'NETWORK' as const;
     readonly method: string;
     readonly path: string;
@@ -161,6 +168,7 @@ function networkReason(error: unknown): string | undefined {
 
 /** A timeout elapsed (sandbox wall-clock, per-adapter-call, or context load). */
 export class TimeoutError extends DotCMSError {
+    override readonly name = 'TimeoutError';
     readonly code = 'TIMEOUT' as const;
     readonly timeoutMs?: number;
 
@@ -176,11 +184,13 @@ export class TimeoutError extends DotCMSError {
 
 /** The call was aborted in-flight (typically because the sandbox timed out). */
 export class AbortError extends DotCMSError {
+    override readonly name = 'AbortError';
     readonly code = 'ABORT' as const;
 }
 
 /** Model-authored code threw while executing inside the sandbox. */
 export class SandboxError extends DotCMSError {
+    override readonly name = 'SandboxError';
     readonly code = 'SANDBOX' as const;
     /** The original error's name (e.g. "TypeError") as seen inside the sandbox. */
     readonly originalName?: string;
@@ -198,6 +208,7 @@ export class SandboxError extends DotCMSError {
 
 /** Catch-all for runtime-internal failures that don't fit a more specific type. */
 export class RuntimeError extends DotCMSError {
+    override readonly name = 'RuntimeError';
     readonly code = 'RUNTIME' as const;
 }
 
