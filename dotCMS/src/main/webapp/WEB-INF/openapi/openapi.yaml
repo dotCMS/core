@@ -12141,6 +12141,34 @@ paths:
       summary: Get internationalized messages
       tags:
       - Language
+  /v1/layouts:
+    get:
+      description: "Returns every navigation section (layout) in the order the back-end\
+        \ left menu shows them. Each section carries its id, name, icon, position,\
+        \ the ordered ids of its tools and one localized title per tool id, aligned\
+        \ with portletIds. Sections holding tools the tools catalog hides are still\
+        \ returned as stored. Requires an authenticated back-end user with access\
+        \ to the tools or tools-beta portlet, or the CMS Administrator role."
+      operationId: listNavigationSections
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionListView"
+          description: Sections retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or the caller holds\
+            \ neither the tools nor the tools-beta portlet and is not a CMS Administrator"
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: List every navigation section
+      tags:
+      - Administration
   /v1/logger:
     get:
       operationId: getLoggers
@@ -35425,6 +35453,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySectionListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntitySessionListView:
       type: object
       properties:
@@ -37824,6 +37877,40 @@ components:
           format: int64
     SecretForm:
       type: object
+    SectionView:
+      type: object
+      description: A navigation section (layout) with its ordered tools and their
+        localized titles
+      properties:
+        icon:
+          type: string
+          description: Icon name shown next to the section
+          example: campaign
+        id:
+          type: string
+          description: Section id
+          example: 2df9f117-b140-44bf-93d7-5b10a36fb7f9
+        name:
+          type: string
+          description: "Section name, unique among sections"
+          example: Marketing
+        portletIds:
+          type: array
+          description: "Tool (portlet) ids in the section, in stored order"
+          items:
+            type: string
+            description: "Tool (portlet) ids in the section, in stored order"
+        portletTitles:
+          type: array
+          description: "Localized title of each tool, aligned with portletIds"
+          items:
+            type: string
+            description: "Localized title of each tool, aligned with portletIds"
+        tabOrder:
+          type: integer
+          format: int32
+          description: Position in the navigation; only the relative order is meaningful
+          example: 3
     SelectField:
       type: object
       allOf:
