@@ -88,13 +88,28 @@ export type RequestPolicy = (req: { method: string; path: string }) => boolean |
  * Matching is by whole segment, never by raw `startsWith`: `/api/v1/content` allows
  * `/api/v1/content` and `/api/v1/content/abc`, but not `/api/v1/contenttype`. As a string
  * prefix it allowed every endpoint whose name happened to begin the same way. A trailing
- * slash on an entry changes nothing: `/api/v1/page/` and `/api/v1/page` mean the same.
+ * slash on an entry changes nothing: `/api/v1/page/` and `/api/v1/page` mean the same, and
+ * `'/'` is the explicit way to allow every path.
+ *
+ * An entry that is not a path (`''`, blank, relative, protocol-relative) throws a
+ * `ValidationError` here, when the runtime or tool is created. This is a security boundary,
+ * so a malformed entry must fail closed and loudly: `''` used to match every path, so a typo or
+ * an unset variable silently opened the whole API.
  */
 export function toRequestPolicy(
     allow: string[] | RequestPolicy | undefined
 ): RequestPolicy | undefined {
     if (!allow) return undefined;
     if (typeof allow === 'function') return allow;
+    const invalid = allow.find(
+        (entry) => typeof entry !== 'string' || !entry.startsWith('/') || entry.startsWith('//')
+    );
+    if (invalid !== undefined) {
+        throw new ValidationError(
+            `\`allow\` entry ${JSON.stringify(invalid)} is not a path. Every entry must be an ` +
+                `absolute API path such as "/api/v1/content"; use "/" to allow every path.`
+        );
+    }
     const bases = allow.map((entry) => entry.replace(/\/+$/, ''));
     return ({ path }) => bases.some((base) => path === base || path.startsWith(`${base}/`));
 }

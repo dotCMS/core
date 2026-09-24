@@ -434,6 +434,12 @@ describe('tool factories', () => {
             }
         });
 
+        it('refuses an executeTool allow entry that is not a path, when the tool is created', () => {
+            // The host's own configuration, so it fails at startup rather than quietly opening
+            // the whole API to the model's code: `''` used to match every path.
+            expect(() => executeTool(DOTCMS, { allow: [''] })).toThrow(/allow/);
+        });
+
         it('bounds the model’s code in execute with the allow-list, before any request', async () => {
             // `allow` exists only on executeTool: there the MODEL picks the endpoints. The
             // fixed-purpose tools own theirs, so a consumer cannot misconfigure them.

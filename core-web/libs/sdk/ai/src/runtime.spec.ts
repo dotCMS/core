@@ -1,7 +1,13 @@
 import { vi } from 'vitest';
 
 import { createRuntime } from './runtime';
-import { AbortError, HttpError, NetworkError, PolicyError } from './sandbox/errors';
+import {
+    AbortError,
+    HttpError,
+    NetworkError,
+    PolicyError,
+    ValidationError
+} from './sandbox/errors';
 
 /** Build a minimal JSON Response stub. */
 function jsonResponse(body: unknown, init?: { ok?: boolean; status?: number }): Response {
@@ -125,6 +131,33 @@ describe('createRuntime.request (direct, no worker)', () => {
         });
 
         await expect(dotcms.request({ path: '/api/v1/site/123' })).resolves.toEqual({ ok: true });
+    });
+
+    describe('refuses an entry that is not a path', () => {
+        // The allow-list is a security boundary, so a malformed entry must fail closed and
+        // loudly. `''` used to match every path — every path starts with `'' + '/'` — so a
+        // typo or an unset variable silently opened the whole API.
+        it.each([[''], ['   '], ['api/v1/content'], ['//api/v1/content']])(
+            'refuses %j when the runtime is created',
+            (entry) => {
+                expect(() =>
+                    createRuntime({ url: 'https://demo.dotcms.com', token: 't', allow: [entry] })
+                ).toThrow(ValidationError);
+            }
+        );
+
+        it("keeps '/' as the explicit way to allow every path", async () => {
+            fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
+            const dotcms = createRuntime({
+                url: 'https://demo.dotcms.com',
+                token: 't',
+                allow: ['/']
+            });
+
+            await expect(dotcms.request({ path: '/api/v1/site/123' })).resolves.toEqual({
+                ok: true
+            });
+        });
     });
 
     describe('matches whole path segments', () => {
