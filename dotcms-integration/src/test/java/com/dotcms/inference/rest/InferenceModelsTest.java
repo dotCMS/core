@@ -55,8 +55,9 @@ import static org.mockito.Mockito.when;
  *     <li>Nothing synthetic is added; the count equals the configured count.</li>
  *     <li>No configuration at either the site or the system level yields an empty
  *     {@code data} array, never another site's models.</li>
- *     <li>The models come from the <strong>chat</strong> section, not the embeddings or image
- *     ones, matching what the chat endpoint validates against.</li>
+ *     <li>Every configured section is listed, chat first, and each entry reports the
+ *     {@code type} of the section it came from, so a caller can pick a model for the operation
+ *     it is about to call.</li>
  *     <li>Bearer-only authentication and site attribution behave exactly as on the sibling
  *     completions endpoint.</li>
  * </ul>
@@ -96,6 +97,15 @@ public class InferenceModelsTest {
 
     /** Owner every entry reports; dotCMS serves the model, whoever built it. */
     private static final String OWNED_BY = "dotcms";
+
+    /** Type of an entry configured in the {@code chat} section. */
+    private static final String TYPE_CHAT = "chat";
+
+    /** Type of an entry configured in the {@code embeddings} section — singular, as on the wire. */
+    private static final String TYPE_EMBEDDING = "embedding";
+
+    /** Type of an entry configured in the {@code image} section. */
+    private static final String TYPE_IMAGE = "image";
 
     private static WireMockServer wireMockServer;
     private static User user;
@@ -178,6 +188,7 @@ public class InferenceModelsTest {
         assertEquals(CHAT_MODEL, model.id());
         assertEquals(OBJECT_MODEL, model.object());
         assertEquals(OWNED_BY, model.ownedBy());
+        assertEquals(TYPE_CHAT, model.type());
         assertTrue("An entry must carry a creation time", model.created() > 0);
     }
 
@@ -362,10 +373,8 @@ public class InferenceModelsTest {
      * this site runs" is to read this list and take the first entry, so an ordering that put an
      * embeddings model at the head would silently break every caller following that advice.</p>
      *
-     * <p>The format offers nowhere to say which entry serves which operation — its model object
-     * has no type, mode or modality field — so a caller that picks the wrong one is refused by
-     * the operation itself, naming the field. That refusal is the mechanism; this list is
-     * deliberately not the place to duplicate it.</p>
+     * <p>Which entry serves which operation is reported by each entry's {@code type}, covered by
+     * {@link #test_models_withDistinctSectionModels_reportsEachSectionsType()}.</p>
      */
     @Test
     public void test_models_withDistinctSectionModels_listsEveryCapability() throws Exception {
@@ -385,6 +394,101 @@ public class InferenceModelsTest {
     }
 
     /**
+     * Given a site configured with a chat model, a different embeddings model and a different
+     * image model
+     * When the models are listed
+     * Then each entry reports the type of the section it was configured in
+     *
+     * <p>The model is required on every operation and each operation refuses a model the site
+     * configured for a different one, so without this a caller had to learn out of band which
+     * listed name was the chat model and which the embeddings one. The value comes from the
+     * section, never from the name: {@code text-embedding-3-small} is an embedding model here
+     * because the site put it in {@code embeddings}, not because its name says so.</p>
+     */
+    @Test
+    public void test_models_withDistinctSectionModels_reportsEachSectionsType() throws Exception {
+        final Host site = siteConfiguredWith(CHAT_MODEL, EMBEDDINGS_MODEL, IMAGE_MODEL);
+
+        final Response response = resource.models(
+                mockRequest(), mockResponse(), site.getIdentifier());
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatus());
+
+        final ModelListView view = (ModelListView) response.getEntity();
+        assertEquals(List.of(CHAT_MODEL, EMBEDDINGS_MODEL, IMAGE_MODEL), modelIds(view));
+        assertEquals(List.of(TYPE_CHAT, TYPE_EMBEDDING, TYPE_IMAGE), modelTypes(view));
+    }
+
+    /**
+     * Given a site whose chat model is a three-entry fallback chain
+     * When the models are listed
+     * Then every chain entry reports {@code chat}
+     *
+     * <p>A fallback is as much a chat model as the primary: the chat endpoint accepts any of them
+     * by name, so none may be reported as anything else.</p>
+     */
+    @Test
+    public void test_models_withFallbackChain_reportsEveryChainEntryAsChat() throws Exception {
+        final Host chainSite = siteConfiguredWith(
+                String.join(",", CHAIN_PRIMARY, CHAIN_FALLBACK, CHAIN_LAST_RESORT));
+
+        final Response response = resource.models(
+                mockRequest(), mockResponse(), chainSite.getIdentifier());
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatus());
+        assertEquals(List.of(TYPE_CHAT, TYPE_CHAT, TYPE_CHAT, TYPE_EMBEDDING, TYPE_IMAGE),
+                modelTypes((ModelListView) response.getEntity()));
+    }
+
+    /**
+     * Given a site that names the same model in its chat and embeddings sections
+     * When the models are listed
+     * Then it appears once, reported as {@code chat}
+     *
+     * <p>Clients key a model list by {@code id}, so a repeated id would make one of the two
+     * entries unreachable, and which one would depend on the client. One entry typed by the first
+     * section it appears in keeps the listing's order rule — chat, then embeddings, then image —
+     * as the single rule a caller has to know.</p>
+     */
+    @Test
+    public void test_models_withNameInChatAndEmbeddings_listsItOnceAsChat() throws Exception {
+        final Host site = siteConfiguredWith(CHAT_MODEL, CHAT_MODEL, IMAGE_MODEL);
+
+        final Response response = resource.models(
+                mockRequest(), mockResponse(), site.getIdentifier());
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatus());
+
+        final ModelListView view = (ModelListView) response.getEntity();
+        assertEquals(List.of(CHAT_MODEL, IMAGE_MODEL), modelIds(view));
+        assertEquals(List.of(TYPE_CHAT, TYPE_IMAGE), modelTypes(view));
+    }
+
+    /**
+     * Given a site that names the same model in its embeddings and image sections
+     * When the models are listed
+     * Then it appears once, reported as {@code embedding}
+     */
+    @Test
+    public void test_models_withNameInEmbeddingsAndImage_listsItOnceAsEmbedding()
+            throws Exception {
+        final Host site = siteConfiguredWith(CHAT_MODEL, EMBEDDINGS_MODEL, EMBEDDINGS_MODEL);
+
+        final Response response = resource.models(
+                mockRequest(), mockResponse(), site.getIdentifier());
+
+        assertNotNull(response);
+        assertEquals(200, response.getStatus());
+
+        final ModelListView view = (ModelListView) response.getEntity();
+        assertEquals(List.of(CHAT_MODEL, EMBEDDINGS_MODEL), modelIds(view));
+        assertEquals(List.of(TYPE_CHAT, TYPE_EMBEDDING), modelTypes(view));
+    }
+
+    /**
      * Given a site whose sections name the same model
      * When the models are listed
      * Then it appears once
@@ -401,7 +505,10 @@ public class InferenceModelsTest {
 
         assertNotNull(response);
         assertEquals(200, response.getStatus());
-        assertEquals(List.of(CHAT_MODEL), modelIds((ModelListView) response.getEntity()));
+
+        final ModelListView view = (ModelListView) response.getEntity();
+        assertEquals(List.of(CHAT_MODEL), modelIds(view));
+        assertEquals(List.of(TYPE_CHAT), modelTypes(view));
     }
 
     /**
@@ -468,6 +575,15 @@ public class InferenceModelsTest {
     private static List<String> modelIds(final ModelListView view) {
         assertNotNull(view.data());
         return view.data().stream().map(ModelListView.ModelView::id).toList();
+    }
+
+    /**
+     * @param view the listing
+     * @return the type of each entry it carries, in the order it carries them
+     */
+    private static List<String> modelTypes(final ModelListView view) {
+        assertNotNull(view.data());
+        return view.data().stream().map(ModelListView.ModelView::type).toList();
     }
 
     /**

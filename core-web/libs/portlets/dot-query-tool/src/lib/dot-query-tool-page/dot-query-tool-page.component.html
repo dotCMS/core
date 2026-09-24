@@ -52,6 +52,7 @@
                 [ngModel]="store.query()"
                 [options]="QUERY_EDITOR_OPTIONS"
                 (ngModelChange)="onQueryChange($event)"
+                (init)="onQueryEditorInit($event)"
                 data-testid="query-tool-query-editor" />
 
             <p-panel
@@ -125,6 +126,8 @@
                 data-testid="query-tool-run-footer">
                 <p-button
                     [loading]="store.isLoading()"
+                    [pTooltip]="'queryTool.action.run.tooltip' | dm: [runShortcutLabel]"
+                    tooltipPosition="top"
                     (onClick)="onRun()"
                     data-testid="query-tool-run-btn">
                     <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>
