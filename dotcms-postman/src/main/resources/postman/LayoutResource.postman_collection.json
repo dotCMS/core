@@ -37,27 +37,7 @@
    "value": ""
   },
   {
-   "key": "toolsRoleId",
-   "value": ""
-  },
-  {
-   "key": "toolsUserId",
-   "value": ""
-  },
-  {
-   "key": "toolsUserEmail",
-   "value": ""
-  },
-  {
-   "key": "toolsUserPassword",
-   "value": ""
-  },
-  {
    "key": "sectionId",
-   "value": ""
-  },
-  {
-   "key": "originalOrder",
    "value": ""
   },
   {
@@ -347,103 +327,6 @@
         "type": "text/javascript",
         "exec": [
          "pm.test('401', () => pm.response.to.have.status(401));"
-        ]
-       }
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "name": "Setup",
-   "item": [
-    {
-     "name": "Setup - create tools-only role",
-     "request": {
-      "method": "POST",
-      "header": [
-       {
-        "key": "Content-Type",
-        "value": "application/json"
-       }
-      ],
-      "url": {
-       "raw": "{{serverURL}}/api/v1/roles",
-       "host": [
-        "{{serverURL}}"
-       ],
-       "path": [
-        "api",
-        "v1",
-        "roles"
-       ]
-      },
-      "body": {
-       "mode": "raw",
-       "raw": "{\n    \"roleName\": \"layouts-pm-tools-role-{{runId}}\",\n    \"roleKey\": \"layouts-pm-tools-role-{{runId}}\",\n    \"canEditUsers\": true,\n    \"canEditPermissions\": false,\n    \"canEditLayouts\": false,\n    \"description\": \"Postman: non-admin role for /v1/layouts gate tests (canEditUsers so users can be added)\"\n}",
-       "options": {
-        "raw": {
-         "language": "json"
-        }
-       }
-      }
-     },
-     "response": [],
-     "event": [
-      {
-       "listen": "test",
-       "script": {
-        "type": "text/javascript",
-        "exec": [
-         "pm.test('role created', () => pm.response.to.have.status(200));",
-         "pm.collectionVariables.set('toolsRoleId', pm.response.json().entity.id);"
-        ]
-       }
-      }
-     ]
-    },
-    {
-     "name": "Setup - create tools-only user",
-     "request": {
-      "method": "POST",
-      "header": [
-       {
-        "key": "Content-Type",
-        "value": "application/json"
-       }
-      ],
-      "url": {
-       "raw": "{{serverURL}}/api/v1/users",
-       "host": [
-        "{{serverURL}}"
-       ],
-       "path": [
-        "api",
-        "v1",
-        "users"
-       ]
-      },
-      "body": {
-       "mode": "raw",
-       "raw": "{\n    \"userId\": \"layouts-pm-user-{{runId}}\",\n    \"active\": true,\n    \"firstName\": \"Layouts\",\n    \"lastName\": \"Postman\",\n    \"email\": \"layouts-pm-{{runId}}@dotcms.com\",\n    \"password\": [\n        \"L\",\n        \"a\",\n        \"y\",\n        \"o\",\n        \"u\",\n        \"t\",\n        \"s\",\n        \"1\",\n        \"2\",\n        \"3\",\n        \"4\",\n        \"5\"\n    ],\n    \"roles\": [\n        \"DOTCMS_BACK_END_USER\",\n        \"{{toolsRoleId}}\"\n    ]\n}",
-       "options": {
-        "raw": {
-         "language": "json"
-        }
-       }
-      }
-     },
-     "response": [],
-     "event": [
-      {
-       "listen": "test",
-       "script": {
-        "type": "text/javascript",
-        "exec": [
-         "pm.test('user created', () => pm.response.to.have.status(200));",
-         "pm.collectionVariables.set('toolsUserId', pm.response.json().entity.user.userId);",
-         "pm.collectionVariables.set('toolsUserEmail', 'layouts-pm-'+pm.collectionVariables.get('runId')+'@dotcms.com');",
-         "pm.collectionVariables.set('toolsUserPassword', 'Layouts12345');"
         ]
        }
       }
@@ -1082,83 +965,6 @@
         "type": "text/javascript",
         "exec": [
          "pm.test('404', () => pm.response.to.have.status(404));"
-        ]
-       }
-      }
-     ]
-    }
-   ]
-  },
-  {
-   "name": "Teardown",
-   "item": [
-    {
-     "name": "Teardown - delete tools-only user",
-     "request": {
-      "method": "DELETE",
-      "header": [
-       {
-        "key": "Content-Type",
-        "value": "application/json"
-       }
-      ],
-      "url": {
-       "raw": "{{serverURL}}/api/v1/users/{{toolsUserId}}",
-       "host": [
-        "{{serverURL}}"
-       ],
-       "path": [
-        "api",
-        "v1",
-        "users",
-        "{{toolsUserId}}"
-       ]
-      }
-     },
-     "response": [],
-     "event": [
-      {
-       "listen": "test",
-       "script": {
-        "type": "text/javascript",
-        "exec": [
-         "pm.test('user removed or already gone', () => pm.expect([200,404]).to.include(pm.response.code));"
-        ]
-       }
-      }
-     ]
-    },
-    {
-     "name": "Teardown - delete tools-only role",
-     "request": {
-      "method": "DELETE",
-      "header": [
-       {
-        "key": "Content-Type",
-        "value": "application/json"
-       }
-      ],
-      "url": {
-       "raw": "{{serverURL}}/api/v1/roles/{{toolsRoleId}}",
-       "host": [
-        "{{serverURL}}"
-       ],
-       "path": [
-        "api",
-        "v1",
-        "roles",
-        "{{toolsRoleId}}"
-       ]
-      }
-     },
-     "response": [],
-     "event": [
-      {
-       "listen": "test",
-       "script": {
-        "type": "text/javascript",
-        "exec": [
-         "pm.test('role removed or already gone', () => pm.expect([200,404]).to.include(pm.response.code));"
         ]
        }
       }

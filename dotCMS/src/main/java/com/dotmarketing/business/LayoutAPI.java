@@ -142,7 +142,10 @@ public interface LayoutAPI {
 	 *                           must name an existing section
 	 * @throws DotDataException if an id names no section or the write fails; nothing is written
 	 */
-	void setTabOrders(Map<String, Integer> tabOrderByLayoutId) throws DotDataException;
+	default void setTabOrders(final Map<String, Integer> tabOrderByLayoutId) throws DotDataException {
+		// Default so implementations outside core (OSGi plugins) keep compiling; core overrides it.
+		throw new UnsupportedOperationException("setTabOrders is not supported by " + getClass().getName());
+	}
 
     /**
      * Adds a layout to a user (using the user's role)

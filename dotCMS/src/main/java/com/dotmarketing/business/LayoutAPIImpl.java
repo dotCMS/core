@@ -13,7 +13,6 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.UtilMethods;
@@ -226,12 +225,14 @@ public class LayoutAPIImpl implements LayoutAPI {
 	@CloseDBIfOpened
 	@Override
     public Layout findGettingStartedLayout() {
-		Layout layout = Try.of(() -> loadLayout(GETTING_STARTED_LAYOUT_ID)).getOrNull();
+		// A lookup failure must surface as such, never be mistaken for "not found" and trigger a create.
+		Layout layout = Try.of(() -> loadLayout(GETTING_STARTED_LAYOUT_ID)).getOrElseThrow(DotRuntimeException::new);
 		if (!isPersisted(layout)) {
 			// Installs that predate the fixed id hold the section under another id: adopt it as it is.
-			final Layout byName = Try.of(() -> layoutFactory.findLayoutByName(GETTING_STARTED_LAYOUT_NAME)).getOrNull();
+			final Layout byName = Try.of(() -> layoutFactory.findLayoutByName(GETTING_STARTED_LAYOUT_NAME))
+					.getOrElseThrow(DotRuntimeException::new);
 			if (isPersisted(byName)) {
-				layout = Try.of(() -> loadLayout(byName.getId())).getOrNull();
+				layout = Try.of(() -> loadLayout(byName.getId())).getOrElseThrow(DotRuntimeException::new);
 			}
 		}
 		if (!isPersisted(layout)) {
@@ -250,6 +251,13 @@ public class LayoutAPIImpl implements LayoutAPI {
 		return null != layout && UtilMethods.isSet(layout.getId());
 	}
 
+    /**
+     * Creates the Getting Started section with its defaults: fixed id and name, the
+     * {@code whatshot} icon, the position that keeps it first, and the welcome tool. Called only
+     * when no section holds the fixed id and none carries the name.
+     *
+     * @return the created section
+     */
     @WrapInTransaction
     private synchronized Layout createGettingStartedLayout() {
         final Layout gettingStarted = new Layout();
@@ -269,27 +277,17 @@ public class LayoutAPIImpl implements LayoutAPI {
 	@Override
 	@WrapInTransaction
 	public void setTabOrders(final Map<String, Integer> tabOrderByLayoutId) throws DotDataException {
-		final List<Layout> touched = new ArrayList<>();
 		for (final Map.Entry<String, Integer> entry : tabOrderByLayoutId.entrySet()) {
 			final Layout layout = layoutFactory.findLayout(entry.getKey());
 			if (!isPersisted(layout)) {
 				// Inside the transaction: nothing written so far survives.
 				throw new DotDataException("Layout '" + entry.getKey() + "' does not exist; no position was changed");
 			}
-			new DotConnect()
-					.setSQL("UPDATE cms_layout SET tab_order = ? WHERE id = ?")
-					.addParam(entry.getValue())
-					.addParam(entry.getKey())
-					.loadResult();
 			// Keep the Hibernate session's instance in step with the row, as saveLayout does, so a
 			// read in the same request sees the new position.
 			layout.setTabOrder(entry.getValue());
-			touched.add(layout);
 		}
-		final LayoutCache layoutCache = CacheLocator.getLayoutCache();
-		for (final Layout layout : touched) {
-			layoutCache.remove(layout);
-		}
+		layoutFactory.setTabOrders(tabOrderByLayoutId);
 		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
 	}
 

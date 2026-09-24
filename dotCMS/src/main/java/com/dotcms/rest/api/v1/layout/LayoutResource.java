@@ -216,7 +216,9 @@ public class LayoutResource implements Serializable {
             operationId = "updateNavigationSection",
             summary = "Rename and re-icon a navigation section",
             description = "Changes a section's name and icon together; its position and its tools are untouched. "
-                    + "Same name and icon rules as create. Getting Started may be renamed and re-iconed. "
+                    + "Same name and icon rules as create. Getting Started may be renamed and re-iconed, except on "
+                    + "an install where it is only identifiable by its name (no section holds the fixed id): there "
+                    + "the rename is refused. "
                     + "Requires a CMS Administrator who also holds the tools or tools-beta portlet."
     )
     @ApiResponses(value = {
@@ -255,9 +257,17 @@ public class LayoutResource implements Serializable {
 
         final User user = initWrite(request, response, OP_UPDATE);
         requireBody(form);
+        // Validate everything before touching the loaded section: it is the instance Hibernate
+        // manages for this request, and a rejected write must leave nothing behind to flush.
+        final String name = helper.validateName(form.getName());
+        final String icon = helper.validateIcon(form.getIcon());
         final Layout layout = helper.findSectionOrThrow(layoutId);
-        layout.setName(helper.validateName(form.getName()));
-        layout.setDescription(helper.validateIcon(form.getIcon()));
+        if (helper.isLegacyGettingStarted(layout) && !name.equals(layout.getName())) {
+            throw new BadRequestException("The Getting Started section on this install is identified by its "
+                    + "name and cannot be renamed");
+        }
+        layout.setName(name);
+        layout.setDescription(icon);
         helper.saveOrDuplicate(layout);
         logWrite(user, OP_UPDATE, layoutId);
         return Response.ok(new ResponseEntitySectionView(helper.toView(layoutApi.loadLayout(layoutId), user))).build();

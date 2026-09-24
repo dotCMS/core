@@ -26,6 +26,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -82,6 +83,11 @@ public class LayoutResourceIntegrationTest {
     /** Non-admin back-end user whose sections contain neither {@code tools} nor {@code tools-beta}. */
     private static User noPortletUser;
 
+    private static Layout toolsBetaLayout;
+    private static Layout contentOnlyLayout;
+    private static Role toolsBetaRole;
+    private static Role contentOnlyRole;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -91,24 +97,45 @@ public class LayoutResourceIntegrationTest {
         roleAPI = APILocator.getRoleAPI();
         testHost = new SiteDataGen().nextPersisted();
 
-        final Layout toolsBetaLayout = new LayoutDataGen()
+        toolsBetaLayout = new LayoutDataGen()
                 .name("Tools Beta " + uniq())
                 .portletIds(TOOLS_BETA_PORTLET_ID)
                 .tabOrder(800000)
                 .nextPersisted();
-        final Role toolsBetaRole = new RoleDataGen().layout(toolsBetaLayout).nextPersisted();
+        toolsBetaRole = new RoleDataGen().layout(toolsBetaLayout).nextPersisted();
         toolsBetaUser = backendUser(toolsBetaRole);
 
-        final Layout contentOnlyLayout = new LayoutDataGen()
+        contentOnlyLayout = new LayoutDataGen()
                 .name("Content Only " + uniq())
                 .portletIds("content")
                 .tabOrder(800001)
                 .nextPersisted();
-        final Role contentOnlyRole = new RoleDataGen().layout(contentOnlyLayout).nextPersisted();
+        contentOnlyRole = new RoleDataGen().layout(contentOnlyLayout).nextPersisted();
         noPortletUser = backendUser(contentOnlyRole);
     }
 
+    @AfterClass
+    public static void cleanup() throws Exception {
+        for (final Layout layout : List.of(toolsBetaLayout, contentOnlyLayout)) {
+            removeQuietly(layout.getId());
+        }
+        for (final User user : List.of(toolsBetaUser, noPortletUser)) {
+            UserDataGen.remove(user, true);
+        }
+        for (final Role role : List.of(toolsBetaRole, contentOnlyRole)) {
+            RoleDataGen.remove(role, true);
+        }
+    }
+
     // ==================== Fixtures ====================
+
+    /** Deletes a section by id through a freshly loaded instance; ignores an id that is already gone. */
+    private static void removeQuietly(final String layoutId) throws Exception {
+        final Layout layout = layoutAPI.findLayout(layoutId);
+        if (layout != null && UtilMethods.isSet(layout.getId())) {
+            layoutAPI.removeLayout(layout);
+        }
+    }
 
     /**
      * Creates an active back-end user holding the given role plus the back-end user role, so it
@@ -188,15 +215,23 @@ public class LayoutResourceIntegrationTest {
      */
     @Test
     public void list_returnsEverySection_inFindAllLayoutsOrder() throws Exception {
-        new LayoutDataGen().name("Order A " + uniq()).tabOrder(900001).nextPersisted();
-        new LayoutDataGen().name("Order B " + uniq()).tabOrder(900002).nextPersisted();
+        final Layout a = new LayoutDataGen().name("Order A " + uniq()).tabOrder(900001).nextPersisted();
+        final Layout b = new LayoutDataGen().name("Order B " + uniq()).tabOrder(900002).nextPersisted();
+        try {
+            final List<String> expected = layoutAPI.findAllLayouts().stream()
+                    .map(Layout::getId).collect(Collectors.toList());
+            final List<String> actual = listAs(requestFor(toolsBetaUser)).stream()
+                    .map(SectionView::id).collect(Collectors.toList());
 
-        final List<String> expected = layoutAPI.findAllLayouts().stream()
-                .map(Layout::getId).collect(Collectors.toList());
-        final List<String> actual = listAs(requestFor(toolsBetaUser)).stream()
-                .map(SectionView::id).collect(Collectors.toList());
-
-        assertEquals(expected, actual);
+            // Same membership; and the two sections with distinct positions come back in position order.
+            // (Sections sharing a position may legitimately swap between two reads.)
+            assertEquals(new java.util.HashSet<>(expected), new java.util.HashSet<>(actual));
+            assertEquals(expected.size(), actual.size());
+            assertTrue(actual.indexOf(a.getId()) < actual.indexOf(b.getId()));
+        } finally {
+            removeQuietly(a.getId());
+            removeQuietly(b.getId());
+        }
     }
 
     /**
@@ -208,10 +243,13 @@ public class LayoutResourceIntegrationTest {
     public void list_preservesToolOrderWithinSection() throws Exception {
         final Layout layout = new LayoutDataGen().name("Tool Order " + uniq())
                 .portletIds("templates", "containers", "site-browser").tabOrder(900003).nextPersisted();
+        try {
+            final SectionView view = find(listAs(requestFor(toolsBetaUser)), layout.getId());
 
-        final SectionView view = find(listAs(requestFor(toolsBetaUser)), layout.getId());
-
-        assertEquals(List.of("templates", "containers", "site-browser"), view.portletIds());
+            assertEquals(List.of("templates", "containers", "site-browser"), view.portletIds());
+        } finally {
+            removeQuietly(layout.getId());
+        }
     }
 
     /**
@@ -225,8 +263,9 @@ public class LayoutResourceIntegrationTest {
         final String customId = "c_pm_" + uniq();
         final Portlet custom = new PortletDataGen().portletId(customId)
                 .initParams(Map.of("name", "Press Releases " + customId)).nextPersisted();
+        Layout layout = null;
         try {
-            final Layout layout = new LayoutDataGen().name("Titles " + uniq())
+            layout = new LayoutDataGen().name("Titles " + uniq())
                     .portletIds("templates", custom.getPortletId()).tabOrder(900004).nextPersisted();
 
             final SectionView view = find(listAs(requestFor(toolsBetaUser)), layout.getId());
@@ -239,6 +278,9 @@ public class LayoutResourceIntegrationTest {
                         title.startsWith("com.dotcms.repackage.javax.portlet.title."));
             }
         } finally {
+            if (layout != null) {
+                removeQuietly(layout.getId());
+            }
             // Leave no custom portlet behind: it would surface in the tools catalog for other suites.
             APILocator.getPortletAPI().deletePortlet(custom.getPortletId());
         }
@@ -253,10 +295,13 @@ public class LayoutResourceIntegrationTest {
     public void list_includesHiddenLanguagesTool_whenStoredInSection() throws Exception {
         final Layout layout = new LayoutDataGen().name("Languages " + uniq())
                 .portletIds("languages").tabOrder(900005).nextPersisted();
+        try {
+            final SectionView view = find(listAs(requestFor(toolsBetaUser)), layout.getId());
 
-        final SectionView view = find(listAs(requestFor(toolsBetaUser)), layout.getId());
-
-        assertEquals(List.of("languages"), view.portletIds());
+            assertEquals(List.of("languages"), view.portletIds());
+        } finally {
+            removeQuietly(layout.getId());
+        }
     }
 
     /**
@@ -376,6 +421,56 @@ public class LayoutResourceIntegrationTest {
 
     /**
      * Method to test: {@link LayoutResource#update}
+     * Given: a valid new name together with an over-long icon
+     * Expected: rejected as invalid and the stored name is unchanged (nothing written)
+     */
+    @Test
+    public void update_invalidIcon_leavesNameUnchanged() throws Exception {
+        final Layout layout = new LayoutDataGen().name("Icon " + uniq()).description("ok").tabOrder(900014).nextPersisted();
+        try {
+            resource.update(adminRequest(), response(), layout.getId(), form("Renamed " + uniq(), "i".repeat(256)));
+            fail("over-long icon accepted");
+        } catch (final BadRequestException expected) {
+            final Layout stored = layoutAPI.findLayout(layout.getId());
+            assertEquals(layout.getName(), stored.getName());
+            assertEquals("ok", stored.getDescription());
+        } finally {
+            removeQuietly(layout.getId());
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutResource#update} on an install that predates the fixed Getting Started id
+     * Given: no section holds the fixed id and a section named "Getting Started" exists under another id
+     * Expected: renaming it is refused (it would become unrecognisable and a second one would be created),
+     *           changing its icon is accepted
+     */
+    @Test
+    public void update_legacyGettingStarted_renameRefused_iconAllowed() throws Exception {
+        final Layout fixed = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
+        if (fixed != null && UtilMethods.isSet(fixed.getId())) {
+            layoutAPI.removeLayout(fixed);
+        }
+        final Layout legacy = new LayoutDataGen().name(LayoutAPI.GETTING_STARTED_LAYOUT_NAME)
+                .description("legacy-icon").portletIds("starter").tabOrder(-6).nextPersisted();
+        try {
+            try {
+                resource.update(adminRequest(), response(), legacy.getId(), form("Onboarding " + uniq(), "legacy-icon"));
+                fail("legacy Getting Started renamed");
+            } catch (final BadRequestException expected) {
+                assertEquals(LayoutAPI.GETTING_STARTED_LAYOUT_NAME, layoutAPI.findLayout(legacy.getId()).getName());
+            }
+            final SectionView updated = entityOf(resource.update(adminRequest(), response(), legacy.getId(),
+                    form(LayoutAPI.GETTING_STARTED_LAYOUT_NAME, "rocket_launch")));
+            assertEquals("rocket_launch", updated.icon());
+        } finally {
+            removeQuietly(legacy.getId());
+            layoutAPI.findGettingStartedLayout();
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutResource#update}
      * Given: an id no section has
      * Expected: not found (404)
      */
@@ -431,15 +526,22 @@ public class LayoutResourceIntegrationTest {
         roleAPI.addLayoutToRole(layout, userRole);
         assertTrue(roleAPI.loadLayoutIdsForRole(roleA).contains(layout.getId()));
 
-        final Response response = resource.delete(adminRequest(), response(), layout.getId());
+        try {
+            final Response response = resource.delete(adminRequest(), response(), layout.getId());
 
-        assertEquals(200, response.getStatus());
-        final List<SectionView> remaining = ((ResponseEntitySectionListView) response.getEntity()).getEntity();
-        assertTrue(remaining.stream().noneMatch(s -> layout.getId().equals(s.id())));
-        final Layout gone = layoutAPI.findLayout(layout.getId());
-        assertTrue(gone == null || !UtilMethods.isSet(gone.getId()));
-        for (final Role role : List.of(roleA, roleB, userRole)) {
-            assertFalse("grant left for role " + role.getName(), roleAPI.loadLayoutIdsForRole(role).contains(layout.getId()));
+            assertEquals(200, response.getStatus());
+            final List<SectionView> remaining = ((ResponseEntitySectionListView) response.getEntity()).getEntity();
+            assertTrue(remaining.stream().noneMatch(s -> layout.getId().equals(s.id())));
+            final Layout gone = layoutAPI.findLayout(layout.getId());
+            assertTrue(gone == null || !UtilMethods.isSet(gone.getId()));
+            for (final Role role : List.of(roleA, roleB, userRole)) {
+                assertFalse("grant left for role " + role.getName(), roleAPI.loadLayoutIdsForRole(role).contains(layout.getId()));
+            }
+        } finally {
+            removeQuietly(layout.getId());
+            UserDataGen.remove(user, true);
+            RoleDataGen.remove(roleA, true);
+            RoleDataGen.remove(roleB, true);
         }
     }
 
@@ -551,7 +653,9 @@ public class LayoutResourceIntegrationTest {
     /** Runs the call and returns every line the security log received meanwhile. */
     private static List<String> captureSecurityLog(final Call call) throws Exception {
         final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        final org.apache.logging.log4j.core.Logger logger = ctx.getLogger(SecurityLogger.class.getName());
+        final String loggerName = SecurityLogger.class.getName();
+        final org.apache.logging.log4j.core.Logger logger = ctx.getLogger(loggerName);
+        final boolean hadOwnConfig = loggerName.equals(ctx.getConfiguration().getLoggerConfig(loggerName).getName());
         final Level previous = logger.getLevel();
         final List<String> lines = new CopyOnWriteArrayList<>();
         final AbstractAppender appender = new AbstractAppender("layouts-security-capture", null, null, true, Property.EMPTY_ARRAY) {
@@ -568,7 +672,14 @@ public class LayoutResourceIntegrationTest {
         } finally {
             logger.removeAppender(appender);
             appender.stop();
-            Configurator.setLevel(SecurityLogger.class.getName(), previous);
+            if (hadOwnConfig) {
+                Configurator.setLevel(loggerName, previous);
+            } else {
+                // Configurator.setLevel created a LoggerConfig for this name; drop it again so the
+                // suite JVM ends with the configuration it started with.
+                ctx.getConfiguration().removeLogger(loggerName);
+                ctx.updateLoggers();
+            }
         }
         return lines;
     }

@@ -210,6 +210,19 @@ public class LayoutHelper {
     }
 
     /**
+     * Whether the section is a Getting Started that the product can only recognise by its name:
+     * an install that predates the fixed id, where no section holds that id. Renaming such a
+     * section would make it unrecognisable and the next toggle would create a second one.
+     *
+     * @param layout the section
+     * @return true when Getting Started is identified by name only
+     * @throws DotDataException if the lookup fails
+     */
+    public boolean isLegacyGettingStarted(final Layout layout) throws DotDataException {
+        return !LayoutAPI.GETTING_STARTED_LAYOUT_ID.equals(layout.getId()) && isGettingStarted(layout);
+    }
+
+    /**
      * Saves the section. A duplicate name caught by the database's uniqueness rule, when two
      * writes race past the application check, is reported as the same duplicate-name error the
      * application check raises, so the caller answers 400 rather than 500.

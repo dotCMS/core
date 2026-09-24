@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotDataException;
 import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -460,5 +461,36 @@ public class LayoutHelperTest {
         assertEquals(Integer.valueOf(2), positions.get("a"));
         assertEquals(Integer.valueOf(3), positions.get("b"));
         assertEquals(3, positions.size());
+    }
+
+    // ==================== Getting Started identity ====================
+
+    /**
+     * Method to test: {@link LayoutHelper#isGettingStarted(Layout)} / {@link LayoutHelper#isLegacyGettingStarted(Layout)}
+     * Given: the section holding the fixed id
+     * Expected: it is Getting Started, and not a legacy one
+     */
+    @Test
+    public void gettingStarted_byFixedId_isNotLegacy() throws Exception {
+        final Layout fixed = layout(LayoutAPI.GETTING_STARTED_LAYOUT_ID, "Renamed", "", -320000, "starter");
+        assertTrue(helper.isGettingStarted(fixed));
+        assertFalse(helper.isLegacyGettingStarted(fixed));
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#isLegacyGettingStarted(Layout)}
+     * Given: a section named "Getting Started" under another id, and no section holds the fixed id
+     * Expected: it is a legacy Getting Started; once a fixed-id section exists it is an ordinary section
+     */
+    @Test
+    public void gettingStarted_byNameOnly_isLegacy_untilFixedIdExists() throws Exception {
+        final Layout legacy = layout("legacy-id", LayoutAPI.GETTING_STARTED_LAYOUT_NAME, "", -5, "starter");
+        when(layoutApi.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID)).thenReturn(new Layout());
+        assertTrue(helper.isLegacyGettingStarted(legacy));
+
+        when(layoutApi.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID))
+                .thenReturn(layout(LayoutAPI.GETTING_STARTED_LAYOUT_ID, "Getting Started", "", -320000, "starter"));
+        assertFalse(helper.isGettingStarted(legacy));
+        assertFalse(helper.isLegacyGettingStarted(legacy));
     }
 }
