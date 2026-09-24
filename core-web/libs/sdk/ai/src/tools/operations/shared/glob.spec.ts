@@ -1,4 +1,4 @@
-import { includeMatcher, splitIncludePatterns } from './assets-transfer';
+import { includeMatcher, splitIncludePatterns } from './glob';
 
 describe('splitIncludePatterns', () => {
     it('splits comma-separated patterns and trims them', () => {

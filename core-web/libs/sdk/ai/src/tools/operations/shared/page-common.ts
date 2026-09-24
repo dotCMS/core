@@ -45,7 +45,7 @@ interface ContentLiveResponse {
  * oversight. The two previous copies disagreed here: one swallowed every error into `false`,
  * which conflates "this is not live" with "we could not find out" — and for the transfer
  * manifest those are opposite conclusions, since a read failure reported as not-live sends
- * the caller off to re-publish assets that were already fine. `assets-transfer` needs the
+ * the caller off to re-publish assets that were already fine. `upload-assets` needs the
  * distinction, so the shared primitive is the honest one and the caller that wants a
  * best-effort answer catches for itself.
  */

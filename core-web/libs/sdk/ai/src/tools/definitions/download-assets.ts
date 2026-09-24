@@ -4,7 +4,7 @@ import {
     DOWNLOAD_ASSETS_ENDPOINTS,
     downloadAssets,
     type DownloadAssetsManifest
-} from '../operations/assets-transfer';
+} from '../operations/download-assets';
 import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 
 import type { DotCMSConnection } from '../toolkit/connection';

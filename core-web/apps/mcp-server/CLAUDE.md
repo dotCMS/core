@@ -75,7 +75,7 @@ export default handler;
 
 **Tool logic** — lives in `@dotcms/ai`, not here:
 - `libs/sdk/ai/src/tools/definitions/` — the tools: each one's name, description, Zod input and handler
-- `libs/sdk/ai/src/tools/operations/` — the dotCMS work behind them (`page-create`, `page-place-content`, `page-verify`, `assets-transfer`), each with the endpoint list its tool enforces
+- `libs/sdk/ai/src/tools/operations/` — the dotCMS work behind them (`page-create`, `page-place-content`, `page-verify`, `upload-assets`, `download-assets`), each with the endpoint list its tool enforces
 - `libs/sdk/ai/src/tools/toolkit/` — how any tool is built and run: factory, per-call runtime, request deadline, the `ToolFailure` envelope, endpoint policies
 - [`libs/sdk/ai/src/tools/README.md`](../../libs/sdk/ai/src/tools/README.md) — what goes where
 - `libs/sdk/ai/src/runtime.ts`, `sandbox/`, `adapter/` — the runtime, sandbox and dotCMS adapter everything runs on

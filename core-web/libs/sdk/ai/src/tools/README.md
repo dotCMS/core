@@ -37,7 +37,7 @@ The direct layer, exported for consumers who write their own calls: `createPage`
 
 Each operation also exports its **endpoint list** (`PAGE_CREATE_ENDPOINTS`, …). That's every method + path it calls, declared right next to the requests. The tool enforces that list at runtime: anything else is refused before it reaches the network. The operation's spec records every request its fake runtime sees and fails if one isn't on the list. So a new request means a new entry, or the build goes red.
 
-`shared/` holds what several operations need and no tool calls directly: site/language resolution (`resolve.ts`, with its own `RESOLVE_ENDPOINTS`), page-path normalization, page response shapes, and the local-filesystem boundary the asset operations enforce (`local-root.ts`: paths compared after symlinks resolve, checked before anything is created).
+`shared/` holds what several operations need and no tool calls directly: site/language resolution (`resolve.ts`, with its own `RESOLVE_ENDPOINTS`), page-path normalization, page response shapes, the asset operations' glob filter (`glob.ts`) and manifest shapes (`asset-common.ts`), and the local-filesystem boundary they enforce (`local-root.ts`: paths compared after symlinks resolve, checked before anything is created).
 
 ## `toolkit/` — how a tool is built and run
 

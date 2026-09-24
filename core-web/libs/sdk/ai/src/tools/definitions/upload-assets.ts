@@ -4,7 +4,7 @@ import {
     UPLOAD_ASSETS_ENDPOINTS,
     uploadAssets,
     type UploadAssetsManifest
-} from '../operations/assets-transfer';
+} from '../operations/upload-assets';
 import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool';
 import { lenientBoolean } from '../toolkit/lenient-boolean';
 

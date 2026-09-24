@@ -73,14 +73,18 @@ export type {
     VerifySlotResult
 } from './operations/page-verify';
 
-export { downloadAssets, uploadAssets } from './operations/assets-transfer';
+export { uploadAssets } from './operations/upload-assets';
+export type { UploadAssetsManifest, UploadAssetsOptions } from './operations/upload-assets';
+
+export { downloadAssets } from './operations/download-assets';
+export type {
+    DownloadAssetsManifest,
+    DownloadAssetsOptions,
+    OverwriteMode
+} from './operations/download-assets';
+
 export type {
     AssetManifestFailure,
     AssetManifestFile,
-    AssetManifestSkipped,
-    DownloadAssetsManifest,
-    DownloadAssetsOptions,
-    OverwriteMode,
-    UploadAssetsManifest,
-    UploadAssetsOptions
-} from './operations/assets-transfer';
+    AssetManifestSkipped
+} from './operations/shared/asset-common';
