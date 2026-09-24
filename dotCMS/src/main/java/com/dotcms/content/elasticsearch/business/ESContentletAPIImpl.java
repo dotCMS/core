@@ -1,6 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.api.system.event.ContentletSystemEventUtil;
+import com.dotcms.storage.binary.BinaryAssetStorageAPI;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -1821,6 +1822,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // Binary fields have nothing to do with database.
         if (field instanceof BinaryField) {
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                com.dotcms.storage.binary.BinaryFieldCleanupProcessor.clean(structure.getInode(), deletionDate, field.variable());
+                return;
+            }
             int batchSize = 500;
             int offset = 0;
             final List<Contentlet> contentlets = new ArrayList<>();
@@ -3188,7 +3193,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
             this.logContentletActivity(contentlet, "Content Destroyed", user);
         }
 
-        this.backupDestroyedContentlets(contentlets, user);
+        this.backupDestroyedContentlets(com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? contentletsVersion : contentlets, user);
 
         // Collected before the delete so the journal never depends on post-deletion object
         // state — see journalContentDeletes.
@@ -3284,8 +3290,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    private void backupDestroyedContentlets(final List<Contentlet> contentlets, final User user) {
+    private void backupDestroyedContentlets(final List<Contentlet> contentlets, final User user) throws DotDataException {
         if(!Config.getBooleanProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", false)){
+            return;
+        }
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            final Set<String> backedUp = new HashSet<>();
+            for (Contentlet contentlet : contentlets) {
+                if (backedUp.add(contentlet.getInode())) {
+                    com.dotcms.storage.binary.ContentletBackupStorage.getInstance().store(contentlet);
+                }
+            }
             return;
         }
         if (contentlets.size() > 0) {
@@ -3636,6 +3651,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // Collected before the delete — see journalContentDeletes.
         final Set<String> destroyedIdentifiers = deferredRemovalIdentifiers(contentletsVersion);
 
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            backupDestroyedContentlets(contentletsVersion, APILocator.systemUser());
+        }
         contentFactory.delete(contentletsVersion);
 
         // Same durability requirement as destroyContentlets: the index removal below is deferred
@@ -3650,7 +3668,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
 
-        backupDestroyedContentlets(contentlets, APILocator.systemUser());
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            backupDestroyedContentlets(contentlets, APILocator.systemUser());
+        }
         deleteBinaryFiles(contentletsVersion, null);
 
     }
@@ -3729,6 +3749,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         ArrayList<Contentlet> contentlets = new ArrayList<>();
         contentlets.add(contentlet);
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            backupDestroyedContentlets(contentlets, user);
+        }
         contentFactory.deleteVersion(contentlet);
 
         Optional<ContentletVersionInfo> cinfo = APILocator.getVersionableAPI()
@@ -3746,7 +3769,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         deleteBinaryFiles(contentlets, null);
 
-        fileMetadataAPI.removeVersionMetadata(contentlet);
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            fileMetadataAPI.removeVersionMetadata(contentlet);
+        }
 
     }
 
@@ -5970,6 +5995,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
             workingContentlet = contentlet;
             if (createNewVersion) {
                 workingContentlet = findWorkingContentlet(contentlet);
+            } else if (com.dotcms.storage.AssetStorageFeature.isEnabled() && !contentType.fields(BinaryField.class).isEmpty()) {
+                // The incoming object already contains edits. Preserve the database snapshot
+                // before save so binary replacement cannot mistake an upload for the old file.
+                workingContentlet = contentFactory.findInDb(contentlet.getInode()).orElse(contentlet);
             }
             String workingContentletInode =
                     (workingContentlet == null) ? "" : workingContentlet.getInode();
@@ -6124,6 +6153,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             handleBinaries(contentlet, createNewVersion, contentType, workingContentlet,
                     contentletRaw);
+
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled() && !contentType.fields(BinaryField.class).isEmpty()) {
+                // Persist immutable binary references alongside the filename in this transaction.
+                final String json = APILocator.getContentletJsonAPI().toJson(contentlet);
+                final String jsonValue = DbConnectionFactory.isPostgres() ? "?::jsonb" : "?";
+                new DotConnect().setSQL("update contentlet set contentlet_as_json = " + jsonValue + " where inode = ?")
+                        .addParam(json).addParam(contentlet.getInode()).loadResult();
+                contentlet.getMap().put(Contentlet.CONTENTLET_AS_JSON, json);
+            }
 
             updatePublishAndExpireDates(contentlet, systemUser, contentletRaw);
 
@@ -6795,6 +6833,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private boolean handleBinaries(final Contentlet contentlet, final boolean createNewVersion,
             final ContentType contentType, final Contentlet workingContentlet,
             final Contentlet contentletRaw) throws DotDataException {
+        // Preserve main's filesystem/NFS behavior while S3 assets are disabled.
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
 
         // http://jira.dotmarketing.net/browse/DOTCMS-1073
         // storing binary files in file system.
@@ -6948,6 +6988,120 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotContentletValidationException(
                         "Error occurred while processing the file:" + e.getMessage(), e);
             }
+        }
+        return binaryHandled;
+
+        }
+
+
+        // http://jira.dotmarketing.net/browse/DOTCMS-1073
+        // storing binary files in file system.
+        Logger.debug(this, "ContentletAPIImpl : storing binary files in file system.");
+
+        final boolean validateEmptyFile = UtilMethods.isSetOrGet(
+                contentlet.getBoolProperty(Contentlet.VALIDATE_EMPTY_FILE), true);
+
+        final BinaryAssetStorageAPI binaryStorageAPI = APILocator.getBinaryAssetStorageAPI();
+        final String newInode = contentlet.getInode();
+        final String oldInode = workingContentlet.getInode();
+
+        // tmpDir stays as filesystem code — temp/inline edit files are NOT part of binary storage
+        File tmpDir = null;
+        if (UtilMethods.isSet(oldInode)) {
+            tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+                    + File.separator + oldInode.charAt(0)
+                    + File.separator + oldInode.charAt(1)
+                    + File.separator + oldInode);
+        }
+
+        boolean binaryHandled = false;
+        final Map<String, Map<String, Serializable>> uploadedMetadata = new HashMap<>();
+
+        // loop over the new field values
+        // if we have a new temp file or a deleted file
+        // do it to the new inode directory
+        for (com.dotcms.contenttype.model.field.Field field : contentType.fields(
+                BinaryField.class)) {
+            try {
+
+                final String velocityVarNm = field.variable();
+                File incomingFile = contentletRaw.getBinary(velocityVarNm);
+                if (validateEmptyFile && incomingFile != null && incomingFile.length() == 0
+                        && !Config.getBooleanProperty("CONTENT_ALLOW_ZERO_LENGTH_FILES", false)) {
+                    throw new DotContentletStateException(
+                            "Cannot checkin 0 length file: " + incomingFile);
+                }
+
+                // if the user has removed this file via ui
+                if (incomingFile == null || incomingFile.getAbsolutePath().contains("-removed-")) {
+                    contentlet.setBinary(velocityVarNm, null);
+
+                    // Retain prior revision metadata until durable cleanup; this save can roll back.
+
+                } else { // if we have an incoming file
+                    if (incomingFile.exists()) {
+
+                        //If the incoming file is temp resource we need to find out if there is any metadata associated
+                        final Optional<String> tempResourceId = tempApi.getTempResourceId(
+                                incomingFile);
+
+                        //The physical file name is preserved across versions.
+                        //No need to update the name. We will only reference the file through the logical asset-name
+                        final String oldFileName = incomingFile.getName();
+
+                        File oldFile = null;
+                        if (UtilMethods.isSet(oldInode)) {
+                            oldFile = workingContentlet.getBinary(velocityVarNm);
+
+                            // do we have an inline edited file, if so use that
+                            // (tmpDir stays as filesystem code — not binary storage)
+                            File editedFile = new File(
+                                    tmpDir.getAbsolutePath() + File.separator + velocityVarNm
+                                            + File.separator + WebKeys.TEMP_FILE_PREFIX
+                                            + oldFileName);
+                            if (editedFile.exists()) {
+                                incomingFile = editedFile;
+                            }
+                        }
+
+                        // Never overwrite bytes referenced by committed content. The JSON reference
+                        // switches in the database transaction; rollback leaves the old object intact.
+                        final File newFile;
+                        if (oldFile != null && oldFile.equals(incomingFile) && newInode.equals(oldInode)
+                                && com.dotcms.storage.binary.BinaryAssetReference.keyOf(oldFile, newInode, velocityVarNm) != null) {
+                            newFile = oldFile;
+                        } else {
+                            newFile = binaryStorageAPI.storeRevision(newInode, velocityVarNm,
+                                    oldFileName, incomingFile);
+                        }
+
+                        contentlet.setBinary(velocityVarNm, newFile);
+                        binaryHandled = true;
+
+                        //This copies the metadata associated with the temp resource passed if any.
+                        if (tempResourceId.isPresent()) {
+                            final Optional<Metadata> optionalMetadata = fileMetadataAPI.getMetadata(
+                                    tempResourceId.get());
+                            if (optionalMetadata.isPresent()) {
+                                final Metadata tempMeta = optionalMetadata.get();
+                                uploadedMetadata.put(velocityVarNm, tempMeta.getCustomMeta());
+                                Logger.debug(ESContentletAPIImpl.class,
+                                        String.format("Metadata copied from temp resource: `%s` ",
+                                                tempResourceId.get()));
+                            }
+                        }
+                    }
+                }
+            } catch (IOException | DotDataException e) {
+                throw new DotContentletValidationException(
+                        "Error occurred while processing the file:" + e.getMessage(), e);
+            }
+        }
+        if (binaryHandled && workingContentlet != contentlet) {
+            fileMetadataAPI.copyCustomMetadataForCheckin(workingContentlet, contentlet);
+        }
+        if (!uploadedMetadata.isEmpty()) {
+            fileMetadataAPI.putCustomMetadataAttributesForCheckin(contentlet, uploadedMetadata);
         }
         return binaryHandled;
     }
@@ -9405,7 +9559,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentlets
      * @param field
      */
-    private void deleteBinaryFiles(List<Contentlet> contentlets, Field field) {
+    private void deleteBinaryFiles(List<Contentlet> contentlets, Field field) throws DotDataException {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled() && field == null) {
+            for (final Contentlet contentlet : contentlets) {
+                com.dotcms.storage.binary.BinaryAssetCleanupProcessor.enqueue(contentlet.getInode());
+            }
+            return;
+        }
         this.destroyMetadata(contentlets);
         contentlets.forEach(con -> {
 
@@ -9498,6 +9658,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     @Override
     public File getBinaryFile(final String contentletInode, final String velocityVariableName,
             final User user) throws DotDataException, DotSecurityException {
+        // Preserve main's filesystem/NFS behavior while S3 assets are disabled.
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
 
         Logger.debug(this, "Retrieving binary file name : getBinaryFileName().");
 
@@ -9543,6 +9705,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             + contentletInode
                             + "  velocityVaribleName : " + velocityVariableName
                             + "  path : " + binaryFilePath);
+            throw new DotDataException("File System error.", e);
+        }
+        return binaryFile;
+
+        }
+
+
+        Logger.debug(this, "Retrieving binary file name : getBinaryFileName().");
+
+        Contentlet con = contentFactory.find(contentletInode);
+
+        if (!permissionAPI.doesUserHavePermission(con, PermissionAPI.PERMISSION_READ, user)) {
+            if (null != user) {
+                throw new DotSecurityException(String.format(
+                        "Unauthorized Access user [%s , %s] trying to access contentlet identified by `%s`.",
+                        user.getUserId(), user.getEmailAddress(), con.getIdentifier()));
+            } else {
+                throw new DotSecurityException(
+                        "Unauthorized Access null user trying to access contentlet. ");
+            }
+        }
+
+        File binaryFile = null;
+        try {
+            binaryFile = APILocator.getBinaryAssetStorageAPI()
+                    .getBinaryFile(contentletInode, velocityVariableName);
+        } catch (Exception e) {
+            Logger.error(this,
+                    "Error occurred while retrieving binary file name : getBinaryFileName(). ContentletInode : "
+                            + contentletInode
+                            + "  velocityVaribleName : " + velocityVariableName);
             throw new DotDataException("File System error.", e);
         }
         return binaryFile;

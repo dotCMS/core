@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.temp;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.storage.AssetStorageFeature;
+import com.dotcms.storage.TemporaryAssetStorage;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
@@ -112,7 +114,14 @@ public class TempFileAPI {
     final String tempFileId = TEMP_RESOURCE_PREFIX + UUIDGenerator.shorty();
     
     final String tempFileUri = File.separator + tempFileId + File.separator + incomingFileName;
-    final File tempFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + tempFileUri);
+    final File tempFile;
+    try {
+      tempFile = AssetStorageFeature.isEnabled()
+              ? TemporaryAssetStorage.getInstance().file(tempFileId, incomingFileName)
+              : new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + tempFileUri);
+    } catch (IOException e) {
+      throw new DotRuntimeException("Invalid temporary upload path", e);
+    }
     final File tempFolder = tempFile.getParentFile();
 
     if (!tempFolder.mkdirs()) {
@@ -126,6 +135,14 @@ public class TempFileAPI {
       throw new DotRuntimeException("Invalid file upload");
     }
     createTempPermissionFile(tempFolder, allowList);
+    if (AssetStorageFeature.isEnabled()) {
+      try {
+        Files.writeString(java.nio.file.Path.of(com.dotmarketing.util.ConfigUtils.getAssetTempPath(),
+                tempFileId, TemporaryAssetStorage.MANAGED_MARKER), "");
+      } catch (IOException e) {
+        throw new DotRuntimeException("Unable to mark temporary upload", e);
+      }
+    }
     SecurityLogger.logInfo(this.getClass(),"Temp File Created with id: " + tempFileId + ", uploaded by userId: " + user.getUserId());
     return new DotTempFile(tempFileId, tempFile);
   }
@@ -174,7 +191,8 @@ public class TempFileAPI {
     final File tempFile = dotTempFile.file;
     final long maxLength = maxFileSize(request);
         
-    try (final OutputStream out = new BoundedOutputStream(maxLength,Files.newOutputStream(tempFile.toPath()))) {
+    try {
+      try (final OutputStream out = new BoundedOutputStream(maxLength,Files.newOutputStream(tempFile.toPath()))) {
 
 
       int read = 0;
@@ -182,12 +200,12 @@ public class TempFileAPI {
       while ((read = inputStream.read(bytes)) != -1) {
         out.write(bytes, 0, read);
       }
-
-      if (dotTempFile.metadata == null && dotTempFile.file.exists()) {
-
-        return new DotTempFile(dotTempFile.id, dotTempFile.file);
+      if (!AssetStorageFeature.isEnabled()) {
+        return dotTempFile.metadata == null && dotTempFile.file.exists()
+                ? new DotTempFile(dotTempFile.id, dotTempFile.file) : dotTempFile;
       }
-      return dotTempFile;
+      }
+      return completeTempFile(dotTempFile);
     } catch (IOException e) {
       final String message = APILocator.getLanguageAPI().getStringKey(WebAPILocator.getLanguageWebAPI().getLanguage(request), "temp.file.max.file.size.error").replace("{0}", UtilMethods.prettyByteify(maxLength));
       throw new DotStateException(message, e);
@@ -196,6 +214,24 @@ public class TempFileAPI {
     } finally {
       CloseUtils.closeQuietly(inputStream);
     }
+  }
+
+  /** Finish a closed upload, including files written by the image editor. */
+  public DotTempFile completeTempFile(final DotTempFile temporary) {
+    DotTempFile completed = temporary.metadata == null && temporary.file.exists()
+            ? new DotTempFile(temporary.id, temporary.file) : temporary;
+    if (AssetStorageFeature.isEnabled()) {
+      // DotTempFile can add a detected extension while building its metadata.
+      if (!completed.file.exists() && !completed.file.getName().equals(completed.fileName)) {
+        completed = new DotTempFile(completed.id, new File(completed.file.getParentFile(), completed.fileName));
+      }
+      try {
+        TemporaryAssetStorage.getInstance().store(completed.id, completed.file);
+      } catch (com.dotmarketing.exception.DotDataException e) {
+        throw new DotRuntimeException("Unable to complete temporary upload", e);
+      }
+    }
+    return completed;
   }
 
   /**
@@ -246,11 +282,7 @@ public class TempFileAPI {
         urlGetter.doOut(out);
       }
 
-      if (dotTempFile.metadata == null && dotTempFile.file.exists()) {
-
-        return new DotTempFile(dotTempFile.id, dotTempFile.file);
-      }
-      return dotTempFile;
+      return completeTempFile(dotTempFile);
   }
 
   /**
@@ -360,6 +392,19 @@ public class TempFileAPI {
    * @return
    */
   public Optional<DotTempFile> getTempFile(final List<String> accessingList, final String tempFileId) {
+    if (AssetStorageFeature.isEnabled()) {
+      if (!TemporaryAssetStorage.validId(tempFileId)) return Optional.empty();
+      try {
+        final var store = TemporaryAssetStorage.getInstance();
+        final var record = store.receipt(tempFileId);
+        if (record.isPresent()) {
+          return store.retrieve(record.get(), accessingList).map(file -> new DotTempFile(tempFileId, file));
+        }
+        if (store.isManagedLocally(tempFileId)) return Optional.empty();
+      } catch (com.dotmarketing.exception.DotDataException e) {
+        throw new DotRuntimeException("Unable to retrieve temporary upload", e);
+      }
+    }
     Optional<DotTempFile> tempFile = getTempFile(tempFileId);
     if (tempFile.isPresent() && canUseTempFile(accessingList, tempFile.get())) {
       return tempFile;
@@ -405,6 +450,17 @@ public class TempFileAPI {
    * @return
    */
   public boolean isTempResource(final String tempFileId) {
+    if (AssetStorageFeature.isEnabled()) {
+      if (!TemporaryAssetStorage.validId(tempFileId)) return false;
+      try {
+        final var store = TemporaryAssetStorage.getInstance();
+        final var record = store.receipt(tempFileId);
+        if (record.isPresent()) return store.exists(record.get());
+        if (store.isManagedLocally(tempFileId)) return false;
+      } catch (com.dotmarketing.exception.DotDataException e) {
+        throw new DotRuntimeException("Unable to check temporary upload", e);
+      }
+    }
     return getTempFile(tempFileId).isPresent();
   }
 
@@ -456,6 +512,13 @@ public class TempFileAPI {
    */
   public Optional<String> getTempResourceId(final File file){
     try {
+      if (AssetStorageFeature.isEnabled()) {
+        final var root = new File(com.dotmarketing.util.ConfigUtils.getAssetTempPath()).getCanonicalFile().toPath();
+        final var path = file.getCanonicalFile().toPath();
+        if (!path.startsWith(root) || root.relativize(path).getNameCount() < 2) return Optional.empty();
+        final String id = root.relativize(path).getName(0).toString();
+        return isTempResource(id) ? Optional.of(id) : Optional.empty();
+      }
       final String tempResourceId = file.toPath().getParent().getFileName().toString();
       if (isTempResource(tempResourceId)) {
         return Optional.of(tempResourceId);

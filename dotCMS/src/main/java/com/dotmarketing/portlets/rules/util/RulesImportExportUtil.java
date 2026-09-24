@@ -87,6 +87,9 @@ public class RulesImportExportUtil {
 
 			this.importRules(importer, APILocator.systemUser());
 		} catch (Exception e) {
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				throw new IOException("Unable to import rules from " + file, e);
+			}
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
 		}
 	}

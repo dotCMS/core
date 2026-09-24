@@ -97,6 +97,12 @@ public interface FileStorageAPI {
      */
     Map<String, Serializable> retrieveMetaData(final FetchMetadataParams requestMetaData) throws DotDataException;
 
+    /** Reads stored metadata without cache projection or derived UI fields. Returns null if absent. */
+    Map<String, Serializable> retrieveRawMetaData(StorageKey storageKey) throws DotDataException;
+
+    /** Copies existing metadata to durable storage without overwriting a conflicting object. False means absent. */
+    boolean backfillMetadata(StorageKey storageKey) throws DotDataException;
+
 
     /**
      * Deletes all related metadata for the given contentlet

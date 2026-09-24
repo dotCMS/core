@@ -86,12 +86,12 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     @Override
     public Map<String, Serializable> generateRawBasicMetaData(final File binary) {
-        return this.generateBasicMetaData(binary, s -> true); // raw = no filter
+        return withLocalBinary(binary, () -> this.generateBasicMetaData(binary, s -> true)); // raw = no filter
     }
 
     @Override
     public Map<String, Serializable> generateRawFullMetaData(final File binary, long maxLength) {
-        return this.generateFullMetaData(binary, s -> true, maxLength); // raw = no filter
+        return withLocalBinary(binary, () -> this.generateFullMetaData(binary, s -> true, maxLength)); // raw = no filter
     }
 
     /**
@@ -158,6 +158,9 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
 
         } catch (Exception e) {
+            if (AssetStorageFeature.isEnabled() && e instanceof com.dotmarketing.exception.DotRuntimeException) {
+                throw (com.dotmarketing.exception.DotRuntimeException) e;
+            }
             Logger.error(FileStorageAPIImpl.class, "Exception generating full metadata", e);
             return Collections.emptyMap();
         }
@@ -211,7 +214,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         // Assume the metadata object is there and read it directly — a stat-then-read pattern
         // doubles the filesystem round-trips, and on network-backed storage every extra stat is
         // a chance to hang (issue #36498). When the override just removed it, don't bother.
-        final boolean skipRead = configuration.isOverride() && configuration.isStore();
+        final boolean skipRead = configuration.isOverride()
+                && (configuration.isStore() || AssetStorageFeature.isEnabled());
         Map<String, Serializable> metadataMap = skipRead
                 ? null : tryRetrieveMetaData(storageKey, storage);
         final boolean objectExists = metadataMap != null;
@@ -237,15 +241,18 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     /**
      * Reads the metadata object assuming it exists, returning {@code null} when it is absent,
-     * empty or unreadable so the caller regenerates it from the binary instead. This replaces
-     * the exists-then-read pattern: one read attempt instead of several stats plus a read.
+     * or empty so the caller can regenerate it. Enabled storage failures propagate; disabled
+     * mode retains its unreadable-as-missing fallback. Reads do not add a stat before opening.
      */
     private Map<String, Serializable> tryRetrieveMetaData(final StorageKey storageKey,
-            final StoragePersistenceAPI storage) {
+            final StoragePersistenceAPI storage) throws DotDataException {
         try {
             final Map<String, Serializable> metadataMap = retrieveMetaData(storageKey, storage);
             return null == metadataMap || metadataMap.isEmpty() ? null : metadataMap;
         } catch (final Exception absentOrUnreadable) {
+            if (AssetStorageFeature.isEnabled()) {
+                throw new DotDataException("Unable to read metadata at " + storageKey.getPath(), absentOrUnreadable);
+            }
             Logger.debug(FileStorageAPIImpl.class,
                     () -> "No readable metadata at path: " + storageKey.getPath()
                             + " — it will be regenerated. Reason: "
@@ -274,10 +281,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     private Map<String, Serializable> generateMetadataFromFile(final File binary,
             final GenerateMetadataConfig configuration, final StorageKey storageKey, final Map<String, Serializable> onlyHasCustomMetadataMap, final StoragePersistenceAPI storage) throws DotDataException {
-        validateBinary(binary);
-
-        final long maxLength = configuration.getMaxLength();
-        Map<String, Serializable> metadataMap = generateMetaDataBasedOnConfig(binary, configuration, maxLength);
+        Map<String, Serializable> metadataMap = withLocalBinary(binary, () -> {
+            validateBinary(binary);
+            return generateMetaDataBasedOnConfig(binary, configuration, configuration.getMaxLength());
+        });
 
         if (configuration.isStore()) {
             //if the group/bucket doesn't exist create it — only needed when actually writing.
@@ -286,6 +293,21 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             storeMetadata(storageKey, storage, metadataMap);
         }
         return metadataMap;
+    }
+
+    /** Restore only when generation needs bytes, retaining the cache lease through every file read. */
+    private Map<String, Serializable> withLocalBinary(final File binary,
+            final Supplier<Map<String, Serializable>> generation) {
+        if (!AssetStorageFeature.isEnabled() || binary == null) {
+            return generation.get();
+        }
+        final var assets = APILocator.getBinaryAssetStorageAPI();
+        try (var lease = assets.acquireCacheLease(); var input = assets.openLocalFile(binary)) {
+            return generation.get();
+        } catch (final java.io.IOException | DotDataException failure) {
+            throw new com.dotmarketing.exception.DotRuntimeException(
+                    "Unable to restore binary for metadata: " + binary, failure);
+        }
     }
 
     private void validateBinary(final File binary) {
@@ -419,6 +441,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @param override {@code true} if the file must be overridden, {@code false} otherwise.
      */
     private void checkOverride(final StoragePersistenceAPI storage, final StorageKey storageKey, final boolean override) throws DotDataException {
+        if (AssetStorageFeature.isEnabled()) {
+            // Providers replace a completed object; keep the prior value if generation/upload fails.
+            return;
+        }
         if (override && storage.existsObject(storageKey.getGroup(), storageKey.getPath())) {
             try {
                 storage.deleteObjectAndReferences(storageKey.getGroup(), storageKey.getPath());
@@ -465,6 +491,27 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             }
         }
         return metadataMap;
+    }
+
+    @Override
+    public Map<String, Serializable> retrieveRawMetaData(final StorageKey storageKey) throws DotDataException {
+        return tryRetrieveMetaData(storageKey, persistenceProvider.getStorage(storageKey.getStorage()));
+    }
+
+    @Override
+    public boolean backfillMetadata(final StorageKey storageKey) throws DotDataException {
+        if (!AssetStorageFeature.isEnabled()) {
+            return false;
+        }
+        final Map<String, Serializable> metadata = retrieveRawMetaData(storageKey);
+        if (metadata == null) {
+            return false;
+        }
+        if (!persistenceProvider.getStorage(storageKey.getStorage()).backfillObject(storageKey.getGroup(),
+                storageKey.getPath(), objectWriterDelegate, objectReaderDelegate, (Serializable) metadata)) {
+            throw new DotDataException("Metadata backfill requires a durable provider in the configured metadata chain");
+        }
+        return true;
     }
 
     private Map<String, Serializable> fetchAndCacheMetadata(FetchMetadataParams requestMetaData, String cacheKey)

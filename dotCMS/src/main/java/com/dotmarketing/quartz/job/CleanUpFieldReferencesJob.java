@@ -109,7 +109,13 @@ public class CleanUpFieldReferencesJob extends DotStatefulJob {
 
     }
 
-    public static void triggerCleanUpJob(final Field field, final User user) {
+    public static void triggerCleanUpJob(final Field field, final User user) throws DotDataException {
+
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()
+                && field instanceof com.dotcms.contenttype.model.field.BinaryField) {
+            com.dotcms.storage.binary.BinaryFieldCleanupProcessor.enqueue(field.contentTypeId(), field.variable(), new Date());
+            return;
+        }
 
         final Map<String, Serializable> nextExecutionData = Map
                 .of("field", field,

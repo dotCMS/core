@@ -1,0 +1,27 @@
+name: binary-sts-it
+services:
+  minio:
+    image: minio/minio:latest
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: binary-storage-test
+      MINIO_ROOT_PASSWORD: binary-storage-test
+    ports:
+      - "127.0.0.1:19004:9000"
+  provision:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    volumes:
+      - ./policy.json:/test-policy.json:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -eu
+        for attempt in $$(seq 1 30); do
+          if mc alias set test http://minio:9000 binary-storage-test binary-storage-test >/dev/null 2>&1; then break; fi
+          sleep 1
+        done
+        mc admin policy create test binary-acceptance /test-policy.json
+        mc admin user add test binary-sts-test binary-sts-local-test-password
+        mc admin policy attach test binary-acceptance --user binary-sts-test

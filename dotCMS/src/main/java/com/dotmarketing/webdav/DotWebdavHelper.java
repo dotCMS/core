@@ -398,7 +398,36 @@ public class DotWebdavHelper {
 			Logger.error( this, "Error happened with uri: [" + url + "]", e);
 		}
 		Logger.debug(this, "Getting temp file from path " + url);
-		return new File(getTempDir().getPath() + url);
+		return new File(getTempDir().getPath() + temporaryPath(url));
+	}
+
+	/** CMS paths are case insensitive; the first temporary component and its descendants are not. */
+	private String temporaryPath(String path) {
+		if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) return path;
+		final String[] parts = path.split("/", -1);
+		for (int i = 0; i < parts.length; i++) {
+			if (isTempResource(parts[i])) break;
+			parts[i] = parts[i].toLowerCase(java.util.Locale.ROOT);
+		}
+		return String.join("/", parts);
+	}
+
+	List<Resource> temporaryChildren(String url, boolean autoPublish) throws IOException {
+		final var staging = com.dotcms.storage.WebdavTemporaryStorage.getInstance();
+		final List<Resource> result = new ArrayList<>();
+		final String prefix = url.endsWith("/") ? url : url + "/";
+		try {
+			for (var entry : staging.children(loadTempFile(url))) {
+				final File file = staging.file(entry.path());
+				final String child = prefix + file.getName();
+				if (!isTempResource(child)) continue;
+				result.add(entry.directory() ? new TempFolderResourceImpl(child, file, autoPublish)
+						: new TempFileResourceImpl(file, child, autoPublish));
+			}
+		} catch (DotDataException failure) {
+			throw new IOException("Unable to list WebDAV staging resources", failure);
+		}
+		return result;
 	}
 
 	/**
@@ -473,13 +502,15 @@ public class DotWebdavHelper {
 			String p = APILocator.getIdentifierAPI().find(parentFolder.getIdentifier()).getPath();
 			if ( p.contains( "/" ) )
 				p.replace( "/", File.separator );
-			File tempDir = new File( getTempDir().getPath() + File.separator + folderHost.getHostname() + p );
+			File tempDir = new File( getTempDir().getPath() + temporaryPath(File.separator + folderHost.getHostname() + p) );
 			p = identifierAPI.find(parentFolder.getIdentifier()).getPath();
 			if ( !p.endsWith( "/" ) )
 				p = p + "/";
 			if ( !p.startsWith( "/" ) )
 				p = "/" + p;
-			if ( tempDir.exists() && tempDir.isDirectory() ) {
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				result.addAll(temporaryChildren(prePath + folderHost.getHostname() + p, isAutoPub));
+			} else if ( tempDir.exists() && tempDir.isDirectory() ) {
 				File[] files = tempDir.listFiles();
 				for ( File file : files ) {
 					String tp = prePath + folderHost.getHostname() + p + file.getName();
@@ -534,8 +565,16 @@ public class DotWebdavHelper {
 		if(path.startsWith("/") || path.startsWith("\\")){
 			path = path.substring(1, path.length());
 		}
+		path = temporaryPath(path);
 		path = path.replace("/", File.separator);
 		File f = new File(getTempDir().getPath() + File.separator + path);
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			try {
+				com.dotcms.storage.WebdavTemporaryStorage.getInstance().mkdir(f);
+			} catch (IOException | DotDataException failure) {
+				throw new DotRuntimeException("Unable to create WebDAV staging directory", failure);
+			}
+		}
 		f.mkdirs();
 		return f;
 	}
@@ -555,6 +594,18 @@ public class DotWebdavHelper {
 		File tf = createTempFolder(path);
 		List<Resource> children = getChildrenOfFolder(folder, user, isAutoPub, lang);
 		for (Resource resource : children) {
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()
+                    && (resource instanceof TempFolderResourceImpl || resource instanceof TempFileResourceImpl)) {
+                try {
+                    final File source = resource instanceof TempFolderResourceImpl
+                            ? ((TempFolderResourceImpl) resource).getFolder()
+                            : ((TempFileResourceImpl) resource).getLogicalFile();
+                    com.dotcms.storage.WebdavTemporaryStorage.getInstance().copy(source, new File(tf, resource.getName()));
+                } catch (DotDataException failure) {
+                    throw new IOException("Unable to copy WebDAV staging resource", failure);
+                }
+                continue;
+            }
 			if(resource instanceof CollectionResource){
 				FolderResourceImpl fr = (FolderResourceImpl)resource;
 				copyFolderToTemp(fr.getFolder(), tf, user, fr.getFolder().getName(),isAutoPub, lang);
@@ -566,6 +617,16 @@ public class DotWebdavHelper {
 	}
 
 	public File copyFileToTemp(IFileAsset file, File tempFolder) throws IOException{
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+				final File binary = ((Contentlet) file).getBinary(FileAssetAPI.BINARY_FIELD);
+				final File destination = new File(tempFolder, binary.getName());
+				try (InputStream input = ((Contentlet) file).getBinaryStream(FileAssetAPI.BINARY_FIELD)) {
+					writeCompletedTempFile(destination, input);
+				}
+				return destination;
+			}
+		}
 		File f = null;
 
 		f = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
@@ -576,7 +637,8 @@ public class DotWebdavHelper {
 	}
 
 	public File createTempFile(String path) throws IOException{
-		File file = new File(getTempDir().getPath() + path);
+		File file = new File(getTempDir().getPath() + temporaryPath(path));
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) return file;
 		String p = file.getPath().substring(0,file.getPath().lastIndexOf(File.separator));
 		File f = new File(p);
 		f.mkdirs();
@@ -585,6 +647,20 @@ public class DotWebdavHelper {
 	}
 
 	public void copyTempDirToStorage(File fromFileFolder, String destPath, User user,boolean autoPublish) throws Exception{
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			final var staging = com.dotcms.storage.WebdavTemporaryStorage.getInstance();
+			final var entry = staging.stat(fromFileFolder);
+			if (entry == null || !entry.directory()) throw new IOException("Missing WebDAV staging directory");
+			destPath = stripMapping(destPath);
+			if (!destPath.endsWith("/")) destPath += "/";
+            if (createFolder(destPath, user) == null) throw new IOException("Unable to create WebDAV destination folder");
+			for (var child : staging.children(fromFileFolder)) {
+				final File file = staging.file(child.path());
+				if (child.directory()) copyTempDirToStorage(file, destPath + file.getName(), user, autoPublish);
+				else copyTempFileToStorage(file, destPath + file.getName(), user, autoPublish);
+			}
+			return;
+		}
 		if(fromFileFolder == null || !fromFileFolder.isDirectory()){
 			throw new IOException("The temp source file must be a directory");
 		}
@@ -607,11 +683,26 @@ public class DotWebdavHelper {
 		if(fromFile == null){
 			throw new IOException("The temp source file must exist");
 		}
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			final var staging = com.dotcms.storage.WebdavTemporaryStorage.getInstance();
+			final var entry = staging.stat(fromFile);
+			try (InputStream input = Files.newInputStream(staging.materialize(entry).toPath())) {
+				setResourceContent(destPath, input, null, null, new Date(entry.modified()), user, autoPublish);
+			}
+			return;
+		}
 		InputStream in = Files.newInputStream(fromFile.toPath());
 		setResourceContent(destPath, in, null, null, new Date(fromFile.lastModified()),user, autoPublish);
 	}
 
 	public void copyResource(String fromPath, String toPath, User user, boolean autoPublish) throws Exception {
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			try (InputStream input = getResourceContent(fromPath, user)) {
+				if (input == null) throw new IOException("Missing WebDAV copy source");
+				setResourceContent(toPath, input, null, null, new Date(), user, autoPublish);
+			}
+			return;
+		}
 		setResourceContent(toPath, getResourceContent(fromPath,user), null, null, user);
 	}
 
@@ -629,7 +720,11 @@ public class DotWebdavHelper {
 
 				if (!children[i].isFolder()) {
 
-					setResourceContent(destinationPath + "/" + children[i].getName(), getResourceContent(sourcePath + "/" + children[i].getName(),user), null, null, user);
+					if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+						copyResource(sourcePath + "/" + children[i].getName(), destinationPath + "/" + children[i].getName(), user, autoPublish);
+					} else {
+						setResourceContent(destinationPath + "/" + children[i].getName(), getResourceContent(sourcePath + "/" + children[i].getName(),user), null, null, user);
+					}
 
 					// ### Copy the permission ###
 					// Source
@@ -829,6 +924,13 @@ public class DotWebdavHelper {
 
 					// Make sure we are not trying to delete the current version
 					if (!contentlet.isLive() && !contentlet.isWorking()) {
+						if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+							if (storedBinaryLength(contentlet) == 0) {
+								conAPI.deleteVersion(contentlet, user, false);
+								break;
+							}
+							continue;
+						}
 
 						final File binary = contentlet.getBinary(FileAssetAPI.BINARY_FIELD);
 
@@ -843,8 +945,18 @@ public class DotWebdavHelper {
 					}
 				}
 			}
+		} else if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			throw new IOException("WebDAV destination site or folder does not exist");
 		}
 	} // setResourceContent.
+
+	static long storedBinaryLength(final Contentlet contentlet) throws IOException {
+		try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+			final File binary = contentlet.getBinary(FileAssetAPI.BINARY_FIELD);
+			// Missing storage is not evidence that a historical version was an empty Finder upload.
+			return binary == null ? -1 : Files.size(binary.toPath());
+		}
+	}
 
 	private void validatePermissions(User user, boolean isAutoPub, boolean disableWorkflow,
 									 Contentlet fileAsset) throws DotDataException, DotSecurityException {
@@ -1006,7 +1118,17 @@ public class DotWebdavHelper {
 	 * @param fileName
 	 * @return created file
 	 */
-	private File createFileInTemporalFolder(Field fieldVar, final String userId, final String fileName) {
+	File createFileInTemporalFolder(Field fieldVar, final String userId, final String fileName) throws IOException {
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			if (fileName == null || fileName.isBlank() || fileName.equals(".") || fileName.equals("..")
+					|| fileName.contains("/") || fileName.contains("\\") || fileName.indexOf('\0') >= 0) {
+				throw new IOException("Invalid WebDAV upload filename");
+			}
+			final var root = java.nio.file.Path.of(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
+			Files.createDirectories(root);
+			// A request owns its staging bytes until check-in has stored them in S3.
+			return Files.createTempDirectory(root, "webdav-input-").resolve(fileName).toFile();
+		}
 		final String folderPath = new StringBuilder()
 				.append(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary())
 				.append(File.separator).append(userId).append(File.separator)
@@ -1025,6 +1147,39 @@ public class DotWebdavHelper {
 			fileData.delete();
 
 		return fileData;
+	}
+
+	/** Caller owns the input. Failed uploads leave the previous complete staging file intact. */
+	static File writeCompletedTempFile(final File destination, final InputStream input) throws IOException {
+		final var configuredRoot = java.nio.file.Path.of(ConfigUtils.getAssetTempPath()).toAbsolutePath().normalize();
+		final var root = configuredRoot.toFile().getCanonicalFile().toPath();
+		final var target = destination.getCanonicalFile().toPath();
+		if (!target.startsWith(root) || target.equals(root)) {
+			throw new IOException("WebDAV staging path is outside the temporary directory");
+		}
+		final var supplied = destination.toPath().toAbsolutePath().normalize();
+		final var boundary = supplied.startsWith(configuredRoot) ? configuredRoot : root;
+		if (!supplied.startsWith(boundary)) throw new IOException("Invalid WebDAV staging path");
+		for (var path = supplied; !path.equals(boundary); path = path.getParent()) {
+			if (Files.isSymbolicLink(path)) throw new IOException("WebDAV staging path contains a symbolic link");
+		}
+		Files.createDirectories(target.getParent());
+		final var stage = Files.createTempFile(root, ".webdav-write-", ".tmp");
+		try {
+			Files.copy(input, stage, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				try {
+					com.dotcms.storage.WebdavTemporaryStorage.getInstance().store(destination, stage.toFile());
+				} catch (DotDataException failure) {
+					throw new IOException("Unable to store WebDAV staging file", failure);
+				}
+			}
+			Files.move(stage, target, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+					java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+			return destination;
+		} finally {
+			Files.deleteIfExists(stage);
+		}
 	}
 
 	public Folder createFolder(String folderUri, User user) throws IOException, DotDataException {
@@ -1146,7 +1301,14 @@ public class DotWebdavHelper {
 						final File tmpDir = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
 								+ File.separator+UUIDGenerator.generateUuid());
 						final File tmp = new File(tmpDir, toContentlet.getBinary(FileAssetAPI.BINARY_FIELD).getName());
-						FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
+						if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+							try (InputStream input = origin.getBinaryStream(FileAssetAPI.BINARY_FIELD)) {
+								Files.createDirectories(tmpDir.toPath());
+								Files.copy(input, tmp.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+							}
+						} else {
+							FileUtil.copyFile(origin.getBinary(FileAssetAPI.BINARY_FIELD), tmp);
+						}
 
 						newVersion.setBinary(FileAssetAPI.BINARY_FIELD, tmp);
 						newVersion.setLanguageId(defaultLang);
@@ -1343,8 +1505,10 @@ public class DotWebdavHelper {
 				//Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length.
 				//No need to wait 10 seconds with files with 0 length.
 				if(canDelete
-						|| (fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD) != null
-						&& fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD).length() <= 0)){
+						|| (com.dotcms.storage.AssetStorageFeature.isEnabled()
+							? storedBinaryLength(fileAssetCont) == 0
+							: (fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD) != null
+								&& fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD).length() <= 0))){
 
 					try{
 						conAPI.archive(fileAssetCont, user, false);
@@ -1777,8 +1941,10 @@ public class DotWebdavHelper {
 								Identifier identifier  = APILocator.getIdentifierAPI().find(file);
 								if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 									fileUri = identifier.getPath();
-									workingFile = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
-									is = Files.newInputStream(workingFile.toPath());
+									if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+										workingFile = ((Contentlet)file).getBinary(FileAssetAPI.BINARY_FIELD);
+										is = Files.newInputStream(workingFile.toPath());
+									}
 									idate = file.getModDate();
 								}
 
@@ -1793,7 +1959,13 @@ public class DotWebdavHelper {
 								s.setCreateDate(idate);
 								s.setModifyDate(fa.getModDate());
 
-								s.setLength(is.available());
+								if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+									final long length = storedBinaryLength((Contentlet) file);
+									if (length < 0) throw new IOException("Missing WebDAV asset");
+									s.setLength(length);
+								} else {
+									s.setLength(is.available());
+								}
 								s.setHost(host);
 								s.setFile(fa);
 								returnValue.add(s);
@@ -1804,6 +1976,9 @@ public class DotWebdavHelper {
 				}
 			}
 		} catch (Exception ex) {
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				throw new IOException("Unable to enumerate WebDAV folder assets", ex);
+			}
 			Logger.debug(this, ex.toString());
 		}
 		return returnValue.toArray(new Summary[returnValue.size()]);
@@ -1832,6 +2007,9 @@ public class DotWebdavHelper {
 			Identifier identifier  = APILocator.getIdentifierAPI().find(host, path);
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 				Contentlet cont  = conAPI.findContentletByIdentifier(identifier.getId(), false, defaultLang, user, false);
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+					return cont.getBinaryStream(FileAssetAPI.BINARY_FIELD);
+				}
 				File workingFile = cont.getBinary(FileAssetAPI.BINARY_FIELD);
 				is = Files.newInputStream(workingFile.toPath());
 			}

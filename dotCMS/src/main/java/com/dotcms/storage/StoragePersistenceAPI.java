@@ -151,6 +151,10 @@ public interface StoragePersistenceAPI {
      */
     File pullFile (final String groupName, final String path) throws DotDataException;
 
+    /** Releases provider-owned download staging after the caller has copied or consumed it. */
+    default void releaseRetrievedFile(final File file) throws DotDataException { }
+
+
     /**
      * Pull a stream from the storage and read as an object
      *
@@ -194,6 +198,42 @@ public interface StoragePersistenceAPI {
      */
     default Iterable<? extends ObjectPath> toIterable(String group) {
         return new EmptyIterable<>();
+    }
+
+    /**
+     * Lists object paths under a given prefix within a group. Returns paths relative to the
+     * group root. For example, if objects exist at {@code a/b/inode/field/file.pdf}, calling
+     * with prefix {@code a/b/inode} returns {@code ["a/b/inode/field/file.pdf"]}.
+     *
+     * <p>Default implementation returns an empty list, which is safe for providers that do not
+     * support prefix-based listing.</p>
+     *
+     * @param groupName  The group (bucket/folder) to list within.
+     * @param pathPrefix The path prefix to filter objects by.
+     * @return A list of relative object paths matching the prefix.
+     * @throws DotDataException If a storage error occurs during listing.
+     */
+    default List<String> listObjectPaths(final String groupName,
+                                         final String pathPrefix) throws DotDataException {
+        return List.of();
+    }
+
+    /** Returns true only when a durable provider verifies the same file contents. */
+    default boolean hasDurableCopy(final String groupName, final String path,
+                                   final File file) throws DotDataException {
+        return false;
+    }
+
+    /** Copies to durable storage without overwriting a conflicting object. False means unsupported. */
+    default boolean backfillFile(final String groupName, final String path,
+                                 final File file) throws DotDataException {
+        return false;
+    }
+
+    /** Backfills an object using its reader to compare existing contents independently of serialization order. */
+    default boolean backfillObject(final String groupName, final String path, final ObjectWriterDelegate writer,
+            final ObjectReaderDelegate reader, final Serializable object) throws DotDataException {
+        return false;
     }
 
     /**

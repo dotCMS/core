@@ -7,14 +7,22 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.ImageEngine;
+import com.dotmarketing.image.focalpoint.FocalPoint;
+import com.dotmarketing.image.focalpoint.FocalPointAPI;
+import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
+import com.dotcms.storage.binary.BinaryAssetReference;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.image.filter.PDFImageFilter;
@@ -59,9 +67,21 @@ public class ImageFilterExporter implements BinaryContentExporter {
      * com.dotmarketing.portlets.contentlet.business.BinaryContentExporter#exportContent(java.io.File,
      * java.util.Map)
      */
-    public BinaryContentExporterData exportContent(File file, final Map<String, String[]> parameters)
+    public BinaryContentExporterData exportContent(File file, final Map<String, String[]> suppliedParameters)
+                    throws BinaryContentExporterException {
+        if (s3Renditions()) {
+            try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+                return exportContentInternal(file, suppliedParameters);
+            }
+        }
+        return exportContentInternal(file, suppliedParameters);
+    }
+
+    private BinaryContentExporterData exportContentInternal(File file, final Map<String, String[]> suppliedParameters)
                     throws BinaryContentExporterException {
 
+        final Map<String, String[]> parameters = s3Renditions()
+                ? new LinkedHashMap<>(suppliedParameters) : suppliedParameters;
         final String fileExtension = UtilMethods.getFileExtension(file.getName());
         if (UtilMethods.isVectorImage(fileExtension)) {
             Logger.info(this.getClass(), "Skipping vector image transformation for " + fileExtension);
@@ -72,6 +92,12 @@ public class ImageFilterExporter implements BinaryContentExporter {
         try {
 
             final Map<String,Class<? extends ImageFilter>> filters = imageFilterAPI().resolveFilters(parameters);
+            if (s3Renditions() && filters.isEmpty()) {
+                return new BinaryContentExporterData(file);
+            }
+            if (s3Renditions() && filters.containsKey(ImageFilter.CROP)) {
+                resolveCropFocalPoint(file, parameters);
+            }
             parameters.put("filter", filters.keySet().toArray(new String[0]));
             parameters.put("filters", filters.keySet().toArray(new String[0]));
             
@@ -89,7 +115,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
 
             // SHARED_COMPLETED: if another instance (or this instance, pre-restart) already published
             // this exact rendition to the shared store, serve it directly and skip regeneration.
-            if (ConfigUtils.isDotGeneratedSharedCompleted()) {
+            if (!s3Renditions() && ConfigUtils.isDotGeneratedSharedCompleted()) {
                 final File shared = toSharedFile(finalResultFile(filters.values(), file, parameters));
                 if (shared != null && shared.exists() && shared.length() >= MIN_VALID_FILE_LENGTH) {
                     return new BinaryContentExporterData(shared);
@@ -106,7 +132,7 @@ public class ImageFilterExporter implements BinaryContentExporter {
             // The final rendition is ready locally under dotsecure; publish it to the shared store on a
             // background virtual thread so the request returns immediately and no other instance — nor a
             // restart of this one — has to regenerate it.
-            if (ConfigUtils.isDotGeneratedSharedCompleted()) {
+            if (!s3Renditions() && ConfigUtils.isDotGeneratedSharedCompleted()) {
                 publishToShared(file);
             }
 
@@ -120,7 +146,14 @@ public class ImageFilterExporter implements BinaryContentExporter {
     }
     
     
-    private File runFilter(ImageFilter imageFilter, final File fileIn,final Map<String, String[]> parameters)  {
+    private File runFilter(ImageFilter imageFilter, final File fileIn,final Map<String, String[]> parameters)
+            throws DotDataException {
+        if (s3Renditions()) {
+            final File cached = cachedRendition(imageFilter.getResultsFile(fileIn, parameters));
+            if (cached != null) {
+                return cached;
+            }
+        }
         
         boolean canRun=false;
         try {
@@ -137,7 +170,11 @@ public class ImageFilterExporter implements BinaryContentExporter {
                 
             }
 
-            return imageFilter.runFilter(fileIn, parameters);
+            final File result = imageFilter.runFilter(fileIn, parameters);
+            if (s3Renditions() && !result.equals(fileIn)) {
+                APILocator.getBinaryAssetStorageAPI().storeGeneratedFile(result);
+            }
+            return result;
         } 
         finally {
             if(canRun) {
@@ -150,14 +187,62 @@ public class ImageFilterExporter implements BinaryContentExporter {
     private static final long MIN_VALID_FILE_LENGTH = 50L;
 
     private Optional<File> alreadyGenerated(final Collection<Class<? extends ImageFilter>> clazzes, final File fileIn,
-                    final Map<String, String[]> parameters)  {
+                    final Map<String, String[]> parameters) throws DotDataException {
 
         final File fileToReturn = finalResultFile(clazzes, fileIn, parameters);
+        if (s3Renditions()) {
+            return Optional.ofNullable(cachedRendition(fileToReturn));
+        }
 
         if (fileToReturn == null || ! fileToReturn.exists() ||  fileToReturn.length() < MIN_VALID_FILE_LENGTH) {
             return Optional.empty();
         }
         return Optional.of(fileToReturn);
+    }
+
+    /** Pin the source snapshot's focal point before computing any cache keys or rendering pixels. */
+    void resolveCropFocalPoint(final File source, final Map<String, String[]> parameters)
+            throws DotDataException {
+        final FocalPointAPIImpl focalPoints = new FocalPointAPIImpl();
+        Optional<FocalPoint> point = focalPoints.parseFocalPointFromParams(parameters);
+        if (point.isEmpty()) {
+            final String revision = BinaryAssetReference.keyOf(source);
+            final Path root = Path.of(ConfigUtils.getAssetPath()).toAbsolutePath().normalize();
+            final Path sourcePath = source.toPath().toAbsolutePath().normalize();
+            final Path relative = root.relativize(sourcePath);
+            final boolean legacy = sourcePath.startsWith(root) && relative.getNameCount() == 5
+                    && relative.getName(0).toString().length() == 1
+                    && relative.getName(1).toString().length() == 1
+                    && relative.getName(2).toString().startsWith(
+                            relative.getName(0).toString() + relative.getName(1));
+            if (revision != null || legacy) {
+                final String[] path = relative.toString().replace(File.separatorChar, '/').split("/");
+                final Contentlet snapshot = new Contentlet();
+                snapshot.setInode(path[2]);
+                snapshot.getMap().put(path[3], source);
+                final var metadata = APILocator.getFileMetadataAPI().getMetadata(snapshot, path[3]);
+                if (metadata != null) {
+                    point = focalPoints.parseFocalPoint((String) metadata.getCustomMeta().get(FocalPointAPI.FOCAL_POINT));
+                }
+            } else if (parameters.get("assetInodeOrIdentifier") != null && parameters.get("fieldVarName") != null) {
+                point = focalPoints.readFocalPoint(parameters.get("assetInodeOrIdentifier")[0],
+                        parameters.get("fieldVarName")[0]);
+            }
+        }
+        // An empty value pins absence too, so later filters cannot read a different metadata value.
+        parameters.put(ImageFilter.RESOLVED_CROP_FOCAL_POINT, new String[]{point.map(FocalPoint::toString).orElse("")});
+    }
+
+    private boolean s3Renditions() {
+        return com.dotcms.storage.AssetStorageFeature.isEnabled();
+    }
+
+    private File cachedRendition(final File localFile) throws DotDataException {
+        final File cached = APILocator.getBinaryAssetStorageAPI().getGeneratedFile(localFile);
+        if (cached == null || !cached.isFile() || cached.length() < MIN_VALID_FILE_LENGTH) {
+            return null;
+        }
+        return cached;
     }
 
     /**

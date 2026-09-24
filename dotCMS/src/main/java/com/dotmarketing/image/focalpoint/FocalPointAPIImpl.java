@@ -120,9 +120,15 @@ public class FocalPointAPIImpl implements FocalPointAPI {
 
        try {
            final Metadata metadata = fileMetadataAPI.getMetadata(contentlet, fieldVar);
+           if (metadata == null && com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+               return Optional.empty();
+           }
            return parseFocalPoint(
                    (String) metadata.getCustomMeta().get(FOCAL_POINT));
        }catch (Exception e){
+          if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+              throw new DotRuntimeException("Unable to read focal-point metadata", e);
+          }
           Logger.debug (FocalPointAPIImpl.class, "Metadata Error retrieving focal point from custom metadata", e);
        }
         return Optional.empty();
@@ -188,7 +194,9 @@ public class FocalPointAPIImpl implements FocalPointAPI {
      * @return
      */
     private Optional<Contentlet> findContentletByInode(final String inode){
-      return Optional.ofNullable(Try.of(()->contentletAPI.find(inode, currentUserSupplier.get(), false)).getOrNull());
+      final var lookup = Try.of(() -> contentletAPI.find(inode, currentUserSupplier.get(), false));
+      return Optional.ofNullable(com.dotcms.storage.AssetStorageFeature.isEnabled()
+              ? lookup.getOrElseThrow(DotRuntimeException::new) : lookup.getOrNull());
     }
 
     /**
