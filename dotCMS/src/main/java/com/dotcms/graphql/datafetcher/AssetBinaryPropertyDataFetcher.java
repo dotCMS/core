@@ -45,10 +45,6 @@ public class AssetBinaryPropertyDataFetcher implements DataFetcher<Object> {
         try {
             final Map<String, Object> binaryMap = binaryMapOf(contentlet, environment);
             return null == binaryMap ? null : binaryMap.get(environment.getField().getName());
-        } catch (final IllegalArgumentException e) {
-            Logger.warn(this, "No binary on contentlet " + contentlet.getIdentifier()
-                    + " for field: " + environment.getField().getName());
-            return null;
         } catch (final Exception e) {
             Logger.error(this, e.getMessage(), e);
             return null;
@@ -82,8 +78,18 @@ public class AssetBinaryPropertyDataFetcher implements DataFetcher<Object> {
         Logger.debug(this, () -> "Deriving binary properties for contentlet: "
                 + contentlet.getIdentifier());
 
-        return (Map<String, Object>) new BinaryToMapTransformer(contentlet).asMap()
-                .get(binaryVar + "Map");
+        try {
+            return (Map<String, Object>) new BinaryToMapTransformer(contentlet).asMap()
+                    .get(binaryVar + "Map");
+        } catch (final IllegalArgumentException e) {
+            // Handled here rather than in the caller so the miss is cached like any other result:
+            // otherwise every selected property of every such asset re-derives and logs again,
+            // one line per property per row of a result set. Throttled because a result set can
+            // still hold thousands of such assets; the per-contentlet detail goes to DEBUG.
+            Logger.warnEveryAndDebug(AssetBinaryPropertyDataFetcher.class,
+                    "No binary on contentlet " + contentlet.getIdentifier(), e, 60000);
+            return null;
+        }
     }
 
     @SuppressWarnings("unchecked")

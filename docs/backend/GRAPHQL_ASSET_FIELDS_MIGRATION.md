@@ -55,6 +55,7 @@ Who this actually reaches:
 |---|---|
 | Never select `__typename` under an asset field | Nothing to do |
 | Use Apollo Client, or any normalized cache | **Check this.** Normalized caches key entries on `__typename` + id, so cache keys for these objects change. Entries written by an older build will not be read back |
+| Use Apollo Client 3 and write `... on DotFileasset` (or any fragment on an interface) | **Configure `possibleTypes`.** Apollo's cache matches a fragment by comparing its type condition to `__typename`; that used to match trivially because both said `DotFileasset`. Now `__typename` is `Images`, and without `possibleTypes` telling the cache that `Images` implements `DotFileasset`, the fragment's fields come back missing from cache reads. Generate the map from the query in [Checking your queries](#checking-your-queries) |
 | Assert `__typename` in snapshot tests | Update the expected value to the concrete type |
 | Branch on `__typename` in application code | Re-read the branch. It was comparing against a constant, so it was always taking the same path; now it discriminates, which is probably what you wanted |
 
