@@ -2,6 +2,7 @@ import { type ToolMetadata } from 'xmcp';
 
 import {
     dotcmsConnection,
+    isToolFailure,
     type AnyDotCMSTool,
     type AssetToolOptions,
     type DotCMSConnection,
@@ -62,7 +63,16 @@ export function xmcpTool(
         schema: tool.inputSchema.shape,
         metadata,
         // MCP hands the model text: a code tool's output as-is, and a manifest or a failure as
-        // the same pretty-printed JSON this server has always returned.
-        handler: async (args: unknown): Promise<string> => tool.toText(await tool.execute(args))
+        // the same pretty-printed JSON this server has always returned. A failure is also
+        // flagged `isError`, so the client can tell a failed call from a result instead of
+        // reading both as ordinary content.
+        handler: async (args: unknown) => {
+            const result = await tool.execute(args);
+            const text = tool.toText(result);
+
+            return isToolFailure(result)
+                ? { content: [{ type: 'text' as const, text }], isError: true }
+                : text;
+        }
     };
 }
