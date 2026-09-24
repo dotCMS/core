@@ -3,12 +3,16 @@ package com.dotcms.rendering.velocity.viewtools;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.content.index.domain.ContentSearchResponse;
@@ -21,12 +25,15 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.WebKeys;
@@ -439,6 +446,58 @@ public class ContentSearchToolTest extends IntegrationTestBase {
         final ESContentTool tool = new ESContentTool();
         tool.init(viewContext);
         return tool;
+    }
+
+    private static final String LEGACY_ES_QUERY =
+            "{\"query\":{\"query_string\":{\"query\":\"+basetype:5\"}}}";
+
+    private static void assumeFinalPhase() {
+        assumeTrue("asserts the Phase 3 (OS-only) behaviour of the deprecated ES-only methods",
+                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
+    }
+
+    /**
+     * Method to test: {@link ESContentTool#esSearch(String)} and {@link ESContentTool#esRaw(String)}
+     * Given Scenario: Phase 3, where Elasticsearch no longer receives writes, with no override set
+     * ExpectedResult: both deprecated methods fail with {@link DotStateException} — the one type
+     * Velocity's method-exception handler rethrows — so the page fails visibly instead of rendering
+     * results frozen at cutover (issue #37635).
+     */
+    @Test
+    public void esSearchAndEsRaw_phase3_failByDefault() {
+        assumeFinalPhase();
+        final ESContentTool tool = liveContentTool();
+
+        assertThrows(DotStateException.class, () -> tool.esSearch(LEGACY_ES_QUERY));
+        assertThrows(DotStateException.class, () -> tool.esRaw(LEGACY_ES_QUERY));
+    }
+
+    /**
+     * Method to test: {@link ESContentTool#esSearch(String)} and {@link ESContentTool#esRaw(String)}
+     * Given Scenario: Phase 3 with
+     * {@link FeatureFlagName#FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL} enabled — the
+     * escape hatch support turns on while a customer migrates their templates
+     * ExpectedResult: both return {@code null} rather than failing, so the page renders around the
+     * unresolved block — and never results from the frozen Elasticsearch copy. The override is scoped
+     * to templates: the API underneath still fails for any Java caller.
+     */
+    @Test
+    public void esSearchAndEsRaw_phase3_returnNullWhenOverridden() throws Exception {
+        assumeFinalPhase();
+        final String flag = FeatureFlagName.FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL;
+        final boolean previous = Config.getBooleanProperty(flag, false);
+        Config.setProperty(flag, true);
+        try {
+            final ESContentTool tool = liveContentTool();
+
+            assertNull(tool.esSearch(LEGACY_ES_QUERY));
+            assertNull(tool.esRaw(LEGACY_ES_QUERY));
+            assertThrows("the override only softens templates, not the API",
+                    DotStateException.class,
+                    () -> APILocator.getContentletAPI().esSearch(LEGACY_ES_QUERY, true, systemUser, true));
+        } finally {
+            Config.setProperty(flag, previous);
+        }
     }
 
     /**

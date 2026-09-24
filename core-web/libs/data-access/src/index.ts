@@ -25,6 +25,7 @@ export * from './lib/dot-contentlet/dot-contentlet.service';
 export * from './lib/dot-copy-content/dot-copy-content.service';
 export * from './lib/dot-crud/dot-crud.service';
 export * from './lib/dot-current-user/dot-current-user.service';
+export * from './lib/dot-users/dot-user-search.service';
 export * from './lib/dot-devices/dot-devices.service';
 export * from './lib/dot-edit-page-resolver/dot-edit-page-resolver.service';
 export * from './lib/dot-edit-page/dot-edit-page.service';

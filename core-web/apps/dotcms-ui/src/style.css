@@ -64,6 +64,12 @@ a:visited {
     @apply hidden;
 } */
 
+/* Same rhythm as `.form`, for a form whose fields sit deeper than its direct children
+   (inside tabs, rows or columns) and so are out of `space-y`'s reach. */
+.form .fields {
+    @apply space-y-5;
+}
+
 .form .field {
     @apply flex flex-col gap-1;
 }

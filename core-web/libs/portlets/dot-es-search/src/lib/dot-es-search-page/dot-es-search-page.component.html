@@ -80,6 +80,7 @@
                 [ngModel]="store.query()"
                 [options]="$queryEditorOptions()"
                 (ngModelChange)="onQueryChange($event)"
+                (init)="onQueryEditorInit($event)"
                 data-testid="es-search-query-editor" />
 
             <!-- Parameters panel -->
@@ -138,7 +139,11 @@
                 data-testid="es-search-run-footer">
                 <p-button
                     [loading]="store.isLoading()"
-                    [pTooltip]="$hasEditorErrors() ? ('esSearch.error.invalidJson' | dm) : ''"
+                    [pTooltip]="
+                        $hasEditorErrors()
+                            ? ('esSearch.error.invalidJson' | dm)
+                            : ('esSearch.action.run.tooltip' | dm: [runShortcutLabel])
+                    "
                     tooltipPosition="top"
                     (onClick)="onRun()"
                     data-testid="es-search-run-btn">

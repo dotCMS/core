@@ -9,6 +9,8 @@ import { Mock, Mocked, vi } from 'vitest';
 import { signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
+import { ContextMenu } from 'primeng/contextmenu';
+import { Menu } from 'primeng/menu';
 
 /* eslint-disable @nx/enforce-module-boundaries */
 
@@ -257,6 +259,54 @@ describe('DotPublishingQueueTableComponent', () => {
     describe('row kebab menu', () => {
         it('renders a kebab button per row', () => {
             expect(spectator.queryAll(byTestId('pq-bundles-kebab-btn')).length).toBe(2);
+        });
+
+        describe('only one menu open at a time', () => {
+            const clickKebab = (index: number) => {
+                const button = spectator
+                    .queryAll(byTestId('pq-bundles-kebab-btn'))
+                    [index].querySelector('button');
+                if (button) spectator.click(button);
+            };
+            const openKebabs = () => spectator.queryAll(Menu).filter((menu) => menu.visible);
+
+            it('closes the previous row menu when another row kebab is opened', () => {
+                clickKebab(0);
+                expect(openKebabs().length).toBe(1);
+
+                clickKebab(1);
+
+                const open = openKebabs();
+                expect(open.length).toBe(1);
+                expect(open[0]).toBe(spectator.queryAll(Menu)[1]);
+            });
+
+            it('closes the row menu when the same kebab is clicked again', () => {
+                clickKebab(0);
+                clickKebab(0);
+                expect(openKebabs().length).toBe(0);
+            });
+
+            it('closes the open row menu when a row is right-clicked', () => {
+                clickKebab(0);
+                const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+
+                spectator.component.onRowContextMenu(event, row('b2'));
+
+                expect(openKebabs().length).toBe(0);
+            });
+
+            it('closes the right-click menu when a row kebab is opened', () => {
+                const contextMenu = spectator.query(ContextMenu);
+                expect(contextMenu).toBeTruthy();
+                if (!contextMenu) return;
+                const hideSpy = vi.spyOn(contextMenu, 'hide');
+
+                clickKebab(0);
+
+                expect(hideSpy).toHaveBeenCalled();
+                expect(openKebabs().length).toBe(1);
+            });
         });
 
         it('kebabFor returns the SAME array reference across change-detection cycles', () => {

@@ -85,6 +85,25 @@ const buildStoreMock = (overrides: Partial<Record<string, Mock>> = {}) => ({
  */
 const stubbed = (store: unknown) => store as Record<string, unknown>;
 
+const MONACO_CTRL_CMD = 2048;
+const MONACO_ENTER = 3;
+
+/** Stubs the global Monaco namespace and returns a fake editor that records its actions. */
+const createFakeEditor = () => {
+    vi.stubGlobal('monaco', {
+        ...((globalThis as { monaco?: object }).monaco ?? {}),
+        KeyMod: { CtrlCmd: MONACO_CTRL_CMD },
+        KeyCode: { Enter: MONACO_ENTER }
+    });
+    const addAction = vi.fn();
+
+    return {
+        editor: { addAction },
+        /** Simulates Monaco dispatching the Cmd/Ctrl + Enter keybinding. */
+        pressRunShortcut: () => addAction.mock.calls[0][0].run()
+    };
+};
+
 describe('DotQueryToolPageComponent', () => {
     let spectator: Spectator<DotQueryToolPageComponent>;
     let locationReplaceStateSpy: Mock;
@@ -239,6 +258,65 @@ describe('DotQueryToolPageComponent', () => {
         it('does not sync URL on first mount with no run yet (status INIT)', () => {
             setup();
             expect(locationReplaceStateSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Run keyboard shortcut', () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('binds Cmd/Ctrl + Enter on the query editor', () => {
+            setup();
+            const { editor } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="query-tool-query-editor"]',
+                'init',
+                editor
+            );
+            expect(editor.addAction).toHaveBeenCalledWith(
+                expect.objectContaining({ keybindings: [MONACO_CTRL_CMD | MONACO_ENTER] })
+            );
+        });
+
+        it('runs the query when the shortcut is pressed', () => {
+            const store = setup({}, { query: vi.fn().mockReturnValue('+live:true') });
+            const { editor, pressRunShortcut } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="query-tool-query-editor"]',
+                'init',
+                editor
+            );
+            pressRunShortcut();
+            expect(store.resetOffset).toHaveBeenCalled();
+            expect(store.runSearch).toHaveBeenCalled();
+        });
+
+        it('is a no-op while a search is already in flight', () => {
+            const store = setup(
+                {},
+                {
+                    query: vi.fn().mockReturnValue('+live:true'),
+                    isLoading: vi.fn().mockReturnValue(true)
+                }
+            );
+            const { editor, pressRunShortcut } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="query-tool-query-editor"]',
+                'init',
+                editor
+            );
+            pressRunShortcut();
+            expect(store.runSearch).not.toHaveBeenCalled();
+        });
+
+        it('states the shortcut in the Run button tooltip', () => {
+            setup();
+            const messageService = spectator.inject(DotMessageService);
+            expect(messageService.get).toHaveBeenCalledWith(
+                'queryTool.action.run.tooltip',
+                spectator.component.runShortcutLabel
+            );
         });
     });
 
