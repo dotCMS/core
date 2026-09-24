@@ -76,8 +76,9 @@ async function resolveValue(
         return (await value()) ?? '';
     } catch (error) {
         // The host's resolver failed (a secrets manager down, say). That is the host's problem,
-        // not the call's — reported as CONFIGURATION. The resolver's own error goes to the host
-        // (the hook, and `cause`), never into the message the model reads.
+        // not the call's — reported as CONFIGURATION. The resolver's own error reaches the host
+        // only through `onResolveError`, never the message the model reads. (`cause` below
+        // stays inside the toolkit: the ToolFailure the tool returns does not carry it.)
         try {
             config.onResolveError?.(field, error);
         } catch {
