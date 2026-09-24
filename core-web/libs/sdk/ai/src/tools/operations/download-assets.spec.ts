@@ -191,6 +191,115 @@ describe('downloadAssets', () => {
         // Two searches: the first yields 500 new ids, the second adds none and breaks.
         expect(callsTo(calls, '/api/content/_search')).toBe(2);
         expect(manifest.count).toBe(500);
+        // Stopping here never reached the end of the folder, so it must not read as complete.
+        expect(manifest.warnings.join(' ')).toMatch(/INCOMPLETE/);
+    });
+
+    describe('with a filter', () => {
+        // The filters run on our side, after the search. A page can be full of assets that the
+        // search returned and none of them selected — that page still moved the walk forward.
+
+        /** A `_search` backend that honours `offset`, serving `pages` in order. */
+        function pagedRuntime(pages: Array<Array<{ identifier: string; path: string }>>) {
+            return fakeRuntime({
+                onRequest: (opts) => {
+                    if (opts.path === '/api/content/_search') {
+                        const offset = (opts.body as { offset: number }).offset;
+                        const contentlets = pages[offset / 500] ?? [];
+
+                        return { entity: { jsonObjectView: { contentlets } } };
+                    }
+                    if (opts.path?.startsWith('/api/v2/assets/')) {
+                        return binary('x');
+                    }
+
+                    return undefined;
+                }
+            });
+        }
+
+        /** A full page of `.css` assets at `//demo.dotcms.com/a/<dir>`, ids unique per `tag`. */
+        function cssPage(tag: string, dir = '') {
+            return Array.from({ length: 500 }, (_, i) => ({
+                identifier: `${tag}-${i}`,
+                path: `//demo.dotcms.com/a/${dir}${tag}-${i}.css`
+            }));
+        }
+
+        it('keeps paginating past a full page where nothing matched `include`', async () => {
+            const { runtime, calls } = pagedRuntime([
+                cssPage('p1'),
+                [{ identifier: 'vtl-1', path: '//demo.dotcms.com/a/main.vtl' }]
+            ]);
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/a',
+                dest,
+                recursive: true,
+                overwrite: 'overwrite',
+                include: '*.vtl'
+            });
+
+            expect(callsTo(calls, '/api/content/_search')).toBe(2);
+            expect(manifest.files.map((file) => file.path)).toEqual(['main.vtl']);
+            expect(manifest.warnings).toEqual([]);
+        });
+
+        it('keeps paginating past a full page of nested assets when not recursive', async () => {
+            const { runtime } = pagedRuntime([
+                cssPage('p1', 'nested/'),
+                [{ identifier: 'top-1', path: '//demo.dotcms.com/a/top.css' }]
+            ]);
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/a',
+                dest,
+                recursive: false,
+                overwrite: 'overwrite'
+            });
+
+            expect(manifest.files.map((file) => file.path)).toEqual(['top.css']);
+        });
+
+        it('reports a walk that ran out of pages as incomplete, not as a clean result', async () => {
+            // Every page full and unique: the scan cap stops the walk with results left over.
+            const pages = Array.from({ length: 20 }, (_, n) => cssPage(`p${n}`));
+            const { runtime, calls } = pagedRuntime(pages);
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/a',
+                dest,
+                recursive: true,
+                overwrite: 'overwrite',
+                include: 'p1-0.css'
+            });
+
+            expect(callsTo(calls, '/api/content/_search')).toBe(10);
+            expect(manifest.count).toBe(1);
+            expect(manifest.warnings.join(' ')).toMatch(/INCOMPLETE/);
+        });
+
+        it('does not blame the path when the cap stopped the walk before any match', async () => {
+            const pages = Array.from({ length: 20 }, (_, n) => cssPage(`p${n}`));
+            const { runtime } = pagedRuntime(pages);
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/a',
+                dest,
+                recursive: true,
+                overwrite: 'overwrite',
+                include: '*.vtl'
+            });
+
+            const warnings = manifest.warnings.join(' ');
+            expect(warnings).toMatch(/INCOMPLETE/);
+            // "No assets matched — check the path" would send the caller after a path that is fine.
+            expect(warnings).not.toMatch(/check the path/);
+        });
     });
 
     describe('with a root', () => {

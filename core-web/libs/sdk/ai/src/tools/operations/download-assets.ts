@@ -68,11 +68,12 @@ interface AssetContentlet {
 const SEARCH_LIMIT = 500;
 
 /**
- * Bounds on a single enumeration. `/application` on a large site can hold tens of
- * thousands of assets, and every one enumerated is then downloaded one at a time with an
- * open file handle — so an unbounded walk is both an unbounded tool call and unbounded load
- * on the instance. A realistic theme is 100–500 files, so these are far above any genuine
- * use while still being a ceiling. Hitting either is reported, never silent.
+ * Bounds on a single enumeration: how many search results one walk reads, whether or not the
+ * filters select them. `/application` on a large site can hold tens of thousands of assets,
+ * and every one selected is then downloaded one at a time with an open file handle — so an
+ * unbounded walk is both an unbounded tool call and unbounded load on the instance. A
+ * realistic theme is 100–500 files, so this is far above any genuine use while still being a
+ * ceiling. Hitting it is reported, never silent.
  */
 const MAX_ENUMERATED_ASSETS = 5_000;
 const MAX_SEARCH_PAGES = Math.ceil(MAX_ENUMERATED_ASSETS / SEARCH_LIMIT);
@@ -129,14 +130,16 @@ export async function downloadAssets(
         );
 
         if (truncated) {
+            // `include` and `recursive` filter what the search returned, so they cannot get a
+            // walk past the cap; only a narrower folder can.
             warnings.push(
-                `Enumeration stopped at the ${MAX_ENUMERATED_ASSETS}-asset cap — this folder ` +
-                    `holds more than that, so the download is INCOMPLETE. Narrow it with a ` +
-                    `subfolder path or an \`include\` pattern and run again.`
+                `Enumeration stopped before reaching the end of this folder (it reads at most ` +
+                    `${MAX_ENUMERATED_ASSETS} assets), so the download is INCOMPLETE. Narrow it ` +
+                    `with a subfolder path and run again.`
             );
-        }
-
-        if (assets.length === 0) {
+        } else if (assets.length === 0) {
+            // Only when the walk reached the end: after a cap, zero matches says nothing
+            // about whether the path is right.
             warnings.push(zeroMatchWarning(options.path, input));
         }
 
@@ -199,7 +202,10 @@ async function writeDownloadedFile(
     return { kind: 'written', file: { path: options.rel, bytes: bytes.byteLength, identifier } };
 }
 
-/** Enumerated assets plus whether a cap stopped the walk early (see MAX_ENUMERATED_ASSETS). */
+/**
+ * The selected assets, plus whether the walk stopped before the search reached its end — the
+ * cap (see MAX_ENUMERATED_ASSETS) or a backend that stopped advancing.
+ */
 interface EnumerateResult {
     assets: AssetContentlet[];
     truncated: boolean;
@@ -213,7 +219,9 @@ async function enumerateAssets(
 ): Promise<EnumerateResult> {
     const matches = includeMatcher(include);
     const assets: AssetContentlet[] = [];
-    const seen = new Set<string>();
+    // Every identifier the search returned, selected or not. Progress is measured on this, not
+    // on `assets`: a full page the filters reject entirely still moved the walk forward.
+    const enumerated = new Set<string>();
 
     for (let page_ = 0; page_ < MAX_SEARCH_PAGES; page_++) {
         const offset = page_ * SEARCH_LIMIT;
@@ -228,42 +236,40 @@ async function enumerateAssets(
             }
         });
         const page = extractContentlets(response);
-        const seenBefore = seen.size;
+        const enumeratedBefore = enumerated.size;
 
         for (const asset of page) {
-            if (!asset.identifier || !asset.path || seen.has(asset.identifier)) {
+            if (!asset.identifier || !asset.path || enumerated.has(asset.identifier)) {
                 continue;
             }
+            enumerated.add(asset.identifier);
 
             const rel = relativeAssetPath(folder, normalizeDotCMSPath(asset.path).path);
             if (!rel || (!recursive && rel.includes('/')) || !matches(rel)) {
                 continue;
             }
 
-            seen.add(asset.identifier);
             assets.push(asset);
         }
 
+        // A short page is the end of the results: the only way the walk is complete.
         if (page.length < SEARCH_LIMIT) {
-            break;
+            return { assets, truncated: false };
         }
 
         // Termination guard, NOT an optimisation. If the backend ignores or clamps `offset`,
-        // every page comes back full of the same identifiers: `page.length < SEARCH_LIMIT`
-        // never fires, `seen` de-dupes so `assets` stops growing, and the loop spins forever
-        // issuing identical POSTs — a tool call that never returns while the instance takes
-        // sustained load. A page that adds nothing new means we are not advancing, whatever
-        // the backend thinks it is doing.
-        if (seen.size === seenBefore) {
-            break;
-        }
-
-        if (assets.length >= MAX_ENUMERATED_ASSETS) {
+        // every page comes back full of the same identifiers: the short-page exit never
+        // fires, and the loop spins forever issuing identical POSTs — a tool call that never
+        // returns while the instance takes sustained load. A page that returns nothing new
+        // means we are not advancing, whatever the backend thinks it is doing — and whatever
+        // lies past it was never read.
+        if (enumerated.size === enumeratedBefore) {
             return { assets, truncated: true };
         }
     }
 
-    return { assets, truncated: false };
+    // Out of pages on a full one: there are results left that this walk did not read.
+    return { assets, truncated: true };
 }
 
 /** Fetch an asset's raw bytes — by identifier (`/api/v2/assets/{id}`) or by path query. */
