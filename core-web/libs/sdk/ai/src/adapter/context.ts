@@ -111,18 +111,24 @@ async function loadSites(request: RequestFn): Promise<SiteSummary[]> {
     const pageSize = 200;
     const all: unknown[] = [];
 
-    // `archive=true` means "include archived" and also asks the backend for stopped sites;
-    // without it the endpoint returns only the active selector list. Keep paging until the
-    // server returns a short page so the injected global is a catalog, not the first 200 sites.
-    for (let page = 0; page < 100; page += 1) {
-        const raw = await request({
-            method: 'GET',
-            path: CONTEXT_PATHS.sites,
-            query: { per_page: pageSize, page, archive: true }
-        });
-        const batch = asArray(unwrapEntity(raw));
-        all.push(...batch);
-        if (batch.length < pageSize) break;
+    // Two listings, merged below by identifier. On a live instance the plain listing returns
+    // the active sites and `archive=true` returns ONLY archived ones — asking with
+    // `archive=true` alone (as this once did, reading it as "include archived") left `sites`
+    // empty on any instance without an archived site. Each is paged until a short page, so
+    // the injected global is a catalog, not the first 200 sites.
+    for (const archived of [false, true]) {
+        for (let page = 0; page < 100; page += 1) {
+            const raw = await request({
+                method: 'GET',
+                path: CONTEXT_PATHS.sites,
+                query: archived
+                    ? { per_page: pageSize, page, archive: true }
+                    : { per_page: pageSize, page }
+            });
+            const batch = asArray(unwrapEntity(raw));
+            all.push(...batch);
+            if (batch.length < pageSize) break;
+        }
     }
 
     const sites = all.map((item) => {

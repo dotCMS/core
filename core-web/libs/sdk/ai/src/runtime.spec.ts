@@ -381,23 +381,27 @@ describe('createRuntime context freshness', () => {
         global.fetch = fetchMock as unknown as typeof fetch;
     });
 
-    it('loads all site states and reuses the snapshot within one runtime', async () => {
+    it('loads active and archived sites, and reuses the snapshot within one runtime', async () => {
+        // As a live instance answers: the plain listing holds the active sites, and
+        // `archive=true` holds ONLY archived ones. Asking only with `archive=true` — as the
+        // loader did — left `sites` empty on an instance with no archived site.
         let siteLoads = 0;
         fetchMock.mockImplementation(async (url: string) => {
             const parsed = new URL(url);
             if (parsed.pathname === '/api/v1/site') {
                 siteLoads += 1;
-                expect(parsed.searchParams.get('archive')).toBe('true');
+                const archived = parsed.searchParams.get('archive') === 'true';
                 return jsonResponse({
-                    entity: [
-                        {
-                            identifier: `site-${siteLoads}`,
-                            siteName: 'demo.dotcms.com',
-                            isDefault: true,
-                            isArchived: siteLoads === 1,
-                            isLive: siteLoads > 1
-                        }
-                    ]
+                    entity: archived
+                        ? [{ identifier: 'old', siteName: 'old.dotcms.com', isArchived: true }]
+                        : [
+                              {
+                                  identifier: 'demo',
+                                  siteName: 'demo.dotcms.com',
+                                  isDefault: true,
+                                  isLive: true
+                              }
+                          ]
                 });
             }
             return jsonResponse({ entity: [] });
@@ -405,10 +409,15 @@ describe('createRuntime context freshness', () => {
 
         const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
         const first = await dotcms.loadContext();
+        const loadsAfterFirst = siteLoads;
         const cached = await dotcms.loadContext();
-        expect(first.sites[0]).toMatchObject({ archived: true, live: false });
-        expect(cached.sites[0].identifier).toBe('site-1');
-        expect(siteLoads).toBe(1);
+
+        expect(first.sites).toEqual([
+            expect.objectContaining({ identifier: 'demo', isDefault: true, archived: false }),
+            expect.objectContaining({ identifier: 'old', archived: true })
+        ]);
+        expect(cached.sites).toBe(first.sites);
+        expect(siteLoads).toBe(loadsAfterFirst);
     });
 
     it('paginates and de-duplicates the complete site catalog', async () => {
