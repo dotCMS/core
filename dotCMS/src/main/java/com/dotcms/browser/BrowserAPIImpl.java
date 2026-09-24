@@ -967,9 +967,11 @@ public class BrowserAPIImpl implements BrowserAPI {
     // DB chunk size used by the single-pass-eligible field-filter path (issue #37184). Deliberately
     // decoupled from BROWSER_DB_MAX_SCAN_ROWS: that property is the outer guard rail (total rows a
     // request may scan across all chunks), not a working batch size. The default of 7,000 is a
-    // modest multiple (~8x) of the per-ES-query inode cap computed by calculateMaxInodesPerESQuery
-    // (~876 for a typical base query), so each chunk fans out to roughly 8 concurrent ES sub-queries
-    // instead of the ~57 a 50,000-row chunk would submit at once into the shared DotSubmitter pool.
+    // modest multiple (~9x) of the per-ES-query inode batch computed by partitionInodesForES
+    // (~750 UUIDs for a typical base query, bounded by BROWSER_ES_MAX_QUERY_STRING_LENGTH rather
+    // than by the ~876-inode clause cap; issue #37695), so each chunk fans out to roughly 9-10
+    // concurrent ES sub-queries instead of the ~65 a 50,000-row chunk would submit at once into the
+    // shared DotSubmitter pool.
     // It still cuts DB round trips ~8x versus the BROWSER_CONTENT_CHUNK_SIZE default of 900, and it
     // keeps the chunk loop interleaved and stoppable between chunks.
     static final String BROWSER_SINGLE_PASS_CHUNK_SIZE_KEY = "BROWSER_SINGLE_PASS_CHUNK_SIZE";
