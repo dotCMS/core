@@ -491,14 +491,14 @@ describe('HistoryFeature', () => {
             expect(store.pushPublishHistory()).toEqual(expectedSorted);
         }));
 
-        it('should set the error state without opening the global error dialog', fakeAsync(() => {
-            const error = new HttpErrorResponse({ error: 'Test error', status: 404 });
+        it('should set the error state and report it unobtrusively (toast, not the blocking dialog)', fakeAsync(() => {
+            const error = new HttpErrorResponse({ error: 'Test error', status: 500 });
             dotEditContentService.getPushPublishHistory.mockReturnValue(throwError(() => error));
 
             store.loadPushPublishHistory({ identifier: 'test-identifier', page: 1 });
             tick();
 
-            expect(dotHttpErrorManagerService.handle).not.toHaveBeenCalled();
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error, true);
             expect(store.pushPublishHistoryStatus().status).toBe(ComponentStatus.ERROR);
         }));
     });
