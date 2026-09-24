@@ -12,13 +12,18 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const lockHash = createHash('sha256').update(readFileSync(join(here, 'package-lock.json'))).digest('hex');
+const lockHash = createHash('sha256')
+    .update(readFileSync(join(here, 'package-lock.json')))
+    .digest('hex');
 const installedMarker = join(here, 'node_modules', '.toolchain-lock-hash');
 
 // Reinstall only when the lockfile changed, so repeated local builds stay fast.
 // --ignore-scripts: nothing in this toolchain needs an install script, and PR builds run it.
 if (!existsSync(installedMarker) || readFileSync(installedMarker, 'utf8') !== lockHash) {
-    execFileSync('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], { cwd: here, stdio: 'inherit' });
+    execFileSync('npm', ['ci', '--ignore-scripts', '--no-audit', '--no-fund'], {
+        cwd: here,
+        stdio: 'inherit'
+    });
     writeFileSync(installedMarker, lockHash);
 }
 
