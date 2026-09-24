@@ -166,6 +166,13 @@ public class BrowserAPIImpl implements BrowserAPI {
                     "    \"size\": %d\n" +
             "}";
 
+    // The "+inode:(id1 OR id2 ...)" restriction every ES sub-query is scoped with. Shared by the
+    // query builder (processSingleESQuery) and the batch sizing (partitionInodesForES), so the
+    // length a batch is sized for is exactly the length it is sent with.
+    private static final String INODE_FILTER_PREFIX = " +inode:(";
+    private static final String INODE_FILTER_SEPARATOR = " OR ";
+    private static final String INODE_FILTER_SUFFIX = ") ";
+
     /**
      * JSON-escapes a Lucene query string so it can be safely interpolated as the string value in
      * {@link #ES_QUERY_TEMPLATE}. The shared field strategies emit backslash-escaped Lucene special
@@ -1006,9 +1013,15 @@ public class BrowserAPIImpl implements BrowserAPI {
 
 
     /**
-     * Processes inodes directly through Elasticsearch with ES clause limit awareness.
-     * This method is designed to be called from external chunking loops and handles
-     * the ES boolean clause limit (1024) by subdividing large inode sets when necessary.
+     * Narrows a chunk of DB candidate inodes to the ones matching the text search and
+     * index-routed field criteria, through Elasticsearch. Called from the chunking loops.
+     *
+     * <p>Each ES sub-query carries its candidates as {@code +inode:(id1 OR id2 ...)}, so the
+     * chunk is split into batches that respect both the boolean-clause limit and the index
+     * server's maximum query-string length ({@link #BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY}).
+     * One batch runs directly; several run in parallel. If the base query alone leaves no room
+     * for any inode, the chunk is not sent to ES at all: the condition is logged and the chunk
+     * contributes no matches, the same outcome as any other failed sub-query.</p>
      *
      * @param browserQuery The {@link BrowserQuery} containing search criteria (filter, fileName)
      * @param inodes       The set of inodes to filter through Elasticsearch text search
@@ -1022,20 +1035,43 @@ public class BrowserAPIImpl implements BrowserAPI {
         final int totalInodes = inodes.size();
         final long startTime = System.currentTimeMillis();
 
-        // Calculate the maximum inodes we can handle in a single ES query
-        // considering the ES boolean clause limit and other query conditions
-        final int maxInodesPerESQuery = calculateMaxInodesPerESQuery(browserQuery);
+        final int maxInodesByClauses = calculateMaxInodesPerESQuery(browserQuery);
+        final int baseQueryLength = buildBaseESQuery(browserQuery).length();
+        final int maxQueryLength = getESQueryStringLengthBudget();
+        final List<List<String>> batches = partitionInodesForES(
+                new ArrayList<>(inodes), baseQueryLength, maxQueryLength, maxInodesByClauses);
 
-        Logger.debug(this, String.format("Direct ES processing: %d inodes, max per query: %d",
-            totalInodes, maxInodesPerESQuery));
+        Logger.debug(this, String.format(
+                "Direct ES processing: %d inodes, max per query: %d by clauses, %d characters → %d sub-queries",
+                totalInodes, maxInodesByClauses, maxQueryLength, batches.size()));
 
-        // If we're under the limit, process directly
-        if (totalInodes <= maxInodesPerESQuery) {
-            return processSingleESQuery(browserQuery, inodes, startTime);
-        } else {
-            // Split into multiple ES queries to respect the clause limit
-            return processMultipleESQueries(browserQuery, inodes, maxInodesPerESQuery, startTime);
+        if (batches.isEmpty()) {
+            Logger.error(this, String.format(
+                    "ES filtering skipped for %d inodes: the base query is %d characters, leaving no "
+                            + "room for the inode restriction within the %d-character budget (%s)",
+                    totalInodes, baseQueryLength, maxQueryLength, BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY));
+            return new LinkedHashSet<>();
         }
+        if (batches.size() == 1) {
+            return processSingleESQuery(browserQuery, inodes, startTime);
+        }
+        return processMultipleESQueries(browserQuery, batches, maxQueryLength, startTime);
+    }
+
+    /**
+     * Returns how many characters one ES sub-query's query string may take: the configured
+     * {@link #BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY} (or its default, when unset or not positive)
+     * times {@link #ES_QUERY_STRING_LENGTH_SAFETY_RATIO}.
+     *
+     * @return The query-string length budget for a sub-query.
+     */
+    private static int getESQueryStringLengthBudget() {
+        int limit = Config.getIntProperty(BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY,
+                BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT);
+        if (limit <= 0) {
+            limit = BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT;
+        }
+        return (int) (limit * ES_QUERY_STRING_LENGTH_SAFETY_RATIO);
     }
 
     /**
@@ -1050,8 +1086,10 @@ public class BrowserAPIImpl implements BrowserAPI {
      * {@code maxQueryLength} characters. If the base query leaves no room for even the longest
      * inode, no batch can be built and the result is empty.</p>
      *
-     * <p>STUB (issue #37695, TDD Red phase): currently splits by {@code maxInodesByClauses} only,
-     * exactly as {@link #processMultipleESQueries} does today, ignoring both lengths.</p>
+     * <p>Lengths are the inodes' real lengths, not an assumed 36-character UUID, since legacy
+     * installations can hold inodes of other shapes. The length bound always wins over the
+     * clause cap, including over the minimum of 100 that {@link #calculateMaxInodesPerESQuery}
+     * enforces (issue #37695).</p>
      *
      * @param inodes             Candidate inodes, in DB order.
      * @param baseQueryLength    Length of the base query the inode restriction is prepended to.
@@ -1063,15 +1101,42 @@ public class BrowserAPIImpl implements BrowserAPI {
     static List<List<String>> partitionInodesForES(final List<String> inodes, final int baseQueryLength,
             final int maxQueryLength, final int maxInodesByClauses) {
         final List<List<String>> batches = new ArrayList<>();
-        for (int i = 0; i < inodes.size(); i += maxInodesByClauses) {
-            batches.add(inodes.subList(i, Math.min(i + maxInodesByClauses, inodes.size())));
+        if (inodes.isEmpty()) {
+            return batches;
         }
+        final int fixedLength = INODE_FILTER_PREFIX.length() + INODE_FILTER_SUFFIX.length() + baseQueryLength;
+        final int longestInode = inodes.stream().mapToInt(String::length).max().orElse(0);
+        if (fixedLength + longestInode > maxQueryLength) {
+            return batches;
+        }
+        final int clauseCap = Math.max(1, maxInodesByClauses);
+
+        int batchStart = 0;
+        int batchLength = fixedLength + inodes.get(0).length();
+        for (int i = 1; i < inodes.size(); i++) {
+            final int withNext = batchLength + INODE_FILTER_SEPARATOR.length() + inodes.get(i).length();
+            if (withNext > maxQueryLength || i - batchStart >= clauseCap) {
+                batches.add(inodes.subList(batchStart, i));
+                batchStart = i;
+                batchLength = fixedLength + inodes.get(i).length();
+            } else {
+                batchLength = withNext;
+            }
+        }
+        batches.add(inodes.subList(batchStart, inodes.size()));
         return batches;
     }
 
     /**
      * Calculates the maximum number of inodes we can include in a single ES query
      * while staying under the boolean clause limit (1024).
+     *
+     * <p>This is only the clause cap, and it never goes below 100. The query-string length bound
+     * applied by {@link #partitionInodesForES} takes precedence, so a batch may end up smaller
+     * than what this returns (issue #37695).</p>
+     *
+     * @param browserQuery The {@link BrowserQuery} whose base query shares the clause budget.
+     * @return The most inodes a sub-query may hold under the boolean-clause limit.
      */
     private int calculateMaxInodesPerESQuery(BrowserQuery browserQuery) {
         // ES has a limit of 1024 boolean clauses per query
@@ -1149,7 +1214,8 @@ public class BrowserAPIImpl implements BrowserAPI {
         try {
             final String baseQuery = buildBaseESQuery(browserQuery);
             final List<String> inodesList = new ArrayList<>(inodes);
-            final String inodeFilter = String.format(" +inode:(%s) ", String.join(" OR ", inodesList));
+            final String inodeFilter = INODE_FILTER_PREFIX
+                    + String.join(INODE_FILTER_SEPARATOR, inodesList) + INODE_FILTER_SUFFIX;
             final String luceneQuery = inodeFilter + baseQuery;
             final String esQuery = String.format(ES_QUERY_TEMPLATE, jsonEscape(luceneQuery), inodes.size());
 
@@ -1189,25 +1255,23 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Processes multiple ES queries when inode count exceeds the limit.
-     * Uses parallel processing for better performance.
+     * Runs one ES sub-query per batch, in parallel, and merges their matches. Used when a chunk
+     * of candidates does not fit in a single sub-query.
+     *
+     * @param browserQuery   The {@link BrowserQuery} containing the search criteria.
+     * @param subBatches     The candidate inodes, already split by {@link #partitionInodesForES}.
+     * @param maxQueryLength The query-string length budget the batches were sized for (logging only).
+     * @param startTime      When the caller started, for performance logging.
+     * @return The inodes that matched, across all sub-queries.
      */
-    private Set<String> processMultipleESQueries(BrowserQuery browserQuery, Set<String> inodes,
-                                                 int maxInodesPerQuery, long startTime) {
+    private Set<String> processMultipleESQueries(final BrowserQuery browserQuery,
+            final List<List<String>> subBatches, final int maxQueryLength, final long startTime) {
         final Set<String> allResults = Collections.synchronizedSet(new LinkedHashSet<>());
-        final List<String> inodesList = new ArrayList<>(inodes);
-        final int totalInodes = inodesList.size();
-
-        // Create sub-batches that respect the ES clause limit
-        final List<List<String>> subBatches = new ArrayList<>();
-        for (int i = 0; i < totalInodes; i += maxInodesPerQuery) {
-            final int endIndex = Math.min(i + maxInodesPerQuery, totalInodes);
-            subBatches.add(inodesList.subList(i, endIndex));
-        }
+        final int totalInodes = subBatches.stream().mapToInt(List::size).sum();
 
         final int batchCount = subBatches.size();
-        Logger.info(this, String.format("ES clause limit handling: splitting %d inodes into %d sub-queries (max %d inodes per query)",
-            totalInodes, batchCount, maxInodesPerQuery));
+        Logger.info(this, String.format("ES sub-query limits: splitting %d inodes into %d sub-queries (max %d characters per query)",
+            totalInodes, batchCount, maxQueryLength));
 
         // Process sub-batches in parallel
         final DotSubmitter submitter = DotConcurrentFactory.getInstance().getSubmitter();
