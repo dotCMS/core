@@ -245,9 +245,7 @@ async function writeBodyToFile(
             await file.close();
         }
 
-        if (bytes === 0) {
-            throw new Error('Downloaded asset was empty');
-        }
+        // An empty body is an empty asset (a 0-byte VTL partial is real), so it is written too.
         await rename(partial, outputPath);
 
         return bytes;

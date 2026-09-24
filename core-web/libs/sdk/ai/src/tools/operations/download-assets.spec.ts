@@ -145,6 +145,27 @@ describe('downloadAssets', () => {
         expect(await readFile(join(dest, 'style.css'), 'utf8')).toBe('body');
     });
 
+    it('writes a zero-byte asset as an empty file', async () => {
+        // An empty VTL partial or CSS file is a real asset — upload_assets sends them on
+        // purpose — so an empty body is a file with nothing in it, not a failed download.
+        const { runtime } = searchRuntime(
+            [{ identifier: 'a1', path: '//demo.dotcms.com/application/themes/travel/empty.vtl' }],
+            ''
+        );
+
+        const manifest = await downloadAssets({
+            dotcms: runtime,
+            path: '//demo.dotcms.com/application/themes/travel',
+            dest,
+            recursive: true,
+            overwrite: 'overwrite'
+        });
+
+        expect(manifest.failures).toEqual([]);
+        expect(manifest.files).toEqual([{ path: 'empty.vtl', bytes: 0, identifier: 'a1' }]);
+        expect(await readFile(join(dest, 'empty.vtl'), 'utf8')).toBe('');
+    });
+
     it('skips an existing file without downloading its bytes', async () => {
         await writeFile(join(dest, 'style.css'), 'local');
         const { runtime, calls } = searchRuntime([
