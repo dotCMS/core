@@ -9,8 +9,17 @@ export interface CodeToolResult {
     result: string;
 }
 
+/** A JSON value: the shape the Vercel AI SDK requires of a `json` model output. */
+export type JSONValue =
+    | null
+    | string
+    | number
+    | boolean
+    | { [key: string]: JSONValue | undefined }
+    | JSONValue[];
+
 /** A tool's model-facing output, in the shape the Vercel AI SDK's `toModelOutput` returns. */
-export type ToolModelOutput = { type: 'text'; value: string } | { type: 'json'; value: unknown };
+export type ToolModelOutput = { type: 'text'; value: string } | { type: 'json'; value: JSONValue };
 
 /**
  * How a tool shows one of its results to the model — the one place that is decided.
@@ -28,7 +37,18 @@ export function renderToolOutput<TResult>(
         return { type: 'text', value: toText(output as TResult) };
     }
 
-    return { type: 'json', value: output };
+    return { type: 'json', value: toJSONValue(output) };
+}
+
+/**
+ * A value as the JSON it serializes to — what every transport sends and the model receives.
+ * A `Date` becomes its ISO string and an `undefined` field drops out, here rather than out of
+ * sight in the transport. Results are small plain-data manifests, so the round trip is cheap.
+ */
+function toJSONValue(value: unknown): JSONValue {
+    const text = JSON.stringify(value);
+
+    return text === undefined ? null : (JSON.parse(text) as JSONValue);
 }
 
 /** A model output as the text a text-only transport (an MCP `content` block) carries. */

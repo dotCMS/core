@@ -18,6 +18,8 @@ import { isToolFailure, type ToolFailure } from '../toolkit/tool-runtime';
 
 import type { CodeToolResult } from '../toolkit/results';
 import type { AnyDotCMSTool } from '../toolkit/types';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { ToolSet } from 'ai';
 
 /** Build a minimal JSON Response stub. */
 function jsonResponse(body: unknown): Response {
@@ -133,6 +135,25 @@ describe('tool factories', () => {
 
             expectTypeOf(tools[0].execute).parameter(0).toBeUnknown();
             expect(tools.map((tool) => tool.name)).toEqual(['page_verify', 'search']);
+        });
+
+        it('type-checks as the AI SDK’s tools and as an MCP registerTool config, as the README shows', () => {
+            // Compile-time: the README's framework examples pass the tool objects straight in,
+            // so a type the frameworks reject breaks every consumer that copies them.
+            const aiSdk: ToolSet = {
+                search: searchTool(DOTCMS),
+                page_verify: pageVerifyTool(DOTCMS)
+            };
+            // Never called: it exists so the compiler checks the tool against registerTool's config.
+            const register = (server: McpServer) => {
+                const tool = pageVerifyTool(DOTCMS);
+                server.registerTool(tool.name, tool, async (args) => ({
+                    content: [{ type: 'text', text: tool.toText(await tool.execute(args)) }]
+                }));
+            };
+
+            expect(Object.keys(aiSdk)).toEqual(['search', 'page_verify']);
+            expect(typeof register).toBe('function');
         });
 
         it('marks only the tools that cannot change the instance as read-only', () => {

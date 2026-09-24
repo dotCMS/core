@@ -20,6 +20,15 @@ describe('renderToolOutput', () => {
         });
     });
 
+    it('shows a JSON result as the plain data it serializes to', () => {
+        // The AI SDK types a JSON output's value as JSONValue, and every transport sends it as
+        // JSON. Normalizing here makes the value handed over exactly what the model receives.
+        expect(renderToolOutput(undefined, { when: new Date(0), gone: undefined, n: 1 })).toEqual({
+            type: 'json',
+            value: { when: '1970-01-01T00:00:00.000Z', n: 1 }
+        });
+    });
+
     it('shows a failure as JSON even from a text tool', () => {
         const failure = toToolFailure('search', new Error('boom'));
 
