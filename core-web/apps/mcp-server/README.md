@@ -313,16 +313,16 @@ const defaultSite = sites.find(s => s.isDefault)
 
 **How it works**
 
-- Context is fetched the first time a tool is invoked in an MCP session and cached in memory for **5 minutes**.
-- The cache is keyed by MCP session ID. Concurrent calls in the same session deduplicate to a single load.
-- Each endpoint loads independently — a failure in one (e.g. `contentTypes`) yields an empty array for that global, but the others still populate.
+- Context is loaded fresh at the start of every tool call, and nothing carries over between calls. A content type, site or language added elsewhere, or by an earlier `execute` call, is in the globals of the very next call.
+- Within one call it loads once, and every read in that call shares the same snapshot.
+- Each endpoint loads independently — a failure in one (e.g. `contentTypes`) yields an empty array for that global, but the others still populate. The server logs each failed load to stderr (`onContextError` in `src/lib/tools.ts`), so an empty global is never silent to whoever runs it.
 - Auth is handled by the main thread; the loader uses the same authenticated `api` adapter as `execute`.
 
 **Known limitations**
 
-- No invalidation outside the TTL — schema or site changes made elsewhere are visible after at most 5 minutes.
-- Mutations performed via `execute` do not refresh the cache. Re-read from the API directly when you need post-mutation state.
-- Content type list is capped at 200 entries per session load.
+- Every call pays for the four context reads before its code runs.
+- The globals are a snapshot from the start of the call: a change the same `execute` call makes is not reflected in them. Re-read from the API within the call when you need post-mutation state.
+- The content type list is capped at 200 entries per load.
 
 
 ## Development
