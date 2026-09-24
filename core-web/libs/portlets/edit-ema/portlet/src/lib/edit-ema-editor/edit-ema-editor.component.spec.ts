@@ -2579,11 +2579,13 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 it('onLockChanged uses the page inode (#37713)', async () => {
-                    // The edited contentlet (inode 'contentlet-inode-123') is NOT the page
-                    // itself (inode '123-i') — the pencil/edit-in-place case, not Page
-                    // Properties.
-                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
-
+                    // The edited contentlet (inode 'contentlet-inode-123', from
+                    // EDIT_ACTION_PAYLOAD_MOCK) is NOT the page itself (inode '1234', the
+                    // standard page mock this suite's beforeEach already loads) — the
+                    // pencil/edit-in-place case, not Page Properties. Deliberately NOT
+                    // overriding the page asset here: an in-flight pageLoad from beforeEach
+                    // resolves asynchronously and would clobber an earlier override before
+                    // whenStable() settles.
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
                     vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
@@ -2620,13 +2622,11 @@ describe('EditEmaEditorComponent', () => {
                     const dialogData = config.data as EditContentDialogData;
 
                     const workflowFetchSpy = vi.spyOn(workflowApi(), 'workflowFetch');
-                    dialogData.onLockChanged?.(
-                        MOCK_RESPONSE_HEADLESS.page as unknown as DotCMSContentlet
-                    );
+                    dialogData.onLockChanged?.({
+                        inode: 'contentlet-inode-123'
+                    } as unknown as DotCMSContentlet);
 
-                    expect(workflowFetchSpy).toHaveBeenCalledWith(
-                        MOCK_RESPONSE_HEADLESS.page.inode
-                    );
+                    expect(workflowFetchSpy).toHaveBeenCalledWith('1234');
                     expect(workflowFetchSpy).not.toHaveBeenCalledWith('contentlet-inode-123');
                 });
 
