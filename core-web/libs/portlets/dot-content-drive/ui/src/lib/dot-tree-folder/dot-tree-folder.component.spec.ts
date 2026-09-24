@@ -1099,6 +1099,26 @@ describe('DotTreeFolderComponent', () => {
             expect(spectator.query('[data-node-key="10"]')?.getAttribute('aria-busy')).toBeNull();
         });
 
+        /**
+         * **The stylesheet's only hook.** `dot-tree-folder.component.scss` disables pointer events
+         * with `.p-tree-node-content:has([aria-busy="true"])`, so the busy marker has to sit INSIDE
+         * PrimeNG's clickable row for the rule to match anything.
+         *
+         * This matters because the TypeScript guard cannot do the job alone: PrimeNG commits its
+         * own selection before it emits, so swallowing `onNodeSelect` left the busy folder painted
+         * as the active row while the app stayed put (reported on PR dotCMS/core#37688). If PrimeNG
+         * renames the class or the label moves out of the row, nothing else here fails — the folder
+         * just silently becomes clickable again.
+         */
+        it('should put the busy marker inside the row the stylesheet disables', () => {
+            arrange(['inode-a']);
+
+            const row = spectator.query('.p-tree-node-content:has([aria-busy="true"])');
+
+            expect(row).toBeTruthy();
+            expect(row?.querySelector('[data-node-key="9"]')).toBeTruthy();
+        });
+
         it('should mark nothing when no folders are in flight', () => {
             // The input is optional: the AssetPicker renders this same tree and never passes it.
             arrange([]);

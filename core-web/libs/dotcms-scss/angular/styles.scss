@@ -27,6 +27,36 @@
     box-sizing: border-box;
 }
 
+/*
+ * No PrimeNG Message animates in, anywhere.
+ *
+ * PrimeNG gives its Message a 0.3s enter animation that expands the element's own box
+ * (`grid-template-rows: 0fr -> 1fr`) and offers no input to turn it off — the host binds
+ * `animate.enter` to a literal class name and the theme hangs the keyframes off it.
+ *
+ * Almost every Message in this app appears in the same frame as the panel around it rather than
+ * arriving during a stable view, and there the expansion reads as a late shove of whatever sits
+ * below, after the reader has already started on it. Live alerts landing in a settled view are the
+ * only case the animation is for, and we have none.
+ *
+ * **Here rather than in `dotcms-theme/components/messages`, where it belongs by subject.** That
+ * theme is not in the build at all — the `@import "dotcms-theme/theme"` above is commented out — so
+ * a rule written there compiles and ships nothing. This file is listed in
+ * `apps/dotcms-ui/project.json`'s `styles`, so it is one of the few global sheets that actually
+ * reaches the app. Move this back beside the other Message styles if that import is ever restored.
+ *
+ * Global rather than per component: this began scoped to the Content Drive action centre, where a
+ * class on each element was tried first and left two Messages still animating — one never given the
+ * class, one whose author had no reason to know it existed. The next dialog would repeat it.
+ *
+ * `!important` because the rule is beating a themed animation on a third-party component; that is
+ * the whole reason the declaration exists.
+ */
+.p-message-enter-active,
+.p-message-leave-active {
+    animation: none !important;
+}
+
 html,
 body {
     height: 100%;
