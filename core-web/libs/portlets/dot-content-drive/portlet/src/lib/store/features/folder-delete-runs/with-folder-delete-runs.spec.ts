@@ -104,7 +104,12 @@ describe('withFolderDeleteRuns', () => {
      */
     const withBusyRowsStub = () =>
         signalStoreFeature(
-            { state: type<DotContentDriveState>() },
+            // The sidebar slice travels through here too. Declaring `DotContentDriveState` alone
+            // NARROWS the accumulated state back to it, dropping the `folders` the store above
+            // seeded — and `withFolderDeleteRuns`, which requires that member, then has no matching
+            // overload. The failure surfaces as `TS2769: No overload matches this call` on the
+            // `signalStore(...)` call rather than here, which is what makes it worth spelling out.
+            { state: type<DotContentDriveState & { folders: DotFolderTreeNodeItem[] }>() },
             withComputed(() => ({ busyRows: computed<string[]>(() => []) }))
         );
 
