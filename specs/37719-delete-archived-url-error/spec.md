@@ -108,8 +108,10 @@ Three causes, confirmed while reproducing:
   filtered by that content type, an overlay closes itself.
 - The push history endpoint finds archived content and returns its history (possibly empty); it
   keeps returning 404 for identifiers that do not exist at all.
-- A failure loading the push publish history puts that panel in its error state without opening
-  the global error dialog.
+- A failure loading the push publish history is reported with a non-blocking error toast
+  instead of the global blocking dialog, so the editor stays usable and the failure is not
+  mistaken for "never pushed".
+- After a delete, no overlay reports the deleted content to its opener as saved.
 
 **Explicitly out of scope / non-goals**:
 
@@ -150,7 +152,9 @@ Three causes, confirmed while reproducing:
   message is shown and the user lands on the content listing filtered by that content type
   (`/c/content?filter=<contentType>`), with no error dialog.
 - **AC-002**: In the overlay editor (dialog or side panel), after a Delete or Destroy action
-  succeeds, the overlay closes with no error dialog.
+  succeeds, the overlay closes with no error dialog, and the opener is not notified of a save
+  (`onContentSaved`) for the deleted content — including a save made earlier in the same
+  session.
 - **AC-003**: After a Delete or Destroy action, the editor makes no request for the deleted
   contentlet (no `GET /api/v1/content/{inode}`, workflow actions or workflow status for it).
 - **AC-004**: Every other workflow action (Save, Publish, Unpublish, Archive, Unarchive, Reset…)
@@ -162,8 +166,9 @@ Three causes, confirmed while reproducing:
 - **AC-007**: `GET /api/v1/content/{identifier}/push/history` returns 200 for an archived
   contentlet (with its history, or an empty list), and still returns 404 for an identifier that
   does not exist.
-- **AC-008**: If loading the push publish history fails for any reason, the sidebar panel shows
-  its error state and the global error dialog is not opened.
+- **AC-008**: If loading the push publish history fails for any reason, the failure is reported
+  with a non-blocking error toast (the global blocking dialog is not opened) and the panel's
+  state is set to error, so the failure is never shown only as an empty "never pushed" list.
 - **Verification method**:
   - Vitest/Spectator specs in `core-web/libs/edit-content`:
     - `workflow.feature.spec.ts` — a Delete/Destroy action calls the host's leave method with the
@@ -171,9 +176,13 @@ Three causes, confirmed while reproducing:
       `getByInode` or `getWorkflowStatus`; a non-deleting action keeps the reload path; a failed
       delete calls the error manager (AC-001–AC-005 at store level).
     - `router-edit-content-host.spec.ts` / `overlay-edit-content-host.spec.ts` — the leave method
-      navigates to the filtered listing / closes the dialog (AC-001, AC-002).
-    - `history.feature.spec.ts` — a push history error sets the error state and does not call the
-      error manager (AC-008).
+      navigates to the filtered listing / closes the dialog and signals overlays without a dialog
+      ref, and stops reporting saves (AC-001, AC-002).
+    - `dot-edit-content-side-panel.component.spec.ts` / `dot-create-content-dialog.component.spec.ts`
+      — after a delete the overlay closes and `onContentSaved` is not called, even after an
+      earlier save (AC-002).
+    - `history.feature.spec.ts` — a push history error sets the error state and reports it through
+      the error manager in unobtrusive (toast) mode (AC-008).
   - Backend: integration test for `ContentResource#getPushHistory` — archived contentlet → 200;
     unknown identifier → 404 (AC-007); registered in the relevant `MainSuite`.
   - Manual: the reproduction above on a local instance with New Edit Content enabled, in
