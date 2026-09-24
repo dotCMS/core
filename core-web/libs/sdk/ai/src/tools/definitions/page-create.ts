@@ -71,15 +71,16 @@ instead of an opaque 400 after the folder was already created. Hand-rolling that
   page with the leaf url under that folder — so the url lands exactly where you meant.
 
 WHAT THIS TOOL DOES NOT DO — read this. It creates the page; it does NOT place any content on it.
-The page comes up live but BLANK. Placing content (and the re-publish that makes it render) is a
-separate, explicit step you perform afterward with the \`execute\` tool against the page's layout.
-The returned manifest flags a \`live: false\` / warning case so a successful create is never
-mistaken for a fully-populated page.
+The page comes up live but BLANK. Placing content is a separate, explicit step you take afterward
+with the \`page_place_content\` tool: it puts existing contentlets into the page's slots without
+emptying the slots you don't address. Then check the result with \`page_verify\`, which catches a
+blank slot or an edit that is not live yet. The returned manifest flags a \`live: false\` / warning
+case so a successful create is never mistaken for a fully-populated page.
 
 Returns a JSON manifest: { identifier, inode, folder, url, fullPath, site, live, warnings }.
 
-Use the \`execute\` tool (not this one) when you need a page variant, want to set custom page
-fields beyond the common set, or need to fire a non-PUBLISH workflow action.`,
+Custom page fields go in \`extraFields\` on this tool. Use the \`execute\` tool (not this one) only
+when you need a page variant or need to fire a non-PUBLISH workflow action.`,
     annotations: {
         readOnlyHint: false,
         destructiveHint: false,
