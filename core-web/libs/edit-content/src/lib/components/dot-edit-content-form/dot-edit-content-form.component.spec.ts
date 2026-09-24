@@ -66,6 +66,7 @@ import {
     MOCK_WORKFLOW_STATUS
 } from '../../utils/edit-content.mock';
 import { generatePageEditUrl, generatePreviewUrl } from '../../utils/functions.util';
+import { CHECKBOX_FIELD_MOCK } from '../../utils/mocks';
 
 describe('DotFormComponent', () => {
     let spectator: Spectator<DotEditContentFormComponent>;
@@ -252,6 +253,81 @@ describe('DotFormComponent', () => {
             const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
             expect(disabledWYSIWYGControl).toBeTruthy();
             expect(disabledWYSIWYGControl?.value).toEqual(['wysiwygField1', 'wysiwygField2']);
+        });
+    });
+
+    // A Checkbox the user cleared comes back from the API with its key absent. The resolver must
+    // hand the control null rather than '', because getFinalCastedValue flattens these types with
+    // split(',') — '' would become [''], an array of length one that Validators.required accepts,
+    // letting a required field submit with nothing selected.
+    // See https://github.com/dotCMS/core/issues/35416
+    describe('Cleared selection field on saved content', () => {
+        const REQUIRED_CHECKBOX: DotCMSContentTypeField = {
+            ...CHECKBOX_FIELD_MOCK,
+            variable: 'showOnMenu',
+            defaultValue: 'true',
+            required: true
+        };
+
+        const [firstRow, ...otherRows] = MOCK_CONTENTTYPE_1_TAB.layout;
+        const [firstColumn, ...otherColumns] = firstRow.columns ?? [];
+
+        const CONTENT_TYPE_WITH_CHECKBOX: DotCMSContentType = {
+            ...MOCK_CONTENTTYPE_1_TAB,
+            fields: [...MOCK_CONTENTTYPE_1_TAB.fields, REQUIRED_CHECKBOX],
+            layout: [
+                {
+                    ...firstRow,
+                    columns: [
+                        { ...firstColumn, fields: [...firstColumn.fields, REQUIRED_CHECKBOX] },
+                        ...otherColumns
+                    ]
+                },
+                ...otherRows
+            ]
+        };
+
+        beforeEach(() => {
+            // The saved contentlet deliberately has no showOnMenu key — that is what the API
+            // returns once the box has been cleared.
+            const savedContentlet = { ...MOCK_CONTENTLET_1_OR_2_TABS };
+            delete savedContentlet[REQUIRED_CHECKBOX.variable];
+
+            dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                of(CONTENT_TYPE_WITH_CHECKBOX)
+            );
+            workflowActionsService.getByInode.mockReturnValue(
+                of(MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB)
+            );
+            dotEditContentService.getContentById.mockReturnValue(of(savedContentlet));
+            workflowActionsService.getWorkFlowActions.mockReturnValue(
+                of(MOCK_SINGLE_WORKFLOW_ACTIONS)
+            );
+            dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+            dotContentletService.canLock.mockReturnValue(
+                of({ canLock: true } as DotContentletCanLock)
+            );
+
+            store.initializeExistingContent({
+                inode: MOCK_CONTENTLET_1_OR_2_TABS.inode,
+                depth: DotContentletDepths.ONE
+            });
+
+            spectator.detectChanges();
+        });
+
+        it('should leave the control empty instead of re-applying the default value', () => {
+            const control = component.form.get(REQUIRED_CHECKBOX.variable);
+
+            expect(control).not.toBeNull();
+            expect(control?.value).toBeNull();
+        });
+
+        it('should keep a required cleared checkbox invalid', () => {
+            const control = component.form.get(REQUIRED_CHECKBOX.variable);
+
+            expect(control).not.toBeNull();
+            expect(control?.valid).toBe(false);
         });
     });
 
