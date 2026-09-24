@@ -41,7 +41,7 @@ export type {
 
 // What every tool resolves to on failure, and the guard to tell it from a normal result.
 export { isToolFailure } from './toolkit/tool-runtime';
-export type { ToolFailure } from './toolkit/tool-runtime';
+export type { ToolFailure, ToolFailureCode } from './toolkit/tool-runtime';
 
 // The code tools' result shape, and what `tool.toModelOutput()` returns. Rendering a result
 // for a text-only transport (MCP) is the tool's own `tool.toText(result)`.

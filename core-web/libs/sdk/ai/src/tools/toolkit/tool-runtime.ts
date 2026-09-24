@@ -5,6 +5,7 @@ import {
     isDotCMSError,
     NetworkError,
     TimeoutError,
+    type DotCMSErrorCode,
     type DotCMSRuntime,
     type DotCMSRuntimeConfig,
     type RequestOptions
@@ -184,8 +185,16 @@ function isRetryable(error: unknown): boolean {
     return false;
 }
 
+/**
+ * Every code a {@link ToolFailure} can carry: the runtime's error codes, `CONFIGURATION` for a
+ * connection the host has not set up, and `UNKNOWN` for anything that is not a typed error.
+ * A union rather than `string`, so a host switching on it gets completion and a misspelt code
+ * is a compile error rather than a branch that silently never runs.
+ */
+export type ToolFailureCode = DotCMSErrorCode | ConfigurationError['code'] | 'UNKNOWN';
+
 /** Stable machine-readable code for any thrown value. */
-function errorCode(error: unknown): string {
+function errorCode(error: unknown): ToolFailureCode {
     if (isDotCMSError(error)) {
         return error.code;
     }
@@ -199,7 +208,7 @@ export interface ToolFailure {
     operation: string;
     error: string;
     /** Stable machine-readable code (`HTTP`, `TIMEOUT`, `POLICY`, …), or `UNKNOWN`. */
-    code: string;
+    code: ToolFailureCode;
     /**
      * Whether retrying could help. A FIELD rather than only a type, because MCP hands the
      * model a STRING — `instanceof` is unavailable on the far side, so anything the model
@@ -229,13 +238,15 @@ export function toToolFailure(
     extra?: Record<string, unknown>
 ): ToolFailure {
     return {
+        // Caller context goes FIRST, so it can add fields but never overwrite `ok`, `code` or
+        // `retryable` — the fields a model and a host branch on.
+        ...extra,
         ok: false,
         operation,
         error: `[dotCMS - ${operation}]: ${errorMessage(error)}`,
         code: errorCode(error),
         retryable: isRetryable(error),
-        ...(error instanceof HttpError ? { status: error.status } : {}),
-        ...extra
+        ...(error instanceof HttpError ? { status: error.status } : {})
     };
 }
 

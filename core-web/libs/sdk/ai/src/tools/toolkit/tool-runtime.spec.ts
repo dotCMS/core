@@ -1,4 +1,12 @@
-import { errorMessage, MAX_ERROR_CHARS, toToolFailure, type ToolFailure } from './tool-runtime';
+import { expectTypeOf } from 'vitest';
+
+import {
+    errorMessage,
+    MAX_ERROR_CHARS,
+    toToolFailure,
+    type ToolFailure,
+    type ToolFailureCode
+} from './tool-runtime';
 
 import { AbortError, HttpError, NetworkError, PolicyError, TimeoutError } from '../../runtime';
 
@@ -116,6 +124,37 @@ describe('toToolFailure', () => {
 
         expect(failure.error).toContain('truncated');
         expect(failure.error.length).toBeLessThan(MAX_ERROR_CHARS * 2);
+    });
+
+    it('types code as the documented set, so a misspelt code does not compile', () => {
+        const failure = failureFor('op', new TimeoutError('too slow', 30_000));
+
+        expectTypeOf<ToolFailureCode>().toEqualTypeOf<
+            | 'VALIDATION'
+            | 'POLICY'
+            | 'HTTP'
+            | 'NETWORK'
+            | 'TIMEOUT'
+            | 'ABORT'
+            | 'SANDBOX'
+            | 'RUNTIME'
+            | 'UNKNOWN'
+            | 'CONFIGURATION'
+        >();
+        expectTypeOf(failure.code).toEqualTypeOf<ToolFailureCode>();
+        // @ts-expect-error — not a code; with `code: string` this compiled and never matched.
+        const typo = failure.code === 'CONFIGURATON';
+        expect(typo).toBe(false);
+    });
+
+    it('never lets caller context overwrite the code or the other standard fields', () => {
+        const failure = failureFor('op', new TimeoutError('too slow', 30_000), {
+            code: 'NOT_A_CODE',
+            ok: true,
+            retryable: false
+        });
+
+        expect(failure).toMatchObject({ ok: false, code: 'TIMEOUT', retryable: true });
     });
 
     it('merges caller-supplied context without losing the standard fields', () => {
