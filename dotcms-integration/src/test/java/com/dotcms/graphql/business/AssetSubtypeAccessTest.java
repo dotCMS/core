@@ -20,6 +20,7 @@ import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
@@ -35,6 +36,8 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.liferay.portal.model.User;
 import graphql.ExecutionResult;
@@ -970,6 +973,96 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     }
 
     /**
+     * Given: a clause the asset does not match, written inside a named fragment rather than inline.
+     * When: the query runs.
+     * Then: no warning is produced.
+     *
+     * <p>FR-016 scope: only inline fragments are reported. A named fragment is written once and may
+     * be spread in many places, so attributing a warning to it would name a path the client did not
+     * write. This locks that the collector does not follow spreads, nor walk fragment definitions.
+     */
+    @Test
+    public void test_clauseInsideANamedFragment_isNeverReported() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final ContentType unrelatedType = newDotAssetSubtype();
+        final Contentlet asset = newAssetOf(assetType, "Spread");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s\") { %s { fileName ...OnUnrelated "
+                        + "...WithInlineClause } } } "
+                        + "fragment OnUnrelated on %s { %s } "
+                        + "fragment WithInlineClause on %s { ... on %s { %s } }",
+                holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
+                unrelatedType.variable(), CUSTOM_PROPERTY_VAR,
+                InterfaceType.ASSET_INTERFACE_NAME, unrelatedType.variable(),
+                CUSTOM_PROPERTY_VAR);
+
+        final ExecutionResult result = GraphqlQueryRunner.executeWithWarnings(query, systemUser);
+
+        assertTrue("the request must succeed: " + result.getErrors(),
+                result.getErrors().isEmpty());
+        assertTrue("a clause inside a named fragment must never be reported. Warnings were: "
+                        + GraphqlQueryRunner.warningsOf(result),
+                GraphqlQueryRunner.warningsOf(result).isEmpty());
+    }
+
+    /**
+     * Given: holder content in a second language whose Image field points at a DOTASSET-derived
+     * asset that exists only in the default language.
+     * When: the field is selected.
+     * Then: it answers {@code null} without error — DOTASSET content never falls back to the default
+     * language, exactly as elsewhere in content delivery.
+     *
+     * <p>FR-019: which asset a field resolves to is decided by the unchanged lookup. This and the
+     * FILEASSET case below lock both outcomes of that lookup's language fallback.
+     */
+    @Test
+    public void test_dotAssetOnlyInDefaultLanguage_doesNotFallBack() throws Exception {
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+        final Contentlet asset = newAssetOf(newDotAssetSubtype(), "DefaultOnly");
+
+        final ContentType holder = newHolderType();
+        final Contentlet content =
+                newHolderContentInLanguage(holder, asset, secondLanguage.getId());
+
+        assertEquals("a DOTASSET missing in the requested language must not fall back",
+                null, assetFieldInLanguage(holder, content, secondLanguage.getId()));
+    }
+
+    /**
+     * Given: the same setup with a FILEASSET-derived asset, and file fallback enabled.
+     * When: the field is selected.
+     * Then: the default-language asset is returned.
+     */
+    @Test
+    public void test_fileAssetOnlyInDefaultLanguage_fallsBackWhenConfigured() throws Exception {
+        final boolean previous =
+                Config.getBooleanProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", false);
+        Config.setProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", true);
+        try {
+            final Language secondLanguage = new LanguageDataGen().nextPersisted();
+            // Created after the property is set: a content type reads it once, lazily.
+            final Contentlet asset = newFileAssetOf(newFileAssetSubtype(), "DefaultOnlyFile");
+
+            final ContentType holder = newHolderType();
+            final Contentlet content =
+                    newHolderContentInLanguage(holder, asset, secondLanguage.getId());
+
+            final Map<String, Object> file = (Map<String, Object>)
+                    assetFieldInLanguage(holder, content, secondLanguage.getId());
+            assertNotNull("a FILEASSET missing in the requested language must fall back to the "
+                    + "default language when file fallback is enabled", file);
+            assertEquals("and it must be the same asset",
+                    asset.getIdentifier(), file.get("identifier"));
+        } finally {
+            Config.setProperty("DEFAULT_FILE_TO_DEFAULT_LANGUAGE", previous);
+        }
+    }
+
+    /**
      * Given: an asset behind an Image field.
      * When: the binary's own properties are selected directly on the asset.
      * Then: they come back, without descending into the binary field.
@@ -1196,6 +1289,34 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     }
 
     // ---------------------------------------------------------------- helpers
+
+    /** Holder content in {@code languageId} whose Image field points at {@code asset}. */
+    private Contentlet newHolderContentInLanguage(final ContentType holder, final Contentlet asset,
+            final long languageId) throws Exception {
+        final Contentlet content = new ContentletDataGen(holder.id())
+                .host(site)
+                .languageId(languageId)
+                .setProperty(IMAGE_FIELD_VAR, asset.getIdentifier())
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        ContentletDataGen.publish(content);
+        return content;
+    }
+
+    /** Selects the Image field of {@code content} in {@code languageId}; the row itself must exist. */
+    private Object assetFieldInLanguage(final ContentType holder, final Contentlet content,
+            final long languageId) throws Exception {
+        final String query = String.format(
+                "{ %sCollection(query: \"+identifier:%s +languageId:%d\") { identifier %s { "
+                        + "... on %s { identifier } } } }",
+                holder.variable(), content.getIdentifier(), languageId, IMAGE_FIELD_VAR,
+                InterfaceType.ASSET_INTERFACE_NAME);
+
+        final Map<String, Object> row = firstRow(
+                GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder);
+        assertEquals("fixture problem: the holder row in the second language was not returned",
+                content.getIdentifier(), row.get("identifier"));
+        return row.get(IMAGE_FIELD_VAR);
+    }
 
     /** Asserts the holder's asset field answers {@code null} while the holder itself is returned. */
     private void assertTargetResolvesToNull(final ContentType holder, final Contentlet content)
