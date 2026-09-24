@@ -1,6 +1,8 @@
 package com.dotcms.graphql;
 
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.google.common.annotations.VisibleForTesting;
 import graphql.execution.FetchedValue;
 import com.dotmarketing.util.Logger;
 import graphql.ExecutionResult;
@@ -160,12 +162,19 @@ public class UnmatchedTypeConditionInstrumentation extends SimpleInstrumentation
             // an interface-typed position is the interface -- neither is the concrete type the
             // clause was testing for. The contentlet knows what it actually is, and "did this
             // clause match" is a question about the data, not about the schema.
-            recordResolvedType(parameters.getFetchedValue(), state);
+            try {
+                recordResolvedType(parameters.getFetchedValue(), state);
+            } catch (final RuntimeException e) {
+                // Diagnostics must never cost a client its data: this runs on every field of
+                // every query that declares a clause, far beyond asset fields.
+                Logger.debug(this, () -> "Could not record a resolved type: " + e.getMessage());
+            }
         }
         return super.beginFieldComplete(parameters);
     }
 
-    private void recordResolvedType(final Object value, final State state) {
+    @VisibleForTesting
+    void recordResolvedType(final Object value, final State state) {
         // graphql-java hands the value wrapped, so the unwrap is not optional: without it nothing
         // is ever recognised as content and every clause is reported as unmatched.
         if (value instanceof FetchedValue) {
@@ -173,7 +182,13 @@ public class UnmatchedTypeConditionInstrumentation extends SimpleInstrumentation
             return;
         }
         if (value instanceof Contentlet) {
-            state.resolvedAs(((Contentlet) value).getContentType().variable());
+            // Not every Contentlet on the delivery path has a content type -- the Page API hands
+            // on synthetic ones, e.g. while resolving a vanity URL. Such a value cannot satisfy a
+            // clause, so it is skipped rather than allowed to fail the whole request.
+            final ContentType contentType = ((Contentlet) value).getContentType();
+            if (null != contentType) {
+                state.resolvedAs(contentType.variable());
+            }
             return;
         }
         if (value instanceof Iterable) {
@@ -191,7 +206,14 @@ public class UnmatchedTypeConditionInstrumentation extends SimpleInstrumentation
             return super.instrumentExecutionResult(executionResult, parameters);
         }
 
-        final List<Map<String, Object>> warnings = state.unmatched();
+        final List<Map<String, Object>> warnings;
+        try {
+            warnings = state.unmatched();
+        } catch (final RuntimeException e) {
+            // Same rule as beginFieldComplete: a failure here drops the warnings, never the result.
+            Logger.debug(this, () -> "Could not compute unmatched clauses: " + e.getMessage());
+            return super.instrumentExecutionResult(executionResult, parameters);
+        }
         if (warnings.isEmpty()) {
             return super.instrumentExecutionResult(executionResult, parameters);
         }
