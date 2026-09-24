@@ -59,18 +59,23 @@ export interface RequestOptions {
 export type RequestPolicy = (req: { method: string; path: string }) => boolean | void;
 
 /**
- * Normalize an `allow` setting into the policy the request core consults: a list of path
- * prefixes (a request is allowed when its resolved path starts with any of them), or a
+ * Normalize an `allow` setting into the policy the request core consults: a list of paths
+ * (a request is allowed when its resolved path IS one of them or lies UNDER one), or a
  * predicate used as-is. The one place that meaning is defined, so every caller that accepts
  * `allow` reads it the same way.
+ *
+ * Matching is by whole segment, never by raw `startsWith`: `/api/v1/content` allows
+ * `/api/v1/content` and `/api/v1/content/abc`, but not `/api/v1/contenttype`. As a string
+ * prefix it allowed every endpoint whose name happened to begin the same way. A trailing
+ * slash on an entry changes nothing: `/api/v1/page/` and `/api/v1/page` mean the same.
  */
 export function toRequestPolicy(
     allow: string[] | RequestPolicy | undefined
 ): RequestPolicy | undefined {
     if (!allow) return undefined;
     if (typeof allow === 'function') return allow;
-    const prefixes = allow;
-    return ({ path }) => prefixes.some((prefix) => path.startsWith(prefix));
+    const bases = allow.map((entry) => entry.replace(/\/+$/, ''));
+    return ({ path }) => bases.some((base) => path === base || path.startsWith(`${base}/`));
 }
 
 /** Host-side context the request core needs. Auth lives here, never in the caller's code. */

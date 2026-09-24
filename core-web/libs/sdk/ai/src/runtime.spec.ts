@@ -127,6 +127,37 @@ describe('createRuntime.request (direct, no worker)', () => {
         await expect(dotcms.request({ path: '/api/v1/site/123' })).resolves.toEqual({ ok: true });
     });
 
+    describe('matches whole path segments', () => {
+        // An entry names an endpoint and everything under it — not every path that happens to
+        // begin with the same characters. As raw `startsWith`, allowing `/api/v1/content` also
+        // allowed `/api/v1/contenttype`, `/api/v1/contentrelationships`, and so on.
+        const allow = ['/api/v1/content', '/api/v1/page/'];
+
+        it.each([
+            ['/api/v1/contenttype', 'a sibling that extends the last segment'],
+            ['/api/v1/contentrelationships/abc', 'a sibling with a subpath'],
+            ['/api/v1/pages', 'a sibling of an entry written with a trailing slash']
+        ])('refuses %s (%s)', async (path) => {
+            const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't', allow });
+
+            await expect(dotcms.request({ path })).rejects.toBeInstanceOf(PolicyError);
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            ['/api/v1/content', 'the entry itself'],
+            ['/api/v1/content/abc-123', 'a path under it'],
+            ['/api/v1/content/abc/versions', 'a deeper path under it'],
+            ['/api/v1/page', 'an entry written with a trailing slash, without it'],
+            ['/api/v1/page/render/about-us', 'a path under an entry written with a trailing slash']
+        ])('allows %s (%s)', async (path) => {
+            fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
+            const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't', allow });
+
+            await expect(dotcms.request({ path })).resolves.toEqual({ ok: true });
+        });
+    });
+
     it('fires the onCall observability hook without leaking the token', async () => {
         fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
         const events: unknown[] = [];

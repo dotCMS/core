@@ -12,7 +12,7 @@ Safety isn't a setting you turn on; it's the shape of the runtime:
 
 - **Your token never enters the sandbox.** Auth is injected on the host side; the executing code cannot read it.
 - **Adapters are the only way out.** Sandbox code reaches the network/host *only* through an adapter you grant — direct `fetch`/`require`/`process.env` are removed.
-- **You decide the surface.** An allow-list (or typed `defineAdapter` operations) bounds what any code — model-written or not — can reach. Expose `scan` and `read`; never expose `delete`. The allow-list judges the path that is actually requested, after dot-segments and encoded dots resolve, so `/allowed/../elsewhere` cannot slip past a prefix.
+- **You decide the surface.** An allow-list (or typed `defineAdapter` operations) bounds what any code — model-written or not — can reach. Expose `scan` and `read`; never expose `delete`. The allow-list judges the path that is actually requested, after dot-segments and encoded dots resolve, so `/allowed/../elsewhere` cannot slip past it. It also matches whole path segments: allowing `/api/v1/content` allows that endpoint and everything under it, not `/api/v1/contenttype`.
 
 ## Install
 
@@ -44,7 +44,7 @@ import { createRuntime } from '@dotcms/ai/runtime';
 const dotcms = createRuntime({
     url,          // dotCMS instance URL
     token,        // dotCMS auth token — NEVER enters the sandbox
-    allow,        // optional allow-list/policy (string[] of path prefixes, or a predicate)
+    allow,        // optional allow-list/policy (string[] of paths, matched with everything under them; or a predicate)
     sessionId,    // context-cache + isolation key
     includeSpec,  // inject the `spec` global for the search use case
     timeout       // sandbox wall-clock timeout (ms)

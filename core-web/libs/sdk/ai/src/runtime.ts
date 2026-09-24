@@ -14,8 +14,9 @@ import type { DotCMSContext } from './adapter/context';
 import type { SandboxResult } from './sandbox/types';
 
 /**
- * Policy controlling which requests are permitted. Either a list of allowed path prefixes
- * (a request is allowed if its path starts with any entry) or a predicate consulted per call.
+ * Policy controlling which requests are permitted. Either a list of allowed paths (a request
+ * is allowed if its path is an entry or lies under one, matched by whole segment, so
+ * `/api/v1/content` does not allow `/api/v1/contenttype`) or a predicate consulted per call.
  * Both verbs honor it, because both flow through the one shared request core.
  */
 export type RuntimeAllow = string[] | RequestPolicy;
