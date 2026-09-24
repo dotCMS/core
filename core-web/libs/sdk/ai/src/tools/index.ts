@@ -36,7 +36,8 @@ export type {
     DotCMSTool,
     DotCMSToolAnnotations,
     ExecuteToolOptions,
-    RequestToolOptions
+    RequestToolOptions,
+    UploadToolOptions
 } from './toolkit/types';
 
 // What every tool resolves to on failure, and the guard to tell it from a normal result.

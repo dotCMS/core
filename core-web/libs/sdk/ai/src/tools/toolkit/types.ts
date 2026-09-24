@@ -53,6 +53,21 @@ export interface AssetToolOptions extends RequestToolOptions {
     root: string;
 }
 
+/** Options for `uploadAssetsTool`: the asset options, plus the limits on what one call sends. */
+export interface UploadToolOptions extends AssetToolOptions {
+    /**
+     * Largest file one call sends, in bytes. Default 100 MB. A larger file is a failure in the
+     * manifest, before it is read; the rest still upload. Each file is held in memory once
+     * while it is sent, so this also bounds the upload's memory. `Infinity` lifts it.
+     */
+    maxFileBytes?: number;
+    /**
+     * Most files one call sends, after `include`. Default 1,000. More is a VALIDATION
+     * failure before anything is sent. `Infinity` lifts it.
+     */
+    maxFiles?: number;
+}
+
 /**
  * One dotCMS tool, shaped the way the Vercel AI SDK and the MCP TypeScript SDK both expect:
  * pass it straight into AI SDK's `tools`, or into MCP's `registerTool` config. Every result is

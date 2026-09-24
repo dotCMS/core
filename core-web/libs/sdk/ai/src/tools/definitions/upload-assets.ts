@@ -9,7 +9,7 @@ import { createTool, defineTool, type ToolContext } from '../toolkit/create-tool
 import { lenientBoolean } from '../toolkit/lenient-boolean';
 
 import type { DotCMSConnection } from '../toolkit/connection';
-import type { AssetToolOptions, DotCMSTool } from '../toolkit/types';
+import type { DotCMSTool, UploadToolOptions } from '../toolkit/types';
 
 const definition = defineTool({
     name: 'upload_assets',
@@ -79,7 +79,7 @@ tool, then reference them from a container/template via \`#dotParse\`.`,
         openWorldHint: true
     },
     endpoints: UPLOAD_ASSETS_ENDPOINTS,
-    async handler(args, ctx: ToolContext<AssetToolOptions>): Promise<UploadAssetsManifest> {
+    async handler(args, ctx: ToolContext<UploadToolOptions>): Promise<UploadAssetsManifest> {
         return uploadAssets({
             dotcms: ctx.runtime(),
             root: ctx.options.root,
@@ -87,22 +87,32 @@ tool, then reference them from a container/template via \`#dotParse\`.`,
             dest: args.dest,
             include: args.include,
             publish: args.publish,
-            verify: args.verify
+            verify: args.verify,
+            maxFileBytes: ctx.options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES,
+            maxFiles: ctx.options.maxFiles ?? DEFAULT_MAX_FILES
         });
     }
 });
+
+/** The `upload_assets` tool's per-file limit when the host sets none: 100 MB. */
+const DEFAULT_MAX_FILE_BYTES = 100 * 1024 * 1024;
+
+/** The `upload_assets` tool's file-count limit when the host sets none. */
+const DEFAULT_MAX_FILES = 1_000;
 
 /**
  * The `upload_assets` tool: uploads a local directory into dotCMS as file assets — the bytes
  * never pass through the model. Needs Node or Bun. Resolves to an {@link UploadAssetsManifest}.
  * `options.root` bounds which local directories the model may read from.
  *
- * Each file is held in memory once while it is sent (`fetch` buffers request bodies), so the
- * largest file you can upload is bounded by the memory of the process running the tool.
+ * The model chooses `src`, so the tool is bounded by default: `options.maxFileBytes` (100 MB)
+ * and `options.maxFiles` (1,000). Each file is held in memory once while it is sent (`fetch`
+ * buffers request bodies), so the file limit is also the upload's memory bound. Pass
+ * `Infinity` to lift either.
  */
 export function uploadAssetsTool(
     connection: DotCMSConnection,
-    options: AssetToolOptions
+    options: UploadToolOptions
 ): DotCMSTool<typeof definition.inputSchema, UploadAssetsManifest> {
     return createTool(definition, connection, options);
 }

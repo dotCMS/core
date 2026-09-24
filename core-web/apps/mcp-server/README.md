@@ -288,7 +288,7 @@ A folder is searched on the one site its path names (`//host/...`), or the defau
 
 The upload destination must be host-qualified. When `publish` and `verify` are true, the tool checks live status with `/api/v1/content/{identifier}` and retries publish for files that did not become live.
 
-**File size limitation:** each file is held in memory once while it is sent, because `fetch` buffers request bodies. The largest file you can upload is bounded by the memory available to the server process. Files go one at a time, so a batch costs its largest file, not its total. No cap is enforced.
+**Limits:** a file over 100 MB is reported as a failure without being read, and the rest still upload. More than 1,000 files (after `include`) is refused before anything is sent. Each file is held in memory once while it is sent, because `fetch` buffers request bodies, so the 100 MB limit also bounds the server's memory per upload.
 
 ### Pre-loaded Instance Context
 

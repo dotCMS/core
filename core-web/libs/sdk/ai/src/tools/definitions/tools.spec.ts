@@ -1,7 +1,7 @@
 import { expectTypeOf, vi } from 'vitest';
 import { z } from 'zod';
 
-import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, truncate, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -379,6 +379,68 @@ describe('tool factories', () => {
 
             expect(failure).toMatchObject({ code: 'TIMEOUT', retryable: true });
             expect(failure.error).toContain('20ms deadline');
+        });
+
+        describe('upload_assets limits', () => {
+            // The model picks `src`; the MCP server's root is the whole disk. So the TOOL is
+            // bounded by default, while the direct operation stays unbounded unless told.
+            let dir: string;
+
+            beforeEach(async () => {
+                dir = await mkdtemp(join(tmpdir(), 'dot-limits-'));
+            });
+
+            afterEach(async () => {
+                await rm(dir, { recursive: true, force: true });
+            });
+
+            it('refuses a file over 100 MB by default, without sending it', async () => {
+                // Sparse: 100 MB + 1 byte on paper, nothing on disk.
+                await truncate(join(dir, 'huge.bin'), 100 * 1024 * 1024 + 1).catch(async () => {
+                    await writeFile(join(dir, 'huge.bin'), '');
+                    await truncate(join(dir, 'huge.bin'), 100 * 1024 * 1024 + 1);
+                });
+
+                const manifest = (await uploadAssetsTool(DOTCMS, { root: dir }).execute({
+                    src: dir,
+                    dest: '//demo.dotcms.com/app'
+                })) as { failures: Array<{ path: string; error: string }> };
+
+                expect(manifest.failures).toEqual([
+                    { path: 'huge.bin', error: expect.stringContaining('upload limit') }
+                ]);
+                expect(fetchMock).not.toHaveBeenCalled();
+            });
+
+            it('refuses more than 1,000 files by default, as VALIDATION', async () => {
+                await Promise.all(
+                    Array.from({ length: 1001 }, (_, n) => writeFile(join(dir, `f${n}.css`), 'x'))
+                );
+
+                const failure = expectFailure(
+                    await uploadAssetsTool(DOTCMS, { root: dir }).execute({
+                        src: dir,
+                        dest: '//demo.dotcms.com/app'
+                    })
+                );
+
+                expect(failure).toMatchObject({ code: 'VALIDATION', retryable: false });
+                expect(fetchMock).not.toHaveBeenCalled();
+            });
+
+            it('takes a host’s own limits', async () => {
+                await writeFile(join(dir, 'a.css'), 'x');
+                await writeFile(join(dir, 'b.css'), 'x');
+
+                const failure = expectFailure(
+                    await uploadAssetsTool(DOTCMS, { root: dir, maxFiles: 1 }).execute({
+                        src: dir,
+                        dest: '//demo.dotcms.com/app'
+                    })
+                );
+
+                expect(failure.code).toBe('VALIDATION');
+            });
         });
 
         it('keeps the deadline on a download while its body is still arriving', async () => {

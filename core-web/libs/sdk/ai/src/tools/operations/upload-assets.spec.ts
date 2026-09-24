@@ -341,6 +341,69 @@ describe('uploadAssets', () => {
         expect(empty?.bytes).toBe(1);
     });
 
+    describe('limits', () => {
+        // The model chooses `src`, so without a bound one call can pick a multi-gigabyte file —
+        // held in memory while it is sent — or a tree of a million files.
+        it('skips a file over maxFileBytes without reading or sending it, and uploads the rest', async () => {
+            await writeFile(join(src, 'big.bin'), Buffer.alloc(2048));
+            const { runtime, calls } = fakeRuntime();
+
+            const manifest = await uploadAssets({
+                dotcms: runtime,
+                src,
+                dest: SITE,
+                publish: true,
+                verify: false,
+                maxFileBytes: 1024
+            });
+
+            expect(manifest.files.map((file) => file.path).sort()).toEqual([
+                'main.vtl',
+                'style.css'
+            ]);
+            expect(manifest.failures).toEqual([
+                {
+                    path: 'big.bin',
+                    error: expect.stringMatching(/2048 bytes.*1024-byte upload limit/)
+                }
+            ]);
+            expect(callsTo(calls, '/api/v2/assets/publish')).toBe(2);
+        });
+
+        it('refuses more than maxFiles files before uploading any of them', async () => {
+            const { runtime, calls } = fakeRuntime();
+
+            const error = await uploadAssets({
+                dotcms: runtime,
+                src,
+                dest: SITE,
+                publish: true,
+                verify: false,
+                maxFiles: 1
+            }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(ValidationError);
+            expect((error as Error).message).toMatch(/more than 1 file/);
+            expect(calls).toEqual([]);
+        });
+
+        it('counts only the files `include` selects', async () => {
+            const { runtime } = fakeRuntime();
+
+            const manifest = await uploadAssets({
+                dotcms: runtime,
+                src,
+                dest: SITE,
+                include: '*.css',
+                publish: true,
+                verify: false,
+                maxFiles: 1
+            });
+
+            expect(manifest.files.map((file) => file.path)).toEqual(['style.css']);
+        });
+    });
+
     describe('with a root', () => {
         // `src` comes from the model. The root is what stops a hosted server's upload_assets
         // from reading any directory the process can — and then serving it back through dotCMS.

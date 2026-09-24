@@ -46,6 +46,18 @@ export interface UploadAssetsOptions {
      * the `upload_assets` tool always sets it.
      */
     root?: string;
+    /**
+     * Largest file to send, in bytes. A larger one is recorded as a failure before it is read,
+     * and the rest still upload. Each file is held in memory once while it is sent, so this
+     * bounds the upload's memory. Unbounded when omitted; the `upload_assets` tool always sets it.
+     */
+    maxFileBytes?: number;
+    /**
+     * Most files one upload sends (after `include`). More is refused before anything is sent,
+     * and the directory walk stops as soon as it is exceeded. Unbounded when omitted; the
+     * `upload_assets` tool always sets it.
+     */
+    maxFiles?: number;
 }
 
 /** What `uploadAssets` returns — never the file bytes, only what landed and what did not. */
@@ -102,7 +114,11 @@ export async function uploadAssets(options: UploadAssetsOptions): Promise<Upload
         );
     }
 
-    const { files: localFiles, totalSeen } = await collectLocalFiles(src, options.include);
+    const { files: localFiles, totalSeen } = await collectLocalFiles(
+        src,
+        options.include,
+        options.maxFiles
+    );
     const files: AssetManifestFile[] = [];
     const failures: AssetManifestFailure[] = [];
     const skipped: AssetManifestSkipped[] = [];
@@ -125,6 +141,19 @@ export async function uploadAssets(options: UploadAssetsOptions): Promise<Upload
     }
 
     for (const file of localFiles) {
+        if (options.maxFileBytes !== undefined && file.bytes > options.maxFileBytes) {
+            // Before the file is opened, so an oversized one costs nothing but this entry.
+            failures.push({
+                path: file.rel,
+                error:
+                    `File is ${file.bytes} bytes, over the ${options.maxFileBytes}-byte upload ` +
+                    `limit (${formatMB(options.maxFileBytes)}), so it was not read or sent. ` +
+                    `Retrying will not help: upload it another way, or ask whoever runs this ` +
+                    `server or agent to raise maxFileBytes.`
+            });
+            continue;
+        }
+
         try {
             // Every file in src lands in dotCMS as-is, 0-byte content included. We do not
             // skip on empty content: an empty file that exists locally must exist remotely,
@@ -369,7 +398,8 @@ async function collectNotLive(
  */
 async function collectLocalFiles(
     src: string,
-    include?: string
+    include?: string,
+    maxFiles?: number
 ): Promise<{ files: LocalFile[]; totalSeen: number }> {
     const matches = includeMatcher(include);
     const files: LocalFile[] = [];
@@ -397,6 +427,15 @@ async function collectLocalFiles(
 
             const info = await stat(abs);
             files.push({ abs, rel, bytes: info.size });
+
+            // Thrown mid-walk, so a `src` far over the limit is not walked to the end first.
+            if (maxFiles !== undefined && files.length > maxFiles) {
+                throw new ValidationError(
+                    `"${src}" holds more than ${maxFiles} file(s) to upload${include ? ` matching "${include}"` : ''}, ` +
+                        `over the upload's file limit. Nothing was uploaded. Narrow \`src\` to a ` +
+                        `smaller directory or \`include\` to fewer files.`
+                );
+            }
         }
     }
 
@@ -420,6 +459,11 @@ async function prepareReadableDir(src: string, root: string | undefined): Promis
     await access(resolved, fs.constants.R_OK);
 
     return resolved;
+}
+
+/** Bytes as a human-readable megabyte figure, for a limit message. */
+function formatMB(bytes: number): string {
+    return `${Math.round((bytes / (1024 * 1024)) * 10) / 10} MB`;
 }
 
 function mimeFor(path: string): string {

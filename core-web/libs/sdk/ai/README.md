@@ -140,6 +140,8 @@ The exception is `execute`, where the *model* chooses the endpoints. `executeToo
 | `includeStacks` | `executeTool` | false — host stack traces are withheld from the model |
 | `requestTimeout` | page and asset tools | 30000 ms per request; for the asset tools that is per file, transfer included |
 | `root` | asset tools — **required** | none — the local directory the model's `src` / `dest` must stay inside, symlinks resolved |
+| `maxFileBytes` | `uploadAssetsTool` | 100 MB — a larger file fails before it is read; the rest still upload. `Infinity` lifts it |
+| `maxFiles` | `uploadAssetsTool` | 1,000 — more files (after `include`) is a `VALIDATION` failure before anything is sent. `Infinity` lifts it |
 
 **The asset tools need a `root`.** `uploadAssetsTool` and `downloadAssetsTool` touch the local disk, with paths the model chooses. Without a boundary, a hosted server's `upload_assets` would read any directory the process can (and serve it back through dotCMS), and `download_assets` would write into any directory it can. Name the workspace the model may use:
 
@@ -153,7 +155,7 @@ Paths are compared after symlinks resolve: a link inside the root that points ou
 **File size.** The two directions differ:
 
 - **Downloads stream.** Each file's bytes go from the response straight to disk, a chunk at a time, so memory stays flat whatever the file's size (measured: a 200 MB asset with under 40 MB of growth). A file lands under a temporary name and is renamed into place only once complete, so a broken transfer never leaves a partial file or damages the one it was replacing.
-- **Uploads hold each file in memory once.** The file is opened as a disk-backed Blob and never copied or base64-encoded by the tool, but `fetch` gathers a request body into memory before sending it: measured on Node 22, a 1 GB file costs about 1 GB. **The largest file you can upload is bounded by the memory of the process running the tool.** Files go one at a time, so a batch costs its largest file, not its total. No cap is enforced; a file too large for the process fails when the process runs out of memory.
+- **Uploads hold each file in memory once.** The file is opened as a disk-backed Blob and never copied or base64-encoded by the tool, but `fetch` gathers a request body into memory before sending it: measured on Node 22, a 1 GB file costs about 1 GB. Files go one at a time, so a batch costs its largest file, not its total. Because the model chooses `src`, `uploadAssetsTool` enforces limits by default: `maxFileBytes` (100 MB, which is also the upload's memory bound) and `maxFiles` (1,000). The direct `uploadAssets` operation is unbounded unless you pass the same two options.
 
 Both directions are also bounded by `requestTimeout`, which covers each file's whole transfer: raise it for large files on a slow link.
 
