@@ -102,8 +102,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.AuditPublishingResourceTest.class,
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,
-        ContentAnalyticsPersistenceModeIT.class,
-        com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class
+        ContentAnalyticsPersistenceModeIT.class
 })
 public class MainSuite2a {
 

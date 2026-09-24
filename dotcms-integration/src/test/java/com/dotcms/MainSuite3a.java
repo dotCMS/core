@@ -134,7 +134,8 @@ import org.junit.runners.Suite;
         SystemEventsJobDelegateIntegrationTest.class,
         SystemEventsClusterDeliveryIntegrationTest.class,
         SystemEventsReconciliationIntegrationTest.class,
-        SystemEventsRetentionIntegrationTest.class
+        SystemEventsRetentionIntegrationTest.class,
+        com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class
 })
 
 public class MainSuite3a {
