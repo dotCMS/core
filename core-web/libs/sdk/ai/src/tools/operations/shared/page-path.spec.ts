@@ -1,5 +1,7 @@
 import { normalizePagePath } from './page-path';
 
+import { ValidationError } from '../../../runtime';
+
 describe('normalizePagePath', () => {
     it('leaves an already-clean path alone', () => {
         expect(normalizePagePath('/about-us')).toBe('/about-us');
@@ -68,5 +70,10 @@ describe('normalizePagePath', () => {
 
     it('uses the caller-supplied label in its errors', () => {
         expect(() => normalizePagePath('', 'urlPath')).toThrow(/urlPath must not be empty/i);
+    });
+
+    it('reports a malformed percent-encoding as the caller’s mistake, not a bare URIError', () => {
+        expect(() => normalizePagePath('/a%zz')).toThrow(ValidationError);
+        expect(() => normalizePagePath('/a%zz')).toThrow(/malformed percent-encoding/i);
     });
 });

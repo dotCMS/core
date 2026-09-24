@@ -3,6 +3,8 @@
  * dotCMS path form both accept, and how a manifest is finished.
  */
 
+import { ValidationError } from '../../../runtime';
+
 export interface AssetManifestFile {
     path: string;
     bytes: number;
@@ -25,14 +27,14 @@ export function normalizeDotCMSPath(input: string): { siteQualified?: string; pa
     if (value.startsWith('//')) {
         const firstSlash = value.slice(2).indexOf('/');
         if (firstSlash < 0) {
-            throw new Error(`Site-qualified path "${input}" must include a path`);
+            throw new ValidationError(`Site-qualified path "${input}" must include a path`);
         }
 
         return { siteQualified: value, path: value.slice(firstSlash + 2) };
     }
 
     if (!value.startsWith('/')) {
-        throw new Error(`dotCMS path "${input}" must start with "/" or "//host/"`);
+        throw new ValidationError(`dotCMS path "${input}" must start with "/" or "//host/"`);
     }
 
     return { path: value };

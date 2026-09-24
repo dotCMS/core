@@ -13,7 +13,7 @@ import {
 import { includeMatcher } from './shared/glob';
 import { assertInsideRoot, assertWritableInsideRoot } from './shared/local-root';
 
-import { type DotCMSRuntime, isBinaryResponseEnvelope } from '../../runtime';
+import { type DotCMSRuntime, isBinaryResponseEnvelope, ValidationError } from '../../runtime';
 import { type Endpoint } from '../toolkit/endpoints';
 import { errorMessage } from '../toolkit/tool-runtime';
 
@@ -337,7 +337,7 @@ function looksLikeAssetPath(path: string): boolean {
 
 async function prepareWritableDir(dest: string, root: string | undefined): Promise<string> {
     if (!isAbsolute(dest)) {
-        throw new Error(`Destination must be an absolute path: ${dest}`);
+        throw new ValidationError(`Destination must be an absolute path: ${dest}`);
     }
 
     const resolved = resolve(dest);

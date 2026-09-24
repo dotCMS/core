@@ -4,6 +4,7 @@ import { RESOLVE_ENDPOINTS, resolveLanguageId, resolveSite } from './shared/reso
 
 import {
     HttpError,
+    ValidationError,
     type ContentTypeSummary,
     type DotCMSRuntime,
     type RequestOptions
@@ -304,7 +305,7 @@ async function resolvePageContentType(
     }
 
     if (!definition) {
-        throw new Error(
+        throw new ValidationError(
             `Content type "${wanted}" was not found on this instance. ` +
                 `Available page content types: ${availablePageTypes()}.`
         );
@@ -313,7 +314,7 @@ async function resolvePageContentType(
     // Checked against the FETCHED definition, not the cached summary — the fetch is the
     // authority and is present on every path.
     if (definition.baseType !== PAGE_BASE_TYPE) {
-        throw new Error(
+        throw new ValidationError(
             `Content type "${definition.variable}" is base type ${definition.baseType}, not a page ` +
                 `(HTMLPAGE). page_create only creates pages. Available page content types: ` +
                 `${availablePageTypes()}.`
@@ -402,7 +403,7 @@ function assertRequiredFieldsSatisfied(
     });
 
     if (missing.length > 0) {
-        throw new Error(
+        throw new ValidationError(
             `Content type "${contentType.variable}" has required field(s) with no value: ` +
                 `${missing.join(', ')}. Pass them via extraFields, e.g. ` +
                 `{ "${missing[0]}": <value> }.`
@@ -591,7 +592,7 @@ async function assertTemplateExists(dotcms: DotCMSRuntime, template: string): Pr
         });
     } catch (error) {
         if (error instanceof HttpError && error.status === 404) {
-            throw new Error(
+            throw new ValidationError(
                 `Template "${template}" was not found. This must be the template's IDENTIFIER ` +
                     `(a UUID), not its name — passing a human-readable title here is the most ` +
                     `common cause. Nothing has been created; fix the template and re-run.`
@@ -621,10 +622,18 @@ async function fireCreate(
         const created = folderId
             ? `Folder "${folder}" (${folderId}) WAS created before this failure and still exists. `
             : '';
-        throw new Error(
-            `${errorMessage(error)}\n\n${created}Re-running this call after fixing the input is ` +
-                `SAFE: folder creation is idempotent, so no duplicate folder is made.`
-        );
+        const note =
+            `${created}Re-running this call after fixing the input is SAFE: folder creation ` +
+            `is idempotent, so no duplicate folder is made.`;
+        // Add the note to the fire's OWN error rather than wrapping it: its class is what says
+        // whether to retry — a 503 or a timeout is worth another try, a 400 is not — and a
+        // plain Error would report every one of them as UNKNOWN.
+        const message = `${errorMessage(error)}\n\n${note}`;
+        if (error instanceof Error) {
+            error.message = message;
+            throw error;
+        }
+        throw new Error(message);
     }
 }
 

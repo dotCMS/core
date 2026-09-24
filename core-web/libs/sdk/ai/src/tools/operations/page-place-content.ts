@@ -2,7 +2,7 @@ import { LayoutRow } from './shared/page-common';
 import { normalizePagePath } from './shared/page-path';
 import { RESOLVE_ENDPOINTS, resolveSite } from './shared/resolve';
 
-import { HttpError, type DotCMSRuntime } from '../../runtime';
+import { HttpError, ValidationError, type DotCMSRuntime } from '../../runtime';
 import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
 import { errorMessage } from '../toolkit/tool-runtime';
 
@@ -223,7 +223,7 @@ async function resolvePageTarget(
     const requestedSite = explicitSite?.trim();
 
     if (!requestedSite && !qualifiedHost) {
-        throw new Error(
+        throw new ValidationError(
             '`site` is required for page placement when `path` is not host-qualified. ' +
                 'Pass a site hostname/identifier or use `//hostname/path`; refusing to choose the ' +
                 'default site prevents writes to the wrong page on multi-site instances.'
@@ -238,7 +238,7 @@ async function resolvePageTarget(
     const embedded = qualifiedHost ? await resolveSite(dotcms, qualifiedHost) : undefined;
 
     if (explicit && embedded && explicit.identifier !== embedded.identifier) {
-        throw new Error(
+        throw new ValidationError(
             `Conflicting sites: path targets "${qualifiedHost}" but site targets ` +
                 `"${requestedSite}". Pass one site consistently; no request was made.`
         );
@@ -262,7 +262,9 @@ async function resolvePageTarget(
  */
 function validateAssignments(slots: SlotAssignment[] | undefined): SlotAssignment[] {
     if (!slots || slots.length === 0) {
-        throw new Error('`slots` is required and must contain at least one slot assignment.');
+        throw new ValidationError(
+            '`slots` is required and must contain at least one slot assignment.'
+        );
     }
     return slots;
 }
@@ -312,7 +314,7 @@ function resolveSlot(address: SlotAddress, slots: PageSlot[]): PageSlot {
     if (typeof address === 'number') {
         const index = address - 1; // 1-based, in layout order.
         if (!Number.isInteger(address) || index < 0 || index >= slots.length) {
-            throw new Error(
+            throw new ValidationError(
                 `Slot index ${address} is out of range. The page has ${slots.length} slot(s): ` +
                     `${describeSlots(slots)}.`
             );
@@ -335,7 +337,7 @@ function resolveSlot(address: SlotAddress, slots: PageSlot[]): PageSlot {
             : slots.filter((slot) => containerMatchRank(slot.identifier, wanted) === bestRank);
 
     if (matches.length === 0) {
-        throw new Error(
+        throw new ValidationError(
             `No slot on the page uses container "${address.container}". Available slots: ` +
                 `${describeSlots(slots)}.`
         );
@@ -345,7 +347,7 @@ function resolveSlot(address: SlotAddress, slots: PageSlot[]): PageSlot {
         const exact = matches.find((slot) => slot.uuid === String(address.instance));
         if (!exact) {
             const instances = matches.map((slot) => `'${slot.uuid}'`).join(', ');
-            throw new Error(
+            throw new ValidationError(
                 `Container "${address.container}" has no slot with instance '${address.instance}'. ` +
                     `Available instances: ${instances}.`
             );
@@ -355,7 +357,7 @@ function resolveSlot(address: SlotAddress, slots: PageSlot[]): PageSlot {
 
     if (matches.length > 1) {
         const instances = matches.map((slot) => `'${slot.uuid}'`).join(', ');
-        throw new Error(
+        throw new ValidationError(
             `Container "${address.container}" appears in ${matches.length} slots ` +
                 `(instances: ${instances}). Pass slot.instance to disambiguate.`
         );
@@ -438,7 +440,7 @@ function bestContainerKey(keys: string[], wanted: string): string | undefined {
     }
 
     if (best.length > 1) {
-        throw new Error(
+        throw new ValidationError(
             `Container "${wanted}" is ambiguous — it matches ${best.length} containers on this ` +
                 `page equally well: ${best.join(', ')}. Pass the full container path or id to ` +
                 `disambiguate; guessing here could write content into the wrong container.`
@@ -494,7 +496,7 @@ async function loadPageSlots(
 
     const entity = response.entity;
     if (!entity || !entity.page) {
-        throw new Error(
+        throw new ValidationError(
             `Page "${path}" was not found (no page at this url for language ${languageId}).`
         );
     }

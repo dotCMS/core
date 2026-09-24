@@ -1,4 +1,4 @@
-import { HttpError, type DotCMSRuntime } from '../../../runtime';
+import { HttpError, ValidationError, type DotCMSRuntime } from '../../../runtime';
 import { type Endpoint } from '../../toolkit/endpoints';
 import { errorMessage } from '../../toolkit/tool-runtime';
 
@@ -93,7 +93,7 @@ function toResolvedSite(raw: unknown): ResolvedSite | undefined {
 export async function resolveSite(dotcms: DotCMSRuntime, site: string): Promise<ResolvedSite> {
     const wanted = site.trim();
     if (!wanted) {
-        throw new Error('Site must be a non-empty hostname or identifier.');
+        throw new ValidationError('Site must be a non-empty hostname or identifier.');
     }
 
     const cached = await siteFromCache(dotcms, wanted);
@@ -106,7 +106,7 @@ export async function resolveSite(dotcms: DotCMSRuntime, site: string): Promise<
         return live;
     }
 
-    throw new Error(await siteNotFoundMessage(dotcms, wanted));
+    throw new ValidationError(await siteNotFoundMessage(dotcms, wanted));
 }
 
 async function siteFromCache(
@@ -225,7 +225,7 @@ export async function resolveLanguageId(
     const available = languages
         .map((language) => `${language.id} (${language.isoCode})`)
         .join(', ');
-    throw new Error(
+    throw new ValidationError(
         `languageId ${languageId} does not exist on this instance. dotCMS would silently fall ` +
             `back to the default language and write to the WRONG language rather than reject ` +
             `it, so this is refused up front. Available languages: ${available}.`

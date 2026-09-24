@@ -3,9 +3,8 @@ import { vi } from 'vitest';
 import { createPage, PAGE_CREATE_ENDPOINTS } from './page-create';
 import { splitUrlPath } from './shared/page-path';
 
+import { HttpError, ValidationError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
 import { unlistedCalls } from '../toolkit/endpoints';
-
-import type { DotCMSRuntime, RequestOptions } from '../../runtime';
 
 // Every request the fakes below see. After each test, all of them must be endpoints the
 // page_create tool owns — otherwise the operation works here and is refused in production.
@@ -127,6 +126,7 @@ describe('createPage', () => {
     };
 
     function fakeRuntime(handlers: {
+        onTemplate?: () => unknown;
         onCreateFolders?: (body: unknown) => unknown;
         onFire?: (body: unknown, query: unknown) => unknown;
         onLive?: () => unknown;
@@ -155,6 +155,9 @@ describe('createPage', () => {
                 );
                 const ct = contentTypes.find((c) => c.id === idOrVar || c.variable === idOrVar);
                 return { entity: ct ?? {} };
+            }
+            if (options.path.startsWith('/api/v1/templates/')) {
+                return handlers.onTemplate?.() ?? {};
             }
             if (options.path.startsWith('/api/v1/folder/createfolders/')) {
                 return handlers.onCreateFolders?.(options.body) ?? { entity: [] };
@@ -200,6 +203,45 @@ describe('createPage', () => {
         const fireCall = calls.findIndex((c) => c.path.includes('/fire/'));
         expect(folderCall).toBeGreaterThanOrEqual(0);
         expect(fireCall).toBeGreaterThan(folderCall);
+    });
+
+    describe('failure codes', () => {
+        const PAGE = {
+            site: 'demo.dotcms.com',
+            urlPath: '/books/index',
+            title: 'Books',
+            template: 'tmpl-1'
+        };
+
+        it('reports a template that does not exist as a VALIDATION error', async () => {
+            const { runtime } = fakeRuntime({
+                onTemplate: () => {
+                    throw new HttpError(404, 'Not Found', '');
+                }
+            });
+
+            await expect(createPage({ dotcms: runtime, ...PAGE })).rejects.toBeInstanceOf(
+                ValidationError
+            );
+        });
+
+        it('keeps the fire’s own error, so a 5xx stays a retryable HTTP failure', async () => {
+            // The note about the already-created folder is added to that error, not a new one:
+            // rewrapping it in a plain Error turned every fire failure into UNKNOWN, telling
+            // the model not to retry a call that was safe and likely to succeed.
+            const { runtime } = fakeRuntime({
+                onCreateFolders: () => ({ entity: [{ path: '/books', identifier: 'folder-123' }] }),
+                onFire: () => {
+                    throw new HttpError(503, 'Service Unavailable', 'restarting');
+                }
+            });
+
+            const error = await createPage({ dotcms: runtime, ...PAGE }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(HttpError);
+            expect((error as HttpError).status).toBe(503);
+            expect((error as Error).message).toMatch(/HTTP 503[\s\S]*folder-123[\s\S]*SAFE/);
+        });
     });
 
     it('fires the page with the leaf url and the created folder id, not the full path', async () => {

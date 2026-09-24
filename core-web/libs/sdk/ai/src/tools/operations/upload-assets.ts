@@ -14,7 +14,7 @@ import { includeMatcher } from './shared/glob';
 import { assertInsideRoot } from './shared/local-root';
 import { isContentLive } from './shared/page-common';
 
-import { type DotCMSRuntime } from '../../runtime';
+import { ValidationError, type DotCMSRuntime } from '../../runtime';
 import { type Endpoint } from '../toolkit/endpoints';
 import { errorMessage } from '../toolkit/tool-runtime';
 
@@ -97,7 +97,7 @@ export async function uploadAssets(options: UploadAssetsOptions): Promise<Upload
     const dest = normalizeDotCMSPath(options.dest);
 
     if (!dest.siteQualified) {
-        throw new Error(
+        throw new ValidationError(
             'Upload destination must be host-qualified, e.g. //demo.dotcms.com/application/themes/travel'
         );
     }
@@ -407,13 +407,13 @@ async function collectLocalFiles(
 
 async function prepareReadableDir(src: string, root: string | undefined): Promise<string> {
     if (!isAbsolute(src)) {
-        throw new Error(`Source must be an absolute path: ${src}`);
+        throw new ValidationError(`Source must be an absolute path: ${src}`);
     }
 
     const resolved = resolve(src);
     const info = await stat(resolved);
     if (!info.isDirectory()) {
-        throw new Error(`Source must be a directory: ${src}`);
+        throw new ValidationError(`Source must be a directory: ${src}`);
     }
 
     await assertInsideRoot(root, 'src', resolved);

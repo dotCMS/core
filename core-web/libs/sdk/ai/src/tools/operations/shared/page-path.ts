@@ -17,19 +17,21 @@
  *     natural next hardening step for this tool surface.
  */
 
+import { ValidationError } from '../../../runtime';
+
 /** The percent-decoded segments of a page path, with encoded separators refused. */
 function decodeSegments(pathname: string, original: string, label: string): string[] {
     const segments = pathname
         .split('/')
         .filter(Boolean)
-        .map((segment) => decodeURIComponent(segment));
+        .map((segment) => decodeSegment(segment, original, label));
 
     // Splitting first does not make an encoded slash inert: every caller rebuilds a path by
     // joining these segments, which turns it straight back into a path boundary. dotCMS
     // folder names cannot contain a separator anyway, so nothing legitimate is refused.
     const smuggled = segments.find((segment) => segment.includes('/'));
     if (smuggled !== undefined) {
-        throw new Error(
+        throw new ValidationError(
             `${label} segment "${smuggled}" contains an encoded path separator (%2F), which ` +
                 `would silently resolve to a DIFFERENT path than the one named: "${original}" ` +
                 `would behave as if the slash had been written literally. dotCMS folder names ` +
@@ -38,6 +40,20 @@ function decodeSegments(pathname: string, original: string, label: string): stri
     }
 
     return segments;
+}
+
+/**
+ * Percent-decode one segment. A malformed escape (`%zz`, a lone `%`) is the caller's input
+ * being wrong, so it is reported as that rather than as the bare `URIError` it throws.
+ */
+function decodeSegment(segment: string, original: string, label: string): string {
+    try {
+        return decodeURIComponent(segment);
+    } catch {
+        throw new ValidationError(
+            `${label} has a malformed percent-encoding in segment "${segment}": "${original}"`
+        );
+    }
 }
 
 /** Run a path through the URL API, collapsing `.`/`..` and dropping any query or fragment. */
@@ -54,7 +70,7 @@ function toPathname(trimmed: string, original: string, label: string): string {
         // into the result.
         return new URL(withoutSchemeRelative, 'http://_').pathname;
     } catch {
-        throw new Error(`${label} is not a valid path: "${original}"`);
+        throw new ValidationError(`${label} is not a valid path: "${original}"`);
     }
 }
 
@@ -69,7 +85,7 @@ function toPathname(trimmed: string, original: string, label: string): string {
 export function normalizePagePath(path: string, label = 'path'): string {
     const trimmed = path.trim();
     if (!trimmed) {
-        throw new Error(`${label} must not be empty.`);
+        throw new ValidationError(`${label} must not be empty.`);
     }
 
     const withSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
@@ -106,7 +122,7 @@ export function normalizePagePath(path: string, label = 'path'): string {
 export function splitUrlPath(urlPath: string): { folder: string; url: string; fullPath: string } {
     const trimmed = urlPath.trim();
     if (!trimmed.startsWith('/')) {
-        throw new Error(`urlPath must start with "/": "${urlPath}"`);
+        throw new ValidationError(`urlPath must start with "/": "${urlPath}"`);
     }
 
     const pathname = toPathname(trimmed, urlPath, 'urlPath');

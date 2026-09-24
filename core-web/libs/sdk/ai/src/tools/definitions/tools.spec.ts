@@ -294,6 +294,36 @@ describe('tool factories', () => {
             expect(failure.code).toBe('VALIDATION');
         });
 
+        // Input the schema accepts but the operation refuses. The model gets the same code as
+        // for a schema failure — the call is wrong and retrying it unchanged cannot help —
+        // not UNKNOWN, which says nothing about whether to fix the input or try again.
+        it.each([
+            ['download_assets', { path: '/application/themes', dest: 'relative/dir' }],
+            ['download_assets', { path: 'application/themes', dest: '/tmp/out' }],
+            ['upload_assets', { src: '/tmp', dest: '/application/themes/travel' }],
+            ['upload_assets', { src: 'relative/dir', dest: '//demo.dotcms.com/application' }],
+            [
+                'page_create',
+                { site: 'ghost.example.com', urlPath: '/books', title: 'Books', template: 't-1' }
+            ],
+            [
+                'page_place_content',
+                { path: '/about-us', slots: [{ slot: 1, contentlets: ['c-1'] }] }
+            ],
+            ['page_verify', { path: '/a/my%2Fbooks' }]
+        ])('reports %s input dotCMS cannot act on as VALIDATION', async (name, input) => {
+            // Every instance-context loader answers empty: no site, no type, no language.
+            fetchMock.mockResolvedValue(jsonResponse({ entity: [] }));
+
+            const failure = expectFailure(await FACTORIES[name](DOTCMS).execute(input));
+
+            expect(failure).toMatchObject({
+                operation: name,
+                code: 'VALIDATION',
+                retryable: false
+            });
+        });
+
         it('bounds a direct request with the configured deadline and reports it as retryable', async () => {
             fetchMock.mockImplementation(hangingFetch);
 
