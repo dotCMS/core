@@ -45,7 +45,7 @@ Generic machinery with no knowledge of any specific dotCMS operation:
 
 | File | What it owns |
 |---|---|
-| `types.ts` | The public `DotCMSTool` shape and the factory option types |
+| `types.ts` | The public `DotCMSTool` shape (input typed from its schema), `AnyDotCMSTool` for lists of mixed tools, and the factory option types |
 | `connection.ts` | `dotcmsConnection`: the URL, token and observability hooks a consumer hands every tool, with values resolved on each call. The tools never read the environment (lint-enforced) |
 | `create-tool.ts` | `defineTool` / `createTool`: input validation, resolving the connection, turning throws into failures, building the per-tool policy |
 | `results.ts` | The `{ result }` shape of the code tools, and the one rendering rule behind every tool's `toModelOutput` (AI SDK) and `toText` (MCP and other text transports): text for a tool whose definition declares `toText`, JSON otherwise |

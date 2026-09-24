@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { expectTypeOf, vi } from 'vitest';
 import { z } from 'zod';
 
 import { mkdtemp, readdir, rm } from 'node:fs/promises';
@@ -17,7 +17,7 @@ import { dotcmsConnection, type DotCMSConnection } from '../toolkit/connection';
 import { isToolFailure, type ToolFailure } from '../toolkit/tool-runtime';
 
 import type { CodeToolResult } from '../toolkit/results';
-import type { DotCMSTool } from '../toolkit/types';
+import type { AnyDotCMSTool } from '../toolkit/types';
 
 /** Build a minimal JSON Response stub. */
 function jsonResponse(body: unknown): Response {
@@ -70,7 +70,7 @@ function sent(fetchMock: ReturnType<typeof vi.fn>, n = 0): { url: string; auth: 
 
 const DOTCMS = dotcmsConnection({ url: 'https://demo.dotcms.com', token: 'secret-tok' });
 
-const FACTORIES: Record<string, (connection: DotCMSConnection) => DotCMSTool> = {
+const FACTORIES: Record<string, (connection: DotCMSConnection) => AnyDotCMSTool> = {
     download_assets: (connection) => downloadAssetsTool(connection, { root: '/' }),
     execute: executeTool,
     page_create: pageCreateTool,
@@ -113,6 +113,27 @@ describe('tool factories', () => {
                 ]);
             }
         );
+
+        it('types execute’s input from the tool’s own schema', () => {
+            // Compile-time: a caller writing the call gets completion, and a wrong field is a
+            // type error rather than a VALIDATION failure found at run time.
+            const tool = pageVerifyTool(DOTCMS);
+
+            expectTypeOf(tool.execute)
+                .parameter(0)
+                .toEqualTypeOf<z.input<typeof tool.inputSchema>>();
+            // @ts-expect-error — `path` is a string.
+            const wrong = () => tool.execute({ path: 42 });
+            expect(typeof wrong).toBe('function');
+        });
+
+        it('holds tools with different schemas in one AnyDotCMSTool[]', () => {
+            // A registry dispatches whatever the model picked, so its element type takes any input.
+            const tools: AnyDotCMSTool[] = [pageVerifyTool(DOTCMS), searchTool(DOTCMS)];
+
+            expectTypeOf(tools[0].execute).parameter(0).toBeUnknown();
+            expect(tools.map((tool) => tool.name)).toEqual(['page_verify', 'search']);
+        });
 
         it('marks only the tools that cannot change the instance as read-only', () => {
             const readOnly = Object.entries(FACTORIES)

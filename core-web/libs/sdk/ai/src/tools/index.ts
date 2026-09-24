@@ -31,6 +31,7 @@ export { uploadAssetsTool } from './definitions/upload-assets';
 export { downloadAssetsTool } from './definitions/download-assets';
 
 export type {
+    AnyDotCMSTool,
     AssetToolOptions,
     DotCMSTool,
     DotCMSToolAnnotations,

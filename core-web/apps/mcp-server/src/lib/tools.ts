@@ -2,9 +2,9 @@ import { type ToolMetadata } from 'xmcp';
 
 import {
     dotcmsConnection,
+    type AnyDotCMSTool,
     type AssetToolOptions,
     type DotCMSConnection,
-    type DotCMSTool,
     type ExecuteToolOptions
 } from '@dotcms/ai/tools';
 
@@ -48,7 +48,7 @@ const SERVER_OPTIONS: ServerToolOptions = {
  * `schema` (a raw Zod shape), `metadata`, and the default-exported handler.
  */
 export function xmcpTool(
-    factory: (connection: DotCMSConnection, options: ServerToolOptions) => DotCMSTool
+    factory: (connection: DotCMSConnection, options: ServerToolOptions) => AnyDotCMSTool
 ) {
     const tool = factory(DOTCMS, SERVER_OPTIONS);
 

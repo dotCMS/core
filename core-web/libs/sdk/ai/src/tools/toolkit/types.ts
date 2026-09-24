@@ -63,11 +63,33 @@ export interface AssetToolOptions extends RequestToolOptions {
  * carrying a stable `code` and a `retryable` flag, because a model cannot `instanceof` its
  * way through a failure.
  *
- * `input` is `unknown` rather than the schema's type for the same reason: it is the model's,
- * and checking it is `execute`'s job. It is also what lets a host hold several tools in one
- * `DotCMSTool[]` and call whichever the model picked.
+ * `input` is typed from the tool's own schema, so code that calls a tool directly gets
+ * completion and a compile error for a wrong field. That is a convenience for the caller, not
+ * the check: `execute` still validates at run time, because what reaches it from a model was
+ * never type-checked. A host that holds several tools in one list and calls whichever the
+ * model picked types that list as {@link AnyDotCMSTool}.
  */
-export interface DotCMSTool<TInput extends z.ZodObject = z.ZodObject, TResult = unknown> {
+export interface DotCMSTool<
+    TInput extends z.ZodObject = z.ZodObject,
+    TResult = unknown
+> extends DotCMSToolBase<TResult> {
+    readonly inputSchema: TInput;
+    execute(input: z.input<TInput>): Promise<TResult | ToolFailure>;
+}
+
+/**
+ * Any dotCMS tool, whatever its schema — the element type of a registry: `AnyDotCMSTool[]`, or
+ * a map from tool name to tool. `execute` takes `unknown`, because a registry dispatches on the
+ * name the model chose and hands over the model's arguments as they came; `execute` validates
+ * them. Every {@link DotCMSTool} is assignable to it.
+ */
+export interface AnyDotCMSTool extends DotCMSToolBase<unknown> {
+    readonly inputSchema: z.ZodObject;
+    execute(input: unknown): Promise<unknown>;
+}
+
+/** What every tool has, whatever its input: identity, annotations and rendering. */
+interface DotCMSToolBase<TResult> {
     /**
      * The name the tool's description expects to be called by. The descriptions refer to their
      * siblings by these names ("use the `search` tool first"), so register each tool under it.
@@ -76,9 +98,7 @@ export interface DotCMSTool<TInput extends z.ZodObject = z.ZodObject, TResult = 
     readonly title: string;
     /** The model-facing description — tuned prompt text. */
     readonly description: string;
-    readonly inputSchema: TInput;
     readonly annotations: DotCMSToolAnnotations;
-    execute(input: unknown): Promise<TResult | ToolFailure>;
     /**
      * What the model sees of a result, for frameworks that ask (the AI SDK picks this up on its
      * own): text for the tools that declare a text form (`search`, `execute`), structured JSON
