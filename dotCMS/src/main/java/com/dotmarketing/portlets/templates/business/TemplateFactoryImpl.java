@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.templates.business;
 import static com.dotcms.util.FunctionUtils.ifOrElse;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -468,35 +469,64 @@ public class TemplateFactoryImpl implements TemplateFactory {
 			// the visitor. See issue #37386.
 			//
 			// The live request is wrapped rather than replaced: MockAttributeRequest and
-			// MockSessionRequest snapshot its request and session attributes and delegate everything
-			// else (Site, headers, parameters, user, language, page mode) to the real request, so
-			// Container path resolution is unchanged while every write lands on the throwaway copy.
-			// The response is always a throwaway.
+			// MockSessionRequest snapshot its request and session attributes, so attribute and
+			// session writes land on the throwaway copy while Site, headers, parameters, user,
+			// language and page mode still resolve from the real request and Container path
+			// resolution is unchanged. Two limits worth knowing: MockSessionRequest answers
+			// getServletContext() from Config.CONTEXT rather than the live context, and the
+			// wrappers do not override every write-capable HttpServletRequest method -- this
+			// isolates attributes and the session, not literally every call.
 			final HttpServletRequest liveRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-			final HttpServletRequest requestProxy = null != liveRequest ?
+			final HttpServletResponse liveResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+			final HttpServletRequest requestProxy = UtilMethods.isSet(liveRequest) ?
 					new MockSessionRequest(new MockAttributeRequest(liveRequest).request()).request() :
 					new FakeHttpRequest(defaultHostname(), StringPool.FORWARD_SLASH).request();
+
+			// VelocityUtil.getWebContext short-circuits on this attribute and hands back the cached
+			// ChainedContext, which holds the LIVE request and response -- ignoring the proxies
+			// passed to it. VelocityPreviewMode sets it before its own merge, so a harvest during a
+			// PREVIEW render would otherwise reach the visitor's response and, worse, leave the
+			// DONT_LOAD_CONTAINERS flag below on the live render context, blanking every later
+			// #parseContainer. Dropping it affects only the snapshot; the live request is untouched.
+			requestProxy.removeAttribute(com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT);
 			final HttpServletResponse responseProxy = new BaseResponse().response();
 
-			// Create a Velocity context with the fake request and response
-			// and parse the template body to extract container UUIDs
-			final VelocityContext context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
-			context.put(DotCacheDirective.DONT_USE_DIRECTIVE_CACHE, Boolean.TRUE); // Disable cache for this parsing
-			context.put(ParseContainer.DONT_LOAD_CONTAINERS, Boolean.TRUE); // Disable loading containers
-			VelocityUtil.eval(templateBody, context);
+			// Viewtools reachable from a template body read the request and response straight off
+			// the thread locals rather than from the context they were handed -- see
+			// ContentUtils.addRelationships and GenericRenderableImpl -- so swapping only the
+			// context would leave a second live handle. Bind the proxies for the harvest and always
+			// restore, including when the eval throws.
+			HttpServletRequestThreadLocal.INSTANCE.setRequest(requestProxy);
+			HttpServletResponseThreadLocal.INSTANCE.setResponse(responseProxy);
+			try {
+				// Create a Velocity context with the fake request and response
+				// and parse the template body to extract container UUIDs
+				final VelocityContext context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
+				context.put(DotCacheDirective.DONT_USE_DIRECTIVE_CACHE, Boolean.TRUE); // Disable cache for this parsing
+				context.put(ParseContainer.DONT_LOAD_CONTAINERS, Boolean.TRUE); // Disable loading containers
+				VelocityUtil.eval(templateBody, context);
 
-			final Object containerIdsObj = context.get(ParseContainer.DOT_TEMPLATE_CONTAINER_IDS);
-			if (containerIdsObj instanceof Collection<?>) {
-				final Collection<?> containerIds = (Collection<?>) containerIdsObj;
-				for (final Object containerIdObj : containerIds) {
-					final Pair<?, ?> containerId = (Pair<?, ?>) containerIdObj;
-					containerUUIDS.add(new ContainerUUID(
-							(String) containerId.getLeft(),
-							(String) containerId.getRight()));
+				final Object containerIdsObj = context.get(ParseContainer.DOT_TEMPLATE_CONTAINER_IDS);
+				if (containerIdsObj instanceof Collection<?>) {
+					final Collection<?> containerIds = (Collection<?>) containerIdsObj;
+					for (final Object containerIdObj : containerIds) {
+						final Pair<?, ?> containerId = (Pair<?, ?>) containerIdObj;
+						containerUUIDS.add(new ContainerUUID(
+								(String) containerId.getLeft(),
+								(String) containerId.getRight()));
+					}
 				}
+			} finally {
+				HttpServletRequestThreadLocal.INSTANCE.setRequest(liveRequest);
+				HttpServletResponseThreadLocal.INSTANCE.setResponse(liveResponse);
 			}
 		} catch (Exception e) {
-			Logger.error(this, "Error parsing template body to get container", e);
+			// Deliberately swallowed so a bad Template body cannot break a page render, but the
+			// caller cannot tell an empty result from a failed harvest -- MultiTreeAPIImpl then
+			// caches it as "this page has no Containers". Log enough to trace which body failed.
+			Logger.error(this, "Error harvesting Containers from template body; returning the "
+					+ containerUUIDS.size() + " found so far. Body starts with: "
+					+ org.apache.commons.lang3.StringUtils.abbreviate(templateBody, 150), e);
 		}
 		return containerUUIDS;
 
@@ -512,8 +542,11 @@ public class TemplateFactoryImpl implements TemplateFactory {
 	 */
 	private String defaultHostname() {
 
+		// getOrElse(Supplier), not getOrElse(T): the eager overload would call systemHost() on every
+		// invocation regardless of whether findDefaultHost succeeded, and systemHost() can fall
+		// through to createSystemHost(), which is @WrapInTransaction and writes contentlets.
 		final Host host = Try.of(() -> APILocator.getHostAPI().findDefaultHost(
-				APILocator.systemUser(), false)).getOrElse(APILocator.systemHost());
+				APILocator.systemUser(), false)).getOrElse(APILocator::systemHost);
 
 		return UtilMethods.isSet(host) && UtilMethods.isSet(host.getHostname()) ?
 				host.getHostname() : "dotcms.com"; // fake host

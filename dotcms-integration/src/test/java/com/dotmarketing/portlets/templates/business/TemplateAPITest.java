@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.mockito.Mockito.*;
@@ -17,6 +18,7 @@ import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.*;
 import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.VariantAPI;
@@ -63,6 +65,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import org.apache.velocity.tools.view.context.ChainedContext;
 import org.awaitility.Awaitility;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -324,6 +327,8 @@ public class TemplateAPITest extends IntegrationTestBase {
                 "#parseContainer('f4a02846-7ca4-4e08-bf07-a61366bbacbb','1552493847863')\n" +
                 "$response.sendError(404)\n";
 
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse previousResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
         try {
             HttpServletRequestThreadLocal.INSTANCE.setRequest(liveRequest);
             HttpServletResponseThreadLocal.INSTANCE.setResponse(liveResponse);
@@ -343,9 +348,62 @@ public class TemplateAPITest extends IntegrationTestBase {
             verify(liveResponse, never()).sendError(anyInt());
             verify(liveResponse, never()).sendError(anyInt(), anyString());
             verify(liveResponse, never()).setStatus(anyInt());
+
+            // The harvest rebinds the thread locals to its proxies so that viewtools reading them
+            // do not see the live pair; it must put the originals back when it is done.
+            assertSame("The live request must be restored on the thread local",
+                    liveRequest, HttpServletRequestThreadLocal.INSTANCE.getRequest());
+            assertSame("The live response must be restored on the thread local",
+                    liveResponse, HttpServletResponseThreadLocal.INSTANCE.getResponse());
         } finally {
-            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
-            HttpServletResponseThreadLocal.INSTANCE.setResponse(null);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(previousResponse);
+        }
+    }
+
+    /**
+     * Method to test: {@link TemplateAPIImpl#getContainersUUIDFromDrawTemplateBody(String)}
+     * Given Scenario: The live request already carries a cached Velocity {@link ChainedContext}
+     *                 under the "velocityContext" attribute, as {@code VelocityPreviewMode} leaves
+     *                 before its own merge. {@code VelocityUtil.getWebContext} short-circuits on
+     *                 that attribute and would otherwise hand the harvest a context holding the
+     *                 LIVE request and response, defeating the isolation.
+     * ExpectedResult: The harvest ignores the cached context -- Containers are still harvested and
+     *                 the live response is never touched. Regression test for issue #37386.
+     */
+    @Test
+    public void getContainersUUIDFromDrawTemplateBodyIgnoresCachedVelocityContext() throws Exception {
+
+        final HttpServletRequest liveRequest =
+                new FakeHttpRequest(host.getHostname(), "/issue-37386-cached-ctx").request();
+        final HttpServletResponse liveResponse = mock(HttpServletResponse.class);
+
+        final String templateBody =
+                "#parseContainer('f4a02846-7ca4-4e08-bf07-a61366bbacbb','1552493847863')\n" +
+                "$response.sendError(404)\n";
+
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse previousResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+        try {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(liveRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(liveResponse);
+
+            // The cached context VelocityPreviewMode would have left behind, holding the live pair
+            liveRequest.setAttribute(com.dotcms.rendering.velocity.Constants.VELOCITY_CONTEXT,
+                    VelocityUtil.getWebContext(liveRequest, liveResponse));
+
+            final List<ContainerUUID> containerUUIDS =
+                    APILocator.getTemplateAPI().getContainersUUIDFromDrawTemplateBody(templateBody);
+
+            assertNotNull(containerUUIDS);
+            assertEquals(1, containerUUIDS.size());
+            assertEquals("f4a02846-7ca4-4e08-bf07-a61366bbacbb", containerUUIDS.get(0).getIdentifier());
+
+            verify(liveResponse, never()).sendError(anyInt());
+            verify(liveResponse, never()).sendError(anyInt(), anyString());
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(previousResponse);
         }
     }
 
