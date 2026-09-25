@@ -3930,14 +3930,16 @@ describe('EditEmaEditorComponent', () => {
                         vi.spyOn(store, 'pageParams').mockReturnValue(samePathPageParams());
                     });
 
-                    it('should not trigger pageLoad for hash-only navigation on same page', () => {
+                    // Cancelled so the link can't load outside the editor; the
+                    // iframe is scrolled instead of reloaded.
+                    it('should cancel hash-only navigation on same page without reloading', () => {
                         const hashUrl = 'http://localhost:3000/current-page#sectionA';
                         const mockEvent = createMockEvent(hashUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
                         expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
                     });
 
                     it('should not trigger pageLoad for hash-only with complex id', () => {
@@ -4039,7 +4041,7 @@ describe('EditEmaEditorComponent', () => {
                             });
                         });
 
-                        it('should still let a hash-only link scroll without reloading', () => {
+                        it('should still scroll a hash-only link without reloading', () => {
                             const mockEvent = createMockEvent(
                                 'http://localhost:3000/current-page#section'
                             );
@@ -4047,7 +4049,6 @@ describe('EditEmaEditorComponent', () => {
                             spectator.component.handleInternalNav(mockEvent);
 
                             expect(pageLoadSpy).not.toHaveBeenCalled();
-                            expect(mockEvent.preventDefault).not.toHaveBeenCalled();
                         });
                     });
 

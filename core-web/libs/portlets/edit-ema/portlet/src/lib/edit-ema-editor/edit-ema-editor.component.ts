@@ -128,6 +128,7 @@ import {
     isAssetPath,
     isSamePageNavigation,
     measureCanvasAvailableSize,
+    scrollIframeToFragment,
     shouldNavigate
 } from '../utils';
 
@@ -843,8 +844,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         }
 
         if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
-            // A hash with no query is an in-page anchor: let the browser scroll.
+            // A hash with no query is an in-page anchor. Scroll the iframe
+            // ourselves: left to the browser, the link would load outside the
+            // editor instead of scrolling.
             if (url.hash && !url.search) {
+                e.preventDefault();
+                scrollIframeToFragment(this.contentWindow, url.hash);
+
                 return;
             }
 

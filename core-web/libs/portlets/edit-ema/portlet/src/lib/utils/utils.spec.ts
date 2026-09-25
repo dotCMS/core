@@ -32,7 +32,8 @@ import {
     convertUTCToLocalTime,
     escapeHtmlAttributeValue,
     isSamePageNavigation,
-    isAssetPath
+    isAssetPath,
+    scrollIframeToFragment
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
@@ -1176,6 +1177,78 @@ describe('utils functions', () => {
 
         it('should return false when the paths are not equal', () => {
             expect(compareUrlPaths('/test', '/test2')).toBe(false);
+        });
+    });
+
+    describe('scrollIframeToFragment', () => {
+        let doc: Document;
+        let win: Window;
+        let scrollTo: ReturnType<typeof vi.fn>;
+
+        const addTarget = (attr: 'id' | 'name', value: string, top: number): HTMLElement => {
+            const el = doc.createElement('a');
+            el.setAttribute(attr, value);
+            el.getBoundingClientRect = () => ({ top }) as DOMRect;
+            doc.body.appendChild(el);
+
+            return el;
+        };
+
+        beforeEach(() => {
+            doc = document.implementation.createHTMLDocument();
+            scrollTo = vi.fn();
+            win = { document: doc, scrollTo, scrollY: 100 } as unknown as Window;
+        });
+
+        it('should scroll to the element with that id, relative to the current scroll', () => {
+            addTarget('id', 'section', 250);
+
+            scrollIframeToFragment(win, '#section');
+
+            expect(scrollTo).toHaveBeenCalledWith({ top: 350, left: 0 });
+        });
+
+        it('should fall back to the first element with that name', () => {
+            addTarget('name', 'legacy', 40);
+
+            scrollIframeToFragment(win, '#legacy');
+
+            expect(scrollTo).toHaveBeenCalledWith({ top: 140, left: 0 });
+        });
+
+        it('should decode the fragment before looking it up', () => {
+            addTarget('id', 'año 2025', 10);
+
+            scrollIframeToFragment(win, '#a%C3%B1o%202025');
+
+            expect(scrollTo).toHaveBeenCalledWith({ top: 110, left: 0 });
+        });
+
+        it('should scroll to the top for "#" and "#top"', () => {
+            scrollIframeToFragment(win, '#');
+            scrollIframeToFragment(win, '#top');
+
+            expect(scrollTo).toHaveBeenNthCalledWith(1, { top: 0, left: 0 });
+            expect(scrollTo).toHaveBeenNthCalledWith(2, { top: 0, left: 0 });
+        });
+
+        it('should prefer an element with id "top" over the top of the page', () => {
+            addTarget('id', 'top', 500);
+
+            scrollIframeToFragment(win, '#top');
+
+            expect(scrollTo).toHaveBeenCalledWith({ top: 600, left: 0 });
+        });
+
+        it('should do nothing for a fragment with no matching element', () => {
+            scrollIframeToFragment(win, '#missing');
+
+            expect(scrollTo).not.toHaveBeenCalled();
+        });
+
+        it('should not throw on a malformed escape or a missing window', () => {
+            expect(() => scrollIframeToFragment(win, '#%E0%A4%A')).not.toThrow();
+            expect(() => scrollIframeToFragment(null, '#section')).not.toThrow();
         });
     });
 
