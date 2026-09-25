@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.datagen.*;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -39,6 +40,7 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -727,5 +729,162 @@ public class NavToolTest extends IntegrationTestBase{
         final NavResult navResult1 = navTool.getNav(site, folder.getPath());
         assertNotNull("There must be a valid NavResult object", navResult1);
         assertEquals("Both items should appear in the nav result. ",2,navResult1.getChildren().size());
+    }
+
+    /**
+     * Method to test: {@link NavResultHydrated#isActive()}
+     *
+     * Given Scenario: A folder holding an index page is rendered through the Page API twice — once
+     * with the explicit index-page URI (/folder/index) and once with the folder-style URI the
+     * Universal Visual Editor produces when it navigates in-editor (/folder, no page segment).
+     *
+     * Expected Result: the same navigation item is active for both URI shapes. Before the fix for
+     * issue #37105 the folder-style URI marked nothing active, because the active check chopped the
+     * request URI at its last slash and assumed a page name was there to discard.
+     *
+     * @see <a href="https://github.com/dotCMS/core/issues/37105">#37105</a>
+     */
+    @Test
+    public void test_isActive_folderStyleUri_resolvesSameItemAsIndexPageUri() throws Exception {
+
+        final String indexPageName = HTMLPageAssetAPIImpl.CMS_INDEX_PAGE.get();
+
+        final Folder navFolder = new FolderDataGen().site(site).showOnMenu(true).nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset indexPage = new HTMLPageDataGen(navFolder, template)
+                .pageURL(indexPageName)
+                .showOnMenu(true)
+                .languageId(1)
+                .nextPersisted();
+        indexPage.setIndexPolicy(IndexPolicy.FORCE);
+        contentletAPI.publish(indexPage, user, false);
+
+        final String folderHref = "/" + navFolder.getName();
+
+        // The explicit index-page URI — this has always worked.
+        assertTrue("The folder must be active for the explicit index-page URI",
+                isFolderActive("/api/v1/page/render" + folderHref + "/" + indexPageName, folderHref));
+
+        // The folder-style URI UVE navigates with — the defect in #37105.
+        assertTrue("The folder must be active for the folder-style URI, exactly as for /index",
+                isFolderActive("/api/v1/page/render" + folderHref, folderHref));
+
+        // And on the front end, where CMSFilter has already appended the index page name.
+        assertTrue("Front-end resolution must be unchanged",
+                isFolderActive(folderHref + "/" + indexPageName, folderHref));
+    }
+
+    /**
+     * Renders the site-root navigation for the given request URI and returns the item with the
+     * given href.
+     *
+     * @param requestURI  the request URI the navigation is resolved against
+     * @param href        the href of the navigation item to look for
+     * @return that navigation item
+     */
+    private NavResultHydrated navItemFor(final String requestURI, final String href)
+            throws Exception {
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        Mockito.when(request.getRequestURI()).thenReturn(requestURI);
+        Mockito.when(request.getServerName()).thenReturn(site.getHostname());
+
+        final ViewContext viewContext = mock(ViewContext.class);
+        Mockito.when(viewContext.getRequest()).thenReturn(request);
+
+        final NavTool navTool = new NavTool();
+        navTool.init(viewContext);
+
+        final NavResult rootNav = navTool.getNav(site, "/");
+        assertNotNull("There must be a valid NavResult for the site root", rootNav);
+
+        for (final NavResult child : rootNav.getChildren()) {
+            if (href.equals(child.getHref())) {
+                return (NavResultHydrated) child;
+            }
+        }
+        throw new AssertionError("No navigation item found with href " + href);
+    }
+
+    /**
+     * Whether the navigation item with the given href reports itself active for the given URI.
+     */
+    private boolean isFolderActive(final String requestURI, final String href) throws Exception {
+        return navItemFor(requestURI, href).isActive();
+    }
+
+    /**
+     * Method to test: {@link NavResultHydrated#isActive()} as Velocity actually reaches it
+     *
+     * Given Scenario: a navigation item is placed in a Velocity context and a template fragment
+     * using the {@code $n.active} property is evaluated by the real engine.
+     *
+     * Expected Result: the property resolves and reports the item active. {@code isActive} is an
+     * overloaded name on this class -- the no-argument instance method plus the package-private
+     * static holding the decision -- and Velocity resolves a property by method name before arity,
+     * so this asserts the binding end to end rather than through a proxy. Every other test calls
+     * the method directly from Java and would stay green if the binding broke.
+     */
+    @Test
+    public void test_navActive_resolvesThroughVelocityPropertyIntrospection() throws Exception {
+
+        final String indexPageName = HTMLPageAssetAPIImpl.CMS_INDEX_PAGE.get();
+
+        final Folder navFolder = new FolderDataGen().site(site).showOnMenu(true).nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset indexPage = new HTMLPageDataGen(navFolder, template)
+                .pageURL(indexPageName)
+                .showOnMenu(true)
+                .languageId(1)
+                .nextPersisted();
+        indexPage.setIndexPolicy(IndexPolicy.FORCE);
+        contentletAPI.publish(indexPage, user, false);
+
+        final String folderHref = "/" + navFolder.getName();
+        final NavResultHydrated navItem =
+                navItemFor("/api/v1/page/render" + folderHref, folderHref);
+
+        final Context velocityContext = VelocityUtil.getBasicContext();
+        velocityContext.put("n", navItem);
+
+        assertEquals("$n.active must resolve to the no-argument isActive()",
+                "ACTIVE",
+                UtilMethods.evaluateVelocity("#if($n.active)ACTIVE#end", velocityContext));
+    }
+
+    /**
+     * Method to test: {@link NavResultHydrated#isActive()}
+     *
+     * Given Scenario: the three states the method guards against before it looks at any URI -- no
+     * ViewContext, a ViewContext whose request is gone, and an item carrying no href.
+     *
+     * Expected Result: each reports inactive rather than throwing. The guard was rewritten as part
+     * of the fix for issue #37105, from {@code if (context != null && isSet(href))} to an early
+     * {@code if (context == null || !isSet(href)) return false}, and a De Morgan inversion is worth
+     * covering.
+     */
+    @Test
+    public void test_isActive_guardsAgainstMissingContextRequestAndHref() throws Exception {
+
+        final NavResult navResult = new NavResult("/", site.getIdentifier(), null, 1L);
+        navResult.setHref("/some-page");
+        navResult.setType("htmlpage");
+
+        assertFalse("No ViewContext means nothing can be active",
+                new NavResultHydrated(navResult, null).isActive());
+
+        final ViewContext contextWithoutRequest = mock(ViewContext.class);
+        Mockito.when(contextWithoutRequest.getRequest()).thenReturn(null);
+        assertFalse("No request means nothing can be active",
+                new NavResultHydrated(navResult, contextWithoutRequest).isActive());
+
+        final NavResult withoutHref = new NavResult("/", site.getIdentifier(), null, 1L);
+        withoutHref.setType("htmlpage");
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        Mockito.when(request.getRequestURI()).thenReturn("/some-page");
+        final ViewContext viewContext = mock(ViewContext.class);
+        Mockito.when(viewContext.getRequest()).thenReturn(request);
+        assertFalse("An item with no href can never match a URI",
+                new NavResultHydrated(withoutHref, viewContext).isActive());
     }
 }
