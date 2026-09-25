@@ -3889,34 +3889,106 @@ describe('EditEmaEditorComponent', () => {
                         expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
 
-                    it('should not trigger pageLoad for query-only navigation on same page', () => {
+                    // Traditional pages render in an iframe UVE writes itself, so a
+                    // browser-handled query change leaves it blank and never reaches
+                    // the Page API (#36999). It has to go through pageLoad.
+                    it('should trigger pageLoad with the new query for query-only navigation on same page', () => {
                         const queryUrl = 'http://localhost:3000/current-page?tab=2';
                         const mockEvent = createMockEvent(queryUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            tab: '2'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
                     });
 
-                    it('should not trigger pageLoad for multiple query params on same page', () => {
+                    it('should pass every query param for multiple query params on same page', () => {
                         const queryUrl =
                             'http://localhost:3000/current-page?filter=value&sort=date';
                         const mockEvent = createMockEvent(queryUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            filter: 'value',
+                            sort: 'date'
+                        });
                     });
 
-                    it('should not trigger pageLoad when both hash and query are present on same path', () => {
+                    it('should trigger pageLoad when both hash and query are present on same path', () => {
                         const combinedUrl = 'http://localhost:3000/current-page?tab=2#section';
                         const mockEvent = createMockEvent(combinedUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            tab: '2'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should load a new language for a same-path language_id link', () => {
+                        const languageUrl = 'http://localhost:3000/current-page?language_id=3';
+                        const mockEvent = createMockEvent(languageUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            language_id: '3'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    describe('when the current page already carries a page query param', () => {
+                        beforeEach(() => {
+                            vi.spyOn(store, 'pageParams').mockReturnValue({
+                                ...samePathPageParams(),
+                                mode: UVE_MODE.EDIT,
+                                device: 'mobile',
+                                anno_pubblicazione: '2025'
+                            });
+                        });
+
+                        it('should clear it when the link no longer sets it', () => {
+                            const mockEvent = createMockEvent('http://localhost:3000/current-page');
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/current-page',
+                                anno_pubblicazione: undefined
+                            });
+                        });
+
+                        it('should replace it when the link sets a new value', () => {
+                            const mockEvent = createMockEvent(
+                                'http://localhost:3000/current-page?anno_pubblicazione=2024'
+                            );
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/current-page',
+                                anno_pubblicazione: '2024'
+                            });
+                        });
+
+                        it('should still let a hash-only link scroll without reloading', () => {
+                            const mockEvent = createMockEvent(
+                                'http://localhost:3000/current-page#section'
+                            );
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).not.toHaveBeenCalled();
+                            expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        });
                     });
 
                     it('should trigger pageLoad when navigating to different page with hash', () => {

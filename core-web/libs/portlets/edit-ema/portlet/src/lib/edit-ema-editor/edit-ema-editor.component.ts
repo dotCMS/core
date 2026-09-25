@@ -56,6 +56,7 @@ import {
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
+    EXPERIMENT_RETURN_PARAM,
     FeaturedFlags,
     SeoMetaTags,
     SeoMetaTagsResult
@@ -92,7 +93,7 @@ import { EmaDragItem } from './components/ema-page-dropzone/types';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiService, DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
@@ -814,7 +815,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const url = new URL(href, this.window.location.origin);
         // Get the query parameters from the URL
-        const urlQueryParams = Object.fromEntries(url.searchParams.entries());
+        const urlQueryParams: Record<string, string | undefined> = Object.fromEntries(
+            url.searchParams.entries()
+        );
 
         if (url.hostname !== this.window.location.hostname) {
             this.window.open(href, '_blank');
@@ -836,13 +839,52 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        // Same pathname (any hash/query): let the browser handle it (anchors, query-driven UI)
         if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
-            return;
+            // A hash with no query is an in-page anchor: let the browser scroll.
+            if (url.hash && !url.search) {
+                return;
+            }
+
+            // Anything else re-renders the page through the Page API below. Left to
+            // the browser, the iframe of a traditional page navigates on its own and
+            // comes back blank, and the new query never reaches the page render
+            // (#36999). The previous link's query is cleared first, so a link
+            // without a filter removes it instead of inheriting it through the
+            // `pageLoad` merge.
+            for (const key of this.#pageOwnedParamKeys()) {
+                if (!(key in urlQueryParams)) {
+                    urlQueryParams[key] = undefined;
+                }
+            }
         }
 
         this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
+    }
+
+    /**
+     * Returns the query params of the current page that the editor does not own,
+     * such as a filter a page link added.
+     *
+     * `pageLoad` merges new params over the current ones, so these would otherwise
+     * survive every later load of the same page. Setting them to `undefined` clears
+     * them: `undefined` values are left out of both the Page API request and the
+     * admin URL. Editor params (language, persona, mode, variant, device…) are not
+     * returned, so they still follow the editor.
+     *
+     * @return {string[]} The keys of the page-owned params
+     * @memberof EditEmaEditorComponent
+     */
+    #pageOwnedParamKeys(): string[] {
+        const editorKeys = new Set<string>([
+            ...Object.values(DotPageAssetKeys),
+            EXPERIMENT_RETURN_PARAM,
+            'device',
+            'orientation',
+            'seo'
+        ]);
+
+        return Object.keys(this.uveStore.pageParams() ?? {}).filter((key) => !editorKeys.has(key));
     }
 
     /**
