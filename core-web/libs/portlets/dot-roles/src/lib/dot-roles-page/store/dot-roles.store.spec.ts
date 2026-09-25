@@ -9,6 +9,7 @@ import {
     DotRoleUserResult,
     DotRolesService
 } from '@dotcms/data-access';
+import { DotMessageSeverity } from '@dotcms/dotcms-models';
 
 import { DotRolesStore } from './dot-roles.store';
 
@@ -1160,6 +1161,30 @@ describe('DotRolesStore', () => {
             const categories = store.roles().find((n) => n.id === 'r-categories');
             expect(categories?.roleChildren?.map((c) => c.id)).toContain('r-eco');
             expect(result?.deleted).toBe(false);
+        });
+
+        it('should warn with a toast when the backend refuses the delete', async () => {
+            const messageDisplay = spectator.inject(DotMessageDisplayService);
+            service.delete.mockReturnValueOnce(
+                of({ deleted: false, roleId: 'r-eco', usersAffected: 0 })
+            );
+
+            await store.deleteRole('r-eco');
+
+            expect(messageDisplay.push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: DotMessageSeverity.WARNING,
+                    message: 'roles.delete.rejected'
+                })
+            );
+        });
+
+        it('should not warn when the role was deleted', async () => {
+            const messageDisplay = spectator.inject(DotMessageDisplayService);
+
+            await store.deleteRole('r-eco');
+
+            expect(messageDisplay.push).not.toHaveBeenCalled();
         });
     });
 

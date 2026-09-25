@@ -8,11 +8,7 @@ import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
-import {
-    DotAlertConfirmService,
-    DotHttpErrorManagerService,
-    DotMessageService
-} from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRolesPageComponent } from './dot-roles-page.component';
@@ -89,8 +85,7 @@ describe('DotRolesPageComponent', () => {
         componentProviders: [baseStoreMock()],
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
-            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
-            mockProvider(DotAlertConfirmService, { alert: vi.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 

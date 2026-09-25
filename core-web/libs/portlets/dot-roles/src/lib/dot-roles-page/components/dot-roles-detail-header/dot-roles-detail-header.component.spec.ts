@@ -18,7 +18,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRolesDetailHeaderComponent } from './dot-roles-detail-header.component';
 
-import { DotRoleDeleteService } from '../../../services/dot-role-delete.service';
 import { DotRolesStore } from '../../store/dot-roles.store';
 
 const MESSAGES = {
@@ -49,11 +48,12 @@ describe('DotRolesDetailHeaderComponent', () => {
                 memberCount: vi.fn().mockReturnValue(0),
                 toolGroupCount: vi.fn().mockReturnValue(0),
                 isSystemRole: vi.fn().mockReturnValue(false),
-                canModifyRole: vi.fn().mockReturnValue(true)
+                canModifyRole: vi.fn().mockReturnValue(true),
+                deleteRole: vi.fn().mockResolvedValue({ deleted: true })
             }),
             mockProvider(DialogService, { open: vi.fn() }),
-            mockProvider(DotRoleDeleteService, { confirmDelete: vi.fn() }),
             mockProvider(ConfirmationService, {
+                confirm: vi.fn().mockImplementation((cfg) => cfg.accept?.()),
                 // p-confirmDialog subscribes to these on init
                 requireConfirmation$: EMPTY,
                 accept: EMPTY,
@@ -159,16 +159,19 @@ describe('DotRolesDetailHeaderComponent', () => {
         );
     });
 
-    it('should start the shared delete flow for the selected role from the Delete item', () => {
-        const roleDelete = spectator.inject(DotRoleDeleteService, true);
+    it('should confirm, then delete the selected role, from the Delete item', () => {
+        const store = spectator.inject(DotRolesStore, true);
+        const confirmation = spectator.inject(ConfirmationService, true);
         selectRole();
         spectator.detectChanges();
 
         groupItems()[2].command?.({});
 
-        expect(roleDelete.confirmDelete).toHaveBeenCalledWith(
-            expect.objectContaining({ id: 'r-eco', name: 'Eco Role' })
+        // The mocked confirm accepts straight away.
+        expect(confirmation.confirm).toHaveBeenCalledWith(
+            expect.objectContaining({ acceptLabel: 'Delete', defaultFocus: 'reject' })
         );
+        expect(store.deleteRole).toHaveBeenCalledWith('r-eco');
     });
 
     it('should disable Edit and Delete for a role that cannot be modified', () => {

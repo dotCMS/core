@@ -1099,7 +1099,8 @@ export const DotRolesStore = signalStore(
              *
              * State reconciliation: the node is removed from the tree; if it
              * was the selected role, selection + members + selectedRole are
-             * cleared. On BE rejection (403 system/locked, 404, 409 has
+             * cleared. A 200 with `deleted: false` (child roles, a workflow
+             * reference) leaves the tree alone and shows a warning toast. On BE rejection (403 system/locked, 404, 409 has
              * children/workflow), the error routes through `httpErrorManager`
              * and this method returns `null`.
              */
@@ -1126,6 +1127,15 @@ export const DotRolesStore = signalStore(
                                 memberCount: 0
                             });
                         }
+                    } else if (result) {
+                        // Refused with a 200 — nothing reached the error manager, so
+                        // say so here rather than let the confirm close on a no-op.
+                        messageDisplayService.push({
+                            life: 5000,
+                            severity: DotMessageSeverity.WARNING,
+                            message: messageService.get('roles.delete.rejected'),
+                            type: DotMessageType.SIMPLE_MESSAGE
+                        });
                     }
 
                     return result;

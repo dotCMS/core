@@ -27,7 +27,7 @@ import { DotFolderTreeComponent, DotMessagePipe, DotTruncatedLabelComponent } fr
 import { DotRolesAddComponent } from '../../../dot-roles-add/dot-roles-add.component';
 import { DotRolesEditComponent } from '../../../dot-roles-edit/dot-roles-edit.component';
 import { DotRoleNode } from '../../../models/dot-roles.models';
-import { DotRoleDeleteService } from '../../../services/dot-role-delete.service';
+import { roleDeleteConfirmation } from '../../../utils/dot-role-delete.utils';
 import { DotRolesStore } from '../../store/dot-roles.store';
 import { collectAncestorChain } from '../../store/dot-roles.tree-utils';
 
@@ -53,7 +53,7 @@ interface DotRolePrimeTreeNode extends TreeNode {
         DotTruncatedLabelComponent,
         DotMessagePipe
     ],
-    providers: [DialogService, ConfirmationService, DotRoleDeleteService],
+    providers: [DialogService, ConfirmationService],
     templateUrl: './dot-roles-tree.component.html',
     host: { class: 'flex flex-col flex-1 min-h-0 p-4 gap-3' }
 })
@@ -61,8 +61,8 @@ export class DotRolesTreeComponent {
     protected readonly store = inject(DotRolesStore);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dialogService = inject(DialogService);
+    readonly #confirmationService = inject(ConfirmationService);
     readonly #messageService = inject(DotMessageService);
-    readonly #roleDelete = inject(DotRoleDeleteService);
     readonly #filterInput$ = new Subject<string>();
 
     /**
@@ -347,7 +347,11 @@ export class DotRolesTreeComponent {
             return;
         }
 
-        this.#roleDelete.confirmDelete(node.data);
+        this.#confirmationService.confirm(
+            roleDeleteConfirmation(node.data, this.#messageService, () =>
+                this.store.deleteRole(node.data.id)
+            )
+        );
     }
 
     #toTreeNodes(nodes: DotRoleNode[], expandAll = false): DotRolePrimeTreeNode[] {

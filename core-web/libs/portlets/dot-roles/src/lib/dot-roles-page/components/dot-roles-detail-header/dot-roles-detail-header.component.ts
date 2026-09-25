@@ -11,7 +11,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotRolesEditComponent } from '../../../dot-roles-edit/dot-roles-edit.component';
-import { DotRoleDeleteService } from '../../../services/dot-role-delete.service';
+import { roleDeleteConfirmation } from '../../../utils/dot-role-delete.utils';
 import { DotRolesStore } from '../../store/dot-roles.store';
 
 @Component({
@@ -24,7 +24,7 @@ import { DotRolesStore } from '../../store/dot-roles.store';
         SkeletonModule,
         DotMessagePipe
     ],
-    providers: [DialogService, ConfirmationService, DotRoleDeleteService],
+    providers: [DialogService, ConfirmationService],
     templateUrl: './dot-roles-detail-header.component.html',
     host: { class: 'block' }
 })
@@ -32,7 +32,7 @@ export class DotRolesDetailHeaderComponent {
     protected readonly store = inject(DotRolesStore);
     readonly #dialogService = inject(DialogService);
     readonly #messageService = inject(DotMessageService);
-    readonly #roleDelete = inject(DotRoleDeleteService);
+    readonly #confirmationService = inject(ConfirmationService);
 
     /**
      * The header's actions menu: a "Role" group heading over Edit, a divider,
@@ -85,6 +85,8 @@ export class DotRolesDetailHeaderComponent {
             return;
         }
 
-        this.#roleDelete.confirmDelete(role);
+        this.#confirmationService.confirm(
+            roleDeleteConfirmation(role, this.#messageService, () => this.store.deleteRole(role.id))
+        );
     }
 }

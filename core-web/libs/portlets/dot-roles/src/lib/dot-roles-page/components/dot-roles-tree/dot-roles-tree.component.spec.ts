@@ -19,7 +19,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRolesTreeComponent } from './dot-roles-tree.component';
 
-import { DotRoleDeleteService } from '../../../services/dot-role-delete.service';
 import { DotRolesStore } from '../../store/dot-roles.store';
 
 const MESSAGES = {
@@ -61,8 +60,7 @@ describe('DotRolesTreeComponent', () => {
                 requireConfirmation$: EMPTY,
                 accept: EMPTY,
                 reject: EMPTY
-            }),
-            mockProvider(DotRoleDeleteService, { confirmDelete: vi.fn() })
+            })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
     });
@@ -106,16 +104,19 @@ describe('DotRolesTreeComponent', () => {
             ]);
         });
 
-        it('should hand Delete to the shared delete flow for the right-clicked role', () => {
-            const roleDelete = spectator.inject(DotRoleDeleteService, true);
+        it('should confirm, then delete the right-clicked role', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            const confirmation = spectator.inject(ConfirmationService, true);
             spectator.detectChanges();
             rightClick({ id: 'r-1', name: 'Eco' });
 
             menuItems()[2].command?.({});
 
-            expect(roleDelete.confirmDelete).toHaveBeenCalledWith(
-                expect.objectContaining({ id: 'r-1', name: 'Eco' })
+            // The mocked confirm accepts straight away.
+            expect(confirmation.confirm).toHaveBeenCalledWith(
+                expect.objectContaining({ acceptLabel: 'Delete', defaultFocus: 'reject' })
             );
+            expect(store.deleteRole).toHaveBeenCalledWith('r-1');
         });
 
         it('should disable Edit and Delete on a system role', () => {
