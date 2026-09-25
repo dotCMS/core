@@ -54,7 +54,8 @@ export const monacoMock = {
                 endColumn: 1
             }),
             executeEdits: () => {},
-            focus: () => {}
+            focus: () => {},
+            addAction: () => ({ dispose: () => {} })
         }),
         setModelLanguage: () => {},
         createModel: () => ({
@@ -100,6 +101,9 @@ export const monacoMock = {
         registerDefinitionProvider: () => {},
         setMonarchTokensProvider: () => {}
     },
+    // Keybinding constants, with Monaco's real values, for editors that register shortcuts.
+    KeyMod: { CtrlCmd: 2048, Shift: 1024, Alt: 512, WinCtrl: 256 },
+    KeyCode: { Enter: 3, Escape: 9 },
     Uri: {
         parse: () => ({}),
         file: () => ({})

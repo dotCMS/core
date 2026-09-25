@@ -1,0 +1,31 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/chat/completions",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "contains": "DOTAI_FORCE_CHAT_ERROR"
+      }
+    ]
+  },
+  "response": {
+    "status": 500,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "jsonBody": {
+      "error": {
+        "message": "forced provider failure for tests",
+        "type": "server_error",
+        "param": null,
+        "code": "forced_error"
+      }
+    }
+  }
+}

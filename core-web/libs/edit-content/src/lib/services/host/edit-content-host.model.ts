@@ -103,6 +103,15 @@ export interface EditContentHost {
     goToRestoredVersion(inode: string, previousInode: string | undefined): void;
 
     /**
+     * Leaves the editor after a workflow action deleted the content being edited.
+     * The content no longer exists, so there is nothing left to show: full-screen
+     * goes back to the content listing for that type; the overlay closes itself.
+     *
+     * @param contentType Variable of the deleted content's type, used to filter the listing.
+     */
+    leaveDeletedContent(contentType: string): void;
+
+    /**
      * Whether this host navigates the editor in place (dialog/overlay) rather than
      * through the router. Consumers use it to decide, e.g., whether a breadcrumb
      * crumb is a `routerLink` (full-screen) or a `command` (in-place).
