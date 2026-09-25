@@ -91,6 +91,26 @@ public interface Storage {
      */
     Upload uploadFile(final PutObjectRequest putObjectRequest) throws DotRuntimeException;
 
+    /** Creates an object without replacing an existing key. Unsupported implementations must fail. */
+    default void uploadFileIfAbsent(final String bucketName, final String key, final File file) {
+        throw new UnsupportedOperationException("Conditional uploads are not supported");
+    }
+
+    /** Reads bytes and their version from the same S3 response. Caller closes the response. */
+    default com.amazonaws.services.s3.model.S3Object getObject(final String bucket, final String key) {
+        throw new UnsupportedOperationException("Versioned reads are not supported");
+    }
+
+    /** Writes a small record only if its ETag still matches; null expects absence. */
+    default String uploadFileIfMatch(final String bucket, final String key, final File file, final String etag) {
+        throw new UnsupportedOperationException("Conditional writes are not supported");
+    }
+
+    /** Compares object bytes when an ETag cannot verify file contents. */
+    default boolean fileContentsMatch(final String bucketName, final String key, final File file) throws java.io.IOException {
+        return false;
+    }
+
     /**
      * Async method: Schedules a new transfer to download data from Amazon S3 and save it to the specified file.
      */
