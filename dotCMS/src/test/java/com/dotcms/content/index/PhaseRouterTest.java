@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.dotcms.content.index.domain.InvalidSearchQueryException;
+import com.dotcms.content.index.domain.QueryRejectedByOpenSearchException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -478,7 +479,7 @@ public class PhaseRouterTest {
     }
 
     /**
-     * Given Scenario: Phase 2. OS rejects the query as invalid on the checked path
+     * Given Scenario: Phase 2. The query is not valid JSON, on the checked path
      * ({@code SearchAPIImpl.searchRaw()}).
      * Then : the exception propagates and ES is never contacted.
      */
@@ -486,7 +487,7 @@ public class PhaseRouterTest {
     public void test_readChecked_phase2_invalidQuery_propagates_esNeverCalled() {
         final PhaseRouter<CheckedSupplier<String>> router = new PhaseRouter<>(
                 () -> { fail("ES must NOT be retried for an invalid query"); return null; },
-                () -> { throw new InvalidSearchQueryException("OS rejected the query: HTTP 400"); });
+                () -> { throw new InvalidSearchQueryException("Unable to parse the given query."); });
         setPhase(2);
 
         assertThrows(InvalidSearchQueryException.class,
@@ -537,6 +538,60 @@ public class PhaseRouterTest {
         setPhase(2);
 
         assertEquals("es-result", router.readChecked(CheckedSupplier::get));
+    }
+
+    /**
+     * Given Scenario: Phase 2. OpenSearch refuses a query it cannot parse — which may be older
+     * syntax Elasticsearch 7 still accepts.
+     * Then : the read still falls back to ES and succeeds, as before this change.
+     */
+    @Test
+    public void test_readChecked_phase2_queryRejectedByOpenSearch_stillFallsBackToEs()
+            throws Exception {
+        final AtomicBoolean esCalled = new AtomicBoolean();
+        final PhaseRouter<CheckedSupplier<String>> router = new PhaseRouter<>(
+                () -> { esCalled.set(true); return "es-result"; },
+                () -> {
+                    throw new DotDataException("search failed",
+                            new QueryRejectedByOpenSearchException("OS search failed: HTTP 400"));
+                });
+        setPhase(2);
+
+        assertEquals("es-result", router.readChecked(CheckedSupplier::get));
+        assertTrue("ES may accept syntax OpenSearch dropped", esCalled.get());
+    }
+
+    /** The unchecked read falls back the same way. */
+    @Test
+    public void test_read_phase2_queryRejectedByOpenSearch_stillFallsBackToEs() {
+        final PhaseRouter<Supplier<String>> router = new PhaseRouter<>(
+                () -> "es-result",
+                () -> { throw new QueryRejectedByOpenSearchException("OS search failed: HTTP 400"); });
+        setPhase(2);
+
+        assertEquals("es-result", router.read(Supplier::get));
+    }
+
+    /**
+     * The log line for a query OpenSearch refused says so, warns that it will fail at Phase 3, and
+     * does not blame the index.
+     */
+    @Test
+    public void test_rejectedQueryMessage_warnsAboutPhase3_notTheIndex() {
+        final String message = PhaseRouter.rejectedQueryMessage("searchRaw",
+                new QueryRejectedByOpenSearchException("OS search failed: HTTP 400 — parsing_exception"));
+
+        assertTrue(message, message.contains("parsing_exception"));
+        assertTrue(message, message.contains("searchRaw"));
+        assertTrue(message, message.contains("Phase 3"));
+        assertFalse(message, message.contains("stale or unavailable"));
+    }
+
+    /** A rejection is not a caller error: it must not be classified as one. */
+    @Test
+    public void test_queryRejectedByOpenSearch_isNotACallerError() {
+        assertFalse(PhaseRouter.isCallerError(
+                new QueryRejectedByOpenSearchException("OS search failed: HTTP 400")));
     }
 
     /**

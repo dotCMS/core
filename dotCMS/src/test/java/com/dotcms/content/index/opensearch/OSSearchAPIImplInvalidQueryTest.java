@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.content.index.domain.InvalidSearchQueryException;
+import com.dotcms.content.index.domain.QueryRejectedByOpenSearchException;
 import com.dotmarketing.business.DotStateException;
 import org.junit.Test;
 
@@ -35,25 +36,30 @@ public class OSSearchAPIImplInvalidQueryTest extends UnitTestBase {
                 () -> api.searchRaw(null, false, null, true));
     }
 
-    /** HTTP 400 with a parse failure: the request itself is malformed, the caller's error. */
+    /**
+     * HTTP 400 with a parse failure: OpenSearch refused the request. Not the caller's error in the
+     * no-fallback sense — Elasticsearch 7 may accept syntax OpenSearch 3 dropped — so it is raised
+     * as a rejection, which Phase 2 still retries on Elasticsearch.
+     */
     @Test
-    public void httpFailure_400_parsingException_isAnInvalidQuery() {
+    public void httpFailure_400_parsingException_isARejection() {
         final DotStateException failure = OSSearchAPIImpl.searchFailure(400,
                 "{\"error\":{\"root_cause\":[{\"type\":\"parsing_exception\","
                         + "\"reason\":\"unknown query [bogus_clause]\"}],"
                         + "\"type\":\"parsing_exception\"},\"status\":400}");
 
-        assertTrue(failure instanceof InvalidSearchQueryException);
+        assertTrue(failure instanceof QueryRejectedByOpenSearchException);
+        assertFalse(failure instanceof InvalidSearchQueryException);
         assertTrue(failure.getMessage(), failure.getMessage().contains("parsing_exception"));
     }
 
-    /** A request body OpenSearch could not read as JSON content is the caller's error too. */
+    /** A body OpenSearch could not read as query content is a rejection too. */
     @Test
-    public void httpFailure_400_contentParseException_isAnInvalidQuery() {
+    public void httpFailure_400_contentParseException_isARejection() {
         assertTrue(OSSearchAPIImpl.searchFailure(400,
                 "{\"error\":{\"root_cause\":[{\"type\":\"x_content_parse_exception\"}],"
                         + "\"type\":\"x_content_parse_exception\"},\"status\":400}")
-                instanceof InvalidSearchQueryException);
+                instanceof QueryRejectedByOpenSearchException);
     }
 
     /**
@@ -62,28 +68,28 @@ public class OSSearchAPIImplInvalidQueryTest extends UnitTestBase {
      * fallback exists for, so it must stay eligible for it.
      */
     @Test
-    public void httpFailure_400_queryShardException_isNotAnInvalidQuery() {
+    public void httpFailure_400_queryShardException_isNotARejection() {
         assertFalse(OSSearchAPIImpl.searchFailure(400,
                 "{\"error\":{\"root_cause\":[{\"type\":\"query_shard_exception\","
                         + "\"reason\":\"failed to create query\"}],"
                         + "\"type\":\"search_phase_execution_exception\"},\"status\":400}")
-                instanceof InvalidSearchQueryException);
+                instanceof QueryRejectedByOpenSearchException);
     }
 
     /** A shard-level illegal argument (e.g. sorting on a text field) is a mapping question too. */
     @Test
-    public void httpFailure_400_shardIllegalArgument_isNotAnInvalidQuery() {
+    public void httpFailure_400_shardIllegalArgument_isNotARejection() {
         assertFalse(OSSearchAPIImpl.searchFailure(400,
                 "{\"error\":{\"root_cause\":[{\"type\":\"illegal_argument_exception\"}],"
                         + "\"type\":\"search_phase_execution_exception\"},\"status\":400}")
-                instanceof InvalidSearchQueryException);
+                instanceof QueryRejectedByOpenSearchException);
     }
 
     /** A 400 whose body cannot be read gives no reason to skip the fallback. */
     @Test
-    public void httpFailure_400_unreadableBody_isNotAnInvalidQuery() {
+    public void httpFailure_400_unreadableBody_isNotARejection() {
         assertFalse(OSSearchAPIImpl.searchFailure(400, "<html>Bad Request</html>")
-                instanceof InvalidSearchQueryException);
+                instanceof QueryRejectedByOpenSearchException);
     }
 
     /**
@@ -94,8 +100,9 @@ public class OSSearchAPIImplInvalidQueryTest extends UnitTestBase {
     public void httpFailure_otherStatuses_areNotInvalidQueries() {
         for (final int status : new int[]{401, 403, 404, 429, 500, 503}) {
             final DotStateException failure = OSSearchAPIImpl.searchFailure(status, "{}");
-            assertFalse("HTTP " + status + " must stay a fallback condition",
-                    failure instanceof InvalidSearchQueryException);
+            assertFalse("HTTP " + status + " must stay a plain fallback condition",
+                    failure instanceof InvalidSearchQueryException
+                            || failure instanceof QueryRejectedByOpenSearchException);
         }
     }
 }

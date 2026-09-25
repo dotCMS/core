@@ -7,6 +7,7 @@ import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 import static com.dotcms.content.index.IndexConfigHelper.logShadowWriteFailure;
 
 import com.dotcms.content.index.domain.InvalidSearchQueryException;
+import com.dotcms.content.index.domain.QueryRejectedByOpenSearchException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import java.util.List;
@@ -180,8 +181,10 @@ public final class PhaseRouter<T> {
      * <p><strong>Phase 2 only</strong>: OS is the read provider but ES is still active.
      * If OS throws a runtime exception the error is logged at {@code ERROR} level and the
      * read is retried against ES, so a transient OS failure never surfaces to the caller.
-     * A failure caused by the request itself — an invalid query, a security rule — is not
+     * A failure caused by the request itself — a query that is not JSON, a security rule — is not
      * retried: it propagates, logged at {@code WARN} with its cause (see {@link #isCallerError}).
+     * A query OpenSearch refused as malformed is still retried, logged at {@code WARN} as a query
+     * that will fail at Phase 3 (see {@link #isRejectedByOpenSearch}).
      * In all other phases the call is forwarded to the read provider without a safety net:
      * Phase 0/1 read from ES (no fallback needed); Phase 3 reads from OS (ES decommissioned).</p>
      *
@@ -216,7 +219,11 @@ public final class PhaseRouter<T> {
                 Logger.warn(PhaseRouter.class, callerErrorMessage(operation, e));
                 throw e;
             }
-            Logger.error(PhaseRouter.class, fallbackMessage(operation, e), e);
+            if (isRejectedByOpenSearch(e)) {
+                Logger.warn(PhaseRouter.class, rejectedQueryMessage(operation, e));
+            } else {
+                Logger.error(PhaseRouter.class, fallbackMessage(operation, e), e);
+            }
             return fn.apply(esImpl);
         }
     }
@@ -267,6 +274,45 @@ public final class PhaseRouter<T> {
             current = current.getCause();
         }
         return false;
+    }
+
+    /**
+     * Whether OpenSearch parsed the request and refused it. Unlike a caller error this still falls
+     * back: Elasticsearch 7 accepts syntax OpenSearch 3 dropped, so the query may succeed there.
+     * What it must not do is log as an index problem (issue #37637).
+     */
+    static boolean isRejectedByOpenSearch(final Throwable failure) {
+        Throwable current = failure;
+        while (null != current) {
+            if (current instanceof QueryRejectedByOpenSearchException) {
+                return true;
+            }
+            if (current.getCause() == current) {
+                return false;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    /**
+     * The log line for a Phase 2 read OpenSearch refused as malformed and that is being retried on
+     * Elasticsearch: names the operation and OpenSearch's reason, and says the query will fail once
+     * reads no longer fall back — the early warning a migrating site needs to rewrite it.
+     */
+    static String rejectedQueryMessage(final String operation, final Throwable failure) {
+        final StringBuilder message = new StringBuilder("OS rejected a read in Phase 2");
+        if (null != operation && !operation.isBlank()) {
+            message.append(" [").append(operation).append(']');
+        }
+        message.append(" as malformed; retrying on ES, which may accept syntax OpenSearch does "
+                + "not. This query will fail at Phase 3 unless it is rewritten for OpenSearch. "
+                + "Cause: ").append(failure.getMessage());
+        final String rootCause = rootCauseMessage(failure);
+        if (null != rootCause) {
+            message.append(" / root cause: ").append(rootCause);
+        }
+        return message.toString();
     }
 
     /**
@@ -415,7 +461,11 @@ public final class PhaseRouter<T> {
                 Logger.warn(PhaseRouter.class, callerErrorMessage(null, e));
                 throw e;
             }
-            Logger.error(PhaseRouter.class, fallbackMessage(null, e), e);
+            if (isRejectedByOpenSearch(e)) {
+                Logger.warn(PhaseRouter.class, rejectedQueryMessage(null, e));
+            } else {
+                Logger.error(PhaseRouter.class, fallbackMessage(null, e), e);
+            }
             return fn.apply(esImpl);
         }
     }

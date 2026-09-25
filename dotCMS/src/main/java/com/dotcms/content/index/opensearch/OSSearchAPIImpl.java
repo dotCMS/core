@@ -6,6 +6,7 @@ import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.content.index.domain.InvalidSearchQueryException;
+import com.dotcms.content.index.domain.QueryRejectedByOpenSearchException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -389,9 +390,8 @@ public class OSSearchAPIImpl implements SearchAPI {
     }
 
     /**
-     * OpenSearch error types that mean the request itself could not be read: the query JSON is
-     * malformed or names a clause OpenSearch does not know. Elasticsearch rejects the same request
-     * the same way, so these are the caller's errors.
+     * OpenSearch error types that mean it could not parse the request: the query JSON is malformed,
+     * or uses syntax OpenSearch does not accept — possibly older syntax Elasticsearch 7 still does.
      */
     private static final Set<String> MALFORMED_REQUEST_ERRORS = Set.of(
             "parsing_exception", "x_content_parse_exception", "json_parse_exception",
@@ -400,22 +400,21 @@ public class OSSearchAPIImpl implements SearchAPI {
     /**
      * The exception for a search OpenSearch answered with a non-2xx status.
      *
-     * <p>An HTTP 400 is raised as {@link InvalidSearchQueryException} only when OpenSearch says the
-     * request could not be parsed ({@link #MALFORMED_REQUEST_ERRORS}), both at the top level and in
-     * every root cause. The Phase 2 router then propagates it rather than retrying it on
-     * Elasticsearch, which would reject it too (issue #37637).</p>
+     * <p>An HTTP 400 whose top-level error and every root cause are parse failures
+     * ({@link #MALFORMED_REQUEST_ERRORS}) is raised as {@link QueryRejectedByOpenSearchException}.
+     * Phase 2 still retries it on Elasticsearch — Elasticsearch 7 accepts syntax OpenSearch 3
+     * dropped, so the query may well succeed there — but logs it as a query that will fail at
+     * Phase 3 instead of blaming the index (issue #37637).</p>
      *
-     * <p>Every other failure stays a plain {@link DotStateException}, eligible for the fallback.
-     * That includes a 400 from a shard ({@code query_shard_exception},
-     * {@code search_phase_execution_exception}): a well-formed query can draw one from an
-     * OpenSearch index whose mapping has not caught up with Elasticsearch, which is exactly the
-     * stale-index case the fallback exists for. A body that cannot be read also stays eligible —
-     * there is no evidence then that the request was at fault.</p>
+     * <p>Every other failure stays a plain {@link DotStateException}: a 400 from a shard
+     * ({@code query_shard_exception}, {@code search_phase_execution_exception}), which a
+     * well-formed query can draw from an OpenSearch mapping that has not caught up; a body that
+     * cannot be read; and every other status.</p>
      */
     static DotStateException searchFailure(final int status, final String body) {
         final String message = "OS search failed: HTTP " + status + " — " + body;
         return status == 400 && isMalformedRequest(body)
-                ? new InvalidSearchQueryException(message)
+                ? new QueryRejectedByOpenSearchException(message)
                 : new DotStateException(message);
     }
 
