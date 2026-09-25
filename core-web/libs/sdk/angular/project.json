@@ -7,6 +7,9 @@
     "tags": [],
     "targets": {
         "build": {
+            "metadata": {
+                "description": "Builds the published package with the Angular pinned in toolchain/ (the SDK's supported floor), not core-web's. Do not switch back to @nx/angular:package: it compiles with core-web's Angular, which makes the package unusable on older Angular versions. See toolchain/README.md."
+            },
             "executor": "nx:run-commands",
             "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
             "defaultConfiguration": "production",

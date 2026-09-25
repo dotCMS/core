@@ -17,7 +17,6 @@
         "types": [],
         "baseUrl": ".",
         "paths": {
-            "@angular/*": ["node_modules/@angular/*"],
             "@tinymce/tinymce-angular": ["node_modules/@tinymce/tinymce-angular"],
             "rxjs": ["node_modules/rxjs"],
             "rxjs/*": ["node_modules/rxjs/*"],

@@ -9,8 +9,8 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
 @Component({
     selector: 'dotcms-block-editor-renderer-grid-block',
     imports: [NgComponentOutlet],
-    // Default, not Eager: Eager does not exist in Angular 19, the oldest version this SDK
-    // is built with and supports (libs/sdk/angular/toolchain/README.md). Both mean check-always.
+    // Default, not Eager: Eager only exists from Angular 21.2, and this SDK is built with and
+    // supports Angular 21.0 (libs/sdk/angular/toolchain/README.md). Both mean check-always.
     changeDetection: ChangeDetectionStrategy.Default,
     template: `
         <div
@@ -23,7 +23,7 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
                 <div
                     data-type="gridColumn"
                     class="grid-block__column"
-                    [style.grid-column]="'span ' + (columnSpans[$index] ?? 6)">
+                    [style.grid-column]="'span ' + columnSpan($index)">
                     <ng-container
                         *ngComponentOutlet="
                             blockEditorItem;
@@ -49,5 +49,15 @@ export class DotGridBlock {
             rawCols.every((v: unknown) => typeof v === 'number' && Number.isFinite(v))
             ? rawCols
             : [6, 6];
+    }
+
+    /**
+     * Grid span for the column at `index`. The template walks `node.content`, which can hold
+     * more columns than the two in `columnSpans`, so any extra column falls back to 6.
+     */
+    columnSpan(index: number): number {
+        const span: number | undefined = this.columnSpans[index];
+
+        return span ?? 6;
     }
 }

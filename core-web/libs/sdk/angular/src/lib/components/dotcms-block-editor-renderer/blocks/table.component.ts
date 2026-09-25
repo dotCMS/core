@@ -7,8 +7,8 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
 @Component({
     selector: 'dotcms-block-editor-renderer-table',
     imports: [NgComponentOutlet],
-    // Default, not Eager: Eager does not exist in Angular 19, the oldest version this SDK
-    // is built with and supports (libs/sdk/angular/toolchain/README.md). Both mean check-always.
+    // Default, not Eager: Eager only exists from Angular 21.2, and this SDK is built with and
+    // supports Angular 21.0 (libs/sdk/angular/toolchain/README.md). Both mean check-always.
     changeDetection: ChangeDetectionStrategy.Default,
     template: `
         <table

@@ -9,8 +9,8 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
 
 @Component({
     selector: 'dotcms-no-component-provided',
-    // Default, not Eager: Eager does not exist in Angular 19, the oldest version this SDK
-    // is built with and supports (libs/sdk/angular/toolchain/README.md). Both mean check-always.
+    // Default, not Eager: Eager only exists from Angular 21.2, and this SDK is built with and
+    // supports Angular 21.0 (libs/sdk/angular/toolchain/README.md). Both mean check-always.
     changeDetection: ChangeDetectionStrategy.Default,
     template: `
         <div data-testid="no-component-provided" [style]="style">
