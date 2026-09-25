@@ -46,9 +46,7 @@ export type CustomRenderer = Record<string, DynamicComponentEntity>;
     selector: 'dotcms-block-editor-renderer',
     templateUrl: './dotcms-block-editor-renderer.component.html',
     styleUrls: ['./dotcms-block-editor-renderer.component.scss'],
-    // Default, not Eager: Eager only exists from Angular 21.2, and this SDK is built with and
-    // supports Angular 21.0 (libs/sdk/angular/toolchain/README.md). Both mean check-always.
-    changeDetection: ChangeDetectionStrategy.Default,
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotCMSBlockEditorItemComponent]
 })
 export class DotCMSBlockEditorRendererComponent {

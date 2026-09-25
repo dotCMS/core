@@ -3,9 +3,9 @@
   "version": "1.1.1",
   "peerDependencies": {
     "rxjs": ">=7.0.0",
-    "@angular/common": ">=21.0.0",
-    "@angular/core": ">=21.0.0",
-    "@angular/router": ">=21.0.0",
+    "@angular/common": ">=21.2.0",
+    "@angular/core": ">=21.2.0",
+    "@angular/router": ">=21.2.0",
     "@dotcms/client": "0.0.0",
     "@dotcms/uve": "0.0.0",
     "@dotcms/types": "0.0.0"

@@ -18,7 +18,7 @@ class DotCMSShowWhenDirective {
 `;
 
 const FLOOR_22: AngularFloor = {
-    floor: '22.0.0',
+    floor: '22.1.0',
     highestMinVersion: '17.0.0',
     compilerVersion: '22.1.0',
     declarationCount: 5
@@ -48,14 +48,21 @@ describe('readPartialDeclarations', () => {
 });
 
 describe('deriveAngularFloor', () => {
-    it('uses the compiler major when minVersion under-reports it — the #37680 artifact', () => {
+    it('uses the compiler major.minor when minVersion under-reports it — the #37680 artifact', () => {
         expect(deriveAngularFloor(readPartialDeclarations(BUNDLE_37680))).toEqual(FLOOR_22);
     });
 
-    it('uses the highest minVersion when it is above the compiler major', () => {
+    it('keeps the compiler minor but not its patch — a 21.2 build cannot be read by 21.0 or 21.1', () => {
+        // 21.2 added ChangeDetectionStrategy.Eager; a floor of 21.0.0 would admit linkers that reject it.
+        const floor = deriveAngularFloor([{ kind: 'Component', minVersion: '17.0.0', version: '21.2.24' }]);
+
+        expect(floor.floor).toBe('21.2.0');
+    });
+
+    it('uses the highest minVersion when it is above the compiler major.minor', () => {
         const floor = deriveAngularFloor([
-            { kind: 'Factory', minVersion: '12.0.0', version: '23.4.1' },
-            { kind: 'Component', minVersion: '23.2.0', version: '23.4.1' }
+            { kind: 'Factory', minVersion: '12.0.0', version: '23.1.4' },
+            { kind: 'Component', minVersion: '23.2.0', version: '23.1.4' }
         ]);
 
         expect(floor.floor).toBe('23.2.0');
@@ -100,17 +107,17 @@ describe('validateAngularPeerFloor', () => {
             expect.stringContaining('peerDependencies["@angular/core"] is ">=17.0.0", which admits 17.0.0'),
             expect.stringContaining('peerDependencies["@angular/router"] is ">=17.0.0", which admits 17.0.0')
         ]);
-        expect(violations[0]).toContain('needs Angular 22.0.0 or newer');
+        expect(violations[0]).toContain('needs Angular 22.1.0 or newer');
     });
 
-    it.each(['>=22.0.0', '^22.0.0', '^22.0.0 || ^23.0.0', '>=22.1.0 <24.0.0', '22.x'])(
+    it.each(['>=22.1.0', '^22.1.0', '~22.1.0', '^22.1.0 || ^23.0.0', '>=22.1.0 <24.0.0'])(
         'passes the range "%s", whose lowest version is at or above the floor',
         (range) => {
             expect(validateAngularPeerFloor(peers(range), FLOOR_22)).toEqual([]);
         }
     );
 
-    it.each(['^21.0.0 || ^22.0.0', '>=21.2.0', '*', '>=22.0.0-rc.0'])(
+    it.each(['>=22.0.0', '22.x', '^21.0.0 || ^22.0.0', '>=21.2.0', '*', '>=22.1.0-rc.0'])(
         'flags the range "%s", which admits something below the floor',
         (range) => {
             expect(validateAngularPeerFloor(peers(range), FLOOR_22)).toHaveLength(3);
@@ -130,6 +137,6 @@ describe('validateAngularPeerFloor', () => {
     });
 
     it('ignores non-Angular peers, even when their ranges are low', () => {
-        expect(validateAngularPeerFloor({ peerDependencies: { '@angular/core': '>=22.0.0', rxjs: '>=1.0.0' } }, FLOOR_22)).toEqual([]);
+        expect(validateAngularPeerFloor({ peerDependencies: { '@angular/core': '>=22.1.0', rxjs: '>=1.0.0' } }, FLOOR_22)).toEqual([]);
     });
 });

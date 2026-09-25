@@ -5,9 +5,7 @@ import { getUVEState } from '@dotcms/uve';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-unknown',
-    // Default, not Eager: Eager only exists from Angular 21.2, and this SDK is built with and
-    // supports Angular 21.0 (libs/sdk/angular/toolchain/README.md). Both mean check-always.
-    changeDetection: ChangeDetectionStrategy.Default,
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: `
         @if (isEditMode) {
             <div [style]="style" data-testid="unknown-block-type">

@@ -14,10 +14,11 @@
  * `minVersion` on its own is NOT a usable floor. The build that caused #37680 had a highest
  * `minVersion` of "17.0.0" while emitting `ChangeDetectionStrategy.Eager` 18 times, which no
  * linker older than 21.2 can parse — the compiler does not bump `minVersion` for every enum
- * member it emits. Angular's supported contract for partially compiled libraries is instead
- * that the app must be on the same major as the Angular that built the library, or newer
- * (angular.dev, "Creating libraries" → "Ensuring library version compatibility"). So the floor
- * is the higher of the two: the compiler's major, and the highest `minVersion`.
+ * member it emits. Angular's documented contract is that the app must be on the same major as
+ * the Angular that built the library, or newer (angular.dev, "Creating libraries" → "Ensuring
+ * library version compatibility"), but that is not tight enough either: `Eager` arrived in a
+ * minor (21.2), so a 21.2 build can't be read by 21.0 or 21.1. So the floor is the higher of the
+ * two: the compiler's major.minor (patches add no features), and the highest `minVersion`.
  *
  * Since #37680 the SDK is built with the Angular pinned in core-web/libs/sdk/angular/toolchain
  * (its supported floor), not core-web's. This check is what keeps the declared peer range and
@@ -102,10 +103,10 @@ export function deriveAngularFloor(declarations: PartialDeclaration[]): AngularF
 
     const highestMinVersion = declarations.map((d) => d.minVersion).sort(semver.rcompare)[0];
     const compilerVersion = declarations.map((d) => d.version).sort(semver.rcompare)[0];
-    const compilerMajorFloor = `${semver.major(compilerVersion)}.0.0`;
+    const compilerMinorFloor = `${semver.major(compilerVersion)}.${semver.minor(compilerVersion)}.0`;
 
     return {
-        floor: semver.gt(highestMinVersion, compilerMajorFloor) ? highestMinVersion : compilerMajorFloor,
+        floor: semver.gt(highestMinVersion, compilerMinorFloor) ? highestMinVersion : compilerMinorFloor,
         highestMinVersion,
         compilerVersion,
         declarationCount: declarations.length
