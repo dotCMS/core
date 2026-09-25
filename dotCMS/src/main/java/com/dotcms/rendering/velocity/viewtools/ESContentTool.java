@@ -102,7 +102,7 @@ public class ESContentTool implements ViewTool {
 
 	/**
 	 * @deprecated Use {@link #search(String)} for vendor-neutral access.
-	 *             This method returns Elasticsearch-specific types and will be removed in v26.08.04.
+	 *             This method returns Elasticsearch-specific types and will be removed in a future release.
 	 *             Velocity templates using {@code $results.hits}, {@code $results.aggregations},
 	 *             or {@code $results.response} must migrate to the neutral equivalents exposed by
 	 *             {@link ContentSearchResults}.
@@ -121,7 +121,7 @@ public class ESContentTool implements ViewTool {
 
 	/**
 	 * @deprecated Use {@link #raw(String)} for vendor-neutral access.
-	 *             This method returns an Elasticsearch-specific type and will be removed in v26.08.04.
+	 *             This method returns an Elasticsearch-specific type and will be removed in a future release.
 	 *             <p>Like {@link #raw(String)}, the query is lowercased before execution, so mixed-case
 	 *             field names resolve to the physical index field name.</p>
 	 *             <p>In Phase 3 of the OpenSearch migration this fails the page render, or returns
