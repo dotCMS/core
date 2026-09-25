@@ -21,6 +21,7 @@ import { SafeUrlPipe } from '@dotcms/ui';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
+import { scrollIframeToFragment } from '../../../utils';
 import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection';
 
 /**
@@ -214,11 +215,16 @@ export class DotUveIframeComponent {
                     const linkElement = target.closest('a');
                     const href = linkElement?.getAttribute('href');
 
-                    // Hash-only anchors (#section) are same-page scrolls — let
-                    // the browser handle them. Skip both internalNav and
-                    // inlineEditing emits even when the anchor is nested
-                    // inside an editable [data-mode] region.
+                    // Hash-only anchors (#section) are same-page scrolls. The
+                    // browser can't do it here: the srcdoc's base URL is the
+                    // admin's, so it would load the admin inside the canvas.
+                    // Scroll the iframe ourselves, and skip both internalNav and
+                    // inlineEditing emits even when the anchor is nested inside
+                    // an editable [data-mode] region.
                     if (href?.startsWith('#')) {
+                        e.preventDefault();
+                        scrollIframeToFragment(win, href);
+
                         return false;
                     }
 

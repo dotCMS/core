@@ -13,9 +13,19 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.content.index.migration.MirrorStatus;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
+import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.PublisherAPI;
+import com.dotcms.publishing.PublisherConfig;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -65,6 +75,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 import static org.awaitility.Awaitility.await;
@@ -880,5 +892,441 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         return page;
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // Issue #37321 — the crawl must not hold a pooled connection or an open transaction.
+    //
+    // The job used to call HibernateUtil.startTransaction() before the crawl and close the session
+    // only in the finally, so one pooled connection was leased for the crawl's whole duration —
+    // hours on a large site. HikariCP never validates an in-use connection and pgjdbc's
+    // tcpKeepAlive is off, so a stateful network device could evict the idle TCP flow and the
+    // closing audit INSERT would fail on a dead socket. The failure was then swallowed and the job
+    // reported "Job Finished".
+    //
+    // These tests assert the two properties that fix it, at the two moments that matter. They use
+    // the @VisibleForTesting constructor to inject observers rather than driving a real multi-hour
+    // crawl: the defect is about *what the thread holds*, which is observable in milliseconds.
+    // ------------------------------------------------------------------------------------------
+
+    /**
+     * Builds the Quartz context a run-now crawl needs, mirroring the setup the scenarios above use.
+     *
+     * @param jobId job identifier the audit row is keyed by
+     * @param alias index alias the crawl should end up with
+     * @return a mock {@link JobExecutionContext} carrying the job detail and fire time
+     */
+    private JobExecutionContext runNowContext(final String jobId, final String alias) {
+        final JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
+        jobDataMap.put(SiteSearchJobImpl.INDEX_ALIAS, alias);
+        jobDataMap.put(SiteSearchJobImpl.JOB_ID, jobId);
+        jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME, SiteSearchJobImpl.RUNNING_ONCE_JOB_NAME);
+        jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
+        jobDataMap.put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(defaultLang)});
+        jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
+
+        final JobDetail jobDetail = Mockito.mock(JobDetail.class);
+        Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
+        final JobExecutionContext context = Mockito.mock(JobExecutionContext.class);
+        Mockito.when(context.getJobDetail()).thenReturn(jobDetail);
+        Mockito.when(context.getFireTime()).thenReturn(new Date());
+        return context;
+    }
+
+    /**
+     * A publisher that does no crawling and instead records what the thread was holding when the
+     * crawl would have started. Standing in for the real publisher is the whole point: on a real
+     * site this call is where the hours go, and it is precisely then that a held connection goes
+     * quiet long enough to be evicted.
+     *
+     * @param connectionHeld set to whether a pooled connection existed at crawl time
+     * @param transactionHeld set to whether a transaction was open at crawl time
+     * @return a {@link PublisherAPI} that records and returns the status it was handed
+     */
+    private PublisherAPI crawlTimeObserver(final AtomicBoolean connectionHeld,
+            final AtomicBoolean transactionHeld) throws DotPublishingException {
+        final PublisherAPI publisherAPI = Mockito.mock(PublisherAPI.class);
+        Mockito.when(publisherAPI.publish(Mockito.any(PublisherConfig.class),
+                        Mockito.any(PublishStatus.class)))
+                .thenAnswer(invocation -> {
+                    connectionHeld.set(DbConnectionFactory.connectionExists());
+                    transactionHeld.set(DbConnectionFactory.inTransaction());
+                    return invocation.getArgument(1);
+                });
+        return publisherAPI;
+    }
+
+    /**
+     * AC-001 — nothing is held while the crawl runs.
+     *
+     * <p>Before the fix both assertions fail: {@code startTransaction()} at the top of {@code run()}
+     * leases a connection and sets {@code autoCommit=false}, and both survive until
+     * {@code closeSession()} in the finally. After it, {@code prepareJob()}'s reads each close their
+     * own connection through {@code @CloseDBIfOpened}, so the thread holds nothing by the time the
+     * publisher is called.</p>
+     *
+     * <p>The two conditions are asserted separately because they fail independently and mean
+     * different things: an open transaction is what stalls autovacuum database-wide, while a held
+     * connection is what dies silently behind a firewall.</p>
+     */
+    @Test
+    public void Test_Crawl_Runs_With_No_Connection_And_No_Transaction_Held()
+            throws DotPublishingException, JobExecutionException, DotDataException, IOException,
+            DotSecurityException {
+
+        deleteAllSiteSearchIndices();
+
+        final AtomicBoolean connectionHeld = new AtomicBoolean(true);
+        final AtomicBoolean transactionHeld = new AtomicBoolean(true);
+
+        final SiteSearchJobImpl impl = new SiteSearchJobImpl(
+                APILocator.getIndiciesAPI(), siteSearchAPI, hostAPI, APILocator.getUserAPI(),
+                siteSearchAuditAPI, crawlTimeObserver(connectionHeld, transactionHeld));
+
+        impl.run(runNowContext(UUIDUtil.uuid(), "no-held-conn-" + System.currentTimeMillis()));
+
+        Assert.assertFalse(
+                "The crawl must not run with a pooled connection held: on a long crawl that "
+                        + "connection goes quiet and can be evicted by a stateful network device, "
+                        + "killing the audit insert that follows (issue #37321)",
+                connectionHeld.get());
+        Assert.assertFalse(
+                "The crawl must not run inside an open transaction: holding one for the duration "
+                        + "of the crawl pins the xmin horizon and stalls autovacuum database-wide "
+                        + "(issue #37321)",
+                transactionHeld.get());
+    }
+
+    /**
+     * AC-002 — the audit save begins a transaction of its own.
+     *
+     * <p>This is the property that makes the row survive a connection that died during the crawl.
+     * {@code SiteSearchAuditAPIImpl.save()} is {@code @WrapInTransaction}, but that only opens a
+     * fresh transaction — on a freshly leased, pool-validated connection — when none is already
+     * open. While the job held one, the nested call joined it instead and inherited its dead
+     * socket.</p>
+     *
+     * <p>Killing a real backend mid-crawl is not reproducible in CI, so this asserts the mechanism
+     * rather than the symptom: no transaction open on entry to {@code save()} means
+     * {@code @WrapInTransaction} is about to start one. The symptom itself is covered by the manual
+     * reproduction in the feature's quickstart.</p>
+     */
+    @Test
+    public void Test_Audit_Save_Starts_Its_Own_Transaction()
+            throws DotPublishingException, JobExecutionException, DotDataException, IOException,
+            DotSecurityException {
+
+        deleteAllSiteSearchIndices();
+
+        final AtomicBoolean inTransactionAtSave = new AtomicBoolean(true);
+        final AtomicBoolean saveWasCalled = new AtomicBoolean(false);
+
+        final SiteSearchAuditAPI auditObserver = Mockito.mock(SiteSearchAuditAPI.class);
+        Mockito.when(auditObserver.findRecentAudits(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.anyInt())).thenReturn(new ArrayList<>());
+        Mockito.doAnswer(invocation -> {
+            saveWasCalled.set(true);
+            inTransactionAtSave.set(DbConnectionFactory.inTransaction());
+            return null;
+        }).when(auditObserver).save(Mockito.any(SiteSearchAudit.class));
+
+        final AtomicBoolean ignoredConnection = new AtomicBoolean();
+        final AtomicBoolean ignoredTransaction = new AtomicBoolean();
+
+        final SiteSearchJobImpl impl = new SiteSearchJobImpl(
+                APILocator.getIndiciesAPI(), siteSearchAPI, hostAPI, APILocator.getUserAPI(),
+                auditObserver, crawlTimeObserver(ignoredConnection, ignoredTransaction));
+
+        impl.run(runNowContext(UUIDUtil.uuid(), "own-tx-" + System.currentTimeMillis()));
+
+        Assert.assertTrue("The job must still attempt to save the audit row", saveWasCalled.get());
+        Assert.assertFalse(
+                "The audit save must not inherit an already-open transaction: @WrapInTransaction "
+                        + "only leases a fresh, pool-validated connection when none is open, and "
+                        + "that is what lets the insert survive a socket that died during the "
+                        + "crawl (issue #37321)",
+                inTransactionAtSave.get());
+    }
+
+    /**
+     * Builds an audit API that fails the way a dead socket fails it.
+     *
+     * @param failure the exception {@code save} should throw
+     * @return a {@link SiteSearchAuditAPI} with no recent audits and a failing {@code save}
+     */
+    private SiteSearchAuditAPI failingAuditAPI(final DotDataException failure)
+            throws DotDataException {
+        final SiteSearchAuditAPI auditAPI = Mockito.mock(SiteSearchAuditAPI.class);
+        Mockito.when(auditAPI.findRecentAudits(Mockito.anyString(), Mockito.anyInt(),
+                Mockito.anyInt())).thenReturn(new ArrayList<>());
+        Mockito.doThrow(failure).when(auditAPI).save(Mockito.any(SiteSearchAudit.class));
+        return auditAPI;
+    }
+
+    /**
+     * AC-003 — a failed audit save fails the job.
+     *
+     * <p>The audit row is the checkpoint an incremental crawl anchors its delta on. Losing it costs
+     * the next run a full rebuild, so a run that lost it has not succeeded. Before the fix the
+     * failure was caught, logged as "can't save audit data" and dropped, and the job went on to log
+     * "Job Finished" — which is why this went unnoticed in production until someone read the logs
+     * closely.</p>
+     *
+     * <p>The exception must arrive intact rather than wrapped or replaced: whoever reads the job
+     * result needs to see which insert failed and why — including, via this same path, the separate
+     * {@code path varchar(500)} overflow of issue #36706.</p>
+     */
+    @Test
+    public void Test_Failed_Audit_Save_Propagates_Out_Of_Run()
+            throws DotPublishingException, JobExecutionException, DotDataException, IOException,
+            DotSecurityException {
+
+        deleteAllSiteSearchIndices();
+
+        final DotDataException auditFailure =
+                new DotDataException("simulated audit insert failure (issue #37321)");
+        final AtomicBoolean ignoredConnection = new AtomicBoolean();
+        final AtomicBoolean ignoredTransaction = new AtomicBoolean();
+
+        final SiteSearchJobImpl impl = new SiteSearchJobImpl(
+                APILocator.getIndiciesAPI(), siteSearchAPI, hostAPI, APILocator.getUserAPI(),
+                failingAuditAPI(auditFailure),
+                crawlTimeObserver(ignoredConnection, ignoredTransaction));
+
+        try {
+            impl.run(runNowContext(UUIDUtil.uuid(), "failing-audit-" + System.currentTimeMillis()));
+            Assert.fail("A failed audit save must fail the job, not be swallowed and reported as "
+                    + "\"Job Finished\" (issue #37321)");
+        } catch (final DotDataException expected) {
+            Assert.assertSame(
+                    "The audit failure must reach the caller intact, so the job result says which "
+                            + "insert failed and why", auditFailure, expected);
+        }
+    }
+
+    /**
+     * AC-003, ordering half — the failure is raised only after the crawl has finished.
+     *
+     * <p>Failing the job must not cost the index work that already succeeded. The crawl writes to
+     * the search engine, which no Postgres transaction covers and which nothing here rolls back; a
+     * failed audit save leaves the index exactly as a successful one would, and only the checkpoint
+     * is missing. This asserts that ordering directly: the publisher ran before the throw.</p>
+     *
+     * <p>Not asserted here: that {@code SiteSearchJobProxy} turns this into a
+     * {@link JobExecutionException}. The proxy builds its own {@code SiteSearchJobImpl} with no
+     * injection seam, so a test could only prove it by mocking the very thing it claims to verify.
+     * That wrapping is pre-existing behavior this fix does not touch — it catches {@code Exception}
+     * and rethrows as {@code JobExecutionException} — and adding a seam to production code purely
+     * to assert it would exceed the scope of this fix.</p>
+     */
+    @Test
+    public void Test_Audit_Failure_Is_Raised_After_The_Crawl_Completes()
+            throws DotPublishingException, JobExecutionException, DotDataException, IOException,
+            DotSecurityException {
+
+        deleteAllSiteSearchIndices();
+
+        final AtomicBoolean crawlCompleted = new AtomicBoolean(false);
+        final PublisherAPI publisherAPI = Mockito.mock(PublisherAPI.class);
+        Mockito.when(publisherAPI.publish(Mockito.any(PublisherConfig.class),
+                        Mockito.any(PublishStatus.class)))
+                .thenAnswer(invocation -> {
+                    crawlCompleted.set(true);
+                    return invocation.getArgument(1);
+                });
+
+        final SiteSearchJobImpl impl = new SiteSearchJobImpl(
+                APILocator.getIndiciesAPI(), siteSearchAPI, hostAPI, APILocator.getUserAPI(),
+                failingAuditAPI(new DotDataException("simulated audit insert failure")),
+                publisherAPI);
+
+        try {
+            impl.run(runNowContext(UUIDUtil.uuid(), "after-crawl-" + System.currentTimeMillis()));
+            Assert.fail("A failed audit save must fail the job (issue #37321)");
+        } catch (final DotDataException expected) {
+            Assert.assertTrue(
+                    "The crawl must have completed before the audit failure is raised, so failing "
+                            + "the job never leaves the index in a worse state than a successful "
+                            + "run would (issue #37321)",
+                    crawlCompleted.get());
+        }
+    }
+
+    /**
+     * AC-001, the branch the other connection test cannot reach — the pre-crawl index-completeness
+     * check must not leave a connection bound to the thread.
+     *
+     * <p>{@code incompleteContentIndexWarning()} is advisory and off by default
+     * ({@code SITE_SEARCH_CRAWL_MIN_CONTENT_INDEXED_PERCENT} defaults to 0), so it returns before
+     * touching the database and
+     * {@link #Test_Crawl_Runs_With_No_Connection_And_No_Transaction_Held()} never exercises it. Turn
+     * it on during a migration and it reaches {@code ContentIndexMirrorReconciler.statuses()}, whose
+     * last step is an unannotated {@code new DotConnect().setSQL(...).loadObjectResults()} —
+     * {@code DotConnect} leases from the pool and never closes, relying on an enclosing
+     * {@code @CloseDBIfOpened} that does not exist on that path.</p>
+     *
+     * <p>That matters here more than anywhere else in the job: the check runs immediately before the
+     * publish loop, so a connection left bound is pinned for the whole crawl — the exact shape of
+     * issue #37321, a few lines below where it was removed. Worse, it defeats the fix downstream:
+     * {@code publish()}'s {@code @CloseDBIfOpened} sees {@code isNewConnection == false} and skips
+     * the close, and the audit save's {@code @WrapInTransaction} then works on that same
+     * possibly-dead connection instead of leasing a fresh, pool-validated one.</p>
+     *
+     * <p>The supplier injected here stands in for the reconciler by doing the one thing that
+     * matters — an unannotated read — rather than requiring a real migration with live mirrors.</p>
+     */
+    @Test
+    public void Test_Index_Check_Leaves_No_Connection_Bound_For_The_Crawl() {
+
+        // Exactly what ContentIndexMirrorReconciler.loadDatabaseCountsQuietly() does: a bare
+        // DotConnect with no transaction or connection boundary of its own.
+        final Supplier<List<MirrorStatus>> leakingStatuses = () -> {
+            try {
+                new DotConnect().setSQL("select 1 as one").loadObjectResults();
+            } catch (final DotDataException e) {
+                throw new IllegalStateException(e);
+            }
+            return new ArrayList<>();
+        };
+
+        // Both are required to get past the early returns in incompleteContentIndexWarning():
+        // a positive threshold, and a migration that has actually started. Only the check itself is
+        // invoked — deliberately not a whole crawl, because running one under a non-zero migration
+        // phase pulls OpenSearch into a test that has nothing to do with it.
+        Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, "1");
+        Config.setProperty(MigrationPhase.FLAG_KEY, "1");
+        try {
+            DbConnectionFactory.closeSilently();
+
+            final SiteSearchJobImpl impl = new SiteSearchJobImpl(
+                    APILocator.getIndiciesAPI(), siteSearchAPI, hostAPI, APILocator.getUserAPI(),
+                    siteSearchAuditAPI, Mockito.mock(PublisherAPI.class), leakingStatuses);
+
+            impl.incompleteContentIndexWarning();
+
+            Assert.assertFalse(
+                    "The pre-crawl index-completeness check must not leave a connection bound: it "
+                            + "runs immediately before the publish loop, so anything it leaves "
+                            + "behind is held for the whole crawl, and the audit save then inherits "
+                            + "that connection instead of leasing a fresh one (issue #37321)",
+                    DbConnectionFactory.connectionExists());
+        } finally {
+            Config.setProperty(SiteSearchJobImpl.MIN_CONTENT_INDEXED_KEY, null);
+            Config.setProperty(MigrationPhase.FLAG_KEY, null);
+            HibernateUtil.closeSessionSilently();
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
+    /**
+     * AC-003, proxy half — a failed audit save surfaces as a Quartz job failure.
+     *
+     * <p>This is the assertion the rest of the suite could not make without mocking the thing under
+     * test: {@link SiteSearchJobProxy} builds its own {@code SiteSearchJobImpl}, so there is nowhere
+     * to inject a failing audit API. Instead the failure is induced for real, the same way
+     * production hits it — the {@code path} column is {@code varchar(500)} and nothing truncates
+     * what the job writes into it, so an over-long path makes the genuine audit insert fail
+     * (issue #36706). No mock stands between the crawl and the database here.</p>
+     *
+     * <p>What it proves end to end: the exception leaves {@code SiteSearchJobImpl.run()}, the proxy
+     * turns it into a {@link JobExecutionException} — which is what Quartz records as a failed run —
+     * and no audit row exists afterwards. Before the fix this same setup logged "can't save audit
+     * data", wrote no row, and reported "Job Finished" (issue #37321).</p>
+     *
+     * <p>Not asserted: the absence of the "Job Finished" {@code ActivityLogger}/{@code AdminLogger}
+     * entries. Those calls sit after the {@code try}/{@code finally} in {@code run()}, so a
+     * propagating exception cannot reach them — a structural guarantee that would need log parsing
+     * to restate. The missing audit row asserted below is the observable consequence that actually
+     * matters.</p>
+     */
+    @Test
+    public void Test_Proxy_Reports_Failed_Audit_Save_As_Job_Execution_Exception()
+            throws DotDataException, IOException {
+
+        deleteAllSiteSearchIndices();
+
+        final String jobId = UUIDUtil.uuid();
+        // sitesearch_audit.path is varchar(500) and the job does not truncate (issue #36706),
+        // so this is a real insert failure, not a simulated one.
+        final String overlongPath = "/" + RandomStringUtils.randomAlphabetic(600);
+
+        final JobDataMap jobDataMap = new JobDataMap();
+        jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
+        jobDataMap.put(SiteSearchJobImpl.INDEX_ALIAS, "proxy-fail-" + System.currentTimeMillis());
+        jobDataMap.put(SiteSearchJobImpl.JOB_ID, jobId);
+        jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME, SiteSearchJobImpl.RUNNING_ONCE_JOB_NAME);
+        jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
+        jobDataMap.put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(defaultLang)});
+        jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
+        jobDataMap.put(SiteSearchJobImpl.PATHS, overlongPath);
+
+        final JobDetail jobDetail = Mockito.mock(JobDetail.class);
+        Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
+        Mockito.when(jobDetail.getName()).thenReturn("site-search-proxy-" + jobId);
+        Mockito.when(jobDetail.getGroup()).thenReturn("site-search-proxy-test");
+        final JobExecutionContext context = Mockito.mock(JobExecutionContext.class);
+        Mockito.when(context.getJobDetail()).thenReturn(jobDetail);
+        Mockito.when(context.getFireTime()).thenReturn(new Date());
+
+        try {
+            new SiteSearchJobProxy().run(context);
+            Assert.fail("A crawl whose audit row cannot be written must be reported as a failed "
+                    + "Quartz job, not finish silently (issue #37321)");
+        } catch (final JobExecutionException expected) {
+            // Deliberately specific. A bare non-null check would also pass if the crawl itself had
+            // failed for an unrelated reason, since the proxy wraps every exception the same way —
+            // the test would go green while proving nothing about the audit path.
+            final Throwable cause = expected.getCause();
+            Assert.assertTrue(
+                    "The JobExecutionException must carry the audit insert failure itself, not "
+                            + "some earlier crawl error; got: " + cause,
+                    cause instanceof DotDataException
+                            && cause.getMessage() != null
+                            && cause.getMessage().contains("sitesearch_audit"));
+        }
+
+        Assert.assertTrue(
+                "No audit row may exist for a run that failed to write one — this is the missing "
+                        + "checkpoint that silently forced the next crawl into a full rebuild "
+                        + "(issue #37321)",
+                siteSearchAuditAPI.findRecentAudits(jobId, 0, 1).isEmpty());
+    }
+
+    /**
+     * AC-005 — the crawl phase must stay read-only against Postgres.
+     *
+     * <p>Removing the job's transaction is only safe while the crawl writes nothing. The one write
+     * reachable from the bundlers — {@code FileAssetBundler}'s
+     * {@code pushedAssetUtil.savePushedAssetForAllEnv(...)} — is gated behind
+     * {@link com.dotcms.publishing.PublisherConfig#shouldManageDependencies()}, which returns
+     * {@link com.dotcms.publishing.PublisherConfig#isStatic()}. {@link SiteSearchConfig} never sets
+     * it, so Site Search takes the non-static branch and that write is unreachable.</p>
+     *
+     * <p>Nothing in the type system says so, and a later {@code setStatic(true)} — for a
+     * static-publishing feature, say — would silently put a per-asset write back inside a crawl that
+     * no longer has a transaction around it. This is what that change runs into first. If it fails,
+     * do not just update the expectation: the job's transaction boundaries assume a read-only crawl,
+     * and that assumption needs revisiting before a write goes back in (see {@code run()}'s
+     * Javadoc).</p>
+     *
+     * <p>Lives here rather than in a pure unit test because {@code PublisherConfig}'s constructor
+     * calls {@code APILocator.getLanguageAPI().getDefaultLanguage()}, which needs a live context —
+     * a plain unit test fails with {@code DotRuntimeException: No Company!}. Sitting in this class
+     * also keeps it inside {@code MainSuite1a}, so it actually runs in CI.</p>
+     */
+    @Test
+    public void Test_SiteSearchConfig_Stays_Non_Static_So_The_Crawl_Writes_Nothing() {
+
+        final SiteSearchConfig config = new SiteSearchConfig();
+
+        Assert.assertFalse(
+                "SiteSearchConfig must not be static by default (issue #37321)",
+                config.isStatic());
+        Assert.assertFalse(
+                "SiteSearchConfig must stay non-static: shouldManageDependencies() enables a "
+                        + "per-asset DB write inside the crawl, which the job no longer wraps in a "
+                        + "transaction (issue #37321)",
+                config.shouldManageDependencies());
     }
 }
