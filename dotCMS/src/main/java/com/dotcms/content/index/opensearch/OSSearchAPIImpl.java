@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import org.opensearch.client.json.JsonpDeserializer;
@@ -388,19 +389,58 @@ public class OSSearchAPIImpl implements SearchAPI {
     }
 
     /**
+     * OpenSearch error types that mean the request itself could not be read: the query JSON is
+     * malformed or names a clause OpenSearch does not know. Elasticsearch rejects the same request
+     * the same way, so these are the caller's errors.
+     */
+    private static final Set<String> MALFORMED_REQUEST_ERRORS = Set.of(
+            "parsing_exception", "x_content_parse_exception", "json_parse_exception",
+            "json_e_o_f_exception");
+
+    /**
      * The exception for a search OpenSearch answered with a non-2xx status.
      *
-     * <p>HTTP 400 means OpenSearch parsed the request and rejected it as malformed, so it is the
-     * caller's error and is raised as {@link InvalidSearchQueryException}: the Phase 2 router then
-     * propagates it rather than retrying it on Elasticsearch, which would reject it too. Every other
-     * status — a missing index, an auth failure, an overloaded node — stays a plain
-     * {@link DotStateException} and remains eligible for the fallback (issue #37637).</p>
+     * <p>An HTTP 400 is raised as {@link InvalidSearchQueryException} only when OpenSearch says the
+     * request could not be parsed ({@link #MALFORMED_REQUEST_ERRORS}), both at the top level and in
+     * every root cause. The Phase 2 router then propagates it rather than retrying it on
+     * Elasticsearch, which would reject it too (issue #37637).</p>
+     *
+     * <p>Every other failure stays a plain {@link DotStateException}, eligible for the fallback.
+     * That includes a 400 from a shard ({@code query_shard_exception},
+     * {@code search_phase_execution_exception}): a well-formed query can draw one from an
+     * OpenSearch index whose mapping has not caught up with Elasticsearch, which is exactly the
+     * stale-index case the fallback exists for. A body that cannot be read also stays eligible —
+     * there is no evidence then that the request was at fault.</p>
      */
     static DotStateException searchFailure(final int status, final String body) {
         final String message = "OS search failed: HTTP " + status + " — " + body;
-        return status == 400
+        return status == 400 && isMalformedRequest(body)
                 ? new InvalidSearchQueryException(message)
                 : new DotStateException(message);
+    }
+
+    /** Whether an OpenSearch error body reports only parse failures of the request itself. */
+    private static boolean isMalformedRequest(final String body) {
+        try {
+            final JSONObject error = new JSONObject(body).getJSONObject("error");
+            if (!MALFORMED_REQUEST_ERRORS.contains(error.optString("type"))) {
+                return false;
+            }
+            final JSONArray rootCauses = error.optJSONArray("root_cause");
+            if (null == rootCauses) {
+                return true;
+            }
+            for (int i = 0; i < rootCauses.length(); i++) {
+                if (!MALFORMED_REQUEST_ERRORS.contains(
+                        rootCauses.getJSONObject(i).optString("type"))) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (final RuntimeException e) {
+            // JSONException is a RuntimeException: any unreadable body lands here.
+            return false;
+        }
     }
 
     /**

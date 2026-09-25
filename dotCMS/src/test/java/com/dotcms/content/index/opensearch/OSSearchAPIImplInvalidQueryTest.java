@@ -35,14 +35,55 @@ public class OSSearchAPIImplInvalidQueryTest extends UnitTestBase {
                 () -> api.searchRaw(null, false, null, true));
     }
 
-    /** HTTP 400 means OpenSearch parsed the request and rejected it: the caller's error. */
+    /** HTTP 400 with a parse failure: the request itself is malformed, the caller's error. */
     @Test
-    public void httpFailure_400_isAnInvalidQuery() {
+    public void httpFailure_400_parsingException_isAnInvalidQuery() {
         final DotStateException failure = OSSearchAPIImpl.searchFailure(400,
-                "{\"error\":{\"type\":\"parsing_exception\"}}");
+                "{\"error\":{\"root_cause\":[{\"type\":\"parsing_exception\","
+                        + "\"reason\":\"unknown query [bogus_clause]\"}],"
+                        + "\"type\":\"parsing_exception\"},\"status\":400}");
 
         assertTrue(failure instanceof InvalidSearchQueryException);
         assertTrue(failure.getMessage(), failure.getMessage().contains("parsing_exception"));
+    }
+
+    /** A request body OpenSearch could not read as JSON content is the caller's error too. */
+    @Test
+    public void httpFailure_400_contentParseException_isAnInvalidQuery() {
+        assertTrue(OSSearchAPIImpl.searchFailure(400,
+                "{\"error\":{\"root_cause\":[{\"type\":\"x_content_parse_exception\"}],"
+                        + "\"type\":\"x_content_parse_exception\"},\"status\":400}")
+                instanceof InvalidSearchQueryException);
+    }
+
+    /**
+     * A well-formed query can still draw a 400 from a shard whose mapping differs — during Phase 2
+     * an OpenSearch index still catching up with Elasticsearch. That is the stale-index case the
+     * fallback exists for, so it must stay eligible for it.
+     */
+    @Test
+    public void httpFailure_400_queryShardException_isNotAnInvalidQuery() {
+        assertFalse(OSSearchAPIImpl.searchFailure(400,
+                "{\"error\":{\"root_cause\":[{\"type\":\"query_shard_exception\","
+                        + "\"reason\":\"failed to create query\"}],"
+                        + "\"type\":\"search_phase_execution_exception\"},\"status\":400}")
+                instanceof InvalidSearchQueryException);
+    }
+
+    /** A shard-level illegal argument (e.g. sorting on a text field) is a mapping question too. */
+    @Test
+    public void httpFailure_400_shardIllegalArgument_isNotAnInvalidQuery() {
+        assertFalse(OSSearchAPIImpl.searchFailure(400,
+                "{\"error\":{\"root_cause\":[{\"type\":\"illegal_argument_exception\"}],"
+                        + "\"type\":\"search_phase_execution_exception\"},\"status\":400}")
+                instanceof InvalidSearchQueryException);
+    }
+
+    /** A 400 whose body cannot be read gives no reason to skip the fallback. */
+    @Test
+    public void httpFailure_400_unreadableBody_isNotAnInvalidQuery() {
+        assertFalse(OSSearchAPIImpl.searchFailure(400, "<html>Bad Request</html>")
+                instanceof InvalidSearchQueryException);
     }
 
     /**
