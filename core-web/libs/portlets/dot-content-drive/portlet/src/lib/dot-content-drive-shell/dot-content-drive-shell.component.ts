@@ -84,7 +84,7 @@ import { DotContentDriveToolbarComponent } from '../components/dot-content-drive
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
-    ACTION_CENTER_DIALOG_STYLE,
+    ACTION_CENTER_DIALOG_CLASS,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
@@ -387,12 +387,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     /**
-     * @see ACTION_CENTER_DIALOG_STYLE
+     * @see ACTION_CENTER_DIALOG_CLASS
      */
-    readonly $dialogStyle = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
-            ? ACTION_CENTER_DIALOG_STYLE
-            : undefined
+    readonly $dialogRootClass = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? ACTION_CENTER_DIALOG_CLASS : ''
     );
 
     /**

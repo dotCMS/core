@@ -70,7 +70,7 @@ import { DotContentDriveShellComponent } from './dot-content-drive-shell.compone
 
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
-    ACTION_CENTER_DIALOG_STYLE,
+    ACTION_CENTER_DIALOG_CLASS,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
@@ -1507,7 +1507,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.component.$dialogContentStyle()).toEqual(
                 ACTION_CENTER_DIALOG_CONTENT_STYLE
             );
-            expect(spectator.component.$dialogStyle()).toEqual(ACTION_CENTER_DIALOG_STYLE);
+            expect(spectator.component.$dialogRootClass()).toBe(ACTION_CENTER_DIALOG_CLASS);
         });
 
         it('should render a sub-header with the selected contentlet count', () => {
@@ -1580,9 +1580,42 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('[data-testId="dialog-action-center"]')).toBeNull();
-            expect(spectator.component.$dialogStyle()).toBeUndefined();
+            expect(spectator.component.$dialogRootClass()).toBe('');
             expect(spectator.component.$dialogContentStyle()).toBeUndefined();
             expect(spectator.component.$dialogHeaderClass()).toBe('');
+        });
+
+        it('should not leave the Action Center sizing on the next dialog', () => {
+            // One `p-dialog` serves every type, so whatever one type applies has to come back off
+            // when the next opens. The computeds already return the empty value for a folder —
+            // asserted above — so this covers the half those assertions cannot see: what is still
+            // on the element afterwards. Reported as "open the workflow center, close it, then open
+            // Folder Settings and a style is off", and wrong for the rest of the session, because
+            // the element is reused rather than recreated.
+            const rootOf = () => spectator.query('.p-dialog', { root: true }) as HTMLElement | null;
+
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+            expect(rootOf()?.className).toContain('h-[80vh]');
+
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+            dialogSignal.set(undefined);
+            spectator.detectChanges();
+            dialogComponent.onHide.emit();
+            spectator.detectChanges();
+
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            // Both halves: the class comes off, and — the actual defect — no `height`/`width` is
+            // left behind in the root's inline style, which is where the Action Center used to put
+            // its sizing.
+            expect(rootOf()?.className).not.toContain('h-[80vh]');
+            expect(rootOf()?.getAttribute('style') ?? '').not.toContain('height');
+            expect(rootOf()?.getAttribute('style') ?? '').not.toContain('width');
         });
 
         it('should configure the dialog as closable and closeOnEscape', () => {
