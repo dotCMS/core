@@ -193,6 +193,8 @@ public class PostgresJobQueue implements JobQueue {
             "UPDATE job SET progress = ?, updated_at = ?"
                     + " WHERE id = ?";
 
+    private static final String TOUCH_JOB_QUERY = "UPDATE job SET updated_at = ? WHERE id = ?";
+
     private static final String HAS_JOB_BEEN_IN_STATE_QUERY = "SELECT "
             + "EXISTS (SELECT 1 FROM job_history WHERE job_id = ? AND state IN $??$)";
 
@@ -761,6 +763,27 @@ public class PostgresJobQueue implements JobQueue {
         } catch (DotDataException e) {
             Logger.error(this, "Database error while updating job progress", e);
             throw new JobQueueDataException("Database error while updating job progress", e);
+        }
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public void touchJob(final String jobId) throws JobQueueDataException {
+
+        try {
+            DotConnect dc = new DotConnect();
+            dc.setSQL(TOUCH_JOB_QUERY);
+            dc.addParam(Timestamp.valueOf(LocalDateTime.now()));
+            dc.addParam(jobId);
+            dc.loadResult();
+
+            // Cleanup cache - same as updateJobProgress, so a subsequent getJob() reads the
+            // fresh updated_at rather than a stale cached row
+            CacheLocator.getJobCache().remove(jobId);
+
+        } catch (DotDataException e) {
+            Logger.error(this, "Database error while touching job", e);
+            throw new JobQueueDataException("Database error while touching job", e);
         }
     }
 

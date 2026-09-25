@@ -1395,6 +1395,114 @@ public class JobQueueManagerAPITest {
     }
 
     /**
+     * Method to test: JobQueueManagerAPI#getJobQueue() already exposes JobQueue#hasJobBeenInState
+     * Given Scenario: #37063 (spec FR-030) needed a way to ask whether a job has
+     * ever been ABANDONED, to avoid misreporting an already-deleted folder as a fresh failure on a
+     * re-queued run. A new top-level JobQueueManagerAPI method was planned for this and even
+     * reached this test file (removed here) before this test caught that getJobQueue() already
+     * returns the live JobQueue instance - the exact same one JobQueueManagerAPIImpl uses
+     * internally for its own CANCEL_REQUESTED/CANCELLING check - so hasJobBeenInState was already
+     * publicly reachable with zero framework changes.
+     * ExpectedResult: getJobQueue() returns the same instance passed into the constructor, so
+     * getJobQueue().hasJobBeenInState(...) is already callable by any consumer of
+     * JobQueueManagerAPI - including FolderBulkDeleteProcessor (T067) - with no new method needed.
+     */
+    @Test
+    public void test_getJobQueue_exposesTheSameJobQueueInstance_soHasJobBeenInStateIsAlreadyPublic()
+            throws JobQueueDataException {
+
+        when(mockJobQueue.hasJobBeenInState("job123", JobState.ABANDONED)).thenReturn(true);
+
+        boolean result = jobQueueManagerAPI.getJobQueue()
+                .hasJobBeenInState("job123", JobState.ABANDONED);
+
+        assertTrue(result);
+        assertTrue(jobQueueManagerAPI.getJobQueue() == mockJobQueue);
+    }
+
+    /**
+     * Method to test: the progress/heartbeat ticker JobQueueManagerAPIImpl schedules while a job
+     * is being processed
+     * Given Scenario: A running job whose processor keeps calling heartbeat(), and whose first
+     * touchJob call fails with a transient JobQueueDataException
+     * ExpectedResult: The ticker keeps running and touchJob is called again on a later tick. The
+     * ticker runs under scheduleAtFixedRate, which cancels every future run as soon as one run
+     * throws, so before the #37685 review fix one failed touchJob stopped the heartbeat for the
+     * rest of the job and a long run could then be flagged ABANDONED while still alive. The tick
+     * is fixed at 3 seconds, so this test needs roughly 6 seconds to see the second call.
+     */
+    @Test
+    public void test_heartbeat_touchJobFailsOnce_tickerKeepsRunning() throws Exception {
+
+        final String jobId = "job123";
+        final Job mockJob = mock(Job.class);
+        when(mockJob.id()).thenReturn(jobId);
+        when(mockJob.queueName()).thenReturn("testQueue");
+
+        when(mockCircuitBreaker.allowRequest()).thenReturn(true);
+
+        final AtomicReference<JobState> jobState = new AtomicReference<>(JobState.PENDING);
+        when(mockJob.state()).thenAnswer(inv -> jobState.get());
+        when(mockJob.withState(any())).thenAnswer(inv -> {
+            jobState.set(inv.getArgument(0));
+            return mockJob;
+        });
+        when(mockJob.markAsRunning()).thenAnswer(inv -> {
+            jobState.set(JobState.RUNNING);
+            return mockJob;
+        });
+        when(mockJob.markAsSuccessful(any())).thenAnswer(inv -> {
+            jobState.set(JobState.SUCCESS);
+            return mockJob;
+        });
+        when(mockJob.progress()).thenReturn(0f);
+        when(mockJob.withProgress(anyFloat())).thenReturn(mockJob);
+
+        // The processor must call heartbeat() on the same tracker the ticker reads, so keep the
+        // real DefaultProgressTracker the framework attaches instead of a mock.
+        final AtomicReference<DefaultProgressTracker> tracker = new AtomicReference<>();
+        when(mockJob.withProgressTracker(any(DefaultProgressTracker.class))).thenAnswer(inv -> {
+            tracker.set(inv.getArgument(0));
+            return mockJob;
+        });
+        when(mockJob.progressTracker()).thenAnswer(
+                inv -> Optional.ofNullable((ProgressTracker) tracker.get()));
+
+        when(mockJobQueue.nextJob()).thenReturn(mockJob, null);
+
+        doThrow(new JobQueueDataException("simulated transient DB error"))
+                .doNothing()
+                .when(mockJobQueue).touchJob(jobId);
+
+        // Keeps signalling liveness every 200ms until the test lets it finish.
+        final AtomicBoolean stopProcessing = new AtomicBoolean(false);
+        doAnswer(inv -> {
+            Awaitility.await().atMost(30, TimeUnit.SECONDS)
+                    .pollInterval(200, TimeUnit.MILLISECONDS)
+                    .until(() -> {
+                        tracker.get().heartbeat();
+                        return stopProcessing.get();
+                    });
+            return null;
+        }).when(mockJobProcessor).process(any());
+
+        jobQueueManagerAPI.start();
+        try {
+            Awaitility.await().atMost(20, TimeUnit.SECONDS)
+                    .pollInterval(200, TimeUnit.MILLISECONDS)
+                    .untilAsserted(() -> verify(mockJobQueue, atLeast(2)).touchJob(jobId));
+        } finally {
+            stopProcessing.set(true);
+        }
+
+        Awaitility.await().atMost(10, TimeUnit.SECONDS)
+                .pollInterval(100, TimeUnit.MILLISECONDS)
+                .untilAsserted(() -> assertEquals(JobState.SUCCESS, jobState.get()));
+
+        jobQueueManagerAPI.close();
+    }
+
+    /**
      * Creates a new instance of the JobQueueManagerAPI with the provided configurations.
      *
      * @param jobQueue                           The job queue to be managed.

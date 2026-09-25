@@ -3,6 +3,7 @@ package com.dotcms.content.index.migration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -11,8 +12,10 @@ import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.ContentMirrors;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
 import com.dotcms.content.index.migration.MirrorStatus.Verdict;
+import com.dotcms.content.index.migration.SiteSearchMirrorReconciler.SiteSearchMirrors;
 import com.dotmarketing.util.Config;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.After;
 import org.junit.Before;
@@ -43,6 +46,10 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         // Default to a healthy WORKING/LIVE pair so the mandatory-content precondition is satisfied;
         // tests that exercise missing content override this explicitly.
         stubContent(healthyContentPair());
+        // The service reads mirrors(); most cases only care about the rows, so derive it from
+        // whatever statuses() is stubbed to, with both engines reachable.
+        when(siteSearch.mirrors()).thenAnswer(
+                inv -> new SiteSearchMirrors(siteSearch.statuses(), Map.of()));
         service = new MigrationReadinessService(siteSearch, content, () -> "cluster_x");
     }
 
@@ -535,5 +542,166 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
                 new MirrorStatus.EngineCopy(osExists, osCount, "cluster_x." + name + ".os"),
                 MirrorStatus.verdictFor(esExists, osExists, esCount, osCount), "advice",
                 databaseDocCount);
+    }
+
+    // ---- One engine unreachable (issue #37636) --------------------------------------------------
+
+    private static final String ES_DOWN = "elasticsearch: Name or service not known";
+    private static final String OS_DOWN = "opensearch: Connection refused";
+
+    /** Stubs the content pair with one engine that could not be read. */
+    private void stubContentUnreachable(final String engine, final String reason,
+            final List<MirrorStatus> statuses) {
+        when(content.mirrors()).thenReturn(
+                new ContentMirrors(statuses, Optional.empty(), Map.of(engine, reason)));
+    }
+
+    /** A content row whose Elasticsearch side could not be read. */
+    private static MirrorStatus esUnreachable(final IndexKind kind, final String name,
+            final long osCount) {
+        return new MirrorStatus(name, kind,
+                MirrorStatus.EngineCopy.unavailable("cluster_x." + name, null, ES_DOWN),
+                new MirrorStatus.EngineCopy(true, osCount, "cluster_x." + name + ".os"),
+                Verdict.UNMEASURED, "advice", null);
+    }
+
+    /** A content row whose OpenSearch side could not be read. */
+    private static MirrorStatus osUnreachable(final IndexKind kind, final String name,
+            final long esCount) {
+        return new MirrorStatus(name, kind,
+                new MirrorStatus.EngineCopy(true, esCount, "cluster_x." + name),
+                MirrorStatus.EngineCopy.unavailable("cluster_x." + name + ".os", null, OS_DOWN),
+                Verdict.UNMEASURED, "advice", null);
+    }
+
+    private static boolean prescribesAReindex(final List<String> blockers) {
+        return blockers.stream().anyMatch(b -> b.contains("has no") || b.contains("No active"));
+    }
+
+    /**
+     * Dual-write with Elasticsearch down: nothing can be concluded about either direction, so both
+     * verdicts are false — with ONE reason that names the engine and says why, instead of per-slot
+     * "no Elasticsearch copy, reindex" messages that would prescribe a reindex over an unknown.
+     */
+    @Test
+    public void dualWrite_elasticsearchUnreachable_blocksBothWays_withoutPrescribingAReindex() {
+        setPhase(PHASE_1);
+        stubContentUnreachable(MirrorStatus.ELASTICSEARCH, ES_DOWN, List.of(
+                esUnreachable(IndexKind.CONTENT_WORKING, "working_1", 10),
+                esUnreachable(IndexKind.CONTENT_LIVE, "live_1", 5)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertEquals(Map.of(MirrorStatus.ELASTICSEARCH, ES_DOWN), r.unreachableEngines());
+        assertEquals(2, r.content().size());
+        assertFalse(r.verdict().safeToAdvance());
+        assertFalse(r.verdict().safeToRollback());
+        assertEquals(1, r.verdict().blockers().size());
+        final String blocker = r.verdict().blockers().get(0);
+        assertTrue(blocker, blocker.contains("Elasticsearch could not be reached"));
+        assertTrue(blocker, blocker.contains(ES_DOWN));
+        assertFalse(prescribesAReindex(r.verdict().blockers()));
+    }
+
+    /** Dual-write with OpenSearch down: the same, naming OpenSearch. */
+    @Test
+    public void dualWrite_openSearchUnreachable_blocksBothWays() {
+        setPhase(PHASE_2);
+        stubContentUnreachable(MirrorStatus.OPENSEARCH, OS_DOWN, List.of(
+                osUnreachable(IndexKind.CONTENT_WORKING, "working_1", 10),
+                osUnreachable(IndexKind.CONTENT_LIVE, "live_1", 5)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToAdvance());
+        assertFalse(r.verdict().safeToRollback());
+        assertEquals(1, r.verdict().blockers().size());
+        assertTrue(r.verdict().blockers().get(0).contains("OpenSearch could not be reached"));
+    }
+
+    /**
+     * Phase 0 with OpenSearch down. A missing OpenSearch copy is the expected Phase 0 state and is not
+     * a blocker — but an OpenSearch that cannot be reached is: advancing starts dual-write into it.
+     */
+    @Test
+    public void phase0_openSearchUnreachable_blocksAdvance() {
+        setPhase(PHASE_0);
+        stubContentUnreachable(MirrorStatus.OPENSEARCH, OS_DOWN, List.of(
+                osUnreachable(IndexKind.CONTENT_WORKING, "working_1", 10),
+                osUnreachable(IndexKind.CONTENT_LIVE, "live_1", 5)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToAdvance());
+        assertEquals(1, r.verdict().blockers().size());
+        assertTrue(r.verdict().blockers().get(0).contains("OpenSearch could not be reached"));
+    }
+
+    /**
+     * Phase 3 with Elasticsearch retired — the runbook's end state. Nothing in Phase 3 depends on
+     * Elasticsearch, so the report stays usable and not blocked; but whether a downgrade is safe cannot
+     * be judged, and the summary says exactly that rather than warning that OpenSearch is "ahead",
+     * which nobody measured.
+     */
+    @Test
+    public void phase3_elasticsearchRetired_stillReports_butCannotJudgeRollback() {
+        setPhase(PHASE_3);
+        stubContentUnreachable(MirrorStatus.ELASTICSEARCH, ES_DOWN, List.of(
+                esUnreachable(IndexKind.CONTENT_WORKING, "working_1", 10),
+                esUnreachable(IndexKind.CONTENT_LIVE, "live_1", 5)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertEquals(Map.of(MirrorStatus.ELASTICSEARCH, ES_DOWN), r.unreachableEngines());
+        assertTrue(r.verdict().blockers().isEmpty());
+        assertTrue(r.verdict().safeToAdvance());
+        assertEquals(0, r.verdict().outOfSyncCount());
+        assertFalse(r.verdict().safeToRollback());
+        final String summary = r.verdict().summary();
+        assertTrue(summary, summary.contains("Elasticsearch could not be reached"));
+        assertFalse(summary, summary.contains("OpenSearch holds content Elasticsearch does not"));
+    }
+
+    /** Phase 3 with OpenSearch down: the active content store itself is unknown — blocked. */
+    @Test
+    public void phase3_openSearchUnreachable_blocks() {
+        setPhase(PHASE_3);
+        stubContentUnreachable(MirrorStatus.OPENSEARCH, OS_DOWN, List.of(
+                osUnreachable(IndexKind.CONTENT_WORKING, "working_1", 10),
+                osUnreachable(IndexKind.CONTENT_LIVE, "live_1", 5)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertFalse(r.verdict().safeToAdvance());
+        assertFalse(r.verdict().safeToRollback());
+        assertEquals(1, r.verdict().blockers().size());
+        assertTrue(r.verdict().blockers().get(0).contains("OpenSearch could not be reached"));
+        assertFalse(prescribesAReindex(r.verdict().blockers()));
+    }
+
+    /**
+     * An engine that failed only on the Site Search side is still an unreachable engine: it reaches
+     * the report and blocks, even when the content half read fine.
+     */
+    @Test
+    public void siteSearchSideUnreachable_isReportedAndBlocks() {
+        setPhase(PHASE_2);
+        // doReturn, not when(): calling mirrors() to re-stub it would fire setUp's answer mid-stubbing.
+        doReturn(new SiteSearchMirrors(List.of(), Map.of(MirrorStatus.OPENSEARCH, OS_DOWN)))
+                .when(siteSearch).mirrors();
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertEquals(Map.of(MirrorStatus.OPENSEARCH, OS_DOWN), r.unreachableEngines());
+        assertFalse(r.verdict().safeToAdvance());
+        assertFalse(r.verdict().safeToRollback());
+    }
+
+    /** Both engines reachable: nothing reported as unreachable. */
+    @Test
+    public void bothReachable_noUnreachableEngines() {
+        setPhase(PHASE_1);
+
+        assertTrue(service.evaluate().unreachableEngines().isEmpty());
     }
 }

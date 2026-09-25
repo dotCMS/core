@@ -10,6 +10,7 @@ import { Mocked, vi } from 'vitest';
 import { signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
+import { Button } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotContentletEditUrlService, DotMessageService } from '@dotcms/data-access';
@@ -59,7 +60,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
                     'publishing-queue.column.name': 'Name',
                     'publishing-queue.column.type': 'Type',
                     'publishing-queue.asset-list.empty': 'No items',
-                    'publishing-queue.asset-list.remove': 'Remove from bundle',
+                    'publishing-queue.select-bundle.delete-tooltip': 'Delete from bundle',
                     'publishing-queue.asset-list.remove-confirm.header':
                         'Remove asset from bundle?',
                     'publishing-queue.asset-list.remove-confirm.message':
@@ -183,6 +184,22 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         it('renders a trash button per row', () => {
             const buttons = spectator.queryAll(byTestId('pq-asset-remove-btn'));
             expect(buttons.length).toBe(2);
+        });
+
+        it('renders the trash button with the neutral secondary severity, not danger', () => {
+            const buttons = spectator
+                .queryAll(Button)
+                .filter(
+                    (button) => button.el.nativeElement.dataset.testid === 'pq-asset-remove-btn'
+                );
+
+            expect(buttons.length).toBe(2);
+            buttons.forEach((button) => expect(button.severity).toBe('secondary'));
+        });
+
+        it('labels the trash button like the Select Bundle dialog ("Delete from bundle")', () => {
+            const [button] = spectator.queryAll(byTestId('pq-asset-remove-btn'));
+            expect(button.getAttribute('aria-label')).toBe('Delete from bundle');
         });
 
         it('confirms before removing, then calls store.removeBundleAsset with the asset id', () => {

@@ -127,6 +127,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
                     setContentTitle: vi.fn(),
                     addBreadcrumb: vi.fn(),
                     goToSavedContent: vi.fn(),
+                    leaveDeletedContent: vi.fn(),
                     goToRestoredVersion: vi.fn(),
                     goToRelatedContent: vi.fn(),
                     goToCrumb: vi.fn()
