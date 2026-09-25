@@ -12417,6 +12417,274 @@ paths:
       summary: Get internationalized messages
       tags:
       - Language
+  /v1/layouts:
+    get:
+      description: "Returns every navigation section (layout) in the order the back-end\
+        \ left menu shows them. Each section carries its id, name, icon, position,\
+        \ the ordered ids of its tools and one localized title per tool id, aligned\
+        \ with portletIds. Sections holding tools the tools catalog hides are still\
+        \ returned as stored. Requires an authenticated back-end user with access\
+        \ to the tools or tools-beta portlet, or the CMS Administrator role."
+      operationId: listNavigationSections
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionListView"
+          description: Sections retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or the caller holds\
+            \ neither the tools nor the tools-beta portlet and is not a CMS Administrator"
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: List every navigation section
+      tags:
+      - Administration
+    post:
+      description: "Creates a section from a name and an icon. The new section is\
+        \ placed after every existing section and holds no tools. The name is trimmed,\
+        \ must be present, at most 255 characters and unique among sections; the icon\
+        \ is at most 255 characters and may be empty. Requires a CMS Administrator\
+        \ who also holds the tools or tools-beta portlet."
+      operationId: createNavigationSection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectionForm"
+        description: Name and icon of the new section
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionView"
+          description: Section created
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - blank or over-long name, over-long icon, or\
+            \ duplicate name"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or no tools / tools-beta\
+            \ portlet"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create a navigation section
+      tags:
+      - Administration
+  /v1/layouts/_reorder:
+    put:
+      description: "Rewrites the position of every section from one full ordered list\
+        \ of section ids. The list must contain every existing section id exactly\
+        \ once; a missing, unknown or repeated id is rejected and no position changes.\
+        \ Positions are written strictly increasing in the order sent, in one transaction,\
+        \ and open sessions receive a single refresh. Requires a CMS Administrator\
+        \ who also holds the tools or tools-beta portlet."
+      operationId: reorderNavigationSections
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectionOrderForm"
+        description: "Every section id exactly once, in the new navigation order"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionListView"
+          description: Sections reordered; the full list is returned in the new order
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - an id is missing, unknown or repeated; nothing\
+            \ was written"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or no tools / tools-beta\
+            \ portlet"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Reorder every navigation section
+      tags:
+      - Administration
+  /v1/layouts/{layoutId}:
+    delete:
+      description: "Removes the section, its tool list and every grant of it to a\
+        \ role or a user, so users who reached a tool only through this section lose\
+        \ it from their menu. The Getting Started section cannot be deleted. Returns\
+        \ the remaining sections in navigation order. Requires a CMS Administrator\
+        \ who also holds the tools or tools-beta portlet."
+      operationId: deleteNavigationSection
+      parameters:
+      - description: Navigation section id
+        in: path
+        name: layoutId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionListView"
+          description: Section deleted; the remaining sections are returned
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the Getting Started section cannot be deleted
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or no tools / tools-beta\
+            \ portlet"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Not found - no section has that id
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete a navigation section
+      tags:
+      - Administration
+    put:
+      description: Changes a section's name and icon together; its position and its
+        tools are untouched. Same name and icon rules as create. Getting Started may
+        be renamed and re-iconed. Requires a CMS Administrator who also holds the
+        tools or tools-beta portlet.
+      operationId: updateNavigationSection
+      parameters:
+      - description: Navigation section id
+        in: path
+        name: layoutId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectionForm"
+        description: New name and icon
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionView"
+          description: Section updated
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - blank or over-long name, over-long icon, or\
+            \ duplicate name"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or no tools / tools-beta\
+            \ portlet"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Not found - no section has that id
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Rename and re-icon a navigation section
+      tags:
+      - Administration
+  /v1/layouts/{layoutId}/portlets:
+    put:
+      description: "Replaces the section's tools with the full ordered list sent,\
+        \ which covers adding, removing and reordering in one call. Every id must\
+        \ name a registered portlet the product allows in a section and may appear\
+        \ once; otherwise the request is rejected naming the id and the section is\
+        \ unchanged. Registered tools the tools catalog hides are accepted. An empty\
+        \ list is accepted for every section except Getting Started. Requires a CMS\
+        \ Administrator who also holds the tools or tools-beta portlet."
+      operationId: setNavigationSectionTools
+      parameters:
+      - description: Navigation section id
+        in: path
+        name: layoutId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectionToolsForm"
+        description: Full ordered list of tool ids; may be empty
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionListView"
+          description: Tools replaced; the full section list is returned
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - an id is unregistered, not placeable or repeated,\
+            \ or the list would empty the Getting Started section"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or no tools / tools-beta\
+            \ portlet"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Not found - no section has that id
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Replace the ordered tools of a navigation section
+      tags:
+      - Administration
   /v1/logger:
     get:
       operationId: getLoggers
@@ -36238,6 +36506,54 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySectionListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySectionView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/SectionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntitySessionListView:
       type: object
       properties:
@@ -38691,6 +39007,81 @@ components:
           format: int64
     SecretForm:
       type: object
+    SectionForm:
+      type: object
+      description: Name and icon of a navigation section
+      properties:
+        icon:
+          type: string
+          description: "Icon name, at most 255 characters; may be empty"
+          example: campaign
+        name:
+          type: string
+          description: "Section name, unique among sections, at most 255 characters"
+          example: Marketing
+      required:
+      - name
+    SectionOrderForm:
+      type: object
+      description: "Every navigation section id exactly once, in the new order"
+      properties:
+        layoutIds:
+          type: array
+          description: Section ids in the new navigation order; must contain every
+            existing section exactly once
+          items:
+            type: string
+            description: Section ids in the new navigation order; must contain every
+              existing section exactly once
+      required:
+      - layoutIds
+    SectionToolsForm:
+      type: object
+      description: Full ordered list of the tool (portlet) ids a section holds
+      properties:
+        portletIds:
+          type: array
+          description: Tool ids in the order they appear in the section; may be empty
+          items:
+            type: string
+            description: Tool ids in the order they appear in the section; may be
+              empty
+      required:
+      - portletIds
+    SectionView:
+      type: object
+      description: A navigation section (layout) with its ordered tools and their
+        localized titles
+      properties:
+        icon:
+          type: string
+          description: Icon name shown next to the section
+          example: campaign
+        id:
+          type: string
+          description: Section id
+          example: 2df9f117-b140-44bf-93d7-5b10a36fb7f9
+        name:
+          type: string
+          description: "Section name, unique among sections"
+          example: Marketing
+        portletIds:
+          type: array
+          description: "Tool (portlet) ids in the section, in stored order"
+          items:
+            type: string
+            description: "Tool (portlet) ids in the section, in stored order"
+        portletTitles:
+          type: array
+          description: "Localized title of each tool, aligned with portletIds"
+          items:
+            type: string
+            description: "Localized title of each tool, aligned with portletIds"
+        tabOrder:
+          type: integer
+          format: int32
+          description: Position in the navigation; only the relative order is meaningful
+          example: 3
     SelectField:
       type: object
       allOf:
