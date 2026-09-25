@@ -34,9 +34,21 @@ behavior.
 1. **Create the feature directory** (reuse the standard Spec-Kit script — do NOT reimplement
    numbering):
 
+   Read `feature_numbering` from `.specify/init-options.json` first, and pass `--timestamp`
+   when it is `timestamp`:
+
    ```bash
-   .specify/scripts/bash/create-new-feature.sh --json "<short issue description>"
+   .specify/scripts/bash/create-new-feature.sh --json --timestamp "<short issue description>"   # feature_numbering: timestamp
+   .specify/scripts/bash/create-new-feature.sh --json "<short issue description>"               # feature_numbering: sequential or absent
    ```
+
+   **Why the flag is not optional.** `create-new-feature.sh` does not read
+   `init-options.json` — it only accepts `--timestamp` on the command line. The shipped
+   `/speckit-specify` honours `feature_numbering` because it builds the directory name
+   itself; this command delegates to the script instead, so without the flag a fix would
+   keep numbering sequentially while features number by timestamp. Nothing would error: the
+   two flows would simply drift apart, and the collision-free guarantee the setting exists
+   for would not hold for fixes.
 
    Parse the JSON for `BRANCH_NAME` and `SPEC_FILE`. If the user explicitly provided a
    feature directory or branch name, honor it.

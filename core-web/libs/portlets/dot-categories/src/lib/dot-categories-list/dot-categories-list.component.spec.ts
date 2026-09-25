@@ -8,6 +8,7 @@ import { Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { ConfirmationService } from 'primeng/api';
+import { Button } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import {
@@ -221,6 +222,19 @@ describe('DotCategoriesListComponent', () => {
                 const deleteBtn = spectator.query(byTestId('category-delete-btn'));
 
                 expect(deleteBtn).toBeTruthy();
+            });
+
+            it('should render the Delete button as a tertiary (text) button, not red', () => {
+                spectator.detectChanges();
+                const deleteBtn = spectator
+                    .queryAll(Button)
+                    .find(
+                        (button) => button.el.nativeElement.dataset.testid === 'category-delete-btn'
+                    );
+
+                expect(deleteBtn).toBeDefined();
+                expect(deleteBtn?.severity).toBeUndefined();
+                expect(deleteBtn?.text).toBe(true);
             });
 
             it('should hide Delete button when no categories are selected', () => {

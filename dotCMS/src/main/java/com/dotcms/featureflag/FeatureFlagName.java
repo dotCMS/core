@@ -83,6 +83,22 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_OPEN_SEARCH_PHASE = "FEATURE_FLAG_OPEN_SEARCH_PHASE";
 
+    /**
+     * Escape hatch for Velocity templates that still call the deprecated Elasticsearch-only
+     * {@code $estool.esSearch()} / {@code $estool.esRaw()} once the migration reaches Phase 3.
+     *
+     * <p>In Phase 3 Elasticsearch no longer receives writes, so those calls could only answer from the
+     * index frozen at cutover. By default (off) they fail with a clear error, which fails the page
+     * render. Turning this on makes them return {@code null} instead — the page renders, the block
+     * that used the call shows nothing (or its unresolved {@code $variable}, depending on how the
+     * template references it) — and logs a rate-limited warning naming the migration to do. Neither
+     * mode ever serves frozen Elasticsearch results. Meant to be switched on temporarily by support
+     * while a customer migrates those calls to {@code $estool.search()} / {@code $estool.raw()}; it
+     * has no effect before Phase 3 and does not change the Java API, which always fails in Phase 3.</p>
+     */
+    String FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL =
+            "FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL";
+
     String FEATURE_FLAG_NEW_BLOCK_EDITOR = "FEATURE_FLAG_NEW_BLOCK_EDITOR";
 
     String FEATURE_FLAG_REPORT_ISSUE_ENABLED = "FEATURE_FLAG_REPORT_ISSUE_ENABLED";
@@ -124,4 +140,11 @@ public interface FeatureFlagName {
      * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_DOTAI_CONFIG_UI}.
      */
     String FEATURE_FLAG_DOTAI_CONFIG_UI = "FEATURE_FLAG_DOTAI_CONFIG_UI";
+
+    /**
+     * Routes experiment result queries to the CAEM analytics backend instead of CubeJS.
+     * Off by default; enable only after CAEM endpoints (#37223, #37224) are deployed and
+     * customer data has been migrated to CAEM.
+     */
+    String FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS = "FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS";
 }

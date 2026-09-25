@@ -118,6 +118,13 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
             this.#hasContentBeenSaved.set(true);
         });
 
+        // The content was deleted: forget earlier saves so the opener never receives deleted
+        // content. `left$` fires before the host closes the dialog, so this runs before onClose.
+        this.#host.left$.pipe(takeUntilDestroyed()).subscribe(() => {
+            this.#savedContentlet.set(null);
+            this.#hasContentBeenSaved.set(false);
+        });
+
         // Single source of truth for callbacks — only fires when the close actually completes.
         // This prevents callbacks from firing if the dirty-close guard cancels the close.
         this.#dialogRef.onClose.pipe(takeUntilDestroyed()).subscribe(() => {

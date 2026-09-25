@@ -487,7 +487,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
          */
         const { pageType } = this.uveStore.$reloadEditorContent();
         const isClientReady = untracked(() => this.uveStore.isClientReady());
-        const hasClientQuery = untracked(() => !!this.uveStore.requestMetadata());
+        const isGraphQLSourced = untracked(() => this.uveStore.pageAsset()?.source === 'graphql');
 
         untracked(() => {
             this.uveStore.resetEditorProperties();
@@ -498,13 +498,23 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        // Headless pages are driven entirely by the client's own GraphQL
-        // query. Never push a REST-sourced pageAsset into the iframe — it
-        // never carries the relationships that query defines, and the
-        // client already has its own correct render. Skip until a
-        // GraphQL-backed update (requestMetadata set from CLIENT_READY)
-        // is available; this effect re-fires once that happens.
-        if (pageType === PageType.HEADLESS && !hasClientQuery) {
+        // Headless pages are driven entirely by the client's own GraphQL query. Never push a
+        // REST-sourced pageAsset into the iframe — it never carries the relationships that
+        // query defines. Provenance is tracked explicitly on the stored asset (`source`)
+        // rather than inferred from whether a query was merely registered
+        // (`requestMetadata`): a registered-but-unresolved or aborted/failed GraphQL fetch
+        // leaves a stale REST asset in place while `requestMetadata` stays set, which the old
+        // `hasClientQuery` check could not distinguish from the resolved case (dotCMS/core#37097).
+        // Tell the client to reload itself from its own GraphQL source instead of pushing
+        // anything REST-shaped.
+        if (pageType === PageType.HEADLESS && !isGraphQLSourced) {
+            this.sendMessageToIframe(
+                {
+                    name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                },
+                this.host
+            );
+
             return;
         }
 

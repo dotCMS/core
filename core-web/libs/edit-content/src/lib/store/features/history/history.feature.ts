@@ -511,7 +511,13 @@ export function withHistory() {
                                                 });
                                             },
                                             error: (error: HttpErrorResponse) => {
-                                                errorManager.handle(error);
+                                                // Push history is a secondary sidebar panel: a
+                                                // failure here must not block the editor with the
+                                                // global error dialog, but the user still needs to
+                                                // know — the panel has no error branch, so an empty
+                                                // list alone would read as "never pushed". Show a
+                                                // non-blocking toast instead.
+                                                errorManager.handle(error, true);
                                                 patchState(store, {
                                                     pushPublishHistoryStatus: {
                                                         status: ComponentStatus.ERROR,

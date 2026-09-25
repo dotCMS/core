@@ -5,12 +5,13 @@ import { Mocked, vi } from 'vitest';
 import { CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 /* eslint-disable @nx/enforce-module-boundaries */
 
 import {
     DotCurrentUserService,
+    DotFormatDateService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
     DotMessageDisplayService,
@@ -18,6 +19,7 @@ import {
     DotPublishingQueueService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { PublishAuditStatus, PublishingJobView } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
@@ -66,6 +68,7 @@ describe('DotPublishingQueueShellComponent', () => {
                 getCurrentUser: vi.fn().mockReturnValue(of({ userId: 'user-1' }))
             }),
             mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotFormatDateService),
             mockProvider(DotGlobalMessageService, { error: vi.fn() }),
             mockProvider(DotMessageDisplayService, { push: vi.fn() }),
             mockProvider(DotPushPublishDialogService, { open: vi.fn() }),
@@ -109,6 +112,61 @@ describe('DotPublishingQueueShellComponent', () => {
             spectator.detectChanges();
             onCloseSubject.next(undefined);
             expect(store.selectedBundleId()).toBeNull();
+        });
+
+        describe('allowRemove per bundle status', () => {
+            function openAssetListFor(status: PublishAuditStatus | null): void {
+                const row: PublishingJobView = {
+                    bundleId: 'B-1',
+                    bundleName: 'Bundle 1',
+                    status,
+                    filterName: null,
+                    filterKey: null,
+                    assetCount: 2,
+                    assetPreview: [],
+                    environmentCount: 1,
+                    createDate: '2026-01-01T00:00:00Z',
+                    statusUpdated: null,
+                    numTries: 0
+                };
+                const service = spectator.inject(DotPublishingQueueService);
+                vi.mocked(service.listPublishingJobs).mockReturnValue(
+                    of({
+                        entity: [row],
+                        pagination: { currentPage: 1, perPage: 10, totalEntries: 1 }
+                    })
+                );
+                store.loadBundles();
+                store.openAssetList('B-1');
+                spectator.detectChanges();
+            }
+
+            function allowRemoveOfLastOpen(): boolean | undefined {
+                const config = dialogService.open.mock.calls.at(-1)?.[1] as
+                    | DynamicDialogConfig<{ allowRemove: boolean }>
+                    | undefined;
+
+                return config?.data?.allowRemove;
+            }
+
+            it.each([
+                PublishAuditStatus.PUBLISHING_BUNDLE,
+                PublishAuditStatus.BUNDLING,
+                PublishAuditStatus.SENDING_TO_ENDPOINTS
+            ])('opens the asset list read-only for a %s bundle', (status) => {
+                openAssetListFor(status);
+                expect(allowRemoveOfLastOpen()).toBe(false);
+            });
+
+            it.each([
+                PublishAuditStatus.BUNDLE_REQUESTED,
+                PublishAuditStatus.WAITING_FOR_PUBLISHING,
+                PublishAuditStatus.SCHEDULED,
+                null
+            ])('allows removing assets for a %s bundle', (status) => {
+                openAssetListFor(status);
+                expect(allowRemoveOfLastOpen()).toBe(true);
+            });
         });
     });
 

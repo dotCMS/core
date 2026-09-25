@@ -138,6 +138,7 @@ const FIELD_TYPES_COMPONENTS: Partial<
                     setContentTitle: vi.fn(),
                     addBreadcrumb: vi.fn(),
                     goToSavedContent: vi.fn(),
+                    leaveDeletedContent: vi.fn(),
                     goToRestoredVersion: vi.fn(),
                     goToRelatedContent: vi.fn(),
                     goToCrumb: vi.fn()

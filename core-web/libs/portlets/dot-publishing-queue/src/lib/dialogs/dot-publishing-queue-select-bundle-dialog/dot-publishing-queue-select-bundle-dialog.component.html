@@ -337,7 +337,7 @@
                                                 [text]="true"
                                                 [rounded]="true"
                                                 size="small"
-                                                severity="danger"
+                                                severity="secondary"
                                                 styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity h-8! w-8! min-w-0! p-0!"
                                                 [pTooltip]="
                                                     'publishing-queue.select-bundle.delete-tooltip'
@@ -447,7 +447,6 @@
                     <p-button
                         [label]="'publishing-queue.select-bundle.remove' | dm"
                         [text]="true"
-                        severity="danger"
                         (onClick)="onRemoveBundles()"
                         data-testid="pq-select-bundle-remove-btn" />
                     <p-button

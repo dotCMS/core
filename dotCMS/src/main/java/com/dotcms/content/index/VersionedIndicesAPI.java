@@ -105,19 +105,20 @@ public interface VersionedIndicesAPI {
     Optional<VersionedIndices> loadDefaultVersionedIndices() throws DotDataException;
 
     /**
-     * Removes the legacy ElasticSearch content-index pointers (NULL {@code index_version}) from
-     * the {@code indicies} table — the {@code live} / {@code working} and transient
-     * {@code reindex_live} / {@code reindex_working} rows — and flushes the index caches.
+     * Removes the transient legacy ElasticSearch reindex pointers (NULL {@code index_version}) from
+     * the {@code indicies} table — the {@code reindex_live} / {@code reindex_working} rows — and
+     * flushes the index caches.
      *
-     * <p>Intended for Phase 3 (OpenSearch-only) reindex cleanup: ES is decommissioned and these
-     * rows are orphans. The unmigrated {@code site_search} pointer and all OS (non-NULL version)
-     * rows are preserved. This is a DB-only operation — it never contacts the ES cluster, which
-     * may not be running in Phase 3.</p>
+     * <p>Intended for Phase 3 (OpenSearch-only) reindex cleanup: ES is decommissioned and a stale
+     * reindex slot is an orphan. The active {@code live} / {@code working} pair is preserved — it is
+     * the only record of which ElasticSearch index holds the pre-migration content (issue #37635) —
+     * as are the unmigrated {@code site_search} pointer and all OS (non-NULL version) rows. This is a
+     * DB-only operation: it never contacts the ES cluster, which may not be running in Phase 3.</p>
      *
      * @return the number of rows removed
      * @throws DotDataException if a SQL error occurs
      */
-    int removeLegacyIndices() throws DotDataException;
+    int removeLegacyReindexIndices() throws DotDataException;
 
     /**
      * Clears all cached indices data.

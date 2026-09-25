@@ -25,7 +25,8 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
 describe('DotEditContentSidePanelComponent', () => {
     let spectator: Spectator<DotEditContentSidePanelComponent>;
     let saved$: Subject<DotCMSContentlet>;
-    let mockHost: Pick<OverlayEditContentHost, 'saved$'>;
+    let left$: Subject<void>;
+    let mockHost: Pick<OverlayEditContentHost, 'saved$' | 'left$'>;
 
     const EDIT_DATA: EditContentDialogData = {
         mode: 'edit',
@@ -59,7 +60,8 @@ describe('DotEditContentSidePanelComponent', () => {
         // Isolate the persisted expanded preference between tests.
         localStorage.clear();
         saved$ = new Subject<DotCMSContentlet>();
-        mockHost = { saved$: saved$.asObservable() };
+        left$ = new Subject<void>();
+        mockHost = { saved$: saved$.asObservable(), left$: left$.asObservable() };
 
         spectator = createComponent({
             providers: [
@@ -413,6 +415,29 @@ describe('DotEditContentSidePanelComponent', () => {
         expect(onCancel).toHaveBeenCalledTimes(1);
     });
 
+    it('should close without the guard or a save report when the host says the content was deleted', async () => {
+        const onContentSaved = vi.fn();
+        const onCancel = vi.fn();
+        spectator.setInput('data', { ...EDIT_DATA, onContentSaved, onCancel });
+        spectator.detectChanges();
+        await spectator.fixture.whenStable();
+
+        // An earlier save of the same content must not reach the opener once it is deleted.
+        saved$.next({ inode: 'inode-2' } as DotCMSContentlet);
+
+        const layout = spectator.query(DotEditContentLayoutComponent);
+        const confirmClose = vi.spyOn(layout!, 'confirmClose');
+        const closedSpy = vi.fn();
+        spectator.output('closed').subscribe(closedSpy);
+
+        left$.next();
+
+        expect(closedSpy).toHaveBeenCalledTimes(1);
+        expect(confirmClose).not.toHaveBeenCalled();
+        expect(onContentSaved).not.toHaveBeenCalled();
+        expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
     it('should not fire data.onContentSaved on close when nothing was saved', () => {
         const onContentSaved = vi.fn();
         const onCancel = vi.fn();
@@ -549,7 +574,10 @@ describe('DotEditContentSidePanelComponent — persisted expanded preference', (
             providers: [
                 {
                     provide: OverlayEditContentHost,
-                    useValue: { saved$: new Subject<DotCMSContentlet>().asObservable() }
+                    useValue: {
+                        saved$: new Subject<DotCMSContentlet>().asObservable(),
+                        left$: new Subject<void>().asObservable()
+                    }
                 },
                 {
                     provide: DotSidePanelNavController,
@@ -640,7 +668,10 @@ describe('DotEditContentSidePanelComponent — image editor host capability', ()
     beforeEach(() => {
         spectator = createComponent({
             providers: [
-                { provide: OverlayEditContentHost, useValue: { saved$: new Subject() } },
+                {
+                    provide: OverlayEditContentHost,
+                    useValue: { saved$: new Subject(), left$: new Subject<void>() }
+                },
                 // Same stub the suites above use: keep the real controller — and the GlobalStore
                 // and HTTP services behind it — out of a test that is only about providers.
                 {

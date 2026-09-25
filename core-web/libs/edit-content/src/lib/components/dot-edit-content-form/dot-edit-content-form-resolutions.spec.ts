@@ -8,18 +8,20 @@ import {
 import {
     createFakeBlockEditorField,
     createFakeCategoryField,
+    createFakeCheckboxField,
     createFakeContentlet,
     createFakeDateField,
     createFakeHostFolderField,
     createFakeKeyValueField,
     createFakeLineDividerField,
+    createFakeMultiSelectField,
     createFakeRelationshipField,
     createFakeSelectField,
     createFakeTextAreaField,
     createFakeTextField
 } from '@dotcms/utils-testing';
 
-import { resolutionValue } from './dot-edit-content-form-resolutions';
+import { resolutionValue, ResolvedFormValue } from './dot-edit-content-form-resolutions';
 
 import { attachOrderedFields, parsePreservingKeyOrder } from '../../utils/key-value-order.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
@@ -126,6 +128,86 @@ describe('DotEditContentFormResolutions', () => {
                 true
             );
             expect(result).toBeNull();
+        });
+    });
+
+    // A Checkbox or Multi-Select the user cleared comes back from the API with its key absent.
+    // On saved content that absence means "nothing selected", so the Content Type default must
+    // not be re-applied — otherwise the box re-checks itself and a save writes the default back.
+    // See https://github.com/dotCMS/core/issues/35416
+    describe('selectionResolutionFn', () => {
+        // One fixture per arm, each from its own factory, so a Checkbox never carries another
+        // type's clazz or dataType — castResolvedValue dispatches on fieldType. Each resolver is
+        // bound to its own field so the call is checked against that arm, not the union.
+        const selectionOverrides = {
+            ...MOCK_FIELD_OVERRIDES,
+            variable: 'showOnMenu',
+            defaultValue: 'true'
+        };
+        const checkboxField = createFakeCheckboxField(selectionOverrides);
+        const multiSelectField = createFakeMultiSelectField(selectionOverrides);
+
+        const SELECTION_CASES: ReadonlyArray<{
+            fieldType: string;
+            variable: string;
+            resolve: (
+                contentlet: DotCMSContentlet | null,
+                isManualTranslation?: boolean
+            ) => ResolvedFormValue;
+        }> = [
+            {
+                fieldType: checkboxField.fieldType,
+                variable: checkboxField.variable,
+                resolve: (contentlet, isManualTranslation) =>
+                    resolutionValue[DotCMSFieldTypes.CHECKBOX](
+                        contentlet,
+                        checkboxField,
+                        undefined,
+                        isManualTranslation
+                    )
+            },
+            {
+                fieldType: multiSelectField.fieldType,
+                variable: multiSelectField.variable,
+                resolve: (contentlet, isManualTranslation) =>
+                    resolutionValue[DotCMSFieldTypes.MULTI_SELECT](
+                        contentlet,
+                        multiSelectField,
+                        undefined,
+                        isManualTranslation
+                    )
+            }
+        ];
+
+        describe.each(SELECTION_CASES)('$fieldType', ({ variable, resolve }) => {
+            // null, not '': castResolvedValue flattens these types with split(','), and ''
+            // would become [''] — length 1, which Validators.required accepts.
+            it('should return null when the key is absent on a saved contentlet', () => {
+                const contentlet = createFakeContentlet({ identifier: 'saved-123' });
+                delete contentlet[variable];
+                // createFakeContentlet does not set this key, so the delete is defensive —
+                // assert it so the test fails loudly if the fake ever grows one.
+                expect(contentlet[variable]).toBeUndefined();
+
+                expect(resolve(contentlet)).toBeNull();
+            });
+
+            it('should return the stored value when the contentlet has one', () => {
+                const contentlet = createFakeContentlet({
+                    identifier: 'saved-123',
+                    [variable]: 'true'
+                });
+
+                expect(resolve(contentlet)).toBe('true');
+            });
+
+            it('should return the defaultValue for new content', () => {
+                expect(resolve(null)).toBe('true');
+            });
+
+            it('should return null for new content during manual translation', () => {
+                expect(resolve(null, true)).toBeNull();
+            });
         });
     });
 
@@ -575,13 +657,13 @@ describe('DotEditContentFormResolutions', () => {
                 DotCMSFieldTypes.BINARY,
                 DotCMSFieldTypes.FILE,
                 DotCMSFieldTypes.IMAGE,
-                DotCMSFieldTypes.CHECKBOX,
+                // CHECKBOX and MULTI_SELECT have their own resolver — for saved content an
+                // absent key means "nothing selected", so no default is applied.
                 DotCMSFieldTypes.CONSTANT,
                 DotCMSFieldTypes.CUSTOM_FIELD,
                 DotCMSFieldTypes.HIDDEN,
                 DotCMSFieldTypes.JSON,
                 // KEY_VALUE has its own resolver — it recovers the response's key order.
-                DotCMSFieldTypes.MULTI_SELECT,
                 DotCMSFieldTypes.RADIO,
                 DotCMSFieldTypes.TAG,
                 DotCMSFieldTypes.TEXTAREA,
@@ -591,6 +673,17 @@ describe('DotEditContentFormResolutions', () => {
             defaultFieldTypes.forEach((fieldType) => {
                 expect(resolutionValue[fieldType]).toBe(resolutionValue[DotCMSFieldTypes.TEXTAREA]);
             });
+        });
+
+        // Keeps the table above self-checking: without this, removing CHECKBOX and MULTI_SELECT
+        // from the default list leaves only a comment recording where they went.
+        it('should route CHECKBOX and MULTI_SELECT to their own shared resolver', () => {
+            expect(resolutionValue[DotCMSFieldTypes.CHECKBOX]).toBe(
+                resolutionValue[DotCMSFieldTypes.MULTI_SELECT]
+            );
+            expect(resolutionValue[DotCMSFieldTypes.CHECKBOX]).not.toBe(
+                resolutionValue[DotCMSFieldTypes.TEXTAREA]
+            );
         });
 
         describe('blockEditorResolutionFn', () => {

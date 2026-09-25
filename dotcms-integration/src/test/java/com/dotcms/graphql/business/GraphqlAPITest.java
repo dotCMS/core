@@ -63,6 +63,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.graphql.CustomFieldType;
+import com.dotcms.graphql.InterfaceType;
 import com.dotcms.graphql.util.TypeUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -83,6 +84,8 @@ import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
@@ -592,8 +595,13 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         new GraphQLNonNull(expectedType).toString()
                         , graphQLFieldType.toString());
             } else {
-                Assert.assertEquals("Type of GraphQL Field should match type expected", expectedType
-                        , graphQLFieldType);
+                // Compared by name rather than by identity: a field whose declared type is a
+                // forward reference (as asset-pointing fields now are, to avoid resolving
+                // InterfaceType during another type's static initialization) yields a
+                // GraphQLTypeReference here and the resolved type in the built schema. Same type,
+                // different object. See #34540.
+                Assert.assertEquals("Type of GraphQL Field should match type expected",
+                        TypeUtil.getName(expectedType), TypeUtil.getName(graphQLFieldType));
             }
         }
     }
@@ -809,12 +817,20 @@ public class GraphqlAPITest extends IntegrationTestBase {
                         .getObjectType(contentType.variable())
                         .getFieldDefinition(imageField.variable());
 
-                assertEquals(CustomFieldType.FILEASSET.getType(), fileFieldDefinition.getType());
+                // An asset-pointing field is now described by the asset interface rather than by
+                // a flat object type, so a client can narrow to the concrete content type the
+                // field actually points at. The interface keeps the name clients already write in
+                // `... on DotFileasset` clauses, and still carries all six long-standing flat
+                // properties. See #34540.
+                assertEquals(InterfaceType.ASSET_INTERFACE_NAME,
+                        ((GraphQLNamedSchemaElement) fileFieldDefinition.getType()).getName());
+                assertEquals(InterfaceType.ASSET_INTERFACE_NAME,
+                        ((GraphQLNamedSchemaElement) imageFieldDefinition.getType()).getName());
 
-                assertTrue(areFileassetFieldsPresent((GraphQLObjectType) fileFieldDefinition.getType()));
-                assertTrue(areFileassetFieldsPresent((GraphQLObjectType) imageFieldDefinition.getType()));
-
-                assertEquals(CustomFieldType.FILEASSET.getType(), imageFieldDefinition.getType());
+                assertTrue(areFileassetFieldsPresent(
+                        (GraphQLFieldsContainer) fileFieldDefinition.getType()));
+                assertTrue(areFileassetFieldsPresent(
+                        (GraphQLFieldsContainer) imageFieldDefinition.getType()));
             } finally {
                 APILocator.getContentTypeAPI(APILocator.systemUser()).delete(contentType);
             }
@@ -961,13 +977,23 @@ public class GraphqlAPITest extends IntegrationTestBase {
         ContentAPIGraphQLTypesProvider.INSTANCE.setFieldGeneratorFactory(fieldGeneratorFactory);
     }
 
-    private boolean areFileassetFieldsPresent(final GraphQLObjectType objectType) {
+    /**
+     * Asserts that every FileAsset field is present on the given type — which is what this
+     * method is named for, and what the calling test's javadoc describes.
+     *
+     * <p>It previously used {@code allMatch}, which asserted the opposite: that the type exposed
+     * <b>no field other than</b> those six. That made it a lock against ever adding a field to
+     * {@code DotFileasset}, so any such addition failed here rather than where the change was
+     * made. Presence is the contract; the type is free to expose more.
+     */
+    private boolean areFileassetFieldsPresent(final GraphQLFieldsContainer fieldsContainer) {
         final List<String> fileAssetFields = list(FILEASSET_FILE_NAME_FIELD_VAR,
                 FILEASSET_DESCRIPTION_FIELD_VAR, FILEASSET_FILEASSET_FIELD_VAR,
                 FILEASSET_METADATA_FIELD_VAR, FILEASSET_SHOW_ON_MENU_FIELD_VAR,
                 FILEASSET_SORT_ORDER_FIELD_VAR);
-        return objectType.getFieldDefinitions().stream().allMatch(fieldDefinition ->
-                fileAssetFields.contains(fieldDefinition.getName()));
+        final Set<String> actualFields = fieldsContainer.getFieldDefinitions().stream()
+                .map(GraphQLFieldDefinition::getName).collect(Collectors.toSet());
+        return actualFields.containsAll(fileAssetFields);
     }
 
     private ContentType createAndSaveSimpleContentType(final String name) throws DotSecurityException, DotDataException {

@@ -1541,14 +1541,17 @@ paths:
   /inference/v1/models:
     get:
       description: "Returns the models the resolved site has configured for chat,\
-        \ including every entry of a fallback chain, in configured order — the first\
-        \ is the site's primary model. The list is exactly the set of values the chat\
-        \ completions endpoint accepts as \"model\": there is no implicit default\
-        \ and no reserved alias, and nothing synthetic is added. No model provider\
-        \ is contacted. A site with no AI configuration, on an instance with none\
-        \ at the system level either, returns an empty data array rather than another\
-        \ site's models. Every response reports the serving site in the X-dotCMS-Resolved-Site\
-        \ header."
+        \ embeddings and image generation, including every entry of a chat fallback\
+        \ chain, in configured order with chat first — the first entry is the site's\
+        \ primary chat model. Each entry reports in \"type\" which operation accepts\
+        \ it: \"chat\", \"embedding\" or \"image\". A name configured for more than\
+        \ one operation is listed once, with the type of the first of those in that\
+        \ order. The list is exactly the set of values this family accepts as \"model\"\
+        : there is no implicit default and no reserved alias, and nothing synthetic\
+        \ is added. No model provider is contacted. A site with no AI configuration,\
+        \ on an instance with none at the system level either, returns an empty data\
+        \ array rather than another site's models. Every response reports the serving\
+        \ site in the X-dotCMS-Resolved-Site header."
       operationId: listInferenceModels
       parameters:
       - in: query
@@ -4539,6 +4542,34 @@ paths:
             application/json: {}
           description: Folder not found at the specified path
       summary: Update existing folder
+      tags:
+      - Web Assets
+  /v1/assets/folders/_bulkdelete:
+    post:
+      description: |-
+        Accepts a list of folder paths and answers `202` with a job handle **before any folder is deleted**. The run is asynchronous, queued to the `folderBulkDelete` queue, and each folder's delete is recursive and permanent, exactly as the single-folder delete already is. Follow the run with `GET /api/v1/jobs/{jobId}/status`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and watch it with `GET /api/v1/jobs/{jobId}/monitor`. The submitting author is notified on any terminal state.
+
+        One folder failing does not abort the run: every remaining folder is still attempted, and each failure is reported by path with a machine-readable reason.
+      operationId: bulkDeleteFolders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FolderBulkDeleteForm"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFolderBulkDeleteSubmitView"
+          description: Run queued
+        "400":
+          description: "No paths submitted, or more paths than the configured maximum"
+        "403":
+          description: The caller is not entitled to use this operation
+        "409":
+          description: A submitted path overlaps an in-flight run's paths
+      summary: "Delete several folders from one submission, asynchronously"
       tags:
       - Web Assets
   /v1/assets/folders/_delete:
@@ -10832,10 +10863,10 @@ paths:
           content:
             application/javascript:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
           description: default response
       tags:
       - Experiment
@@ -14999,8 +15030,37 @@ paths:
           description: default response
       tags:
       - Portlets
+  /v1/portlet/_catalog:
+    get:
+      description: "Every portlet that can be added to a section, with the same inclusion\
+        \ rules as the legacy Roles & Tools tool picker: portlets excluded from layouts\
+        \ are omitted, and the old Languages tool is omitted while FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET\
+        \ is on. Sorted by title ignoring letter case. Each row carries the id, the\
+        \ localized title and an isCustom flag that is true only for tools an admin\
+        \ created through New Tool. Requires an authenticated back-end user with access\
+        \ to the tools or tools-beta portlet, or the CMS Administrator role."
+      operationId: getToolsCatalog
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityToolCatalogView"
+          description: Catalog retrieved
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds neither the tools nor the tools-beta portlet and is not a CMS\
+            \ Administrator"
+      summary: List the tools that can be placed in a navigation section
+      tags:
+      - Portlets
   /v1/portlet/custom:
     post:
+      description: "Creates a custom content tool that lists the given base types\
+        \ and/or content types. Requires an authenticated back-end user with access\
+        \ to the roles, tools or tools-beta portlet, or the CMS Administrator role."
       operationId: saveNew
       requestBody:
         content:
@@ -15008,14 +15068,32 @@ paths:
             schema:
               $ref: "#/components/schemas/CustomPortletForm"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
+          description: Created; the entity carries the stored portlet id under "portlet"
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Validation failure (missing name or view mode, unknown content\
+            \ type, ...)"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
+            \ Administrator"
+      summary: Create a custom content tool
       tags:
       - Portlets
     put:
+      description: "Replaces the name, base types, content types and data view mode\
+        \ of an existing custom content tool. Refuses, with 404 and no change, an\
+        \ id that is not a custom content tool: tools shipped with the product cannot\
+        \ be rewritten this way. Requires an authenticated back-end user with access\
+        \ to the roles, tools or tools-beta portlet, or the CMS Administrator role."
       operationId: updatePortlet
       requestBody:
         content:
@@ -15023,28 +15101,93 @@ paths:
             schema:
               $ref: "#/components/schemas/CustomPortletForm"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
+          description: Updated; the entity carries the stored portlet id under "portlet"
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
+            \ Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: "No portlet has the given id, or it is a tool shipped with\
+            \ the product"
+      summary: Update a custom content tool
       tags:
       - Portlets
   /v1/portlet/custom/{portletId}:
     delete:
+      description: "Removes the custom content tool and takes it out of every navigation\
+        \ section that contained it. Refuses, with 404 and no change, any id that\
+        \ is not a custom content tool: tools shipped with the product cannot be removed\
+        \ this way. Requires an authenticated back-end user with access to the roles,\
+        \ tools or tools-beta portlet, or the CMS Administrator role."
       operationId: deleteCustomPortlet
       parameters:
-      - in: path
+      - description: "Stored id of the custom tool, c_ prefix included"
+        in: path
         name: portletId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
+          description: Deleted; the entity carries a confirmation under "message"
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
+            \ Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: "No portlet has this id, or it is a tool shipped with the product"
+      summary: Delete a custom content tool
+      tags:
+      - Portlets
+    get:
+      description: "Returns the editable configuration of a custom content tool: id,\
+        \ name, base types, content types and data view mode. Requires an authenticated\
+        \ back-end user with access to the tools or tools-beta portlet, or the CMS\
+        \ Administrator role."
+      operationId: getCustomTool
+      parameters:
+      - description: "Stored id of the custom tool, c_ prefix included"
+        in: path
+        name: portletId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCustomToolView"
+          description: Custom tool found
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds neither the tools nor the tools-beta portlet and is not a CMS\
+            \ Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: "No portlet has this id, or it is a tool shipped with the product\
+            \ and has no custom configuration"
+      summary: Read one custom content tool's configuration
       tags:
       - Portlets
   /v1/portlet/custom/{portletId}/_addtolayout/{layoutId}:
@@ -27816,6 +27959,36 @@ components:
           type: string
         portletName:
           type: string
+    CustomToolView:
+      type: object
+      description: Editable configuration of a custom content tool
+      properties:
+        baseTypes:
+          type: array
+          description: "Base type names as stored (CONTENT, WIDGET, PERSONA, FILEASSET,\
+            \ HTMLPAGE, VANITY_URL, DOTASSET, FORM, KEY_VALUE); empty when none"
+          items:
+            type: string
+            description: "Base type names as stored (CONTENT, WIDGET, PERSONA, FILEASSET,\
+              \ HTMLPAGE, VANITY_URL, DOTASSET, FORM, KEY_VALUE); empty when none"
+        contentTypes:
+          type: array
+          description: Content type variable names; empty when none
+          items:
+            type: string
+            description: Content type variable names; empty when none
+        dataViewMode:
+          type: string
+          description: "list or card, as stored"
+          example: card
+        portletId:
+          type: string
+          description: Stored id including the c_ prefix
+          example: c_press-releases
+        portletName:
+          type: string
+          description: Display name of the tool
+          example: Press Releases
     DateField:
       type: object
       allOf:
@@ -29514,6 +29687,37 @@ components:
           type: string
         type:
           type: string
+    FolderBulkDeleteForm:
+      type: object
+      properties:
+        assetPaths:
+          type: array
+          description: "The selected folders, in the same site-qualified path form\
+            \ the single-folder delete accepts"
+          example:
+          - //demo.dotcms.com/old-projects/
+          items:
+            type: string
+            description: "The selected folders, in the same site-qualified path form\
+              \ the single-folder delete accepts"
+            example: "[\"//demo.dotcms.com/old-projects/\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+    FolderBulkDeleteSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statusUrl:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     FolderDeletionRequestForm:
       type: object
       properties:
@@ -31902,6 +32106,19 @@ components:
           type: string
           description: Owner
           example: dotcms
+        type:
+          type: string
+          description: "The operation this model serves: chat completions, embeddings\
+            \ or image generation. Taken from the section of the site's configuration\
+            \ the model is listed in; a model listed in more than one section reports\
+            \ the first, in the order chat, embeddings, image. Any other operation\
+            \ refuses the model with a 404 unless the site configured it for that\
+            \ operation too."
+          enum:
+          - chat
+          - embedding
+          - image
+          example: chat
     MoveFieldsForm:
       type: object
     MulitreeView:
@@ -34165,6 +34382,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityCustomToolView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CustomToolView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityDefaultWorkflowActionsView:
       type: object
       properties:
@@ -34506,6 +34746,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/FileAssetView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFolderBulkDeleteSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/FolderBulkDeleteSubmitResponse"
         errors:
           type: array
           items:
@@ -36537,6 +36800,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityToolCatalogView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolCatalogEntryView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityUpdatePermissionsView:
       type: object
       properties:
@@ -36849,6 +37137,35 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MulitreeView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityViewMapStringHealth:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: string
+            enum:
+            - OK
+            - NOT_CONFIGURED
+            - CONFIGURATION_ERROR
         errors:
           type: array
           items:
@@ -39982,6 +40299,24 @@ components:
           type: string
         type:
           type: string
+    ToolCatalogEntryView:
+      type: object
+      description: One tool that can be placed in a navigation section
+      properties:
+        id:
+          type: string
+          description: "Portlet id, e.g. roles or c_press-releases"
+          example: c_press-releases
+        isCustom:
+          type: boolean
+          description: "True only for tools created through New Tool: registered in\
+            \ the database and not declared in the product's portlet id registry.\
+            \ False for every shipped tool, Language Variables included"
+        title:
+          type: string
+          description: "Title in the caller's language; falls back to the registered\
+            \ name, then to the id"
+          example: Press Releases
     ToolView:
       type: object
       description: Tools the model may call

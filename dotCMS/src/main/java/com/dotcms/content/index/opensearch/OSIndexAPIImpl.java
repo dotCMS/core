@@ -16,6 +16,7 @@ import com.dotcms.content.index.domain.CreateIndexStatus;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
@@ -349,6 +350,20 @@ public class OSIndexAPIImpl implements IndexAPI {
     @Override
     public Set<String> listIndices() {
         try {
+            return listIndicesOrThrow();
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Error listing indices", e);
+            return new HashSet<>();
+        }
+    }
+
+    /**
+     * Lists the cluster's indices, propagating a failure to reach OpenSearch rather than answering
+     * with an empty set (issue #37636).
+     */
+    @Override
+    public Set<String> listIndicesOrThrow() {
+        try {
             final GetIndexRequest request = GetIndexRequest.of(b ->
                 b.index(getClusterPrefix() + "*")
             );
@@ -356,9 +371,8 @@ public class OSIndexAPIImpl implements IndexAPI {
             return response.result().keySet().stream()
                     .map(this::removeClusterIdFromName)
                     .collect(Collectors.toSet());
-        } catch (Exception e) {
-            Logger.error(this.getClass(), "Error listing indices", e);
-            return new HashSet<>();
+        } catch (IOException e) {
+            throw new DotRuntimeException("Could not list OpenSearch indices: " + e.getMessage(), e);
         }
     }
 
@@ -449,6 +463,20 @@ public class OSIndexAPIImpl implements IndexAPI {
     @Override
     public Map<String, com.dotcms.content.index.domain.IndexStats> getIndicesStats() {
         try {
+            return getIndicesStatsOrThrow();
+        } catch (final Exception e) {
+            Logger.error(this.getClass(), "Error fetching OS indices stats: " + e.getMessage(), e);
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * Index statistics for the cluster, propagating a failure to reach OpenSearch rather than
+     * answering with an empty map (issue #37636).
+     */
+    @Override
+    public Map<String, com.dotcms.content.index.domain.IndexStats> getIndicesStatsOrThrow() {
+        try {
             final org.opensearch.client.opensearch.indices.IndicesStatsResponse response =
                     clientProvider.getClient().indices()
                             .stats(r -> r.index(getClusterPrefix() + "*")
@@ -473,9 +501,8 @@ public class OSIndexAPIImpl implements IndexAPI {
                         .build());
             }
             return result;
-        } catch (final Exception e) {
-            Logger.error(this.getClass(), "Error fetching OS indices stats: " + e.getMessage(), e);
-            return new HashMap<>();
+        } catch (final IOException e) {
+            throw new DotRuntimeException("Could not read OpenSearch index stats: " + e.getMessage(), e);
         }
     }
 

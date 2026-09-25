@@ -87,6 +87,41 @@ const defaultResolutionFn: FnResolutionValue<string> = (
 };
 
 /**
+ * Resolves a Checkbox or Multi-Select field, whose value is a set of selected options.
+ *
+ * For a contentlet that has already been saved the stored value is authoritative: a field the
+ * user cleared comes back with its key absent from the payload, and that absence means "nothing
+ * selected", not "no value supplied". Falling back to `field.defaultValue` there re-checks a box
+ * the user deliberately cleared, and saving that screen writes the default back to the database.
+ *
+ * The default still seeds the form when there is no contentlet yet — new content — which is the
+ * only point a Content Type default is meant to apply.
+ *
+ * Returns `null`, not `''`, for the cleared case. `castResolvedValue` flattens these two field
+ * types with `split(',')`, which turns `''` into `['']` — an array of length one that Angular's
+ * `Validators.required` accepts, so a required field would pass validation with nothing selected.
+ * `null` survives that path untouched and stays empty.
+ *
+ * Scoped to these two types only, matching what already shipped on the backend. The same
+ * re-application of a default to saved content is still live for every other field type on
+ * `defaultResolutionFn` — that is remaining exposure, not intended behaviour.
+ *
+ * @see https://github.com/dotCMS/core/issues/35416
+ */
+const selectionResolutionFn: FnResolutionValue<string | null> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (contentlet) {
+        return contentlet[field.variable] ?? null;
+    }
+
+    return isManualTranslation ? null : field.defaultValue;
+};
+
+/**
  * Resolves a Key/Value field, preferring the key order the response actually carried.
  *
  * A JavaScript object cannot hold that order: integer-like keys are enumerated first,
@@ -327,7 +362,7 @@ export const resolutionValue: {
     [DotCMSFieldTypes.FILE]: defaultResolutionFn,
     [DotCMSFieldTypes.IMAGE]: defaultResolutionFn,
     [DotCMSFieldTypes.BLOCK_EDITOR]: blockEditorResolutionFn,
-    [DotCMSFieldTypes.CHECKBOX]: defaultResolutionFn,
+    [DotCMSFieldTypes.CHECKBOX]: selectionResolutionFn,
     [DotCMSFieldTypes.CONSTANT]: defaultResolutionFn,
     [DotCMSFieldTypes.CUSTOM_FIELD]: defaultResolutionFn,
     [DotCMSFieldTypes.DATE]: dateResolutionFn,
@@ -337,7 +372,7 @@ export const resolutionValue: {
     [DotCMSFieldTypes.HOST_FOLDER]: hostFolderResolutionFn,
     [DotCMSFieldTypes.JSON]: defaultResolutionFn,
     [DotCMSFieldTypes.KEY_VALUE]: keyValueResolutionFn,
-    [DotCMSFieldTypes.MULTI_SELECT]: defaultResolutionFn,
+    [DotCMSFieldTypes.MULTI_SELECT]: selectionResolutionFn,
     [DotCMSFieldTypes.RADIO]: defaultResolutionFn,
     [DotCMSFieldTypes.SELECT]: selectResolutionFn,
     [DotCMSFieldTypes.TAG]: defaultResolutionFn,

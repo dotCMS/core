@@ -50,7 +50,7 @@ import static com.liferay.util.StringPool.BLANK;
  *      .build();
  *
  * final CubeClient cubeClient =  new CubeClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
- * final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
+ * final AnalyticsResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
  * }
  * </pre>
  *
@@ -83,7 +83,7 @@ public class CubeJSClient implements EventSubscriber<SystemTableUpdatedKeyEvent>
      *      .build();
      *
      * final CubeClient cubeClient =  new CubeClient(String.format("http://%s:%s", cubeServerIp, cubeJsServerPort));
-     * final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
+     * final AnalyticsResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
      *
      * for (ResultSetItem resultSetItem : cubeJSResultSet) {
      *      System.out.println("Events.experiment", resultSetItem.get("Events.experiment").get())
@@ -95,9 +95,9 @@ public class CubeJSClient implements EventSubscriber<SystemTableUpdatedKeyEvent>
      *
      * @param query Query to be run in the CubeJS Server
      *
-     * @return A {@link CubeJSResultSet} object containing the results of the query.
+     * @return A {@link AnalyticsResultSet} object containing the results of the query.
      */
-    public CubeJSResultSet send(final CubeJSQuery query) {
+    public AnalyticsResultSet send(final CubeJSQuery query) {
         DotPreconditions.notNull(query, "Query not must be NULL");
         DotPreconditions.notNull(accessToken, "Access token not must be NULL");
 
@@ -110,10 +110,10 @@ public class CubeJSClient implements EventSubscriber<SystemTableUpdatedKeyEvent>
      *
      * @param queryAsString The query as a String.
      *
-     * @return A {@link CubeJSResultSet} object containing the results of the query.
+     * @return A {@link AnalyticsResultSet} object containing the results of the query.
      */
     @SuppressWarnings("unchecked")
-    public CubeJSResultSet send(final String queryAsString) {
+    public AnalyticsResultSet send(final String queryAsString) {
         DotPreconditions.notNull(queryAsString, "Query not must be NULL");
         DotPreconditions.notNull(accessToken, "Access token not must be NULL");
 
@@ -141,7 +141,7 @@ public class CubeJSClient implements EventSubscriber<SystemTableUpdatedKeyEvent>
                     JsonUtil.getJsonFromString(responseAsString) : new HashMap<>();
             final List<Map<String, Object>> data = (List<Map<String, Object>>) responseAsMap.get("data");
 
-            return new CubeJSResultSetImpl(UtilMethods.isSet(data) ? data : Collections.emptyList());
+            return new AnalyticsResultSetImpl(UtilMethods.isSet(data) ? data : Collections.emptyList());
         } catch (final IOException e) {
             throw new DotRuntimeException("Failed to parse JSON response from CubeJS Server", e);
         }

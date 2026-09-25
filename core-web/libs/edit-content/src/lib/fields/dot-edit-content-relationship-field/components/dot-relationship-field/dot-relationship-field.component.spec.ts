@@ -122,6 +122,7 @@ let hostStub: {
     setContentTitle: Mock;
     addBreadcrumb: Mock;
     goToSavedContent: Mock;
+    leaveDeletedContent: Mock;
     goToRestoredVersion: Mock;
     goToRelatedContent: Mock;
     goToCrumb: Mock;
@@ -150,6 +151,7 @@ describe('DotRelationshipFieldComponent', () => {
             setContentTitle: vi.fn(),
             addBreadcrumb: vi.fn(),
             goToSavedContent: vi.fn(),
+            leaveDeletedContent: vi.fn(),
             goToRestoredVersion: vi.fn(),
             goToRelatedContent: vi.fn(),
             goToCrumb: vi.fn()
