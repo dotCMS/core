@@ -12,12 +12,12 @@ import { DotMessageService } from '@dotcms/data-access';
  * owns everything after that, including the warning when the backend refuses the delete.
  *
  * @param role the role about to be deleted; its name goes into the message
- * @param messages resolves the copy
+ * @param messages resolves the copy — only `get` is used, so any message source will do
  * @param onAccept runs when the admin confirms
  */
 export function roleDeleteConfirmation(
     role: { name: string },
-    messages: DotMessageService,
+    messages: Pick<DotMessageService, 'get'>,
     onAccept: () => void
 ): Confirmation {
     return {

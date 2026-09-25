@@ -56,8 +56,7 @@ describe('DotRolesDetailHeaderComponent', () => {
                 confirm: vi.fn().mockImplementation((cfg) => cfg.accept?.()),
                 // p-confirmDialog subscribes to these on init
                 requireConfirmation$: EMPTY,
-                accept: EMPTY,
-                reject: EMPTY
+                accept: EMPTY
             })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
