@@ -215,11 +215,12 @@ everything, the third passes everything.
 ### Edge Cases
 
 - **Getting Started is the product's own onboarding section.** It is identified by its fixed
-  id, or, on an install where no section has that id, by its name. The product resolves it
+  id only; a section an admin creates and names "Getting Started" is an ordinary section here
+  and can be renamed, emptied or deleted. The product resolves it
   whenever a user switches Getting Started on or off; that lookup must find the section as the
   admin left it and must not rewrite it, otherwise every edit made here would be undone at the
-  next switch. Delete and an empty tool list are refused, so the section always exists and
-  always holds something to show. Rename, icon, position and tool changes are allowed and
+  next switch. Delete and an empty tool list are refused, and the legacy screen can no longer
+  delete it either, so the section always exists and always holds something to show. Rename, icon, position and tool changes are allowed and
   persist.
 - **Two admins saving the same name at once.** The application check and the database
   uniqueness rule both guard the name; whichever one trips, the loser gets the same invalid
@@ -256,8 +257,9 @@ everything, the third passes everything.
   portlet-gated endpoint in the product does. A portlet holder who is not a CMS Administrator is
   reported as 403 Forbidden, as the modern operations that grant sections to roles do. The
   frontend must not depend on the distinction beyond "refused".
-- **Legacy screen untouched.** The Roles & Tools tab and its remoting methods keep working
-  unchanged. The role-scoped read of one role's sections and the system-wide read under the
+- **Legacy screen untouched, except deleting Getting Started.** The Roles & Tools tab and its
+  remoting methods keep working unchanged, except that deleting Getting Started is refused with
+  a message naming the section. The role-scoped read of one role's sections and the system-wide read under the
   Roles resource are not changed; the new read is the Tools-gated replacement for the latter.
 
 ## Requirements *(mandatory)*
@@ -296,8 +298,7 @@ everything, the third passes everything.
   MUST be accepted.
 - **FR-009**: The Getting Started section MUST be returned by the read and MUST accept every
   write except delete and an empty tool list, both refused as invalid, leaving the section
-  intact. For these refusals Getting Started is identified by its fixed id, or by its name when
-  no section has that id.
+  intact. For these refusals Getting Started is identified by its fixed id only.
 - **FR-018**: The product's own Getting Started lookup, used when a user switches Getting
   Started on or off, MUST resolve the section by its fixed id; if no section has that id, by
   the name "Getting Started", adopting that section as it is; and only if neither exists MUST
@@ -325,7 +326,9 @@ everything, the third passes everything.
 - **FR-016**: Every endpoint added MUST be described in the generated API documentation with
   response schemas that match what is actually returned.
 - **FR-017**: The legacy Roles & Tools screen, its remoting methods, and the existing modern
-  reads of sections under the Roles resource MUST continue to behave exactly as today.
+  reads of sections under the Roles resource MUST continue to behave exactly as today, except
+  that the legacy screen's delete MUST refuse the Getting Started section (its fixed id) and
+  leave it intact.
 
 ### Key Entities
 
@@ -372,7 +375,8 @@ everything, the third passes everything.
   mocks return nothing, while the real calls return the full section list; the store may consume
   or ignore that body.
 - **SC-008**: The legacy Roles & Tools tab still creates, edits, deletes and grants sections
-  after this feature ships, with no change in behaviour.
+  after this feature ships, with no change in behaviour other than refusing to delete Getting
+  Started.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -381,8 +385,9 @@ everything, the third passes everything.
   Dojo tab and the modern Roles endpoints already share. Those services are called, with two
   small additions: the Getting Started lookup resolves by fixed id instead of by name and no
   longer rebuilds an existing section (FR-018), and a single-step reorder that writes every
-  position together and notifies once (FR-007). The Dojo tab, its remoting methods, and the
-  modern Roles reads of sections are not modified. The new resource is added alongside them.
+  position together and notifies once (FR-007). The Dojo tab's delete remoting method refuses
+  Getting Started (FR-017); the rest of the Dojo tab, its remoting methods, and the modern Roles
+  reads of sections are not modified. The new resource is added alongside them.
 - **Backward-compatibility expectations**: No existing endpoint or screen changes contract. No
   stored data changes shape; the reorder write only rewrites position numbers that already exist,
   and the tool-list write uses the same storage the legacy screen uses. Rolling back is safe: a
@@ -391,8 +396,8 @@ everything, the third passes everything.
   Started lookup change also makes the legacy screen's edits to that section persist, which is
   what that screen always appeared to do. The behaviours this feature is stricter about than
   the legacy screen are refusing to delete or empty Getting Started. Sections with no tools are
-  otherwise new: the legacy dialog requires at least one tool. The legacy screen is left as it
-  is.
+  otherwise new: the legacy dialog requires at least one tool. The legacy screen's only change
+  is refusing to delete Getting Started. Rolling back restores that delete.
 - **Known related decisions**: On 2026-09-17 it was decided, and recorded on #37353,
   that section writes require the CMS Administrator role in addition to the Tools portlet,
   following the modern operations that grant sections to roles and users, while reads and the
@@ -412,7 +417,8 @@ everything, the third passes everything.
 - **Getting Started is editable and durable** (decided 2026-09-23 after spec review): listed
   like any section; rename, icon, position and tools editable; delete and an empty tool list
   refused. The product's lookup is corrected to resolve by fixed id so those edits survive
-  (FR-018). Its name is not reserved: identity is the id, and the ordinary uniqueness rule
+  (FR-018). Its name is not reserved: identity is the id only, both for these refusals and in the
+  legacy screen's delete, and the ordinary uniqueness rule
   already prevents two sections sharing a name. The My Account and Users toggles keep their
   static "Show Getting Started" label whatever the section is renamed to.
 - **Positions are rewritten, not preserved.** Reorder assigns strictly increasing positions in

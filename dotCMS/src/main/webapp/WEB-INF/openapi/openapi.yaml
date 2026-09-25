@@ -12302,11 +12302,10 @@ paths:
       tags:
       - Administration
     put:
-      description: "Changes a section's name and icon together; its position and its\
-        \ tools are untouched. Same name and icon rules as create. Getting Started\
-        \ may be renamed and re-iconed, except on an install where it is only identifiable\
-        \ by its name (no section holds the fixed id): there the rename is refused.\
-        \ Requires a CMS Administrator who also holds the tools or tools-beta portlet."
+      description: Changes a section's name and icon together; its position and its
+        tools are untouched. Same name and icon rules as create. Getting Started may
+        be renamed and re-iconed. Requires a CMS Administrator who also holds the
+        tools or tools-beta portlet.
       operationId: updateNavigationSection
       parameters:
       - description: Navigation section id

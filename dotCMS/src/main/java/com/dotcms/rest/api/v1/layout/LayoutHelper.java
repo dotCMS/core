@@ -14,7 +14,6 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
-import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,9 +38,6 @@ public class LayoutHelper {
     static final int MAX_LENGTH = 255;
 
     private static final String NAME_INIT_PARAM = "name";
-
-    /** PostgreSQL SQLSTATE for a unique-constraint violation. */
-    private static final String UNIQUE_VIOLATION_SQL_STATE = "23505";
 
     /** Name of the unique constraint on {@code cms_layout.layout_name}. */
     private static final String NAME_CONSTRAINT = "cms_layout_name_parent";
@@ -191,35 +187,14 @@ public class LayoutHelper {
     }
 
     /**
-     * Whether the section is the product's Getting Started section: the fixed id, or the fixed
-     * name when no section holds the fixed id (installs that predate it).
+     * Whether the section is the product's Getting Started section. It is identified by its fixed
+     * id only: a section an admin names "Getting Started" is an ordinary section.
      *
      * @param layout the section
      * @return true for Getting Started
-     * @throws DotDataException if the lookup fails
      */
-    public boolean isGettingStarted(final Layout layout) throws DotDataException {
-        if (LayoutAPI.GETTING_STARTED_LAYOUT_ID.equals(layout.getId())) {
-            return true;
-        }
-        if (LayoutAPI.GETTING_STARTED_LAYOUT_NAME.equals(layout.getName())) {
-            final Layout fixed = layoutApi.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
-            return null == fixed || !UtilMethods.isSet(fixed.getId());
-        }
-        return false;
-    }
-
-    /**
-     * Whether the section is a Getting Started that the product can only recognise by its name:
-     * an install that predates the fixed id, where no section holds that id. Renaming such a
-     * section would make it unrecognisable and the next toggle would create a second one.
-     *
-     * @param layout the section
-     * @return true when Getting Started is identified by name only
-     * @throws DotDataException if the lookup fails
-     */
-    public boolean isLegacyGettingStarted(final Layout layout) throws DotDataException {
-        return !LayoutAPI.GETTING_STARTED_LAYOUT_ID.equals(layout.getId()) && isGettingStarted(layout);
+    public boolean isGettingStarted(final Layout layout) {
+        return LayoutAPI.GETTING_STARTED_LAYOUT_ID.equals(layout.getId());
     }
 
     /**
@@ -243,11 +218,9 @@ public class LayoutHelper {
         }
     }
 
+    /** Only the name constraint means a duplicate name; any other unique violation propagates. */
     private static boolean isUniqueNameViolation(final Throwable failure) {
         for (Throwable t = failure; null != t; t = t.getCause()) {
-            if (t instanceof SQLException && UNIQUE_VIOLATION_SQL_STATE.equals(((SQLException) t).getSQLState())) {
-                return true;
-            }
             if (null != t.getMessage() && t.getMessage().contains(NAME_CONSTRAINT)) {
                 return true;
             }

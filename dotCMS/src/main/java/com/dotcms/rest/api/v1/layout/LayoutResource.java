@@ -10,6 +10,7 @@ import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.portal.PortletAPI;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -216,9 +217,7 @@ public class LayoutResource implements Serializable {
             operationId = "updateNavigationSection",
             summary = "Rename and re-icon a navigation section",
             description = "Changes a section's name and icon together; its position and its tools are untouched. "
-                    + "Same name and icon rules as create. Getting Started may be renamed and re-iconed, except on "
-                    + "an install where it is only identifiable by its name (no section holds the fixed id): there "
-                    + "the rename is refused. "
+                    + "Same name and icon rules as create. Getting Started may be renamed and re-iconed. "
                     + "Requires a CMS Administrator who also holds the tools or tools-beta portlet."
     )
     @ApiResponses(value = {
@@ -257,15 +256,9 @@ public class LayoutResource implements Serializable {
 
         final User user = initWrite(request, response, OP_UPDATE);
         requireBody(form);
-        // Validate everything before touching the loaded section: it is the instance Hibernate
-        // manages for this request, and a rejected write must leave nothing behind to flush.
         final String name = helper.validateName(form.getName());
         final String icon = helper.validateIcon(form.getIcon());
         final Layout layout = helper.findSectionOrThrow(layoutId);
-        if (helper.isLegacyGettingStarted(layout) && !name.equals(layout.getName())) {
-            throw new BadRequestException("The Getting Started section on this install is identified by its "
-                    + "name and cannot be renamed");
-        }
         layout.setName(name);
         layout.setDescription(icon);
         helper.saveOrDuplicate(layout);
@@ -388,8 +381,12 @@ public class LayoutResource implements Serializable {
         final User user = initWrite(request, response, OP_REORDER);
         requireBody(form);
         final List<String> sent = null == form.getLayoutIds() ? List.of() : form.getLayoutIds();
-        helper.validateOrder(sent, layoutApi.findAllLayouts());
-        layoutApi.setTabOrders(helper.positions(sent));
+        // Check completeness and write in one transaction, so a section created by another admin
+        // between the check and the write cannot be left out of the order.
+        LocalTransaction.wrap(() -> {
+            helper.validateOrder(sent, layoutApi.findAllLayouts());
+            layoutApi.setTabOrders(helper.positions(sent));
+        });
         logWrite(user, OP_REORDER, null);
         return Response.ok(new ResponseEntitySectionListView(helper.toViews(layoutApi.findAllLayouts(), user))).build();
     }

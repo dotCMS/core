@@ -283,8 +283,8 @@ public class LayoutAPIImpl implements LayoutAPI {
 				// Inside the transaction: nothing written so far survives.
 				throw new DotDataException("Layout '" + entry.getKey() + "' does not exist; no position was changed");
 			}
-			// Keep the Hibernate session's instance in step with the row, as saveLayout does, so a
-			// read in the same request sees the new position.
+			// findLayout may return the instance Hibernate cached in this session; update it so a
+			// read later in the same request sees the new position.
 			layout.setTabOrder(entry.getValue());
 		}
 		layoutFactory.setTabOrders(tabOrderByLayoutId);

@@ -280,6 +280,27 @@ public class LayoutHelperTest {
 
     /**
      * Method to test: {@link LayoutHelper#saveOrDuplicate(Layout)}
+     * Given: a unique violation (state 23505) on a constraint other than the section name
+     * Expected: the failure propagates; only the name constraint means a duplicate name
+     */
+    @Test
+    public void otherUniqueViolation_propagates() throws Exception {
+        final DotDataException dbFailure = new DotDataException("insert failed",
+                new SQLException("duplicate key value violates unique constraint \"cms_layout_pkey\"", "23505"));
+        doThrow(dbFailure).when(layoutApi).saveLayout(any(Layout.class));
+
+        try {
+            helper.saveOrDuplicate(layout("x", "Marketing", "", 1));
+            fail("failure swallowed");
+        } catch (final LayoutNameAlreadyExistsException wrong) {
+            fail("primary-key collision reported as a duplicate name");
+        } catch (final RuntimeException | DotDataException expected) {
+            // ok: propagated, never as a duplicate
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutHelper#saveOrDuplicate(Layout)}
      * Given: the layout API fails for an unrelated reason
      * Expected: the failure propagates unchanged
      */
@@ -466,31 +487,23 @@ public class LayoutHelperTest {
     // ==================== Getting Started identity ====================
 
     /**
-     * Method to test: {@link LayoutHelper#isGettingStarted(Layout)} / {@link LayoutHelper#isLegacyGettingStarted(Layout)}
-     * Given: the section holding the fixed id
-     * Expected: it is Getting Started, and not a legacy one
+     * Method to test: {@link LayoutHelper#isGettingStarted(Layout)}
+     * Given: the section holding the fixed id, under any name
+     * Expected: it is Getting Started
      */
     @Test
-    public void gettingStarted_byFixedId_isNotLegacy() throws Exception {
-        final Layout fixed = layout(LayoutAPI.GETTING_STARTED_LAYOUT_ID, "Renamed", "", -320000, "starter");
-        assertTrue(helper.isGettingStarted(fixed));
-        assertFalse(helper.isLegacyGettingStarted(fixed));
+    public void gettingStarted_isTheFixedId_whateverItsName() {
+        assertTrue(helper.isGettingStarted(layout(LayoutAPI.GETTING_STARTED_LAYOUT_ID, "Renamed", "", -320000, "starter")));
     }
 
     /**
-     * Method to test: {@link LayoutHelper#isLegacyGettingStarted(Layout)}
-     * Given: a section named "Getting Started" under another id, and no section holds the fixed id
-     * Expected: it is a legacy Getting Started; once a fixed-id section exists it is an ordinary section
+     * Method to test: {@link LayoutHelper#isGettingStarted(Layout)}
+     * Given: a section named "Getting Started" under another id, with no section holding the fixed id
+     * Expected: it is an ordinary section; the name alone never identifies Getting Started
      */
     @Test
-    public void gettingStarted_byNameOnly_isLegacy_untilFixedIdExists() throws Exception {
-        final Layout legacy = layout("legacy-id", LayoutAPI.GETTING_STARTED_LAYOUT_NAME, "", -5, "starter");
+    public void gettingStarted_isNeverIdentifiedByName() throws Exception {
         when(layoutApi.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID)).thenReturn(new Layout());
-        assertTrue(helper.isLegacyGettingStarted(legacy));
-
-        when(layoutApi.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID))
-                .thenReturn(layout(LayoutAPI.GETTING_STARTED_LAYOUT_ID, "Getting Started", "", -320000, "starter"));
-        assertFalse(helper.isGettingStarted(legacy));
-        assertFalse(helper.isLegacyGettingStarted(legacy));
+        assertFalse(helper.isGettingStarted(layout("admin-made", LayoutAPI.GETTING_STARTED_LAYOUT_NAME, "", -5, "starter")));
     }
 }

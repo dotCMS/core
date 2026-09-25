@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -440,32 +441,40 @@ public class LayoutResourceIntegrationTest {
     }
 
     /**
-     * Method to test: {@link LayoutResource#update} on an install that predates the fixed Getting Started id
-     * Given: no section holds the fixed id and a section named "Getting Started" exists under another id
-     * Expected: renaming it is refused (it would become unrecognisable and a second one would be created),
-     *           changing its icon is accepted
+     * Method to test: {@link LayoutResource#update}, {@link LayoutResource#setTools}, {@link LayoutResource#delete}
+     * Given: Getting Started is renamed, and an admin creates another section named "Getting Started"
+     * Expected: that section is an ordinary section: it can be emptied, renamed and deleted, because
+     *           Getting Started is identified by its fixed id only
      */
     @Test
-    public void update_legacyGettingStarted_renameRefused_iconAllowed() throws Exception {
+    public void sectionNamedGettingStarted_underAnotherId_isOrdinary() throws Exception {
+        layoutAPI.findGettingStartedLayout();
         final Layout fixed = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
-        if (fixed != null && UtilMethods.isSet(fixed.getId())) {
-            layoutAPI.removeLayout(fixed);
-        }
-        final Layout legacy = new LayoutDataGen().name(LayoutAPI.GETTING_STARTED_LAYOUT_NAME)
-                .description("legacy-icon").portletIds("starter").tabOrder(-6).nextPersisted();
+        final String originalName = fixed.getName();
+        final String originalIcon = fixed.getDescription();
+        resource.update(adminRequest(), response(), LayoutAPI.GETTING_STARTED_LAYOUT_ID,
+                form("Onboarding " + uniq(), originalIcon));
+        Layout named = null;
         try {
-            try {
-                resource.update(adminRequest(), response(), legacy.getId(), form("Onboarding " + uniq(), "legacy-icon"));
-                fail("legacy Getting Started renamed");
-            } catch (final BadRequestException expected) {
-                assertEquals(LayoutAPI.GETTING_STARTED_LAYOUT_NAME, layoutAPI.findLayout(legacy.getId()).getName());
-            }
-            final SectionView updated = entityOf(resource.update(adminRequest(), response(), legacy.getId(),
-                    form(LayoutAPI.GETTING_STARTED_LAYOUT_NAME, "rocket_launch")));
-            assertEquals("rocket_launch", updated.icon());
+            named = new LayoutDataGen().name(LayoutAPI.GETTING_STARTED_LAYOUT_NAME)
+                    .description("admin-icon").portletIds("starter").tabOrder(-6).nextPersisted();
+
+            resource.setTools(adminRequest(), response(), named.getId(), tools());
+            assertTrue(layoutAPI.loadLayout(named.getId()).getPortletIds().isEmpty());
+
+            final SectionView renamed = entityOf(resource.update(adminRequest(), response(), named.getId(),
+                    form("Renamed " + uniq(), "admin-icon")));
+            assertNotEquals(LayoutAPI.GETTING_STARTED_LAYOUT_NAME, renamed.name());
+
+            resource.delete(adminRequest(), response(), named.getId());
+            final Layout gone = layoutAPI.findLayout(named.getId());
+            assertTrue(gone == null || !UtilMethods.isSet(gone.getId()));
         } finally {
-            removeQuietly(legacy.getId());
-            layoutAPI.findGettingStartedLayout();
+            if (named != null) {
+                removeQuietly(named.getId());
+            }
+            resource.update(adminRequest(), response(), LayoutAPI.GETTING_STARTED_LAYOUT_ID,
+                    form(originalName, originalIcon));
         }
     }
 
