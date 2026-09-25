@@ -4,8 +4,7 @@ import {
     DotCMSContentlet,
     DotContainerMap,
     DotDevice,
-    DotExperiment,
-    DotExperimentStatus
+    DotExperiment
 } from '@dotcms/dotcms-models';
 import {
     DotCMSPage,
@@ -661,7 +660,9 @@ export function computeIsPageLocked(page: DotCMSPage, currentUser: CurrentUser):
  * Editing is allowed when ALL of the following are true:
  * - User has edit permission on the page
  * - Page is not locked (or locked by current user with feature flag enabled)
- * - No experiment is running or scheduled
+ *
+ * A running or scheduled experiment no longer blocks editing (#37308). The `experiment` argument
+ * is kept so callers and tests can show it is ignored.
  *
  * @param {DotCMSPage} page - The page to check
  * @param {CurrentUser} currentUser - The current user
@@ -677,12 +678,7 @@ export function computeCanEditPage(
 ): boolean {
     const hasEditPermission = !!page?.canEdit;
 
-    const isBlockedByExperiment = [
-        DotExperimentStatus.RUNNING,
-        DotExperimentStatus.SCHEDULED
-    ].includes(experiment?.status);
-
-    if (!hasEditPermission || isBlockedByExperiment) {
+    if (!hasEditPermission) {
         return false;
     }
 

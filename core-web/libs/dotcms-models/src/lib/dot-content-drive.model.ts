@@ -31,6 +31,14 @@ export interface DotContentDriveLazyLoadEvent {
 export interface DotContentDriveActionableFolder {
     type: 'folder';
     identifier: string;
+    /**
+     * The row's key in the listing, which the grid marks busy by.
+     *
+     * Optional because the search service only backfills it from `identifier` when the API returned
+     * none, leaving legacy data with whatever it has. A caller registering a run over this folder
+     * should target both, since neither is reliably the key the row carries.
+     */
+    inode?: string;
     /** The folder's own name (last path segment). */
     name: string;
     /** The folder's own full path, e.g. `/application/blog/`. */
@@ -122,6 +130,24 @@ export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
 export type DotContentDriveBrowseItem = DotContentDriveItem | DotContentDriveLink;
 
 /**
+ * Whether a browse row is one the content actions can act on.
+ *
+ * Everything except a menu link: links have no workflow state, no permissions of their own and no
+ * editor to open, so they are displayed and selectable but never actionable.
+ *
+ * Lives with the union rather than beside either consumer, because both the shared listing and the
+ * portlets that bind to it have to narrow the same way. A caller that takes the narrower type
+ * without going through this is asserting something the emitter does not promise.
+ */
+export function isActionableBrowseItem(
+    item: DotContentDriveBrowseItem
+): item is DotContentDriveItem {
+    const row = item as { type?: string; extension?: string };
+
+    return row.type !== 'link' && row.extension !== 'link';
+}
+
+/**
  * An item the shared folder actions (context menu, Edit-folder dialog) can act on.
  *
  * Wider than {@link DotContentDriveItem} on the folder side: the table passes a full
@@ -163,7 +189,26 @@ export interface DotContentDriveQueryFilters {
      * Text to search for.
      */
     text: string;
+
+    /**
+     * Which fields {@link text} is matched against.
+     *
+     * Sits here rather than at the top level because it qualifies `text` and means nothing without
+     * it — the same reason {@link filterFolders} lives here. Omit it for the historical behaviour:
+     * an absent scope is processed exactly as it was before the field existed, which is what keeps
+     * the AssetPicker unaffected.
+     *
+     * Not to be confused with a *browse* scope, which says where you are browsing rather than which
+     * fields a search reads.
+     */
+    searchScope?: 'TITLE' | 'ALL_FIELDS';
 }
+
+/**
+ * Which slice of content a Content Drive listing is asked for: the whole current site at any
+ * depth, only what sits at the site root, or System Host alone.
+ */
+export type DotContentDriveBrowseScope = 'ALL' | 'ROOT' | 'SYSTEM_HOST';
 
 /**
  * Request body for the /api/v1/drive/search endpoint.
@@ -200,6 +245,15 @@ export interface DotContentDriveSearchRequest {
      * @default true
      */
     includeSystemHost?: boolean;
+
+    /**
+     * Which slice of content to list. Omitting it means today's behavior, and it carries no
+     * default for that reason: at the site root an omitted scope and `ALL` agree, but inside a
+     * folder they do not, so defaulting it would turn folder requests into listings of every
+     * descendant. Only valid with a site-root `assetPath`; naming one alongside a folder path is
+     * refused by the endpoint.
+     */
+    browseScope?: DotContentDriveBrowseScope;
 
     /**
      * List of language identifiers to include in the search.
@@ -430,3 +484,62 @@ export interface DotBulkRefreshCompletedEvent extends Partial<DotBulkRefreshCoun
      */
     jobId?: string;
 }
+
+/**
+ * Why a single file in a bulk upload batch did not make it.
+ *
+ * The closed set fixed by the submission contract
+ * (`specs/37166-bulk-file-upload/contracts/bulk-upload-api.md` §3), carried as `results[].reason`
+ * on a `FAILED` item. Adding a member is a change to both halves of #37166.
+ *
+ * It lives here rather than beside the copy that renders it because it is a **wire** vocabulary:
+ * the service that reads a run's outcome sits in `data-access`, and a service there cannot import
+ * a type out of a portlet. Resolving a reason to product copy is the portlet's business and stays
+ * there.
+ */
+export const DOT_BULK_UPLOAD_FAILURE_REASONS = [
+    'OVER_SIZE_LIMIT',
+    'DISALLOWED_FILE_TYPE',
+    'FOLDER_FILTER_MISMATCH',
+    'NAME_COLLISION',
+    'PERMISSION_DENIED',
+    'STAGED_CONTENT_UNAVAILABLE',
+    'UNCLASSIFIED'
+] as const;
+
+export type DotBulkUploadFailureReason = (typeof DOT_BULK_UPLOAD_FAILURE_REASONS)[number];
+
+/**
+ * Why a folder in a bulk delete could not be removed.
+ *
+ * The closed set fixed by the submission contract
+ * (`specs/37063-bulk-folder-delete-frontend/contracts/client-requirements.md` CR-04), carried as
+ * `results[].reason` on a `FAILED` item. Adding a member is a change to both halves of #37063 —
+ * and to folder copy (#37062) and move (#37165), which read the same outcome shape.
+ *
+ * Four of these are delete's own; `PERMISSION_DENIED` and `UNCLASSIFIED` already existed in the
+ * shared batch vocabulary. `UNCLASSIFIED` is also what an **unrecognised** value renders as: a
+ * reason the client does not know must still name its folder and still report it as failed
+ * (frontend FR-030), never swallow it.
+ *
+ * Here rather than beside the copy that renders it, for the same reason as
+ * {@link DOT_BULK_UPLOAD_FAILURE_REASONS}: this is a **wire** vocabulary read by a `data-access`
+ * service, and a service there cannot import a type out of a portlet. Mapping a reason to product
+ * copy is the portlet's business and stays there.
+ */
+export const DOT_FOLDER_DELETE_FAILURE_REASONS = [
+    /** No rights on the folder, or on something inside it. */
+    'PERMISSION_DENIED',
+    /** The path no longer resolves, or does not name a folder. */
+    'PATH_NOT_FOUND',
+    /** A system folder or site root; refused outright. */
+    'PROTECTED_FOLDER',
+    /** Locked or referenced content inside blocked the delete. */
+    'IN_USE',
+    /** An ancestor in the same submission removed it first — not a failure to be alarmed by. */
+    'COVERED_BY_PARENT',
+    /** Anything else, and the fallback for a value this client does not recognise. */
+    'UNCLASSIFIED'
+] as const;
+
+export type DotFolderDeleteFailureReason = (typeof DOT_FOLDER_DELETE_FAILURE_REASONS)[number];

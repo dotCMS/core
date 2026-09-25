@@ -12,7 +12,7 @@ which cannot arbitrate between two surfaces that want the same key.
 |---|---|---|
 | `/` | Focus the search field | `dot-content-drive-search-input`, `dot-asset-picker-toolbar` |
 | `Mod + K` | Focus the search field (alias for `/`) | as above |
-| `Mod + B` | Show or hide the folder tree | `dot-content-drive-shell` |
+| `Mod + B` | Show or hide the sidebar (the folder tree and the entries around it) | `dot-content-drive-shell` |
 | `Escape` | Clear the selection | `dot-content-drive-shell` |
 | `Escape` | Close the content side panel (wins while open) | `dot-edit-content-side-panel` |
 | `↑` `↓` | Move focus between rows | the shared listing |

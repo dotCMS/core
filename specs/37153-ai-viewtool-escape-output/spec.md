@@ -159,9 +159,9 @@ provider reply contains active markup.
   read-only use of those utilities; the plan confirms.
 - **Related known decisions**: None known. The epic's principle applies: fix at the boundary
   so every current and future template consumer inherits it. Sibling
-  [#37154](https://github.com/dotCMS/core/issues/37154) (stop returning stack traces; spec PR
-  #37455 open) edits the same three classes; merge order is not fixed (see Regression Risk)
-  and this spec does not depend on its code. The plan formally consults
+  [#37154](https://github.com/dotCMS/core/issues/37154) (stop returning stack traces, merged
+  first via #37455) edits the same three classes; this fix escapes the generic error payload
+  it returns and does not otherwise depend on its code. The plan formally consults
   `dotCMS/platform-adrs`.
 
 ## Root-Cause Hypothesis
@@ -284,8 +284,7 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
   fail to render. The release note must say so, and the implementation PR carries the
   rollback-unsafe label. The safer "ship the accessor first, flip the default later" sequence
   was considered and rejected because the default is the security fix. #37154
-  edits the same classes; its spec is open and not merged. Whichever lands first, the other
-  rebases; neither depends on the other's code.
+  edited the same classes and merged first; this change is merged on top of it.
 - **Data considerations**: None. No stored data is read differently or repaired. The
   `EMBEDDING_CACHE`, the embeddings table and `#dotcache` entries are untouched; cached
   fragments rendered before the fix expire on their own TTL.
@@ -333,7 +332,7 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
   WireMock mapping answering the dedicated prompt with HTTP 500 and a non-JSON prompt, for
   `summarize` the no-hits `{error}` shape, for `generateImage` a prompt no stub answers. The
   `search.*` error path uses the same routine and is covered by the unit test (including
-  non-string leaves such as stack-trace elements, which are stringified and encoded).
+  non-string leaves, which are stringified and encoded).
   `generateText` rethrows today; that behaviour is unchanged and not asserted.
 - **AC-007**: `release-note.md` exists in this spec directory and covers everything listed for
   it under In scope.

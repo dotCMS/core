@@ -16,6 +16,7 @@ import { ActivatedRoute } from '@angular/router';
 import {
     AddToBundleService,
     DotBulkRefreshService,
+    DotFolderBulkDeleteService,
     DotEventsSocket,
     DotMessageService,
     PushPublishService,
@@ -47,6 +48,7 @@ import {
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
+    ROOT_PATH,
     DEFAULT_TREE_EXPANDED,
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_ENABLED_VALUE,
@@ -85,7 +87,10 @@ describe('DotContentDriveStore', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: vi.fn().mockReturnValue(SYSTEM_HOST)
+                siteDetails: vi.fn().mockReturnValue(SYSTEM_HOST),
+                // Nothing advertised by default, which is what an instance older than the field
+                // reports and what a configuration still in flight reads as.
+                systemBulkUpload: vi.fn().mockReturnValue(null)
             }),
             mockProvider(DotContentDriveService),
             // Fetched once on init to resolve the CMS Administrator role. Answers through a subject
@@ -105,6 +110,11 @@ describe('DotContentDriveStore', () => {
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -149,6 +159,31 @@ describe('DotContentDriveStore', () => {
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
+        });
+    });
+
+    describe('uploadCeilings', () => {
+        it('should pass through the ceilings the server advertises', () => {
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore.systemBulkUpload as unknown as Mock).mockReturnValue({
+                maxFiles: 100,
+                maxTotalBytes: 1073741824
+            });
+
+            expect(store.uploadCeilings()).toEqual({ maxFiles: 100, maxTotalBytes: 1073741824 });
+        });
+
+        it('should read as no ceiling when the server advertises none', () => {
+            // Set here rather than left to the provider's default: that mock is built once for the
+            // factory, so the test above it would decide what this one sees.
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore.systemBulkUpload as unknown as Mock).mockReturnValue(null);
+
+            // The two cases callers must not tell apart: a configuration still loading, and an
+            // instance too old to carry the field. Both mean the server does the refusing.
+            expect(store.uploadCeilings()).toBeNull();
         });
     });
 
@@ -267,10 +302,12 @@ describe('DotContentDriveStore', () => {
 
         it('should still show folders when a language is selected', () => {
             // Folders have no language, so a locale filter — which selects a *version* of content —
-            // must not tear down the structure being navigated.
+            // must not tear down the structure being navigated. Asserted at the site root, which is
+            // where structure exists: all site content asks for no folders by design, so testing it
+            // there would prove nothing about the language filter.
             store.initContentDrive({
                 currentSite: SYSTEM_HOST,
-                path: DEFAULT_PATH,
+                path: ROOT_PATH,
                 filters: { languageId: ['1', '2'] },
                 isTreeExpanded: false
             });
@@ -311,7 +348,10 @@ describe('DotContentDriveStore', () => {
                 // Likewise `status`: omitted entirely when nothing is selected, so an unfiltered
                 // request stays byte-identical to one that never knew about the filter (FR-002).
                 expect(request.status).toBeUndefined();
-                expect(request.showFolders).toBe(true);
+                // No location means all site content, which spans every folder in the site and so
+                // lists none of them; the tree is still there to navigate. Browsing the site root
+                // instead is what asks for the top-level folders.
+                expect(request.showFolders).toBe(false);
             });
 
             describe('includeSystemHost', () => {
@@ -395,6 +435,199 @@ describe('DotContentDriveStore', () => {
                 const request = store.$request();
 
                 expect(request.assetPath).toBe(`//${customSite.hostname}/`);
+            });
+
+            describe('browse scope', () => {
+                // The wire values are written out rather than imported: this is the one place the
+                // client's idea of a location turns into what the endpoint is asked for, so the
+                // assertions should fail if that mapping drifts, not follow it.
+
+                it('should ask for all site content when the URL carries no location', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('ALL');
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                // An empty path reaches the same branch as an absent one today, because
+                // toRequestLocation asks `!path?.length`. Both forms occur — the URL yields
+                // undefined, a cleared location yields '' — so the equivalence is pinned rather
+                // than assumed. Narrowing that check to one of the two would fail here.
+                it('should treat an empty location the same as an absent one', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    const absent = store.$request();
+
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    const empty = store.$request();
+
+                    expect(empty.browseScope).toBe(absent.browseScope);
+                    expect(empty.assetPath).toBe(absent.assetPath);
+                    expect(empty.showFolders).toBe(absent.showFolders);
+                });
+
+                it('should ask for the site root when the location is the root itself', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('ROOT');
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should name no scope when the location is a folder', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/documents/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    // A folder is addressed by its path alone. Naming a scope as well would be
+                    // refused by the endpoint, and it is what would turn this into a listing of
+                    // every descendant.
+                    expect(request.browseScope).toBeUndefined();
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/documents/`);
+                });
+
+                it('should ask for System Host without pasting the reserved word onto the site', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('SYSTEM_HOST');
+                    // The bug this exists to catch: interpolating the location straight into the
+                    // path produces `//demo.dotcms.comSYSTEM_HOST`, which resolves to nothing.
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should keep System Host selected when the site is switched', () => {
+                    // **Characterization test: green the day it is written**, like the host-clause
+                    // guard on the backend. System Host belongs to no site, so switching sites does
+                    // not change what it lists, and the selection already survives because it is
+                    // derived from the location while a switch changes the site.
+                    //
+                    // Written precisely because nothing would notice if that stopped being true. A
+                    // later change that reset the path on a site switch would drift the highlight
+                    // onto the new site's root, and the sidebar would claim the user is in two
+                    // places at once — with every other test still passing.
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    expect(store.$systemHostSelected()).toBe(true);
+
+                    // A site switch reaches the store as a re-init carrying the new site and the
+                    // location the route still holds — which is how the switch can change the
+                    // site without disturbing where the drive is browsing.
+                    store.initContentDrive({
+                        currentSite: MOCK_SITES[0],
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$systemHostSelected()).toBe(true);
+                    expect(store.$allSiteContentSelected()).toBe(false);
+                    // The hierarchy below re-renders for the newly chosen site, so the switch
+                    // visibly does something rather than appearing to fail.
+                    expect(store.currentSite()).toEqual(MOCK_SITES[0]);
+                    // And the request still asks for System Host, not for the new site's content.
+                    expect(store.$request().browseScope).toBe('SYSTEM_HOST');
+                });
+
+                it('should not ask for folders in all site content', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    // Folders are not results in a flat listing that spans the whole site, and the
+                    // tree is still there to navigate them.
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                // Searching all site content asks for them again: a term matches names rather
+                // than browsing a place, and a folder should be found wherever it lives
+                // (#37479 FR-011). Suppressing them for the whole scope broke that feature's
+                // e2e at the default view, which is the only place the two rules meet.
+                it('should ask for folders when all site content is searched', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { title: 'report' },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(true);
+                });
+
+                // System Host has none either way, so a term changes nothing there.
+                it('should still ask for no folders when System Host is searched', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: { title: 'report' },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                it('should not ask for folders in System Host, which has none', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                it('should still ask for folders at the site root', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    // The top-level folders sit at the root, so they are part of what is there.
+                    expect(store.$request().showFolders).toBe(true);
+                });
             });
 
             it('should include title filter in request when provided', () => {
@@ -561,14 +794,15 @@ describe('DotContentDriveStore', () => {
 
             it('should KEEP showFolders true when a languageId filter is provided', () => {
                 // Folders have no language, so a locale filter — which picks a *version* of content
-                // — must not tear down the structure being navigated.
+                // — must not tear down the structure being navigated. At the site root for the same
+                // reason as the sibling test above.
                 const filters = {
                     languageId: ['en']
                 };
 
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters,
                     isTreeExpanded: false
                 });
@@ -613,7 +847,7 @@ describe('DotContentDriveStore', () => {
             it('should drop the status filter when filters are cleared', () => {
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters: { status: ['ARCHIVED'] },
                     isTreeExpanded: false
                 });
@@ -660,9 +894,11 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should set showFolders to true when no filters are provided', () => {
+                // At the site root: with no location at all this is now all site content, which
+                // asks for no folders whatever the filters say.
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters: {},
                     isTreeExpanded: false
                 });
@@ -799,6 +1035,28 @@ describe('DotContentDriveStore', () => {
                 );
             });
 
+            it('should drop the search scope when the term is cleared', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('TITLE');
+                expect(store.filters()['searchScope']).toBe('TITLE');
+
+                store.setGlobalSearch('');
+
+                // The scope qualifies the term; with the term gone it is nonsense in the state —
+                // and a leftover scope would keep "Clear all" lit with nothing filtered (FR-020).
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+
+            it('should keep the scope when the term is replaced, not cleared', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('TITLE');
+
+                store.setGlobalSearch('contracts');
+
+                expect(store.filters()['searchScope']).toBe('TITLE');
+                expect(store.filters()['title']).toBe('contracts');
+            });
+
             it('should reset pagination offset when setting global search', () => {
                 store.setPagination({ limit: 20, page: 2, offset: 20 });
                 expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });
@@ -813,6 +1071,75 @@ describe('DotContentDriveStore', () => {
 
                 store.setGlobalSearch('test');
                 expect(store.path()).toBe(DEFAULT_PATH);
+            });
+        });
+
+        describe('setSearchScope', () => {
+            it('should record a non-default scope as filter state', () => {
+                store.setSearchScope('TITLE');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], searchScope: 'TITLE' })
+                );
+            });
+
+            it('should remove the key when the scope returns to the default', () => {
+                store.setSearchScope('TITLE');
+
+                store.setSearchScope('ALL_FIELDS');
+
+                // Removed, not set to 'ALL_FIELDS'. A present key counts as a non-default filter,
+                // so storing the default would offer "Clear all" on an unfiltered drive.
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            });
+
+            it('should never store the default, even when set first', () => {
+                store.setSearchScope('ALL_FIELDS');
+
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+
+            it('should preserve the search term and other filters', () => {
+                store.setGlobalSearch('pricing');
+                store.patchFilters({ contentType: ['Blog'] });
+
+                store.setSearchScope('TITLE');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'pricing',
+                        searchScope: 'TITLE'
+                    })
+                );
+            });
+
+            it('should keep the scope and the term under separate keys', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('TITLE');
+
+                // `title` holds the TERM; `searchScope` holds the mode. A scope whose value is
+                // 'TITLE' beside a filter key named `title` is a collision waiting to happen.
+                expect(store.filters()['title']).toBe('pricing');
+                expect(store.filters()['searchScope']).toBe('TITLE');
+            });
+
+            it('should reset pagination so the narrowed results start at page 1', () => {
+                store.setPagination({ offset: 40, limit: 20, page: 3 });
+
+                store.setSearchScope('TITLE');
+
+                expect(store.pagination().page).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+            });
+
+            it('should drop the scope when all filters are cleared', () => {
+                store.setSearchScope('TITLE');
+
+                store.clearFilters();
+
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
             });
         });
 
@@ -1065,6 +1392,11 @@ describe('DotContentDriveStore - onInit', () => {
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1137,6 +1469,11 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
@@ -1386,6 +1723,11 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1515,6 +1857,60 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 sortBy: 'baseType:desc'
             })
         );
+    });
+
+    describe('quiet reload', () => {
+        beforeEach(() => {
+            // Held in flight on purpose: this is about what the listing looks like *while* the
+            // request is out. Letting it resolve would settle the status and hide the difference.
+            contentDriveService.search.mockReturnValue(NEVER);
+        });
+
+        it('should blank the listing for an ordinary search', () => {
+            // The skeleton is the only signal an author has that a search is running. It stays.
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            spectator.service.loadItems();
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+        });
+
+        it('should leave the listing rendered on a quiet reload', () => {
+            // Redundant exactly when the affected rows are already marked busy: the author has
+            // already been told which rows are working, so blanking everything to swap them reads
+            // as a second load and a jump.
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            spectator.service.loadItems({ quiet: true });
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+        });
+
+        it('should still refetch when quiet, so the result stays filter-correct', () => {
+            // The point of refetching rather than patching rows in place: an archived or unpublished
+            // row simply is not in the new result. The client cannot work that out for itself.
+            contentDriveService.search.mockClear();
+
+            spectator.service.loadItems({ quiet: true });
+
+            expect(contentDriveService.search).toHaveBeenCalled();
+        });
+
+        it('should keep the skeleton for a reload that marked no rows', () => {
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            store.reloadContentDrive();
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+        });
+
+        it('should skip the skeleton for a reload whose caller marked rows', () => {
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            store.reloadContentDrive({ quiet: true });
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+        });
     });
 
     it('should handle title filter in request', () => {
@@ -1837,14 +2233,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 1
             });
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Refresh',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 0,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
-                backgrounded: true
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Refresh',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 0,
+                    partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                    backgrounded: true
+                })
+            );
         });
     });
 
@@ -1876,7 +2274,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
 
             const lockInFlight = store.actionExecution();
-            expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
+            expect(lockInFlight).toEqual(expect.objectContaining({ operation: 'LOCK', total: 1 }));
 
             store.reportRefreshCompleted('Refresh', {
                 jobId: 'job-1',
@@ -1888,7 +2286,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 1
             });
 
-            expect(store.actionExecution()).toBe(lockInFlight);
+            expect(store.actionExecution()).toEqual(lockInFlight);
             expect(store.actionExecutionResult()).toBeDefined();
         });
 
@@ -1937,7 +2335,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
 
             const lockInFlight = store.actionExecution();
-            expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
+            expect(lockInFlight).toEqual(expect.objectContaining({ operation: 'LOCK', total: 1 }));
 
             store.reportRefreshCompleted('Refresh', {
                 jobId: 'job-1',
@@ -1949,7 +2347,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 0
             });
 
-            expect(store.actionExecution()).toBe(lockInFlight);
+            expect(store.actionExecution()).toEqual(lockInFlight);
         });
 
         it('should report an unusable outcome rather than settling on it', () => {
@@ -1973,14 +2371,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 3
             });
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Refresh',
-                successCount: 2,
-                skippedCount: 1,
-                failCount: 1,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
-                backgrounded: true
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Refresh',
+                    successCount: 2,
+                    skippedCount: 1,
+                    failedCount: 1,
+                    partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                    backgrounded: true
+                })
+            );
         });
 
         it('should still report a cancelled run, whose counters do account for every item', () => {
@@ -2054,7 +2454,9 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Lock', total: 2 });
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ operation: 'LOCK', total: 2 })
+            );
         });
 
         it('should fire the default action with the given inodes', () => {
@@ -2078,12 +2480,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Lock',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Lock',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
         });
 
         it('should clear the running action once settled', () => {
@@ -2149,12 +2553,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Lock',
-                successCount: 0,
-                skippedCount: 0,
-                failCount: 2
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Lock',
+                    successCount: 0,
+                    skippedCount: 0,
+                    failedCount: 2
+                })
+            );
             expect(httpErrorManager.handle).not.toHaveBeenCalled();
         });
     });
@@ -2180,12 +2586,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Send for Review',
-                successCount: 1,
-                skippedCount: 1,
-                failCount: 0
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Send for Review',
+                    successCount: 1,
+                    skippedCount: 1,
+                    failedCount: 0
+                })
+            );
         });
 
         it('should count per-item failures from the fails list', () => {
@@ -2199,7 +2607,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()?.failCount).toBe(1);
+            expect(store.actionExecutionResult()?.failedCount).toBe(1);
         });
 
         it('should hand errors to the error manager and clear the running action', () => {
@@ -2233,6 +2641,24 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,id-2', BUNDLE);
         });
 
+        it('should mark the rows it is acting on, not the assets it is sending', () => {
+            // The request takes identifiers, because a bundle holds one entry per asset and the
+            // language versions of a contentlet are one entry. The *rows* are keyed by inode, so a
+            // run whose targets were identifiers marked nothing: the listing dimmed no row while
+            // the action ran, and a workflow run over the same rows was not refused, because the
+            // overlap check compares two vocabularies that never intersect.
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+
+            store.executeAddToBundle(
+                'Add to Bundle',
+                BUNDLE,
+                ['id-1', 'id-2'],
+                ['inode-1', 'inode-2']
+            );
+
+            expect(store.busyRows()).toEqual(['inode-1', 'inode-2']);
+        });
+
         it('should report the server count of assets queued, not the number sent', () => {
             // The server dedupes by identifier and drops anything already in the bundle, so `total`
             // can be lower than what was posted. Reporting the input would overstate the result.
@@ -2242,12 +2668,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Add to Bundle',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 0
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 0
+                })
+            );
         });
 
         it('should split failures out of the total', () => {
@@ -2257,12 +2685,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2', 'id-3']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Add to Bundle',
-                successCount: 2,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 2,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
         });
 
         // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
@@ -2284,12 +2714,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'folder-1']);
 
             expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,folder-1', BUNDLE);
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Add to Bundle',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
         });
 
         it('should never report a negative success count', () => {
@@ -2308,16 +2740,29 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Add to Bundle', total: 2 });
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ operation: 'Add to Bundle', total: 2 })
+            );
         });
 
-        it('should refuse a second run while one is in flight', () => {
+        it('should refuse the same items being queued again while in flight', () => {
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(1);
+        });
+
+        it('should allow different items to be queued while one run is in flight', () => {
+            // **Deliberate change.** The guard is now scoped to this operation over *these* items
+            // (FR-016), so bundling one asset no longer blocks bundling a different one.
             addToBundleService.addToBundle.mockReturnValue(NEVER);
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-2']);
 
-            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(1);
+            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(2);
         });
 
         it('should hand errors to the error manager and clear the running action', () => {
@@ -2370,12 +2815,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Push Publish',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 0
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 0
+                })
+            );
         });
 
         it('should split failures out of the total', () => {
@@ -2385,12 +2832,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2', 'id-3'], SETTINGS);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Push Publish',
-                successCount: 2,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 2,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
         });
 
         // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
@@ -2411,12 +2860,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'folder-1'], SETTINGS);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Push Publish',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
         });
 
         it('should never report a negative success count', () => {
@@ -2463,14 +2914,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Push Publish', total: 2 });
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ operation: 'Push Publish', total: 2 })
+            );
         });
 
-        it('should refuse a second run while one is in flight', () => {
+        it('should refuse the same items being pushed again while in flight', () => {
             pushPublishService.pushPublishAssets.mockReturnValue(NEVER);
             store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
 
-            store.executePushPublish('Push Publish', ['id-2'], SETTINGS);
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
 
             expect(pushPublishService.pushPublishAssets).toHaveBeenCalledTimes(1);
         });

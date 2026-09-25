@@ -1018,32 +1018,38 @@ describe('utils functions', () => {
             expect(result).toBe(true);
         });
 
-        it('should return false when the page can be edited and does have an experiment that is running', () => {
+        // Reversed by #37308: a live experiment no longer blocks editing. The `experiment`
+        // argument is kept precisely so these can prove it is now ignored — this helper has no
+        // production caller, so the change is for consistency with the store computeds that do.
+        it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED])(
+            'should return true when the page can be edited and its experiment is %s',
+            (status) => {
+                const { page, currentUser } = generatePageAndUser({
+                    locked: false,
+                    lockedBy: '123',
+                    userId: '123'
+                });
+
+                const experiment = { status } as DotExperiment;
+
+                const result = computeCanEditPage(
+                    { ...page, canEdit: true },
+                    currentUser,
+                    experiment
+                );
+
+                expect(result).toBe(true);
+            }
+        );
+
+        it('should still return false for a live experiment on a page locked by another user', () => {
             const { page, currentUser } = generatePageAndUser({
-                locked: false,
+                locked: true,
                 lockedBy: '123',
-                userId: '123'
+                userId: '456'
             });
 
-            const experiment = {
-                status: DotExperimentStatus.RUNNING
-            } as DotExperiment;
-
-            const result = computeCanEditPage({ ...page, canEdit: true }, currentUser, experiment);
-
-            expect(result).toBe(false);
-        });
-
-        it('should return false when the page can be edited and does have an experiment that is scheduled', () => {
-            const { page, currentUser } = generatePageAndUser({
-                locked: false,
-                lockedBy: '123',
-                userId: '123'
-            });
-
-            const experiment = {
-                status: DotExperimentStatus.SCHEDULED
-            } as DotExperiment;
+            const experiment = { status: DotExperimentStatus.RUNNING } as DotExperiment;
 
             const result = computeCanEditPage({ ...page, canEdit: true }, currentUser, experiment);
 

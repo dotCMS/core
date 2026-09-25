@@ -13,7 +13,7 @@ import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
-    DotCMSContentTypeField,
+    ContentTypeRelationshipField,
     DotLanguage,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
@@ -23,22 +23,43 @@ import { RelationshipFieldService } from './relationship-field.service';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
-import { SelectionMode, TableColumn } from '../models/relationship.models';
+import { RelationshipDescriptor, SelectionMode, TableColumn } from '../models/relationship.models';
+
+/**
+ * Rows revealed per step.
+ *
+ * Matches the Key/Value field and the site/folder selector, which is where this pattern already
+ * lives in the product — one page size across the three, so an editor learns the affordance once.
+ */
+export const RELATED_PAGE_SIZE = 40;
 
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
-    field: DotCMSContentTypeField | null;
+    field: ContentTypeRelationshipField | null;
+    /**
+     * The validated relationship settings, published by `RelationshipFieldService.prepareField`.
+     * Null until the field loads; read this rather than `field.relationships`, which is raw
+     * server JSON that nothing has checked yet.
+     */
+    relationships: RelationshipDescriptor | null;
     selectionMode: SelectionMode | null;
     contentType: DotCMSContentType | null;
     isNewEditorEnabled: boolean;
     staticColumns: number;
     columns: TableColumn[];
-    pagination: {
-        offset: number;
-        currentPage: number;
-        rowsPerPage: number;
-    };
+    /**
+     * Whether the list is showing every related item or only the first {@link RELATED_PAGE_SIZE}.
+     *
+     * A flag rather than a count: the control is a two-state toggle — "Show all (N)" and
+     * "Show less" — not an incremental reveal, so there is no intermediate amount to track.
+     *
+     * **Deliberately state, not derived from `data`.** `DotKeyValueComponent` learned this the hard
+     * way and records it: derive what is rendered from the list and the table collapses back to the
+     * first page the moment anything is added, edited, removed or reordered. A field opened afresh
+     * still starts collapsed, because a new field component is built for it.
+     */
+    showingAll: boolean;
     /**
      * Origin of the current `data`:
      * - `'load'`: populated programmatically (initial load / locale re-init). The
@@ -55,16 +76,13 @@ const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
     field: null,
+    relationships: null,
     columns: [],
     selectionMode: null,
     contentType: null,
     isNewEditorEnabled: false,
     staticColumns: STATIC_COLUMNS,
-    pagination: {
-        offset: 0,
-        currentPage: 1,
-        rowsPerPage: 6
-    },
+    showingAll: false,
     lastChangeSource: 'load'
 };
 
@@ -79,20 +97,20 @@ export const RelationshipFieldStore = signalStore(
     withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed((state) => ({
         /**
-         * Computes the total number of pages based on the number of items and the rows per page.
-         * @returns {number} The total number of pages.
+         * The rows to render — a prefix of `data`, never a page of it.
+         *
+         * There is no paging here any more: every related item is in `data`, and this only decides
+         * how much of it reaches the DOM. That is what lets a drag move any item next to any other,
+         * which paging made impossible for anything past the first six rows.
          */
-        totalPages: computed(() => Math.ceil(state.data().length / state.pagination().rowsPerPage)),
+        $visibleItems: computed(() =>
+            state.showingAll() ? state.data() : state.data().slice(0, RELATED_PAGE_SIZE)
+        ),
         /**
-         * Returns the slice of data for the current page based on offset and rowsPerPage.
-         * @returns {DotCMSContentlet[]} The items for the current page.
+         * Whether the toggle row is worth rendering at all: only once the list outgrows one page.
+         * Below that there is nothing to expand and nothing to collapse.
          */
-        paginatedData: computed(() => {
-            const allData = state.data();
-            const { offset, rowsPerPage } = state.pagination();
-
-            return allData.slice(offset, offset + rowsPerPage);
-        }),
+        $canToggleAll: computed(() => state.data().length > RELATED_PAGE_SIZE),
         /**
          * Checks if the create new content button is disabled based on the selection mode and the number of items.
          * @returns {boolean} True if the button is disabled, false otherwise.
@@ -138,11 +156,7 @@ export const RelationshipFieldStore = signalStore(
              * @param {RelationshipFieldItem[]} data - The data to be set.
              */
             setData(data: DotCMSContentlet[]) {
-                patchState(store, {
-                    data: [...data],
-                    pagination: { ...store.pagination(), offset: 0, currentPage: 1 },
-                    lastChangeSource: 'user'
-                });
+                patchState(store, { data: [...data], lastChangeSource: 'user' });
             },
             /**
              * Initializes the relationship field with the provided parameters.
@@ -153,7 +167,7 @@ export const RelationshipFieldStore = signalStore(
              * @param {string} params.contentTypeId - The ID of the content type to load.
              */
             initialize: rxMethod<{
-                field: DotCMSContentTypeField;
+                field: ContentTypeRelationshipField;
                 contentlet: DotCMSContentlet;
                 targetLanguageId?: number;
                 targetLanguage?: DotLanguage;
@@ -220,6 +234,7 @@ export const RelationshipFieldStore = signalStore(
                                                 status: ComponentStatus.LOADED,
                                                 contentType: newState.contentType,
                                                 isNewEditorEnabled: newState.isNewEditorEnabled,
+                                                relationships: newState.relationships,
                                                 selectionMode: newState.selectionMode,
                                                 columns: newState.columns,
                                                 data: newState.data,
@@ -248,35 +263,15 @@ export const RelationshipFieldStore = signalStore(
              * @param inode - The inode of the item to delete.
              */
             deleteItem(inode: string) {
-                const newData = store.data().filter((item) => item.inode !== inode);
-                const { offset, rowsPerPage } = store.pagination();
-
-                if (offset >= newData.length && newData.length > 0) {
-                    const lastPage = Math.ceil(newData.length / rowsPerPage);
-                    const newOffset = (lastPage - 1) * rowsPerPage;
-                    patchState(store, {
-                        data: newData,
-                        pagination: {
-                            ...store.pagination(),
-                            offset: newOffset,
-                            currentPage: lastPage
-                        },
-                        lastChangeSource: 'user'
-                    });
-                } else if (newData.length === 0) {
-                    patchState(store, {
-                        data: newData,
-                        pagination: {
-                            ...store.pagination(),
-                            offset: 0,
-                            currentPage: 1
-                        },
-                        lastChangeSource: 'user'
-                    });
-                } else {
-                    patchState(store, { data: newData, lastChangeSource: 'user' });
-                }
+                // Just a filter now. The branch this replaces existed only to keep the current page
+                // valid when a removal emptied it — with no pages, there is nothing to clamp, and
+                // `showingAll` is deliberately left alone so an expanded list stays expanded.
+                patchState(store, {
+                    data: store.data().filter((item) => item.inode !== inode),
+                    lastChangeSource: 'user'
+                });
             },
+
             /**
              * Replaces one item in place, matched by identifier — identifiers are stable across
              * saves, so this finds the row even though a save mints a new inode. Used when a
@@ -315,28 +310,14 @@ export const RelationshipFieldStore = signalStore(
                 patchState(store, { data: [...data], lastChangeSource: 'user' });
             },
             /**
-             * Advances the pagination to the next page and updates the state accordingly.
+             * Reveals the next page of rows.
+             *
+             * Purely a rendering limit: the whole list is already in memory, so unlike the
+             * site/folder selector this fetches nothing. Rows are withheld from the DOM, never from
+             * the data — every operation on the value still sees all of them.
              */
-            nextPage: () => {
-                patchState(store, {
-                    pagination: {
-                        ...store.pagination(),
-                        offset: store.pagination().offset + store.pagination().rowsPerPage,
-                        currentPage: store.pagination().currentPage + 1
-                    }
-                });
-            },
-            /**
-             * Moves the pagination to the previous page and updates the state accordingly.
-             */
-            previousPage: () => {
-                patchState(store, {
-                    pagination: {
-                        ...store.pagination(),
-                        offset: store.pagination().offset - store.pagination().rowsPerPage,
-                        currentPage: store.pagination().currentPage - 1
-                    }
-                });
+            toggleShowAll() {
+                patchState(store, { showingAll: !store.showingAll() });
             }
         })
     )

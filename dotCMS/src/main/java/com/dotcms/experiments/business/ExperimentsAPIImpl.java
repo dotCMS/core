@@ -29,7 +29,7 @@ import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
-import com.dotcms.cube.CubeJSResultSet;
+import com.dotcms.cube.AnalyticsResultSet;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.*;
 import com.dotcms.exception.NotAllowedException;
@@ -1303,13 +1303,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
             "The Experiment must be RUNNING or ENDED to get results");
 
-        final CubeJSResultSet totalSessions = getTotalSessions(experimentFromDataBase, user);
-        final CubeJSResultSet summarize = getSummary(experimentFromDataBase, user);
+        final AnalyticsResultSet totalSessions = getTotalSessions(experimentFromDataBase, user);
+        final AnalyticsResultSet summarize = getSummary(experimentFromDataBase, user);
         return getResults(experimentFromDataBase, totalSessions, summarize);
     }
 
-    private ExperimentResults getResults(final Experiment experiment, final CubeJSResultSet totalSessions,
-                                         final CubeJSResultSet summarize) {
+    private ExperimentResults getResults(final Experiment experiment, final AnalyticsResultSet totalSessions,
+                                         final AnalyticsResultSet summarize) {
 
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
@@ -1427,17 +1427,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         return bayesianAPI.doBayesian(bayesianInput);
     }
 
-    public CubeJSResultSet getSummary(final Experiment experiment,
+    public AnalyticsResultSet getSummary(final Experiment experiment,
                                              final User user) throws DotDataException, DotSecurityException {
-        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
-        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.createWithDayGranularity(experiment);
-        return cubeClient.send(cubeJSQuery);
+        return ExperimentResultsQueryFactory.INSTANCE.executeByDay(experiment, user);
     }
 
-    public CubeJSResultSet getTotalSessions(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
-        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
-        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.create(experiment);
-        return cubeClient.send(cubeJSQuery);
+    public AnalyticsResultSet getTotalSessions(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
+        return ExperimentResultsQueryFactory.INSTANCE.executeAggregate(experiment, user);
     }
 
     @Override

@@ -379,6 +379,33 @@ const INLINE_EXCLUDE = new Set(['uuid']);
  */
 const POOL_FORKS = new Set(['libs/sdk/analytics', 'libs/sdk/experiments']);
 
+/**
+ * Projects that run type-level tests (`*.test-d.ts`) through `vitest --typecheck`.
+ *
+ * Typecheck mode invokes the TypeScript compiler instead of executing anything, so a broken
+ * type is a named failing test rather than a wall of `tsc` output. Opt-in per project, not
+ * workspace-wide, for one reason: `ignoreSourceErrors` is off by default and this workspace has
+ * a large stock of pre-existing type errors in spec programs (846 in edit-content, 559 in ui at
+ * the time of writing). Turning it on everywhere would report all of them as run errors and
+ * nobody would trust the output.
+ *
+ * `ignoreSourceErrors: true` is set below for the same reason: these tests assert about the
+ * types under test, and policing unrelated source is a separate job with a separate backlog.
+ * Even the generated config itself trips it — `process.env.GITHUB_ACTIONS` is an index-signature
+ * access that fails `noPropertyAccessFromIndexSignature`.
+ *
+ * Added for issue #37670, where the content model became a discriminated union and the contract
+ * worth protecting is entirely type-level.
+ *
+ * ONE LANDMINE, and it fails silently. The project's `tsconfig.spec.json` must list
+ * `src/**\/*.test-d.ts` in `include`. The existing `src/**\/*.d.ts` entry does NOT cover it —
+ * that glob matches `.d.ts`, and a type-test file ends in `-d.ts`. Left out, vitest still
+ * discovers the files and reports them as passing tests, because tsc never puts them in the
+ * program and therefore never reports a diagnostic for them. Verified the only way worth
+ * trusting: delete an arm from the union and confirm the suite goes red.
+ */
+const TYPECHECK = new Set(['libs/dotcms-models']);
+
 /** Jest environment -> Vitest. Absent means the project inherited the preset's jsdom. */
 function environmentFor(jestEnv) {
     if (!jestEnv) return 'jsdom';
@@ -681,7 +708,16 @@ ${isolateBlock(dir)}
         // instead of jsdom (9%).
         pool: '${POOL_FORKS.has(dir) ? 'forks' : 'vmForks'}',${POOL_FORKS.has(dir) ? '' : "\n        vmMemoryLimit: '1G',"}
         environment: '${env}',${environmentOptionsFor(env)}
-        include: ['{${includeRootsFor(dir).join(',')}}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],${setupFiles.length ? `\n        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
+        include: ['{${includeRootsFor(dir).join(',')}}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],${TYPECHECK.has(dir) ? `
+        // Type-level tests. See TYPECHECK in tools/generate-vite-configs.mjs for why this is
+        // per project and why source errors are ignored.
+        typecheck: {
+            enabled: true,
+            only: false,
+            ignoreSourceErrors: true,
+            tsconfig: './tsconfig.spec.json',
+            include: ['{${includeRootsFor(dir).join(',')}}/**/*.test-d.{ts,mts,cts,tsx}']
+        },` : ''}${setupFiles.length ? `\n        setupFiles: [${setupFiles.map((f) => `'${f}'`).join(', ')}],` : ''}
         server: {
             deps: {
                 inline: [${inline.join(', ')}]

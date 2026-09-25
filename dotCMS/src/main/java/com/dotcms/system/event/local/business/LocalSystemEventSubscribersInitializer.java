@@ -9,6 +9,8 @@ import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
 import com.dotcms.jobs.business.api.events.JobCompletedEvent;
 import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
 import com.dotcms.rendering.velocity.services.MacroCacheRefresherJob;
+import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteCompletionListener;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadCompletionListener;
 import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshCompletionListener;
 import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
 import com.dotcms.security.apps.AppSecretSavedEvent;
@@ -81,6 +83,16 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         // so it would never have been constructed and completion would never have been reported.
         APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
                 new BulkRefreshCompletionListener());
+
+        // Same registration for the same reason: nothing injects this listener, so as a CDI bean it
+        // would never be constructed and a finished bulk upload would tell nobody — silently.
+        APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
+                new BulkUploadCompletionListener());
+
+        // Same registration, same reason (#37063): nothing injects this listener, so as a CDI
+        // bean it would never be constructed and a finished bulk folder delete would tell nobody.
+        APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
+                new FolderBulkDeleteCompletionListener());
 
         this.initDotVelocityMacrosVtlFiles();
     }

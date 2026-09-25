@@ -17,7 +17,6 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,10 +33,11 @@ import java.util.Optional;
  * {@code title} and the contentlet fields under {@code dotCMSResults} are returned as stored. Templates
  * that need the unescaped payload go through {@code $ai.unsafe.search}, which constructs this tool with
  * escaping off and behaves exactly as before #37153.
+ *
+ * <p>When a call fails, the method returns the generic payload from {@link AIViewToolErrorHandler}
+ * and the exception is logged server-side; no exception detail reaches the template.
  */
 public class SearchTool implements ViewTool {
-
-    private static final String STACKTRACE_KEY = "stackTrace";
 
     private final HttpServletRequest request;
     private final Host host;
@@ -72,19 +72,18 @@ public class SearchTool implements ViewTool {
      * @return the search results
      */
     public Object query(final String query, final String indexName) {
-        final User user = PortalUtil.getUser(request);
-        final EmbeddingsDTO searcher = new EmbeddingsDTO.Builder()
-                .withQuery(query)
-                .withIndexName(indexName)
-                .withUser(user)
-                .withLimit(50)
-                .withThreshold(.5f)
-                .build();
-
         try {
+            final User user = PortalUtil.getUser(request);
+            final EmbeddingsDTO searcher = new EmbeddingsDTO.Builder()
+                    .withQuery(query)
+                    .withIndexName(indexName)
+                    .withUser(user)
+                    .withLimit(50)
+                    .withThreshold(.5f)
+                    .build();
             return escapeSearchShaped(APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher));
         } catch (Exception e) {
-            return escape(Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace())));
+            return escape(AIViewToolErrorHandler.handle(SearchTool.class, e));
         }
     }
 
@@ -96,13 +95,15 @@ public class SearchTool implements ViewTool {
      * @return the search results
      */
     public Object query(final Map<String, Object> mapIn) {
-        final User user = PortalUtil.getUser(request);
-        final EmbeddingsDTO searcher = EmbeddingsDTO.from(mapIn).withUser(user).build();
-
         try {
+            // argument parsing is inside the handled block on purpose: EmbeddingsDTO.from casts
+            // map values to String, and a template passing another type must still get the
+            // generic payload rather than an exception escaping into the rendering engine
+            final User user = PortalUtil.getUser(request);
+            final EmbeddingsDTO searcher = EmbeddingsDTO.from(mapIn).withUser(user).build();
             return escapeSearchShaped(APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher));
         } catch (Exception e) {
-            return escape(Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace())));
+            return escape(AIViewToolErrorHandler.handle(SearchTool.class, e));
         }
     }
 
@@ -126,7 +127,11 @@ public class SearchTool implements ViewTool {
      * @return the search results
      */
     public Object related(final ContentMap contentMap, final String indexName) {
-        return related(contentMap.getContentObject(), indexName);
+        try {
+            return related(contentMap.getContentObject(), indexName);
+        } catch (Exception e) {
+            return escape(AIViewToolErrorHandler.handle(SearchTool.class, e));
+        }
     }
 
     /**
@@ -157,7 +162,7 @@ public class SearchTool implements ViewTool {
                     .build();
             return escapeSearchShaped(APILocator.getDotAIAPI().getEmbeddingsAPI(host).searchForContent(searcher));
         } catch (Exception e) {
-            return escape(Map.of(AiKeys.ERROR, e.getMessage(), STACKTRACE_KEY, Arrays.asList(e.getStackTrace())));
+            return escape(AIViewToolErrorHandler.handle(SearchTool.class, e));
         }
     }
 

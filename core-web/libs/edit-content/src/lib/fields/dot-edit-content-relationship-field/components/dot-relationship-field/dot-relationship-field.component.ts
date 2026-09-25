@@ -28,8 +28,9 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ContentTypeRelationshipField,
     DotCMSContentlet,
-    DotCMSContentTypeField,
+    DotCMSFieldTypes,
     DotLanguage,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
@@ -40,12 +41,9 @@ import {
 } from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
-import { FooterComponent } from './../dot-select-existing-content/components/footer/footer.component';
-import { DotSelectExistingContentComponent } from './../dot-select-existing-content/dot-select-existing-content.component';
-import { PaginationComponent } from './../pagination/pagination.component';
+import { AddRelationshipsComponent } from './../add-relationships/add-relationships.component';
 
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
-import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
@@ -66,11 +64,17 @@ import type { DotEditContentSidePanelComponent } from '../../../../components/do
         DotMessagePipe,
         DotContentletStatusBadgeComponent,
         DotContentThumbnailComponent,
-        LanguagePipe,
-        PaginationComponent
+        LanguagePipe
     ],
     templateUrl: './dot-relationship-field.component.html',
     styleUrl: './dot-relationship-field.component.scss',
+    host: {
+        // The field's value is a collection, so no single control can carry `<label for>`. The
+        // widget is the named thing, via the label's id. No aria-required: ARIA defines that
+        // attribute on radiogroup, not on a plain group.
+        role: 'group',
+        '[attr.aria-labelledby]': "'label-' + $field().variable"
+    },
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         RelationshipFieldStore,
@@ -187,7 +191,7 @@ export class DotRelationshipFieldComponent
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeRelationshipField>({ alias: 'field' });
 
     /**
      * DotCMS Contentlet
@@ -420,16 +424,22 @@ export class DotRelationshipFieldComponent
         }
 
         const contentType = this.store.contentType();
+        const relationships = this.store.relationships();
 
-        // Don't open dialog if contentType or its ID is null (invalid field data)
-        if (!contentType?.id) {
+        // Don't open dialog if contentType or its ID is null (invalid field data), nor without
+        // the relationship descriptor: `prepareField` publishes both together, so either being
+        // absent means the field never loaded and there is nothing to pick against.
+        if (!contentType?.id || !relationships) {
             return;
         }
 
         const hasSiteFolder = this.#hasHostFolderField();
         const contentlet = this.$contentlet();
 
-        this.#dialogRef = this.#dialogService.open(DotSelectExistingContentComponent, {
+        this.#dialogRef = this.#dialogService.open(AddRelationshipsComponent, {
+            // The dialog renders its own header (title + full screen + ✕), so PrimeNG's chrome
+            // header is hidden to avoid a second one stacked above it.
+            showHeader: false,
             appendTo: 'body',
             baseZIndex: 10000,
             closable: true,
@@ -439,18 +449,38 @@ export class DotRelationshipFieldComponent
             modal: true,
             resizable: false,
             position: 'center',
-            width: '90%',
-            height: '90%',
+            // Full screen runs through PrimeNG's own maximized state, driven from this
+            // dialog's header. No maximize button is rendered — PrimeNG's lives in the
+            // header we hid. The Image Editor omits this flag and still works, but the
+            // Asset Picker sets it deliberately and is the closer analogue.
+            maximizable: true,
+            // Windowed size as a single `width`/`height`, never `90%` capped by an inline
+            // `max-width`: those caps survive maximisation and keep clamping the dialog, which is
+            // why the full-screen toggle appeared to do nothing. Same reasoning — and the same
+            // shape — as the Asset Picker and the Image Editor.
+            //
+            // `.p-dialog` is capped at `max-height: 90%` by the theme, so asking for more than
+            // 90vh would have no effect anyway.
+            width: 'min(90vw, 114rem)',
+            height: 'min(90vh, 68rem)',
+            // The dialog fills its host so it can grow with the full-screen toggle.
+            contentStyle: { height: '100%', overflow: 'hidden', padding: '0' },
             maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field',
-            style: { 'max-width': '1040px', 'max-height': '800px' },
             data: {
                 contentTypeId: contentType.id,
                 selectionMode: this.store.selectionMode(),
-                currentItemsIds: this.store.data().map((item) => item.inode),
-                cardinality: this.$field().relationships?.cardinality,
+                // The contentlets, not their ids. The dialog seeds its selection from these and
+                // never rebuilds it from a search response, so an already-related item the search
+                // does not return — another locale, a later page, an index that has not caught up
+                // (ADR-0018) — is still related when the editor confirms.
+                selected: this.store.data(),
+                // From the store, not the field: `prepareField` is what validated these, and the
+                // guard above means a field whose `relationships` the server left unusable never
+                // gets this far.
+                cardinality: relationships.cardinality,
                 parentContentTypeId: this.$field().contentTypeId,
                 fieldVariable: this.$field().variable,
-                isParentField: this.$field().relationships?.isParentField,
+                isParentField: relationships.isParentField,
                 currentContentIdentifier: contentlet?.identifier ?? null,
                 contentletContext: {
                     languageId:
@@ -462,16 +492,17 @@ export class DotRelationshipFieldComponent
                         url: contentlet?.url
                     })
                 }
-            },
-            header: this.#dotMessageService.get('dot.file.relationship.dialog.search.title'),
-            templates: {
-                footer: FooterComponent
             }
         });
 
         this.#dialogRef.onClose
             .pipe(
-                filter((items) => !!items),
+                // Nullish is a cancel and leaves the relationship alone — PrimeNG closes with
+                // `undefined` on X/Escape, and `null` reaches here too. An **empty array** is the
+                // opposite: a confirmed empty selection, which must be applied, because it is how
+                // the editor unrelates the last item. A truthiness check happens to admit `[]`,
+                // but only by accident; this states the rule.
+                filter((items): items is DotCMSContentlet[] => items != null),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((items: DotCMSContentlet[]) => {
@@ -482,11 +513,13 @@ export class DotRelationshipFieldComponent
     /**
      * Persists row order after a PrimeNG table row reorder.
      *
-     * Since `[value]` is now bound to a paginated slice (a new array from a computed signal),
-     * PrimeNG mutates that transient slice in-place via `ObjectUtils.reorderArray`, leaving
-     * the full `store.data()` untouched. We translate the slice-local `dragIndex` / `dropIndex`
-     * to global indices using the current pagination offset, then apply the reorder on a copy
-     * of the full data array and persist it back to the store.
+     * `[value]` is bound to a computed slice, so PrimeNG mutates that transient array in place via
+     * `ObjectUtils.reorderArray` and leaves the full `store.data()` untouched. The reorder is
+     * therefore applied to a copy of the whole list and persisted back.
+     *
+     * The indices need no translation: the rendered rows are a **prefix** of the data — the first
+     * `visibleCount` of them — so a row's index in the slice is its index in the list. That was not
+     * true while the table paged, which is why this used to add the page offset.
      */
     onRowReorder(event: TableRowReorderEvent) {
         const dragIndex = event?.dragIndex;
@@ -495,13 +528,9 @@ export class DotRelationshipFieldComponent
             return;
         }
 
-        const offset = this.store.pagination().offset;
-        const globalDragIndex = offset + dragIndex;
-        const globalDropIndex = offset + dropIndex;
-
         const reorderedData = [...this.store.data()];
-        const [movedItem] = reorderedData.splice(globalDragIndex, 1);
-        reorderedData.splice(globalDropIndex, 0, movedItem);
+        const [movedItem] = reorderedData.splice(dragIndex, 1);
+        reorderedData.splice(dropIndex, 0, movedItem);
 
         this.store.reorderData(reorderedData);
     }
@@ -514,7 +543,8 @@ export class DotRelationshipFieldComponent
      */
     async showCreateNewContentDialog(): Promise<void> {
         const contentType = this.store.contentType();
-        if (this.$isDisabled() || !contentType) {
+        const relationships = this.store.relationships();
+        if (this.$isDisabled() || !contentType || !relationships) {
             return;
         }
 
@@ -528,7 +558,10 @@ export class DotRelationshipFieldComponent
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
-                isParent: this.$field().relationships?.isParentField ?? true
+                // The descriptor `prepareField` published, which already applied the parent-side
+                // default for a payload that omitted the flag. This used to re-apply `?? true`
+                // over the raw field, in a second place, from data nothing had checked.
+                isParent: relationships.isParentField
             },
             onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship
@@ -645,7 +678,7 @@ export class DotRelationshipFieldComponent
      * @param contentlet - The contentlet to initialize the store with.
      */
     readonly initialize = signalMethod<{
-        field: DotCMSContentTypeField;
+        field: ContentTypeRelationshipField;
         contentlet: DotCMSContentlet;
         targetLanguageId?: number;
         targetLanguage?: DotLanguage;
@@ -660,6 +693,6 @@ export class DotRelationshipFieldComponent
     readonly #hasHostFolderField = computed(() => {
         const fields = this.#editContentStore.contentType()?.fields ?? [];
 
-        return fields.some((f) => f.fieldType === FIELD_TYPES.HOST_FOLDER);
+        return fields.some((f) => f.fieldType === DotCMSFieldTypes.HOST_FOLDER);
     });
 }

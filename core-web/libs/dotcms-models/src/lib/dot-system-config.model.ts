@@ -48,6 +48,33 @@ export interface DotCluster {
  * System configuration interface containing essential server configuration data.
  * This represents a subset of the full server configuration focused on UI and system info.
  */
+/**
+ * The bulk-upload ceilings the server enforces, as it advertises them on
+ * `/api/v1/appconfiguration`.
+ *
+ * Advertised so a client can name the limit rather than saying "fewer", and refuse an over-ceiling
+ * batch in the file chooser instead of after uploading it. The server remains the enforcement
+ * point: these are read from the same constants it enforces with, so the two cannot disagree.
+ */
+export interface DotBulkUploadCeilings {
+    /** Files in one upload. */
+    maxFiles: number;
+    /** Bytes across the whole batch. */
+    maxTotalBytes: number;
+}
+
+/**
+ * The bulk folder delete ceiling the server enforces, as it advertises it on
+ * `/api/v1/appconfiguration`.
+ *
+ * Advertised for the same reason as {@link DotBulkUploadCeilings}: so a client can name the limit
+ * rather than saying "fewer". The server remains the enforcement point.
+ */
+export interface DotFolderBulkDeleteCeilings {
+    /** Folder paths in one submission. */
+    maxPaths: number;
+}
+
 export interface DotSystemConfig {
     logos: DotLogos;
     colors: DotUIColors;
@@ -56,6 +83,10 @@ export interface DotSystemConfig {
     languages: DotSystemLanguage[];
     license: DotSystemLicense;
     cluster: DotCluster;
+    /** Absent on an instance older than the field. See {@link DotBulkUploadCeilings}. */
+    bulkUpload?: DotBulkUploadCeilings;
+    /** Absent on an instance older than the field. See {@link DotFolderBulkDeleteCeilings}. */
+    folderBulkDelete?: DotFolderBulkDeleteCeilings;
 }
 
 /**
@@ -70,6 +101,7 @@ export interface SystemConfigEntity {
         languages: DotSystemLanguage[];
         license: DotSystemLicense;
         cluster: DotCluster;
+        bulkUpload?: DotBulkUploadCeilings;
         // Other config properties we don't need for the system config
         [key: string]: unknown;
     };

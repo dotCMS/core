@@ -291,6 +291,67 @@ public enum SystemEventType {
 	 * with {@link Visibility#USER} scoped to whoever submitted the run, because a reindex is nobody
 	 * else's business — unlike the legacy batch reindex, which told every CMS Administrator.
 	 */
-	BULK_REFRESH_COMPLETED
+	BULK_REFRESH_COMPLETED,
+
+	/**
+	 * A bulk file upload ({@code POST /api/v1/assets/_bulkupload}) has finished.
+	 * <p>
+	 * Its own type rather than a shared "batch finished" event, so a client can tell an upload from
+	 * a reindex without inspecting the payload — they are different operations with different copy
+	 * and different follow-up actions.
+	 * <p>
+	 * Carries the counts <b>and the per-file results</b>, not counts alone: an author told "27 of 30
+	 * created" with no way to learn which three cannot act on it, and those names are exactly what
+	 * tell them which files to choose again. Pushed with {@link Visibility#USER} scoped to whoever
+	 * submitted the run.
+	 */
+	BULK_UPLOAD_COMPLETED,
+
+	/**
+	 * A bulk folder delete ({@code POST /v1/assets/folders/_bulkdelete}, #37063) has finished.
+	 * <p>
+	 * Its own type for the same reason {@link #BULK_UPLOAD_COMPLETED} has one — a client tells this
+	 * apart from any other background work without inspecting the payload. Carries the counts
+	 * <b>and the per-path results</b>, not counts alone, plus {@code stoppedAt} on a cancelled run.
+	 * Pushed with {@link Visibility#USER} scoped to whoever submitted the run — never every
+	 * administrator.
+	 * <p>
+	 * <b>This exact name is fixed by the frontend half of #37063</b>
+	 * ({@code DotSystemEventType.BULK_FOLDER_DELETE_COMPLETED}, PR dotCMS/core#37612) — do not
+	 * rename it independently on this side.
+	 */
+	BULK_FOLDER_DELETE_COMPLETED,
+
+	/**
+	 * A folder is about to be deleted as part of a bulk folder delete run (#37063, FR-035a).
+	 * <p>
+	 * Distinct from {@link #DELETE_FOLDER} in both audience and purpose: this reaches
+	 * <b>everyone who may read the folder</b> (excluding whoever is doing the deleting, the same
+	 * {@link Visibility#EXCLUDE_OWNER} pattern {@code FolderAPIImpl#delete} already uses), while
+	 * {@link #BULK_FOLDER_DELETE_COMPLETED} stays scoped to the submitter and carries how the run
+	 * went. This one carries only {@code {jobId, path}} — that the folder is now busy, nothing
+	 * about the run's outcome — because an author working inside a folder that is being destroyed
+	 * under them needs to know regardless of whether they submitted the run.
+	 * <p>
+	 * <b>This exact name is fixed by the frontend half of #37063</b>
+	 * ({@code DotSystemEventType.FOLDER_DELETE_STARTED}, PR dotCMS/core#37612).
+	 */
+	FOLDER_DELETE_STARTED,
+
+	/**
+	 * A folder has left a bulk folder delete run — deleted, or the delete attempt ended, one way
+	 * or the other (#37063, FR-035a).
+	 * <p>
+	 * <b>Fires whether that folder's delete succeeded or was caught as a classified failure</b> —
+	 * unlike the existing {@link #DELETE_FOLDER} event, whose push only runs when
+	 * {@code FolderAPIImpl#delete} returns normally. Reusing {@code DELETE_FOLDER} for this was
+	 * the original plan and was wrong: an author told a folder had "entered" a delete but never
+	 * told it left, because the delete happened to fail, would be left believing it is still busy
+	 * indefinitely.
+	 * <p>
+	 * <b>This exact name is fixed by the frontend half of #37063</b>
+	 * ({@code DotSystemEventType.FOLDER_DELETE_FINISHED}, PR dotCMS/core#37612).
+	 */
+	FOLDER_DELETE_FINISHED
 
 }

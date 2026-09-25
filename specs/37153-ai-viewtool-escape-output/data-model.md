@@ -52,8 +52,7 @@ The image payload therefore has no model-written text; `originalPrompt` is the v
 
 | Shape | When | Default |
 |---|---|---|
-| `Map.of("error", msg, "stackTrace", trace)` (immutable) | before #37154 | **E** on every string; returned as a `JSONObject` copy |
-| `JSONObject { "error": <fixed string> }` | after #37154 | **E** (no-op) |
+| `JSONObject { "error": <fixed string> }` (from `AIViewToolErrorHandler`, #37154) | any handled failure | **E** (no-op on today's fixed message) |
 | `generateText` | throws; no payload | n/a |
 
 ## Encoder semantics

@@ -1,6 +1,6 @@
 import { patchState, signalMethod } from '@ngrx/signals';
 
-import { Location } from '@angular/common';
+import { Location, NgComponentOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -11,12 +11,14 @@ import {
     OnDestroy,
     OnInit,
     signal,
+    Type,
+    untracked,
     ViewChild
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { MessageModule } from 'primeng/message';
@@ -29,6 +31,7 @@ import { SiteService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
+    DotExperimentStatus,
     DotPageToolUrlParams,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
@@ -37,6 +40,7 @@ import {
     DotPageToolsSeoComponent,
     PageScannerToolType
 } from '@dotcms/portlets/dot-ema/ui';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, UVE_MODE } from '@dotcms/types';
 import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage } from '@dotcms/ui';
@@ -60,6 +64,7 @@ import {
     shouldNavigate
 } from '../utils';
 import { readExperimentsPortletSwitch } from '../utils/experiments-portlet-switch.util';
+import { leaveTheVariant } from '../utils/leave-the-variant.util';
 
 /**
  * Query params for the breadcrumb's address — the same page, spelled the way `editEmaGuard` wants
@@ -121,8 +126,22 @@ function hasOpenContentForEdit(component: unknown): component is RouteWithOpenCo
         DotInfoPageComponent,
         DotNotLicenseComponent,
         MessageModule,
-        DotMessagePipe
+        DotMessagePipe,
+        NgComponentOutlet
     ],
+    /**
+     * `DotExperimentsPanelStore` is **not** here: it is provided by the route, beside `UVEStore`
+     * (#37478).
+     *
+     * It lived here first, on the assumption that leaving for a variant only changes query params
+     * and so this component is never re-created. Measured in a running editor, that is false — the
+     * shell is destroyed and rebuilt on that navigation, and a component-provided store went with
+     * it, taking the panel's memory of which experiment and which screen the editor had open. The
+     * return then had nothing to return to.
+     *
+     * The route's injector outlives the component, which is the same reason `UVEStore` is there
+     * and the same trap #37005 fell into.
+     */
     providers: [ConfirmationService]
 })
 export class DotEmaShellComponent implements OnInit, OnDestroy {
@@ -144,6 +163,120 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
+    protected readonly experimentsPanel = inject(DotExperimentsPanelStore);
+
+    /**
+     * Opens the panel where the editor already is, rather than always at the list.
+     *
+     * The entry point is one gesture with three honest answers. A panel the editor left to go and
+     * see a variant is *resumed*, which gives back the exact screen and card they were on. Failing
+     * that, a page whose address names an experiment opens on that experiment's Variants card —
+     * standing on a variant and asking for the panel means asking for *that* experiment, not for a
+     * list to search through it. Only a page with nothing to say opens on the list.
+     *
+     * All three take the editor off the variant on the way, which is the same thing the banner's
+     * own back arrow does — the two doors out of an experiment have to agree, or the banner
+     * survives one of them and goes on announcing a variant the editor has left.
+     */
+    #openExperimentsPanel(): void {
+        if (this.experimentsPanel.suspendedForVariant()) {
+            leaveTheVariant(this.uveStore);
+            this.experimentsPanel.resumeFromVariant();
+
+            return;
+        }
+
+        const experimentId = this.uveStore.pageParams()?.['experimentId'];
+
+        if (experimentId) {
+            leaveTheVariant(this.uveStore);
+            this.experimentsPanel.openVariants(experimentId);
+
+            return;
+        }
+
+        this.experimentsPanel.open();
+    }
+
+    /** Provided by the `/edit-page` route, beside `ConfirmationService`. */
+    readonly #messageService = inject(MessageService);
+
+    /**
+     * The page in hand, as the Experiments panel's scope (#37478).
+     *
+     * A signal rather than a value: the panel re-scopes when the editor navigates to another
+     * page without closing it, and it must never be able to describe a page other than the one
+     * on the canvas (FR-034).
+     */
+    protected readonly $experimentsPanelPageId = computed<string | null>(
+        () => this.uveStore.pageAsset()?.page?.identifier ?? null
+    );
+
+    /**
+     * The Experiments panel's component class, once its chunk has landed (#37478).
+     *
+     * Null until the editor first opens the panel. The template renders it through
+     * `NgComponentOutlet`, so this signal is the whole of the panel's mounting contract: the
+     * effect below resolves the class, the template decides whether it is on screen.
+     */
+    protected readonly $experimentsPanelComponent = signal<Type<unknown> | null>(null);
+
+    /**
+     * Loads the Experiments panel's chunk the first time the editor opens it (#37478).
+     *
+     * **A dynamic `import()` rather than `@defer`, and that is forced twice over.** The experiments
+     * portlet lib is reached only through dynamic imports — `app.routes.ts` and this lib's own
+     * `lib.routes.ts` both `import()` it — so Nx marks it lazy-loaded and
+     * `@nx/enforce-module-boundaries` rejects any static import of it, which is what a `@defer`
+     * block still needs in `imports:`. And even past that rule there would be no chunk: `@defer`
+     * would reach the component through the lib's barrel, and a bundler keeps a barrel's exports
+     * together, so the whole lib would land in this one's bundle anyway.
+     *
+     * The split is the point: three screens, four stores and chart.js stay out of what the editor
+     * loads until the panel is first opened (FR-037, SC-006).
+     *
+     * Once loaded the class is kept, and `@if` in the template mounts and destroys the panel from
+     * there — so closing still leaves nothing of it running (FR-039) without re-fetching the chunk
+     * on the next open. Nothing here has to survive the `await`: if the editor dismissed the panel
+     * while it was in flight, the template simply never renders it.
+     */
+    readonly $experimentsPanelLoader = effect(() => {
+        if (!this.experimentsPanel.isOpen() || this.$experimentsPanelComponent()) {
+            return;
+        }
+
+        untracked(async () => {
+            try {
+                const { DotExperimentsPanelComponent } =
+                    await import('@dotcms/portlets/dot-experiments/portlet');
+
+                this.$experimentsPanelComponent.set(DotExperimentsPanelComponent);
+            } catch (error) {
+                /**
+                 * A chunk that never arrives is the one failure this panel can have before it
+                 * exists, and it is silent unless it is said out loud: the class stays null, the
+                 * `@if` renders nothing, and the editor is left on a page where the Experiments
+                 * item does nothing at all. A deploy pointing at a hash the CDN has already
+                 * dropped is the ordinary way to get here.
+                 *
+                 * Closing is part of the report, not tidying up. The store still says the panel is
+                 * open, and the effect above only fires on that transition — so a panel left open
+                 * with nothing in it would swallow the next attempt and the editor could not even
+                 * retry.
+                 */
+                console.error('[UVE] The Experiments panel chunk failed to load', error);
+
+                this.#messageService.add({
+                    severity: 'error',
+                    summary: this.#dotMessageService.get('experiments.panel.error.load.title'),
+                    detail: this.#dotMessageService.get('experiments.panel.error.load.message')
+                });
+
+                this.experimentsPanel.close();
+            }
+        });
+    });
+
     readonly #dotMessageService = inject(DotMessageService);
     protected readonly $lockOptions = this.uveStore.$lockOptions;
     protected readonly $workflowLockIsLoading = this.uveStore.workflowLockIsLoading;
@@ -158,6 +291,38 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     });
 
     protected readonly $showBanner = signal<boolean>(true);
+
+    /**
+     * Whether this page's experiment is live (#37308).
+     *
+     * A live experiment no longer stops the page being edited, so the fact has to stay on screen
+     * for as long as it holds. Deliberately narrower than it looks: it is not gated on edit
+     * permission, on view mode, on the page lock, or on `$showBanner` — the dismissal state the
+     * lock banner uses. A confirmation is answered once; this condition outlives any click, so
+     * there is nothing a close button could truthfully mean.
+     *
+     * Empty when the page has no experiment *and* when the lookup failed, which are
+     * indistinguishable here by design: the shell must not invent a warning it cannot justify.
+     */
+    protected readonly $showExperimentBanner = computed<boolean>(() => {
+        const status = this.uveStore.pageExperiment()?.status;
+
+        return status === DotExperimentStatus.RUNNING || status === DotExperimentStatus.SCHEDULED;
+    });
+
+    /**
+     * Which warning the live experiment earns.
+     *
+     * Two messages, never one shared string. A running experiment is already measuring, so the
+     * cost is that its results will combine data from before and after the edit. A scheduled one
+     * has collected nothing yet, so the same edit is simply part of what it will measure — a fact,
+     * not a caution.
+     */
+    protected readonly $experimentWarningKey = computed<string>(() =>
+        this.uveStore.pageExperiment()?.status === DotExperimentStatus.RUNNING
+            ? 'uve.shell.experiment.running.edit.warning'
+            : 'uve.shell.experiment.scheduled.edit.warning'
+    );
 
     protected readonly $showPageScanner = computed<boolean>(
         () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER] === true
@@ -221,31 +386,21 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             {
                 materialIcon: 'science',
                 label: 'editema.editor.navbar.experiments',
-                // The switch selects the destination and nothing else: `isDisabled` is the same
-                // rule on both sides, so an editor who cannot see experiments for this page does
-                // not gain access through the new one (FR-023).
-                ...(experimentsPortletEnabled
-                    ? {
-                          href: '/experiments',
-                          /**
-                           * The page, and the language the editor is standing in.
-                           *
-                           * `language_id` is not a filter — the list narrows on `pageId` alone.
-                           * It is the only place the language exists: a page identifier says
-                           * nothing about which version was open, so without it the list's
-                           * back-link and the Configure prefill have to guess, and a wrong
-                           * language is invisible until the wrong content loads. Spelled as UVE
-                           * spells it everywhere else, so the same key travels the whole way.
-                           *
-                           * `url` and the persona key are still left behind: they mean nothing to
-                           * the list, and `parseViewState` would leave them in its address.
-                           */
-                          queryParams: {
-                              pageId: page?.identifier,
-                              language_id: this.uveStore.pageLanguageId()
-                          }
-                      }
-                    : { href: `experiments/${page?.identifier}` }),
+                /**
+                 * With the switch on the item carries **no `href`**, and that absence is the
+                 * mechanism rather than an omission: `EditEmaNavigationBarComponent.navigate`
+                 * emits `action` for an item without one, so the gesture opens the panel beside
+                 * the canvas instead of navigating away from the page (#37478, FR-001, FR-002).
+                 *
+                 * `$activeHref` skips items with no `href`, so the item also stops being
+                 * highlighted as a destination — which is the cost D1 accepts, and it needs no
+                 * code of its own.
+                 *
+                 * The switch selects the behaviour and nothing else: `isDisabled` is the same
+                 * rule on both sides, so an editor who cannot see experiments for this page does
+                 * not gain access through the new one (FR-004).
+                 */
+                ...(experimentsPortletEnabled ? {} : { href: `experiments/${page?.identifier}` }),
                 id: 'experiments',
                 isDisabled: !page?.canEdit
             },
@@ -347,6 +502,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     constructor() {
         this.$updateBreadcrumb(this.$breadcrumbPage);
+
+        // Signals, not values: the panel reads the page and the language at the moment it uses
+        // them, so neither goes stale against the canvas. The language is return context only —
+        // it never narrows the panel, because an experiment belongs to a page and not to one of
+        // its language versions (#37478, D10).
+        this.experimentsPanel.setContext({
+            pageId: this.$experimentsPanelPageId,
+            languageId: this.uveStore.pageLanguageId
+        });
     }
 
     ngOnInit(): void {
@@ -456,7 +620,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @memberof DotEmaShellComponent
      */
     handleItemAction(itemId: string) {
-        if (itemId === 'page-tools') {
+        if (itemId === 'experiments') {
+            // Only reachable with the switch on: with it off the item carries an `href` and the
+            // navigation bar navigates instead of emitting (#37478, FR-001).
+            this.#openExperimentsPanel();
+        } else if (itemId === 'page-tools') {
             this.pageTools.toggleDialog();
         } else if (itemId === 'properties') {
             const page = this.uveStore.pageAsset()?.page;
@@ -573,6 +741,24 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     reloadFromDialog() {
         this.uveStore.pageReload();
+    }
+
+    /**
+     * Opens the running experiment beside the page, rather than going to look at it (#37308).
+     *
+     * Unconditional, and that is the point. The panel's other entry point — the nav bar's
+     * Experiments item — only reaches it when `FEATURE_FLAG_EXPERIMENTS_PORTLET` is on, and that
+     * property ships off. The panel store itself never reads the flag, so calling it directly is
+     * what makes this work on a stock build. The alternative, a link to the full-screen reports
+     * screen, would eject the editor from the page they are in the middle of editing — which is
+     * the one thing this banner must not do.
+     */
+    onExperimentBannerLink(): void {
+        const experimentId = this.uveStore.pageExperiment()?.id;
+
+        if (experimentId) {
+            this.experimentsPanel.openResults(experimentId);
+        }
     }
 
     /**

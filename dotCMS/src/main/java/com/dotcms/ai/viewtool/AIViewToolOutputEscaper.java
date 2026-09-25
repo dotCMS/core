@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * <p>The input is never mutated: new {@link JSONObject} / {@link JSONArray} containers are built
  * along the escaped paths and untouched values are shared. Plain {@link Map} and {@link Collection}
- * inputs (the pre-#37154 {@code Map.of(...)} error payloads) come back as {@code JSONObject} /
+ * inputs (including immutable {@code Map.of(...)}) come back as {@code JSONObject} /
  * {@code JSONArray}. Java {@code null} values become {@link JSONObject#NULL}, exactly as
  * {@code new JSONObject(Map)} does. Numbers, booleans, enums and {@code NULL} are returned as is;
  * any other leaf object is stringified and encoded (the JSON carrier would stringify it on output).
@@ -76,8 +76,8 @@ final class AIViewToolOutputEscaper {
                 || value instanceof Boolean || value.getClass().isEnum()) {
             return value;
         }
-        // any other leaf (e.g. a StackTraceElement in an error payload) would be stringified by the
-        // JSON carrier on output; encode that string now so no path renders raw markup
+        // any other leaf object would be stringified by the JSON carrier on output; encode that
+        // string now so no path renders raw markup
         return Encode.forHtml(String.valueOf(value));
     }
 

@@ -1,10 +1,27 @@
 package com.dotcms;
 
+import com.dotcms.jobs.business.HeartbeatIT;
 import com.dotcms.jobs.business.api.JobProcessorDiscoveryTest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPICDITest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPIIntegrationTest;
 import com.dotcms.jobs.business.processor.impl.ImportContentletsProcessorIntegrationTest;
 import com.dotcms.jobs.business.queue.PostgresJobQueueIntegrationTest;
+import com.dotcms.jobs.business.processor.impl.BulkUploadProcessorIT;
+import com.dotcms.jobs.business.processor.impl.BulkUploadNotificationIT;
+import com.dotcms.jobs.business.processor.impl.BulkUploadIndexingIT;
+import com.dotcms.jobs.business.processor.impl.BulkUploadConcurrencyIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteAnnouncementIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteCancellationIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteHeartbeatIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteMemoryCeilingIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteNotificationIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteProcessorIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteResumeIT;
+import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteOverlapIT;
+import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteResourceIT;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadReclaimIT;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadResourceIT;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadSecurityIT;
 import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshResourceIntegrationTest;
 import com.dotcms.rest.api.v1.content.dotimport.ContentImportResourceIntegrationTest;
 import com.dotcms.rest.api.v1.job.JobQueueHelperIntegrationTest;
@@ -32,7 +49,24 @@ import org.junit.platform.suite.api.Suite;
         ImportContentletsProcessorIntegrationTest.class,
         ContentImportResourceIntegrationTest.class,
         BulkRefreshResourceIntegrationTest.class,
-        JobProcessorDiscoveryTest.class
+        BulkUploadResourceIT.class,
+        BulkUploadProcessorIT.class,
+        BulkUploadNotificationIT.class,
+        BulkUploadIndexingIT.class,
+        BulkUploadConcurrencyIT.class,
+        BulkUploadReclaimIT.class,
+        BulkUploadSecurityIT.class,
+        JobProcessorDiscoveryTest.class,
+        HeartbeatIT.class,
+        FolderBulkDeleteResourceIT.class,
+        FolderBulkDeleteProcessorIT.class,
+        FolderBulkDeleteCancellationIT.class,
+        FolderBulkDeleteNotificationIT.class,
+        FolderBulkDeleteOverlapIT.class,
+        FolderBulkDeleteAnnouncementIT.class,
+        FolderBulkDeleteResumeIT.class,
+        FolderBulkDeleteHeartbeatIT.class,
+        FolderBulkDeleteMemoryCeilingIT.class
 })
 public class Junit5Suite1 {
 

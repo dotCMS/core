@@ -3,11 +3,11 @@
 @let dataType = field.dataType;
 @let fieldHasError = $hasError();
 
-<dot-card-field [hasError]="fieldHasError">
+<dot-card-field [hasError]="fieldHasError" [isRequired]="isRequired">
     @if (showLabel) {
-        <dot-card-field-label [variableName]="field.variable" [isRequired]="isRequired">
+        <label dotCardFieldLabel [variableName]="field.variable" [isRequired]="isRequired">
             {{ field.name }}
-        </dot-card-field-label>
+        </label>
     }
     <dot-card-field-content>
         <input
@@ -23,7 +23,7 @@
             [attr.step]="inputTextOptions[dataType].step"
             pInputText />
     </dot-card-field-content>
-    @if ((fieldHasError && isRequired) || (!fieldHasError && field.hint)) {
+    @if ((fieldHasError && isRequired) || field.hint) {
         <dot-card-field-footer>
             @if (fieldHasError && isRequired) {
                 <small class="p-field-error">
@@ -31,7 +31,7 @@
                 </small>
             }
 
-            @if (!fieldHasError && field.hint) {
+            @if (field.hint) {
                 <small class="p-field-hint" [attr.data-testId]="'hint-' + field.variable">
                     {{ field.hint }}
                 </small>

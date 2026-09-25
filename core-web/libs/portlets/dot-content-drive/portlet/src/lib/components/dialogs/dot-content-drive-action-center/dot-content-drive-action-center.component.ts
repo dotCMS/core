@@ -49,6 +49,7 @@ import {
     ADD_TO_BUNDLE_ACTION_ID,
     DotActionCenterQuickAction,
     PUSH_PUBLISH_ACTION_ID,
+    DELETE_FOLDER_ACTION_ID,
     REFRESH_ACTION_ID,
     DotActionInputKind,
     eligibleContentlets,
@@ -61,6 +62,7 @@ import {
     requiredInputKinds,
     toDistinctIdentifiers
 } from '../../../utils/action-center';
+import { isFolder } from '../../../utils/functions';
 
 /** The screens the dialog switches between. */
 type DotActionCenterView = 'actions' | 'configure' | 'preview';
@@ -152,20 +154,7 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'flex min-h-0 flex-1 flex-col'
-    },
-    styles: [
-        `
-            /*
-             * Folder notice is present at open, so PrimeNG Message's hardcoded enter/leave height
-             * animation (no API opt-out) reads as a late shove of the action list — kill both via CSS
-             * on '.no-enter-motion'; ':host ::ng-deep' so we don't rely on '_ngcontent' piercing.
-             */
-            :host ::ng-deep p-message.no-enter-motion.p-message-enter-active,
-            :host ::ng-deep p-message.no-enter-motion.p-message-leave-active {
-                animation: none;
-            }
-        `
-    ]
+    }
 })
 export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
@@ -278,7 +267,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * local signal would reset to `false` on the new instance and let the same action be fired twice
      * over the same rows.
      */
-    protected readonly $executing = computed(() => !!this.#store.actionExecution());
+    protected readonly $executing = computed(() => this.#store.activeRunCount() > 0);
     /**
      * Which screen is showing.
      *
@@ -750,6 +739,39 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return;
         }
 
+        // Delete is the only destructive quick action, and the only one whose targets are folders
+        // rather than contentlets. It speaks site-qualified paths to the server and row keys to the
+        // listing, which is why it builds both here rather than reusing `inodes`.
+        if (quickAction.id === DELETE_FOLDER_ACTION_ID) {
+            const hostname = this.#store.currentSite()?.hostname;
+
+            if (!hostname) {
+                // Without a site there is no way to qualify a path, and a half-qualified one would
+                // resolve somewhere unintended. Matches how the single-folder delete refuses.
+                this.#messageService.add({
+                    severity: 'error',
+                    summary: this.#dotMessageService.get(
+                        'content-drive.dialog.delete-folder.no-site'
+                    )
+                });
+
+                return;
+            }
+
+            const folders = this.$includedItems().filter(isFolder);
+            const assetPaths = folders.map((folder) => `//${hostname}${folder.path}`);
+            // Both keys: the search service only backfills `inode` from `identifier` when the API
+            // returned none, so neither is reliably the key the row carries.
+            const targets = folders.flatMap((folder) =>
+                [folder.inode, folder.identifier].filter((key): key is string => !!key)
+            );
+
+            this.#store.executeFolderBulkDelete(assetPaths, targets);
+            this.handOffToToolbar();
+
+            return;
+        }
+
         // Refresh speaks inodes like the workflow quick actions, but goes to its own job-backed
         // endpoint rather than the system-action fire, so it branches here rather than falling through.
         if (quickAction.id === REFRESH_ACTION_ID) {
@@ -805,7 +827,10 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.#store.executeAddToBundle(
             this.#dotMessageService.get(quickAction.name),
             bundle,
-            identifiers
+            identifiers,
+            // The rows this is acting on. Sent alongside the identifiers because the two are
+            // different vocabularies: the request queues assets, the listing marks rows.
+            this.$includedItems().map((item) => item.inode)
         );
         this.handOffToToolbar();
     }
@@ -828,7 +853,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.#store.executePushPublish(
             this.#dotMessageService.get(quickAction.name),
             identifiers,
-            settings
+            settings,
+            this.$includedItems().map((item) => item.inode)
         );
         this.handOffToToolbar();
     }
@@ -980,6 +1006,14 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         this.$pushPublishValid.set(false);
         this.#store.clearDialogDrillDown();
     }
+
+    /**
+     * Whether the preview is confirming a delete, which is the only action here that warrants its
+     * own warning above the list.
+     */
+    protected readonly $isDeleteAction = computed(
+        () => this.$pendingQuickAction()?.id === DELETE_FOLDER_ACTION_ID
+    );
 
     /** Tracks the preview's checked rows, keeping the dialog header's count in step. */
     protected onIncludedItemsChange(items: DotContentDriveItem[]): void {

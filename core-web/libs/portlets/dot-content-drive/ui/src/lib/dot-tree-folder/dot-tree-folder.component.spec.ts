@@ -990,4 +990,161 @@ describe('DotTreeFolderComponent', () => {
             expect(event.preventDefault).not.toHaveBeenCalled();
         });
     });
+
+    /**
+     * In-flight folder marking (#37063 US2).
+     *
+     * A folder being deleted must not behave like a folder. The grid already marks its rows — that
+     * shipped with #37166 — and this is the other half: without it an author can still walk into,
+     * expand, or drop content onto a folder that is being destroyed, and what they put there dies
+     * with it.
+     *
+     * Matched on `data.inode` OR `data.id`, the same "both keys" rule the grid follows: the search
+     * service only backfills one of them when the API returned none, so neither is reliably present.
+     */
+    describe('in-flight folders (#37063)', () => {
+        const inFlightNode: TreeNode = {
+            key: '9',
+            label: '/old-a',
+            data: { path: '/old-a', inode: 'inode-a', id: 'id-a' }
+        };
+
+        const healthyNode: TreeNode = {
+            key: '10',
+            label: '/keep',
+            data: { path: '/keep', inode: 'inode-keep', id: 'id-keep' }
+        };
+
+        const arrange = (inFlightKeys: string[]): void => {
+            spectator.fixture.componentRef.setInput('folders', [inFlightNode, healthyNode]);
+            spectator.fixture.componentRef.setInput('loading', false);
+            spectator.fixture.componentRef.setInput('inFlightKeys', inFlightKeys);
+            spectator.detectChanges();
+        };
+
+        it('should not let a marked node be navigated into', () => {
+            arrange(['inode-a']);
+            const spy = vi.spyOn(component.onNodeSelect, 'emit');
+
+            spectator.triggerEventHandler(Tree, 'onNodeSelect', {
+                originalEvent: new Event('click'),
+                node: inFlightNode
+            });
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should not let a marked node be expanded', () => {
+            arrange(['inode-a']);
+            const spy = vi.spyOn(component.onNodeExpand, 'emit');
+
+            spectator.triggerEventHandler(Tree, 'onNodeExpand', {
+                originalEvent: new Event('click'),
+                node: inFlightNode
+            });
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should let an unmarked node become a drop target', () => {
+            // The positive control for the test below. Without it that one passes on an empty DOM,
+            // proving only that nothing happened for some other reason.
+            arrange(['inode-a']);
+            const label = spectator.query('[data-node-key="10"]') as HTMLElement;
+
+            component.onDragOver(createDragOverEvent(label));
+
+            expect(component.$activeDropNode()).not.toBeNull();
+        });
+
+        it('should not let a marked node become a drop target', () => {
+            arrange(['inode-a']);
+            const label = spectator.query('[data-node-key="9"]') as HTMLElement;
+
+            component.onDragOver(createDragOverEvent(label));
+
+            expect(component.$activeDropNode()).toBeNull();
+        });
+
+        it('should still allow every interaction on an unmarked node', () => {
+            arrange(['inode-a']);
+            const spy = vi.spyOn(component.onNodeSelect, 'emit');
+
+            spectator.triggerEventHandler(Tree, 'onNodeSelect', {
+                originalEvent: new Event('click'),
+                node: healthyNode
+            });
+
+            expect(spy).toHaveBeenCalled();
+        });
+
+        it('should match on the identifier when the node carries no inode', () => {
+            arrange(['id-a']);
+            const spy = vi.spyOn(component.onNodeSelect, 'emit');
+
+            spectator.triggerEventHandler(Tree, 'onNodeSelect', {
+                originalEvent: new Event('click'),
+                node: inFlightNode
+            });
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should report the marked node as busy to assistive technology', () => {
+            // Opacity and `pointer-events: none` reach one sense only, and the consequence of
+            // missing the signal is acting on a folder about to cease to exist (FR-014a, SC-012).
+            arrange(['inode-a']);
+
+            expect(spectator.query('[data-node-key="9"]')?.getAttribute('aria-busy')).toBe('true');
+            expect(spectator.query('[data-node-key="10"]')?.getAttribute('aria-busy')).toBeNull();
+        });
+
+        /**
+         * **The stylesheet's only hook.** `dot-tree-folder.component.scss` disables pointer events
+         * with `.p-tree-node-content:has([aria-busy="true"])`, so the busy marker has to sit INSIDE
+         * PrimeNG's clickable row for the rule to match anything.
+         *
+         * This matters because the TypeScript guard cannot do the job alone: PrimeNG commits its
+         * own selection before it emits, so swallowing `onNodeSelect` left the busy folder painted
+         * as the active row while the app stayed put (reported on PR dotCMS/core#37688). If PrimeNG
+         * renames the class or the label moves out of the row, nothing else here fails — the folder
+         * just silently becomes clickable again.
+         */
+        it('should put the busy marker inside the row the stylesheet disables', () => {
+            arrange(['inode-a']);
+
+            const row = spectator.query('.p-tree-node-content:has([aria-busy="true"])');
+
+            expect(row).toBeTruthy();
+            expect(row?.querySelector('[data-node-key="9"]')).toBeTruthy();
+        });
+
+        it('should mark nothing when no folders are in flight', () => {
+            // The input is optional: the AssetPicker renders this same tree and never passes it.
+            arrange([]);
+            const spy = vi.spyOn(component.onNodeSelect, 'emit');
+
+            spectator.triggerEventHandler(Tree, 'onNodeSelect', {
+                originalEvent: new Event('click'),
+                node: inFlightNode
+            });
+
+            expect(spy).toHaveBeenCalled();
+            expect(spectator.query('[data-node-key="9"]')?.getAttribute('aria-busy')).toBeNull();
+        });
+
+        it("should not mark a marked folder's children", () => {
+            // Marking covers the folders submitted and their own nodes, not what is inside them
+            // (FR-015). Walking descendants would cost a prefix test on every node on every render,
+            // for folders that are about to disappear anyway.
+            spectator.fixture.componentRef.setInput('folders', [
+                { ...inFlightNode, expanded: true, children: [healthyNode] }
+            ]);
+            spectator.fixture.componentRef.setInput('loading', false);
+            spectator.fixture.componentRef.setInput('inFlightKeys', ['inode-a']);
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-node-key="10"]')?.getAttribute('aria-busy')).toBeNull();
+        });
+    });
 });

@@ -1,6 +1,6 @@
 import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
 import { RxMethod, rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, forkJoin, of, pipe, throwError } from 'rxjs';
+import { EMPTY, forkJoin, Observable, of, pipe, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Signal } from '@angular/core';
@@ -14,7 +14,7 @@ import {
     DotPageLayoutService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, EXPERIMENT_RETURN_PARAM } from '@dotcms/dotcms-models';
 import { DotCMSPageAsset, DotPageAssetLayoutRow } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 
@@ -28,7 +28,20 @@ import {
 } from '../../../shared/models';
 import { compareUrlPaths, getIframeAccessMode, isForwardOrPage } from '../../../utils';
 import { PageType, UVEState } from '../../models';
-import { PageSnapshot } from '../page/withPage';
+import { PageAssetSource, PageSnapshot } from '../page/withPage';
+
+/**
+ * Shared shape for `pageReload`'s REST/GraphQL branches. Named and explicit so both
+ * branches of the ternary resolve to the same type — an inferred union here (each branch's
+ * `map()` producing a structurally different literal type) breaks overload resolution on the
+ * subsequent `.pipe(switchMap(...))`, collapsing `pageResult` to `unknown` at compile time
+ * (a real `tsc`/esbuild error that Jest's `isolatedModules` config does not catch).
+ */
+type PageReloadPayload = {
+    pageAsset: DotCMSPageAsset;
+    content?: Record<string, unknown>;
+    source: PageAssetSource;
+};
 
 /**
  * Interface defining the methods provided by withPageApi
@@ -71,6 +84,7 @@ export interface WithPageApiDeps {
     setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
+        source?: PageAssetSource;
     }) => void;
     rollbackPageAssetResponse: () => boolean;
 
@@ -78,6 +92,7 @@ export interface WithPageApiDeps {
     addHistory: (response: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
+        source?: PageAssetSource;
     }) => void;
     resetHistoryToCurrent: () => void;
 
@@ -136,6 +151,26 @@ export function withPageApi(deps: WithPageApiDeps) {
             const iframeMessenger = inject(UveIframeMessengerService);
             const dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
 
+            /**
+             * Sends the current page asset to the headless client only when it is
+             * GraphQL-sourced (or the page is traditional) — never REST-shaped. When it
+             * can't push, tells the client to reload itself instead, so it re-syncs rather
+             * than being left showing a stale optimistic edit. See dotCMS/core#37097: this
+             * mirrors the primary reload effect's gate for the senders that bypass it
+             * (rollback-after-failed-save paths).
+             */
+            const sendPageDataIfGraphQLSourced = () => {
+                const asset = deps.pageAsset();
+                const canPush =
+                    store.pageType() === PageType.TRADITIONAL || asset?.source === 'graphql';
+
+                if (canPush && asset?.clientResponse) {
+                    iframeMessenger.sendPageData(asset.clientResponse);
+                } else {
+                    iframeMessenger.reloadPage();
+                }
+            };
+
             return {
                 /**
                  * Load page with all related data
@@ -145,14 +180,42 @@ export function withPageApi(deps: WithPageApiDeps) {
                 pageLoad: rxMethod<Partial<DotPageAssetParams>>(
                     pipe(
                         map((params) => {
-                            if (!store.pageParams()) {
+                            const current = store.pageParams();
+
+                            if (!current) {
                                 return params as DotPageAssetParams;
                             }
 
-                            return {
-                                ...store.pageParams(),
-                                ...params
-                            };
+                            const merged = { ...current, ...params };
+
+                            /**
+                             * A different page drops the params that only meant something on the
+                             * last one.
+                             *
+                             * The merge is what makes this editor feel like one screen — language,
+                             * persona and mode follow the editor from page to page. But the
+                             * experiment ones are not the editor's, they are the page's: a variant
+                             * belongs to one page, and carrying `variantName` into another asks the
+                             * Page API for a variant that page does not have. The visible half was
+                             * the banner announcing a variant over a page the editor had navigated
+                             * away from, with a way back to an experiment that was never about it.
+                             *
+                             * Dropped here rather than at the navigation call sites — there are
+                             * four of them and the merge is the one place they all pass through.
+                             */
+                            if (params.url && params.url !== current.url) {
+                                delete merged.experimentId;
+                                delete merged[EXPERIMENT_RETURN_PARAM];
+
+                                // Only a real one. `DEFAULT` is not a variant, it is the absence
+                                // of one, and dropping it would rewrite the address on every
+                                // ordinary navigation for nothing.
+                                if (merged.variantName !== DEFAULT_VARIANT_ID) {
+                                    delete merged.variantName;
+                                }
+                            }
+
+                            return merged;
                         }),
                         tap((pageParams) => {
                             // The stored client GraphQL request (sent by the headless
@@ -271,8 +334,12 @@ export function withPageApi(deps: WithPageApiDeps) {
                                         tap(({ experiment, languages }) => {
                                             const payload =
                                                 graphQLContent !== undefined
-                                                    ? { pageAsset, content: graphQLContent }
-                                                    : { pageAsset };
+                                                    ? {
+                                                          pageAsset,
+                                                          content: graphQLContent,
+                                                          source: 'graphql' as const
+                                                      }
+                                                    : { pageAsset, source: 'rest' as const };
 
                                             // Both writes land in the same synchronous tap.
                                             // Angular batches them before flushing effects, so
@@ -316,20 +383,38 @@ export function withPageApi(deps: WithPageApiDeps) {
                             }
                         }),
                         switchMap(() => {
+                            const pageParams = store.pageParams();
+                            const requestWithParams = deps.$requestWithParams();
+
+                            if (!pageParams) {
+                                return EMPTY;
+                            }
+
                             // Thread content through the stream value so the payload shape
                             // naturally encodes whether this is a GraphQL reload:
                             // - non-GraphQL emits { pageAsset }         → 'content' NOT in payload
                             // - GraphQL emits     { pageAsset, content } → 'content' IN payload
                             // setPageAsset in withPage.ts uses 'content' in payload to decide
                             // whether to clear the existing content, so this preserves original semantics.
-                            const pageRequest = !deps.requestMetadata()
-                                ? dotPageApiService
-                                      .get(store.pageParams())
-                                      .pipe(map((pageAsset) => ({ pageAsset })))
-                                : dotPageApiService
-                                      .getGraphQLPage(deps.$requestWithParams())
-                                      .pipe(
-                                          map(({ pageAsset, content }) => ({ pageAsset, content }))
+                            // `source` tags provenance explicitly for the headless push gate — see #37097.
+                            const pageRequest: Observable<PageReloadPayload> =
+                                !deps.requestMetadata() || !requestWithParams
+                                    ? dotPageApiService.get(pageParams).pipe(
+                                          map(
+                                              (pageAsset): PageReloadPayload => ({
+                                                  pageAsset,
+                                                  source: 'rest'
+                                              })
+                                          )
+                                      )
+                                    : dotPageApiService.getGraphQLPage(requestWithParams).pipe(
+                                          map(
+                                              ({ pageAsset, content }): PageReloadPayload => ({
+                                                  pageAsset,
+                                                  content,
+                                                  source: 'graphql'
+                                              })
+                                          )
                                       );
 
                             return pageRequest.pipe(
@@ -396,21 +481,29 @@ export function withPageApi(deps: WithPageApiDeps) {
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() => {
+                                    const pageParams = store.pageParams();
+
+                                    if (!pageParams) {
+                                        return EMPTY;
+                                    }
+
                                     const pageRequest = !deps.requestMetadata()
-                                        ? dotPageApiService
-                                              .get(store.pageParams())
-                                              .pipe(
-                                                  tap((pageAsset) =>
-                                                      deps.setPageAsset({ pageAsset })
-                                                  )
+                                        ? dotPageApiService.get(pageParams).pipe(
+                                              tap((pageAsset) =>
+                                                  deps.setPageAsset({
+                                                      pageAsset,
+                                                      source: 'rest'
+                                                  })
                                               )
+                                          )
                                         : dotPageApiService
                                               .getGraphQLPage(deps.$requestWithParams())
                                               .pipe(
                                                   tap((response) =>
                                                       deps.setPageAsset({
                                                           pageAsset: response.pageAsset,
-                                                          content: response.content
+                                                          content: response.content,
+                                                          source: 'graphql'
                                                       })
                                                   ),
                                                   map((response) => response.pageAsset)
@@ -497,21 +590,29 @@ export function withPageApi(deps: WithPageApiDeps) {
                                      * rendered page HTML.                                                 *
                                      **********************************************************************/
                                     switchMap(() => {
+                                        const pageParams = store.pageParams();
+
+                                        if (!pageParams) {
+                                            return EMPTY;
+                                        }
+
                                         return !deps.requestMetadata()
-                                            ? dotPageApiService
-                                                  .get(store.pageParams())
-                                                  .pipe(
-                                                      tap((pageAsset) =>
-                                                          deps.setPageAsset({ pageAsset })
-                                                      )
+                                            ? dotPageApiService.get(pageParams).pipe(
+                                                  tap((pageAsset) =>
+                                                      deps.setPageAsset({
+                                                          pageAsset,
+                                                          source: 'rest'
+                                                      })
                                                   )
+                                              )
                                             : dotPageApiService
                                                   .getGraphQLPage(deps.$requestWithParams())
                                                   .pipe(
                                                       tap((response) =>
                                                           deps.setPageAsset({
                                                               pageAsset: response.pageAsset,
-                                                              content: response.content
+                                                              content: response.content,
+                                                              source: 'graphql'
                                                           })
                                                       ),
                                                       map((response) => response.pageAsset)
@@ -561,10 +662,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                             const rolledBack = deps.rollbackPageAssetResponse();
 
                             if (rolledBack) {
-                                const rolledBackResponse = deps.pageAsset()?.clientResponse;
-                                if (rolledBackResponse) {
-                                    iframeMessenger.sendPageData(rolledBackResponse);
-                                }
+                                sendPageDataIfGraphQLSourced();
                             }
 
                             return throwError(() => error);
@@ -594,10 +692,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                 const rolledBack = deps.rollbackPageAssetResponse();
 
                                 if (rolledBack) {
-                                    const rolledBackResponse = deps.pageAsset()?.clientResponse;
-                                    if (rolledBackResponse) {
-                                        iframeMessenger.sendPageData(rolledBackResponse);
-                                    }
+                                    sendPageDataIfGraphQLSourced();
                                 }
 
                                 return throwError(() => error);
