@@ -1354,6 +1354,16 @@ describe('utils functions', () => {
             expect(result).toBe(expectedURL);
         });
 
+        it('should leave out params that were cleared to undefined', () => {
+            const result = createFullURL({
+                ...params,
+                anno_pubblicazione: undefined,
+                publishDate: undefined
+            });
+
+            expect(result).toBe(expectedURL);
+        });
+
         it('should ignore the double slash in the clientHost or path', () => {
             const result = createFullURL({
                 ...params,

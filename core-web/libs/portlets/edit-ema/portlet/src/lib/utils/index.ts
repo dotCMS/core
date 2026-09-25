@@ -620,6 +620,12 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
     delete paramsCopy?.clientHost;
     delete paramsCopy?.url;
 
+    // A param set to `undefined` has been cleared (a removed filter, a reset
+    // publish date). URLSearchParams would print it as "key=undefined".
+    Object.keys(paramsCopy).forEach(
+        (key) => paramsCopy[key] === undefined && delete paramsCopy[key]
+    );
+
     const searchParams = new URLSearchParams(paramsCopy);
 
     const pureURL = new URL(`${url}?${searchParams.toString()}`, clientHost);
