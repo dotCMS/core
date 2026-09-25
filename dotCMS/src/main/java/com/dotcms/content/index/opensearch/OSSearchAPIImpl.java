@@ -5,6 +5,8 @@ import com.dotcms.content.index.SearchAPI;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.domain.InvalidSearchQueryException;
+import com.dotcms.content.index.domain.QueryRejectedByOpenSearchException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -28,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import org.opensearch.client.json.JsonpDeserializer;
@@ -144,7 +147,7 @@ public class OSSearchAPIImpl implements SearchAPI {
             throws DotSecurityException, DotDataException {
 
         if (!UtilMethods.isSet(query)) {
-            throw new DotStateException("Search query is null");
+            throw new InvalidSearchQueryException("Search query is null");
         }
 
         // Normalize the query the same way search() does, so the raw path resolves mixed-case
@@ -159,7 +162,9 @@ public class OSSearchAPIImpl implements SearchAPI {
             completeQueryJSON = new JSONObject(normalizedQuery);
             completeQueryJSON.put("_source", new JSONArray("[identifier, inode]"));
         } catch (final JSONException e) {
-            throw new DotStateException("Unable to parse the given query.", e);
+            // The caller's error, not the cluster's: raised as such so Phase 2 does not retry it on
+            // Elasticsearch and log it as an index outage (issue #37637).
+            throw new InvalidSearchQueryException("Unable to parse the given query.", e);
         }
 
         return executeSearch(completeQueryJSON, live, user, respectFrontendRoles, -1, -1, null);
@@ -368,8 +373,7 @@ public class OSSearchAPIImpl implements SearchAPI {
                     "OS search returned an empty body (HTTP " + status + ")"));
 
             if (status < 200 || status >= 300) {
-                throw new DotStateException(
-                        "OS search failed: HTTP " + status + " — " + body.bodyAsString());
+                throw searchFailure(status, body.bodyAsString());
             }
 
             try (final InputStream is = body.body();
@@ -382,6 +386,59 @@ public class OSSearchAPIImpl implements SearchAPI {
 
         } catch (final IOException e) {
             throw new DotStateException("OS search execution failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * OpenSearch error types that mean it could not parse the request: the query JSON is malformed,
+     * or uses syntax OpenSearch does not accept — possibly older syntax Elasticsearch 7 still does.
+     */
+    private static final Set<String> MALFORMED_REQUEST_ERRORS = Set.of(
+            "parsing_exception", "x_content_parse_exception", "json_parse_exception",
+            "json_e_o_f_exception");
+
+    /**
+     * The exception for a search OpenSearch answered with a non-2xx status.
+     *
+     * <p>An HTTP 400 whose top-level error and every root cause are parse failures
+     * ({@link #MALFORMED_REQUEST_ERRORS}) is raised as {@link QueryRejectedByOpenSearchException}.
+     * Phase 2 still retries it on Elasticsearch — Elasticsearch 7 accepts syntax OpenSearch 3
+     * dropped, so the query may well succeed there — but logs it as a query that will fail at
+     * Phase 3 instead of blaming the index (issue #37637).</p>
+     *
+     * <p>Every other failure stays a plain {@link DotStateException}: a 400 from a shard
+     * ({@code query_shard_exception}, {@code search_phase_execution_exception}), which a
+     * well-formed query can draw from an OpenSearch mapping that has not caught up; a body that
+     * cannot be read; and every other status.</p>
+     */
+    static DotStateException searchFailure(final int status, final String body) {
+        final String message = "OS search failed: HTTP " + status + " — " + body;
+        return status == 400 && isMalformedRequest(body)
+                ? new QueryRejectedByOpenSearchException(message)
+                : new DotStateException(message);
+    }
+
+    /** Whether an OpenSearch error body reports only parse failures of the request itself. */
+    private static boolean isMalformedRequest(final String body) {
+        try {
+            final JSONObject error = new JSONObject(body).getJSONObject("error");
+            if (!MALFORMED_REQUEST_ERRORS.contains(error.optString("type"))) {
+                return false;
+            }
+            final JSONArray rootCauses = error.optJSONArray("root_cause");
+            if (null == rootCauses) {
+                return true;
+            }
+            for (int i = 0; i < rootCauses.length(); i++) {
+                if (!MALFORMED_REQUEST_ERRORS.contains(
+                        rootCauses.getJSONObject(i).optString("type"))) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (final RuntimeException e) {
+            // JSONException is a RuntimeException: any unreadable body lands here.
+            return false;
         }
     }
 
