@@ -269,6 +269,7 @@ import org.junit.runners.Suite.SuiteClasses;
         // of just their own fixtures. Keep new full-reindex tests in this block.
         ESMappingUtilHelperTest.class,
         com.dotmarketing.common.reindex.ReindexThreadTest.class,
+        com.dotmarketing.common.reindex.ReindexQueueFactoryShareQueryTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMappingTimeoutIT.class,
         com.dotmarketing.common.reindex.ReindexAPITest.class,
         CleanUpFieldReferencesJobTest.class,
