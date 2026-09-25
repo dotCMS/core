@@ -185,8 +185,8 @@ public class AIViewToolTest extends IntegrationTestBase {
      * Scenario: generateImage output is escaped by default and raw through $ai.unsafe (AC-001, AC-002, AC-003)
      * Given a prompt that carries markup (the image payload's only text is the echoed prompt: the client
      * rebuilds the provider response as data[].url, so no revised_prompt reaches dotCMS)
-     * When generateImage is called on $ai and on $ai.unsafe
-     * Then $ai returns originalPrompt HTML-encoded, the url intact and no raw markup anywhere;
+     * When generateImage is called on $ai (String and Map prompt) and on $ai.unsafe
+     * Then $ai returns originalPrompt HTML-encoded and no raw markup anywhere (the stub url has no encodable characters);
      * $ai.unsafe returns originalPrompt literally. Same retry as the existing image tests (async temp file).
      */
     @Test
@@ -197,10 +197,13 @@ public class AIViewToolTest extends IntegrationTestBase {
                 .pollDelay(1, TimeUnit.SECONDS)
                 .ignoreExceptions()
                 .until(() -> {
-                    final JSONObject escaped = aiViewTool.generateImage(AiTest.PROBE_IMAGE_PROMPT);
-                    assertEquals(Encode.forHtml(AiTest.PROBE_IMAGE_PROMPT), escaped.getString("originalPrompt"));
-                    assertEquals("http://localhost:50505/s/ganymede", escaped.getString("url"));
-                    AiTest.assertNoRawMarkup(escaped);
+                    for (final JSONObject escaped : List.of(
+                            aiViewTool.generateImage(AiTest.PROBE_IMAGE_PROMPT),
+                            aiViewTool.generateImage(Map.of("prompt", AiTest.PROBE_IMAGE_PROMPT)))) {
+                        assertEquals(Encode.forHtml(AiTest.PROBE_IMAGE_PROMPT), escaped.getString("originalPrompt"));
+                        assertEquals("http://localhost:50505/s/ganymede", escaped.getString("url"));
+                        AiTest.assertNoRawMarkup(escaped);
+                    }
 
                     final JSONObject raw = aiViewTool.getUnsafe().generateImage(AiTest.PROBE_IMAGE_PROMPT);
                     assertEquals(AiTest.PROBE_IMAGE_PROMPT, raw.getString("originalPrompt"));

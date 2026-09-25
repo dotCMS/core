@@ -4,7 +4,7 @@
 
 **Created**: 2026-09-11
 
-**Status**: Draft
+**Status**: Approved
 
 **Type**: Issue / Bug Resolution
 
@@ -303,7 +303,8 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
   (the OWASP `Encode.forHtml` output of the stub string), and no string value anywhere in the
   provider-output part contains a literal `<`, `>`, `"` or `'`. For `generateImage(String)`,
   `generateImage(Map)`: when the prompt carries the same markup, `originalPrompt` is returned as
-  its `Encode.forHtml` output, `url` is unchanged, and no string value contains raw markup.
+  its `Encode.forHtml` output, `url` is encoded like every other provider string, and no string
+  value contains raw markup.
 - **AC-002**: For `search.query(String,String)`, `search.query(Map)` and `summarize`: when the
   indexed `extractedText` and the result `title` both contain the same markup, the default
   accessor returns `extractedText` escaped, returns `title` and every other `dotCMSResults`
@@ -312,18 +313,22 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
   `search.related` overloads share the same wrapped return and are covered by the code path,
   not by a separate test.
 - **AC-003**: For every accessor in AC-001 and AC-002, the same call through `$ai.unsafe`
-  returns a payload byte-for-byte identical to what the API method returns, including the
-  literal `<script>alert(1)</script>` and `<img src=x onerror=alert(1)>`.
+  returns what the API method returns, unchanged, including the literal
+  `<script>alert(1)</script>` and `<img src=x onerror=alert(1)>`. The full payload comparison
+  is asserted for `summarize` and `raw`; the other accessors assert the literal value, since
+  the unsafe path returns the API object as is.
 - **AC-004**: Default and unsafe payloads are otherwise identical: same keys at every depth,
   same array lengths, same non-string values. Only string values differ, and only inside the
   provider-output part and the echoed-input values, and only where they contained characters
-  the encoder changes.
+  the encoder changes. Asserted as a pair for `summarize` and `raw`; the shape-preserving copy
+  itself is covered for every shape by the unit test.
 - **AC-005**: The escaped payload still resolves through property access
   (`get("openAiResponse")` → `getJSONArray("choices")` → index 0 → `getJSONObject("message")`
   → `getString("content")`), and the existing success-path tests in `CompletionsToolTest`,
   `SearchToolTest` and `AIViewToolTest` pass unchanged.
-- **AC-006**: The API method's own return value is not mutated by the default accessor: after
-  a default call, the object the API returned still contains the literal markup. Error
+- **AC-006**: The API method's own return value is not mutated by the default accessor: the
+  escaping routine copies and never writes to its input (unit test), and the API layer still
+  returns the literal markup after default calls (integration test, see AC-008). Error
   payloads are escaped in full and returned without throwing: for `completions.raw` a
   WireMock mapping answering the dedicated prompt with HTTP 500 and a non-JSON prompt, for
   `summarize` the no-hits `{error}` shape, for `generateImage` a prompt no stub answers. The
@@ -349,7 +354,7 @@ request"; that name is taken and cannot double as the unescaped-output opt-in.
     `extractedText` and `title` through the `EmbeddingsDTODataGen` builder into a dedicated
     `escape-probe` index (so probe rows can never feed another test's prompt); one case seeds
     and queries the `cache` index. Each test runs the same call through `$ai` and `$ai.unsafe`
-    and asserts on the pair; AC-006 asserts against the API's object after the default call.
+    and asserts on the pair; non-mutation (AC-006) is asserted by the unit test.
   - A plain unit test under `dotCMS/src/test` for the shared escaping routine: nested
     `JSONObject`, `JSONArray` of strings, arrays of objects, plain `Map` and `List` including
     an immutable `Map.of(...)`, mixed non-string leaves, `null`, empty structures, strings
