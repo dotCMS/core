@@ -25,6 +25,7 @@ export * from './lib/components/dot-workflow-push-publish/dot-workflow-push-publ
 export * from './lib/components/dot-asset-search/components/dot-asset-search-dialog/dot-asset-search-dialog.component';
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
 export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
+export * from './lib/components/dot-user-filter/dot-user-filter.component';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
 export * from './lib/components/dot-chip-filter/constants';
 export * from './lib/components/dot-filter-bar/constants';
@@ -82,6 +83,7 @@ export * from './lib/components/dot-folder-list-view/constants';
 
 export { DotSiteComponent } from './lib/components/dot-site/dot-site.component';
 export * from './lib/components/dot-theme/dot-theme.component';
+export * from './lib/components/dot-status-toast/dot-status-toast.component';
 export * from './lib/components/dot-toast/dot-toast.component';
 export * from './lib/components/dot-upload-button/dot-upload-button.component';
 export * from './lib/components/dot-upload-dropzone/dot-upload-dropzone.component';
@@ -149,6 +151,7 @@ export * from './lib/dialog/fullscreen-dialog';
 
 // Monaco editor presets
 export * from './lib/monaco/editor-options';
+export * from './lib/monaco/run-shortcut';
 
 // Theme
 export * from './lib/theme';

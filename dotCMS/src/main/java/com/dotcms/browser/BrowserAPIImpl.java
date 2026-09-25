@@ -794,10 +794,36 @@ public class BrowserAPIImpl implements BrowserAPI {
             ? browserQuery.site.getIdentifier()
             : browserQuery.folder.getHostId();
 
-        if (browserQuery.forceSystemHost || browserQuery.folder.isSystemFolder()) {
+        // The caller's request decides this, and nothing else. This used to widen the clause
+        // whenever the folder happened to be the system folder — that is, at every site root —
+        // which made this builder answer differently from the SQL one about a structural
+        // criterion. ADR-0018 makes the database authoritative for exactly those criteria and
+        // forbids re-routing them to the index, so the two must name the same hosts for the same
+        // request. The divergence only ever surfaced under the non-default PURE_ES heuristic,
+        // which is why it went unnoticed rather than why it was acceptable.
+        if (SystemHostMode.ONLY == browserQuery.systemHostMode) {
+            query.append("+conhost:SYSTEM_HOST ");
+        } else if (SystemHostMode.INCLUDE == browserQuery.systemHostMode) {
             query.append("+(conhost:").append(hostId).append(" OR conhost:SYSTEM_HOST) ");
         } else {
             query.append("+conhost:").append(hostId).append(" ");
+        }
+
+        // Confine the contentlets to the folder being browsed, mirroring the SQL builder's
+        // `id.parent_path = ?`. Without it this builder emitted no folder criterion at all, so a
+        // request for the site root returned the whole site: `ROOT` and `ALL` produced byte-for-byte
+        // the same query, and the scope existed only on the database path.
+        //
+        // `skipFolder` is the same switch the SQL side reads, so the two agree by construction:
+        // all site content (and a request carrying no scope at the root) deliberately spans every
+        // depth and sets it, while the site root, a folder and System Host each name a place and
+        // do not.
+        //
+        // Only contentlets are at stake. Folders are never indexed and never come from here --
+        // both paths list them from the database through `findSubFoldersByParent` -- so this
+        // changes what content is returned and nothing about the folder rows beside it.
+        if (!browserQuery.skipFolder) {
+            query.append("+conFolder:").append(browserQuery.folder.getInode()).append(" ");
         }
 
         // Content type filters - include specific types if provided
@@ -2554,8 +2580,8 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (shouldApplySiteFiltering) {
                 if (browserQuery.site != null) {
                     appendSiteQuery(candidatesPredicates, browserQuery.site.getIdentifier(),
-                            browserQuery.forceSystemHost, parameters);
-                } else if (browserQuery.forceSystemHost) {
+                            browserQuery.systemHostMode, parameters);
+                } else if (SystemHostMode.EXCLUDE != browserQuery.systemHostMode) {
                     appendSystemHostQuery(candidatesPredicates);
                 }
             }
@@ -2591,9 +2617,11 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (shouldApplySiteFiltering) {
                 if (browserQuery.site != null) {
                     appendSiteQuery(selectQuery, browserQuery.site.getIdentifier(),
-                            browserQuery.forceSystemHost, parameters);
+                            browserQuery.systemHostMode, parameters);
                 } else {
-                    if (browserQuery.forceSystemHost) {
+                    // No site to narrow to, so the only host clause worth emitting is the
+                    // System Host one, which both INCLUDE and ONLY want here.
+                    if (SystemHostMode.EXCLUDE != browserQuery.systemHostMode) {
                         appendSystemHostQuery(selectQuery);
                     }
                 }
@@ -2764,9 +2792,14 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param siteIdentifier The site identifier to filter by.
      * @param parameters     The list of parameters to add the site identifier to.
      */
-    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier, boolean forceSystemHost,
-            List<Object> parameters) {
-        if(forceSystemHost){
+    private void appendSiteQuery(StringBuilder sqlQuery, String siteIdentifier,
+            SystemHostMode systemHostMode, List<Object> parameters) {
+        if (SystemHostMode.ONLY == systemHostMode) {
+            // The site is context rather than a filter here, so nothing is bound.
+            appendSystemHostQuery(sqlQuery);
+            return;
+        }
+        if (SystemHostMode.INCLUDE == systemHostMode) {
             sqlQuery.append(" and (id.host_inode = ? or id.host_inode = 'SYSTEM_HOST') ");
         } else {
             sqlQuery.append(" and (id.host_inode = ?) ");
@@ -3621,6 +3654,16 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @return a list of folders that match the filtering criteria specified in the browser query
      */
     private List<Folder> getFolders(BrowserQuery browserQuery) {
+        // System Host holds no folders, so a request scoped to it has none to report -- whatever
+        // it asked for. Without this the parent is still the browsed SITE, and asking for folders
+        // in the System Host scope returned that site's folders beside System Host's content: rows
+        // belonging to a host the caller did not ask about. Content Drive never asks, so nothing
+        // showed, but the listing's own contract (FR-010) said one thing and the server did
+        // another, and only the client's good manners hid it.
+        if (SystemHostMode.ONLY == browserQuery.systemHostMode) {
+            return Collections.emptyList();
+        }
+
         List<Folder> folders = Collections.emptyList();
         try {
 

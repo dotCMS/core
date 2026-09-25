@@ -1,5 +1,6 @@
 package com.dotcms.content.index.migration;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import java.util.Map;
 
@@ -18,13 +19,19 @@ import java.util.Map;
  * @param siteSearch the Site Search indices as a list — an open set with no natural key, so a list
  *                   (each entry carries its own {@code indexName})
  * @param verdict    the overall go/no-go for advancing and rolling back, with reasons
+ * @param unreachableEngines the engines that could not be read while building this report, keyed by
+ *                   engine name ({@code Elasticsearch} / {@code OpenSearch}) with the failure reason.
+ *                   The rows are still reported for the engine that answered; the other engine's side
+ *                   of each row carries the same reason (issue #37636). Omitted from the JSON when
+ *                   both engines were read.
  */
 public record MigrationReadiness(
         String clusterId,
         PhaseInfo phase,
         Map<String, MirrorStatus> content,
         List<MirrorStatus> siteSearch,
-        Verdict verdict) {
+        Verdict verdict,
+        @JsonInclude(JsonInclude.Include.NON_EMPTY) Map<String, String> unreachableEngines) {
 
     /**
      * @param current      the current phase ordinal (0–3)
@@ -47,11 +54,15 @@ public record MigrationReadiness(
      * @param safeToRollback whether it is safe to downgrade — false when any index's Elasticsearch
      *                       copy is missing, behind its OpenSearch counterpart, or has an unmeasurable
      *                       count on either engine, because a downgrade routes reads back to Elasticsearch
-     *                       and would silently drop that delta until a reindex
+     *                       and would silently drop that delta until a reindex. Also false when the
+     *                       mandatory content pair could not be resolved at all: with no rows to compare,
+     *                       "nothing shows Elasticsearch behind" is vacuously true (issue #37635)
      * @param outOfSyncCount how many indices need attention <em>in the current phase</em> (missing
      *                       counterpart or count drift). In Phase 0 an OpenSearch counterpart that does not
      *                       exist yet is the expected state — it is built during dual-write — so it is not
-     *                       counted here
+     *                       counted here. <strong>A 0 here is not on its own an all-clear</strong>: it
+     *                       counts drift among the rows that exist, so read it together with
+     *                       {@code blockers}, which is non-empty when nothing could be measured
      * @param summary        one human-readable sentence describing the overall state
      * @param blockers       per-index reasons that make advancing unsafe (empty when safe)
      */

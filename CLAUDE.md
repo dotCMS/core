@@ -98,6 +98,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - **Flow**: `/speckit-specify` (new feature) **or** `/speckit-specify-fix` (issue/bug resolution) → **PR 1 (spec) approved** → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → `/speckit-converge` → PR 2 (implementation).
 - **Two PRs, gated on approval — not merge**: PR 1 carries `spec.md` **alone** and another dev must **approve** it before `/speckit-plan` runs. Do **not** wait for PR 1 to merge — branch off the spec branch (the spec isn't on `main` yet) and open PR 2 with the implementation. If the spec changes after sign-off, get it re-approved. **Before opening PR 2, run `/speckit-converge` on your final code** and get `converged` (or consciously accept what remains). Human-triggered and human-judged; nothing enforces it. See [Quick Start §3](docs/core/SPEC_KIT_QUICK_START.md).
 - **Constitution**: [.specify/memory/constitution.md](.specify/memory/constitution.md) — legacy-awareness + Critical Rules; loaded by every skill.
+- **Reporting**: never let a reference carry the meaning. Say what a thing is or does, then attach the pointer in parentheses — spec or task id, commit sha, CI run id, ADR number, path. The test is whether the reader could act on the sentence without opening the thing it names: "proving that ten files upload as ten is still pending (T065)", not "T065 is pending"; "ADR-0018 makes the DB authoritative for folder and host, so the scope belongs in the SQL builder", not "per ADR-0018". References are encouraged — paths, classes, methods, config keys and line numbers are checkable, and the repair for a bare one is to add the meaning beside it, never to drop it. See [Constitution → Reporting to the Developer](.specify/memory/constitution.md).
 - **TDD (Principle V, non-negotiable)**: no implementation code before tests are written, **dev-approved**, and confirmed **failing (Red)**. If a test type can't be done, the dev must say so and why. Enforced in the constitution + `tasks-template` `[GATE]` tasks + plan Test Strategy.
 - **Convergence (closing step — you trigger it)**: `/speckit-converge` checks the code against the approved spec. `/speckit-implement` **recommends** it on finishing (`after_implement` hook, `optional: true`) but does **not** run it — the end of the task list is rarely the end of your work, and a run fired before your manual corrections would assess code you're about to change. Run it when you judge the work done, fix, repeat until `converged`. **Append-only** — findings become tasks in `tasks.md`, never direct edits. See [Quick Start §9](docs/core/SPEC_KIT_QUICK_START.md).
 - **ADRs**: live only in the private repo `dotCMS/platform-adrs`. `/speckit-plan` **always consults** relevant ADRs (auto `before_plan` hook → `/speckit-adr-context`, read-only via `gh`). Spec-Kit **never creates ADRs** — it only *proposes* them; ADRs are authored in `platform-adrs` via its `new-adr.sh`.
@@ -122,13 +123,16 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Java Standards](docs/backend/JAVA_STANDARDS.md) — Coding patterns, immutables, exceptions, utilities
 - [When to Use Virtual Threads](docs/backend/VIRTUAL_THREADS.md) — Socket I/O yes, file I/O no; carrier pinning
 - [REST API Patterns](docs/backend/REST_API_PATTERNS.md) — JAX-RS, Swagger, @Schema rules
+- [Inference API](docs/backend/INFERENCE_API.md) — OpenAI-compatible `/api/inference/v1` family: chat completions, streaming, models, embeddings, images; bearer-only auth, per-site resolution, limits
 - [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) — Dependency management
 - [Configuration Patterns](docs/backend/CONFIGURATION_PATTERNS.md) — Config.getProperty() usage
 - [Database Patterns](docs/backend/DATABASE_PATTERNS.md) — DotConnect, transactions
 - [Health Monitoring](docs/backend/HEALTH_MONITORING.md) — Health endpoints, log levels
 - [Security Patterns](docs/backend/SECURITY_BACKEND.md) — Input validation, auth, SQL/XSS prevention, secure logging
 - [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) — ES → OpenSearch: deprecated `ContentletAPI` search methods, plugin migration guide
+- [GraphQL Asset Fields Migration](docs/backend/GRAPHQL_ASSET_FIELDS_MIGRATION.md) — Image/File fields now resolve to an interface; existing queries keep working, but `__typename` reports the concrete type and generated types must be regenerated
 - [Telemetry Implementation](docs/backend/TELEMETRY_IMPLEMENTATION.md) — CDI-based metrics system, creating new metrics, `/v1/usage` endpoints
+- [Index Field Emission](docs/backend/INDEX_FIELD_EMISSION.md) — how `loadFields`/`toMap` build the index document; the `_dotraw` zero-padding sort invariant
 - [Jandex Metadata Scanning](docs/backend/JANDEX_METADATA_SCANNING.md) — Fast class/annotation metadata lookup, prefer over reflection
 - **ES → OpenSearch Migration** — infra migration from ElasticSearch to OpenSearch, phased dual-write/read rollout
   - [Migration Design](docs/backend/OPENSEARCH_MIGRATION.md) — Architecture, phased rollout, configuration
@@ -142,16 +146,20 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) — **single source of truth**: syntax, signals, change detection, forms, icons
 - [Component Architecture](docs/frontend/COMPONENT_ARCHITECTURE.md) — Structure, file layout, data flow
 - [State Management](docs/frontend/STATE_MANAGEMENT.md) — NgRx Signal Store, rxMethod, patchState
-- [Styling Standards](docs/frontend/STYLING_STANDARDS.md) — Tailwind, PrimeNG theme, BEM, SCSS
+- [Styling Standards](docs/frontend/STYLING_STANDARDS.md) — Tailwind, PrimeNG theme, BEM, SCSS, **form markup** (global `.form` / `.field`, labels, hints/errors, accessible naming)
 - [TypeScript Standards](docs/frontend/TYPESCRIPT_STANDARDS.md) — Strict types, as const, `#` private
 - [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) — Writing tests: Spectator, Jest, byTestId
 - [Testing Review Rules](docs/frontend/TESTING_REVIEW_RULES.md) — Reviewing tests: violation checklist
 - [Breadcrumbs](docs/frontend/BREADCRUMBS.md) — GlobalStore breadcrumb trail
 
 ### Testing
-- [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — JUnit, integration patterns
+- [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — Surefire in `:dotcms-core`, Mockito setup, naming (there is no category/tag mechanism), running and debugging
 - [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — Running/debugging tests, MainSuite registration, API testing, database setup
 - [E2E Tests](docs/testing/E2E_TESTS.md) — Playwright, user workflows
+
+### CLI (`tools/dotcms-cli`)
+- [CLI Overview](docs/cli/CLI_OVERVIEW.md) — Quarkus + PicocLI architecture, module layout, command patterns. **Compiles to a lower `maven.compiler.release` than the core modules** — read the property before using modern syntax
+- [CLI Build System](docs/cli/CLI_BUILD_SYSTEM.md) — Maven profiles (`dist`, `native`, `release`), Quarkus dev mode, native image, testcontainers
 
 ### Infrastructure
 - [Docker Build Process](docs/infrastructure/DOCKER_BUILD_PROCESS.md) — Container setup, optimization

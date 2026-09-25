@@ -205,6 +205,12 @@ export interface DotContentDriveQueryFilters {
 }
 
 /**
+ * Which slice of content a Content Drive listing is asked for: the whole current site at any
+ * depth, only what sits at the site root, or System Host alone.
+ */
+export type DotContentDriveBrowseScope = 'ALL' | 'ROOT' | 'SYSTEM_HOST';
+
+/**
  * Request body for the /api/v1/drive/search endpoint.
  *
  * @example
@@ -239,6 +245,15 @@ export interface DotContentDriveSearchRequest {
      * @default true
      */
     includeSystemHost?: boolean;
+
+    /**
+     * Which slice of content to list. Omitting it means today's behavior, and it carries no
+     * default for that reason: at the site root an omitted scope and `ALL` agree, but inside a
+     * folder they do not, so defaulting it would turn folder requests into listings of every
+     * descendant. Only valid with a site-root `assetPath`; naming one alongside a folder path is
+     * refused by the endpoint.
+     */
+    browseScope?: DotContentDriveBrowseScope;
 
     /**
      * List of language identifiers to include in the search.

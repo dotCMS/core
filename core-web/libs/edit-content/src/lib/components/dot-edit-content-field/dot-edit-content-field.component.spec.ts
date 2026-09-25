@@ -109,6 +109,8 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         providers: [
             mockProvider(DialogService),
             mockProvider(DotEditContentStore, {
+                // BaseWrapperField gates required errors on this.
+                hasAttemptedSubmit: vi.fn().mockReturnValue(false),
                 contentType: signal(null),
                 isCopyingLocale: signal(false),
                 currentLocale: signal(undefined),
@@ -125,6 +127,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
                     setContentTitle: vi.fn(),
                     addBreadcrumb: vi.fn(),
                     goToSavedContent: vi.fn(),
+                    leaveDeletedContent: vi.fn(),
                     goToRestoredVersion: vi.fn(),
                     goToRelatedContent: vi.fn(),
                     goToCrumb: vi.fn()
@@ -177,6 +180,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             {
                 provide: DotEditContentStore,
                 useValue: {
+                    hasAttemptedSubmit: signal(false),
                     currentLocale: signal({ id: 1, language: 'English', country: 'US' })
                 }
             }
@@ -261,6 +265,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             {
                 provide: DotEditContentStore,
                 useValue: {
+                    hasAttemptedSubmit: signal(false),
                     showSidebar: signal(false)
                 }
             }

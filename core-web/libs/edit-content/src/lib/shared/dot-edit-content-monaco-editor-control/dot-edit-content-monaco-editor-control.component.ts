@@ -118,6 +118,12 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
         return {
             ...DEFAULT_MONACO_CONFIG,
             ...this.$customPropsContentField(),
+            // Monaco owns its DOM, so `<label for>` cannot reach the surface it renders. Its own
+            // ariaLabel option is where the field name belongs; without it the editor announces
+            // itself with Monaco's generic default and the author cannot tell which field they are
+            // in. Set after the spreads, like `language`, so it is not silently dropped by custom
+            // monacoOptions.
+            ariaLabel: this.$field()?.name,
             language: this.$forcedLanguage() || this.$language()
         };
     });

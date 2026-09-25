@@ -122,6 +122,7 @@ let hostStub: {
     setContentTitle: Mock;
     addBreadcrumb: Mock;
     goToSavedContent: Mock;
+    leaveDeletedContent: Mock;
     goToRestoredVersion: Mock;
     goToRelatedContent: Mock;
     goToCrumb: Mock;
@@ -150,6 +151,7 @@ describe('DotRelationshipFieldComponent', () => {
             setContentTitle: vi.fn(),
             addBreadcrumb: vi.fn(),
             goToSavedContent: vi.fn(),
+            leaveDeletedContent: vi.fn(),
             goToRestoredVersion: vi.fn(),
             goToRelatedContent: vi.fn(),
             goToCrumb: vi.fn()
@@ -206,6 +208,8 @@ describe('DotRelationshipFieldComponent', () => {
             provideHttpClientTesting(),
             mockProvider(DotMessageService, messageServiceMock),
             mockProvider(DotEditContentStore, {
+                // BaseWrapperField gates required errors on this.
+                hasAttemptedSubmit: vi.fn().mockReturnValue(false),
                 contentType: vi.fn().mockReturnValue(null),
                 currentLocale: vi.fn().mockReturnValue(null),
                 isCopyingLocale: vi.fn().mockReturnValue(false),
@@ -241,6 +245,17 @@ describe('DotRelationshipFieldComponent', () => {
 
     describe('Locales column', () => {
         beforeEach(() => setup());
+
+        /**
+         * AC-209 — a relationship's value is the list of related contentlets, so no single control
+         * can carry `<label for>`. The widget names itself from the field label instead.
+         */
+        it('should expose itself as a group named by the field label', () => {
+            expect(spectator.element.getAttribute('role')).toBe('group');
+            expect(spectator.element.getAttribute('aria-labelledby')).toBe(
+                'label-' + FIELD_MOCK.variable
+            );
+        });
 
         it('should render the Locales header using the table language key', () => {
             const localeHeader = spectator.query(byTestId('relationship-locale-header'));

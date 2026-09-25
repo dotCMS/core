@@ -603,12 +603,80 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     readonly $ptConfig = computed(() => {
         const extras = this.$sizedExtraColumns();
 
+        // Take the paginator out of play while a search is in flight, so the controls cannot be
+        // clicked into queueing more searches.
+        //
+        // Reacts to `#pageChangeAccepted`, not just `$loading()`: that flag closes the same
+        // microtask gap `onPage` guards against (see its doc comment) -- without it here too, the
+        // lockout only starts once `$loading()` catches up, leaving that same gap open at the DOM
+        // level. A second real mouse click landing in that window reaches PrimeNG's own paginator
+        // button, which mutates its internal current-page state (`_first`) synchronously on click
+        // regardless of what `onPage` does with the event. `onPage`'s guard blocks the resulting
+        // duplicate request, but PrimeNG's internal page pointer is left desynced from `$offset()`
+        // -- `onFirstChange` cannot correct it in that case because it resets `first` back to a
+        // value Angular already considers unchanged, so the correction never reaches the child
+        // paginator (found in review, issue #37212 QA follow-up #1: Previous/Next disabled state
+        // stops matching which page is actually displayed after a fast click on the other control).
+        const locked = this.$loading() || this.#pageChangeAccepted();
+
+        // Mirrors PrimeNG Paginator's own isFirstPage()/isLastPage()/empty() (primeng-paginator.mjs)
+        // exactly, off this component's own reactive state, so `prev`/`next` below can supply a
+        // `disabled` value on *every* render -- locked or not -- rather than omitting the key when
+        // unlocked and leaving PrimeNG's own `[disabled]="isFirstPage() || empty()"` binding to
+        // cover that case.
+        //
+        // That omission was itself a bug (found in review, issue #37212 QA follow-up #4): PrimeNG's
+        // template binding only re-writes the DOM property when its OWN evaluated boolean differs
+        // from the value Angular last recorded for it. `pBind`'s effect (see the `prev`/`next`
+        // comment below) writes `disabled` imperatively, outside that bookkeeping -- so once it had
+        // forced `disabled = true` while locked, unlocking at a page where `isFirstPage()` was
+        // already `false` before AND after (any page that is not page 1, i.e. most navigation)
+        // left Angular's evaluated value unchanged across the whole transition. Angular therefore
+        // never re-wrote the property, and Previous/Next stayed stuck disabled after loading
+        // finished on every page but the first. Reading `$offset()`/`$recordCount()`/the table's
+        // current `rows` here and computing the boundary ourselves means `prev`/`next` always
+        // carry a concrete boolean, so `pBind` is the only thing ever writing `disabled` -- no
+        // second, independently-dirty-checked writer left to fall out of sync with it.
+        //
+        // `$recordCount()`, not `$totalItems()` directly: a non-lazy caller has no reason to bind
+        // `totalItems` (it holds every row already), which would otherwise read as 0 here and mark
+        // the paginator permanently `empty()`. `$recordCount()` already carries the right fallback
+        // to `$items().length` for that case -- see its own doc comment.
+        const rows = this.dataTable()?.rows ?? this.MIN_ROWS_PER_PAGE;
+        const totalItems = this.$recordCount();
+        const pageCount = Math.ceil(totalItems / rows);
+        const isEmpty = pageCount === 0;
+        const page = Math.floor(this.$offset() / rows);
+        const isFirstPage = page === 0;
+        const isLastPage = page === pageCount - 1;
+
         return {
-            // Take the paginator out of play while a search is in flight, so the controls cannot be
-            // clicked into queueing more searches. `pointer-events-none` covers the rows-per-page
-            // dropdown too, which triggers a fetch of its own.
-            paginator: {
-                class: this.$loading() ? 'pointer-events-none opacity-60' : ''
+            // `p-table`'s own pt section for its paginator sub-component is `pcPaginator`, not
+            // `paginator` -- an unrecognized section key is silently ignored, so an earlier version
+            // of this lockout (`paginator: { class: ... }`) never reached the DOM at all: the
+            // computed object looked right in isolation, but the rendered `.p-paginator` carried
+            // neither the class nor a disabled button (issue #37212 QA follow-up #2, confirmed
+            // against `primeng/fesm2022/primeng-table.mjs`'s own `[pt]="ptm('pcPaginator')"`).
+            //
+            // `root` (not a bare top-level `class`) targets the paginator's own host element --
+            // every PrimeNG v21 component's pt object is itself a map of named sections, and `root`
+            // is the section for the component's own top-level node. `pointer-events-none` there
+            // still protects the rows-per-page dropdown (a plain CSS lockout is good enough for it,
+            // and it is a more complex nested component to risk a `disabled` pass-through into).
+            //
+            // `prev`/`next` set a real `disabled` on the actual buttons, unconditionally (see the
+            // boundary computation above for why this is now always supplied rather than only
+            // while locked). A real `disabled` is stronger than a CSS-only lockout for two reasons
+            // `pointer-events-none` cannot cover on its own: keyboard activation (Enter/Space still
+            // reaches a `pointer-events: none` button) and assistive tech (a screen reader still
+            // announces it as enabled). Verified against the installed PrimeNG 21.1.3: `Paginator`'s
+            // `prev`/`next` buttons bind `[pBind]="ptm('prev'/'next')"` alongside their own
+            // `[disabled]="isFirstPage() || empty()"` -- `pBind`'s effect (from the shared `Bind`
+            // directive) writes the DOM property after the template's own binding runs, so it wins.
+            pcPaginator: {
+                root: { class: locked ? 'pointer-events-none opacity-60' : '' },
+                prev: { disabled: locked || isFirstPage || isEmpty },
+                next: { disabled: locked || isLastPage || isEmpty }
             },
             table: {
                 style: {
@@ -922,7 +990,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         // catches up with the click that set it (found in review, issue #37212).
         effect(() => {
             if (this.$loading()) {
-                this.#pageChangeAccepted = false;
+                this.#pageChangeAccepted.set(false);
             }
         });
     }
@@ -1234,8 +1302,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * `$loading()` guard below and queue a second request the first click already started (found in
      * review, issue #37212). This flag closes exactly that gap; once `$loading()` catches up (see the
      * constructor's effect), that guard alone is sufficient for the rest of the request's lifetime.
+     *
+     * A signal, not a plain field, so `$ptConfig` can also gate the paginator's CSS lockout on it
+     * (issue #37212 QA follow-up) -- the JS guard below stopping a duplicate *request* was never the
+     * whole story; the DOM buttons themselves must be unclickable for that same window; otherwise a
+     * fast second click reaches PrimeNG's own paginator before `$loading()` catches up and mutates
+     * its internal current-page state, which nothing then corrects (see `$ptConfig`'s comment).
      */
-    #pageChangeAccepted = false;
+    #pageChangeAccepted = signal(false);
 
     /**
      * Handles pagination events from the PrimeNG Table
@@ -1254,11 +1328,11 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         // the user cannot see yet, and the last response to arrive wins regardless of which page was
         // asked for last. The controls are also visually disabled via `$ptConfig`, but this is the
         // part that has to hold: a keyboard activation or a fast double click does not wait for CSS.
-        if (this.$loading() || this.#pageChangeAccepted) {
+        if (this.$loading() || this.#pageChangeAccepted()) {
             return;
         }
 
-        this.#pageChangeAccepted = true;
+        this.#pageChangeAccepted.set(true);
 
         const page = event.first && event.rows ? Math.floor(event.first / event.rows) + 1 : 1;
         this.paginate.emit({ ...event, page });

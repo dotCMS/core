@@ -1,8 +1,8 @@
 import { SpectatorHost, byTestId, createHostFactory, mockProvider } from '@openng/spectator/vitest';
 import { describe, vi } from 'vitest';
 
-import { Component } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { Component, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DatePicker } from 'primeng/datepicker';
 import { Tooltip, TooltipModule } from 'primeng/tooltip';
@@ -21,6 +21,7 @@ import * as calendarUtils from './components/calendar-field/calendar-field.util'
 import { DotEditContentCalendarFieldComponent } from './dot-edit-content-calendar-field.component';
 
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import { CONTENT_TYPE_MOCK, DATE_FIELD_MOCK } from '../../utils/mocks';
 
 @Component({
@@ -37,6 +38,8 @@ export class MockFormComponent {
     contentType!: DotCMSContentType;
 }
 
+const submitAttempted = signal(false);
+
 describe('DotEditContentCalendarFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentCalendarFieldComponent, MockFormComponent>;
 
@@ -46,6 +49,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
         imports: [ReactiveFormsModule, TooltipModule],
         detectChanges: false,
         providers: [
+            { provide: DotEditContentStore, useValue: { hasAttemptedSubmit: submitAttempted } },
             mockProvider(DotMessageService, {
                 get: vi.fn().mockReturnValue('Never expires')
             })
@@ -183,7 +187,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
                 {
                     hostProps: {
                         formGroup: new FormGroup({
-                            [fieldWithHint.variable]: new FormControl()
+                            // A real validator, not a forced flag: $hasError now reads the control's
+                            // actual validity, which is the point of the #37464 gate.
+                            [fieldWithHint.variable]: new FormControl(null, Validators.required)
                         }),
                         field: fieldWithHint,
                         utcTimezone: MOCK_TIMEZONE,
@@ -196,7 +202,9 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            spectator.component.$hasError.set(true);
+            // $hasError is computed from the store's submit flag and the control's validity;
+            // it is no longer settable, which is the point of the #37464 gate.
+            submitAttempted.set(true);
             spectator.detectChanges();
 
             const error = spectator.query('.p-field-error');

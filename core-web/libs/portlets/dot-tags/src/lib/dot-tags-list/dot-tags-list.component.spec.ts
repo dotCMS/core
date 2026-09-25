@@ -8,6 +8,7 @@ import { Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { ConfirmationService, MenuItemCommandEvent } from 'primeng/api';
+import { Button } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
@@ -251,6 +252,19 @@ describe('DotTagsListComponent', () => {
                 spectator.detectChanges();
                 expect(spectator.query(byTestId('tag-delete-btn'))).toBeTruthy();
                 expect(spectator.query(byTestId('tag-export-split-btn'))).toBeTruthy();
+            });
+
+            it('should render the Delete button as a tertiary (text) button, not red', () => {
+                (store.selectedTags as unknown as Mock).mockReturnValue([MOCK_TAGS[0]]);
+                spectator = createComponent();
+                spectator.detectChanges();
+                const deleteBtn = spectator
+                    .queryAll(Button)
+                    .find((button) => button.el.nativeElement.dataset.testid === 'tag-delete-btn');
+
+                expect(deleteBtn).toBeDefined();
+                expect(deleteBtn?.severity).toBeUndefined();
+                expect(deleteBtn?.text).toBe(true);
             });
 
             it('should show the Add split button regardless of selection', () => {

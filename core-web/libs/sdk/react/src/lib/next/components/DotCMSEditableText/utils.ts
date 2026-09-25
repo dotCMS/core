@@ -1,10 +1,10 @@
-import { IAllProps } from '@tinymce/tinymce-react';
-
 import { DotCMSBasicContentlet } from '@dotcms/types';
 import {
     __BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__,
     __DEFAULT_TINYMCE_CONFIG__
 } from '@dotcms/uve/internal';
+
+import type { IAllProps } from '@tinymce/tinymce-react';
 export type DOT_EDITABLE_TEXT_FORMAT = 'html' | 'text';
 
 export type DOT_EDITABLE_TEXT_MODE = 'minimal' | 'full' | 'plain';
