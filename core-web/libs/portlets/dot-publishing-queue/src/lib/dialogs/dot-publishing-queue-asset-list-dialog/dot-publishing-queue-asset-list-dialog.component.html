@@ -68,20 +68,22 @@
                         <p-tag severity="secondary" [rounded]="false" [value]="asset.type" />
                     </td>
                     @if (allowRemove) {
-                        <td class="text-right" (click)="$event.stopPropagation()">
+                        <td class="pr-5 text-right" (click)="$event.stopPropagation()">
                             <p-button
-                                severity="danger"
                                 [text]="true"
                                 [rounded]="true"
                                 size="small"
-                                styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
-                                [pTooltip]="'publishing-queue.asset-list.remove' | dm"
+                                severity="secondary"
+                                styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity h-8! w-8! min-w-0! p-0!"
+                                [pTooltip]="'publishing-queue.select-bundle.delete-tooltip' | dm"
                                 tooltipPosition="left"
-                                [attr.aria-label]="'publishing-queue.asset-list.remove' | dm"
                                 (onClick)="onRemoveAsset(asset)"
+                                [attr.aria-label]="
+                                    'publishing-queue.select-bundle.delete-tooltip' | dm
+                                "
                                 data-testid="pq-asset-remove-btn">
                                 <span
-                                    class="material-symbols-rounded w-6 text-center"
+                                    class="material-symbols-rounded text-lg! leading-none!"
                                     aria-hidden="true">
                                     delete
                                 </span>

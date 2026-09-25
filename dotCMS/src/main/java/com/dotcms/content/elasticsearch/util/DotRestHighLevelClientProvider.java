@@ -174,8 +174,15 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     return httpClientBuilder;
                 })
                 .setFailureListener(new RestClient.FailureListener() {
-                    public void onFailure(Node node) {
-                        Logger.error(this, node.toString());
+                    /**
+                     * Called by the low-level client when a request to a node fails and the node is
+                     * marked dead. The exception is not passed here — it reaches the caller — so say
+                     * what happened in words an operator would search for (issue #37636).
+                     */
+                    @Override
+                    public void onFailure(final Node node) {
+                        Logger.error(this, "Elasticsearch node failed a request and was marked dead "
+                                + "by the client; the caller receives the error: " + node);
                     }
                 });
 

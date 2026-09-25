@@ -435,12 +435,26 @@ path in the first; confirm the second is refused with a readable reason and no j
   as "not found" tells the author their delete failed when it succeeded.
 
 - **FR-030a**: The system MUST state its position on re-running a failed or interrupted delete.
-  Declaring the run non-retryable is **not sufficient on its own**: the abandonment sweep returns an
+  **Revised 2026-09-21, found while implementing T067, not at planning time**: the premise below
+  ("the abandonment sweep returns an abandoned run to the queue without consulting the retry
+  policy") is factually wrong — checked directly in `JobQueueManagerAPIImpl#canRetry`, it consults
+  the exact same retry-policy/retry-count gate for a job coming back from `ABANDONED` as it does
+  for one coming back from a thrown exception. A `@NoRetryPolicy` processor is therefore routed
+  straight to `ABANDONED_PERMANENTLY` on re-queue — `process(Job)` never runs a second time — which
+  would make FR-030 itself unreachable: there is no second attempt to get right. The identical
+  false premise was independently recorded already in `BulkUploadProcessor`'s own javadoc
+  ("the abandoned-job sweep re-queues... without consulting the retry policy"), so this is a real
+  framework-level gap, not specific to this feature — tracked separately, not fixed here.
+  ~~Declaring the run non-retryable is not sufficient on its own: the abandonment sweep returns an
   abandoned run to the queue without consulting the retry policy, so a second attempt can happen
-  either way and has to be survivable regardless of what is declared.
-  **Decided**: no retry policy — a failure is reported per folder and the author decides, matching
-  what the reindex processor already does. The abandonment sweep still re-queues independently of
-  that, which is exactly why FR-030 exists and is not made redundant by this answer.
+  either way and has to be survivable regardless of what is declared.~~
+  **Decided (corrected)**: no `@NoRetryPolicy` annotation — not because retry policy doesn't matter
+  here, but because it is the only way an abandoned run actually gets a second `process(Job)` call
+  at all, matching `BulkUploadProcessor`'s own precedent exactly. This costs nothing on the
+  ordinary exception-retry axis either: every catch block in `FolderBulkDeleteProcessor` records a
+  `FAILED` result and returns rather than re-throwing, so `process(Job)` itself never throws for
+  that path to even apply to. A failure is still reported per folder and the author decides — that
+  part of the original decision holds; only the retry-policy annotation choice was wrong.
 
 #### Telling the author
 

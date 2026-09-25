@@ -4,6 +4,8 @@ import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.content.index.migration.ContentIndexMirrorReconciler.ContentMirrors;
 import com.dotcms.content.index.migration.MirrorStatus.IndexKind;
+import com.dotcms.content.index.migration.MirrorStatus.Verdict;
+import com.dotcms.content.index.migration.SiteSearchMirrorReconciler.SiteSearchMirrors;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -60,8 +62,14 @@ public class MigrationReadinessService {
     public MigrationReadiness evaluate() {
         final MigrationPhase phase = MigrationPhase.current();
         final ContentMirrors contentMirrors = contentReconciler.mirrors();
+        final SiteSearchMirrors siteSearchMirrors = siteSearchReconciler.mirrors();
         final List<MirrorStatus> content = new ArrayList<>(contentMirrors.statuses());
-        final List<MirrorStatus> siteSearch = new ArrayList<>(siteSearchReconciler.statuses());
+        final List<MirrorStatus> siteSearch = new ArrayList<>(siteSearchMirrors.statuses());
+        // An engine that failed on either half is unreachable for the whole report; the first reason
+        // recorded is kept, since both halves see the same outage.
+        final Map<String, String> unreachable = new LinkedHashMap<>(contentMirrors.unreachableEngines());
+        siteSearchMirrors.unreachableEngines().forEach(unreachable::putIfAbsent);
+        final boolean elasticsearchUnreachable = unreachable.containsKey(MirrorStatus.ELASTICSEARCH);
 
         final List<MirrorStatus> all = new ArrayList<>(content.size() + siteSearch.size());
         all.addAll(content);
@@ -78,8 +86,9 @@ public class MigrationReadinessService {
         // nothing to report on — a hard no-go, independent of the sync check, which would otherwise
         // pass vacuously when there are no active indices at all. Site Search is an open set that may
         // legitimately be empty, so it is not required here.
-        final List<String> missingContent =
-                requiredContentBlockers(content, phase, contentMirrors.unreadableReason());
+        final List<String> missingContent = requiredContentBlockers(content, phase,
+                contentMirrors.unreadableReason(), unreachable);
+        final List<String> unreachableBlockers = unreachableEngineBlockers(phase, unreachable);
 
         final boolean safeToAdvance;
         final String summary;
@@ -92,6 +101,7 @@ public class MigrationReadinessService {
             // of health over zero measurements: outOfSyncCount reads 0 because nothing was counted and
             // the rollback verdict reads safe because no index could show Elasticsearch behind
             // OpenSearch (issue #37635). Report the gap instead of the vacuous all-clear.
+            blockers.addAll(unreachableBlockers);
             blockers.addAll(missingContent);
             safeToAdvance = blockers.isEmpty();
             summary = safeToAdvance
@@ -103,7 +113,13 @@ public class MigrationReadinessService {
                                     + "measured, or holds materially less than the database; run a "
                                     + "full reindex. ", plural(outOfSync.size(), "index", "indices"),
                                     outOfSync.size() == 1 ? "has" : "have"))
-                        + (esBehindAnywhere
+                        // A retired Elasticsearch is the runbook's end state, not a fault — but it
+                        // was not measured, so claiming OpenSearch is "ahead" of it would be a guess.
+                        + (elasticsearchUnreachable
+                            ? String.format("Elasticsearch could not be reached (%s), so whether a "
+                                    + "downgrade is safe cannot be judged; do not downgrade on this "
+                                    + "reading.", unreachable.get(MirrorStatus.ELASTICSEARCH))
+                            : esBehindAnywhere
                             ? "WARNING: OpenSearch holds content Elasticsearch does not; a downgrade "
                                     + "would hide it until a full reindex."
                             : "No index shows Elasticsearch behind OpenSearch; still verify before any "
@@ -115,7 +131,9 @@ public class MigrationReadinessService {
                             + "attempted on this reading.", plural(blockers.size(), "blocker"));
         } else if (phase.isMigrationNotStarted()) {
             // Phase 0: OpenSearch counterparts are built later (during dual-write), so their absence is
-            // expected and NOT a blocker; only the mandatory Elasticsearch content pair is required.
+            // expected and NOT a blocker; only the mandatory Elasticsearch content pair is required —
+            // and both engines reachable, since advancing starts writing to OpenSearch.
+            blockers.addAll(unreachableBlockers);
             blockers.addAll(missingContent);
             safeToAdvance = blockers.isEmpty();
             summary = safeToAdvance
@@ -133,13 +151,17 @@ public class MigrationReadinessService {
                                         outOfSync.size() == 1 ? "is" : "are"))
                     : String.format("Not safe to advance from Phase 0: %s to resolve first (see the "
                             + "blockers list). Dual-write needs an active Elasticsearch content index "
-                            + "to mirror from.", plural(blockers.size(), "blocker"));
+                            + "to mirror from and a reachable OpenSearch to mirror into.",
+                            plural(blockers.size(), "blocker"));
         } else {
             // Phases 1/2 (dual-write): require the mandatory content pair AND every mirror in sync. Drop
             // out-of-sync rows already reported as missing content (an ES-missing content slot surfaces
             // both as a missing-source blocker and as MISSING_COUNTERPART) so it is not reported twice.
+            // Rows left unmeasured by an unreachable engine are covered by that engine's one blocker.
+            blockers.addAll(unreachableBlockers);
             blockers.addAll(missingContent);
             outOfSync.stream()
+                    .filter(s -> s.verdict() != Verdict.UNMEASURED)
                     .filter(s -> !(isContent(s.kind()) && !s.es().exists()))
                     .forEach(s -> blockers.add(String.format("%s '%s': %s", s.kind(), s.indexName(),
                             s.recommendation())));
@@ -158,7 +180,9 @@ public class MigrationReadinessService {
         // saw the mandatory content pair. Without it, "no index shows Elasticsearch behind OpenSearch"
         // is vacuously true over an empty list — and the rollback verdict is the one decision that
         // reading exists to protect (issue #37635).
-        final boolean safeToRollback = missingContent.isEmpty() && !esBehindAnywhere;
+        // Rollback compares the two engines, so it cannot be judged with either one unread.
+        final boolean safeToRollback = missingContent.isEmpty() && !esBehindAnywhere
+                && unreachable.isEmpty();
         final MigrationReadiness.Verdict verdict = new MigrationReadiness.Verdict(
                 safeToAdvance, safeToRollback, outOfSync.size(), summary, blockers);
 
@@ -170,7 +194,7 @@ public class MigrationReadinessService {
             contentBySlot.put(contentSlot(s.kind()), s);
         }
         return new MigrationReadiness(clusterIdSupplier.get(), phaseInfo, contentBySlot,
-                siteSearch, verdict);
+                siteSearch, verdict, Map.copyOf(unreachable));
     }
 
     /**
@@ -191,8 +215,9 @@ public class MigrationReadinessService {
         if (!status.needsAttention()) {
             return false;
         }
-        final boolean expectedMissingCounterpart =
-                phase.isMigrationNotStarted() && status.es().exists() && !status.os().exists();
+        // "Not built yet" only applies to an OpenSearch that was actually read and found without it.
+        final boolean expectedMissingCounterpart = phase.isMigrationNotStarted()
+                && status.es().exists() && status.os().wasRead() && !status.os().exists();
         return !expectedMissingCounterpart;
     }
 
@@ -257,9 +282,16 @@ public class MigrationReadinessService {
      * from it would be asserted over zero measurements (issues #36360 and #37635).</p>
      */
     private static List<String> requiredContentBlockers(final List<MirrorStatus> content,
-            final MigrationPhase phase, final Optional<String> unreadableReason) {
+            final MigrationPhase phase, final Optional<String> unreadableReason,
+            final Map<String, String> unreachable) {
         final boolean openSearchOwnsContent = phase.isMigrationComplete();
-        final String engine = openSearchOwnsContent ? "OpenSearch" : "Elasticsearch";
+        final String engine = openSearchOwnsContent ? MirrorStatus.OPENSEARCH : MirrorStatus.ELASTICSEARCH;
+        // The owning engine could not be read, so whether its copies exist is unknown. Its own blocker
+        // (see unreachableEngineBlockers) says so; a per-slot "no copy — reindex" here would prescribe
+        // a rebuild over an unknown (issue #37636).
+        if (unreadableReason.isEmpty() && unreachable.containsKey(engine)) {
+            return List.of();
+        }
         // A store that could not be read is NOT a store with no indices. Both leave the report with
         // no rows, but the operator action is the opposite — fix the read, do not reindex — and the
         // per-slot messages below would confidently prescribe the wrong one (issue #37635).
@@ -284,6 +316,26 @@ public class MigrationReadinessService {
                         + "rebuild it before changing the phase.", slot, status.indexName(), engine));
             }
         }
+        return out;
+    }
+
+    /**
+     * One blocker per engine that could not be read, except Elasticsearch in Phase 3: nothing there
+     * depends on it any more, and switching it off is the runbook's last step, so its absence is
+     * reported in the summary and in {@code safeToRollback} rather than as a reason not to advance
+     * (issue #37636).
+     */
+    private static List<String> unreachableEngineBlockers(final MigrationPhase phase,
+            final Map<String, String> unreachable) {
+        final List<String> out = new ArrayList<>(unreachable.size());
+        unreachable.forEach((engine, reason) -> {
+            if (phase.isMigrationComplete() && MirrorStatus.ELASTICSEARCH.equals(engine)) {
+                return;
+            }
+            out.add(String.format("%s could not be reached: %s. Its side of every index below is "
+                    + "unknown, so this reading cannot support changing the phase. Restore access and "
+                    + "re-run this check; do not reindex because of it.", engine, reason));
+        });
         return out;
     }
 
