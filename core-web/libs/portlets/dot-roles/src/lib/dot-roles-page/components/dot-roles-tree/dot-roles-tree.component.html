@@ -1,5 +1,5 @@
 <header class="flex items-center justify-between">
-    <span class="text-color-secondary text-xs font-semibold tracking-wider uppercase">
+    <span class="text-color-secondary text-sm font-semibold tracking-wider uppercase">
         {{ 'roles.panel.title' | dm }}
     </span>
     <button
@@ -8,7 +8,6 @@
         (click)="onAddRole()"
         data-testid="new-role-btn"
         [attr.aria-label]="'roles.action.new' | dm"
-        [outlined]="true"
         size="small">
         {{ 'roles.action.new' | dm }}
     </button>

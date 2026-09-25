@@ -8,17 +8,11 @@ import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
-import {
-    DotAlertConfirmService,
-    DotHttpErrorManagerService,
-    DotMessageService
-} from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRolesPageComponent } from './dot-roles-page.component';
 import { DotRolesStore } from './store/dot-roles.store';
-
-import { DotRolesPortletService } from '../services/dot-roles-portlet.service';
 
 const MESSAGES = {
     'roles.detail.empty': 'Select a role',
@@ -59,6 +53,8 @@ function baseStoreMock(overrides: Record<string, unknown> = {}) {
         status: vi.fn().mockReturnValue('LOADED'),
         membersStatus: vi.fn().mockReturnValue('LOADED'),
         members: vi.fn().mockReturnValue([]),
+        membersFilter: vi.fn().mockReturnValue(''),
+        memberIds: vi.fn().mockReturnValue([]),
         toolGroups: vi.fn().mockReturnValue([]),
         toolGroupsStatus: vi.fn().mockReturnValue('LOADED'),
         toolGroupsSaving: vi.fn().mockReturnValue(false),
@@ -87,11 +83,10 @@ describe('DotRolesPageComponent', () => {
         component: DotRolesPageComponent,
         schemas: [CUSTOM_ELEMENTS_SCHEMA],
         detectChanges: false,
-        componentProviders: [baseStoreMock(), mockProvider(DotRolesPortletService)],
+        componentProviders: [baseStoreMock()],
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
-            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
-            mockProvider(DotAlertConfirmService, { alert: vi.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 
