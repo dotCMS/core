@@ -365,6 +365,7 @@ describe('DotUveIframeComponent', () => {
 
             beforeEach(() => {
                 doc = document.implementation.createHTMLDocument();
+                Object.assign(mockWindow, { document: doc, scrollTo: vi.fn(), scrollY: 0 });
                 (mockWindow.addEventListener as Mock).mockImplementation(
                     (event: string, handler: (e: MouseEvent) => void) => {
                         if (event === 'click') {
@@ -463,7 +464,7 @@ describe('DotUveIframeComponent', () => {
                 expect(inlineEditingSpy).not.toHaveBeenCalled();
             });
 
-            it('should not emit for hash-only anchors (browser handles same-page scroll)', () => {
+            it('should not emit for hash-only anchors', () => {
                 const a = doc.createElement('a');
                 a.setAttribute('href', '#page-section');
 
@@ -474,6 +475,24 @@ describe('DotUveIframeComponent', () => {
 
                 expect(internalNavSpy).not.toHaveBeenCalled();
                 expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+
+            // The srcdoc's base URL is the admin's, so a browser-handled
+            // "#section" would load the admin inside the canvas.
+            it('should cancel a hash-only anchor and scroll the iframe to its target', () => {
+                const target = doc.createElement('div');
+                target.id = 'page-section';
+                target.getBoundingClientRect = () => ({ top: 320 }) as DOMRect;
+                doc.body.appendChild(target);
+                const a = doc.createElement('a');
+                a.setAttribute('href', '#page-section');
+                const click = createClickWithTarget(a);
+                const preventDefaultSpy = vi.spyOn(click, 'preventDefault');
+
+                clickHandler?.(click);
+
+                expect(preventDefaultSpy).toHaveBeenCalled();
+                expect(mockWindow.scrollTo).toHaveBeenCalledWith({ top: 320, left: 0 });
             });
 
             // Anchor links are commonly placed inside an editable contentlet area

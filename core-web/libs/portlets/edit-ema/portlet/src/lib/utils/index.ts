@@ -620,6 +620,12 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
     delete paramsCopy?.clientHost;
     delete paramsCopy?.url;
 
+    // A param set to `undefined` has been cleared (a removed filter, a reset
+    // publish date). URLSearchParams would print it as "key=undefined".
+    Object.keys(paramsCopy).forEach(
+        (key) => paramsCopy[key] === undefined && delete paramsCopy[key]
+    );
+
     const searchParams = new URLSearchParams(paramsCopy);
 
     const pureURL = new URL(`${url}?${searchParams.toString()}`, clientHost);
@@ -1164,6 +1170,50 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
 
     return target.pathname === current.pathname;
 };
+
+/**
+ * Scrolls a traditional page's iframe to the element a URL fragment points at.
+ *
+ * Traditional pages render through `srcdoc`, whose base URL is the admin's, so a
+ * browser-handled `#section` link resolves to the admin URL and loads the admin
+ * inside the canvas instead of scrolling. Callers cancel the click and scroll
+ * here instead. The target follows the HTML rules: the element with that id,
+ * else the first element with that name, and the top of the page for `#` or
+ * `#top`. An unknown fragment does nothing, as in a browser.
+ *
+ * Scrolls the iframe's own window rather than calling `scrollIntoView`, which
+ * would also scroll the editor's canvas around the iframe.
+ *
+ * @param {Window | null} win - The iframe's window
+ * @param {string} hash - The fragment, with or without the leading `#`
+ */
+export function scrollIframeToFragment(win: Window | null, hash: string): void {
+    if (!win) {
+        return;
+    }
+
+    const fragment = hash.replace(/^#/, '');
+    let id = fragment;
+
+    try {
+        id = decodeURIComponent(fragment);
+    } catch {
+        // A malformed escape is looked up as written.
+    }
+
+    const doc = win.document;
+    const target = id ? (doc.getElementById(id) ?? doc.getElementsByName(id)[0]) : undefined;
+
+    if (target) {
+        win.scrollTo({ top: target.getBoundingClientRect().top + (win.scrollY || 0), left: 0 });
+
+        return;
+    }
+
+    if (!id || id.toLowerCase() === 'top') {
+        win.scrollTo({ top: 0, left: 0 });
+    }
+}
 
 /** dotCMS path prefixes that stream a binary asset instead of rendering a page. */
 const ASSET_PATH_PREFIXES = ['/dA/', '/dotAsset/', '/contentAsset/'];
