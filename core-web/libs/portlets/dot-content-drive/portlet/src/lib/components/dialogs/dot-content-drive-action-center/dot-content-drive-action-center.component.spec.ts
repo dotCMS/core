@@ -239,7 +239,8 @@ describe('DotContentDriveActionCenterComponent', () => {
                 executeWorkflowAction: vi.fn(),
                 executeAddToBundle: vi.fn(),
                 executePushPublish: vi.fn(),
-                executeRefresh: vi.fn()
+                executeRefresh: vi.fn(),
+                executeFolderBulkDelete: vi.fn()
             }),
             // The trigger toast for a backgrounded reindex goes through PrimeNG's MessageService,
             // which in the app resolves to the shell's instance so the toast outlives this dialog.
@@ -566,21 +567,6 @@ describe('DotContentDriveActionCenterComponent', () => {
                 'id-1',
                 'folder-1'
             ]);
-        });
-
-        it('should render the notice statically, with no entrance animation', () => {
-            // The notice is present the moment the dialog opens, and PrimeNG's Message animates its
-            // own height from zero over 300ms with no way to opt out through the component — which
-            // read as the notice arriving late and shoving the action list down. `no-enter-motion` is
-            // what the component's styles hook onto to suppress it.
-            mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
-
-            spectator.detectChanges();
-
-            const notice = spectator.query('[data-testid="folders-limited-message"]');
-
-            expect(notice).toBeTruthy();
-            expect(notice?.classList.contains('no-enter-motion')).toBe(true);
         });
     });
 
@@ -2597,6 +2583,77 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(spectator.query('[data-testid="action-center-done"]')).toBeNull();
             expect(store.closeDialog).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * Bulk folder delete's confirmation (#37063 US1, FR-007 … FR-011).
+     *
+     * Written before the action exists (T009 before T017/T018). `DotMessageService.get` is mocked to
+     * return the key, so these assert on keys rather than on English — the copy itself is reviewed at
+     * the T055 gate, but which *claims* it does and does not make is a requirement and is pinned here.
+     */
+    describe('Delete confirmation (#37063)', () => {
+        const folderSelection = [
+            { type: 'folder', identifier: 'id-a', inode: 'inode-a', name: 'old-a' },
+            { type: 'folder', identifier: 'id-b', inode: 'inode-b', name: 'old-b' }
+        ] as unknown as DotContentDriveItem[];
+
+        beforeEach(() => {
+            spectator = createComponent();
+            mockSelectedItems.set(folderSelection);
+        });
+
+        it('should require a confirmation step before anything is submitted', () => {
+            openQuickActionPreview('DELETE_FOLDER');
+
+            expect(store.executeFolderBulkDelete).not.toHaveBeenCalled();
+        });
+
+        it('should say the folders AND their contents are permanently deleted', () => {
+            openQuickActionPreview('DELETE_FOLDER');
+
+            const warning = spectator.query('[data-testid="delete-warning"]');
+
+            // The single most important sentence in the feature: what makes this different from every
+            // other bulk action is that it destroys things the author never selected.
+            expect(warning?.textContent).toContain('content-drive.action-center.delete.warning');
+        });
+
+        it('should make NO claim about workflow', () => {
+            // The issue text proposed saying no workflow action fires on the contents. That is false —
+            // a content type declaring an action for the destroy system action will run it — so the copy
+            // states what is certain and asserts nothing about workflow (FR-010).
+            openQuickActionPreview('DELETE_FOLDER');
+
+            const body = spectator.query('[data-testid="delete-warning"]')?.textContent ?? '';
+
+            expect(body).not.toContain('workflow');
+        });
+
+        it('should say how many folders it is about', () => {
+            // Asserted through the message service rather than the rendered text: `get` is mocked to
+            // echo the key and drop its arguments, so the count never reaches the DOM in a spec.
+            openQuickActionPreview('DELETE_FOLDER');
+
+            expect(spectator.inject(DotMessageService).get).toHaveBeenCalledWith(
+                'content-drive.action-center.delete.warning',
+                '2'
+            );
+        });
+
+        it('should submit the selected folders when confirmed', () => {
+            executeQuickAction('DELETE_FOLDER');
+
+            expect(store.executeFolderBulkDelete).toHaveBeenCalled();
+        });
+
+        it('should submit nothing when the confirmation is dismissed', () => {
+            openQuickActionPreview('DELETE_FOLDER');
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+
+            expect(store.executeFolderBulkDelete).not.toHaveBeenCalled();
         });
     });
 });

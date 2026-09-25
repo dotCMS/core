@@ -198,23 +198,28 @@ export const DIALOG_TYPE = {
 } as const;
 
 /**
- * Root styles for the Action Center dialog.
+ * Root sizing for the Action Center dialog, as classes rather than inline styles.
  *
  * Fixed height so the content box has something to flex against — without it the column sizes to
- * content and the body never scrolls. `display: flex` / `flex-direction: column` / `overflow: hidden`
- * are required: the theme gives `.p-dialog-content` `flex-grow: 1` and the header/footer
- * `flex-shrink: 0`, but `.p-dialog` itself is not a flex container — without that, `height: 80vh`
- * does not constrain the content and the whole dialog (footer included) grows past the viewport.
+ * content and the body never scrolls.
+ *
+ * **Classes, not `[style]`, and that is the whole point.** One `p-dialog` serves every dialog type
+ * in this portlet, so whatever styles a type applies have to come back off when the next type opens.
+ * PrimeNG's dialog root carries `[style]="sx('root')"` *and* `[ngStyle]="style"` on the same
+ * element; NgStyle's additions land, but its removals are overwritten by the template's own style
+ * map on the next change detection. The result was that the Action Center's `width`/`height` stayed
+ * on the root for the rest of the session — open the workflow center once and Folder Settings was
+ * sized wrong from then on. `[styleClass]` feeds `[class]`, an ordinary Angular class binding that
+ * reconciles properly. The content box is unaffected: it has `[ngStyle]` alone, nothing competing.
+ *
+ * `display: flex` and `flex-direction: column` are deliberately absent — `sx('root')` already sets
+ * both inline, which no class could override anyway.
+ *
+ * `max-h-[80vh]!` is the one that needs `!`: the theme puts `max-height: 90%` on `.p-dialog`, and
+ * a bare utility only ties with it on specificity.
  */
-export const ACTION_CENTER_DIALOG_STYLE = {
-    width: '42rem',
-    maxWidth: '92vw',
-    height: '80vh',
-    maxHeight: '80vh',
-    display: 'flex',
-    'flex-direction': 'column',
-    overflow: 'hidden'
-} as const;
+export const ACTION_CENTER_DIALOG_CLASS =
+    'w-168 max-w-[92vw] h-[80vh] max-h-[80vh]! overflow-hidden';
 
 /**
  * Content-box styles for the Action Center dialog — the dialog's only scroll container.

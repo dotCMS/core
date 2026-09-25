@@ -23,7 +23,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotSiteService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeCustomField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
 import { WINDOW } from '@dotcms/utils';
 
@@ -68,7 +68,7 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
     /**
      * The field to render.
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeCustomField>({ alias: 'field' });
     /**
      * The content type to render the field for.
      */

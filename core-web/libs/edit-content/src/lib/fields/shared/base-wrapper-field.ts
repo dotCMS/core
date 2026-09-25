@@ -16,7 +16,9 @@ import { DotEditContentStore } from '../../store/edit-content.store';
  *
  * Note: Child components must define the $field input property.
  */
-export abstract class BaseWrapperField {
+export abstract class BaseWrapperField<
+    TField extends DotCMSContentTypeField = DotCMSContentTypeField
+> {
     protected destroyRef = inject(DestroyRef);
     protected controlContainer = inject(ControlContainer);
 
@@ -26,7 +28,13 @@ export abstract class BaseWrapperField {
      * store at all. Falling back to "not submitted" there costs nothing and cannot throw.
      */
     protected editContentStore = inject(DotEditContentStore, { optional: true });
-    abstract $field: InputSignal<DotCMSContentTypeField>;
+    /**
+     * Parameterised so a wrapper can declare the arm it actually renders. `InputSignal` is
+     * invariant, so a subclass narrowing `$field` to, say, `ContentTypeCalendarField` cannot
+     * satisfy a base that fixes the whole union. Wrappers that render any field leave it at the
+     * default and are unaffected.
+     */
+    abstract $field: InputSignal<TField>;
     abstract $contentlet: InputSignal<DotCMSContentlet>;
 
     /**

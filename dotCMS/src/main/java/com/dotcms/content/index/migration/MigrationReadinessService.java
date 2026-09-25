@@ -113,17 +113,8 @@ public class MigrationReadinessService {
                                     + "measured, or holds materially less than the database; run a "
                                     + "full reindex. ", plural(outOfSync.size(), "index", "indices"),
                                     outOfSync.size() == 1 ? "has" : "have"))
-                        // A retired Elasticsearch is the runbook's end state, not a fault — but it
-                        // was not measured, so claiming OpenSearch is "ahead" of it would be a guess.
-                        + (elasticsearchUnreachable
-                            ? String.format("Elasticsearch could not be reached (%s), so whether a "
-                                    + "downgrade is safe cannot be judged; do not downgrade on this "
-                                    + "reading.", unreachable.get(MirrorStatus.ELASTICSEARCH))
-                            : esBehindAnywhere
-                            ? "WARNING: OpenSearch holds content Elasticsearch does not; a downgrade "
-                                    + "would hide it until a full reindex."
-                            : "No index shows Elasticsearch behind OpenSearch; still verify before any "
-                                    + "downgrade.")
+                        + finalPhaseDriftSentence(all, outOfSync, esBehindAnywhere,
+                            unreachable.get(MirrorStatus.ELASTICSEARCH))
                     : String.format("Phase 3 (OpenSearch only), but this report measured nothing: %s "
                             + "to resolve first (see the blockers list). No conclusion below is "
                             + "supported by data — an outOfSyncCount of 0 here means nothing was "
@@ -137,18 +128,12 @@ public class MigrationReadinessService {
             blockers.addAll(missingContent);
             safeToAdvance = blockers.isEmpty();
             summary = safeToAdvance
-                    ? "Phase 0 (Elasticsearch only). OpenSearch counterparts are built during the "
-                            + "dual-write phases, so there is nothing to reconcile yet. Safe to advance "
-                            + "to Phase 1."
-                            // Anything still counted here is NOT a yet-to-be-built counterpart (those are
-                            // filtered out above) — e.g. a leftover OpenSearch index with no Elasticsearch
-                            // source. Not a blocker for starting dual-write, but say so rather than leave a
-                            // non-zero count contradicting "nothing to reconcile yet".
-                            + (outOfSync.isEmpty() ? ""
-                                : String.format(" Note: %s from an earlier migration attempt %s left over "
-                                        + "on OpenSearch; dual-write will overwrite them on the next "
-                                        + "crawl/reindex.", plural(outOfSync.size(), "index", "indices"),
-                                        outOfSync.size() == 1 ? "is" : "are"))
+                    ? (outOfSync.isEmpty()
+                        ? "Phase 0 (Elasticsearch only). OpenSearch counterparts are built during the "
+                                + "dual-write phases, so there is nothing to reconcile yet. Safe to "
+                                + "advance to Phase 1."
+                        : "Phase 0 (Elasticsearch only). Safe to advance to Phase 1, but OpenSearch "
+                                + "already holds copies that do not match." + initialPhaseNotes(outOfSync))
                     : String.format("Not safe to advance from Phase 0: %s to resolve first (see the "
                             + "blockers list). Dual-write needs an active Elasticsearch content index "
                             + "to mirror from and a reachable OpenSearch to mirror into.",
@@ -195,6 +180,100 @@ public class MigrationReadinessService {
         }
         return new MigrationReadiness(clusterIdSupplier.get(), phaseInfo, contentBySlot,
                 siteSearch, verdict, Map.copyOf(unreachable));
+    }
+
+    /**
+     * What the Phase 0 summary says about the OpenSearch copies it counted. None of them is a
+     * yet-to-be-built counterpart — {@link #needsAttentionIn} filters those out — so each is one of two
+     * things, and they need different words.
+     *
+     * <p>A copy on both engines with a different (or uncountable) size is almost always the current
+     * mirror left behind by a rollback from a dual-write phase: Phase 0 writes Elasticsearch only, so
+     * every change since the rollback is missing from OpenSearch. It is not debris, and dual-write will
+     * not repair it — dual-write mirrors new writes and never backfills — so the repair named is a
+     * reindex (or a re-crawl, for Site Search). A copy that exists only on OpenSearch has nothing to be
+     * compared with and is described as exactly that (issue #37638).</p>
+     */
+    private static String initialPhaseNotes(final List<MirrorStatus> outOfSync) {
+        final List<MirrorStatus> drifted = outOfSync.stream()
+                .filter(s -> s.es().exists() && s.os().exists())
+                .collect(Collectors.toList());
+        final int openSearchOnly = (int) outOfSync.stream()
+                .filter(s -> !s.es().exists() && s.os().exists())
+                .count();
+        final StringBuilder notes = new StringBuilder();
+        if (!drifted.isEmpty()) {
+            final boolean content = drifted.stream().anyMatch(s -> isContent(s.kind()));
+            final boolean siteSearch = drifted.stream().anyMatch(s -> !isContent(s.kind()));
+            final String repair = content && siteSearch
+                    ? "run a full reindex and re-crawl Site Search"
+                    : content ? "run a full reindex" : "re-crawl Site Search";
+            notes.append(String.format(" %s on OpenSearch %s a different document count than "
+                    + "Elasticsearch, which is what a rollback from a dual-write phase leaves behind "
+                    + "once content changes: Phase 0 writes Elasticsearch only. Dual-write mirrors new "
+                    + "writes and never backfills, so after advancing to Phase 1 %s; until then the "
+                    + "Phase 1 report will block on %s.",
+                    plural(drifted.size(), "index", "indices"),
+                    drifted.size() == 1 ? "holds" : "hold", repair,
+                    drifted.size() == 1 ? "it" : "them"));
+        }
+        if (openSearchOnly > 0) {
+            notes.append(String.format(" %s %s only on OpenSearch, with no Elasticsearch "
+                    + "counterpart; not a blocker, and safe to remove if unused.",
+                    plural(openSearchOnly, "index", "indices"),
+                    openSearchOnly == 1 ? "exists" : "exist"));
+        }
+        return notes.toString();
+    }
+
+    /**
+     * The Phase 3 summary's sentence on how the two engines' counts compare, stating each direction
+     * that is actually present instead of reassuring about the one that is not (issue #37638).
+     *
+     * <p>Elasticsearch stops receiving writes at the cutover, so both directions occur on a healthy
+     * install: Elasticsearch behind after new content, ahead after deletes. The first is what makes a
+     * downgrade unsafe and keeps its warning. The second gets its own sentence because OpenSearch is
+     * the engine serving live search; whether it is actually short is judged against the database —
+     * the count in the sentence before this one — not against the frozen copy.</p>
+     *
+     * @param elasticsearchUnreachableReason why Elasticsearch could not be read, or {@code null}
+     */
+    private static String finalPhaseDriftSentence(final List<MirrorStatus> all,
+            final List<MirrorStatus> outOfSync, final boolean esBehindAnywhere,
+            final String elasticsearchUnreachableReason) {
+        // A retired Elasticsearch is the runbook's end state, not a fault — but it was not measured,
+        // so any statement about the direction of drift would be a guess.
+        if (elasticsearchUnreachableReason != null) {
+            return String.format("Elasticsearch could not be reached (%s), so whether a downgrade is "
+                    + "safe cannot be judged; do not downgrade on this reading.",
+                    elasticsearchUnreachableReason);
+        }
+        final int openSearchBehind = (int) all.stream()
+                .filter(s -> s.es().exists() && s.os().exists()
+                        && s.es().docCount() >= 0 && s.os().docCount() >= 0
+                        && s.os().docCount() < s.es().docCount())
+                .count();
+        final StringBuilder sentence = new StringBuilder();
+        if (esBehindAnywhere) {
+            sentence.append("WARNING: OpenSearch holds content Elasticsearch does not; a downgrade "
+                    + "would hide it until a full reindex.");
+        }
+        if (openSearchBehind > 0) {
+            if (sentence.length() > 0) {
+                sentence.append(' ');
+            }
+            sentence.append(String.format("OpenSearch holds fewer documents than Elasticsearch in %s. "
+                    + "Elasticsearch stopped receiving writes at the cutover, so content deleted or "
+                    + "unpublished since the cutover also shows up this way; the database comparison "
+                    + "is what tells the two apart, and it %s.",
+                    plural(openSearchBehind, "index", "indices"),
+                    outOfSync.isEmpty() ? "flags no index here" : "flags the indices counted above"));
+        }
+        if (sentence.length() == 0) {
+            sentence.append("No index shows Elasticsearch behind OpenSearch; still verify before any "
+                    + "downgrade.");
+        }
+        return sentence.toString();
     }
 
     /**
