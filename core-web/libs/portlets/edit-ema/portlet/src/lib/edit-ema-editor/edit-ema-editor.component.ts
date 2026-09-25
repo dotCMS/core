@@ -836,8 +836,20 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        // Same pathname (any hash/query): let the browser handle it (anchors, query-driven UI)
-        if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
+        // Same pathname WITH a hash or query: let the browser handle it (anchor scroll,
+        // query-driven UI). A pathname-only duplicate of the current URL has no hash to
+        // scroll to and no query to react to — there is nothing for "the browser" to
+        // handle. Bypassing preventDefault() for that case lets the anchor's default
+        // action navigate the iframe natively: for traditional pages the iframe's real
+        // location is the synthetic `about:srcdoc`, so that native navigation goes to a
+        // live, un-decorated fetch of the real URL, permanently blanking the edit canvas
+        // (dotCMS/core#37327). Requiring an actual hash/query difference keeps the
+        // intentional same-page bypass working while forcing an exact duplicate link
+        // through the normal pageLoad() + preventDefault() path below.
+        if (
+            (url.hash || url.search) &&
+            isSamePageNavigation(href, this.uveStore.pageParams()?.url)
+        ) {
             return;
         }
 

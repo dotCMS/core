@@ -3919,6 +3919,24 @@ describe('EditEmaEditorComponent', () => {
                         expect(mockEvent.preventDefault).not.toHaveBeenCalled();
                     });
 
+                    it('should trigger pageLoad when re-clicking an exact duplicate of the current URL (no hash, no query)', () => {
+                        // Confirmed live (dotCMS/core#37327): for a traditional page, the
+                        // iframe's real location is always the synthetic `about:srcdoc`. If
+                        // this early-returns without calling preventDefault() for an exact
+                        // duplicate link (no hash/query to react to), the anchor's own
+                        // default action navigates the iframe to a live fetch of the real
+                        // URL, permanently blanking the edit canvas with no console error.
+                        const duplicateUrl = 'http://localhost:3000/current-page';
+                        const mockEvent = createMockEvent(duplicateUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
                     it('should trigger pageLoad when navigating to different page with hash', () => {
                         const differentPageUrl = 'http://localhost:3000/other-page#section';
                         const mockEvent = createMockEvent(differentPageUrl);
