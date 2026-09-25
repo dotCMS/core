@@ -17,16 +17,27 @@
         [class.out-of-sync]="!saved && !saving"
         class="mb-8 rounded-md border border-gray-200 bg-white text-sm focus:ring-0 focus:outline-none">
         @if (!hidden) {
+            <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
             <div
                 (click)="setRuleExpandedState(!rule._expanded)"
                 class="flex flex-1 flex-col gap-3 rounded-md bg-white p-3 focus:bg-white focus:ring-0 focus:outline-none active:bg-white md:flex-row">
                 <div
                     class="dot-rules-header-info flex w-full flex-row items-center justify-start md:max-w-[70%] md:basis-[70%]">
-                    <i
+                    <!-- The disclosure control is this button, not the header container.
+                         The container keeps its own (click) as a mouse affordance, but it
+                         cannot become the focusable control: it wraps the rule-name text
+                         input, and a textbox nested inside a role="button" is neither
+                         operable nor announceable. Keyboard and screen reader users get the
+                         toggle here; stopPropagation keeps a click on the chevron from
+                         toggling twice via the container. -->
+                    <button
+                        type="button"
                         [class.pi-angle-right]="!rule._expanded"
                         [class.pi-angle-down]="rule._expanded"
-                        class="pi shrink-0 p-2 text-sm font-bold"
-                        aria-hidden="true"></i>
+                        [attr.aria-expanded]="rule._expanded"
+                        aria-label="Toggle rule details"
+                        (click)="setRuleExpandedState(!rule._expanded); $event.stopPropagation()"
+                        class="pi shrink-0 cursor-pointer border-0 bg-transparent p-2 text-sm font-bold"></button>
                     <div class="flex min-w-0 flex-1 flex-col">
                         <input
                             (click)="$event.stopPropagation()"
@@ -86,7 +97,7 @@
                             pButton
                             severity="secondary"
                             icon="pi pi-ellipsis-v"
-                            ariaLabel="Rule options"></button>
+                            aria-label="Rule options"></button>
                         <button
                             (click)="
                                 onCreateConditionGroupClicked();
@@ -97,7 +108,7 @@
                             pButton
                             severity="secondary"
                             icon="pi pi-plus"
-                            ariaLabel="Add Group"
+                            aria-label="Add Group"
                             styleClass="ml-2"></button>
                         <p-menu
                             [model]="ruleActionOptions"
@@ -155,7 +166,7 @@
                                             type="button"
                                             severity="success"
                                             icon="pi pi-plus"
-                                            ariaLabel="Add Action"></button>
+                                            aria-label="Add Action"></button>
                                     }
                                 </div>
                             </div>
