@@ -18,8 +18,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRolesPageComponent } from './dot-roles-page.component';
 import { DotRolesStore } from './store/dot-roles.store';
 
-import { DotRolesPortletService } from '../services/dot-roles-portlet.service';
-
 const MESSAGES = {
     'roles.detail.empty': 'Select a role',
     'roles.tab.users': 'Users',
@@ -88,7 +86,7 @@ describe('DotRolesPageComponent', () => {
         component: DotRolesPageComponent,
         schemas: [CUSTOM_ELEMENTS_SCHEMA],
         detectChanges: false,
-        componentProviders: [baseStoreMock(), mockProvider(DotRolesPortletService)],
+        componentProviders: [baseStoreMock()],
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),

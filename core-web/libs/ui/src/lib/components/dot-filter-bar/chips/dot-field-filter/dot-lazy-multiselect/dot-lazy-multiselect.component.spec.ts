@@ -4,6 +4,8 @@ import { Mock, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
+import { Listbox } from 'primeng/listbox';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -13,6 +15,7 @@ import {
     DotLazyMultiselectOption
 } from './dot-lazy-multiselect.component';
 
+import { LISTBOX_OPTION_HEIGHT } from '../../../../../theme/theme.config';
 import { FIELD_FILTER_DEBOUNCE_TIME } from '../constants';
 
 const page = (options: DotLazyMultiselectOption[], hasMore = false) => of({ options, hasMore });
@@ -221,6 +224,94 @@ describe('DotLazyMultiselectComponent', () => {
             expect(spectator.component.$state.canLoadMore()).toBe(false);
             expect(spectator.component.$state.error()).toBe(true);
             expect(spectator.query(byTestId('lazy-multiselect-error'))).toBeTruthy();
+        });
+    });
+
+    describe('single selection', () => {
+        const options = [
+            { label: 'Angular', value: 'a' },
+            { label: 'Backend', value: 'b' }
+        ];
+
+        const buildSingle = () => {
+            build(vi.fn().mockReturnValue(page(options)));
+            spectator.setInput('multiple' as never, false as never);
+            spectator.detectChanges();
+        };
+
+        it('should be multiple, with checkboxes, by default', () => {
+            build(vi.fn().mockReturnValue(page(options)));
+
+            const listbox = spectator.query(Listbox) as Listbox;
+            expect(listbox.multiple).toBe(true);
+            expect(listbox.checkbox).toBe(true);
+        });
+
+        it('should drop the checkboxes and pick one when multiple is off', () => {
+            buildSingle();
+
+            const listbox = spectator.query(Listbox) as Listbox;
+            expect(listbox.multiple).toBe(false);
+            expect(listbox.checkbox).toBe(false);
+        });
+
+        it('should hand back the data a loaded option carried', () => {
+            const record = { id: 'b', email: 'b@x' };
+            build(vi.fn().mockReturnValue(page([{ label: 'Backend', value: 'b', data: record }])));
+            spectator.setInput('multiple' as never, false as never);
+            spectator.detectChanges();
+            const emitted: DotLazyMultiselectOption[][] = [];
+            spectator.component.selectionChange.subscribe((value) => emitted.push(value));
+
+            spectator.triggerEventHandler('p-listbox', 'onChange', { value: 'b' });
+
+            expect(emitted).toEqual([[{ label: 'Backend', value: 'b', data: record }]]);
+        });
+
+        it('should still emit an array holding the one pick', () => {
+            buildSingle();
+            const emitted: DotLazyMultiselectOption[][] = [];
+            spectator.component.selectionChange.subscribe((value) => emitted.push(value));
+
+            spectator.triggerEventHandler('p-listbox', 'onChange', { value: 'b' });
+            spectator.triggerEventHandler('p-listbox', 'onChange', { value: null });
+
+            expect(emitted).toEqual([[{ label: 'Backend', value: 'b' }], []]);
+        });
+    });
+
+    describe('row customization', () => {
+        it('should use the theme row height unless told otherwise', () => {
+            build(vi.fn().mockReturnValue(page([])));
+
+            expect((spectator.query(Listbox) as Listbox).virtualScrollItemSize).toBe(
+                LISTBOX_OPTION_HEIGHT
+            );
+
+            spectator.setInput('itemSize' as never, 56 as never);
+            spectator.detectChanges();
+
+            expect((spectator.query(Listbox) as Listbox).virtualScrollItemSize).toBe(56);
+        });
+
+        it('should use the given key for the search placeholder', () => {
+            spectator = createComponent({
+                props: {
+                    loadPage: vi.fn().mockReturnValue(page([])),
+                    searchPlaceholderKey: 'users.search'
+                } as never,
+                providers: [
+                    {
+                        provide: DotMessageService,
+                        useValue: new MockDotMessageService({ 'users.search': 'Search users' })
+                    }
+                ]
+            });
+            spectator.detectChanges();
+
+            const input = spectator.query(byTestId('lazy-multiselect-search')) as HTMLInputElement;
+            expect(input.placeholder).toBe('Search users');
+            expect(input.getAttribute('aria-label')).toBe('Search users');
         });
     });
 });

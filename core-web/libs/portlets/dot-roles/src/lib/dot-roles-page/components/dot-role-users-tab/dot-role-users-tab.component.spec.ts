@@ -4,21 +4,21 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { EMPTY, of } from 'rxjs';
+import { EMPTY } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
-import { Popover } from 'primeng/popover';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { DotUserPickerComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRoleUsersTabComponent } from './dot-role-users-tab.component';
 
-import { DotRolesPortletService } from '../../../services/dot-roles-portlet.service';
 import { DotRolesStore } from '../../store/dot-roles.store';
 
 const MESSAGES = {
@@ -71,9 +71,6 @@ describe('DotRoleUsersTabComponent', () => {
                 requireConfirmation$: EMPTY,
                 accept: EMPTY,
                 reject: EMPTY
-            }),
-            mockProvider(DotRolesPortletService, {
-                searchUsers: vi.fn().mockReturnValue(of([]))
             })
         ],
         providers: [
@@ -144,6 +141,25 @@ describe('DotRoleUsersTabComponent', () => {
         expect(spectator.query(byTestId('member-remove-u-2'))).toBeNull();
     });
 
+    it('should render the row Remove button grey, not danger', () => {
+        const store = spectator.inject(DotRolesStore, true);
+        (store.members as Mock).mockReturnValue([
+            {
+                userId: 'u-1',
+                firstName: 'Alan',
+                lastName: 'Cruz',
+                emailAddress: 'alan.cruz@dotcms.com',
+                grantedFromRoleId: 'r-eco',
+                grantedFromRoleName: 'Eco Role'
+            }
+        ]);
+        spectator.detectChanges();
+
+        const removeBtn = spectator.query(byTestId('member-remove-u-1'))?.querySelector('button');
+        expect(removeBtn?.classList).not.toContain('p-button-danger');
+        expect(removeBtn?.classList).toContain('p-button-secondary');
+    });
+
     it('should confirm + call removeUsersFromRole with the row user id', async () => {
         const store = spectator.inject(DotRolesStore, true);
         const member = {
@@ -198,14 +214,54 @@ describe('DotRoleUsersTabComponent', () => {
 
         it('should open the user picker from Add User', () => {
             spectator.detectChanges();
-            const popover = spectator.query(Popover);
-            expect(popover).toBeTruthy();
-            const toggle = vi.spyOn(popover as Popover, 'toggle').mockReturnValue(undefined);
+            const picker = spectator.query(DotUserPickerComponent) as DotUserPickerComponent;
+            const toggle = vi.spyOn(picker, 'toggle').mockReturnValue(undefined);
 
             const addBtn = spectator.query(byTestId('add-user-btn'))?.querySelector('button');
             spectator.click(addBtn as HTMLElement);
 
             expect(toggle).toHaveBeenCalled();
+        });
+    });
+
+    describe('user picker', () => {
+        const picker = () => spectator.query(DotUserPickerComponent) as DotUserPickerComponent;
+
+        it('should pick one user at a time and hide users already in the role', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            (store.members as Mock).mockReturnValue([
+                {
+                    userId: 'u-1',
+                    firstName: 'Alan',
+                    lastName: 'Cruz',
+                    emailAddress: 'alan.cruz@dotcms.com',
+                    grantedFromRoleId: 'r-ancestor',
+                    grantedFromRoleName: 'Ancestor'
+                }
+            ]);
+            spectator.detectChanges();
+
+            expect(picker().$multiple()).toBe(false);
+            expect(picker().$excludeIds()).toEqual(['u-1']);
+        });
+
+        it('should grant the role to the picked user', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            spectator.detectChanges();
+
+            picker().picked.emit([{ userId: 'u-9', firstName: 'Jane' }]);
+
+            expect(store.grantUserToRole).toHaveBeenCalledWith('u-9');
+        });
+
+        it('should route a directory failure to the shared error manager', () => {
+            const errorManager = spectator.inject(DotHttpErrorManagerService);
+            spectator.detectChanges();
+            const error = new HttpErrorResponse({ status: 500 });
+
+            picker().loadFailed.emit(error);
+
+            expect(errorManager.handle).toHaveBeenCalledWith(error);
         });
     });
 

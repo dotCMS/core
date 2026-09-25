@@ -1,6 +1,7 @@
 import { patchState, signalState } from '@ngrx/signals';
 import { EMPTY, Observable, Subject, timer } from 'rxjs';
 
+import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -10,7 +11,8 @@ import {
     input,
     linkedSignal,
     OnInit,
-    output
+    output,
+    TemplateRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -28,9 +30,19 @@ import { LISTBOX_OPTION_HEIGHT } from '../../../../../theme/theme.config';
 import { DotFilterListItemComponent } from '../../../../dot-filter-list-item/dot-filter-list-item.component';
 import { FIELD_FILTER_DEBOUNCE_TIME, FIELD_FILTER_PANEL_SCROLL_HEIGHT } from '../constants';
 
-export interface DotLazyMultiselectOption {
+export interface DotLazyMultiselectOption<T = unknown> {
     label: string;
     value: string;
+    /**
+     * Whatever the consumer wants a custom row template to reach — the full record behind the
+     * option, say. Never read by this component.
+     */
+    data?: T;
+}
+
+/** Context handed to a custom `itemTemplate`: the option being rendered. */
+export interface DotLazyMultiselectItemContext<T = unknown> {
+    $implicit: DotLazyMultiselectOption<T>;
 }
 
 /** One page of options plus whether more remain, returned by the loader. */
@@ -46,11 +58,6 @@ export type DotLazyMultiselectLoader = (params: {
     filter: string;
 }) => Observable<DotLazyMultiselectPage>;
 
-/**
- * Row height (px) for the virtual scroller. Taken from the theme, which fixes every listbox
- * option to the same height, so this can never drift from what is actually rendered.
- */
-const ITEM_HEIGHT = LISTBOX_OPTION_HEIGHT;
 /** Page size requested from the loader. */
 const PER_PAGE = 20;
 
@@ -76,6 +83,7 @@ interface State {
 @Component({
     selector: 'dot-lazy-multiselect',
     imports: [
+        NgTemplateOutlet,
         FormsModule,
         IconFieldModule,
         InputIconModule,
@@ -94,8 +102,35 @@ export class DotLazyMultiselectComponent implements OnInit {
     readonly $loadPage = input.required<DotLazyMultiselectLoader>({ alias: 'loadPage' });
     /** Currently-selected values, used to highlight rows. */
     readonly $selectedValues = input<string[]>([], { alias: 'selectedValues' });
-    /** Emits the selected options (value + label) whenever the selection changes. */
+    /**
+     * Emits the selected options (value + label) whenever the selection changes. Always an array,
+     * so a single-select consumer reads the one entry rather than a different type.
+     */
     readonly selectionChange = output<DotLazyMultiselectOption[]>();
+
+    /**
+     * Whether several options can be ticked at once. Defaults to `true`, which is what every
+     * filter built on this list wants; `false` turns it into a plain pick-one list with no
+     * checkboxes.
+     */
+    readonly $multiple = input<boolean>(true, { alias: 'multiple' });
+
+    /**
+     * Replaces the default one-line row. Receives the option as `$implicit`; put the full record
+     * in the option's `data` to render more than the label.
+     *
+     * A taller row must come with a matching {@link $itemSize}: the virtual scroller positions
+     * rows by that number and cannot measure them.
+     */
+    readonly $itemTemplate = input<TemplateRef<DotLazyMultiselectItemContext> | null>(null, {
+        alias: 'itemTemplate'
+    });
+
+    /** Rendered row height in px, for the virtual scroller. Defaults to the theme's listbox row. */
+    readonly $itemSize = input<number>(LISTBOX_OPTION_HEIGHT, { alias: 'itemSize' });
+
+    /** Message key for the search box placeholder and accessible name. */
+    readonly $searchPlaceholderKey = input<string>('search', { alias: 'searchPlaceholderKey' });
 
     /**
      * Idle time before a typed term is searched, in ms. Defaults to the field-filter value, so
@@ -132,7 +167,6 @@ export class DotLazyMultiselectComponent implements OnInit {
      */
     readonly loadFailed = output<HttpErrorResponse>();
     protected readonly SCROLL_HEIGHT = FIELD_FILTER_PANEL_SCROLL_HEIGHT;
-    protected readonly ITEM_HEIGHT = ITEM_HEIGHT;
 
     readonly $state = signalState<State>({
         options: [],
@@ -143,20 +177,25 @@ export class DotLazyMultiselectComponent implements OnInit {
         currentPage: 1
     });
 
-    /** Selected values bound to the listbox; re-seeds when the input changes. */
-    protected readonly $model = linkedSignal<string[]>(() => [...this.$selectedValues()]);
+    /**
+     * Selected values bound to the listbox; re-seeds when the input changes. An array in multiple
+     * mode and a single value otherwise, which is what `p-listbox` expects for each.
+     */
+    protected readonly $model = linkedSignal<string[] | string | null>(() =>
+        this.$multiple() ? [...this.$selectedValues()] : (this.$selectedValues()[0] ?? null)
+    );
 
     /** Cancels an in-flight load when a newer search supersedes it. */
     readonly #cancel$ = new Subject<void>();
     readonly #search$ = new Subject<string>();
 
     /**
-     * Accumulated value → label across every page loaded this session. `onChange` resolves labels
+     * Accumulated value → option across every page loaded this session. `onChange` resolves picks
      * from here rather than the current page only, so a value selected earlier keeps its label
-     * after a search reset or paging (otherwise it would emit `label = value`, which for Category
-     * is the raw inode and would overwrite the good cached label upstream).
+     * (and its `data`) after a search reset or paging — otherwise it would emit `label = value`,
+     * which for Category is the raw inode and would overwrite the good cached label upstream.
      */
-    readonly #labelByValue = new Map<string, string>();
+    readonly #optionByValue = new Map<string, DotLazyMultiselectOption>();
 
     constructor() {
         this.#search$
@@ -209,12 +248,17 @@ export class DotLazyMultiselectComponent implements OnInit {
         this.#load(true);
     }
 
-    protected onChange(values: string[]): void {
+    protected onChange(selection: string[] | string | null): void {
+        const values = Array.isArray(selection) ? selection : selection ? [selection] : [];
+
         this.selectionChange.emit(
-            (values ?? []).map((value) => ({
-                label: this.#labelByValue.get(value) ?? value,
-                value
-            }))
+            // The whole option, not just its label: a consumer that put its record in `data`
+            // needs it back on the pick.
+            values.map((value) => {
+                const known = this.#optionByValue.get(value);
+
+                return known ? { ...known } : { label: value, value };
+            })
         );
     }
 
@@ -253,7 +297,7 @@ export class DotLazyMultiselectComponent implements OnInit {
             )
             .subscribe(({ options, hasMore }) => {
                 for (const option of options) {
-                    this.#labelByValue.set(option.value, option.label);
+                    this.#optionByValue.set(option.value, option);
                 }
 
                 patchState(this.$state, {

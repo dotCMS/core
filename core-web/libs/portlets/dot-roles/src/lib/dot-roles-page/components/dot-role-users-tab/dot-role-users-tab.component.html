@@ -47,7 +47,7 @@
                 [label]="'roles.users.add' | dm"
                 [outlined]="true"
                 [disabled]="!store.canGrantUsers()"
-                (onClick)="grantPanel.toggle($event)"
+                (onClick)="userPicker.toggle($event)"
                 data-testid="add-user-btn" />
         </div>
     </p-toolbar>
@@ -165,18 +165,16 @@
                                 Row-level Remove: shown only for direct grants
                                 (inherited rows can only be revoked from the
                                 ancestor role that granted them), and only on
-                                row hover to keep the table clean. Chrome
-                                matches `pq-select-bundle-asset-delete` in the
-                                Publishing Queue's bundle picker so the
-                                destructive row action is consistent across
-                                portlets.
+                                row hover to keep the table clean. Grey
+                                (`secondary`), not danger, per design: the
+                                confirm dialog already guards the action.
                             -->
                             @if (direct && store.canGrantUsers()) {
                                 <p-button
                                     [text]="true"
                                     [rounded]="true"
                                     size="small"
-                                    severity="danger"
+                                    severity="secondary"
                                     styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity h-8! w-8! min-w-0! p-0!"
                                     [pTooltip]="'roles.users.remove.tooltip' | dm"
                                     tooltipPosition="left"
@@ -203,66 +201,14 @@
     empty) host elements don't contribute extra `gap-4` slots between the
     actions row and the members table.
 -->
-<p-popover #grantPanel styleClass="w-96" (onShow)="onGrantPanelShow()">
-    <ng-template pTemplate="content">
-        <p-listbox
-            [options]="$filteredSuggestions()"
-            [filter]="true"
-            filterBy="firstName,lastName,emailAddress"
-            [filterPlaceHolder]="'roles.users.search.placeholder' | dm"
-            [checkmark]="false"
-            [showToggleAll]="false"
-            [listStyle]="{ 'max-height': '360px' }"
-            (onChange)="onGrantUser($event.value, grantPanel)"
-            (onFilter)="onGrantSearch($event)"
-            data-testid="grant-user-list">
-            <ng-template let-user pTemplate="item">
-                <div class="flex items-center gap-3">
-                    <p-avatar
-                        [label]="initialsFor(user)"
-                        shape="circle"
-                        size="normal"
-                        styleClass="bg-primary-100 text-primary-800 font-semibold" />
-                    <div class="flex flex-col gap-0.5">
-                        <strong>{{ user.firstName }} {{ user.lastName }}</strong>
-                        <small class="text-color-secondary">{{ user.emailAddress }}</small>
-                    </div>
-                </div>
-            </ng-template>
-            <ng-template pTemplate="empty">
-                @if ($suggestionsLoading()) {
-                    <!--
-                        Loading skeleton — five rows mirroring the real
-                        item layout (avatar circle + name + email) so the
-                        popover doesn't feel empty during the initial
-                        fetch or a search re-query.
-                    -->
-                    @for (i of [0, 1, 2, 3, 4]; track i) {
-                        <div class="flex items-center gap-3 px-3 py-2">
-                            <p-skeleton shape="circle" size="2rem" />
-                            <div class="flex flex-1 flex-col gap-1.5">
-                                <p-skeleton height="0.875rem" width="55%" />
-                                <p-skeleton height="0.75rem" width="80%" />
-                            </div>
-                        </div>
-                    }
-                } @else {
-                    <!-- Friendly empty state — icon + title. -->
-                    <div
-                        class="text-color-secondary flex flex-col items-center gap-2 px-3 py-6 text-center"
-                        data-testid="grant-user-empty">
-                        <span class="material-symbols-outlined text-3xl! leading-none! opacity-40">
-                            search_off
-                        </span>
-                        <p class="m-0 text-sm font-medium text-color">
-                            {{ 'roles.users.search.empty.title' | dm }}
-                        </p>
-                    </div>
-                }
-            </ng-template>
-        </p-listbox>
-    </ng-template>
-</p-popover>
+<dot-user-picker
+    #userPicker
+    [excludeIds]="$memberIds()"
+    searchPlaceholderKey="roles.users.search.placeholder"
+    emptyKey="roles.users.search.empty.title"
+    (picked)="onGrantUsers($event)"
+    (loadFailed)="onDirectoryError($event)"
+    data-testid="grant-user-picker" />
 
 <p-confirmDialog
     [draggable]="false"
