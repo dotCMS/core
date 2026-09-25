@@ -3664,8 +3664,68 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(windowOpenSpy).toHaveBeenCalledWith(externalUrl, '_blank');
+                    expect(openedLink.href).toBe(externalUrl);
+                    expect(openedLink.target).toBe('_blank');
+                    expect(openedLink.click).toHaveBeenCalled();
                     expect(pageLoadSpy).not.toHaveBeenCalled();
+                });
+
+                // Without it the anchor also navigates the iframe to the external
+                // site, which refuses to be framed and blanks the canvas.
+                it('should keep the iframe on the page when opening an external URL', () => {
+                    const mockEvent = createMockEvent('https://external-site.com/page');
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                describe('absolute URLs to the edited site', () => {
+                    beforeEach(() => {
+                        const pageAsset = store.pageAsset();
+
+                        vi.spyOn(store, 'pageAsset').mockReturnValue({
+                            ...pageAsset,
+                            site: {
+                                ...pageAsset?.site,
+                                hostname: 'www.site.com',
+                                aliases: 'site.com\nalias.site.com'
+                            }
+                        } as ReturnType<typeof store.pageAsset>);
+                    });
+
+                    it('should load a link to the site hostname inside the editor', () => {
+                        const mockEvent = createMockEvent(
+                            'https://www.site.com/news?anno_pubblicazione=2025'
+                        );
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/news',
+                            anno_pubblicazione: '2025'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should load a link to a site alias inside the editor', () => {
+                        const mockEvent = createMockEvent('https://alias.site.com/news');
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/news' });
+                    });
+
+                    it('should still open a different site in a new tab', () => {
+                        const mockEvent = createMockEvent('https://other-site.com/news');
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).toHaveBeenCalled();
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
                 });
 
                 it('should load page asset with pathname only for internal URL without query params', () => {

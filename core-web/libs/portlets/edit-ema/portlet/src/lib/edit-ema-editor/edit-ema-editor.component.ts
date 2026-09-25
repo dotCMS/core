@@ -819,8 +819,11 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             url.searchParams.entries()
         );
 
-        if (url.hostname !== this.window.location.hostname) {
-            this.window.open(href, '_blank');
+        if (!this.#isPageSiteHost(url.hostname)) {
+            // Cancel first: without it the anchor also navigates the iframe to the
+            // external site, which usually refuses to be framed and blanks the canvas.
+            e.preventDefault();
+            this.#openInNewTab(url.href);
 
             return;
         }
@@ -860,6 +863,28 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
+    }
+
+    /**
+     * Tells whether a link's hostname points at the site of the page being edited.
+     *
+     * Pages often link to their own site with an absolute URL
+     * (`https://www.site.com/news?year=2025`), and the admin usually runs on a
+     * different host than the site. Those links must load inside the editor like
+     * relative ones, so the site's hostname and aliases count as internal, as
+     * well as the admin host itself.
+     *
+     * @param {string} hostname - Hostname of the clicked link
+     * @return {boolean} `true` when the link belongs to the edited site
+     * @memberof EditEmaEditorComponent
+     */
+    #isPageSiteHost(hostname: string): boolean {
+        const site = this.uveStore.pageAsset()?.site;
+        // Aliases are stored one per line, but commas are accepted too.
+        const aliases = (site?.aliases ?? '').split(/[\s,]+/);
+        const siteHosts = [this.window.location.hostname, site?.hostname, ...aliases];
+
+        return siteHosts.some((host) => !!host && host.toLowerCase() === hostname.toLowerCase());
     }
 
     /**
