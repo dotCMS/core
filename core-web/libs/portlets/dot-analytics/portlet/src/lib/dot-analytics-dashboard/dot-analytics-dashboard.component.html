@@ -15,7 +15,7 @@
         </p-message>
     }
 
-    <p-tabs [lazy]="true">
+    <p-tabs [value]="store.currentTab()" [lazy]="true">
         <div class="analytics-dashboard-toolbar border-b border-gray-300 bg-gray-100 px-4">
             <div class="flex min-h-12 items-center justify-between gap-4">
                 <div class="flex min-w-0 items-center gap-4">
@@ -24,9 +24,9 @@
                         [pt]="tabListPt">
                         @for (tab of tabs; track tab.id) {
                             <p-tab
+                                [value]="tab.id"
                                 [routerLink]="tab.route"
-                                queryParamsHandling="preserve"
-                                [routerLinkActive]="['p-tab-active']">
+                                queryParamsHandling="preserve">
                                 {{ tab.label | dm }}
                             </p-tab>
                         }
