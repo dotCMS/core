@@ -22,6 +22,7 @@ indexSuffix    := "/" + indexPage
 
 active         := matches(reqURI)
                   OR ( strippedURI is not null           // <- Page API requests ONLY
+                       AND onRequestedSite                // <- item is on the site being rendered
                        AND reqURI does not end with indexSuffix
                        AND matches( reqURI ends with "/" ? reqURI + indexPage
                                                          : reqURI + indexSuffix ) )
@@ -69,6 +70,7 @@ match the shorter `render` prefix and strip to `HTML/x`, which is precisely the 
 | **I1** | An item active today is still active. | `active` is an OR over today's test plus a new one. OR is monotone: it can only turn `false` into `true`. |
 | **I2** | **Front-end rendering is bit-for-bit unchanged, for every URI shape.** | The index candidate is computed **only when a Page API rendering prefix was actually stripped**. A front-end request carries no such prefix, so the second operand is never evaluated and the expression reduces to today's code — not "reduces for index pages", but always. |
 | **I3** | No false positive can reach the front end. | Follows from I2 rather than from an argument about what folder and page paths can coexist. The database constraint in §4 is no longer load-bearing; it is now corroboration. |
+| **I3b** | The synthesized candidate can only activate items belonging to the site being rendered. | The candidate is a *guess* at which page a folder-style URI means, and that guess is only meaningful for the current site. Items pulled from another site carry unqualified hrefs (`ident.getURI()`), so a folder path there can collide with a page path here; `onRequestedSite` withholds the guess from them. It does **not** exclude such items from the ordinary comparison — see XH-5. |
 | **I4** | `parentPath` is never the empty string and the method never throws. | The `lastSlash < 0` guard. **Confirmed reachable at the Red gate**: a URI with no slash threw `StringIndexOutOfBoundsException: Range [0, -1)` before the guard existed. |
 | **I5** | The REST and GraphQL nav payloads are unaffected. | Neither calls `isActive()`; neither exposes an `active` field. [research.md §R6](../research.md). |
 
@@ -168,16 +170,30 @@ unique index on `full_path_lc(identifier)` = `LOWER(parent_path || asset_name)` 
 keys include `host_inode`, and a nav tree can carry items from another host. That left a residual
 the contract could only describe, not exclude.
 
-**How it is closed.** The candidate is computed **only for a Page API request** — one whose URI
-actually carried a rendering prefix. `CMSFilter` has already redirected a folder URL and appended
-the index page name before Velocity sees a front-end request, so a front-end URI always names a page
-and never needs a candidate. The Page API applies none of that, which is the whole defect. The guard
-therefore costs nothing real and removes the entire class of front-end change, cross-host included.
+**How it is closed.** Two conditions, each closing a different half.
 
-| # | Scenario | Contract |
-|---|---|---|
+1. **Page API only.** The candidate is built only for a request that carried a rendering prefix.
+   `CMSFilter` has already redirected a folder URL and appended the index page name before Velocity
+   sees a front-end request, so a front-end URI always names a page and never needs a candidate.
+   This closes the entire front-end class, cross-site included.
+2. **Requested site only.** Under the Page API a candidate *is* built, so the collision is still
+   reachable there — and the Page API is exactly where UVE renders. A folder item from another site
+   whose unqualified href equals the current page's path would be activated by the guess. The
+   item's `hostId` (always `host.getIdentifier()`, set for every item in `NavTool`) is compared
+   against the site on the request, read from the `WebKeys.CURRENT_HOST` attribute that
+   `PageResource.java:665` already sets. When the site cannot be determined, the guess is allowed,
+   preserving prior behavior.
+
+Cost: one attribute read and a string comparison, evaluated only in the candidate branch — which
+itself only runs when the ordinary comparison already failed, and only under the Page API.
+`getCurrentHost()` is deliberately **not** used: it is `@CloseDBIfOpened` and resolves the system
+user, far too heavy to run per navigation item per page render.
+
 | XH-1 | Front-end URI `/a/b`; nav item `F: //hostB/a/b` | not active — host-qualified href matches nothing |
-| XH-2 | Front-end URI `/a/b`; nav item `F: /a/b` with an unqualified href from another host | **not active** — no candidate is computed for a front-end URI |
+| XH-2 | Front-end URI `/a/b`; nav item `F: /a/b` with an unqualified href from another site | **not active** — no candidate is computed for a front-end URI |
+| XH-3 | `/api/v1/page/render/a/b` (and `renderHTML`); folder item `/a/b` **from another site** | **not active** — the candidate is withheld from items off the requested site |
+| XH-4 | `/api/v1/page/render/a/b`; folder item `/a/b` **on the requested site** | **active** — this is FIX-1; the XH-3 guard must not undo it |
+| XH-5 | Item from another site matched by the ordinary comparison (page href equal to the URI, or folder href matching the real parent path) | **active** — the guard withholds only the synthesized candidate, it never excludes an item |
 
 ## 5. Contracts explicitly NOT changed
 

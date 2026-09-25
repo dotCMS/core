@@ -37,6 +37,8 @@ public class NavResultHydratedTest extends UnitTestBase {
     private static final boolean PAGE = false;
     private static final boolean CODE_LINK = true;
     private static final boolean NOT_CODE_LINK = false;
+    private static final boolean SAME_SITE = true;
+    private static final boolean OTHER_SITE = false;
 
     private static final String API_PREFIX = "/api/v1/page/render";
     private static final String API_HTML_PREFIX = "/api/v1/page/renderHTML";
@@ -57,7 +59,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_frontEndIndexPage_marksParentFolderActive() {
-        assertTrue(isActive("/TravelHub/index", "/TravelHub", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive("/TravelHub/index", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -65,7 +67,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_frontEndIndexPage_marksThePageActive() {
-        assertTrue(isActive("/TravelHub/index", "/TravelHub/index", PAGE, NOT_CODE_LINK));
+        assertTrue(isActive("/TravelHub/index", "/TravelHub/index", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -74,7 +76,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_frontEndIndexPage_leavesSamePrefixSiblingInactive() {
-        assertFalse(isActive("/TravelHub/index", "/Travel", FOLDER, NOT_CODE_LINK));
+        assertFalse(isActive("/TravelHub/index", "/Travel", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -82,7 +84,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_frontEndIndexPage_leavesUnrelatedFolderInactive() {
-        assertFalse(isActive("/TravelHub/index", "/Partners", FOLDER, NOT_CODE_LINK));
+        assertFalse(isActive("/TravelHub/index", "/Partners", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -91,9 +93,9 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_frontEndNestedIndexPage_marksEveryAncestorActive() {
-        assertTrue(isActive("/a/b/c/index", "/a", FOLDER, NOT_CODE_LINK));
-        assertTrue(isActive("/a/b/c/index", "/a/b", FOLDER, NOT_CODE_LINK));
-        assertTrue(isActive("/a/b/c/index", "/a/b/c", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive("/a/b/c/index", "/a", FOLDER, NOT_CODE_LINK, SAME_SITE));
+        assertTrue(isActive("/a/b/c/index", "/a/b", FOLDER, NOT_CODE_LINK, SAME_SITE));
+        assertTrue(isActive("/a/b/c/index", "/a/b/c", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -101,7 +103,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_frontEndSiteRoot_marksRootIndexPageActive() {
-        assertTrue(isActive("/index", "/index", PAGE, NOT_CODE_LINK));
+        assertTrue(isActive("/index", "/index", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -109,7 +111,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_frontEndSiteRoot_leavesTopLevelFolderInactive() {
-        assertFalse(isActive("/index", "/TravelHub", FOLDER, NOT_CODE_LINK));
+        assertFalse(isActive("/index", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -117,7 +119,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_frontEndNonIndexPage_marksParentFolderActive() {
-        assertTrue(isActive("/TravelHub/contact", "/TravelHub", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive("/TravelHub/contact", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -125,7 +127,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_frontEndNonIndexPage_marksThePageActive() {
-        assertTrue(isActive("/TravelHub/contact", "/TravelHub/contact", PAGE, NOT_CODE_LINK));
+        assertTrue(isActive("/TravelHub/contact", "/TravelHub/contact", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -133,7 +135,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_frontEndUrlMappedDetailPage_marksContainingFolderActive() {
-        assertTrue(isActive("/store/product/widget-123", "/store", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive("/store/product/widget-123", "/store", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -141,8 +143,8 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_codeLink_isNeverActive() {
-        assertFalse(isActive("/TravelHub/index", "/TravelHub/index", PAGE, CODE_LINK));
-        assertFalse(isActive("/index", "/index", PAGE, CODE_LINK));
+        assertFalse(isActive("/TravelHub/index", "/TravelHub/index", PAGE, CODE_LINK, SAME_SITE));
+        assertFalse(isActive("/index", "/index", PAGE, CODE_LINK, SAME_SITE));
     }
 
     // ------------------------------------------------------------------
@@ -155,7 +157,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiIndexPage_marksParentFolderActive() {
-        assertTrue(isActive(API_PREFIX + "/TravelHub/index", "/TravelHub", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive(API_PREFIX + "/TravelHub/index", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -164,7 +166,7 @@ public class NavResultHydratedTest extends UnitTestBase {
     @Test
     public void isActive_apiIndexPage_marksThePageActive() {
         assertTrue(
-                isActive(API_PREFIX + "/TravelHub/index", "/TravelHub/index", PAGE, NOT_CODE_LINK));
+                isActive(API_PREFIX + "/TravelHub/index", "/TravelHub/index", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -173,7 +175,7 @@ public class NavResultHydratedTest extends UnitTestBase {
     @Test
     public void isActive_apiNonIndexPage_marksParentFolderActive() {
         assertTrue(
-                isActive(API_PREFIX + "/TravelHub/contact", "/TravelHub", FOLDER, NOT_CODE_LINK));
+                isActive(API_PREFIX + "/TravelHub/contact", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     // ------------------------------------------------------------------
@@ -187,7 +189,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiFolderStyleUri_marksFolderActive() {
-        assertTrue(isActive(API_PREFIX + "/TravelHub", "/TravelHub", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive(API_PREFIX + "/TravelHub", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -196,7 +198,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiFolderStyleUri_marksIndexPageActive() {
-        assertTrue(isActive(API_PREFIX + "/TravelHub", "/TravelHub/index", PAGE, NOT_CODE_LINK));
+        assertTrue(isActive(API_PREFIX + "/TravelHub", "/TravelHub/index", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -204,7 +206,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiFolderStyleUriWithTrailingSlash_marksFolderActive() {
-        assertTrue(isActive(API_PREFIX + "/TravelHub/", "/TravelHub", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive(API_PREFIX + "/TravelHub/", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -212,9 +214,9 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiNestedFolderStyleUri_marksEveryAncestorActive() {
-        assertTrue(isActive(API_PREFIX + "/a/b/c", "/a", FOLDER, NOT_CODE_LINK));
-        assertTrue(isActive(API_PREFIX + "/a/b/c", "/a/b", FOLDER, NOT_CODE_LINK));
-        assertTrue(isActive(API_PREFIX + "/a/b/c", "/a/b/c", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive(API_PREFIX + "/a/b/c", "/a", FOLDER, NOT_CODE_LINK, SAME_SITE));
+        assertTrue(isActive(API_PREFIX + "/a/b/c", "/a/b", FOLDER, NOT_CODE_LINK, SAME_SITE));
+        assertTrue(isActive(API_PREFIX + "/a/b/c", "/a/b/c", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -222,7 +224,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiFolderStyleUri_marksSamePrefixFolderActive() {
-        assertTrue(isActive(API_PREFIX + "/Travel", "/Travel", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive(API_PREFIX + "/Travel", "/Travel", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -231,7 +233,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiFolderStyleUri_leavesSamePrefixSiblingInactive() {
-        assertFalse(isActive(API_PREFIX + "/Travel", "/TravelHub", FOLDER, NOT_CODE_LINK));
+        assertFalse(isActive(API_PREFIX + "/Travel", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -241,7 +243,7 @@ public class NavResultHydratedTest extends UnitTestBase {
     @Test
     public void isActive_apiUrlMappedDetailPage_marksContainingFolderActive() {
         assertTrue(isActive(API_PREFIX + "/store/product/widget-123", "/store", FOLDER,
-                NOT_CODE_LINK));
+                NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -250,8 +252,8 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiVanityUrlMatchingNoNavItem_marksNothingActive() {
-        assertFalse(isActive(API_PREFIX + "/summer-sale", "/TravelHub", FOLDER, NOT_CODE_LINK));
-        assertFalse(isActive(API_PREFIX + "/summer-sale", "/TravelHub/index", PAGE, NOT_CODE_LINK));
+        assertFalse(isActive(API_PREFIX + "/summer-sale", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
+        assertFalse(isActive(API_PREFIX + "/summer-sale", "/TravelHub/index", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     // ------------------------------------------------------------------
@@ -264,7 +266,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiSiteRoot_marksRootIndexPageActive() {
-        assertTrue(isActive(API_PREFIX + "/", "/index", PAGE, NOT_CODE_LINK));
+        assertTrue(isActive(API_PREFIX + "/", "/index", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -272,7 +274,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiSiteRoot_leavesTopLevelFolderInactive() {
-        assertFalse(isActive(API_PREFIX + "/", "/TravelHub", FOLDER, NOT_CODE_LINK));
+        assertFalse(isActive(API_PREFIX + "/", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -280,7 +282,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_apiSiteRootIndexPage_marksRootIndexPageActive() {
-        assertTrue(isActive(API_PREFIX + "/index", "/index", PAGE, NOT_CODE_LINK));
+        assertTrue(isActive(API_PREFIX + "/index", "/index", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -289,11 +291,11 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_degenerateUris_doNotThrow() {
-        isActive(API_PREFIX + "/", "/index", PAGE, NOT_CODE_LINK);
-        isActive(API_PREFIX + "/", "/TravelHub", FOLDER, NOT_CODE_LINK);
-        isActive("/", "/index", PAGE, NOT_CODE_LINK);
-        isActive("/index", "/", FOLDER, NOT_CODE_LINK);
-        isActive("no-leading-slash", "/TravelHub", FOLDER, NOT_CODE_LINK);
+        isActive(API_PREFIX + "/", "/index", PAGE, NOT_CODE_LINK, SAME_SITE);
+        isActive(API_PREFIX + "/", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE);
+        isActive("/", "/index", PAGE, NOT_CODE_LINK, SAME_SITE);
+        isActive("/index", "/", FOLDER, NOT_CODE_LINK, SAME_SITE);
+        isActive("no-leading-slash", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE);
     }
 
     // ------------------------------------------------------------------
@@ -306,20 +308,49 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_hostQualifiedHref_isNotActive() {
-        assertFalse(isActive("/a/b", "//hostB/a/b", FOLDER, NOT_CODE_LINK));
+        assertFalse(isActive("/a/b", "//hostB/a/b", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
-     * XH-2: a folder href equal to the current page's URI. On one host this state is
+     * XH-2: a folder href equal to the current page's URI. On one site this state is
      * unrepresentable — the identifier table's uniqueness constraints forbid a folder and a page
-     * sharing a path — so this can only arise from a nav item sourced from another host with an
-     * unqualified href. Guarded at the developer's decision on the T012 gate: the index candidate
-     * is only ever considered for a Page API request, and this is a front-end URI, so the folder
-     * cannot be lit up by a synthesized candidate.
+     * sharing a path — so it can only arise from an item pulled from another site, whose hrefs are
+     * unqualified. On a front-end URI no candidate is synthesized at all, so nothing can light up.
      */
     @Test
     public void isActive_folderHrefEqualToFrontEndPageUri_isNotActive() {
-        assertFalse(isActive("/a/b", "/a/b", FOLDER, NOT_CODE_LINK));
+        assertFalse(isActive("/a/b", "/a/b", FOLDER, NOT_CODE_LINK, SAME_SITE));
+        assertFalse(isActive("/a/b", "/a/b", FOLDER, NOT_CODE_LINK, OTHER_SITE));
+    }
+
+    /**
+     * XH-3: the same collision under the Page API, where a candidate IS synthesized. A folder from
+     * another site whose unqualified href matches the current page's path must not be activated by
+     * that guess — the guess is only meaningful for the site being rendered.
+     */
+    @Test
+    public void isActive_apiFolderHrefFromAnotherSite_isNotActive() {
+        assertFalse(isActive(API_PREFIX + "/a/b", "/a/b", FOLDER, NOT_CODE_LINK, OTHER_SITE));
+        assertFalse(isActive(API_HTML_PREFIX + "/a/b", "/a/b", FOLDER, NOT_CODE_LINK, OTHER_SITE));
+    }
+
+    /**
+     * XH-4: the same shape on the site being rendered is the defect this fix exists for, and must
+     * still resolve. Without this, the guard added for XH-3 would undo FIX-1.
+     */
+    @Test
+    public void isActive_apiFolderHrefOnRequestedSite_isActive() {
+        assertTrue(isActive(API_PREFIX + "/a/b", "/a/b", FOLDER, NOT_CODE_LINK, SAME_SITE));
+    }
+
+    /**
+     * XH-5: an item from another site is still matched by the ordinary comparison — the guard only
+     * withholds the synthesized candidate, it does not exclude the item altogether.
+     */
+    @Test
+    public void isActive_pageHrefFromAnotherSite_stillMatchesDirectly() {
+        assertTrue(isActive(API_PREFIX + "/a/b", "/a/b", PAGE, NOT_CODE_LINK, OTHER_SITE));
+        assertTrue(isActive("/a/b/index", "/a/b", FOLDER, NOT_CODE_LINK, OTHER_SITE));
     }
 
     // ------------------------------------------------------------------
@@ -333,7 +364,7 @@ public class NavResultHydratedTest extends UnitTestBase {
     @Test
     public void isActive_defaultIndexPageName_resolvesIndexPage() {
         NavResultHydrated.indexPageName = () -> "index";
-        assertTrue(isActive(API_PREFIX + "/TravelHub", "/TravelHub/index", PAGE, NOT_CODE_LINK));
+        assertTrue(isActive(API_PREFIX + "/TravelHub", "/TravelHub/index", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -342,7 +373,7 @@ public class NavResultHydratedTest extends UnitTestBase {
     @Test
     public void isActive_configuredIndexPageName_resolvesConfiguredPage() {
         NavResultHydrated.indexPageName = () -> "default";
-        assertTrue(isActive(API_PREFIX + "/TravelHub", "/TravelHub/default", PAGE, NOT_CODE_LINK));
+        assertTrue(isActive(API_PREFIX + "/TravelHub", "/TravelHub/default", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -352,7 +383,7 @@ public class NavResultHydratedTest extends UnitTestBase {
     @Test
     public void isActive_configuredIndexPageName_doesNotResolveDefaultNamedPage() {
         NavResultHydrated.indexPageName = () -> "default";
-        assertFalse(isActive(API_PREFIX + "/TravelHub", "/TravelHub/index", PAGE, NOT_CODE_LINK));
+        assertFalse(isActive(API_PREFIX + "/TravelHub", "/TravelHub/index", PAGE, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -361,7 +392,7 @@ public class NavResultHydratedTest extends UnitTestBase {
     @Test
     public void isActive_configuredIndexPageName_frontEndUriNeedsNoCandidate() {
         NavResultHydrated.indexPageName = () -> "default";
-        assertTrue(isActive("/TravelHub/default", "/TravelHub", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive("/TravelHub/default", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     // ------------------------------------------------------------------
@@ -375,8 +406,8 @@ public class NavResultHydratedTest extends UnitTestBase {
     @Test
     public void isActive_renderHtmlEndpoint_stripsItsOwnPrefix() {
         assertTrue(isActive(API_HTML_PREFIX + "/TravelHub/index", "/TravelHub", FOLDER,
-                NOT_CODE_LINK));
-        assertTrue(isActive(API_HTML_PREFIX + "/TravelHub", "/TravelHub", FOLDER, NOT_CODE_LINK));
+                NOT_CODE_LINK, SAME_SITE));
+        assertTrue(isActive(API_HTML_PREFIX + "/TravelHub", "/TravelHub", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -386,7 +417,7 @@ public class NavResultHydratedTest extends UnitTestBase {
     @Test
     public void isActive_renderSourcesEndpoint_prefixIsNotStripped() {
         assertFalse(isActive("/api/v1/page/_render-sources/TravelHub/index", "/TravelHub", FOLDER,
-                NOT_CODE_LINK));
+                NOT_CODE_LINK, SAME_SITE));
     }
 
     /**
@@ -395,7 +426,7 @@ public class NavResultHydratedTest extends UnitTestBase {
      */
     @Test
     public void isActive_pathBeginningWithRender_isNotStripped() {
-        assertTrue(isActive("/rendering/index", "/rendering", FOLDER, NOT_CODE_LINK));
+        assertTrue(isActive("/rendering/index", "/rendering", FOLDER, NOT_CODE_LINK, SAME_SITE));
     }
 
     // ------------------------------------------------------------------

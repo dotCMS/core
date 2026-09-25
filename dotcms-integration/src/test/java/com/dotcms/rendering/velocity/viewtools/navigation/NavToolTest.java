@@ -788,6 +788,11 @@ public class NavToolTest extends IntegrationTestBase{
         final HttpServletRequest request = mock(HttpServletRequest.class);
         Mockito.when(request.getRequestURI()).thenReturn(requestURI);
         Mockito.when(request.getServerName()).thenReturn(site.getHostname());
+        // The Page API sets this, and isActive() reads it to tell whether a navigation item
+        // belongs to the site being rendered. Without it the test would only ever exercise the
+        // "cannot determine the site" fallback.
+        Mockito.when(request.getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST))
+                .thenReturn(site);
 
         final ViewContext viewContext = mock(ViewContext.class);
         Mockito.when(viewContext.getRequest()).thenReturn(request);

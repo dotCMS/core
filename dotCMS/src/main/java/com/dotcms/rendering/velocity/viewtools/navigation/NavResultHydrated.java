@@ -9,6 +9,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.tools.view.context.ViewContext;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -18,6 +19,7 @@ import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONIgnore;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -72,7 +74,29 @@ public final class NavResultHydrated extends NavResult{
         }
         final HttpServletRequest req = (HttpServletRequest) context.getRequest();
         return req != null
-                && isActive(req.getRequestURI(), navResult.getHref(), isFolder(), isCodeLink());
+                && isActive(req.getRequestURI(), navResult.getHref(), isFolder(), isCodeLink(),
+                        belongsToRequestedSite(req));
+    }
+
+    /**
+     * Whether this navigation item belongs to the site the request is being rendered for.
+     *
+     * <p>A navigation tree can be pulled from another site — {@code $navtool.getNav("//other/path")}
+     * — and its items carry unqualified hrefs, so a folder on that site can have the same path as a
+     * page on this one. Reads the site off the request attribute the Page API already sets rather
+     * than calling {@code getCurrentHost()}, which is {@code @CloseDBIfOpened} and resolves the
+     * system user — far too heavy to run once per navigation item per page render.
+     *
+     * @param req the current request
+     * @return {@code true} when the item is on the requested site, or when that cannot be determined
+     */
+    private boolean belongsToRequestedSite(final HttpServletRequest req) {
+        final Object requestedSite = req.getAttribute(WebKeys.CURRENT_HOST);
+        if (!(requestedSite instanceof Host) || navResult.getHostId() == null) {
+            // Cannot tell; keep the behavior the item would have had without this check.
+            return true;
+        }
+        return navResult.getHostId().equals(((Host) requestedSite).getIdentifier());
     }
 
     /**
@@ -84,11 +108,12 @@ public final class NavResultHydrated extends NavResult{
      * @param href       the navigation item's URL path
      * @param folder     whether the item is a folder rather than a page or link
      * @param codeLink   whether the item is a Velocity code link, which is never active
+     * @param onRequestedSite whether the item belongs to the site being rendered
      * @return {@code true} when the item is the current page, or a folder containing it
      */
     @VisibleForTesting
     static boolean isActive(final String requestURI, final String href, final boolean folder,
-            final boolean codeLink) {
+            final boolean codeLink, final boolean onRequestedSite) {
 
         // A Page API render carries a prefix; the front end does not. Which it is decides whether
         // the index candidate below is even considered.
@@ -106,6 +131,13 @@ public final class NavResultHydrated extends NavResult{
         // /api/v1/page/render/TravelHub arrives with no page segment at all -- which is what the
         // Universal Visual Editor sends when it navigates in-editor. See issue #37105.
         if (strippedURI == null) {
+            return false;
+        }
+        // The candidate is a guess at the page this folder-style URI means, and it is only a safe
+        // guess for the site being rendered. An item pulled from another site carries an unqualified
+        // href, so its folder path can collide with a page path here; without this check that folder
+        // would light up on a page it has nothing to do with.
+        if (!onRequestedSite) {
             return false;
         }
         final String indexCandidate = indexCandidate(reqURI);
