@@ -202,6 +202,70 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
     }
 
     /**
+     * Rolled back to Phase 0 from a dual-write phase with nothing changed since: the OpenSearch copies
+     * are current and in sync, and must not be described as debris from an earlier attempt
+     * (issue #37638).
+     */
+    @Test
+    public void phase0_afterRollback_inSyncCopies_areNotCalledLeftovers() {
+        setPhase(PHASE_0);
+        stubContent(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", 6),
+                cc(IndexKind.CONTENT_LIVE, "live_1", 4)));
+        when(siteSearch.statuses()).thenReturn(List.of(ss("a", true, 3, true, 3)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        assertTrue(r.verdict().safeToAdvance());
+        assertEquals(0, r.verdict().outOfSyncCount());
+        assertFalse(r.verdict().summary(), r.verdict().summary().contains("left over"));
+        assertFalse(r.verdict().summary(), r.verdict().summary().contains("earlier migration"));
+    }
+
+    /**
+     * Rolled back to Phase 0, then content changed: Phase 0 writes Elasticsearch only, so the current
+     * OpenSearch copies fall behind. The summary must say that, and name a reindex as the repair —
+     * dual-write mirrors new writes and never backfills (issue #37638).
+     */
+    @Test
+    public void phase0_afterRollback_driftedCopies_needAReindexNotDualWrite() {
+        setPhase(PHASE_0);
+        stubContent(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, 7, true, 6),
+                cc(IndexKind.CONTENT_LIVE, "live_1", true, 5, true, 4)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        final String summary = r.verdict().summary();
+        assertTrue(r.verdict().safeToAdvance());
+        assertEquals(2, r.verdict().outOfSyncCount());
+        assertFalse(summary, summary.contains("left over"));
+        assertFalse(summary, summary.contains("earlier migration"));
+        assertFalse(summary, summary.contains("dual-write will"));
+        assertFalse(summary, summary.contains("nothing to reconcile"));
+        assertTrue(summary, summary.contains("run a full reindex"));
+        assertTrue(summary, summary.contains("never backfills"));
+    }
+
+    /**
+     * An index that exists only on OpenSearch at Phase 0 is described as exactly that, with no promise
+     * that dual-write will do anything about it (issue #37638).
+     */
+    @Test
+    public void phase0_openSearchOnlyIndex_isDescribedAsSuch() {
+        setPhase(PHASE_0);
+        when(siteSearch.statuses()).thenReturn(List.of(ss("orphan", false, 0, true, 40)));
+
+        final MigrationReadiness r = service.evaluate();
+
+        final String summary = r.verdict().summary();
+        assertEquals(1, r.verdict().outOfSyncCount());
+        assertTrue(summary, summary.contains("exists only on OpenSearch"));
+        assertFalse(summary, summary.contains("dual-write will"));
+    }
+
+    /**
      * An unmeasurable OpenSearch count (-1) must not read as "ES is ahead": {@code 100 < -1} is false, so
      * a naive comparison would return a false green while OpenSearch may hold more documents.
      */
@@ -389,6 +453,66 @@ public class MigrationReadinessServiceTest extends UnitTestBase {
         final MigrationReadiness r = service.evaluate();
 
         assertEquals(0, r.verdict().outOfSyncCount());
+    }
+
+    /**
+     * Phase 3 with OpenSearch — the only engine serving reads — behind Elasticsearch and short against
+     * the database. The summary must speak to that direction, not reassure about the opposite one
+     * (issue #37638).
+     */
+    @Test
+    public void phase3_openSearchBehindElasticsearch_getsItsOwnSentence() {
+        setPhase(PHASE_3);
+        stubContent(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, 7, true, 6, 7L),
+                cc(IndexKind.CONTENT_LIVE, "live_1", true, 5, true, 4, 5L)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        final String summary = r.verdict().summary();
+        assertEquals(2, r.verdict().outOfSyncCount());
+        assertTrue(summary, summary.contains("run a full reindex"));
+        assertTrue(summary, summary.contains("OpenSearch holds fewer documents than Elasticsearch"));
+        assertFalse(summary, summary.contains("No index shows Elasticsearch behind OpenSearch"));
+    }
+
+    /**
+     * Phase 3 with OpenSearch behind the frozen Elasticsearch copy but matching the database — content
+     * deleted since the cutover. Not counted, but the direction is still stated rather than covered by
+     * a reassurance about the other one (issue #37638).
+     */
+    @Test
+    public void phase3_openSearchBehindFrozenElasticsearch_butCompleteAgainstDatabase() {
+        setPhase(PHASE_3);
+        stubContent(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, 100, true, 98, 98L),
+                cc(IndexKind.CONTENT_LIVE, "live_1", true, 50, true, 50, 50L)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        final String summary = r.verdict().summary();
+        assertEquals(0, r.verdict().outOfSyncCount());
+        assertTrue(summary, summary.contains("OpenSearch holds fewer documents than Elasticsearch"));
+        assertTrue(summary, summary.contains("deleted or unpublished since the cutover"));
+        assertFalse(summary, summary.contains("No index shows Elasticsearch behind OpenSearch"));
+    }
+
+    /** Phase 3 with both engines holding the same counts keeps the plain no-drift sentence. */
+    @Test
+    public void phase3_equalCounts_keepsTheNoDriftSentence() {
+        setPhase(PHASE_3);
+        stubContent(List.of(
+                cc(IndexKind.CONTENT_WORKING, "working_1", true, 7, true, 7, 7L),
+                cc(IndexKind.CONTENT_LIVE, "live_1", true, 5, true, 5, 5L)));
+        when(siteSearch.statuses()).thenReturn(List.of());
+
+        final MigrationReadiness r = service.evaluate();
+
+        final String summary = r.verdict().summary();
+        assertTrue(summary, summary.contains("No index shows Elasticsearch behind OpenSearch"));
+        assertFalse(summary, summary.contains("fewer documents"));
     }
 
     /** The same state with the OpenSearch copy gone — that one blocks. */

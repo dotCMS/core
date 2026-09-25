@@ -391,6 +391,10 @@ public class ContentIndexMirrorReconcilerTest extends UnitTestBase {
         // The incomplete copy is named in the recommendation, with the fallout spelled out.
         assertTrue(working.recommendation().contains("OpenSearch copy holds 21 of the 686"));
         assertTrue(working.recommendation().contains("Site Search crawl"));
+        // A copy that missed writes after a rollback reads the same as an unfinished one, so the note
+        // must not assert a single cause (issue #37638).
+        assertFalse(working.recommendation().contains("never fully rebuilt"));
+        assertTrue(working.recommendation().contains("a rollback to Phase 0"));
         assertFalse("the complete copy must not be flagged",
                 working.recommendation().contains("Elasticsearch copy holds"));
     }
