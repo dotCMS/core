@@ -74,7 +74,9 @@ export class FetchHttpClient extends BaseHttpClient {
             checkSdkCompatibility(response.headers, SDK_VERSION);
 
             const contentType = response.headers.get('content-type');
-            const isJson = contentType?.includes('application/json') ?? false;
+            // application/json and the structured-syntax variants (problem+json,
+            // graphql-response+json, ...), in any case.
+            const isJson = /^application\/([\w.-]+\+)?json\b/i.test(contentType ?? '');
 
             if (!response.ok) {
                 // Parse response body for error context
@@ -110,8 +112,9 @@ export class FetchHttpClient extends BaseHttpClient {
             }
 
             // Every SDK caller talks to a JSON endpoint, so a successful answer in another
-            // format means something other than dotCMS answered (a login page, a proxy, the
-            // wrong port). Returning the Response would only move the failure downstream.
+            // format means something other than the dotCMS API answered (a login page, a
+            // proxy, the wrong port). Returning the Response would only move the failure
+            // downstream.
             if (contentType) {
                 let body: string | undefined;
                 try {
@@ -126,7 +129,7 @@ export class FetchHttpClient extends BaseHttpClient {
                         ? ` after a redirect to '${response.url}'`
                         : '';
                 const message = [
-                    `Expected a JSON response from '${url}' but received '${contentType}' (HTTP ${response.status})${sameOriginRedirect}, which is not JSON. dotCMS API endpoints answer in JSON, so another server answered: check that dotcmsUrl points at your dotCMS instance.`,
+                    `Expected a JSON response from '${url}' but received '${contentType}' (HTTP ${response.status})${sameOriginRedirect}, which is not JSON. dotCMS API endpoints answer in JSON, so something other than the dotCMS API answered (a login page, a proxy or another server): check that dotcmsUrl points at your dotCMS instance.`,
                     crossOriginRedirect
                 ]
                     .filter(Boolean)

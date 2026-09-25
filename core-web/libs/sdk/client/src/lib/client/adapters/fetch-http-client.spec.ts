@@ -76,6 +76,25 @@ describe('FetchHttpClient', () => {
                 expect(result).toEqual(mockResponse);
             });
 
+            it.each([
+                'application/problem+json',
+                'application/graphql-response+json; charset=utf-8',
+                'Application/JSON'
+            ])('should parse a successful %s response as JSON', async (contentType) => {
+                const body = { data: 'test' };
+                mockFetch.mockResolvedValueOnce({
+                    ok: true,
+                    status: 200,
+                    statusText: 'OK',
+                    headers: new Headers({ 'content-type': contentType }),
+                    json: vi.fn().mockResolvedValue(body)
+                } as unknown as Response);
+
+                const result = await httpClient.request('https://api.example.com/test');
+
+                expect(result).toEqual(body);
+            });
+
             it('should reject a successful response whose content type is not JSON', async () => {
                 mockFetch.mockResolvedValueOnce({
                     ok: true,
@@ -144,6 +163,9 @@ describe('FetchHttpClient', () => {
 
                 expect(error.message).toContain("'https://api.example.com/login'");
                 expect(error.message).not.toContain('a different origin');
+                // The login page may be dotCMS's own, so don't claim another server answered.
+                expect(error.message).not.toContain('another server answered');
+                expect(error.message).toContain('something other than the dotCMS API answered');
             });
 
             it('should handle responses without content-type header', async () => {
@@ -343,6 +365,24 @@ describe('FetchHttpClient', () => {
                 );
 
                 expect(error.message).toBe('HTTP 500: Internal Server Error');
+            });
+
+            it('should parse a failed application/problem+json body as JSON without a non-JSON hint', async () => {
+                const problem = { title: 'Bad Request', status: 400 };
+                mockFetch.mockResolvedValueOnce({
+                    ok: false,
+                    status: 400,
+                    statusText: 'Bad Request',
+                    headers: new Headers({ 'content-type': 'application/problem+json' }),
+                    json: vi.fn().mockResolvedValue(problem)
+                } as unknown as Response);
+
+                const error = await captureError(
+                    httpClient.request('https://api.example.com/test')
+                );
+
+                expect(error.data).toEqual(problem);
+                expect(error.message).toBe('HTTP 400: Bad Request');
             });
 
             it('should report a non-JSON content type on a failed response', async () => {
