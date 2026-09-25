@@ -18,7 +18,20 @@ export enum DotSystemEventType {
     UPDATE_PORTLET_LAYOUTS = 'UPDATE_PORTLET_LAYOUTS',
     /** A bulk content reindex finished; the payload carries the run's counters. */
     BULK_REFRESH_COMPLETED = 'BULK_REFRESH_COMPLETED',
-    BULK_UPLOAD_COMPLETED = 'BULK_UPLOAD_COMPLETED'
+    BULK_UPLOAD_COMPLETED = 'BULK_UPLOAD_COMPLETED',
+    /**
+     * A folder entered a bulk delete. Announced to **everyone who may read that folder**, not only
+     * to whoever submitted the run — which is what lets a second author's listing mark it before
+     * they walk into a folder that is being destroyed (#37063, backend FR-035a/FR-035b).
+     */
+    FOLDER_DELETE_STARTED = 'FOLDER_DELETE_STARTED',
+    /**
+     * A folder left a bulk delete — **whether or not the delete succeeded**. A failed delete leaves
+     * the folder intact and usable, so this must clear the marking just as a success does.
+     */
+    FOLDER_DELETE_FINISHED = 'FOLDER_DELETE_FINISHED',
+    /** A bulk folder delete finished; scoped to the submitter, and carries the run's outcome. */
+    BULK_FOLDER_DELETE_COMPLETED = 'BULK_FOLDER_DELETE_COMPLETED'
 }
 
 /**
