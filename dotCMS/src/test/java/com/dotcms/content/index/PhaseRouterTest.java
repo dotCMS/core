@@ -7,7 +7,9 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.content.index.domain.InvalidSearchQueryException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -445,6 +447,125 @@ public class PhaseRouterTest {
 
         assertEquals("Phase-1 reads must come from ES", "es-result", router.read(Supplier::get));
         assertFalse("OS must NOT be contacted on the Phase-1 read path", osCalled.get());
+    }
+
+    // =========================================================================
+    // Caller errors are not a fallback condition (issue #37637)
+    //
+    // A query the caller got wrong fails identically on every engine. Retrying it against ES only
+    // doubles the work, and logging it as "OS index may be stale or unavailable" sends an operator
+    // looking for a cluster fault that does not exist.
+    // =========================================================================
+
+    /**
+     * Given Scenario: Phase 2. OS rejects the query as invalid.
+     * When : read() delegates the search.
+     * Then : the OS exception propagates unchanged and ES is never contacted.
+     */
+    @Test
+    public void test_read_phase2_invalidQuery_propagates_esNeverCalled() {
+        final Supplier<String> esRead = () -> { fail("ES must NOT be retried for an invalid query"); return null; };
+        final Supplier<String> osRead = () -> {
+            throw new InvalidSearchQueryException("Unable to parse the given query.");
+        };
+
+        final PhaseRouter<Supplier<String>> router = new PhaseRouter<>(esRead, osRead);
+        setPhase(2);
+
+        final InvalidSearchQueryException thrown = assertThrows(InvalidSearchQueryException.class,
+                () -> router.read(Supplier::get));
+        assertEquals("Unable to parse the given query.", thrown.getMessage());
+    }
+
+    /**
+     * Given Scenario: Phase 2. OS rejects the query as invalid on the checked path
+     * ({@code SearchAPIImpl.searchRaw()}).
+     * Then : the exception propagates and ES is never contacted.
+     */
+    @Test
+    public void test_readChecked_phase2_invalidQuery_propagates_esNeverCalled() {
+        final PhaseRouter<CheckedSupplier<String>> router = new PhaseRouter<>(
+                () -> { fail("ES must NOT be retried for an invalid query"); return null; },
+                () -> { throw new InvalidSearchQueryException("OS rejected the query: HTTP 400"); });
+        setPhase(2);
+
+        assertThrows(InvalidSearchQueryException.class,
+                () -> router.readChecked(CheckedSupplier::get));
+    }
+
+    /**
+     * Given Scenario: Phase 2. The invalid-query failure arrives wrapped by an intermediate layer.
+     * Then : it is still recognised by its cause, and ES is never contacted.
+     */
+    @Test
+    public void test_readChecked_phase2_wrappedInvalidQuery_propagates_esNeverCalled() {
+        final PhaseRouter<CheckedSupplier<String>> router = new PhaseRouter<>(
+                () -> { fail("ES must NOT be retried for an invalid query"); return null; },
+                () -> {
+                    throw new DotDataException("search failed",
+                            new InvalidSearchQueryException("Unable to parse the given query."));
+                });
+        setPhase(2);
+
+        assertThrows(DotDataException.class, () -> router.readChecked(CheckedSupplier::get));
+    }
+
+    /**
+     * Given Scenario: Phase 2. OS refuses the read for a security reason the caller caused (for
+     * example no user while not respecting frontend roles). ES applies the same rule.
+     * Then : the exception propagates and ES is never contacted.
+     */
+    @Test
+    public void test_readChecked_phase2_securityFailure_propagates_esNeverCalled() {
+        final PhaseRouter<CheckedSupplier<String>> router = new PhaseRouter<>(
+                () -> { fail("ES must NOT be retried for a security failure"); return null; },
+                () -> { throw new DotSecurityException("You must specify a user"); });
+        setPhase(2);
+
+        assertThrows(DotSecurityException.class, () -> router.readChecked(CheckedSupplier::get));
+    }
+
+    /**
+     * Given Scenario: Phase 2. OS fails for an availability reason (the existing fallback case).
+     * Then : the fallback still fires — the classification must not swallow the case it exists for.
+     */
+    @Test
+    public void test_readChecked_phase2_availabilityFailure_stillFallsBackToEs() throws Exception {
+        final PhaseRouter<CheckedSupplier<String>> router = new PhaseRouter<>(
+                () -> "es-result",
+                () -> { throw new IOException("Connection refused"); });
+        setPhase(2);
+
+        assertEquals("es-result", router.readChecked(CheckedSupplier::get));
+    }
+
+    /**
+     * The log line for a caller error names the real cause and does not describe the index as stale
+     * or unavailable, nor claim a fallback that did not happen.
+     */
+    @Test
+    public void test_callerErrorMessage_namesTheCause_notTheIndex() {
+        final String message = PhaseRouter.callerErrorMessage("searchRaw",
+                new InvalidSearchQueryException("Unable to parse the given query."));
+
+        assertTrue(message, message.contains("Unable to parse the given query."));
+        assertTrue(message, message.contains("searchRaw"));
+        assertFalse(message, message.contains("stale or unavailable"));
+        assertFalse(message, message.contains("falling back"));
+    }
+
+    /**
+     * Phases other than 2 have no fallback, so a caller error there behaves exactly as before: it
+     * propagates from the only engine that was asked.
+     */
+    @Test
+    public void test_read_phase3_invalidQuery_propagates() {
+        final PhaseRouter<Supplier<String>> router = new PhaseRouter<>(
+                () -> { fail("ES must NOT be called in Phase 3"); return null; },
+                () -> { throw new InvalidSearchQueryException("bad"); });
+        setPhase(3);
+
+        assertThrows(InvalidSearchQueryException.class, () -> router.read(Supplier::get));
     }
 
     // =========================================================================

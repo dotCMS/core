@@ -5,6 +5,7 @@ import com.dotcms.content.index.SearchAPI;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.domain.InvalidSearchQueryException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -144,7 +145,7 @@ public class OSSearchAPIImpl implements SearchAPI {
             throws DotSecurityException, DotDataException {
 
         if (!UtilMethods.isSet(query)) {
-            throw new DotStateException("Search query is null");
+            throw new InvalidSearchQueryException("Search query is null");
         }
 
         // Normalize the query the same way search() does, so the raw path resolves mixed-case
@@ -159,7 +160,9 @@ public class OSSearchAPIImpl implements SearchAPI {
             completeQueryJSON = new JSONObject(normalizedQuery);
             completeQueryJSON.put("_source", new JSONArray("[identifier, inode]"));
         } catch (final JSONException e) {
-            throw new DotStateException("Unable to parse the given query.", e);
+            // The caller's error, not the cluster's: raised as such so Phase 2 does not retry it on
+            // Elasticsearch and log it as an index outage (issue #37637).
+            throw new InvalidSearchQueryException("Unable to parse the given query.", e);
         }
 
         return executeSearch(completeQueryJSON, live, user, respectFrontendRoles, -1, -1, null);
@@ -368,8 +371,7 @@ public class OSSearchAPIImpl implements SearchAPI {
                     "OS search returned an empty body (HTTP " + status + ")"));
 
             if (status < 200 || status >= 300) {
-                throw new DotStateException(
-                        "OS search failed: HTTP " + status + " — " + body.bodyAsString());
+                throw searchFailure(status, body.bodyAsString());
             }
 
             try (final InputStream is = body.body();
@@ -383,6 +385,22 @@ public class OSSearchAPIImpl implements SearchAPI {
         } catch (final IOException e) {
             throw new DotStateException("OS search execution failed: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * The exception for a search OpenSearch answered with a non-2xx status.
+     *
+     * <p>HTTP 400 means OpenSearch parsed the request and rejected it as malformed, so it is the
+     * caller's error and is raised as {@link InvalidSearchQueryException}: the Phase 2 router then
+     * propagates it rather than retrying it on Elasticsearch, which would reject it too. Every other
+     * status — a missing index, an auth failure, an overloaded node — stays a plain
+     * {@link DotStateException} and remains eligible for the fallback (issue #37637).</p>
+     */
+    static DotStateException searchFailure(final int status, final String body) {
+        final String message = "OS search failed: HTTP " + status + " — " + body;
+        return status == 400
+                ? new InvalidSearchQueryException(message)
+                : new DotStateException(message);
     }
 
     /**

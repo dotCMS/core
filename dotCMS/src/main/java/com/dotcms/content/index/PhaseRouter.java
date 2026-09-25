@@ -6,6 +6,8 @@ import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 
 import static com.dotcms.content.index.IndexConfigHelper.logShadowWriteFailure;
 
+import com.dotcms.content.index.domain.InvalidSearchQueryException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import java.util.List;
 import java.util.function.Consumer;
@@ -178,6 +180,8 @@ public final class PhaseRouter<T> {
      * <p><strong>Phase 2 only</strong>: OS is the read provider but ES is still active.
      * If OS throws a runtime exception the error is logged at {@code ERROR} level and the
      * read is retried against ES, so a transient OS failure never surfaces to the caller.
+     * A failure caused by the request itself — an invalid query, a security rule — is not
+     * retried: it propagates, logged at {@code WARN} with its cause (see {@link #isCallerError}).
      * In all other phases the call is forwarded to the read provider without a safety net:
      * Phase 0/1 read from ES (no fallback needed); Phase 3 reads from OS (ES decommissioned).</p>
      *
@@ -208,6 +212,10 @@ public final class PhaseRouter<T> {
         try {
             return fn.apply(osImpl);
         } catch (final RuntimeException e) {
+            if (isCallerError(e)) {
+                Logger.warn(PhaseRouter.class, callerErrorMessage(operation, e));
+                throw e;
+            }
             Logger.error(PhaseRouter.class, fallbackMessage(operation, e), e);
             return fn.apply(esImpl);
         }
@@ -230,6 +238,49 @@ public final class PhaseRouter<T> {
         }
         message.append(" — falling back to ES. OS index may be stale or unavailable. Cause: ")
                 .append(failure.getMessage());
+        final String rootCause = rootCauseMessage(failure);
+        if (null != rootCause) {
+            message.append(" / root cause: ").append(rootCause);
+        }
+        return message.toString();
+    }
+
+    /**
+     * Whether a Phase 2 read failed because of what the caller sent rather than because of the
+     * OpenSearch index or cluster: an invalid query, or a security rule the caller did not satisfy.
+     *
+     * <p>Such a failure is not what the fallback exists for. Elasticsearch parses and authorises the
+     * same request the same way, so retrying there fails identically after doing the work twice, and
+     * the fallback's log line would blame the index for a problem in the request (issue #37637). The
+     * whole cause chain is inspected because intermediate layers wrap the provider's exception.</p>
+     */
+    static boolean isCallerError(final Throwable failure) {
+        Throwable current = failure;
+        while (null != current) {
+            if (current instanceof InvalidSearchQueryException
+                    || current instanceof DotSecurityException) {
+                return true;
+            }
+            if (current.getCause() == current) {
+                return false;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    /**
+     * The log line for a Phase 2 read that failed on the caller's side and was not retried: names the
+     * operation and the cause, and deliberately says nothing about the index being stale or
+     * unavailable, because it is not.
+     */
+    static String callerErrorMessage(final String operation, final Throwable failure) {
+        final StringBuilder message = new StringBuilder("OS read rejected in Phase 2");
+        if (null != operation && !operation.isBlank()) {
+            message.append(" [").append(operation).append(']');
+        }
+        message.append(" — the request is invalid, not the index; not retrying on ES, where it would "
+                + "fail the same way. Cause: ").append(failure.getMessage());
         final String rootCause = rootCauseMessage(failure);
         if (null != rootCause) {
             message.append(" / root cause: ").append(rootCause);
@@ -347,7 +398,8 @@ public final class PhaseRouter<T> {
      * Delegates a checked read to the current read provider with automatic ES fallback in Phase 2.
      *
      * <p>Same fallback semantics as {@link #read}: in Phase 2 an OS exception is caught,
-     * logged at {@code ERROR}, and the read is retried against ES.
+     * logged at {@code ERROR}, and the read is retried against ES — unless the request itself
+     * caused the failure, which propagates (see {@link #isCallerError}).
      * In Phase 0/1 reads from ES; in Phase 3 reads from OS — no fallback in either case.</p>
      *
      * @throws Exception the exception thrown by the fallback provider (ES), if both fail
@@ -359,9 +411,11 @@ public final class PhaseRouter<T> {
         try {
             return fn.apply(osImpl);
         } catch (final Exception e) {
-            Logger.error(PhaseRouter.class,
-                    "OS read failed in Phase 2 — falling back to ES. "
-                    + "OS index may be stale or unavailable. Cause: " + e.getMessage(), e);
+            if (isCallerError(e)) {
+                Logger.warn(PhaseRouter.class, callerErrorMessage(null, e));
+                throw e;
+            }
+            Logger.error(PhaseRouter.class, fallbackMessage(null, e), e);
             return fn.apply(esImpl);
         }
     }
