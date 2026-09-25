@@ -103,9 +103,12 @@ public class ESContentTool implements ViewTool {
 	/**
 	 * @deprecated Use {@link #search(String)} for vendor-neutral access.
 	 *             This method returns Elasticsearch-specific types and will be removed in a future release.
-	 *             Velocity templates using {@code $results.hits}, {@code $results.aggregations},
-	 *             or {@code $results.response} must migrate to the neutral equivalents exposed by
-	 *             {@link ContentSearchResults}.
+	 *             {@code $results.hits}, {@code $results.aggregations} and {@code $results.response}
+	 *             continue to resolve on {@link ContentSearchResults}. What changes is
+	 *             {@code $item.map.fieldName}, which no longer resolves: {@link #search(String)}
+	 *             returns {@code ContentMap} objects rather than contentlets, so fields are read
+	 *             directly as {@code $item.fieldName}. The old expression yields nothing and does
+	 *             not error.
 	 *             <p>In Phase 3 of the OpenSearch migration this fails the page render, or returns
 	 *             {@code null} when {@code FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL}
 	 *             is enabled — see {@link #returnsNullInFinalPhase()}.</p>
@@ -124,6 +127,13 @@ public class ESContentTool implements ViewTool {
 	 *             This method returns an Elasticsearch-specific type and will be removed in a future release.
 	 *             <p>Like {@link #raw(String)}, the query is lowercased before execution, so mixed-case
 	 *             field names resolve to the physical index field name.</p>
+	 *             <p>{@code $raw.toString()} no longer returns JSON. {@link #raw(String)} returns a
+	 *             {@code ContentSearchResponse} record whose {@code toString()} is the record
+	 *             default. Use {@code $json.generate($raw)}, which emits the neutral response shape
+	 *             ({@code tookInMillis}, {@code hits.totalHits}, and
+	 *             {@code index} / {@code id} / {@code score} / {@code sourceAsMap}) rather than
+	 *             Elasticsearch's envelope. Nothing errors, so a consumer expecting JSON silently
+	 *             receives something else.</p>
 	 *             <p>In Phase 3 of the OpenSearch migration this fails the page render, or returns
 	 *             {@code null} when {@code FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL}
 	 *             is enabled — see {@link #returnsNullInFinalPhase()}.</p>
