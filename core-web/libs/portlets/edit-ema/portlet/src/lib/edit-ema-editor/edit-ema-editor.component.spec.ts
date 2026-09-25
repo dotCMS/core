@@ -1113,6 +1113,67 @@ describe('EditEmaEditorComponent', () => {
                 );
             });
 
+            describe('bounded reload — regression from #37097 post-merge QA', () => {
+                // QA on the merged fix found an endless client reload loop: every CLIENT_READY
+                // re-announcement unconditionally re-patches requestMetadata (setCustomClient),
+                // which changes pageAsset()'s reference and re-fires this effect. If the asset
+                // is still REST-sourced (GraphQL never resolved — slow, aborted, or permanently
+                // broken), the effect resent UVE_RELOAD_PAGE on every re-fire, and each reload
+                // the client performs triggers a fresh CLIENT_READY, looping indefinitely.
+                it('should send UVE_RELOAD_PAGE only once across repeated CLIENT_READY-style re-announcements while the asset stays REST-sourced', () => {
+                    store.setCustomClient({ query: 'query', variables: {} });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+
+                    // Simulate the client's browser reload re-announcing itself several times
+                    // (a duplicate CLIENT_READY unconditionally re-patches requestMetadata,
+                    // which is exactly what changes pageAsset()'s reference and re-fires the
+                    // effect) while the fetch still never resolves to GraphQL.
+                    for (let i = 0; i < 10; i++) {
+                        store.setCustomClient({ query: 'query', variables: { attempt: `${i}` } });
+                        spectator.flushEffects();
+                    }
+
+                    const reloadCalls = postMessageSpy.mock.calls.filter(
+                        ([message]) => message?.name === __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    );
+                    expect(reloadCalls.length).toBe(1);
+                    expect(postMessageSpy).not.toHaveBeenCalledWith(
+                        expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                        expect.anything()
+                    );
+                });
+
+                it('should send a fresh UVE_RELOAD_PAGE once the asset resolves to GraphQL and later regresses to REST on a new page', () => {
+                    store.setCustomClient({ query: 'query', variables: {} });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+                    postMessageSpy.mockClear();
+
+                    // Resolves: clears the pending flag.
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'graphql' });
+                    spectator.flushEffects();
+                    postMessageSpy.mockClear();
+
+                    // A new navigation (markPageLoading) resets pageReloadPending so a fresh
+                    // REST-sourced streak on the NEW page gets its own single reload request,
+                    // rather than being silently suppressed by a stale flag from the old page.
+                    // markPageLoading also resets isClientReady (unrelated pre-existing gate),
+                    // so re-establish it the way a genuine post-navigation CLIENT_READY would.
+                    store.markPageLoading();
+                    patchState(store as Parameters<typeof patchState>[0], {
+                        isClientReady: true
+                    });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+
+                    const reloadCalls = postMessageSpy.mock.calls.filter(
+                        ([message]) => message?.name === __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    );
+                    expect(reloadCalls.length).toBe(1);
+                });
+            });
+
             it('should never touch the iframe for a TRADITIONAL page regardless of source (regression)', () => {
                 // Spectator store type doesn't satisfy WritableStateSource but runtime works —
                 // same cast withPage.spec.ts's patchStoreState helper documents.
