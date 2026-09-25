@@ -105,3 +105,23 @@ Record per run: date, skill commit, scenario id, PASS/FAIL, and one line on the 
 
 | Date | Skill state | Scenario | Result | Note |
 |---|---|---|---|---|
+| 2026-09-25 | 3d4504bb75 | A1 | PASS | inline, no path question; `#else` `cmp`-identical to the pasted text |
+| 2026-09-25 | 3d4504bb75 | A2 | PASS | single `keytag_custom_field.vtl`, no `_new`/`_old`; `#else` identical |
+| 2026-09-25 | 3d4504bb75 | A3 | PASS | Spanish keyword → inline; `#else` identical |
+| 2026-09-25 | 3d4504bb75 | A4 | PASS | pasted `#parse` did not select three files; `#else` identical, `#parse` kept |
+| 2026-09-25 | 3d4504bb75 | B1 | PASS | blocked, names `renderTag`, first-definition-wins explained, offers three files |
+| 2026-09-25 | 3d4504bb75 | B2 | PASS | "inline anyway" → emitted, finding restated; `#else` identical |
+| 2026-09-25 | 3d4504bb75 | B3 | PASS | blocked on the unclosed `#if` at line 1 |
+| 2026-09-25 | 3d4504bb75 | B4 | PASS | blocked on `'#end-date'` read as `#end`, line 2 |
+| 2026-09-25 | 3d4504bb75 | B5 | PASS | warning lists the 4 shared `#set`; both branches identical (CRLF kept) |
+| 2026-09-25 | 3d4504bb75 | B6 | PASS | split refused: `#foreach` line 3 unclosed, `#else` line 6 not top-level; no files |
+| 2026-09-25 | 3d4504bb75 | C1 | PASS* | three files; `_old` identical; router differed only by a final newline → fixed in SKILL.md |
+| 2026-09-25 | 3d4504bb75 | C2 | PASS | asked for filename and server path; no files |
+| 2026-09-25 | 3d4504bb75 | C3–C6 | PASS* | all four keywords → three files; `_old` identical; same router final-newline difference as C1 |
+| 2026-09-25 | 3d4504bb75 | C7 | PASS | asked which shape; no files |
+| 2026-09-25 | 3d4504bb75 | D1 | PASS | collapse: both branches identical, nothing blocking |
+| 2026-09-25 | 3d4504bb75 | D2 | PASS | split: router, `_new`, `_old` all `cmp`-identical to the repo |
+| 2026-09-25 | 3d4504bb75 | D3 | PASS | asked for the router's server path |
+| 2026-09-25 | 3d4504bb75 | D4 | PASS | 20/20 branch files identical; 8 routers identical, `url-title` and `tag_storage_field_creation` same targets |
+| 2026-09-25 | 3d4504bb75 | D5 | PASS | reported the `_old` path mismatch; no files |
+| 2026-09-25 | 3d4504bb75 | E | NOT RUN | live render needs a running instance |

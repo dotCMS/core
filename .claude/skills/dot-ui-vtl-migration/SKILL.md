@@ -138,7 +138,7 @@ The **conditional router** — this file takes the name of the original and dele
 #end
 ```
 
-The `#parse` paths must use the **full server path** of the file, not just the filename. Use the same directory as the original file. Indent the `#parse` lines with a tab, as the routers already in the repository do.
+The `#parse` paths must use the **full server path** of the file, not just the filename. Use the same directory as the original file. Indent the `#parse` lines with a tab and end the file right after `#end`, with no final newline, as the routers already in the repository do. On disk, write it with `printf` so no newline is added.
 
 ---
 
