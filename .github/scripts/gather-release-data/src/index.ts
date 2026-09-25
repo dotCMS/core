@@ -19,8 +19,8 @@ import {
   findPreviousTag,
   fetchCommitRange,
   resolvePRNumbers,
-  fetchPRDetails,
-} from './github';
+} from '../../shared/github';
+import { fetchPRDetails } from './github';
 import { processChanges } from './categorize';
 
 /** Parse CLI arguments. */
