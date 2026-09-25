@@ -857,7 +857,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             // Anything else re-renders the page through the Page API below. Left to
             // the browser, the iframe of a traditional page navigates on its own and
             // comes back blank, and the new query never reaches the page render
-            // (#36999). The previous link's query is cleared first, so a link
+            // (#36999, #37327). The previous link's query is cleared first, so a link
             // without a filter removes it instead of inheriting it through the
             // `pageLoad` merge.
             for (const key of this.#pageOwnedParamKeys()) {
