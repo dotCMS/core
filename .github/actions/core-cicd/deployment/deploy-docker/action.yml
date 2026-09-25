@@ -66,6 +66,16 @@ inputs:
     description: 'Pull image before building'
     required: false
     default: 'false'
+  cache-scope:
+    description: |
+      BuildKit cache scope for type=gha. BuildKit's implicit scope is shared by
+      every run on the same GITHUB_REF, so on a long-lived ref (main) unrelated
+      workflows evict each other's layers. An explicit scope keeps a caller's
+      cache to itself. Callers that build more than one image should pass a
+      distinct scope per image, or those two evict each other. Defaults to
+      BuildKit's implicit scope, which is what callers had before.
+    required: false
+    default: 'buildkit'
   identifier-tag:
     description: 'Optional mutable alias tag managed by the deployment phase (e.g., nightly_20250218_java-25, manual_issue-123_java-25). Applied when non-empty.'
     required: false
@@ -219,9 +229,11 @@ runs:
         platforms: ${{ inputs.docker_platforms }}
         pull: true
         push: ${{ inputs.do_deploy }}
-        cache-from: type=gha
+        # Same scope on read and write. 'scope=buildkit' is BuildKit's implicit
+        # default, so callers that pass nothing are unaffected.
+        cache-from: type=gha,scope=${{ inputs.cache-scope }}
         # ignore-error: a transient GHA cache-service failure on this WRITE (pure build-speed
         # optimization) must never fail a release deployment — it skipped Promote-latest,
         # Release-Notes, and the changelog publish on v26.07.27-01 (#36744).
-        cache-to: type=gha,mode=max,ignore-error=true
+        cache-to: type=gha,scope=${{ inputs.cache-scope }},mode=max,ignore-error=true
         build-args: ${{ inputs.build_args }}

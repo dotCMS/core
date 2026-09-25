@@ -43,7 +43,7 @@ on:
         required: false
         default: ''
       artifact-suffix:
-        description: 'Override artifact suffix (e.g., -java25, -java25.0.1, -java25-ms). If not set, derived from java-version major.'
+        description: 'Override artifact suffix (e.g., -java-25, -java-25.0.1, -java-25-ms). If not set, derived from java-version major.'
         type: string
         required: false
         default: ''
