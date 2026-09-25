@@ -4,7 +4,12 @@ import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotWorkflowActionsFireService } from '@dotcms/data-access';
-import { DotCMSContentTypeField, DotCMSContentlet } from '@dotcms/dotcms-models';
+import {
+    ContentTypeBinaryField,
+    ContentTypeFileField,
+    ContentTypeImageField,
+    DotCMSContentlet
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotFileFieldComponent } from './components/dot-file-field/dot-file-field.component';
@@ -44,13 +49,17 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         }
     ]
 })
-export class DotEditContentFileFieldComponent extends BaseWrapperField {
+export class DotEditContentFileFieldComponent extends BaseWrapperField<
+    ContentTypeBinaryField | ContentTypeFileField | ContentTypeImageField
+> {
     /**
      * DotCMS Content Type Field
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeBinaryField | ContentTypeFileField | ContentTypeImageField>({
+        alias: 'field'
+    });
     /**
      * DotCMS Contentlet
      *
