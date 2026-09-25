@@ -195,8 +195,8 @@ true — which is the failure mode this entire Rock was created to address.
   iframe, which is where `data-testid` does not exist. Every symbol in it resolved; the guidance was
   still wrong, and the Cursor rule auto-loads while the doc has to be opened deliberately.
 - Existing gates do not catch any of this: `skill-lint` checks frontmatter, the reachability check
-  (#37578) catches unreachable files, and CI compiles production code — but no doc example is ever
-  compiled or resolved.
+  proposed in #37709 catches unreachable files, and CI compiles production code — but no doc
+  example is ever compiled or resolved.
 - **The failure reproduces even under active hunting.** The replacement example written for #37666,
   in a PR whose entire purpose was removing fabricated content, stubbed
   `healthStateManager.getLivenessResponse()` — a method that does not exist. Caught in review, not
@@ -225,7 +225,8 @@ hand, by whoever remembers.
   Cursor loads on every spec edit.
 - The fixes are merged; the process gap is not. Nothing makes a change to `docs/testing/` prompt a
   look at `test-context.mdc`, and the CI gate that exists for skills has no equivalent for rules or
-  commands. The reachability check added in #37578 covers `docs/`, not these two directories.
+  commands. The reachability check in #37709 (approved, not yet merged) covers `docs/`, not these
+  two directories.
 
 ## 10. The Rock's Own Ownership Split Omitted 10 Files — Size: S (decision, not a content fix)
 
@@ -240,14 +241,15 @@ and nine of the ten then in `docs/core/` — **43 of the 53 `.md` files under `d
   written, and he has not touched any of the unassigned files.
 - `docs/integration/` was already caught this way during M0 and is item 5 above — the **second time
   the same omission surfaced**, which makes it a process finding rather than a one-off.
-- Resolved since: `docs/cli/` taken by Scout, audited and linked (#37664, which found the Java
-  language level stated as 21 against a pom pinned to 11); every orphan linked and `docs/README.md`
-  rebuilt as a complete index of all 54 files (#37578). Still needing an owner: `docs/claude/`,
-  `docs/test-cases/`, and the loose `docs/core/` file.
-- The durable fix is not a better manual split. It is the complete index plus the automated
-  reachability check added in #37578, which runs on every PR touching `docs/` — an index over every
-  file makes an omission visible, and a check that fails on an unreachable doc stops one being added
-  silently.
+- Resolved since: `docs/cli/` taken by Scout, audited and linked (#37664, merged — it found the
+  Java language level stated as 21 against a pom pinned to 11), and `docs/claude/` and
+  `docs/test-cases/` likewise (#37721, merged). #37709 links every remaining orphan and rebuilds
+  `docs/README.md` as a complete index of all 54 files; it is approved but **not yet merged**.
+  Still needing an owner: the loose `docs/core/` file.
+- The durable fix is not a better manual split. It is the complete index plus an automated
+  reachability check that fails a PR leaving any doc unreachable — an index over every file makes an
+  omission visible, and the check stops one being added silently. Both are in #37709, approved and
+  awaiting merge; until it lands, nothing prevents the next omission.
 
 ## Next Steps
 
