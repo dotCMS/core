@@ -1,8 +1,7 @@
 import { TZDate } from '@date-fns/tz';
 
-import { DotCMSContentTypeField, DotSystemTimezone } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSFieldTypes, DotSystemTimezone } from '@dotcms/dotcms-models';
 
-import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { FieldType } from '../../../../models/dot-edit-content-field.type';
 
 export interface DateOptions {
@@ -11,23 +10,26 @@ export interface DateOptions {
     icon: string;
 }
 
-export type CalendarTypes = FIELD_TYPES.DATE_AND_TIME | FIELD_TYPES.DATE | FIELD_TYPES.TIME;
+export type CalendarTypes =
+    | typeof DotCMSFieldTypes.DATE_AND_TIME
+    | typeof DotCMSFieldTypes.DATE
+    | typeof DotCMSFieldTypes.TIME;
 
 export type CalendarConfig = Record<CalendarTypes, DateOptions>;
 
 // Object to hold the options of the calendar component per field type
 export const CALENDAR_OPTIONS_PER_TYPE: CalendarConfig = {
-    [FIELD_TYPES.DATE_AND_TIME]: {
+    [DotCMSFieldTypes.DATE_AND_TIME]: {
         showTime: true,
         timeOnly: false,
         icon: 'pi pi-calendar'
     },
-    [FIELD_TYPES.DATE]: {
+    [DotCMSFieldTypes.DATE]: {
         showTime: false,
         timeOnly: false,
         icon: 'pi pi-calendar'
     },
-    [FIELD_TYPES.TIME]: {
+    [DotCMSFieldTypes.TIME]: {
         showTime: true,
         timeOnly: true,
         icon: 'pi pi-clock'
@@ -406,7 +408,7 @@ export const parseFieldDefaultValue = (
 
         // For TIME fields with "now", return the current time directly
         // The caller will handle proper display/form value separation
-        if (fieldType === FIELD_TYPES.TIME) {
+        if (fieldType === DotCMSFieldTypes.TIME) {
             return currentTime;
         }
 
@@ -635,7 +637,7 @@ export const processFieldDefaultValue = (
     if (!field.defaultValue) {
         return null;
     }
-    const fieldType = field.fieldType as FieldType;
+    const fieldType = field.fieldType;
 
     const defaultValue = parseFieldDefaultValue(field.defaultValue, systemTimezone, fieldType);
 

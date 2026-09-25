@@ -30,6 +30,7 @@
 <div class="min-h-0 flex-1" data-testid="hierarchy-scroll">
     <dot-tree-folder
         #treeFolder
+        [inFlightKeys]="$busyRows()"
         [folders]="$folders()"
         [loading]="$loading()"
         [selectedNode]="$selectedNode() ?? null"
