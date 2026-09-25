@@ -668,6 +668,13 @@ public class TikaUtils {
         return this.tikaService.detect(file);
     }
 
+    /** Version of the actual loaded parser bundle; unknown implementations must not share extraction caches. */
+    public String extractorVersion() {
+        if (!osgiInitialized || tikaService == null) return null;
+        final var bundle = org.osgi.framework.FrameworkUtil.getBundle(tikaService.getClass());
+        return bundle == null ? null : bundle.getSymbolicName() + ":" + bundle.getVersion();
+    }
+
     private Map<String, String> buildMetaDataMap() {
 
         Map<String, String> metaMap = new HashMap<>();

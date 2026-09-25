@@ -29,6 +29,9 @@ import com.dotmarketing.util.UtilMethods;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
@@ -48,6 +51,11 @@ public class AWSS3Storage implements Storage {
         this (getAmazonS3Client(credentialsProviderChain , null, DEFAULT_S3_REGION));
     }
 
+    public AWSS3Storage(final AWSCredentialsProvider credentialsProvider, final String endpoint,
+            final String region) {
+        this(getAmazonS3Client(credentialsProvider, endpoint, region));
+    }
+
     public AWSS3Storage(final AWSS3Configuration configuration) {
         this(getAmazonS3Client(configuration.getAccessKey(), configuration.getSecretKey(),
                 configuration.getEndPoint(), configuration.getRegion()));
@@ -63,14 +71,18 @@ public class AWSS3Storage implements Storage {
             final String endPoint, final String region) {
 
 
-        return AmazonS3ClientBuilder.standard()
+        final AmazonS3ClientBuilder builder = AmazonS3ClientBuilder.standard()
                 .withCredentials(credentialsProvider)
-                .withClientConfiguration(getClientConfiguration())
-                .withEndpointConfiguration(
+                .withClientConfiguration(getClientConfiguration());
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled() || UtilMethods.isSet(endPoint)) {
+            builder.withEndpointConfiguration(
                         new AwsClientBuilder.EndpointConfiguration(
                                 UtilMethods.isSet(endPoint) ? endPoint : "s3.amazonaws.com",
-                                region))
-                .build();
+                                region));
+        } else if (UtilMethods.isSet(region)) {
+            builder.withRegion(region);
+        }
+        return builder.build();
     }
 
     private AWSS3Storage(AmazonS3 s3client) {
@@ -86,7 +98,7 @@ public class AWSS3Storage implements Storage {
 
     private static ClientConfiguration getClientConfiguration(){
         ClientConfiguration conf = new ClientConfiguration();
-        conf.setSignerOverride("S3SignerType");
+        conf.setSignerOverride(com.dotcms.storage.AssetStorageFeature.isEnabled() ? "AWSS3V4SignerType" : "S3SignerType");
 
         return conf;
     }
@@ -184,7 +196,17 @@ public class AWSS3Storage implements Storage {
     public ObjectListing listObjects(String bucketName, String folderPath) throws DotRuntimeException {
         try {
             ListObjectsRequest lor = new ListObjectsRequest().withBucketName(bucketName).withPrefix(folderPath);
-            return s3client.listObjects(lor);
+            final ObjectListing result = s3client.listObjects(lor);
+            if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                return result;
+            }
+            ObjectListing page = result;
+            while (page.isTruncated()) {
+                page = s3client.listNextBatchOfObjects(page);
+                result.getObjectSummaries().addAll(page.getObjectSummaries());
+            }
+            result.setTruncated(false);
+            return result;
         } catch (AmazonServiceException ase) {
             throw new DotRuntimeException("Caught an error from Amazon S3: request made but was rejected", ase);
         } catch (AmazonClientException ace) {
@@ -230,6 +252,76 @@ public class AWSS3Storage implements Storage {
             throw new DotRuntimeException("Caught an error from Amazon S3: request made but was rejected", ase);
         } catch (AmazonClientException ace) {
             throw new DotRuntimeException("Caught an error from Amazon S3: client encountered an internal error", ace);
+        }
+    }
+
+    @Override
+    public S3Object getObject(final String bucket, final String key) {
+        try {
+            return s3client.getObject(bucket, key);
+        } catch (AmazonS3Exception failure) {
+            if (failure.getStatusCode() == 404 && "NoSuchKey".equals(failure.getErrorCode())) return null;
+            throw failure;
+        }
+    }
+
+    @Override
+    public String uploadFileIfMatch(final String bucket, final String key, final File file, final String etag) {
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new IllegalStateException("S3 asset storage is disabled");
+        final var request = new PutObjectRequest(bucket, key, file);
+        request.putCustomRequestHeader(etag == null ? "If-None-Match" : "If-Match", etag == null ? "*" : "\"" + etag + "\"");
+        try {
+            return s3client.putObject(request).getETag();
+        } catch (AmazonS3Exception failure) {
+            if (failure.getStatusCode() == 412 || failure.getStatusCode() == 409
+                    || (etag != null && failure.getStatusCode() == 404 && "NoSuchKey".equals(failure.getErrorCode()))) return null;
+            throw failure;
+        }
+    }
+
+    /** Creates an object without replacing an existing key, including multipart completion. */
+    @Override
+    public void uploadFileIfAbsent(final String bucket, final String key, final File file) {
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            throw new IllegalStateException("S3 asset storage is disabled");
+        }
+        if (file.length() <= DEFAULT_STATIC_PUSH_MULTIPART_UPLOAD_THRESHOLD) {
+            final PutObjectRequest request = new PutObjectRequest(bucket, key, file);
+            request.putCustomRequestHeader("If-None-Match", "*");
+            s3client.putObject(request);
+            return;
+        }
+        // The bundled TransferManager does not carry custom headers to multipart completion.
+        final String uploadId = s3client.initiateMultipartUpload(new InitiateMultipartUploadRequest(bucket, key)).getUploadId();
+        try {
+            final List<PartETag> parts = new ArrayList<>();
+            final long length = file.length();
+            final long partSize = Math.max(8L * 1024 * 1024, (length + 9999) / 10000);
+            for (long offset = 0; offset < length; offset += partSize) {
+                parts.add(s3client.uploadPart(new UploadPartRequest().withBucketName(bucket).withKey(key)
+                        .withUploadId(uploadId).withPartNumber(parts.size() + 1).withFile(file)
+                        .withFileOffset(offset).withPartSize(Math.min(partSize, length - offset))).getPartETag());
+            }
+            final CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest(bucket, key, uploadId, parts);
+            request.putCustomRequestHeader("If-None-Match", "*");
+            s3client.completeMultipartUpload(request);
+        } catch (RuntimeException failure) {
+            try {
+                s3client.abortMultipartUpload(new AbortMultipartUploadRequest(bucket, key, uploadId));
+            } catch (RuntimeException abortFailure) {
+                failure.addSuppressed(abortFailure);
+            }
+            throw failure;
+        }
+    }
+
+    /** Verifies opaque/encrypted/multipart ETags by reading the actual object bytes. */
+    @Override
+    public boolean fileContentsMatch(final String bucket, final String key, final File file) throws IOException {
+        try (final S3Object object = s3client.getObject(bucket, key);
+             final InputStream local = Files.newInputStream(file.toPath())) {
+            return object.getObjectMetadata().getContentLength() == file.length()
+                    && org.apache.commons.io.IOUtils.contentEquals(object.getObjectContent(), local);
         }
     }
 
