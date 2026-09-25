@@ -4,6 +4,7 @@ import com.dotcms.ai.AiTest;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
+import com.dotcms.ai.rest.forms.CompletionsForm;
 import com.dotcms.datagen.EmbeddingsDTODataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
@@ -11,6 +12,8 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
@@ -21,9 +24,12 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.owasp.encoder.Encode;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
@@ -51,7 +57,13 @@ public class CompletionsToolTest {
     private static WireMockServer wireMockServer;
     private static Host host;
 
+    /** Title carried by the probe embedding rows; must come back untouched (contentlet field). */
+    private static final String PROBE_TITLE = AiTest.PROBE_MARKUP + " title";
+    /** Dedicated index for the probe rows so they can never appear in another test's summarize prompt. */
+    private static final String PROBE_INDEX = "escape-probe";
+
     private CompletionsTool completionsTool;
+    private CompletionsTool unsafeCompletionsTool;
 
     @BeforeClass
     public static void beforeClass() throws Exception {
@@ -77,6 +89,7 @@ public class CompletionsToolTest {
         when(viewContext.getRequest()).thenReturn(mock(HttpServletRequest.class));
 
         completionsTool = prepareCompletionsTool(viewContext);
+        unsafeCompletionsTool = prepareCompletionsTool(viewContext, false);
     }
 
     /**
@@ -276,6 +289,221 @@ public class CompletionsToolTest {
     private static void assertChatProviderWasCalledWith(final String prompt) {
         wireMockServer.verify(postRequestedFor(urlPathMatching(".*/chat/completions"))
                 .withRequestBody(containing(prompt)));
+    }
+
+
+    // ------------------------------------------------------------------------------------------
+    // #37153: escaped by default, raw only through the unsafe construction
+    // ------------------------------------------------------------------------------------------
+
+    /**
+     * Feature: Safe-by-default completions output (#37153, AC-001 / AC-002)
+     * Scenario: Summarize with a provider reply that contains active markup
+     * Given an embedding row whose extractedText equals the prompt and contains markup, and whose title contains markup
+     * And the provider replies with a script and an onerror image tag
+     * When summarize is called on the default tool
+     * Then the model text, the query echo and the match's extractedText are HTML-escaped
+     * And the result title is returned exactly as stored
+     */
+    @Test
+    public void test_summarize_escapesProviderOutputByDefault() {
+        final String text = AiTest.PROBE_CHAT_PROMPT + " summarize default " + AiTest.PROBE_MARKUP;
+        seedProbeEmbeddings(text);
+
+        final JSONObject result = (JSONObject) completionsTool.summarize(text, PROBE_INDEX);
+
+        assertResult(result);
+        assertEquals(AiTest.PROBE_MARKUP_ESCAPED, AiTest.summarizeContent(result));
+        AiTest.assertNoRawMarkup(result.getJSONObject("openAiResponse"));
+        assertEquals(Encode.forHtml(text), result.getString("query"));
+        final JSONObject probeResult = AiTest.findResultByTitle(result, PROBE_TITLE);
+        assertEquals(PROBE_TITLE, probeResult.getString("title"));
+        assertEquals(Encode.forHtml(text),
+                probeResult.getJSONArray("matches").getJSONObject(0).getString("extractedText"));
+    }
+
+    /**
+     * Feature: Explicit opt-in returns today's payload (#37153, AC-003)
+     * Scenario: Summarize on the unsafe construction
+     * Given the same seeded row and provider reply
+     * When summarize is called on a tool built with escaping off
+     * Then the payload is what the CompletionsAPI returns, markup intact, apart from the per-call timing value
+     */
+    @Test
+    public void test_summarize_unsafeReturnsRawPayload() {
+        final String text = AiTest.PROBE_CHAT_PROMPT + " summarize unsafe " + AiTest.PROBE_MARKUP;
+        seedProbeEmbeddings(text);
+
+        final JSONObject unsafeResult = (JSONObject) unsafeCompletionsTool.summarize(text, PROBE_INDEX);
+
+        assertResult(unsafeResult);
+        assertEquals(AiTest.PROBE_MARKUP, AiTest.summarizeContent(unsafeResult));
+        assertEquals(text, unsafeResult.getString("query"));
+        assertEquals(text, AiTest.findResultByTitle(unsafeResult, PROBE_TITLE)
+                .getJSONArray("matches").getJSONObject(0).getString("extractedText"));
+
+        final JSONObject apiResult = APILocator.getDotAIAPI().getCompletionsAPI(appConfig).summarize(summarizeForm(text));
+        AiTest.assertEquivalentIgnoring(apiResult, unsafeResult, Set.of("timeToEmbeddings"));
+    }
+
+    /**
+     * Feature: Escaping changes text only (#37153, AC-004)
+     * Scenario: Compare default and unsafe summarize payloads
+     * When both tools summarize the same prompt
+     * Then keys, nesting, array lengths and non-string values are identical
+     * And string values differ only under openAiResponse, at query and at matches[].extractedText, by exactly Encode.forHtml
+     */
+    @Test
+    public void test_summarize_defaultAndUnsafeHaveSameShape() {
+        final String text = AiTest.PROBE_CHAT_PROMPT + " summarize shape " + AiTest.PROBE_MARKUP;
+        seedProbeEmbeddings(text);
+
+        final JSONObject unsafeResult = (JSONObject) unsafeCompletionsTool.summarize(text, PROBE_INDEX);
+        final JSONObject defaultResult = (JSONObject) completionsTool.summarize(text, PROBE_INDEX);
+
+        assertResult(unsafeResult);
+        assertResult(defaultResult);
+        AiTest.assertEscapedOnlyAt(unsafeResult, defaultResult, AiTest.searchShapedEscapedPaths(), Set.of("timeToEmbeddings"));
+    }
+
+    /**
+     * Feature: Safe-by-default raw completions (#37153, AC-001)
+     * Scenario: raw(String), raw(JSONObject) and raw(Map) with a provider reply containing markup
+     * When each overload is called on the default tool
+     * Then the whole provider payload is escaped: the model text equals the encoded markup and no string contains raw markup
+     */
+    @Test
+    public void test_raw_escapesWholePayloadByDefault() {
+        final String prompt = rawPrompt(AiTest.PROBE_CHAT_PROMPT);
+
+        final JSONObject fromString = (JSONObject) completionsTool.raw(prompt);
+        final JSONObject fromJson = (JSONObject) completionsTool.raw(new JSONObject(prompt));
+        final JSONObject fromMap = (JSONObject) completionsTool.raw(rawPromptMap(AiTest.PROBE_CHAT_PROMPT));
+
+        for (final JSONObject result : List.of(fromString, fromJson, fromMap)) {
+            assertResult(result);
+            assertEquals(AiTest.PROBE_MARKUP_ESCAPED, AiTest.chatContent(result));
+            AiTest.assertNoRawMarkup(result);
+        }
+    }
+
+    /**
+     * Feature: Explicit opt-in for raw completions (#37153, AC-003 / AC-004)
+     * Scenario: the three raw overloads on the unsafe construction
+     * When each overload is called with escaping off
+     * Then the model text is the literal markup, raw(JSONObject) is byte-for-byte the CompletionsAPI result,
+     * and the default payload differs from it only by Encode.forHtml on string leaves
+     */
+    @Test
+    public void test_raw_unsafeReturnsRawPayload() {
+        final String prompt = rawPrompt(AiTest.PROBE_CHAT_PROMPT);
+
+        final JSONObject fromString = (JSONObject) unsafeCompletionsTool.raw(prompt);
+        final JSONObject fromJson = (JSONObject) unsafeCompletionsTool.raw(new JSONObject(prompt));
+        final JSONObject fromMap = (JSONObject) unsafeCompletionsTool.raw(rawPromptMap(AiTest.PROBE_CHAT_PROMPT));
+
+        for (final JSONObject result : List.of(fromString, fromJson, fromMap)) {
+            assertResult(result);
+            assertEquals(AiTest.PROBE_MARKUP, AiTest.chatContent(result));
+        }
+        final JSONObject apiResult = APILocator.getDotAIAPI().getCompletionsAPI(appConfig)
+                .raw(new JSONObject(prompt), UtilMethods.extractUserIdOrNull(user));
+        assertEquals(apiResult.toString(), fromJson.toString());
+
+        final JSONObject defaultFromJson = (JSONObject) completionsTool.raw(new JSONObject(prompt));
+        AiTest.assertEscapedOnlyAt(fromJson, defaultFromJson, path -> true);
+    }
+
+    /**
+     * Feature: Error payloads are escaped and never throw (#37153, AC-006)
+     * Scenario: provider failure, malformed prompt, and a summarize with no index hits
+     * When the default tool is called
+     * Then each call returns a payload with an error entry, no string value contains raw markup, and nothing is thrown
+     */
+    @Test
+    public void test_errorPayload_isEscapedAndDoesNotThrow() {
+        assertErrorPayloadEscaped(completionsTool.raw(rawPrompt(AiTest.PROBE_FAILURE_PROMPT)));
+        assertErrorPayloadEscaped(completionsTool.raw("this is not json <b>at all</b>"));
+
+        final Object noHits = completionsTool.summarize(
+                "Escaping probe nohits <b>x</b>", "no-such-index-" + System.nanoTime());
+        assertErrorPayloadEscaped(noHits);
+        assertFalse(((Map<?, ?>) noHits).containsKey("openAiResponse"));
+    }
+
+    /**
+     * Feature: The API layer is untouched by the template-side escaping (#37153, AC-006 / AC-008)
+     * Scenario: a default summarize call followed by a direct CompletionsAPI call with the same form
+     * Then the API still returns the literal markup in the model text, the query and the extractedText,
+     * so the REST resources that return these objects are unaffected
+     */
+    @Test
+    public void test_defaultCall_leavesApiLayerUnescaped() {
+        final String text = AiTest.PROBE_CHAT_PROMPT + " summarize api " + AiTest.PROBE_MARKUP;
+        seedProbeEmbeddings(text);
+
+        final JSONObject escaped = (JSONObject) completionsTool.summarize(text, PROBE_INDEX);
+        assertEquals(AiTest.PROBE_MARKUP_ESCAPED, AiTest.summarizeContent(escaped));
+
+        final JSONObject apiResult = APILocator.getDotAIAPI().getCompletionsAPI(appConfig).summarize(summarizeForm(text));
+        assertEquals(AiTest.PROBE_MARKUP, AiTest.summarizeContent(apiResult));
+        assertEquals(text, apiResult.getString("query"));
+        assertEquals(text, AiTest.findResultByTitle(apiResult, PROBE_TITLE)
+                .getJSONArray("matches").getJSONObject(0).getString("extractedText"));
+    }
+
+    // ------------------------------------------------------------------------------ helpers
+
+    /**
+     * Persists one embedding row whose extractedText is exactly {@code text} (so the query reuses its
+     * vector and the search finds it) and whose title carries markup that must come back untouched.
+     */
+    private static void seedProbeEmbeddings(final String text) {
+        // explicit inode: the data-gen default derives it from the current millisecond, and two rows
+        // sharing an inode are merged into one result whose matches[0] may then belong to another test
+        final String inode = "probe-" + UUIDGenerator.generateUuid();
+        new EmbeddingsDTODataGen().generate(inode, PROBE_INDEX, text).withTitle(PROBE_TITLE).nextPersisted();
+    }
+
+    private static CompletionsForm summarizeForm(final String text) {
+        return new CompletionsForm.Builder().indexName(PROBE_INDEX).prompt(text).user(user).build();
+    }
+
+    private static String rawPrompt(final String userMessage) {
+        return String.format(
+                "{\"model\":\"gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"%s\"}]}",
+                userMessage);
+    }
+
+    private static Map<String, Object> rawPromptMap(final String userMessage) {
+        return Map.of("model", "gpt-4o-mini", "messages", new JSONArray()
+                .put(new JSONObject().put("role", "user").put("content", userMessage)));
+    }
+
+    private static void assertErrorPayloadEscaped(final Object payload) {
+        assertNotNull(payload);
+        assertTrue("expected a Map payload but got " + payload.getClass(), payload instanceof Map);
+        assertTrue("expected an error entry in " + payload, ((Map<?, ?>) payload).containsKey("error"));
+        AiTest.assertNoRawMarkup(payload);
+    }
+
+    private CompletionsTool prepareCompletionsTool(final ViewContext viewContext, final boolean escapeOutput) {
+        return new CompletionsTool(viewContext, escapeOutput) {
+            @Override
+            Host host() {
+                return host;
+            }
+
+            @Override
+            AppConfig config() {
+                return appConfig;
+            }
+
+            @Override
+            User user() {
+                return user;
+            }
+        };
     }
 
     private CompletionsTool prepareCompletionsTool(final ViewContext viewContext) {
