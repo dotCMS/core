@@ -17,7 +17,7 @@ _23 first-party · 6 external (symlinked)._
 | `dot-sdk-analytics` | active | @dotcms/falcon | Use this skill when the user asks to install, configure, or set up @dotcms/analytics, sdk-analytics, analytics SDK, add analytics tracking, or mentions install… | — |
 | `dot-test-plan` | experimental | @dotcms/falcon | Generates the manual post-merge QA test plan for a merged dotCMS pull request. Reconstructs issue and PR context, consolidates every issue the PR fixed into ON… | — |
 | `dot-ui-angular-standards` | experimental | @dotcms/falcon | dotCMS Angular coding standards for the core-web Nx workspace. Use this skill for ANY frontend work under core-web/ — writing or editing a component, service, … | — |
-| `dot-ui-vtl-migration` | active | @dotcms/falcon | Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. Use this skill whenever… | — |
+| `dot-ui-vtl-migration` | active | @dotcms/falcon | Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. By default it returns a… | — |
 | `skill-doctor` | _legacy_ | — | Use when a repo skill fails, produces errors, gives wrong instructions, or references stale information. Also use when a command from a skill returns "not foun… | — |
 | `speckit-adr-context` | _legacy_ | — | Consult dotCMS/platform-adrs for Architecture Decision Records relevant to the current feature/fix, so planning treats existing decisions as binding input. Run… | — |
 | `speckit-analyze` | _legacy_ | — | Perform a non-destructive cross-artifact consistency and quality analysis across spec.md, plan.md, and tasks.md after task generation. | — |

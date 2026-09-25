@@ -52,7 +52,7 @@ Tab-indented, full server paths, same directory as the original. This is today's
 
 | Finding | Severity | What the skill says |
 |---|---|---|
-| Same `#macro` name in both branches | blocking | the macro name; both definitions exist in both modes once the file is parsed; offers three files |
+| Same `#macro` name in both branches | blocking | the macro name; the first definition in the file (the migrated one) wins in both modes, so the legacy editor runs the new macro; offers three files |
 | Legacy branch would not parse (unclosed block, stray `#end`, `#else` outside `#if`) | blocking | the line; inline spreads the error to the new edit mode; offers three files |
 | Migrated branch would not parse | blocking | a migration bug — fix it before emitting anything |
 | Same variable `#set` in both branches | warning | the variable names; only one branch runs; three files is the alternative |
