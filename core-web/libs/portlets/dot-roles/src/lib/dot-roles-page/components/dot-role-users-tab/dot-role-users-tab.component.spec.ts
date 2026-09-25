@@ -9,7 +9,7 @@ import { Mock, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -26,6 +26,7 @@ const MESSAGES = {
     'roles.users.filter.placeholder': 'Search user',
     'roles.users.filter.empty.title': 'No users match your search',
     'roles.users.remove': 'Remove',
+    'roles.users.remove.tooltip': 'Delete from role',
     'roles.users.confirm.remove.header': 'Remove user',
     'roles.users.confirm.remove.message': 'Remove {0}?',
     'roles.action.cancel': 'Cancel',
@@ -38,6 +39,12 @@ const MESSAGES = {
     loading: 'Loading',
     'roles.error.load-failed': 'Failed'
 };
+
+/**
+ * A real signal, not a `vi.fn()`: the component clears its search from an `effect` on the
+ * selected role, and only a signal makes that effect run again when the role changes.
+ */
+const selectedRoleId = signal<string | null>('r-eco');
 
 describe('DotRoleUsersTabComponent', () => {
     let spectator: Spectator<DotRoleUsersTabComponent>;
@@ -57,9 +64,10 @@ describe('DotRoleUsersTabComponent', () => {
                     roleKey: 'eco',
                     editUsers: true
                 }),
-                selectedRoleId: vi.fn().mockReturnValue('r-eco'),
+                selectedRoleId,
                 selectedRoleStatus: vi.fn().mockReturnValue('LOADED'),
                 membersFilter: vi.fn().mockReturnValue(''),
+                memberIds: vi.fn().mockReturnValue([]),
                 canGrantUsers: vi.fn().mockReturnValue(true),
                 loadMembers: vi.fn(),
                 setMembersFilter: vi.fn(),
@@ -87,6 +95,9 @@ describe('DotRoleUsersTabComponent', () => {
         (store.members as Mock).mockReturnValue([]);
         (store.membersFilter as Mock).mockReturnValue('');
         (store.canGrantUsers as Mock).mockReturnValue(true);
+        (store.memberIds as Mock).mockReturnValue([]);
+        (store.grantUserToRole as Mock).mockResolvedValue(null);
+        selectedRoleId.set('r-eco');
         vi.clearAllMocks();
     });
 
@@ -157,6 +168,8 @@ describe('DotRoleUsersTabComponent', () => {
 
         const removeBtn = spectator.query(byTestId('member-remove-u-1'))?.querySelector('button');
         expect(removeBtn?.classList).not.toContain('p-button-danger');
+        // On the native button, which is what assistive tech reads — not the `p-button` host.
+        expect(removeBtn?.getAttribute('aria-label')).toBe('Delete from role');
         expect(removeBtn?.classList).toContain('p-button-secondary');
     });
 
@@ -227,8 +240,10 @@ describe('DotRoleUsersTabComponent', () => {
     describe('user picker', () => {
         const picker = () => spectator.query(DotUserPickerComponent) as DotUserPickerComponent;
 
-        it('should pick one user at a time and hide users already in the role', () => {
+        it('should pick one user at a time and hide everyone already in the role', () => {
             const store = spectator.inject(DotRolesStore, true);
+            // A member search narrows `members` to the matches; the picker must still leave out
+            // the whole roster, which the store keeps apart as `memberIds`.
             (store.members as Mock).mockReturnValue([
                 {
                     userId: 'u-1',
@@ -239,10 +254,39 @@ describe('DotRoleUsersTabComponent', () => {
                     grantedFromRoleName: 'Ancestor'
                 }
             ]);
+            (store.memberIds as Mock).mockReturnValue(['u-1', 'u-2', 'u-3']);
             spectator.detectChanges();
 
             expect(picker().$multiple()).toBe(false);
-            expect(picker().$excludeIds()).toEqual(['u-1']);
+            expect(picker().$excludeIds()).toEqual(['u-1', 'u-2', 'u-3']);
+        });
+
+        it('should drop an active member search once a grant lands, so the new row shows', async () => {
+            const store = spectator.inject(DotRolesStore, true);
+            (store.membersFilter as Mock).mockReturnValue('sm');
+            (store.grantUserToRole as Mock).mockResolvedValue({ granted: true });
+            spectator.detectChanges();
+            const input = spectator.query(byTestId('members-search-input')) as HTMLInputElement;
+            spectator.typeInElement('sm', input);
+
+            picker().picked.emit([{ userId: 'u-9', firstName: 'Jones' }]);
+            await Promise.resolve();
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+
+            expect(store.setMembersFilter).toHaveBeenCalledWith('');
+            expect(input.value).toBe('');
+        });
+
+        it('should keep the search when the grant fails', async () => {
+            const store = spectator.inject(DotRolesStore, true);
+            (store.membersFilter as Mock).mockReturnValue('sm');
+            spectator.detectChanges();
+
+            picker().picked.emit([{ userId: 'u-9', firstName: 'Jones' }]);
+            await Promise.resolve();
+
+            expect(store.setMembersFilter).not.toHaveBeenCalledWith('');
         });
 
         it('should grant the role to the picked user', () => {
@@ -281,6 +325,21 @@ describe('DotRoleUsersTabComponent', () => {
             vi.advanceTimersByTime(1);
             expect(store.setMembersFilter).toHaveBeenCalledTimes(1);
             expect(store.setMembersFilter).toHaveBeenCalledWith('jane');
+        });
+
+        it('should not carry a term still being debounced over to a newly selected role', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            spectator.detectChanges();
+            const input = spectator.query(byTestId('members-search-input')) as HTMLInputElement;
+
+            spectator.typeInElement('jo', input);
+            vi.advanceTimersByTime(100);
+            selectedRoleId.set('r-other');
+            spectator.detectChanges();
+            vi.advanceTimersByTime(300);
+
+            expect(store.setMembersFilter).not.toHaveBeenCalledWith('jo');
+            expect(input.value).toBe('');
         });
 
         it('should send an emptied box so the full list comes back', () => {

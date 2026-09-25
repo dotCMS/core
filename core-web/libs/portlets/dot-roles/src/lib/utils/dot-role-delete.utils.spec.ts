@@ -22,6 +22,7 @@ describe('roleDeleteConfirmation', () => {
                 acceptLabel: 'Delete',
                 rejectLabel: 'Cancel',
                 defaultFocus: 'reject',
+                rejectButtonStyleClass: 'p-button-text',
                 closable: true,
                 closeOnEscape: true
             })

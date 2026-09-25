@@ -84,6 +84,12 @@ export interface DotRolesState {
      */
     memberCount: number;
     /**
+     * Ids of every user granted the selected role, direct and inherited, ignoring
+     * `membersFilter` — what the Add User picker leaves out. `members` cannot serve: under a
+     * search it holds only the matches, and the picker would offer everyone else again.
+     */
+    memberIds: string[];
+    /**
      * Tool groups rendered by the Tools tab: the full catalog, each row
      * annotated with whether the selected role gets it and from where.
      */
@@ -108,6 +114,7 @@ const initialState: DotRolesState = {
     members: [],
     membersFilter: '',
     memberCount: 0,
+    memberIds: [],
     toolGroups: [],
     toolGroupsStatus: 'INIT',
     toolGroupsSaving: false,
@@ -400,6 +407,7 @@ export const DotRolesStore = signalStore(
 
             patchState(store, {
                 memberCount: members.length,
+                memberIds: members.map((m) => m.userId),
                 ...(directCount === null
                     ? {}
                     : {
@@ -661,6 +669,7 @@ export const DotRolesStore = signalStore(
                     // A search typed for one role means nothing on the next.
                     membersFilter: '',
                     memberCount: 0,
+                    memberIds: [],
                     toolGroups: [],
                     toolGroupsStatus: 'INIT',
                     // A save still in flight belongs to the role we are leaving.
@@ -993,6 +1002,7 @@ export const DotRolesStore = signalStore(
                             membersStatus: 'INIT',
                             membersFilter: '',
                             memberCount: 0,
+                            memberIds: [],
                             toolGroups: [],
                             toolGroupsStatus: 'INIT',
                             toolGroupsSaving: false
@@ -1114,7 +1124,17 @@ export const DotRolesStore = signalStore(
                     // keeping the node in the tree matches reality.
                     if (result?.deleted) {
                         patchState(store, {
-                            roles: removeNodeFromTree(store.roles(), roleId)
+                            roles: removeNodeFromTree(store.roles(), roleId),
+                            // While a tree search is active the tree renders `searchResults`,
+                            // so pruning only the cache would leave the deleted role on screen.
+                            ...(store.isSearching()
+                                ? {
+                                      searchResults: removeNodeFromTree(
+                                          store.searchResults() ?? [],
+                                          roleId
+                                      )
+                                  }
+                                : {})
                         });
 
                         if (store.selectedRoleId() === roleId) {
@@ -1124,7 +1144,8 @@ export const DotRolesStore = signalStore(
                                 members: [],
                                 membersStatus: 'INIT',
                                 membersFilter: '',
-                                memberCount: 0
+                                memberCount: 0,
+                                memberIds: []
                             });
                         }
                     } else if (result) {
@@ -1224,7 +1245,12 @@ export const DotRolesStore = signalStore(
                                 // Unfiltered, the pruned list IS the roster, so
                                 // the header can follow at once rather than
                                 // waiting on the reload.
-                                ...(store.membersFilter() ? {} : { memberCount: members.length })
+                                ...(store.membersFilter()
+                                    ? {}
+                                    : {
+                                          memberCount: members.length,
+                                          memberIds: members.map((m) => m.userId)
+                                      })
                             });
                         }
 

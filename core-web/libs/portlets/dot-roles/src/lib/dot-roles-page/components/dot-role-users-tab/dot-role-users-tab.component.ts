@@ -106,9 +106,10 @@ export class DotRoleUsersTabComponent {
 
     /**
      * Users the picker leaves out because they already hold the role, directly or inherited —
-     * the grant is idempotent, so offering them would be a silent no-op.
+     * the grant is idempotent, so offering them would be a silent no-op. Read from the full
+     * roster, not `members`, which a member search narrows.
      */
-    protected readonly $memberIds = computed(() => this.store.members().map((m) => m.userId));
+    protected readonly $memberIds = computed(() => this.store.memberIds());
 
     protected readonly $highlightUserId = signal<string | null>(null);
     #highlightTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -129,7 +130,7 @@ export class DotRoleUsersTabComponent {
         // which replaces `selectedRole` — leaves the search alone.
         effect(() => {
             this.store.selectedRoleId();
-            untracked(() => this.$memberSearch.set(''));
+            untracked(() => this.#clearMemberSearch());
         });
 
         // No `distinctUntilChanged`: after a role switch the store has already
@@ -165,6 +166,13 @@ export class DotRoleUsersTabComponent {
                 if (this.#destroyed || !result?.granted) {
                     return;
                 }
+                // A search the new member does not match would hide the row the highlight is
+                // for, and the grant would read as having done nothing. Drop it so the full
+                // list comes back with them in it.
+                if (this.store.membersFilter()) {
+                    this.#clearMemberSearch();
+                    this.store.setMembersFilter('');
+                }
                 this.$highlightUserId.set(user.userId);
                 if (this.#highlightTimeout !== null) {
                     clearTimeout(this.#highlightTimeout);
@@ -175,6 +183,16 @@ export class DotRoleUsersTabComponent {
                 }, GRANT_HIGHLIGHT_DURATION_MS);
             });
         }
+    }
+
+    /**
+     * Empties the search box and supersedes any term still inside the debounce window —
+     * otherwise that term would land after the clear. The store ignores a term equal to the one
+     * it holds, so the trailing `''` costs nothing.
+     */
+    #clearMemberSearch(): void {
+        this.$memberSearch.set('');
+        this.#memberSearchInput$.next('');
     }
 
     /** The picker cannot report errors itself (it lives in `@dotcms/ui`); route them here. */

@@ -135,13 +135,63 @@ describe('DotLazyMultiselectComponent', () => {
     });
 
     describe('infinite scroll', () => {
-        it('should prefetch the next page when the scroller reaches the current one', () => {
-            build(vi.fn().mockReturnValue(page([{ label: 'A', value: 'a' }], true)));
+        /** A full page of `count` options, values prefixed so pages don't collide. */
+        const fullPage = (prefix: string, count = 20) =>
+            Array.from({ length: count }, (_, i) => ({
+                label: `${prefix}${i}`,
+                value: `${prefix}${i}`
+            }));
+
+        it('should load the next page when the scroller reaches the last loaded row', () => {
+            build(vi.fn().mockReturnValue(page(fullPage('p1-'), true)));
             loadPage.mockClear();
 
-            spectator.triggerEventHandler('p-listbox', 'onLazyLoad', { last: 20 });
+            spectator.triggerEventHandler('p-listbox', 'onLazyLoad', { last: 19 });
 
             expect(loadPage).toHaveBeenCalledWith({ page: 2, perPage: 20, filter: '' });
+        });
+
+        it('should not load more while the scroller is still above the last row', () => {
+            build(vi.fn().mockReturnValue(page(fullPage('p1-'), true)));
+            loadPage.mockClear();
+
+            spectator.triggerEventHandler('p-listbox', 'onLazyLoad', { last: 10 });
+
+            expect(loadPage).not.toHaveBeenCalled();
+        });
+
+        it('should keep loading while short pages leave the first screen part-empty', () => {
+            // A loader that hides rows: 5, then nothing, then a full page — with more each time.
+            build(
+                vi
+                    .fn()
+                    .mockReturnValueOnce(page(fullPage('a', 5), true))
+                    .mockReturnValueOnce(page([], true))
+                    .mockReturnValueOnce(page(fullPage('c'), true))
+            );
+
+            expect(loadPage).toHaveBeenCalledTimes(3);
+            expect(loadPage).toHaveBeenLastCalledWith({ page: 3, perPage: 20, filter: '' });
+            expect(spectator.component['$state'].options()).toHaveLength(25);
+        });
+
+        it('should keep advancing past short pages as the admin scrolls', () => {
+            build(
+                vi
+                    .fn()
+                    .mockReturnValueOnce(page(fullPage('a'), true))
+                    .mockReturnValueOnce(page(fullPage('b', 3), true))
+                    .mockReturnValueOnce(page(fullPage('c', 3), true))
+                    .mockReturnValue(page(fullPage('d', 3), false))
+            );
+
+            spectator.triggerEventHandler('p-listbox', 'onLazyLoad', { last: 19 });
+            spectator.triggerEventHandler('p-listbox', 'onLazyLoad', { last: 22 });
+            // 26 rows on three pages. Inferring the page from the row index gives
+            // `ceil(25 / 20) + 1 = 3`, which is the page already loaded, so the list stalled here.
+            spectator.triggerEventHandler('p-listbox', 'onLazyLoad', { last: 25 });
+
+            expect(loadPage).toHaveBeenLastCalledWith({ page: 4, perPage: 20, filter: '' });
         });
 
         it('should not load more once the loader reports no further pages', () => {

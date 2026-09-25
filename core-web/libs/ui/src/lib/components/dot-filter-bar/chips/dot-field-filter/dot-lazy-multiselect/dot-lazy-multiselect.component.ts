@@ -234,17 +234,22 @@ export class DotLazyMultiselectComponent implements OnInit {
             return;
         }
 
-        // Prefetch the next page as soon as the user reaches any row on the current one.
-        const nextPage = Math.ceil(last / PER_PAGE) + 1;
+        // Ask for the next page once the scroller reaches the last loaded row. Keyed on the rows
+        // actually loaded, not on `last / PER_PAGE`: a loader may hand back short pages (one that
+        // hides rows, say), and a page number inferred from the row index then never advances.
         if (
             !this.$state.canLoadMore() ||
-            nextPage <= this.$state.currentPage() ||
-            this.$state.loading()
+            this.$state.loading() ||
+            last < this.$state.options().length - 1
         ) {
             return;
         }
 
-        patchState(this.$state, { currentPage: nextPage });
+        this.#loadNext();
+    }
+
+    #loadNext(): void {
+        patchState(this.$state, { currentPage: this.$state.currentPage() + 1 });
         this.#load(true);
     }
 
@@ -305,6 +310,13 @@ export class DotLazyMultiselectComponent implements OnInit {
                     canLoadMore: hasMore,
                     loading: false
                 });
+
+                // A short page with more to come leaves the first screen part-empty, and an empty
+                // list gives the scroller nothing to scroll — so keep loading until it holds a
+                // page's worth. Bounded by the loader: it stops as soon as `hasMore` is false.
+                if (hasMore && this.$state.options().length < PER_PAGE) {
+                    this.#loadNext();
+                }
             });
     }
 }

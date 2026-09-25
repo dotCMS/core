@@ -104,9 +104,10 @@ describe('DotRolesDetailHeaderComponent', () => {
         selectRole();
         spectator.detectChanges();
 
-        expect(spectator.query(byTestId('role-actions-btn'))?.getAttribute('aria-label')).toBe(
-            'Role actions'
-        );
+        // On the native button, which is what assistive tech reads — the `p-button` host would
+        // carry an `[attr.aria-label]` and still leave the real control unnamed.
+        const button = spectator.query(byTestId('role-actions-btn'))?.querySelector('button');
+        expect(button?.getAttribute('aria-label')).toBe('Role actions');
     });
 
     it('should render System and Locked chips when the role is system + locked', () => {
@@ -172,6 +173,19 @@ describe('DotRolesDetailHeaderComponent', () => {
             expect.objectContaining({ acceptLabel: 'Delete', defaultFocus: 'reject' })
         );
         expect(store.deleteRole).toHaveBeenCalledWith('r-eco');
+    });
+
+    it('should not delete when the admin cancels the confirmation', () => {
+        const store = spectator.inject(DotRolesStore, true);
+        const confirmation = spectator.inject(ConfirmationService, true);
+        (confirmation.confirm as Mock).mockImplementationOnce((cfg) => cfg.reject?.());
+        selectRole();
+        spectator.detectChanges();
+
+        groupItems()[2].command?.({});
+
+        expect(confirmation.confirm).toHaveBeenCalled();
+        expect(store.deleteRole).not.toHaveBeenCalled();
     });
 
     it('should disable Edit and Delete for a role that cannot be modified', () => {

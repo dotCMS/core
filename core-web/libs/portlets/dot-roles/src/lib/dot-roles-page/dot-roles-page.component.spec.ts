@@ -54,6 +54,7 @@ function baseStoreMock(overrides: Record<string, unknown> = {}) {
         membersStatus: vi.fn().mockReturnValue('LOADED'),
         members: vi.fn().mockReturnValue([]),
         membersFilter: vi.fn().mockReturnValue(''),
+        memberIds: vi.fn().mockReturnValue([]),
         toolGroups: vi.fn().mockReturnValue([]),
         toolGroupsStatus: vi.fn().mockReturnValue('LOADED'),
         toolGroupsSaving: vi.fn().mockReturnValue(false),

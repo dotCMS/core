@@ -3,7 +3,6 @@ import { EMPTY, Observable, of } from 'rxjs';
 import { NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
-    ChangeDetectionStrategy,
     Component,
     computed,
     contentChild,
@@ -47,6 +46,14 @@ export const DOT_USER_PICKER_ITEM_HEIGHT = 56;
  * that hiding `excludeIds` rarely needs a second request.
  */
 const DIRECTORY_FETCH_SIZE = 100;
+
+/**
+ * Directory pages read at most per call. Without a ceiling, a role most of the directory already
+ * holds would walk the whole directory, one sequential request at a time, before the popover shows
+ * anything. Past the ceiling the call returns what it has with `hasMore` still true, and the list
+ * asks again — so the walk continues, just in steps the admin can see.
+ */
+const MAX_FILL_PAGES = 5;
 
 /** Context handed to a custom `#item` template: the directory row being rendered. */
 export interface DotUserPickerItemContext {
@@ -93,7 +100,6 @@ const freshCursor = (): DirectoryCursor => ({ nextPage: 1, buffer: [], exhausted
         DotMessagePipe
     ],
     templateUrl: './dot-user-picker.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     // Not auto-provided — see `DotUserSearchService`. Its lifetime is this picker's.
     providers: [DotUserSearchService]
 })
@@ -196,10 +202,13 @@ export class DotUserPickerComponent {
         this.popover().hide();
     }
 
-    /** Every open starts clean: nothing ticked, and a directory walk from the top. */
+    /**
+     * Every open starts with nothing ticked. The directory walk needs no reset here: the list is
+     * created on open and asks for page 1, which starts it over — and resetting here too could
+     * discard a cursor that page already committed, since PrimeNG emits `onShow` later.
+     */
     protected onShow(): void {
         this.$pending.set([]);
-        this.#cursor = freshCursor();
     }
 
     protected onSelectionChange(options: DotLazyMultiselectOption[]): void {
@@ -244,12 +253,14 @@ export class DotUserPickerComponent {
     }
 
     /**
-     * Reads directory pages into the buffer until it holds `perPage` visible rows or the
-     * directory is exhausted.
+     * Reads directory pages into the buffer until it holds `perPage` visible rows, the directory
+     * is exhausted, or {@link MAX_FILL_PAGES} pages have been read in this call.
      */
     #fill(start: DirectoryCursor, perPage: number, filter: string): Observable<DirectoryCursor> {
+        const lastPage = start.nextPage + MAX_FILL_PAGES - 1;
+
         const step = (cursor: DirectoryCursor): Observable<DirectoryCursor> => {
-            if (cursor.buffer.length >= perPage || cursor.exhausted) {
+            if (cursor.buffer.length >= perPage || cursor.exhausted || cursor.nextPage > lastPage) {
                 return EMPTY;
             }
 
@@ -258,7 +269,10 @@ export class DotUserPickerComponent {
                 .pipe(
                     map((response) => {
                         const rows = response?.entity ?? [];
-                        const total = response?.pagination?.totalEntries ?? 0;
+                        // A missing total must not read as "no more": `?? 0` would end the walk
+                        // after one page and silently truncate the list. An empty page still
+                        // ends it when the directory genuinely runs out.
+                        const total = response?.pagination?.totalEntries ?? Infinity;
                         const excluded = this.#excluded();
 
                         return {

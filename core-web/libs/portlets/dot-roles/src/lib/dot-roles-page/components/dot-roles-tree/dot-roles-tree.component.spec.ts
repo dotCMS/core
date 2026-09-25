@@ -119,6 +119,21 @@ describe('DotRolesTreeComponent', () => {
             expect(store.deleteRole).toHaveBeenCalledWith('r-1');
         });
 
+        it('should not delete when the admin cancels the confirmation', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            const confirmation = spectator.inject(ConfirmationService, true);
+            (confirmation.confirm as Mock).mockImplementationOnce((cfg) => cfg.reject?.());
+            // Shared factory mocks: an earlier test's delete would otherwise still be counted.
+            (store.deleteRole as Mock).mockClear();
+            spectator.detectChanges();
+            rightClick({ id: 'r-1', name: 'Eco' });
+
+            menuItems()[2].command?.({});
+
+            expect(confirmation.confirm).toHaveBeenCalled();
+            expect(store.deleteRole).not.toHaveBeenCalled();
+        });
+
         it('should disable Edit and Delete on a system role', () => {
             spectator.detectChanges();
             rightClick({ id: 'r-cms', name: 'CMS Admin', system: true });

@@ -767,6 +767,15 @@ describe('DotRolesStore', () => {
             expect(service.getUsers).not.toHaveBeenCalled();
         });
 
+        it('should keep the full roster ids for the picker while filtered', () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+
+            store.setMembersFilter('jane');
+
+            expect(store.members().map((m) => m.userId)).toEqual(['u-9']);
+            expect(store.memberIds()).toEqual(['u-1', 'u-2']);
+        });
+
         it('should keep the header count at the full roster while filtered', () => {
             service.getUsers.mockReturnValue(of([JANE]));
 
@@ -1161,6 +1170,25 @@ describe('DotRolesStore', () => {
             const categories = store.roles().find((n) => n.id === 'r-categories');
             expect(categories?.roleChildren?.map((c) => c.id)).toContain('r-eco');
             expect(result?.deleted).toBe(false);
+        });
+
+        it('should drop the deleted role from the search results the tree is showing', async () => {
+            service.searchTree.mockReturnValueOnce(
+                of([
+                    {
+                        id: 'r-categories',
+                        name: 'Categories',
+                        roleChildren: [{ id: 'r-eco', name: 'Eco Role' }]
+                    }
+                ])
+            );
+            store.setFilter('eco');
+            await Promise.resolve();
+
+            await store.deleteRole('r-eco');
+
+            expect(findRole(store.searchResults() ?? [], 'r-eco')).toBeUndefined();
+            expect(findRole(store.roles(), 'r-eco')).toBeUndefined();
         });
 
         it('should warn with a toast when the backend refuses the delete', async () => {

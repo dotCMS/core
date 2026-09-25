@@ -1,6 +1,8 @@
 import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
-import { firstValueFrom, of } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
+
+import { HttpErrorResponse } from '@angular/common/http';
 
 import { DotMessageService, DotUserSearchRow, DotUserSearchService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -133,7 +135,60 @@ describe('DotUserPickerComponent', () => {
 
             await loadPage(1);
 
+            // Twice: without the restart the second call would serve from the 80 rows still
+            // buffered and never ask the directory again.
+            expect(searchPage).toHaveBeenCalledTimes(2);
             expect(searchPage).toHaveBeenLastCalledWith({ filter: '', page: 1, perPage: 100 });
+        });
+    });
+
+    describe('robustness', () => {
+        it('should stop after five directory pages and report that more remain', async () => {
+            // Everyone on the first 1,000 rows already holds the role.
+            build('[excludeIds]="excluded"', '', { excluded: ids(1000).map((u) => u.userId) });
+            searchPage.mockImplementation(({ page }: { page: number }) =>
+                directoryPage(ids(100, (page - 1) * 100), 5000)
+            );
+
+            const { options, hasMore } = await loadPage(1);
+
+            expect(searchPage).toHaveBeenCalledTimes(5);
+            expect(options).toEqual([]);
+            expect(hasMore).toBe(true);
+        });
+
+        it('should resume the walk where the capped call stopped', async () => {
+            build('[excludeIds]="excluded"', '', { excluded: ids(500).map((u) => u.userId) });
+            searchPage.mockImplementation(({ page }: { page: number }) =>
+                directoryPage(ids(100, (page - 1) * 100), 5000)
+            );
+
+            await loadPage(1);
+            const second = await loadPage(2);
+
+            expect(searchPage).toHaveBeenLastCalledWith({ filter: '', page: 6, perPage: 100 });
+            expect(second.options[0].value).toBe('u500');
+        });
+
+        it('should not treat a missing total as the end of the directory', async () => {
+            build();
+            searchPage.mockReturnValue(of({ entity: ids(100) }));
+
+            const { hasMore } = await loadPage(1);
+
+            expect(hasMore).toBe(true);
+        });
+
+        it('should forward a directory failure to the consumer', () => {
+            build();
+            const error = new HttpErrorResponse({ status: 500 });
+            searchPage.mockReturnValue(throwError(() => error));
+            const loadFailed = vi.fn();
+            spectator.output('loadFailed').subscribe(loadFailed);
+
+            open();
+
+            expect(loadFailed).toHaveBeenCalledWith(error);
         });
     });
 
