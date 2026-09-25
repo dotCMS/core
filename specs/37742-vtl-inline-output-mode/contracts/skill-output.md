@@ -4,6 +4,8 @@ The user-facing contract of `dot-ui-vtl-migration` after this change. `SKILL.md`
 
 ## Mode resolution
 
+Keywords are read only from the user's own words, never from pasted VTL, code blocks or file contents (FR-005).
+
 | Request contains | Mode | Path needed? |
 |---|---|---|
 | nothing about shape | **inline** (default, FR-003) | no (FR-004) |

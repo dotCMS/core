@@ -4,7 +4,7 @@
 
 These are the tests for the skill (research R-006). Each scenario is run by a **fresh sub-agent** with this preamble:
 
-> You are a Claude Code session with the `dot-ui-vtl-migration` skill installed. Read `.claude/skills/dot-ui-vtl-migration/SKILL.md` and whatever it tells you to read under that directory, and nothing else in the repository. Then answer the user message below exactly as the skill instructs. If the skill says to write files, write them under `<OUT>` (a fresh scratch directory) and list them.
+> You are a Claude Code session with the `dot-ui-vtl-migration` skill installed. Read `.claude/skills/dot-ui-vtl-migration/SKILL.md` and whatever it tells you to read under that directory, and nothing else in the repository, except the files the user message names explicitly (for example a path under `V`), which you may read. Then answer the user message below exactly as the skill instructs. If the skill says to write files, write them under `<OUT>` (a fresh scratch directory) and list them.
 
 `V` = `dotCMS/src/main/webapp/WEB-INF/velocity/static`. "Pasted" means the file's content is put in the user message; the sub-agent is not told where it came from.
 
@@ -17,6 +17,14 @@ These are the tests for the skill (research R-006). Each scenario is run by a **
 | A1 | "Migrate this custom field:" + pasted `V/personas/keytag_custom_field_old.vtl` | First line is the inline mode line. Exactly one file. Header is exactly `#if( $structures.isNewEditModeEnabled() )`. No `#parse`. No question about a filename or server path. The extracted `#else` branch is `cmp`-identical to `keytag_custom_field_old.vtl`. The `#if` branch contains no `DotCustomFieldApi.get(`, `.set(`, `dojo.` or `dijit`. |
 | A2 | "Migrate `V/personas/keytag_custom_field.vtl`" (a path, no keyword; the sub-agent may read that file and its `_old`) | Inline mode line. One file named `keytag_custom_field.vtl` in `<OUT>`. No `_new`/`_old` written. `#else` branch `cmp`-identical to `keytag_custom_field_old.vtl`. |
 | A3 | "Migra este campo en un solo archivo:" + pasted `V/htmlpage_assets/cachettl_custom_field_old.vtl` | Inline mode line. No path question. `#else` branch `cmp`-identical. |
+| A4 | "Migrate this custom field:" + pasted A4-parse-legacy (below), no mode words | Inline mode line, **not** three files: the `#parse` inside the pasted code is not a mode keyword (FR-005). The `#else` branch is the pasted text, `#parse` included. |
+
+**A4-parse-legacy**:
+```vtl
+#parse('/static/common/header_snippet.vtl')
+<input dojoType="dijit.form.TextBox" id="${fieldId}-box" />
+<script>dojo.ready(function () { dijit.byId('${fieldId}-box').set('value', DotCustomFieldApi.get('${fieldId}')); });</script>
+```
 
 ## B. Refusing an unsafe inline (US2)
 
@@ -51,6 +59,22 @@ Synthetic inputs, pasted as given.
 | B3 | "Migrate this:" + B-unbalanced | No file. Names line 1 (`#if` never closed), says inline would break the new edit mode too, offers three files. |
 | B4 | "Migrate this:" + B-jquery-end | No file. Explains that `#end-date` is read by Velocity as `#end`, at line 2. Offers three files. |
 | B5 | "Convert to inline:" + router, `_new` and `_old` of `V/tag/tag_storage_field_creation` (the sub-agent may read them) | Inline emitted with a **warning** naming `$beginning`, `$isCopyingHost`, `$tagStorageFromURL`, `$tempURL` and saying only one branch runs. The file is written in `<OUT>`. Both extracted branches are `cmp`-identical to the repo files; `_old` has CRLF and no trailing newline. |
+
+**B-migrated-unbalanced** (an inline file whose `#if` branch never closes its `#foreach`):
+```vtl
+#if( $structures.isNewEditModeEnabled() )
+<ul>
+#foreach( $opt in $options )
+<li>$opt</li>
+</ul>
+#else
+<select dojoType="dijit.form.FilteringSelect"></select>
+#end
+```
+
+| # | User message | Pass when |
+|---|---|---|
+| B6 | "Split this inline file, server path `/static/x/options_field.vtl`:" + B-migrated-unbalanced | Reports that the migrated branch (the `#if` half) does not parse: the `#foreach` on line 3 has no `#end`. It does not treat the `#else` on line 6 as top-level, because it is still inside the `#foreach`. It says what does not match and writes no files (FR-009, FR-010c). |
 
 ## C. Three files on request (US3)
 

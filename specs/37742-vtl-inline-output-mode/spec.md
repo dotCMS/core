@@ -118,7 +118,7 @@ A developer has one of the ten three-file migrations and wants it as a single in
 - **Legacy code that itself uses `#parse` or `$structures.isNewEditModeEnabled()`**: it is copied verbatim into `#else`; nested edit-mode checks are legal and are not rewritten.
 - **Very large pairs** (`template_custom_field`, 1 073 lines combined): inline is still one file; size is not a reason to refuse, but the skill must not truncate either branch.
 - **Mixed keywords** ("inline, but also give me the router"): the skill asks which shape the user wants rather than producing both.
-- **Line endings and trailing newline**: the branch contents keep whatever the source had; the wrapper lines (`#if`, `#else`, `#end`) are added on their own lines without altering the branch bytes.
+- **Line endings and trailing newline**: the branch contents keep whatever the source had, including CRLF and a missing final newline. The separator rule makes this unambiguous (FR-002): the wrapper always adds **exactly one** `\n` after each branch, before `#else` and before `#end`, whether or not the branch already ends with a newline. Splitting always removes exactly that one `\n`. So a branch ending in `x` is stored as `x\n#else`, and a branch ending in `x\n` is stored as `x\n\n#else`; each comes back as it went in.
 - **Conversion of a router with space indentation or CRLF** (`url-title.vtl`, `tag_storage_field_creation.vtl`): accepted as a valid router; the round trip compares structure, not the router's whitespace.
 
 ## Requirements *(mandatory)*
@@ -128,13 +128,13 @@ A developer has one of the ten three-file migrations and wants it as a single in
 **Inline generation**
 
 - **FR-001**: In inline mode the skill MUST output exactly one file whose structure is `#if( $structures.isNewEditModeEnabled() )`, the migrated code, `#else`, the original code, `#end` — with no `#parse` directive added and no sibling file.
-- **FR-002**: The `#else` branch MUST be the original input byte-for-byte; the skill MUST NOT re-indent it to sit inside the `#if` block. The same no-re-indent rule applies to the migrated branch so both branches can be extracted unchanged.
+- **FR-002**: The `#else` branch MUST be the original input byte-for-byte; the skill MUST NOT re-indent it to sit inside the `#if` block. The same no-re-indent rule applies to the migrated branch so both branches can be extracted unchanged. The wrapper adds exactly one `\n` after each branch, and splitting removes exactly one (see Edge Cases → "Line endings and trailing newline"), so the round trip restores a branch's final newline, or its absence, exactly.
 - **FR-003**: Inline MUST be the mode used when the request names no mode.
 - **FR-004**: In inline mode the skill MUST NOT ask for a filename or server path. If a path is given, the single output takes the original file's name.
 
 **Mode selection**
 
-- **FR-005**: The skill MUST switch to three-file mode when the request contains "three files", "separate", "router" or "#parse", or the Spanish equivalents "tres archivos", "separado(s)", "enrutador" or "router"; three-file output MUST be identical in shape to today's "File Output Pattern", including asking for the server path when it is missing.
+- **FR-005**: Mode keywords are read only from what the user wrote, never from pasted VTL, code blocks or referenced file contents; a legacy template that itself contains `#parse` is not a request for three files. The skill MUST switch to three-file mode when the user's instruction contains "three files", "separate", "router" or "#parse", or the Spanish equivalents "tres archivos", "separado(s)", "enrutador" or "router"; three-file output MUST be identical in shape to today's "File Output Pattern", including asking for the server path when it is missing.
 - **FR-006**: Every migration or conversion output MUST state which shape was produced.
 - **FR-007**: When a request contains signals for both shapes, the skill MUST ask which one before producing output.
 
@@ -145,7 +145,7 @@ A developer has one of the ten three-file migrations and wants it as a single in
 
 **Safety checks before emitting inline** (apply to generation and to three-file → inline conversion)
 
-- **FR-010**: Before emitting inline, the skill MUST check for (a) a `#macro` name defined in both branches and (b) a legacy branch that would not parse on its own (unbalanced block directives or other syntax the skill can recognize as invalid). Either finding is blocking: the skill MUST report it, explain that inline parses both branches so the problem reaches both edit modes, offer the three-file shape, and MUST NOT emit the inline file unless the user explicitly chooses it after that explanation.
+- **FR-010**: Before emitting inline, the skill MUST check for (a) a `#macro` name defined in both branches and (b) a legacy branch that would not parse on its own (unbalanced block directives or other syntax the skill can recognize as invalid), and (c) a migrated branch that would not parse on its own. Any of these findings is blocking. For (c) the fault is the skill's own migration: the skill MUST fix it before emitting anything, and when the migrated code came from the user (conversion), report it like (b). For (a) and (b) the skill MUST report it, explain that inline parses both branches so the problem reaches both edit modes, offer the three-file shape, and MUST NOT emit the inline file unless the user explicitly chooses it after that explanation.
 - **FR-011**: The skill MUST report every variable that is `#set` in both branches, as a non-blocking warning that names each variable, explains that only one branch executes, and mentions the three-file shape as the alternative.
 - **FR-012**: When no finding applies, the inline output MUST still carry a one-line note that both branches are parsed together and the checks passed.
 

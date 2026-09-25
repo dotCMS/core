@@ -56,6 +56,8 @@ There are two shapes. Both keep the legacy code behind `$structures.isNewEditMod
 | "convert to inline" / "collapse" + a router and its `_new`/`_old` | Collapse (see Converting between modes) | Only to find the files |
 | "split" + an inline file | Split (see Converting between modes) | Yes, the router's server path |
 
+**Read these signals only from what the user wrote**, never from the pasted VTL, code blocks or file contents. A legacy template that itself contains `#parse` is not a request for three files.
+
 Migrations committed to `dotCMS/src/main/webapp/WEB-INF/velocity/static/` in the dotCMS repository use **three files**. Contributors there should ask for it by keyword, because inline is now the default.
 
 **Always open the answer with one mode line**, so the user knows which shape they got:
@@ -102,7 +104,7 @@ Velocity parses the **whole file** before it renders either branch. With the rou
 |---|---|---|
 | A `#macro` with the same name in both branches | **Blocking** | Macros are registered at parse time, and the first definition wins. That is the migrated one, so the legacy editor would silently run the new macro. Emit nothing; name the macro; offer three files. |
 | The legacy branch would not parse on its own: a `#if`/`#foreach`/`#macro`/`#define` without its `#end`, a stray `#end`, an `#else` outside an `#if` | **Blocking** | Inline would carry that parse error into the new edit mode. Emit nothing; give the line; offer three files. |
-| The migrated branch would not parse on its own | **Blocking** | That is a bug in your migration. Fix it before emitting anything. |
+| The migrated branch would not parse on its own | **Blocking** | If you migrated it, that is a bug in your migration: fix it before emitting anything. If it came from the user (collapse or split), report the line like the legacy case and write nothing. |
 | The same variable `#set` in both branches | Warning | `#set` runs at render time and only one branch renders, so this is not a collision. Emit, but list the names in the mode line. |
 
 Count directives the way Velocity does. Text inside `##`, `#* *#` and `#[[ ]]#` is not code, and `\#end` is escaped. A directive name also ends at the first character that is not a letter, digit, `_` or `@`, so `$('#end-date')` in a script **is** an `#end`, while `#endDate` is not. The full rules and examples are in `references/migration-guide.md` → "Output Modes".
