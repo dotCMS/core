@@ -506,14 +506,25 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         // leaves a stale REST asset in place while `requestMetadata` stays set, which the old
         // `hasClientQuery` check could not distinguish from the resolved case (dotCMS/core#37097).
         // Tell the client to reload itself from its own GraphQL source instead of pushing
-        // anything REST-shaped.
+        // anything REST-shaped — but only ONCE per non-resolved streak. `$reloadEditorContent`
+        // re-emits on every CLIENT_READY re-announcement (setCustomClient unconditionally
+        // re-patches requestMetadata, which changes pageAsset()'s reference), including the one
+        // the reload we're about to send will itself trigger. Without this guard, a GraphQL
+        // fetch that stays unresolved (slow, aborted, or permanently failing) causes an
+        // uncapped reload → CLIENT_READY → reload loop, driving the client's iframe into
+        // continuous full navigations (regression found in #37097's post-merge QA).
         if (pageType === PageType.HEADLESS && !isGraphQLSourced) {
-            this.sendMessageToIframe(
-                {
-                    name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
-                },
-                this.host
-            );
+            const alreadyRequested = untracked(() => this.uveStore.pageReloadPending());
+
+            if (!alreadyRequested) {
+                untracked(() => this.uveStore.setPageReloadPending(true));
+                this.sendMessageToIframe(
+                    {
+                        name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    },
+                    this.host
+                );
+            }
 
             return;
         }
