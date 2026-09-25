@@ -1,6 +1,5 @@
 package com.dotcms.ai.viewtool;
 
-import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.api.ChatAPI;
@@ -148,10 +147,13 @@ public class AIViewTool implements ViewTool {
         return generate(prompt, serviceCall).getOrElseGet(this::handleException);
     }
 
+    /**
+     * Failure payload for the handled generation paths ({@code generateImage}). Delegates to
+     * {@link AIViewToolErrorHandler} so the template receives the fixed generic message and the
+     * exception, with its trace, goes to the server log (#37154).
+     */
     private JSONObject handleException(final Throwable e) {
-        final JSONObject jsonResponse = new JSONObject();
-        jsonResponse.put(AiKeys.ERROR, e.getMessage());
-        return jsonResponse;
+        return AIViewToolErrorHandler.handle(AIViewTool.class, e);
     }
 
 }

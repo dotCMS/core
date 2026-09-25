@@ -375,6 +375,10 @@ public class ContentIndexMirrorReconciler {
      *
      * <p>It never changes the {@code verdict}: the verdict states the ES↔OS relationship, which is a
      * different fact. Reported side by side, not merged.</p>
+     *
+     * <p>The note names both ways a copy falls short rather than asserting one: a copy that was built
+     * and then missed writes (a rollback to Phase 0 while content kept changing) reads exactly like one
+     * that was never finished (issue #37638).</p>
      */
     private static String incompleteNote(final String engine, final boolean exists, final long count,
             final Long databaseDocCount) {
@@ -386,7 +390,9 @@ public class ContentIndexMirrorReconciler {
             return "";
         }
         return String.format(" NOTE: the %s copy holds %d of the %d contentlets the database has "
-                        + "(%.2f%%) — it was never fully rebuilt. Run a full reindex; until then, "
+                        + "(%.2f%%) — a reindex that never finished, or content changed while this "
+                        + "engine received no writes (a rollback to Phase 0, for one). Run a full "
+                        + "reindex; until then, "
                         + "anything reading through this index sees only that fraction of the content "
                         + "(a Site Search crawl included, since it builds its corpus from a query "
                         + "against it).",

@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import NotFound from "@/app/not-found";
 import { ErrorPage } from "@/components/error";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
-import { getErrorStatus, getPageTitle, isPageError } from "@/utils/pageResponse";
+import { getErrorDetails, getPageTitle, isPageError } from "@/utils/pageResponse";
 import { Page } from "@/views/Page";
 
 interface SlugPageProps {
@@ -43,7 +43,7 @@ export default async function Home({ params, searchParams }: SlugPageProps) {
             return <Page pageContent={graphql ? { graphql } : undefined} />;
         }
 
-        return <ErrorPage error={{ status: getErrorStatus(pageContent.error) }} />;
+        return <ErrorPage error={getErrorDetails(pageContent.error)} />;
     }
 
     const vanityUrl = pageContent.pageAsset?.vanityUrl;
