@@ -11,6 +11,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.liferay.portal.model.User;
@@ -42,6 +43,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * This class tests the functionality of the AIViewTool class.
@@ -336,6 +338,29 @@ public class AIViewToolTest extends IntegrationTestBase {
         assertNotNull(failed);
         assertTrue("expected an error entry in " + failed, failed.containsKey("error"));
         AiTest.assertNoRawMarkup(failed);
+    }
+
+    /**
+     * Scenario: $ai and $ai.unsafe pass their escaping mode down to the sub-tools (#37153, AC-003)
+     * Given the provider answers the probe prompt with a script and an onerror image tag
+     * When completions.raw is called through $ai.completions and through $ai.unsafe.completions
+     * Then the first returns the HTML-encoded markup and the second the literal markup
+     */
+    @Test
+    public void test_completions_throughAccessors_followEscapingMode() {
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(mock(HttpServletRequest.class));
+        final AIViewTool tool = prepareAIViewTool();
+        tool.init(viewContext);
+        final JSONObject prompt = new JSONObject()
+                .put("model", "gpt-4o-mini")
+                .put("messages", new JSONArray().put(new JSONObject()
+                        .put("role", "user").put("content", AiTest.PROBE_CHAT_PROMPT)));
+
+        assertEquals(AiTest.PROBE_MARKUP_ESCAPED,
+                AiTest.chatContent((JSONObject) tool.getCompletions().raw(prompt)));
+        assertEquals(AiTest.PROBE_MARKUP,
+                AiTest.chatContent((JSONObject) tool.getUnsafe().getCompletions().raw(prompt)));
     }
 
     private void assertTextResponse(final JSONObject response, final String containedText) {
