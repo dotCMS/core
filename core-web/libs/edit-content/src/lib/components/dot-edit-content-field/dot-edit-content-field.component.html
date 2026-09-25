@@ -191,4 +191,16 @@
                 [contentlet]="contentlet" />
         }
     }
+    @default {
+        <!--
+            FR-013 (issue #37670): the content model describes 28 field types; the backend's set
+            is open, because customer plugins contribute their own. Before this branch existed an
+            unmodelled field type matched no case and rendered nothing at all — the field simply
+            vanished from the form, with no indication that anything was missing. Saying so is
+            the difference between degrading and failing silently.
+        -->
+        <div class="field-unsupported" [attr.data-testId]="'field-unsupported-' + field.variable">
+            {{ 'edit.content.field.unsupported.type' | dm }}
+        </div>
+    }
 }

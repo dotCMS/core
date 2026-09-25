@@ -21,6 +21,18 @@ import { Portlet } from '@utils/portlets';
  */
 const OUTCOME_TIMEOUT = 60000;
 
+/**
+ * The part of the `/api/v1/drive/search` request body the scope tests assert on. Deliberately
+ * partial — the full form is the backend's business — so a new server-side field does not break
+ * these tests, while the two that matter (`text`, `searchScope`) are named.
+ */
+interface DriveSearchPayload {
+    filters: {
+        text?: string;
+        searchScope?: string;
+    };
+}
+
 export class ContentDrivePage {
     readonly toolbar: Locator;
     readonly treeSelector: Locator;
@@ -28,9 +40,15 @@ export class ContentDrivePage {
     readonly currentSiteHostname: Locator;
     readonly listTitles: Locator;
     readonly treeNodeLabels: Locator;
+    readonly allSiteContentRow: Locator;
+    readonly systemHostRow: Locator;
     readonly searchField: Locator;
-    readonly uploadIndicator: Locator;
-    readonly uploadProgress: Locator;
+    readonly statusToast: Locator;
+    readonly statusToastSummary: Locator;
+    readonly scopeBar: Locator;
+    readonly scopeBarSlot: Locator;
+    readonly scopeBarSummary: Locator;
+    readonly scopeBarToggle: Locator;
     readonly toasts: Locator;
 
     constructor(private page: Page) {
@@ -45,9 +63,25 @@ export class ContentDrivePage {
         this.currentSiteHostname = this.sidebar.getByTestId('tree-node-label').first();
         this.listTitles = page.getByTestId('item-title-text');
         this.treeNodeLabels = this.sidebar.getByTestId('tree-node-label');
-        // The toolbar's in-flight indicator, and the position it shows when a run reports one.
-        this.uploadIndicator = page.getByTestId('action-execution-indicator');
-        this.uploadProgress = page.getByTestId('action-execution-progress');
+        // The two entries that are not part of the hierarchy. They carry their own testids and no
+        // `tree-node-label`, which is why `currentSiteHostname` above still finds the site row.
+        this.allSiteContentRow = this.sidebar.getByTestId('all-site-content');
+        this.systemHostRow = this.sidebar.getByTestId('system-host');
+        // A run in flight is reported by the status toast, not by the toolbar. The toolbar used to
+        // draw an indicator at the end of the filter row (`action-execution-indicator`); that markup
+        // is gone, so anything still looking for it is asserting on a testid that cannot appear.
+        this.statusToast = page.getByTestId('dot-status-toast');
+        this.statusToastSummary = page.getByTestId('status-toast-summary');
+        // The bar above the listing: what is being shown, and the one control that changes it.
+        // Its slot is always in the DOM and opens by height, so visibility is the question to ask
+        // rather than presence.
+        this.scopeBar = page.getByTestId('scope-bar');
+        // The wrapper that opens and closes by height. Assert against this rather than the bar
+        // inside it: Playwright's visibility ignores clipping by an ancestor, so the bar itself
+        // still measures as visible while this has squeezed it to nothing.
+        this.scopeBarSlot = page.getByTestId('scope-bar-slot');
+        this.scopeBarSummary = page.getByTestId('scope-bar-summary');
+        this.scopeBarToggle = page.getByTestId('scope-bar-toggle');
         this.toasts = page.locator('.p-toast-message');
     }
 
@@ -134,6 +168,89 @@ export class ContentDrivePage {
         await expect(this.listTitles.filter({ hasText: title }).first()).toBeVisible({
             timeout: 20000
         });
+    }
+
+    /**
+     * Runs `action` and returns the JSON request body of the drive search it triggers.
+     *
+     * The wait is armed BEFORE `action` runs — the only order that works — and the predicate also
+     * pins the method and status, so a failing search fails here at the capture rather than
+     * downstream as a missing row.
+     *
+     * `matches` guards against a race the portlet's own startup creates: it can still be settling
+     * its initial listing when this is called, and those searches carry their own (usually empty)
+     * text. Every attempt arms before anything pending can slip past, so `action`'s own request
+     * is never missed — a settling search only costs one round of the loop.
+     */
+    async captureSearchPayload(
+        action: () => Promise<void>,
+        matches?: (payload: DriveSearchPayload) => boolean
+    ): Promise<DriveSearchPayload> {
+        for (let attempt = 0; attempt < 6; attempt++) {
+            const search = this.page.waitForResponse(
+                (r) =>
+                    r.url().includes('/api/v1/drive/search') &&
+                    r.request().method() === 'POST' &&
+                    r.status() === 200,
+                { timeout: 15000 }
+            );
+
+            if (attempt === 0) {
+                await action();
+            }
+
+            const response = await search;
+            const payload = (await response.request().postDataJSON()) as DriveSearchPayload;
+
+            if (!matches || matches(payload)) {
+                return payload;
+            }
+        }
+
+        throw new Error('no drive search matching the expected payload was captured');
+    }
+
+    /**
+     * Runs `body` and fails if a drive search that matches `matches` was submitted while it did.
+     *
+     * The evidence a negative needs: "re-selecting the active scope must not re-search" (FR-006)
+     * cannot be asserted on copy or on rows that did not appear — only watching the wire can. The
+     * same pattern `expectNothingUploadedWhile` uses for uploads.
+     *
+     * The payloads are inspected rather than the URLs: without `matches` any drive search in the
+     * window is a violation, but with it a caller can name precisely what a violation would look
+     * like. That is what lets the scope test watch a term-carrying window and ignore a leftover
+     * startup search (an empty `text`) instead of draining it with extra round trips first — a
+     * re-search the click caused would carry the same term, so the predicate catches it all the
+     * same while the window stays open. The same evidence pattern, one request fewer to prove it.
+     */
+    async expectNoSearchWhile(
+        body: () => Promise<void>,
+        matches?: (payload: DriveSearchPayload) => boolean
+    ) {
+        const offenders: DriveSearchPayload[] = [];
+        const record = (request: Request) => {
+            if (request.url().includes('/api/v1/drive/search') && request.method() === 'POST') {
+                const payload = request.postDataJSON() as DriveSearchPayload;
+
+                if (!matches || matches(payload)) {
+                    offenders.push(payload);
+                }
+            }
+        };
+
+        this.page.on('request', record);
+
+        try {
+            await body();
+        } finally {
+            this.page.off('request', record);
+        }
+
+        expect(
+            offenders,
+            'a drive search fired, so the scope re-selection was not ignored'
+        ).toEqual([]);
     }
 
     /** Navigates into a folder by clicking its row in the tree. */
@@ -291,10 +408,88 @@ export class ContentDrivePage {
      * learns the rules changed; without the indicator the batch looks finished when it is not.
      */
     async expectHandedToBackground() {
-        await expect(this.toasts.filter({ hasText: 'in the background' }).first()).toBeVisible({
+        // One surface says both halves now. The status toast carries the in-flight wording, which
+        // for a backgrounded batch is the sentence that tells the author the batch is theirs to
+        // leave — so its presence is the indicator, and there is no second element to check.
+        // It used to be two: a wide advisory toast plus the toolbar's indicator, which meant a
+        // backgrounded upload announced itself twice.
+        await expect(this.statusToastSummary.filter({ hasText: 'in the background' })).toBeVisible({
             timeout: OUTCOME_TIMEOUT
         });
-        await expect(this.uploadIndicator).toBeVisible();
+    }
+
+    /** What the status toast is saying right now, if anything. */
+    async expectStatusToastContaining(text: string) {
+        await expect(this.statusToastSummary.filter({ hasText: text }).first()).toBeVisible({
+            timeout: OUTCOME_TIMEOUT
+        });
+    }
+
+    /**
+     * The status toast has stopped reporting.
+     *
+     * A run that never clears its toast leaves the portlet claiming work is in flight forever, and
+     * the toast is sticky precisely so it cannot time itself out -- which makes it the store's job
+     * to end it, and therefore worth asserting.
+     */
+    async expectStatusToastGone() {
+        await expect(this.statusToastSummary).toHaveCount(0, { timeout: OUTCOME_TIMEOUT });
+    }
+
+    /**
+     * Whether the status toast is what a click would land on at its own centre.
+     *
+     * Asked of the browser's hit-testing rather than by clicking a control underneath. The first
+     * version of this clicked the listing's rows-per-page box on the claim that it is "always
+     * enabled"; it is not -- an empty folder disables it, and a test that seeds its own folder
+     * always starts empty, so the check failed on the control rather than on the toast.
+     *
+     * `elementFromPoint` asks the question directly and needs nothing beneath the toast at all.
+     */
+    async statusToastTakesClicksAtItsCentre(): Promise<boolean> {
+        const box = await this.statusToast.boundingBox();
+
+        if (!box) {
+            throw new Error('no status toast on screen to test');
+        }
+
+        return this.page.evaluate(
+            ([x, y]) =>
+                !!document.elementFromPoint(x, y)?.closest('[data-testid="dot-status-toast"]'),
+            [box.x + box.width / 2, box.y + box.height / 2]
+        );
+    }
+
+    /** Flips the System Host toggle and waits for the listing it re-requests. */
+    async toggleSystemHostInScopeBar() {
+        const listing = this.page.waitForResponse(
+            (response) => response.url().includes('/v1/drive/search') && response.ok()
+        );
+        await this.scopeBarToggle.click();
+        await listing;
+    }
+
+    /** Opens the New menu and returns the labels it offers. */
+    async openNewMenu(): Promise<string[]> {
+        await this.toolbar.getByTestId('add-new-button').click();
+        const items = this.page.getByRole('menuitem');
+        await expect(items.first()).toBeVisible({ timeout: 10000 });
+
+        return items.allInnerTexts();
+    }
+
+    /**
+     * The path the folder dialog says a new folder will land on.
+     *
+     * Read rather than asserted here because the wrong value is not a missing element: the builder
+     * used to paste a location that is not a folder path straight after the hostname, so the field
+     * was populated and confidently wrong.
+     */
+    async folderDialogPath(): Promise<string> {
+        const path = this.page.getByTestId('folder-path-preview');
+        await expect(path).toBeVisible({ timeout: 10000 });
+
+        return (await path.innerText()).trim();
     }
 
     /** A message the author can read, whatever severity it arrived with. */
@@ -373,6 +568,58 @@ export class ContentDrivePage {
      */
     async expectNoSingleFileWarning() {
         await expect(this.page.locator('.p-toast-message-warn')).toHaveCount(0);
+    }
+
+    /** Selects the All Site Content entry and waits for the listing it triggers. */
+    async selectAllSiteContent() {
+        await this.selectSidebarEntry(this.allSiteContentRow);
+    }
+
+    /** Selects the System Host entry and waits for the listing it triggers. */
+    async selectSystemHost() {
+        await this.selectSidebarEntry(this.systemHostRow);
+    }
+
+    /**
+     * Clicks a sidebar entry and waits for the listing request the click sets off.
+     *
+     * Armed before the click, not after: the response can land first, and then a wait registered
+     * afterwards never resolves.
+     */
+    private async selectSidebarEntry(row: Locator) {
+        // Clicking the entry you are already on changes no location, so the store re-requests
+        // nothing and a wait for the listing never resolves -- the test then dies on its own
+        // timeout with "Page closed", which says nothing about the entry. The drive lands on all
+        // site content, so this is the ordinary case for a test that starts there.
+        if ((await row.getAttribute('aria-current')) === 'true') {
+            return;
+        }
+
+        const listing = this.page.waitForResponse(
+            (response) => response.url().includes('/v1/drive/search') && response.ok()
+        );
+        await row.click();
+        await listing;
+    }
+
+    /**
+     * Asserts which sidebar entry reads as the current one.
+     *
+     * `aria-current` rather than a class: the rows announce selection to assistive tech through
+     * it, so asserting on it checks the thing that actually has to be right.
+     */
+    async expectSelectedEntry(entry: 'all' | 'system-host' | 'neither') {
+        const row = entry === 'system-host' ? this.systemHostRow : this.allSiteContentRow;
+        await expect(row).toHaveAttribute('aria-current', entry === 'neither' ? /^$/ : 'true', {
+            timeout: entry === 'neither' ? 2000 : undefined
+        });
+    }
+
+    /** Whether an entry currently announces itself as the selected one. */
+    async isEntrySelected(entry: 'all' | 'system-host') {
+        const row = entry === 'system-host' ? this.systemHostRow : this.allSiteContentRow;
+
+        return (await row.getAttribute('aria-current')) === 'true';
     }
 }
 

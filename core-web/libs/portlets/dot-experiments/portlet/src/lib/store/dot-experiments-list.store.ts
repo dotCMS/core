@@ -23,12 +23,14 @@ import {
     GOAL_TYPES,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 
 import { dotExperimentsApiEvents } from './dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from './dot-experiments-list-page.events';
 
 import {
+    DEFAULT_EXPERIMENTS_LIST_CREATORS,
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -38,10 +40,16 @@ import {
     OPT_IN_STATUSES,
     PAGE_LOOKUP_LANGUAGE_HEADROOM
 } from '../shared/constants';
-import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/models';
+import {
+    DotExperimentPageInfo,
+    DotExperimentsListViewState,
+    ExperimentsListSchedulePeriod
+} from '../shared/models';
 import {
     comparatorFor,
     distinctPageIds,
+    isScheduleRangeInverted,
+    matchesSchedulePeriod,
     emptyGoalCounts,
     emptyStatusCounts,
     fromRouteParams,
@@ -49,6 +57,7 @@ import {
     normalizePagePath,
     parseViewState,
     resolvedPageInfo,
+    scheduleBoundsOf,
     toQueryParams
 } from '../util/dot-experiments-list-store.util';
 import { resolvePagePath } from '../util/dot-experiments-list.util';
@@ -65,6 +74,31 @@ export interface DotExperimentsListState extends DotExperimentsListViewState {
     error: unknown;
 }
 
+/**
+ * What both Clear affordances widen: the search term and every chip, back to page one.
+ *
+ * Shared rather than repeated so the two cannot drift — a filter added later has one place to be
+ * remembered, and the empty state's button stays the wider of the two by *adding* the page
+ * narrowing to this, never by listing its own copy of the chips.
+ */
+const CLEARED_TOOLBAR_NARROWINGS = {
+    filter: '',
+    selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+    selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
+    scheduleFrom: null,
+    scheduleTo: null,
+    page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+    // The path narrowing is in here and the page *scope* is not, though they sit side by side in
+    // state. Nothing in the app writes `?url=`: it arrives typed or pasted and is then echoed back
+    // on every change, which makes it a filter the user applied. `pageId` is the opposite — the
+    // screen hands it out on all four ways out and reads it back on the way in — so it is a scope
+    // this button does not own. Left here, a path that still matches rows could not be removed at
+    // all: the empty state's button is the only other way out and it appears only once the path
+    // matches nothing.
+    selectedPageUrl: null
+} as const;
+
 const initialState: DotExperimentsListState = {
     status: ComponentStatus.LOADING,
     healthStatus: null,
@@ -73,6 +107,9 @@ const initialState: DotExperimentsListState = {
     filter: '',
     selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
     selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+    selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
+    scheduleFrom: null,
+    scheduleTo: null,
     page: DEFAULT_EXPERIMENTS_LIST_PAGE,
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -109,12 +146,25 @@ export const DotExperimentsListStore = signalStore(
     withState<DotExperimentsListState>(initialState),
     withComputed((store) => {
         const globalStore = inject(GlobalStore);
+        const panel = inject(DotExperimentsPanelStore, { optional: true });
 
         /**
          * Fails closed: an experiment whose `pageId` could not be resolved is dropped, so an
          * experiment from another site can never leak into the list.
+         *
+         * **Bypassed entirely in the panel**, not merely left unfed. The narrowing reads
+         * `pageInfoByPageId`, which the panel never fills — it skips the bulk page lookup that
+         * fills it (FR-010) because it has no Page column to feed. Leaving the filter in place
+         * would therefore drop every experiment for want of a host it never asked for, and the
+         * screen would say "no experiments on this page" about a page that has them. There is
+         * nothing to narrow anyway: the server returned the experiments *of this page*, and the
+         * page is the one the editor is standing on (FR-029, SC-008).
          */
         const siteScopedExperiments = computed<DotExperiment[]>(() => {
+            if (panel) {
+                return store.experiments();
+            }
+
             const currentSiteId = globalStore.currentSiteId();
 
             if (!currentSiteId) {
@@ -247,7 +297,7 @@ export const DotExperimentsListStore = signalStore(
          * no goal at all therefore drops out as soon as any goal is picked, since it matches
          * none of them.
          */
-        const filteredExperiments = computed<DotExperiment[]>(() => {
+        const goalFilteredExperiments = computed<DotExperiment[]>(() => {
             const selectedGoals = store.selectedGoals();
 
             if (!selectedGoals.length) {
@@ -260,6 +310,75 @@ export const DotExperimentsListStore = signalStore(
                 return goal !== null && selectedGoals.includes(goal);
             });
         });
+
+        /**
+         * Narrowed to the chosen creators, or left alone when none are chosen (#37307).
+         *
+         * Matching is on `createdBy`, the user id the payload carries, so it never waits on a
+         * display name having been resolved — and an id belonging to a user who has since been
+         * deleted simply matches nothing rather than erroring.
+         *
+         * Sits **after** `statusCounts` and `goalCounts` are taken, alongside the status and goal
+         * narrowings, so that choosing a creator cannot move the numbers shown beside the statuses
+         * and goals the user has not chosen (FR-050).
+         */
+        const creatorFilteredExperiments = computed<DotExperiment[]>(() => {
+            const selectedCreators = store.selectedCreators();
+
+            if (!selectedCreators.length) {
+                return goalFilteredExperiments();
+            }
+
+            return goalFilteredExperiments().filter((experiment) =>
+                selectedCreators.includes(experiment.createdBy)
+            );
+        });
+
+        /** The period as one value, since both bounds are always read together. */
+        const schedulePeriod = computed<ExperimentsListSchedulePeriod>(() => ({
+            from: store.scheduleFrom(),
+            to: store.scheduleTo()
+        }));
+
+        /**
+         * A period naming two real dates in the wrong order, which only the address can produce.
+         *
+         * Exposed rather than swallowed: it matches nothing by construction, so applying it would
+         * empty the table and read as a site with no experiments scheduled then. The narrowing
+         * below therefore leaves the rows alone and the screen says why (FR-021a).
+         */
+        const isScheduleRangeUnusable = computed<boolean>(() =>
+            isScheduleRangeInverted(schedulePeriod())
+        );
+
+        /**
+         * Narrowed to experiments scheduled to start inside the chosen period (#37307).
+         *
+         * The instants are resolved here rather than stored, because the period is held as
+         * calendar dates and what those mean in milliseconds depends on the reader's zone — which
+         * is the point of storing dates (FR-049a).
+         *
+         * Sits after the counts snapshot for the same reason as the creator narrowing above
+         * (FR-027, FR-050).
+         */
+        const scheduleFilteredExperiments = computed<DotExperiment[]>(() => {
+            const bounds = scheduleBoundsOf(schedulePeriod());
+
+            if (!bounds) {
+                return creatorFilteredExperiments();
+            }
+
+            return creatorFilteredExperiments().filter((experiment) =>
+                matchesSchedulePeriod(experiment, bounds)
+            );
+        });
+
+        /**
+         * Last link of the narrowing chain, and the one everything downstream reads — sorting,
+         * paging and `totalRecords`. Named separately from the narrowings above so that a filter
+         * added later extends the chain rather than redefining what "filtered" means.
+         */
+        const filteredExperiments = computed<DotExperiment[]>(() => scheduleFilteredExperiments());
 
         const sortedExperiments = computed<DotExperiment[]>(() => {
             const experiments = filteredExperiments();
@@ -289,6 +408,10 @@ export const DotExperimentsListStore = signalStore(
             statusCounts,
             goalCounts,
             statusFilteredExperiments,
+            goalFilteredExperiments,
+            creatorFilteredExperiments,
+            scheduleFilteredExperiments,
+            isScheduleRangeUnusable,
             filteredExperiments,
             sortedExperiments,
             pagedExperiments,
@@ -357,6 +480,15 @@ export const DotExperimentsListStore = signalStore(
             selectedGoals: payload,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
+        on(dotExperimentsListPageEvents.creatorsChanged, ({ payload }) => ({
+            selectedCreators: payload,
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE
+        })),
+        on(dotExperimentsListPageEvents.scheduleChanged, ({ payload }) => ({
+            scheduleFrom: payload.from,
+            scheduleTo: payload.to,
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE
+        })),
         on(dotExperimentsListPageEvents.pageChanged, ({ payload }) => ({
             page: payload.page,
             perPage: payload.perPage
@@ -367,6 +499,32 @@ export const DotExperimentsListStore = signalStore(
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
         on(dotExperimentsListPageEvents.hydratedFromUrl, ({ payload }) => ({ ...payload })),
+        /**
+         * FR-034b. The editor is on another page, so every answer on screen describes a page that
+         * is no longer there — a search, a status narrowing, a sort and a page number asked about
+         * the page they left. Carrying them across would silently answer the old question with the
+         * new page's data, which reads as a result rather than as a leftover.
+         *
+         * The reset is total for that reason. Every narrowing has to be named here, so adding one
+         * to the view state means adding it here too — `selectedCreators` (#37307) is the one that
+         * proved the point by being missed.
+         */
+        on(dotExperimentsListPageEvents.scopedToPage, ({ payload }) => ({
+            filter: '',
+            selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+            selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+            selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
+            scheduleFrom: null,
+            scheduleTo: null,
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+            perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+            orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+            direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+            selectedPageId: payload.pageId,
+            selectedPageUrl: null,
+            languageId: payload.languageId,
+            status: ComponentStatus.LOADING
+        })),
         /**
          * A site switch keeps search, sort and status selection but always restarts paging — and
          * drops the page narrowing, which belongs to the site being left (#37005).
@@ -384,14 +542,19 @@ export const DotExperimentsListStore = signalStore(
             status: ComponentStatus.LOADING
         })),
         /**
-         * `languageId` goes with it: it exists only to return the editor to the version of the
-         * narrowed page they came from, so it means nothing once that page is gone.
+         * One transition, so neither the row set nor the address is ever derived from a view state
+         * that is only half cleared.
+         *
+         * `languageId` goes with the page narrowing: it exists only to return the editor to the
+         * version of the narrowed page they came from, so it means nothing once that page is gone.
          * `syncUrlEffect` follows, which is what takes the params out of the address.
          */
-        on(dotExperimentsListPageEvents.pageNarrowingCleared, () => ({
-            page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+        // Both clear what the toolbar's controls set; only the empty state's button also drops the
+        // page *scope*, and only because it is on screen beside one that matched nothing.
+        on(dotExperimentsListPageEvents.chipFiltersCleared, () => CLEARED_TOOLBAR_NARROWINGS),
+        on(dotExperimentsListPageEvents.filtersCleared, () => ({
+            ...CLEARED_TOOLBAR_NARROWINGS,
             selectedPageId: null,
-            selectedPageUrl: null,
             languageId: null
         })),
         on(
@@ -418,7 +581,8 @@ export const DotExperimentsListStore = signalStore(
             events = inject(Events),
             experimentsService = inject(DotExperimentsService),
             contentSearchService = inject(DotContentSearchService),
-            httpErrorManager = inject(DotHttpErrorManagerService)
+            httpErrorManager = inject(DotHttpErrorManagerService),
+            panel = inject(DotExperimentsPanelStore, { optional: true })
         ) => {
             /**
              * Turns a failed row action into its `Failed` event, after routing the error through
@@ -453,20 +617,45 @@ export const DotExperimentsListStore = signalStore(
                     map(() => dotExperimentsListPageEvents.loadExperiments())
                 ),
 
+                /**
+                 * The portlet asks for everything and narrows in the browser, because its view
+                 * state can name any page or none. The panel already knows the one page it is
+                 * about, so it asks the server for that page and nothing else — one request
+                 * instead of one plus a bulk lookup over every distinct page in the install
+                 * (FR-010, D4, SC-005).
+                 */
                 loadList$: events.on(dotExperimentsListPageEvents.loadExperiments).pipe(
-                    switchMap(() =>
-                        experimentsService.getAllUnfiltered().pipe(
+                    switchMap(() => {
+                        const pageId = panel?.pageId();
+
+                        const request$ = panel
+                            ? // No page in hand yet is not an error and not an empty page: the
+                              // editor's asset simply has not resolved. The re-scope effect
+                              // below reloads as soon as it does.
+                              pageId
+                                ? experimentsService.getAll(pageId)
+                                : of([])
+                            : experimentsService.getAllUnfiltered();
+
+                        return request$.pipe(
                             mapResponse({
                                 next: (experiments) =>
                                     dotExperimentsApiEvents.listSucceeded(experiments),
                                 error: toFailure(dotExperimentsApiEvents.listFailed)
                             })
-                        )
-                    )
+                        );
+                    })
                 ),
 
                 resolvePageInfo$: events.on(dotExperimentsApiEvents.listSucceeded).pipe(
                     switchMap(({ payload }) => {
+                        // The panel has no Page column to fill and no site narrowing to feed, so
+                        // this lookup has no consumer left there — and it is the most expensive
+                        // request this store makes. The status still has to leave `loading`.
+                        if (panel) {
+                            return of(dotExperimentsApiEvents.pageInfoSucceeded({}));
+                        }
+
                         const experimentPageIds = distinctPageIds(payload);
                         const filteredPageId = store.selectedPageId();
 
@@ -598,9 +787,15 @@ export const DotExperimentsListStore = signalStore(
         const location = inject(Location);
         const globalStore = inject(GlobalStore);
         const dispatcher = inject(Dispatcher);
+        /**
+         * Present only inside the UVE panel (#37478). Its presence — nothing else — is what makes
+         * this store panel-scoped; the portlet never provides it.
+         */
+        const panel = inject(DotExperimentsPanelStore, { optional: true });
 
         let siteEffect: EffectRef;
         let syncUrlEffect: EffectRef;
+        let rescopeEffect: EffectRef;
         let locationSubscription: SubscriptionLike;
 
         /**
@@ -619,84 +814,166 @@ export const DotExperimentsListStore = signalStore(
             }
         };
 
+        /**
+         * The four concerns below are the ones bound to the browser address, and all four are the
+         * portlet's alone.
+         *
+         * In the panel the address belongs to the editor: it names the page being edited, its
+         * language, its device and its preview mode. A list that hydrated from it would read the
+         * editor's params as its own view state; one that wrote to it would push history entries
+         * for a filter change, so Back would step through the panel instead of leaving the page
+         * (FR-031, FR-032, FR-035). Split into named units rather than left as one block, because
+         * "which of these runs in the panel" is the question this file now has to answer.
+         */
+        const hydrateFromUrl = (): void => {
+            // Hydrate before the first fetch so the initial render already honours the URL.
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.hydratedFromUrl(
+                    parseViewState(fromRouteParams(route.snapshot.queryParams))
+                )
+            );
+        };
+
+        /**
+         * Back/Forward re-hydration. `writeUrl` uses `Location.go` (which does not notify), so
+         * only a real popstate reaches here — re-read the restored URL and fold it back in. No
+         * reload is needed: paging, sorting and filtering are all derived client-side.
+         */
+        const subscribeToPopstate = (): void => {
+            locationSubscription = location.subscribe((event) => {
+                const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
+
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.hydratedFromUrl(parseViewState(params))
+                );
+            });
+        };
+
+        /**
+         * Mirrors the view state back into the URL, so the list is shareable and survives a
+         * reload. Lives here rather than in the component because the store already owns the other
+         * half of this contract — it parses the URL on entry and on popstate — and splitting read
+         * from write invites the two to drift.
+         */
+        const mirrorViewStateToUrl = (): void => {
+            syncUrlEffect = effect(() => {
+                const queryParams = toQueryParams({
+                    filter: store.filter(),
+                    selectedStatuses: store.selectedStatuses(),
+                    selectedGoals: store.selectedGoals(),
+                    selectedCreators: store.selectedCreators(),
+                    scheduleFrom: store.scheduleFrom(),
+                    scheduleTo: store.scheduleTo(),
+                    page: store.page(),
+                    perPage: store.perPage(),
+                    selectedPageId: store.selectedPageId(),
+                    selectedPageUrl: store.selectedPageUrl(),
+                    languageId: store.languageId(),
+                    orderBy: store.orderBy(),
+                    direction: store.direction()
+                });
+
+                untracked(() => writeUrl(queryParams));
+            });
+        };
+
+        /**
+         * The site the portlet is scoped to changed, so the list is about a different set of
+         * pages. The panel is scoped to one page instead, which is on the current site by
+         * construction — it is the page open in the editor — so a site switch cannot reach it.
+         */
+        const reloadOnSiteChange = (): void => {
+            // Site is resolved asynchronously, so seed with whatever is known at init and only
+            // react to actual switches.
+            let knownSiteId = untracked(() => globalStore.currentSiteId());
+
+            siteEffect = effect(() => {
+                const currentSiteId = globalStore.currentSiteId();
+
+                if (currentSiteId === knownSiteId) {
+                    return;
+                }
+
+                knownSiteId = currentSiteId;
+
+                untracked(() => {
+                    dispatcher.dispatch(dotExperimentsListPageEvents.siteChanged(currentSiteId));
+
+                    // Same rule as the initial load: never query experiments on an install whose
+                    // Analytics app is not configured. Without this the switch would fire a
+                    // request behind the misconfiguration screen.
+                    if (store.healthStatus() === HealthStatusTypes.OK) {
+                        dispatcher.dispatch(dotExperimentsListPageEvents.loadExperiments());
+                    }
+                });
+            });
+        };
+
+        /**
+         * The panel's equivalent of the two above: it follows the editor's page instead of the
+         * address and the site.
+         *
+         * Reads **only** `pageId`. A language change therefore cannot reach it by construction
+         * rather than by a guard someone could later remove — which is the point, because
+         * refetching on a language change would re-request a provably identical set, and resetting
+         * would discard the editor's view state for no change in the answer (FR-034a, D10). The
+         * language is still carried into the state, as return context for the variant round trip.
+         */
+        const followTheEditorsPage = (): void => {
+            let knownPageId: string | null | undefined;
+
+            rescopeEffect = effect(() => {
+                const pageId = panel?.pageId() ?? null;
+
+                if (pageId === knownPageId) {
+                    return;
+                }
+
+                const isFirstScope = knownPageId === undefined;
+                knownPageId = pageId;
+
+                untracked(() => {
+                    dispatcher.dispatch(
+                        dotExperimentsListPageEvents.scopedToPage({
+                            pageId,
+                            languageId: panel?.languageId() ?? null
+                        })
+                    );
+
+                    // The first scope is followed by the health gate, which owns the first fetch.
+                    // Every later one is a page the editor navigated to, and the gate has already
+                    // answered — so this is the only thing that would reload the list.
+                    if (!isFirstScope && store.healthStatus() === HealthStatusTypes.OK) {
+                        dispatcher.dispatch(dotExperimentsListPageEvents.loadExperiments());
+                    }
+                });
+            });
+        };
+
         return {
             onInit() {
-                // Hydrate before the first fetch so the initial render already honours the URL.
-                dispatcher.dispatch(
-                    dotExperimentsListPageEvents.hydratedFromUrl(
-                        parseViewState(fromRouteParams(route.snapshot.queryParams))
-                    )
-                );
-                // The health gate owns the first fetch: the list is only requested once
-                // Analytics reports `OK`.
+                if (panel) {
+                    followTheEditorsPage();
+                } else {
+                    hydrateFromUrl();
+                }
+
+                // The health gate owns the first fetch in both modes: the list is only requested
+                // once Analytics reports `OK`.
                 dispatcher.dispatch(dotExperimentsListPageEvents.checkHealth());
 
-                /**
-                 * Back/Forward re-hydration. `writeUrl` above uses `Location.go` (which does not
-                 * notify), so only a real popstate reaches here — re-read the restored URL and fold it back in. No reload is
-                 * needed: paging, sorting and filtering are all derived client-side.
-                 */
-                locationSubscription = location.subscribe((event) => {
-                    const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
+                if (panel) {
+                    return;
+                }
 
-                    dispatcher.dispatch(
-                        dotExperimentsListPageEvents.hydratedFromUrl(parseViewState(params))
-                    );
-                });
-
-                /**
-                 * Mirrors the view state back into the URL, so the list is shareable and
-                 * survives a reload. Lives here rather than in the component because the store
-                 * already owns the other half of this contract — it parses the URL on entry and
-                 * on popstate — and splitting read from write invites the two to drift.
-                 */
-                syncUrlEffect = effect(() => {
-                    const queryParams = toQueryParams({
-                        filter: store.filter(),
-                        selectedStatuses: store.selectedStatuses(),
-                        selectedGoals: store.selectedGoals(),
-                        page: store.page(),
-                        perPage: store.perPage(),
-                        selectedPageId: store.selectedPageId(),
-                        selectedPageUrl: store.selectedPageUrl(),
-                        languageId: store.languageId(),
-                        orderBy: store.orderBy(),
-                        direction: store.direction()
-                    });
-
-                    untracked(() => writeUrl(queryParams));
-                });
-
-                // Site is resolved asynchronously, so seed with whatever is known at init and only
-                // react to actual switches.
-                let knownSiteId = untracked(() => globalStore.currentSiteId());
-
-                siteEffect = effect(() => {
-                    const currentSiteId = globalStore.currentSiteId();
-
-                    if (currentSiteId === knownSiteId) {
-                        return;
-                    }
-
-                    knownSiteId = currentSiteId;
-
-                    untracked(() => {
-                        dispatcher.dispatch(
-                            dotExperimentsListPageEvents.siteChanged(currentSiteId)
-                        );
-
-                        // Same rule as the initial load: never query experiments on an install
-                        // whose Analytics app is not configured. Without this the switch would
-                        // fire a request behind the misconfiguration screen.
-                        if (store.healthStatus() === HealthStatusTypes.OK) {
-                            dispatcher.dispatch(dotExperimentsListPageEvents.loadExperiments());
-                        }
-                    });
-                });
+                subscribeToPopstate();
+                mirrorViewStateToUrl();
+                reloadOnSiteChange();
             },
             onDestroy() {
                 siteEffect?.destroy();
                 syncUrlEffect?.destroy();
+                rescopeEffect?.destroy();
                 locationSubscription?.unsubscribe();
             }
         };

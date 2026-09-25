@@ -9,6 +9,8 @@ import {
 
 import {
     ADD_TO_BUNDLE_ACTION_ID,
+    DELETE_FOLDER_ACTION_ID,
+    eligibleForDelete,
     eligibleContentlets,
     excludeFolders,
     getQuickActions,
@@ -175,10 +177,15 @@ describe('action-center utils', () => {
 
         it('should offer only the folder-capable actions for a folder-only selection', () => {
             // Add to Bundle and Push Publish both resolve a folder identifier server-side; the rest
-            // are contentlet-only, so a folder-only selection must not offer them.
+            // are contentlet-only, so a folder-only selection must not offer them. Delete joins
+            // them as of #37063 — folder-only, and the only destructive one.
             const ids = getQuickActions([actionableFolder('f1')]).map((action) => action.id);
 
-            expect(ids).toEqual([ADD_TO_BUNDLE_ACTION_ID, PUSH_PUBLISH_ACTION_ID]);
+            expect(ids).toEqual([
+                ADD_TO_BUNDLE_ACTION_ID,
+                PUSH_PUBLISH_ACTION_ID,
+                DELETE_FOLDER_ACTION_ID
+            ]);
         });
 
         it('should key the folder-capable actions on identifiers, since a folder has no inode', () => {
@@ -1028,5 +1035,103 @@ describe('action-center utils', () => {
 
             expect(toPathToMove(toHostFolderValue(path))).toBe(path);
         });
+    });
+});
+
+/**
+ * Bulk folder delete's entry in the quick-action registry (#37063 US1, US7).
+ *
+ * Written before the registry entry exists (T008 before T017). The point of putting Delete in the
+ * registry at all is that badge and payload come out of one pass, so the row cannot promise a count
+ * the submission then contradicts.
+ */
+describe('Delete (bulk folder delete, #37063)', () => {
+    const deleteAction = (items: DotContentDriveItem[]) =>
+        getQuickActions(items).find((action) => action.id === DELETE_FOLDER_ACTION_ID);
+
+    it('should be offered for a folder-only selection', () => {
+        expect(deleteAction([actionableFolder('f1')])).toBeDefined();
+    });
+
+    it('should act on the folders in a mixed selection, and count only those', () => {
+        // A stray file in the selection must not withhold the action — that reads as broken. It
+        // acts on the folders and says how many (FR-003).
+        const items = [
+            contentlet({ inode: 'a', identifier: 'id-a' }),
+            actionableFolder('f1'),
+            actionableFolder('f2')
+        ];
+
+        const action = deleteAction(items);
+
+        expect(action?.eligibleInodes).toEqual(['f1', 'f2']);
+        expect(action?.count).toBe(2);
+    });
+
+    it('should not be offered when the selection holds no folders at all', () => {
+        // Nothing for it to act on. A disabled row over a contentlet-only selection is noise.
+        expect(deleteAction([contentlet({ inode: 'a' })])).toBeUndefined();
+    });
+
+    it('should key on identifiers, since a folder has no inode', () => {
+        expect(deleteAction([actionableFolder('id-f1')])?.eligibleInodes).toEqual(['id-f1']);
+    });
+
+    it('should not be marked as coming soon', () => {
+        // It is wired. A disabled row with a tooltip would be the honest state only if it were not.
+        expect(deleteAction([actionableFolder('f1')])?.comingSoon).toBe(false);
+    });
+});
+
+/**
+ * Delete's permission gate (#37063 US7).
+ *
+ * Gated exactly as the shipped single-folder delete in the context menu is — EDIT **and**
+ * EDIT_PERMISSIONS — which is in turn what `FolderAPIImpl.delete` enforces server-side. Three
+ * places agreeing beats a fourth opinion.
+ */
+describe('eligibleForDelete (#37063)', () => {
+    const withPermissions = (...permissions: string[]) =>
+        ({ type: 'folder', identifier: 'f1', permissions }) as unknown as DotContentDriveItem;
+
+    it('should allow a folder the author may edit and re-permission', () => {
+        expect(eligibleForDelete(withPermissions('EDIT', 'EDIT_PERMISSIONS'))).toBe(true);
+    });
+
+    it('should refuse a folder the author may edit but not re-permission', () => {
+        expect(eligibleForDelete(withPermissions('EDIT'))).toBe(false);
+    });
+
+    it('should refuse a folder the author may only read', () => {
+        expect(eligibleForDelete(withPermissions('READ'))).toBe(false);
+    });
+
+    it('should stay permissive when rights are UNKNOWN', () => {
+        // `permissions` is `undefined` when the search did not request them, which is distinct from
+        // an empty array meaning "the author holds none". Withholding the action on absent data
+        // would hide Delete wherever a producer did not opt in; the server refuses per folder
+        // regardless (FR-005).
+        expect(eligibleForDelete({ type: 'folder', identifier: 'f1' } as DotContentDriveItem)).toBe(
+            true
+        );
+    });
+
+    it('should refuse when the author explicitly holds no rights', () => {
+        expect(eligibleForDelete(withPermissions())).toBe(false);
+    });
+
+    it('should offer Delete for a selection the author may only PARTLY delete', () => {
+        // The gate is whole-selection. A mixed selection is submitted whole and the refusals come
+        // back per folder — silently shrinking a destructive action the author explicitly selected
+        // is the worse failure (FR-004a).
+        const items = [withPermissions('EDIT', 'EDIT_PERMISSIONS'), withPermissions('READ')];
+
+        expect(getQuickActions(items).some((a) => a.id === DELETE_FOLDER_ACTION_ID)).toBe(true);
+    });
+
+    it('should withhold Delete only when the author may delete NONE of them', () => {
+        const items = [withPermissions('READ'), withPermissions('READ')];
+
+        expect(getQuickActions(items).some((a) => a.id === DELETE_FOLDER_ACTION_ID)).toBe(false);
     });
 });

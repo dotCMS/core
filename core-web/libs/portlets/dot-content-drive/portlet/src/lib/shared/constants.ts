@@ -5,7 +5,13 @@ import {
 } from '@dotcms/dotcms-models';
 import { CHIP_FILTER_SCROLL_HEIGHT, SYSTEM_HOST_ID } from '@dotcms/ui';
 
-import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
+import {
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE,
+    DotContentDrivePage,
+    DotContentDrivePagination,
+    DotContentDriveSearchScope,
+    DotContentDriveSortOrder
+} from './models';
 
 // We only need the host and the identifier from this, the other properties are mostly to comply with SiteEntity interface
 export const SYSTEM_HOST: DotSite = {
@@ -48,6 +54,17 @@ export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 200;
 /** Minimum length the folder-search `name` filter accepts; shorter values are rejected with a 400. */
 export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;
 
+/**
+ * The search scope a drive starts on. All Fields is the no-regression choice: a user who does
+ * nothing keeps exactly the results they got before the control existed, and the narrower, cheaper
+ * path is opt-in.
+ */
+export const DEFAULT_SEARCH_SCOPE: DotContentDriveSearchScope =
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE.ALL_FIELDS;
+
+/** The key the search scope travels under, in the filter state and in the address. */
+export const SEARCH_SCOPE_FILTER_KEY = 'searchScope';
+
 export const DEFAULT_SORT = {
     field: 'modDate',
     order: DotContentDriveSortOrder.DESC
@@ -73,6 +90,16 @@ export const DEFAULT_PATH = undefined;
  * existing.
  */
 export const ROOT_PATH = '/';
+
+/**
+ * The location value that means System Host rather than a place inside the current site.
+ *
+ * A reserved word can never be mistaken for a folder, because every real path begins with `/` and
+ * this does not. That is what lets one value in the URL say all four things the sidebar can
+ * select — absent for all site content, `/` for the site root, a path for a folder, and this —
+ * without a second value beside it that could disagree.
+ */
+export const SYSTEM_HOST_PATH = 'SYSTEM_HOST';
 
 export const DEFAULT_PAGE: DotContentDrivePage = {
     hasMoreContent: true,
@@ -171,23 +198,28 @@ export const DIALOG_TYPE = {
 } as const;
 
 /**
- * Root styles for the Action Center dialog.
+ * Root sizing for the Action Center dialog, as classes rather than inline styles.
  *
  * Fixed height so the content box has something to flex against — without it the column sizes to
- * content and the body never scrolls. `display: flex` / `flex-direction: column` / `overflow: hidden`
- * are required: the theme gives `.p-dialog-content` `flex-grow: 1` and the header/footer
- * `flex-shrink: 0`, but `.p-dialog` itself is not a flex container — without that, `height: 80vh`
- * does not constrain the content and the whole dialog (footer included) grows past the viewport.
+ * content and the body never scrolls.
+ *
+ * **Classes, not `[style]`, and that is the whole point.** One `p-dialog` serves every dialog type
+ * in this portlet, so whatever styles a type applies have to come back off when the next type opens.
+ * PrimeNG's dialog root carries `[style]="sx('root')"` *and* `[ngStyle]="style"` on the same
+ * element; NgStyle's additions land, but its removals are overwritten by the template's own style
+ * map on the next change detection. The result was that the Action Center's `width`/`height` stayed
+ * on the root for the rest of the session — open the workflow center once and Folder Settings was
+ * sized wrong from then on. `[styleClass]` feeds `[class]`, an ordinary Angular class binding that
+ * reconciles properly. The content box is unaffected: it has `[ngStyle]` alone, nothing competing.
+ *
+ * `display: flex` and `flex-direction: column` are deliberately absent — `sx('root')` already sets
+ * both inline, which no class could override anyway.
+ *
+ * `max-h-[80vh]!` is the one that needs `!`: the theme puts `max-height: 90%` on `.p-dialog`, and
+ * a bare utility only ties with it on specificity.
  */
-export const ACTION_CENTER_DIALOG_STYLE = {
-    width: '42rem',
-    maxWidth: '92vw',
-    height: '80vh',
-    maxHeight: '80vh',
-    display: 'flex',
-    'flex-direction': 'column',
-    overflow: 'hidden'
-} as const;
+export const ACTION_CENTER_DIALOG_CLASS =
+    'w-168 max-w-[92vw] h-[80vh] max-h-[80vh]! overflow-hidden';
 
 /**
  * Content-box styles for the Action Center dialog — the dialog's only scroll container.

@@ -28,8 +28,9 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ContentTypeRelationshipField,
     DotCMSContentlet,
-    DotCMSContentTypeField,
+    DotCMSFieldTypes,
     DotLanguage,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
@@ -43,7 +44,6 @@ import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { AddRelationshipsComponent } from './../add-relationships/add-relationships.component';
 
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
-import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
@@ -68,6 +68,13 @@ import type { DotEditContentSidePanelComponent } from '../../../../components/do
     ],
     templateUrl: './dot-relationship-field.component.html',
     styleUrl: './dot-relationship-field.component.scss',
+    host: {
+        // The field's value is a collection, so no single control can carry `<label for>`. The
+        // widget is the named thing, via the label's id. No aria-required: ARIA defines that
+        // attribute on radiogroup, not on a plain group.
+        role: 'group',
+        '[attr.aria-labelledby]': "'label-' + $field().variable"
+    },
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [
         RelationshipFieldStore,
@@ -184,7 +191,7 @@ export class DotRelationshipFieldComponent
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeRelationshipField>({ alias: 'field' });
 
     /**
      * DotCMS Contentlet
@@ -417,9 +424,12 @@ export class DotRelationshipFieldComponent
         }
 
         const contentType = this.store.contentType();
+        const relationships = this.store.relationships();
 
-        // Don't open dialog if contentType or its ID is null (invalid field data)
-        if (!contentType?.id) {
+        // Don't open dialog if contentType or its ID is null (invalid field data), nor without
+        // the relationship descriptor: `prepareField` publishes both together, so either being
+        // absent means the field never loaded and there is nothing to pick against.
+        if (!contentType?.id || !relationships) {
             return;
         }
 
@@ -464,10 +474,13 @@ export class DotRelationshipFieldComponent
                 // does not return — another locale, a later page, an index that has not caught up
                 // (ADR-0018) — is still related when the editor confirms.
                 selected: this.store.data(),
-                cardinality: this.$field().relationships?.cardinality,
+                // From the store, not the field: `prepareField` is what validated these, and the
+                // guard above means a field whose `relationships` the server left unusable never
+                // gets this far.
+                cardinality: relationships.cardinality,
                 parentContentTypeId: this.$field().contentTypeId,
                 fieldVariable: this.$field().variable,
-                isParentField: this.$field().relationships?.isParentField,
+                isParentField: relationships.isParentField,
                 currentContentIdentifier: contentlet?.identifier ?? null,
                 contentletContext: {
                     languageId:
@@ -530,7 +543,8 @@ export class DotRelationshipFieldComponent
      */
     async showCreateNewContentDialog(): Promise<void> {
         const contentType = this.store.contentType();
-        if (this.$isDisabled() || !contentType) {
+        const relationships = this.store.relationships();
+        if (this.$isDisabled() || !contentType || !relationships) {
             return;
         }
 
@@ -544,7 +558,10 @@ export class DotRelationshipFieldComponent
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
-                isParent: this.$field().relationships?.isParentField ?? true
+                // The descriptor `prepareField` published, which already applied the parent-side
+                // default for a payload that omitted the flag. This used to re-apply `?? true`
+                // over the raw field, in a second place, from data nothing had checked.
+                isParent: relationships.isParentField
             },
             onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship
@@ -661,7 +678,7 @@ export class DotRelationshipFieldComponent
      * @param contentlet - The contentlet to initialize the store with.
      */
     readonly initialize = signalMethod<{
-        field: DotCMSContentTypeField;
+        field: ContentTypeRelationshipField;
         contentlet: DotCMSContentlet;
         targetLanguageId?: number;
         targetLanguage?: DotLanguage;
@@ -676,6 +693,6 @@ export class DotRelationshipFieldComponent
     readonly #hasHostFolderField = computed(() => {
         const fields = this.#editContentStore.contentType()?.fields ?? [];
 
-        return fields.some((f) => f.fieldType === FIELD_TYPES.HOST_FOLDER);
+        return fields.some((f) => f.fieldType === DotCMSFieldTypes.HOST_FOLDER);
     });
 }

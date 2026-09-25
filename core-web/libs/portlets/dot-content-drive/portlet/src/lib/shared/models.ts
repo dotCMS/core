@@ -1,6 +1,7 @@
 import {
     DotBatchItemResult,
     DotBulkUploadFailureReason,
+    DotFolderDeleteFailureReason,
     DotCMSContentTypeField,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
@@ -48,6 +49,25 @@ export enum DotContentDriveStatus {
 }
 
 /**
+ * Which fields a Content Drive search term is matched against.
+ *
+ * Not to be confused with a *browse* scope, which says where you are browsing. A browse scope says
+ * where you are; a search scope says how a search reads what is there.
+ *
+ * `as const` rather than a TS `enum`, per TYPESCRIPT_STANDARDS.md. The values are the wire contract
+ * and must match the server's `SearchScope`.
+ */
+export const DOT_CONTENT_DRIVE_SEARCH_SCOPE = {
+    /** The term is matched against every indexed field. The default, and today's behaviour. */
+    ALL_FIELDS: 'ALL_FIELDS',
+    /** The term is matched against the contentlet title only. */
+    TITLE: 'TITLE'
+} as const;
+
+export type DotContentDriveSearchScope =
+    (typeof DOT_CONTENT_DRIVE_SEARCH_SCOPE)[keyof typeof DOT_CONTENT_DRIVE_SEARCH_SCOPE];
+
+/**
  * The sort order of the content drive.
  *
  * @export
@@ -89,7 +109,16 @@ export interface DotContentDriveSort {
  */
 export interface DotContentDriveInit {
     currentSite: DotSite;
-    path: string;
+    /**
+     * The browsed location, or `undefined` when the URL carries none (`DEFAULT_PATH`).
+     *
+     * Declared as a required property holding `string | undefined` rather than an optional
+     * `path?: string`. The difference matters here: this interface is extended by
+     * {@link DotContentDriveState}, and an optional property makes the *signal* optional, so
+     * every `store.path()` call becomes "cannot invoke possibly undefined". This form keeps the
+     * signal required and puts the uncertainty where it actually lives, in the value.
+     */
+    path: string | undefined;
     filters: DotContentDriveFilters;
     isTreeExpanded: boolean;
 }
@@ -142,18 +171,8 @@ export interface DotContentDriveDialog {
  * progress instead of offering to fire it again.
  */
 export interface DotContentDriveActionExecution {
-    /** Already-resolved action label, not an i18n key — it goes straight into the indicator. */
-    actionName: string;
     /** Number of contentlets the run was fired over. */
     total: number;
-    /**
-     * What the run is being applied to, when that is one nameable thing.
-     *
-     * Lets a single-item run read "Applying **Publish** to *My Page*" instead of "to 1 item(s)".
-     * Like `actionName` it reaches the indicator's `[innerHTML]`, and unlike `actionName` it is
-     * content the author typed, so escaping it is not optional.
-     */
-    targetLabel?: string;
     /**
      * Copy this run names itself with, instead of the indicator's "Applying X to Y" form.
      *
@@ -163,15 +182,6 @@ export interface DotContentDriveActionExecution {
      * operation. Resolved with the target label and the total as arguments, in that order.
      */
     labelKey?: string;
-    /**
-     * How many items are done, when the run reports it.
-     *
-     * **Optional on purpose.** Absent means the run does not report progress, which the indicator
-     * shows as activity without a position — never as zero. Progress readback is the backend's
-     * largest piece of hidden work, so the indicator must degrade to indeterminate rather than
-     * assume a number exists.
-     */
-    processed?: number;
 }
 
 /**
@@ -224,6 +234,19 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
  * Counts come from the response, never from the number of items submitted: both endpoints answer 200
  * with per-item failures inside, so an item locked by another user would otherwise read as a success.
  */
+/**
+ * Which vocabulary an outcome's failures speak.
+ *
+ * A named constant rather than the bare strings: the producer in `withActionExecution` and the
+ * consumer in the shell both test it, and two literals that must agree are two chances to typo one.
+ */
+export const OUTCOME_KIND = {
+    UPLOAD: 'upload',
+    FOLDER_DELETE: 'folderDelete'
+} as const;
+
+export type DotContentDriveOutcomeKind = (typeof OUTCOME_KIND)[keyof typeof OUTCOME_KIND];
+
 export interface DotContentDriveActionExecutionResult {
     actionName: string;
     /**
@@ -252,7 +275,17 @@ export interface DotContentDriveActionExecutionResult {
      * reasons are the point of a partial outcome, and the reason codes are what map to product copy
      * rather than the server's diagnostic message, which is never shown.
      */
-    failures?: DotBatchItemResult<DotBulkUploadFailureReason>[];
+    failures?: DotBatchItemResult<DotBulkUploadFailureReason | DotFolderDeleteFailureReason>[];
+    /**
+     * Which vocabulary {@link failures} speaks, and therefore which describer resolves it to copy.
+     *
+     * The reason sets do not overlap beyond `PERMISSION_DENIED` and `UNCLASSIFIED`, so guessing
+     * from the values would resolve a delete's `IN_USE` through upload's mapping and land on the
+     * unclassified fallback — a reason with copy, rendered as though it had none.
+     *
+     * Absent means upload, which is the only producer that predates this field.
+     */
+    outcomeKind?: DotContentDriveOutcomeKind;
     /**
      * The folders whose contents this run changed, as `//hostname/path` references.
      *
@@ -445,6 +478,16 @@ export type DotKnownContentDriveFilters = {
     // `withFilterDefaults`), so the value is explicit in the URL rather than implied by the key's
     // absence.
     sharedAssets: string;
+    // Which fields the `title` search term is matched against: 'TITLE' or 'ALL_FIELDS'.
+    //
+    // Note the key is NOT `title` — that one holds the search TERM. A scope whose value is 'TITLE'
+    // sitting beside a filter key named `title` is a collision waiting to happen, so they are kept
+    // apart deliberately.
+    //
+    // Present only when it differs from the default: `hasNonDefaultFilters` counts every key but
+    // two, so writing this one unconditionally would offer "Clear all" on a drive with nothing
+    // filtered at all.
+    searchScope: string;
 };
 
 /**
@@ -464,3 +507,28 @@ export type DotContentDriveFilters = Partial<DotKnownContentDriveFilters> & {
  * @interface DotContentDriveDecodeFunction
  */
 export type DotContentDriveDecodeFunction = (value: string) => string | string[];
+
+/** A single workflow filter entry: one scheme, optionally pinned to a step. */
+export interface WorkflowFilterEntry {
+    scheme: string;
+    step?: string;
+}
+
+/**
+ * One level of the folder hierarchy returned by {@link getFolderHierarchyByPath}.
+ * `path` is the parent path that was queried; `folders` are its direct children (first page).
+ */
+export type FolderTreeHierarchyLevel = {
+    path: string;
+    folders: DotFolder[];
+    totalEntries: number;
+    /**
+     * The 1-based page "Load more" should request next for this level, expressed in
+     * {@link FOLDER_TREE_PAGE_SIZE} units because that is what load-more pages by.
+     *
+     * Derived from the folders actually fetched, never from the rendered node count: a level can
+     * carry one extra folder that {@link resolveHierarchyAncestor} appended out of sort order, and
+     * counting that as paged-through would make load-more skip a page of real folders.
+     */
+    nextPage: number;
+};

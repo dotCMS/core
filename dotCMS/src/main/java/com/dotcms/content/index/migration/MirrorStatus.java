@@ -40,6 +40,21 @@ public record MirrorStatus(
         String recommendation,
         @JsonInclude(JsonInclude.Include.NON_NULL) Long databaseDocCount) {
 
+    /**
+     * Indexed percentage (see {@link #osIndexedPercent()}) below which an existing copy is treated as
+     * incomplete against the database. Not a tight bound on purpose: counts are taken while indexing
+     * may still be catching up, so this is meant to catch "3% of the content" — a reindex that never
+     * finished — not a handful of documents in flight. Shared by the reconciler's "incomplete" note
+     * and the Phase 3 health count so the two never disagree.
+     */
+    public static final double INCOMPLETE_INDEXED_THRESHOLD = 95.0;
+
+    /** Engine name as the report spells it, in {@code unreachableEngines} and in its messages. */
+    public static final String ELASTICSEARCH = "Elasticsearch";
+
+    /** Engine name as the report spells it, in {@code unreachableEngines} and in its messages. */
+    public static final String OPENSEARCH = "OpenSearch";
+
     /** A row with no database denominator — the shape the Site Search indices use. */
     public MirrorStatus(final String indexName, final IndexKind kind, final EngineCopy es,
             final EngineCopy os, final Verdict verdict, final String recommendation) {
@@ -56,7 +71,13 @@ public record MirrorStatus(
         /** The index exists on one engine but its counterpart is missing on the other. */
         MISSING_COUNTERPART,
         /** Both copies exist but hold a different number of documents. */
-        COUNT_DRIFT
+        COUNT_DRIFT,
+        /**
+         * One engine could not be read at all (unreachable, timing out, refusing the request), so the
+         * two copies could not be compared. Says nothing about whether the copy exists: the fix is to
+         * restore access and re-run the check, never to reindex on the strength of it (issue #37636).
+         */
+        UNMEASURED
     }
 
     /**
@@ -76,13 +97,45 @@ public record MirrorStatus(
      * @param alias        the alias this engine has attached to the index, or {@code null} when it has
      *                     none — and always {@code null} for the content indices, which are addressed by
      *                     name only. Omitted from the JSON when {@code null}.
+     * @param unavailableReason why this engine could not be read at all, or {@code null} when it was
+     *                     read. When set, {@code exists} is {@code false} and {@code docCount} is
+     *                     {@code -1} because nothing is known, not because the copy is gone — read this
+     *                     field before either of them (issue #37636). Omitted from the JSON when
+     *                     {@code null}.
      */
     public record EngineCopy(boolean exists, long docCount, String physicalName,
-            @JsonInclude(JsonInclude.Include.NON_NULL) String alias) {
+            @JsonInclude(JsonInclude.Include.NON_NULL) String alias,
+            @JsonInclude(JsonInclude.Include.NON_NULL) String unavailableReason) {
 
         /** An engine copy with no alias — the shape the content indices use. */
         public EngineCopy(final boolean exists, final long docCount, final String physicalName) {
-            this(exists, docCount, physicalName, null);
+            this(exists, docCount, physicalName, null, null);
+        }
+
+        /** An engine copy that was read, with the alias that engine attached to it. */
+        public EngineCopy(final boolean exists, final long docCount, final String physicalName,
+                final String alias) {
+            this(exists, docCount, physicalName, alias, null);
+        }
+
+        /**
+         * The copy on an engine that could not be read: existence unknown, count unmeasurable.
+         *
+         * @param physicalName the name to look for once the engine answers again (may be {@code null})
+         * @param alias        the alias, when known from elsewhere; usually {@code null}
+         * @param reason       why the engine could not be read, as reported to the operator
+         */
+        public static EngineCopy unavailable(final String physicalName, final String alias,
+                final String reason) {
+            return new EngineCopy(false, -1L, physicalName, alias, reason);
+        }
+
+        /**
+         * Whether this engine was actually read. Not a JSON property: {@code unavailableReason} already
+         * carries the same fact.
+         */
+        public boolean wasRead() {
+            return unavailableReason == null;
         }
     }
 
@@ -194,6 +247,49 @@ public record MirrorStatus(
      * counting does not — {@code -1 == -1} would otherwise read as a perfect match and the report
      * would answer "safe to advance" about a mirror it never actually measured. Unknown degrades to
      * drift, which is what {@code needsAttention()} and {@code safeToAdvance} act on.</p>
+     */
+    public static Verdict verdictFor(final EngineCopy es, final EngineCopy os) {
+        if (!es.wasRead() || !os.wasRead()) {
+            return Verdict.UNMEASURED;
+        }
+        return verdictFor(es.exists(), os.exists(), es.docCount(), os.docCount());
+    }
+
+    /**
+     * The recommendation for an {@link Verdict#UNMEASURED} row: which engine could not be read, why,
+     * and that the fix is access, not a rebuild.
+     *
+     * @param what a short label for the index family, e.g. {@code "content index"}
+     */
+    public static String unmeasuredAdvice(final String what, final String name, final EngineCopy es,
+            final EngineCopy os) {
+        final String engines;
+        final String reason;
+        if (!es.wasRead() && !os.wasRead()) {
+            engines = "Both Elasticsearch and OpenSearch";
+            reason = ELASTICSEARCH + ": " + es.unavailableReason() + "; " + OPENSEARCH + ": "
+                    + os.unavailableReason();
+        } else if (!es.wasRead()) {
+            engines = ELASTICSEARCH;
+            reason = es.unavailableReason();
+        } else {
+            engines = OPENSEARCH;
+            reason = os.unavailableReason();
+        }
+        return String.format("%s could not be reached (%s), so the two copies of %s '%s' could not "
+                + "be compared. Restore access and re-run this check; do not rebuild the index on the "
+                + "strength of this reading.", engines, reason, what, name);
+    }
+
+    /** A failure as the report shows it: the message, or the exception type when there is none. */
+    public static String reasonOf(final Throwable e) {
+        final String message = e.getMessage();
+        return message == null || message.isBlank() ? e.getClass().getSimpleName() : message;
+    }
+
+    /**
+     * Same classification from raw values, for two copies that were both read. A copy on an engine
+     * that could not be read goes through {@link #verdictFor(EngineCopy, EngineCopy)} instead.
      */
     public static Verdict verdictFor(final boolean esExists, final boolean osExists,
             final long esDocCount, final long osDocCount) {

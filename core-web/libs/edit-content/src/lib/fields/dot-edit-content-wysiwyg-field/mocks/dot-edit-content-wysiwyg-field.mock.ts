@@ -1,12 +1,21 @@
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    ContentTypeWYSIWYGField,
+    DotCMSClazzes,
+    DotCMSContentlet,
+    DotCMSDataTypes,
+    DotCMSFieldTypes
+} from '@dotcms/dotcms-models';
 
 export const WYSIWYG_VARIABLE_NAME = 'variable';
 
-export const WYSIWYG_MOCK: DotCMSContentTypeField = {
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+export const WYSIWYG_MOCK: ContentTypeWYSIWYGField = {
+    clazz: DotCMSClazzes.WYSIWYG,
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
-    dataType: 'TEXT',
-    fieldType: 'WYSIWYG',
+    // LONG_TEXT, not TEXT: a WYSIWYG field is long text in dotCMS. The mock claimed TEXT and
+    // nothing noticed, because the flat interface typed `dataType` as a bare string.
+    dataType: DotCMSDataTypes.LONG_TEXT,
+    fieldType: DotCMSFieldTypes.WYSIWYG,
+    forceIncludeInApi: false,
     fieldTypeLabel: 'WYSIWYG',
     fieldVariables: [],
     fixed: false,

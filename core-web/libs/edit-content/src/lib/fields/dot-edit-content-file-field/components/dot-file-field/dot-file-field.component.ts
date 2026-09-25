@@ -30,8 +30,10 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
+    ContentTypeBinaryField,
+    ContentTypeFileField,
+    ContentTypeImageField,
     DotCMSContentlet,
-    DotCMSContentTypeField,
     DotCMSTempFile,
     DotFileMetadata,
     DotGeneratedAIImage,
@@ -69,11 +71,7 @@ import { DotFileFieldUiMessageComponent } from './../dot-file-field-ui-message/d
 import { DotFormFileEditorComponent } from './../dot-form-file-editor/dot-form-file-editor.component';
 import { DotFormImportUrlComponent } from './../dot-form-import-url/dot-form-import-url.component';
 
-import {
-    INPUT_TYPE,
-    INPUT_TYPES,
-    UploadedFile
-} from '../../../../models/dot-edit-content-file.model';
+import { INPUT_TYPES, UploadedFile } from '../../../../models/dot-edit-content-file.model';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
 
@@ -106,6 +104,13 @@ const SVG_MIME_TYPE = 'image/svg+xml';
     ],
     templateUrl: './dot-file-field.component.html',
     styleUrls: ['./dot-file-field.component.scss'],
+    host: {
+        // No control here can carry `<label for>`: the file input is display:none and the rest are
+        // a dropzone and buttons. The widget is the named thing. No aria-required — ARIA defines it
+        // on radiogroup, not on a plain group.
+        role: 'group',
+        '[attr.aria-labelledby]': '$labelledBy() || null'
+    },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotFileFieldComponent
@@ -190,7 +195,14 @@ export class DotFileFieldComponent
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    /**
+     * The three field types this component serves. Narrowing the input here is what lets
+     * `field.fieldType` be passed straight to the store as an INPUT_TYPE, with no assertion:
+     * the arms pin it to exactly 'Binary' | 'File' | 'Image'.
+     */
+    $field = input.required<ContentTypeBinaryField | ContentTypeFileField | ContentTypeImageField>({
+        alias: 'field'
+    });
     /**
      * DotCMS Contentlet
      *
@@ -204,6 +216,15 @@ export class DotFileFieldComponent
      * @default false
      */
     $hasError = input.required<boolean>({ alias: 'hasError' });
+
+    /**
+     * The id of the field's label, when there is one.
+     *
+     * Empty by default on purpose: this component also compiles into the
+     * dotcms-binary-field-builder bundle the legacy Dojo editor loads, where no such label exists.
+     * An empty value leaves the attribute off rather than pointing at an id that is not on the page.
+     */
+    $labelledBy = input<string>('', { alias: 'labelledBy' });
     /**
      * When true, forces the drop zone and action buttons to stack vertically.
      * Use in narrow containers where side-by-side layout would clip the buttons.
@@ -377,7 +398,7 @@ export class DotFileFieldComponent
 
         this.store.initLoad({
             fieldVariable: field.variable,
-            inputType: field.fieldType as INPUT_TYPE,
+            inputType: field.fieldType,
             systemOptionsOverrides
         });
     }

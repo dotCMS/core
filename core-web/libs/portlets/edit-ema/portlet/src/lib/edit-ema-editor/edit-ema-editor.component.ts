@@ -56,6 +56,7 @@ import {
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
+    EXPERIMENT_RETURN_PARAM,
     FeaturedFlags,
     SeoMetaTags,
     SeoMetaTagsResult
@@ -92,7 +93,7 @@ import { EmaDragItem } from './components/ema-page-dropzone/types';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiService, DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
@@ -127,6 +128,7 @@ import {
     isAssetPath,
     isSamePageNavigation,
     measureCanvasAvailableSize,
+    scrollIframeToFragment,
     shouldNavigate
 } from '../utils';
 
@@ -487,7 +489,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
          */
         const { pageType } = this.uveStore.$reloadEditorContent();
         const isClientReady = untracked(() => this.uveStore.isClientReady());
-        const hasClientQuery = untracked(() => !!this.uveStore.requestMetadata());
+        const isGraphQLSourced = untracked(() => this.uveStore.pageAsset()?.source === 'graphql');
 
         untracked(() => {
             this.uveStore.resetEditorProperties();
@@ -498,13 +500,34 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        // Headless pages are driven entirely by the client's own GraphQL
-        // query. Never push a REST-sourced pageAsset into the iframe — it
-        // never carries the relationships that query defines, and the
-        // client already has its own correct render. Skip until a
-        // GraphQL-backed update (requestMetadata set from CLIENT_READY)
-        // is available; this effect re-fires once that happens.
-        if (pageType === PageType.HEADLESS && !hasClientQuery) {
+        // Headless pages are driven entirely by the client's own GraphQL query. Never push a
+        // REST-sourced pageAsset into the iframe — it never carries the relationships that
+        // query defines. Provenance is tracked explicitly on the stored asset (`source`)
+        // rather than inferred from whether a query was merely registered
+        // (`requestMetadata`): a registered-but-unresolved or aborted/failed GraphQL fetch
+        // leaves a stale REST asset in place while `requestMetadata` stays set, which the old
+        // `hasClientQuery` check could not distinguish from the resolved case (dotCMS/core#37097).
+        // Tell the client to reload itself from its own GraphQL source instead of pushing
+        // anything REST-shaped — but only ONCE per non-resolved streak. `$reloadEditorContent`
+        // re-emits on every CLIENT_READY re-announcement (setCustomClient unconditionally
+        // re-patches requestMetadata, which changes pageAsset()'s reference), including the one
+        // the reload we're about to send will itself trigger. Without this guard, a GraphQL
+        // fetch that stays unresolved (slow, aborted, or permanently failing) causes an
+        // uncapped reload → CLIENT_READY → reload loop, driving the client's iframe into
+        // continuous full navigations (regression found in #37097's post-merge QA).
+        if (pageType === PageType.HEADLESS && !isGraphQLSourced) {
+            const alreadyRequested = untracked(() => this.uveStore.pageReloadPending());
+
+            if (!alreadyRequested) {
+                untracked(() => this.uveStore.setPageReloadPending(true));
+                this.sendMessageToIframe(
+                    {
+                        name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    },
+                    this.host
+                );
+            }
+
             return;
         }
 
@@ -804,10 +827,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const url = new URL(href, this.window.location.origin);
         // Get the query parameters from the URL
-        const urlQueryParams = Object.fromEntries(url.searchParams.entries());
+        const urlQueryParams: Record<string, string | undefined> = Object.fromEntries(
+            url.searchParams.entries()
+        );
 
-        if (url.hostname !== this.window.location.hostname) {
-            this.window.open(href, '_blank');
+        if (!this.#isPageSiteHost(url.hostname)) {
+            // Cancel first: without it the anchor also navigates the iframe to the
+            // external site, which usually refuses to be framed and blanks the canvas.
+            e.preventDefault();
+            this.#openInNewTab(url.href);
 
             return;
         }
@@ -826,13 +854,79 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        // Same pathname (any hash/query): let the browser handle it (anchors, query-driven UI)
         if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
-            return;
+            // A hash with no query is an in-page anchor. Scroll the iframe
+            // ourselves: left to the browser, the link would load outside the
+            // editor instead of scrolling.
+            if (url.hash && !url.search) {
+                e.preventDefault();
+                scrollIframeToFragment(this.contentWindow, url.hash);
+
+                return;
+            }
+
+            // Anything else re-renders the page through the Page API below. Left to
+            // the browser, the iframe of a traditional page navigates on its own and
+            // comes back blank, and the new query never reaches the page render
+            // (#36999). The previous link's query is cleared first, so a link
+            // without a filter removes it instead of inheriting it through the
+            // `pageLoad` merge.
+            for (const key of this.#pageOwnedParamKeys()) {
+                if (!(key in urlQueryParams)) {
+                    urlQueryParams[key] = undefined;
+                }
+            }
         }
 
         this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
+    }
+
+    /**
+     * Tells whether a link's hostname points at the site of the page being edited.
+     *
+     * Pages often link to their own site with an absolute URL
+     * (`https://www.site.com/news?year=2025`), and the admin usually runs on a
+     * different host than the site. Those links must load inside the editor like
+     * relative ones, so the site's hostname and aliases count as internal, as
+     * well as the admin host itself.
+     *
+     * @param {string} hostname - Hostname of the clicked link
+     * @return {boolean} `true` when the link belongs to the edited site
+     * @memberof EditEmaEditorComponent
+     */
+    #isPageSiteHost(hostname: string): boolean {
+        const site = this.uveStore.pageAsset()?.site;
+        // Aliases are stored one per line, but commas are accepted too.
+        const aliases = (site?.aliases ?? '').split(/[\s,]+/);
+        const siteHosts = [this.window.location.hostname, site?.hostname, ...aliases];
+
+        return siteHosts.some((host) => !!host && host.toLowerCase() === hostname.toLowerCase());
+    }
+
+    /**
+     * Returns the query params of the current page that the editor does not own,
+     * such as a filter a page link added.
+     *
+     * `pageLoad` merges new params over the current ones, so these would otherwise
+     * survive every later load of the same page. Setting them to `undefined` clears
+     * them: `undefined` values are left out of both the Page API request and the
+     * admin URL. Editor params (language, persona, mode, variant, device…) are not
+     * returned, so they still follow the editor.
+     *
+     * @return {string[]} The keys of the page-owned params
+     * @memberof EditEmaEditorComponent
+     */
+    #pageOwnedParamKeys(): string[] {
+        const editorKeys = new Set<string>([
+            ...Object.values(DotPageAssetKeys),
+            EXPERIMENT_RETURN_PARAM,
+            'device',
+            'orientation',
+            'seo'
+        ]);
+
+        return Object.keys(this.uveStore.pageParams() ?? {}).filter((key) => !editorKeys.has(key));
     }
 
     /**

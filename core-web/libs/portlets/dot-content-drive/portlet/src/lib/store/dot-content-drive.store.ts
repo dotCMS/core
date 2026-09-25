@@ -32,6 +32,7 @@ import { withActionExecution } from './features/action-execution/withActionExecu
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
 import { withDragging } from './features/dragging/withDragging';
+import { withFolderDeleteRuns } from './features/folder-delete-runs/with-folder-delete-runs';
 import { withPushPublishEnvironments } from './features/push-publish-environments/withPushPublishEnvironments';
 import { withSidebar } from './features/sidebar/withSidebar';
 import { withSitePermissions } from './features/site-permissions/withSitePermissions';
@@ -40,18 +41,22 @@ import {
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
+    DEFAULT_SEARCH_SCOPE,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
     MAP_NUMBERS_TO_BASE_TYPES,
+    SEARCH_SCOPE_FILTER_KEY,
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
     SYSTEM_HOST,
+    SYSTEM_HOST_PATH,
     USER_SEARCHABLE_PREFIX
 } from '../shared/constants';
 import {
     DotContentDriveFilters,
     DotContentDriveInit,
     DotContentDrivePagination,
+    DotContentDriveSearchScope,
     DotContentDriveSort,
     DotContentDriveState,
     DotContentDriveStatus
@@ -60,8 +65,10 @@ import {
     buildUserSearchablePayload,
     decodeFilters,
     getUserSearchableActive,
+    listsFolders,
     parseWorkflowFilter,
     sortedEncodedFilters,
+    toRequestLocation,
     withFilterDefaults
 } from '../utils/functions';
 
@@ -125,8 +132,14 @@ export const DotContentDriveStore = signalStore(
                             userSearchableFields()
                         );
 
+                        // One value says where the user is; this is where it becomes the two the
+                        // endpoint expects. Mapped rather than interpolated: pasting the location
+                        // into the path yields `//demo.dotcms.comSYSTEM_HOST` for a reserved word.
+                        const location = toRequestLocation(currentSite()?.hostname, path());
+
                         return {
-                            assetPath: `//${currentSite()?.hostname}${path() || '/'}`,
+                            assetPath: location.assetPath,
+                            browseScope: location.browseScope,
                             // Off only when explicitly turned off. The key is seeded on every path
                             // that builds filters (see `withFilterDefaults`), so a missing one means
                             // state that predates the seeding, not a deliberate opt-out.
@@ -135,7 +148,19 @@ export const DotContentDriveStore = signalStore(
                                 SHARED_ASSETS_DISABLED_VALUE,
                             filters: {
                                 text: filters()?.title || '',
-                                filterFolders: true
+                                filterFolders: true,
+                                // Sent only when a term is present and the scope is not the
+                                // default. The server rejects a scope without text as the contract
+                                // error it is, and an omitted scope is processed exactly as it was
+                                // before this field existed — which is what leaves the AssetPicker,
+                                // the one other caller of this endpoint, untouched.
+                                ...(filters()?.title && filters()?.[SEARCH_SCOPE_FILTER_KEY]
+                                    ? {
+                                          searchScope: filters()?.[
+                                              SEARCH_SCOPE_FILTER_KEY
+                                          ] as DotContentDriveSearchScope
+                                      }
+                                    : {})
                             },
                             language: filters()?.languageId,
                             contentTypes: filters()?.contentType,
@@ -162,6 +187,11 @@ export const DotContentDriveStore = signalStore(
                             // and pinning it would contradict an Archived selection.
                             status: filters()?.status?.length ? filters()?.status : undefined,
                             showFolders:
+                                // Folders are not results in a listing that spans the whole site,
+                                // and System Host has none -- but a search matches names rather
+                                // than browsing a place, so all site content admits them again
+                                // once there is a term to match (#37479 FR-011).
+                                listsFolders(location.browseScope, !!filters()?.title?.length) &&
                                 page.hasMoreFolders &&
                                 !filters()?.baseType?.length &&
                                 !filters()?.contentType?.length &&
@@ -231,6 +261,10 @@ export const DotContentDriveStore = signalStore(
                     filters.title = searchValue;
                 } else {
                     delete filters.title;
+                    // The scope qualifies the term — with no term it is nonsense (FR-025), and a
+                    // leftover scope would keep "Clear all" lit on a drive with nothing filtered
+                    // (FR-020), the exact affordance setSearchScope deletes the key to avoid.
+                    delete filters[SEARCH_SCOPE_FILTER_KEY];
                 }
 
                 patchState(store, {
@@ -242,6 +276,26 @@ export const DotContentDriveStore = signalStore(
                     },
                     path: DEFAULT_PATH
                 });
+            },
+            /**
+             * Records which fields the search term is matched against.
+             *
+             * Written into the filter state only while it differs from the default, and deleted
+             * when it returns to it. That is not cosmetic: `hasNonDefaultFilters` counts every
+             * filter key except two, and that signal is what shows the chip bar's "Clear all". A
+             * scope written on every selection would offer "Clear all" the moment someone picked
+             * the default on a drive with nothing filtered at all.
+             *
+             * Mirrors how `setGlobalSearch` already deletes its own key when the term goes empty.
+             */
+            setSearchScope(scope: DotContentDriveSearchScope) {
+                if (scope === DEFAULT_SEARCH_SCOPE) {
+                    this.removeFilter(SEARCH_SCOPE_FILTER_KEY);
+
+                    return;
+                }
+
+                this.patchFilters({ [SEARCH_SCOPE_FILTER_KEY]: scope });
             },
             clearFilters() {
                 patchState(store, {
@@ -320,7 +374,7 @@ export const DotContentDriveStore = signalStore(
             setTreeForceCollapsed(isTreeForceCollapsed: boolean) {
                 patchState(store, { isTreeForceCollapsed });
             },
-            getFilterValue(filter: string) {
+            getFilterValue(filter: string): string | string[] | undefined {
                 return store.filters()[filter];
             },
             /**
@@ -494,11 +548,16 @@ export const DotContentDriveStore = signalStore(
                     return;
                 }
 
-                // Since we are using scored search for the title we need to sort by score desc
                 dotContentDriveService
                     .search(request)
                     .pipe(
                         take(1),
+                        // Deliberate deviation from the portlet convention of routing every HTTP
+                        // error through DotHttpErrorManagerService: a transient toast over an
+                        // empty grid reads as "found nothing", the exact misread that sent a
+                        // #37532 customer looking for a document that was there all along. The
+                        // ERROR status renders the shell's persistent banner + Retry instead (see
+                        // dot-content-drive-shell.component.html).
                         catchError(() => {
                             patchState(store, { status: DotContentDriveStatus.ERROR });
                             return EMPTY;
@@ -678,60 +737,153 @@ export const DotContentDriveStore = signalStore(
     withSidebar(),
     withDragging(),
     withActionExecution(),
+    withFolderDeleteRuns(),
     withPushPublishEnvironments(),
     withSitePermissions(),
-    withComputed(() => {
-        const globalStore = inject(GlobalStore);
+    // One `withComputed` for all of it, rather than the two or three these concerns would
+    // naturally be: `signalStore`'s typings overload to fifteen features, and this store is at
+    // that ceiling. Split it again and every `store.x` in the file silently degrades to `object`.
+    withComputed(
+        ({ path, currentSite, selectedNode, siteCanAddChildren, systemHostCanAddChildren }) => {
+            const globalStore = inject(GlobalStore);
+
+            // Named locally as well as returned, because the two below read them. A sibling computed
+            // is not on the object yet while that object is being built.
+            const $allSiteContentSelected = computed(() => !path());
+            const $systemHostSelected = computed(() => path() === SYSTEM_HOST_PATH);
+
+            return {
+                /**
+                 * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
+                 *
+                 * Read through the store rather than injected into the shell so the component keeps to
+                 * rendering: the ceilings are data, and every other piece of server state this portlet
+                 * shows arrives the same way. Null covers both a configuration that has not loaded and
+                 * an instance older than the field, which callers must treat alike — no readable
+                 * ceiling, so the refusing is left to the server.
+                 */
+                uploadCeilings: computed(() => globalStore.systemBulkUpload()),
+
+                /**
+                 * Whether the sidebar's first entry, all site content, is the selected one.
+                 *
+                 * Derived from the location rather than stored beside it: an absent location *is* what
+                 * all site content means, so a second piece of state saying so could only ever
+                 * disagree.
+                 */
+                $allSiteContentSelected,
+
+                /** Whether the sidebar's last entry, System Host, is the selected one. */
+                $systemHostSelected,
+
+                /**
+                 * The host that would receive new content here.
+                 *
+                 * Three paths ask this and used to answer it separately: the upload button, a drag and
+                 * drop, and the New menu. Each fell back to the current site when no folder was
+                 * selected, which is right everywhere except System Host, where the current site is
+                 * context rather than the destination. The New menu was worse than wrong — it built
+                 * its target by pasting the location onto the hostname, which with a reserved word
+                 * yields `demo.dotcms.comSYSTEM_HOST` and resolves to nothing.
+                 *
+                 * A folder, when one is selected, is still more specific than this and wins.
+                 */
+                $newContentHostId: computed(() =>
+                    $systemHostSelected() ? SYSTEM_HOST.identifier : currentSite()?.identifier
+                ),
+
+                /**
+                 * Whether the browsed folder accepts new children.
+                 *
+                 * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
+                 * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
+                 * the contentlet checkin path never checks it, so that one is gated here for consistency
+                 * rather than as a preview of a refusal — otherwise uploading would quietly allow what
+                 * creating a folder in the same place forbids.
+                 *
+                 * Computed here rather than in each consumer because three surfaces gate on it — the New
+                 * menu, the Upload button and the drop zone — and three copies of the folder-then-site
+                 * fallback would be three chances to disagree.
+                 *
+                 * A node with no permissions is the site root, whose parent is the host rather than a
+                 * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
+                 * in flight, and an instance too old to report the field. Starting disabled would flicker
+                 * the affordances off and on for the common case, and the server refuses the write anyway.
+                 */
+                $canAddChildren: computed(() => {
+                    // System Host is a real destination, so this is a permission answer — but about
+                    // System Host, not about whichever site the switcher happens to show.
+                    if ($systemHostSelected()) {
+                        return systemHostCanAddChildren() !== false;
+                    }
+
+                    // All site content spans every folder, so it names no single place — but content
+                    // added here lands on the site root, and that is whose permission decides. Asked
+                    // before the node below on purpose: selecting all site content clears the tree
+                    // selection, and a node left over from before it was cleared would be answering
+                    // about a folder that is not the destination.
+                    if ($allSiteContentSelected()) {
+                        return siteCanAddChildren() !== false;
+                    }
+
+                    const permissions = (
+                        selectedNode()?.data as { permissions?: string[] } | undefined
+                    )?.permissions;
+
+                    if (!permissions?.length) {
+                        return siteCanAddChildren() !== false;
+                    }
+
+                    return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
+                })
+            };
+        }
+    ),
+    withHooks((store) => {
+        let systemHostGate: EffectRef | undefined;
 
         return {
-            /**
-             * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
-             *
-             * Read through the store rather than injected into the shell so the component keeps to
-             * rendering: the ceilings are data, and every other piece of server state this portlet
-             * shows arrives the same way. Null covers both a configuration that has not loaded and
-             * an instance older than the field, which callers must treat alike — no readable
-             * ceiling, so the refusing is left to the server.
-             */
-            uploadCeilings: computed(() => globalStore.systemBulkUpload())
-        };
-    }),
-    withComputed(({ selectedNode, siteCanAddChildren }) => ({
-        /**
-         * Whether the browsed folder accepts new children.
-         *
-         * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
-         * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
-         * the contentlet checkin path never checks it, so that one is gated here for consistency
-         * rather than as a preview of a refusal — otherwise uploading would quietly allow what
-         * creating a folder in the same place forbids.
-         *
-         * Computed here rather than in each consumer because three surfaces gate on it — the New
-         * menu, the Upload button and the drop zone — and three copies of the folder-then-site
-         * fallback would be three chances to disagree.
-         *
-         * A node with no permissions is the site root, whose parent is the host rather than a
-         * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
-         * in flight, and an instance too old to report the field. Starting disabled would flicker
-         * the affordances off and on for the common case, and the server refuses the write anyway.
-         */
-        $canAddChildren: computed(() => {
-            const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
-                ?.permissions;
+            onInit() {
+                // Fed the signal rather than called on each site change: `rxMethod` re-runs on every
+                // emission and `switchMap` drops the previous site's in-flight answer, so switching
+                // sites quickly can never settle the gate with the wrong site's result.
+                store.loadSitePermissions(store.currentSite);
+                // Once, not per site: System Host belongs to none of them.
+                store.loadSystemHostPermissions();
+                // Fire-and-forget on purpose: the listing renders unmarked and marks appear when
+                // this answers. Nothing here is awaited, and a failure leaves the portlet exactly as
+                // it is today (FR-022, FR-023).
+                store.establishInFlightFolders();
 
-            if (!permissions?.length) {
-                return siteCanAddChildren() !== false;
+                /**
+                 * Sends a user who cannot read System Host back to all site content.
+                 *
+                 * The sidebar hides the entry, but hiding a button is not a gate: the location is
+                 * carried in the URL, so a link, a reload or a typed address reaches the scope
+                 * without ever touching the sidebar.
+                 *
+                 * Silently, and to all site content rather than an error: the user did nothing
+                 * wrong — usually they followed a colleague's link — and the drive has somewhere
+                 * sensible to put them. This is an affordance, not a defence; the listing enforces
+                 * read permissions on its own, so nothing here is what stops content leaking.
+                 *
+                 * Lives in the store's own hooks rather than in `withSidebar`, which composes
+                 * earlier and cannot see this answer.
+                 */
+                systemHostGate = effect(() => {
+                    const onSystemHost = store.$systemHostSelected();
+                    const canRead = store.systemHostCanRead();
+
+                    untracked(() => {
+                        if (onSystemHost && !canRead) {
+                            store.selectAllSiteContent();
+                        }
+                    });
+                });
+            },
+            onDestroy() {
+                systemHostGate?.destroy();
             }
-
-            return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
-        })
-    })),
-    withHooks((store) => ({
-        onInit() {
-            // Fed the signal rather than called on each site change: `rxMethod` re-runs on every
-            // emission and `switchMap` drops the previous site's in-flight answer, so switching
-            // sites quickly can never settle the gate with the wrong site's result.
-            store.loadSitePermissions(store.currentSite);
-        }
-    }))
+        };
+    })
 );

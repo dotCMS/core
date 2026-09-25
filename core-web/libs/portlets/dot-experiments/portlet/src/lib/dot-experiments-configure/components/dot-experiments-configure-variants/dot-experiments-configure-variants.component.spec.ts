@@ -29,6 +29,7 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { UVE_MODE } from '@dotcms/types';
 import { DotCopyButtonComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
@@ -121,6 +122,8 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
     let weightsField: FieldTree<VariantWeightFormRow[]>;
     /** The one navigation the card makes: the variant round-trip's outbound leg (#37005). */
     let navigate: MockInstance;
+    /** Panel mode is the presence of this store; `null` is the portlet. */
+    let panelStore: { suspendForVariant: Mock } | null;
     /** How a refused open-in-editor reaches the user, instead of a half-formed URL. */
     let messagePush: MockInstance;
 
@@ -128,7 +131,10 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         component: DotExperimentsConfigureVariantsComponent,
         // `componentProviders` replaces the card's own `providers`, which is exactly the
         // `DialogService` the Add Variant dialog is opened through.
-        componentProviders: [{ provide: DialogService, useFactory: () => dialogServiceMock }],
+        componentProviders: [
+            { provide: DialogService, useFactory: () => dialogServiceMock },
+            { provide: DotExperimentsPanelStore, useFactory: () => panelStore }
+        ],
         providers: [
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
             { provide: DotMessageService, useValue: messageServiceMock },
@@ -241,8 +247,17 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         return confirmation;
     };
 
+    /** Backs out of the confirmation opened by the last action and returns it. */
+    const rejectConfirmation = (): Confirmation => {
+        const confirmation = confirm.mock.calls[0][0] as Confirmation;
+        confirmation.reject?.();
+
+        return confirmation;
+    };
+
     beforeEach(() => {
         storeMock = createStoreMock();
+        panelStore = null;
         dialogClosed = new Subject<DotExperimentsAddVariantDialogResult | undefined>();
         dialogServiceMock = { open: vi.fn().mockReturnValue({ onClose: dialogClosed }) };
         spectator = createComponent();
@@ -1233,8 +1248,16 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
      * accident.
      */
     describe('read-only vs editable', () => {
+        // Accepts the confirmation if one was raised. A live experiment's variant now asks before
+        // it opens (#37308), so the navigation this reads happens on accept rather than on click.
+        // Statuses that ask nothing go straight through and `confirm` stays uncalled.
         const modeSentTo = (rowIndex: number): string => {
             clickButton('variant-edit-content-btn', rows()[rowIndex]);
+
+            if (confirm.mock.calls.length) {
+                acceptConfirmation();
+            }
+
             const [, options] = navigate.mock.calls[0];
 
             return options.queryParams.mode;
@@ -1257,26 +1280,61 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.EDIT);
         });
 
-        // FR-009. Every status but DRAFT, not just RUNNING: an ended or archived experiment's
-        // results are just as corruptible by an accidental edit.
-        describe.each([
-            DotExperimentStatus.RUNNING,
-            DotExperimentStatus.SCHEDULED,
-            DotExperimentStatus.ENDED,
-            DotExperimentStatus.ARCHIVED
-        ])('an experiment in %s', (status) => {
-            beforeEach(() => {
-                storeMock.experiment.mockReturnValue({ ...EXPERIMENT, status });
-                storeMock.$isLocked.mockReturnValue(true);
-                storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
-            });
+        /**
+         * #37308 (editing a variant while its experiment is live) splits what used to be one
+         * rule over every non-draft status.
+         *
+         * `$isLocked` is mocked **true** in both blocks below, and that is the whole point.
+         * It means `status !== DRAFT`, so it is true for all four statuses here — a mode still
+         * derived from it could not tell these two groups apart. Only a mode that reads the
+         * status itself passes both blocks, which is what makes this a test of the change rather
+         * than a restatement of it.
+         *
+         * `$isLocked` must also keep working elsewhere: it still freezes the configuration form's
+         * name, description, traffic allocation, goal, scheduling and Save. Widening it is not
+         * the fix.
+         */
+        describe.each([DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED])(
+            'an experiment in %s',
+            (status) => {
+                beforeEach(() => {
+                    storeMock.experiment.mockReturnValue({ ...EXPERIMENT, status });
+                    storeMock.$isLocked.mockReturnValue(true);
+                    storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+                });
 
-            it('should open every variant read-only', () => {
-                render();
+                it('should open a non-control variant editable', () => {
+                    render();
 
-                expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.PREVIEW);
-            });
-        });
+                    expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.EDIT);
+                });
+
+                it('should still open the control read-only', () => {
+                    render();
+
+                    expect(modeSentTo(CONTROL_ROW)).toBe(UVE_MODE.PREVIEW);
+                });
+            }
+        );
+
+        // A finished experiment has nothing left to measure, so the old rule stands here: its
+        // variants stay read-only whatever else changed.
+        describe.each([DotExperimentStatus.ENDED, DotExperimentStatus.ARCHIVED])(
+            'an experiment in %s',
+            (status) => {
+                beforeEach(() => {
+                    storeMock.experiment.mockReturnValue({ ...EXPERIMENT, status });
+                    storeMock.$isLocked.mockReturnValue(true);
+                    storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+                });
+
+                it('should open every variant read-only', () => {
+                    render();
+
+                    expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.PREVIEW);
+                });
+            }
+        );
 
         // The trap this whole describe exists to catch. On a draft, unlocked page
         // `$disabledTooltipKey()` is null — so a mode derived from it would call the control
@@ -1378,6 +1436,143 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
 
             expect(shareOf(0)).toBe('46%');
             expect(shareOf(1)).toBe('46%');
+        });
+    });
+    /**
+     * Confirming before a live variant opens for editing (#37308).
+     *
+     * The other half of unblocking the variant. Removing the block without telling anyone is the
+     * part that would do harm, so the editor is asked at the moment they choose the variant, and
+     * told what it costs — from this point the run measures different content.
+     *
+     * Asserted against the `ConfirmationService` spy rather than a rendered dialog, as the delete
+     * action's tests already are: the dialog is provided by the route, not by this component.
+     *
+     * One implementation covers both entry points. The editor's experiments panel mounts this same
+     * configure screen, so the portlet and the panel cannot diverge here — there is no second call
+     * site to keep in step.
+     */
+    describe('confirming before a live variant opens (#37308)', () => {
+        const VARIANT_ROW = 1;
+        const CONTROL_ROW = 0;
+
+        const liveExperiment = (status: DotExperimentStatus) => {
+            storeMock.experiment.mockReturnValue({ ...EXPERIMENT, status });
+            storeMock.$isLocked.mockReturnValue(true);
+        };
+
+        describe.each([DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED])(
+            'an experiment in %s',
+            (status) => {
+                beforeEach(() => liveExperiment(status));
+
+                it('should ask before opening a non-control variant', () => {
+                    render();
+
+                    clickButton('variant-edit-content-btn', rows()[VARIANT_ROW]);
+
+                    expect(confirm).toHaveBeenCalledTimes(1);
+                });
+
+                it('should not leave, and not touch the panel, when the editor backs out', () => {
+                    panelStore = { suspendForVariant: vi.fn() };
+                    spectator = createComponent();
+                    navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+                    const confirmationService = spectator.inject(ConfirmationService, true);
+                    confirm = vi
+                        .spyOn(confirmationService, 'confirm')
+                        .mockReturnValue(confirmationService) as MockInstance;
+                    liveExperiment(status);
+                    render();
+
+                    clickButton('variant-edit-content-btn', rows()[VARIANT_ROW]);
+                    rejectConfirmation();
+
+                    // Both, not just the navigation. Suspending runs first in the accept path, so
+                    // a confirmation wrapped around the navigation alone would leave a cancelled
+                    // attempt with the panel already suspended: nothing opened, but something
+                    // changed.
+                    expect(navigate).not.toHaveBeenCalled();
+                    expect(panelStore.suspendForVariant).not.toHaveBeenCalled();
+                });
+
+                it('should leave only once the editor accepts', () => {
+                    render();
+
+                    clickButton('variant-edit-content-btn', rows()[VARIANT_ROW]);
+                    expect(navigate).not.toHaveBeenCalled();
+
+                    acceptConfirmation();
+
+                    expect(navigate).toHaveBeenCalledTimes(1);
+                });
+
+                it('should ask again on a second attempt in the same session', () => {
+                    render();
+
+                    clickButton('variant-edit-content-btn', rows()[VARIANT_ROW]);
+                    acceptConfirmation();
+                    clickButton('variant-edit-content-btn', rows()[VARIANT_ROW]);
+
+                    // No preference, flag or remembered answer may suppress it.
+                    expect(confirm).toHaveBeenCalledTimes(2);
+                });
+
+                it('should not ask for the control variant', () => {
+                    render();
+
+                    clickButton('variant-edit-content-btn', rows()[CONTROL_ROW]);
+
+                    expect(confirm).not.toHaveBeenCalled();
+                });
+
+                it('should not ask when the kebab asks for a preview', () => {
+                    render();
+
+                    spectator.component.onRowMenuToggle(spectator.component.$rows()[VARIANT_ROW]);
+                    spectator.component
+                        .$rowMenuItems()
+                        .find(({ id }) => id === 'variant-preview')
+                        ?.command?.({} as never);
+
+                    // Preview is the safe gesture. Asking about it would put a question in front
+                    // of a risk the gesture does not take.
+                    expect(confirm).not.toHaveBeenCalled();
+                });
+            }
+        );
+
+        it('should not ask for a draft experiment', () => {
+            render();
+
+            clickButton('variant-edit-content-btn', rows()[VARIANT_ROW]);
+
+            // The ordinary case, and it carries none of the cost.
+            expect(confirm).not.toHaveBeenCalled();
+            expect(navigate).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    /**
+     * The variant round trip, from inside the UVE panel (#37478).
+     *
+     * The one door that still *is* a navigation, and must be: editing a variant means going to the
+     * editor on that variant. What the panel adds is that it remembers where the editor was, so the
+     * return lands on the same configuration instead of a fresh list (FR-021, FR-023, FR-025).
+     */
+    describe('panel mode (#37478)', () => {
+        it('should suspend the panel before leaving for the variant', () => {
+            panelStore = { suspendForVariant: vi.fn() };
+            spectator = createComponent();
+            navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+            render();
+
+            clickButton('variant-edit-content-btn', rows()[1]);
+
+            expect(panelStore.suspendForVariant).toHaveBeenCalledTimes(1);
+            // Still leaves — suspending is what makes coming back land where they were, and
+            // `close()` would discard exactly the state the return needs.
+            expect(navigate).toHaveBeenCalled();
         });
     });
 });

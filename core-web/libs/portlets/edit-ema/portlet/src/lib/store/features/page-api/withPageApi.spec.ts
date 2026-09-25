@@ -1,4 +1,10 @@
-import { patchState, signalStore, withFeature, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withFeature,
+    withState,
+    WritableStateSource
+} from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
@@ -12,18 +18,22 @@ import {
     DotPropertiesService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotLanguage } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, DotLanguage, EXPERIMENT_RETURN_PARAM } from '@dotcms/dotcms-models';
 import { withFlags } from '@dotcms/store';
 import { DotPageAssetLayoutRow, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 
 import { withPageApi } from './withPageApi';
 
-import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
+import {
+    DotPageApiParams,
+    DotPageApiService
+} from '../../../services/dot-page-api/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { PERSONA_KEY } from '../../../shared/consts';
 import { UVE_STATUS } from '../../../shared/enums';
 import { MOCK_RESPONSE_HEADLESS, ACTION_PAYLOAD_MOCK } from '../../../shared/mocks';
+import { SaveStylePropertiesPayload } from '../../../shared/models';
 import { IframeAccessMode, UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
 import { withPage } from '../page/withPage';
@@ -96,7 +106,8 @@ describe('withPageApi', () => {
                 save: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(UveIframeMessengerService, {
-                sendPageData: vi.fn()
+                sendPageData: vi.fn(),
+                reloadPage: vi.fn()
             }),
             {
                 provide: WINDOW,
@@ -126,6 +137,66 @@ describe('withPageApi', () => {
         spectator = createService();
         store = spectator.service;
         spectator.flushEffects();
+    });
+
+    /**
+     * The merge is what makes this editor feel like one screen: language, persona and mode follow
+     * the editor from page to page. The experiment params are not the editor's, they are the
+     * page's, and they were following too.
+     */
+    describe('pageLoad – what a different page keeps', () => {
+        const onAVariant = () =>
+            patchState(store as unknown as WritableStateSource<UVEState>, {
+                pageParams: {
+                    ...pageParamsBase,
+                    variantName: 'variant-b',
+                    experimentId: 'exp-1',
+                    [EXPERIMENT_RETURN_PARAM]: 'portlet'
+                }
+            });
+
+        /** What the Page API was actually asked for, typed so the assertions can read it. */
+        const askedFor = () => getSpy.mock.calls.at(-1)?.[0] as DotPageApiParams;
+
+        it('should drop the experiment params when the page changes', () => {
+            onAVariant();
+
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            const asked = askedFor();
+            expect(asked['url']).toBe('another-page');
+            expect(asked['variantName']).toBeUndefined();
+            expect(asked['experimentId']).toBeUndefined();
+            expect(asked[EXPERIMENT_RETURN_PARAM]).toBeUndefined();
+        });
+
+        /**
+         * The variant round trip reloads the *same* page to take the variant off, and the panel's
+         * own screens reload it to change language. Dropping on every load would make the editor
+         * unable to stay on a variant at all.
+         */
+        it('should keep them when the same page is loaded again', () => {
+            onAVariant();
+
+            store.pageLoad({ language_id: '2' });
+            spectator.flushEffects();
+
+            const asked = askedFor();
+            expect(asked['variantName']).toBe('variant-b');
+            expect(asked['experimentId']).toBe('exp-1');
+        });
+
+        it("should still carry the editor's own params to the new page", () => {
+            onAVariant();
+
+            store.pageLoad({ url: 'another-page' });
+            spectator.flushEffects();
+
+            const asked = askedFor();
+            expect(asked['language_id']).toBe('1');
+            expect(asked['mode']).toBe(UVE_MODE.EDIT);
+        });
     });
 
     describe('pageLoad – fetch vs GraphQL', () => {
@@ -278,6 +349,22 @@ describe('withPageApi', () => {
             expect(getSpy).toHaveBeenCalled();
         });
 
+        it('should tag pageAssetResponse.source as rest when using get()', () => {
+            store.pageLoad({ language_id: '1' });
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should tag pageAssetResponse.source as graphql when using getGraphQLPage()', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+
+            store.pageLoad({});
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+
         it('should reset editorSelected when loading a new page', () => {
             patchState(store, {
                 editorSelected: {
@@ -383,6 +470,91 @@ describe('withPageApi', () => {
                 })
             );
         });
+
+        it('should tag pageAssetResponse.source as rest when reloading via REST after layout save', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+            store.updateRows(MOCK_ROWS);
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should tag pageAssetResponse.source as graphql when reloading via GraphQL after layout save', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+            store.updateRows(MOCK_ROWS);
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+    });
+
+    describe('editorSave', () => {
+        it('should tag pageAssetResponse.source as rest when reloading via REST after save', () => {
+            store.editorSave([]);
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should tag pageAssetResponse.source as graphql when reloading via GraphQL after save', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+
+            store.editorSave([]);
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+    });
+
+    describe('saveStyleEditor — rollback provenance gate (#37097)', () => {
+        // The rollback path bypasses $handleReloadContentEffect entirely, calling
+        // iframeMessenger.sendPageData directly — it needs its own source check.
+        const setupHistory = (sourceOfPreviousSnapshot: 'rest' | 'graphql') => {
+            store.setPageAsset({
+                pageAsset: MOCK_RESPONSE_HEADLESS,
+                source: sourceOfPreviousSnapshot
+            });
+            // undo() requires historyPointer > 0, i.e. at least two entries — one to land on,
+            // one to move back from — so the "previous" snapshot must be pushed BEFORE the
+            // optimistic update, not just once overall.
+            store.addCurrentPageToHistory();
+            // Simulate the optimistic update that preceded the save attempt
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            store.addCurrentPageToHistory();
+        };
+
+        it('should not push (send UVE_RELOAD_PAGE instead) when the rolled-back asset is REST-sourced', () => {
+            setupHistory('rest');
+            vi.spyOn(spectator.inject(DotPageApiService), 'saveStyleProperties').mockReturnValue(
+                throwError(() => new Error('save failed'))
+            );
+            const iframeMessenger = spectator.inject(UveIframeMessengerService);
+
+            store
+                .saveStyleEditor({} as SaveStylePropertiesPayload)
+                .subscribe({ error: () => undefined });
+
+            expect(iframeMessenger.sendPageData).not.toHaveBeenCalled();
+            expect(iframeMessenger.reloadPage).toHaveBeenCalled();
+        });
+
+        it('should push the rolled-back asset when it is GraphQL-sourced', () => {
+            setupHistory('graphql');
+            vi.spyOn(spectator.inject(DotPageApiService), 'saveStyleProperties').mockReturnValue(
+                throwError(() => new Error('save failed'))
+            );
+            const iframeMessenger = spectator.inject(UveIframeMessengerService);
+
+            store
+                .saveStyleEditor({} as SaveStylePropertiesPayload)
+                .subscribe({ error: () => undefined });
+
+            expect(iframeMessenger.sendPageData).toHaveBeenCalled();
+            expect(iframeMessenger.reloadPage).not.toHaveBeenCalled();
+        });
     });
 
     describe('saveQuickEditFields', () => {
@@ -411,6 +583,50 @@ describe('withPageApi', () => {
             expect(saveContentletSpy).toHaveBeenCalledWith(
                 expect.objectContaining({ variantName: 'my-experiment-variant' })
             );
+        });
+
+        describe('rollback provenance gate (#37097)', () => {
+            const setupHistory = (sourceOfPreviousSnapshot: 'rest' | 'graphql') => {
+                store.setPageAsset({
+                    pageAsset: MOCK_RESPONSE_HEADLESS,
+                    source: sourceOfPreviousSnapshot
+                });
+                store.addCurrentPageToHistory();
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+                store.addCurrentPageToHistory();
+            };
+
+            it('should not push (send UVE_RELOAD_PAGE instead) when the rolled-back asset is REST-sourced', () => {
+                setupHistory('rest');
+                vi.spyOn(
+                    spectator.inject(DotWorkflowActionsFireService),
+                    'saveContentlet'
+                ).mockReturnValue(throwError(() => new Error('save failed')));
+                const iframeMessenger = spectator.inject(UveIframeMessengerService);
+
+                store
+                    .saveQuickEditFields({ inode: 'test-inode' })
+                    .subscribe({ error: () => undefined });
+
+                expect(iframeMessenger.sendPageData).not.toHaveBeenCalled();
+                expect(iframeMessenger.reloadPage).toHaveBeenCalled();
+            });
+
+            it('should push the rolled-back asset when it is GraphQL-sourced', () => {
+                setupHistory('graphql');
+                vi.spyOn(
+                    spectator.inject(DotWorkflowActionsFireService),
+                    'saveContentlet'
+                ).mockReturnValue(throwError(() => new Error('save failed')));
+                const iframeMessenger = spectator.inject(UveIframeMessengerService);
+
+                store
+                    .saveQuickEditFields({ inode: 'test-inode' })
+                    .subscribe({ error: () => undefined });
+
+                expect(iframeMessenger.sendPageData).toHaveBeenCalled();
+                expect(iframeMessenger.reloadPage).not.toHaveBeenCalled();
+            });
         });
     });
 
@@ -490,6 +706,40 @@ describe('withPageApi', () => {
 
             expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
             expect(store.pageAssetResponse()?.pageAsset).toEqual(MOCK_RESPONSE_HEADLESS);
+        });
+
+        it('should tag pageAssetResponse.source as rest when reloading without GraphQL metadata', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            vi.clearAllMocks();
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
+        });
+
+        it('should tag pageAssetResponse.source as graphql when reloading with GraphQL metadata', () => {
+            store.setCustomClient(graphqlRequestWithoutUrl);
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+            vi.clearAllMocks();
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('graphql');
+        });
+
+        it('should still tag pageAssetResponse.source as rest when getLanguagesUsedPage fails on a REST reload', () => {
+            store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS });
+
+            vi.spyOn(spectator.inject(DotLanguagesService), 'getLanguagesUsedPage').mockReturnValue(
+                throwError(() => ({ status: 500 }))
+            );
+
+            store.pageReload();
+            spectator.flushEffects();
+
+            expect(store.pageAssetResponse()?.source).toBe('rest');
         });
     });
 });

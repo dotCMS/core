@@ -10,6 +10,38 @@ import { MockComponent } from 'ng-mocks';
 import { Subject, of, throwError } from 'rxjs';
 import { describe, expect, vi } from 'vitest';
 
+/**
+ * The Experiments panel's chunk, under test control.
+ *
+ * The shell reaches the panel through a dynamic `import()`, so the only way to exercise what it
+ * does when that chunk never arrives is to make the module misbehave. A throwing getter rather
+ * than a rejecting factory: the factory's result is cached after the first call, and a test that
+ * depends on which of its siblings ran first is worth less than no test. The throw lands in the
+ * same place a failed fetch does — the `await` in `$experimentsPanelLoader`.
+ */
+const panelChunk = vi.hoisted(() => ({ shouldFail: false }));
+
+vi.mock('@dotcms/portlets/dot-experiments/portlet', async () => {
+    const { Component } = await import('@angular/core');
+
+    @Component({
+        selector: 'dot-experiments-panel',
+        standalone: true,
+        template: '<div data-testid="experiments-panel"></div>'
+    })
+    class MockExperimentsPanelComponent {}
+
+    return {
+        get DotExperimentsPanelComponent() {
+            if (panelChunk.shouldFail) {
+                throw new Error('Failed to fetch dynamically imported module');
+            }
+
+            return MockExperimentsPanelComponent;
+        }
+    };
+});
+
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -38,11 +70,18 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService, Site, SiteService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, DotPageToolUrlParams, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotExperimentStatus,
+    DotPageToolUrlParams,
+    FEATURE_FLAG_NOT_FOUND,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import {
     DotPageScannerReportComponent,
     DotPageToolsSeoComponent
 } from '@dotcms/portlets/dot-ema/ui';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
@@ -52,6 +91,7 @@ import {
     DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotcmsConfigServiceMock,
+    getExperimentMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
 
@@ -60,7 +100,7 @@ import { DotEmaShellComponent } from './dot-ema-shell.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
@@ -74,6 +114,7 @@ import {
 import { UVEStore } from '../store/dot-uve.store';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { UVEState } from '../store/models';
+import { getIsDefaultVariant } from '../utils';
 
 // Mock structuredClone for Jest environment (not available in jsdom)
 if (typeof globalThis.structuredClone === 'undefined') {
@@ -261,10 +302,14 @@ describe('DotEmaShellComponent', () => {
             MockComponent(DotPageToolsSeoComponent),
             MockComponent(DotPageScannerReportComponent)
         ],
+        // `componentProviders` REPLACES the component's own `providers` array rather than
+        // extending it, so anything the shell provides for itself has to be restated here or it
+        // is simply absent under test.
         componentProviders: [
             MessageService,
             UVEStore,
             ConfirmationService,
+            DotExperimentsPanelStore,
             mockProvider(DotContentTypeService),
             DotActionUrlService,
             DotMessageService,
@@ -1506,6 +1551,181 @@ describe('DotEmaShellComponent', () => {
         });
     });
 
+    /**
+     * The experiment warning banner (#37308).
+     *
+     * A live experiment no longer freezes the page, so the fact that one is running has to stay on
+     * screen while the editor works. A confirmation is answered once; this condition persists, and
+     * an editor back from a coffee break has no other way to know the run is still live.
+     *
+     * Deliberately unlike the lock banner in one respect: no close button and no dismissal state.
+     * Everything else about it mirrors that banner, including sitting above the body wrapper.
+     */
+    describe('Experiment banner (#37308)', () => {
+        const detectChangesAndFlush = async () => {
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+        };
+
+        // No spy restoration here, deliberately, matching the Lock banner describe above.
+        // `dotPageApiService` is shared across this file, and the suite installs its own mock on
+        // it; calling `mockRestore` on a spy layered over that removes *both* and hands later
+        // tests the real service. The Experiments panel tests below fail exactly that way. A
+        // blanket `vi.restoreAllMocks()` is worse still — it also resets the module-level
+        // `dotPropertiesServiceMock.getKey` those tests need to turn the switch on.
+
+        /** Reaches the component's protected banner signals. */
+        const bannerOf = (component: DotEmaShellComponent) =>
+            component as unknown as {
+                $showExperimentBanner: () => boolean;
+                $experimentWarningKey: () => string;
+            };
+
+        /** Puts an experiment of the given status on the page the shell is showing. */
+        const withExperiment = async (status: DotExperimentStatus | null) => {
+            await detectChangesAndFlush();
+            patchState(writableStore(), {
+                pageExperiment: status ? { ...getExperimentMock(0), status } : null
+            });
+            spectator.detectChanges();
+        };
+
+        it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED])(
+            'should render the banner while the experiment is %s',
+            async (status) => {
+                await withExperiment(status);
+
+                expect(spectator.query(byTestId('experiment-banner'))).not.toBeNull();
+            }
+        );
+
+        it.each([
+            DotExperimentStatus.DRAFT,
+            DotExperimentStatus.ENDED,
+            DotExperimentStatus.ARCHIVED
+        ])('should not render the banner for a %s experiment', async (status) => {
+            await withExperiment(status);
+
+            expect(spectator.query(byTestId('experiment-banner'))).toBeNull();
+        });
+
+        it('should not render the banner when the page has no experiment, or the lookup failed', async () => {
+            // The two are indistinguishable by design: a failed fetch leaves `pageExperiment`
+            // empty, and the banner must not invent a warning it cannot justify.
+            await withExperiment(null);
+
+            expect(spectator.query(byTestId('experiment-banner'))).toBeNull();
+        });
+
+        it('should use a different message key for running and scheduled', async () => {
+            // Asserted on the key the component selects, not on rendered text: this spec's
+            // DotMessageService mock answers every key with the same string, so comparing what
+            // appears on screen would pass for a banner using one shared message for both.
+            await withExperiment(DotExperimentStatus.RUNNING);
+            const running = bannerOf(spectator.component).$experimentWarningKey();
+
+            await withExperiment(DotExperimentStatus.SCHEDULED);
+            const scheduled = bannerOf(spectator.component).$experimentWarningKey();
+
+            // A running experiment is already measuring; a scheduled one has nothing yet to mix.
+            expect(running).toBe('uve.shell.experiment.running.edit.warning');
+            expect(scheduled).toBe('uve.shell.experiment.scheduled.edit.warning');
+        });
+
+        it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.SCHEDULED])(
+            'should not reuse the legacy keys that claim results are invalidated (%s)',
+            async (status) => {
+                await withExperiment(status);
+
+                // The legacy strings say the edit "may invalidate any results already collected".
+                // It does not, and saying so would push editors back to the workaround this issue
+                // exists to remove. The wording of the new keys is reviewed against
+                // `Language.properties`; what is checkable here is that the banner does not reach
+                // for the old ones.
+                const key = bannerOf(spectator.component).$experimentWarningKey();
+
+                expect(key).not.toBe('experiment.running.edit.confirmation');
+                expect(key).not.toBe('experiment.running.edit.lock.confirmation.note');
+                expect(key.startsWith('uve.shell.experiment.')).toBe(true);
+            }
+        );
+
+        it('should offer no way to dismiss it', async () => {
+            await withExperiment(DotExperimentStatus.RUNNING);
+
+            const banner = spectator.query(byTestId('experiment-banner'));
+
+            // `expect(...).not.toBeNull()` does not narrow the type, so assert before reaching in.
+            if (!banner) {
+                throw new Error('experiment banner should be rendered');
+            }
+
+            // The condition outlives any click, so there is nothing a close button could
+            // truthfully mean.
+            expect(banner.querySelector('[data-testid="close-message"]')).toBeNull();
+        });
+
+        it('should render below the lock banner when both apply', async () => {
+            vi.spyOn(dotPageApiService, 'get').mockReturnValue(
+                of({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: {
+                        ...MOCK_RESPONSE_HEADLESS.page,
+                        locked: true,
+                        lockedBy: 'other-user-id',
+                        lockedByName: 'Another User',
+                        canLock: true
+                    }
+                })
+            );
+            await withExperiment(DotExperimentStatus.RUNNING);
+
+            const lock = spectator.query(byTestId('message'));
+            const experiment = spectator.query(byTestId('experiment-banner'));
+
+            if (!lock || !experiment) {
+                throw new Error('both banners should be rendered when the page is locked');
+            }
+
+            // Order is a guaranteed property, not an accident of template layout: the lock is
+            // what stops them editing at all, so it has to be read first.
+            const position = lock.compareDocumentPosition(experiment);
+            expect(Boolean(position & Node.DOCUMENT_POSITION_FOLLOWING)).toBe(true);
+        });
+
+        it('should render for a user who can read the page but not edit it', async () => {
+            vi.spyOn(dotPageApiService, 'get').mockReturnValue(
+                of({
+                    ...MOCK_RESPONSE_HEADLESS,
+                    page: { ...MOCK_RESPONSE_HEADLESS.page, canEdit: false }
+                })
+            );
+            await withExperiment(DotExperimentStatus.RUNNING);
+
+            // The warning describes the page's state, not the viewer's rights.
+            expect(spectator.query(byTestId('experiment-banner'))).not.toBeNull();
+        });
+
+        it('should open the experiments panel in place, without navigating', async () => {
+            await withExperiment(DotExperimentStatus.RUNNING);
+            const panel = spectator.inject(DotExperimentsPanelStore, true);
+            // Stubbed rather than called through. What is under test is the shell's handler, not
+            // the store's own transition — and letting the real `openResults` run actually opens
+            // the panel, which loads its lazy chunk and leaves the module-level chunk mock in a
+            // state the Experiments panel tests further down depend on.
+            const openResults = vi.spyOn(panel, 'openResults').mockImplementation(() => undefined);
+            const navigate = vi.spyOn(spectator.inject(Router), 'navigate');
+
+            spectator.click(byTestId('experiment-banner-link'));
+
+            expect(openResults).toHaveBeenCalledWith(getExperimentMock(0).id);
+            // Leaving the page to look at the run would defeat the point of being able to edit
+            // during it.
+            expect(navigate).not.toHaveBeenCalled();
+        });
+    });
+
     describe('Layout structure', () => {
         it('should render the navigation bar inside the two-column body wrapper', async () => {
             spectator.detectChanges();
@@ -1583,6 +1803,7 @@ describe('DotEmaShellComponent', () => {
 
             afterEach(() => {
                 dotPropertiesServiceMock.getKey.mockReturnValue(of('false'));
+                panelChunk.shouldFail = false;
             });
 
             // T052 / FR-016. The exact href a build without this change produces.
@@ -1594,19 +1815,192 @@ describe('DotEmaShellComponent', () => {
                 );
             });
 
-            // T052 / FR-021, FR-021a, FR-022. Absolute, so `navigate()` does not prefix
-            // `edit-page`; and carrying only the page filter, since the list has no use for
-            // UVE's params.
-            it('should lead to the filtered site-wide list with the switch on', () => {
+            /**
+             * #37478, FR-001/FR-002. The item stops being a destination and becomes an action.
+             *
+             * This replaces #37005's assertion that it led to `/experiments` with query params:
+             * the experiments for this page now appear beside the canvas instead of somewhere
+             * the editor has to navigate back from. An item with no `href` is what
+             * `EditEmaNavigationBarComponent.navigate` already treats as an action, so the
+             * absence of the href *is* the mechanism, not an omission.
+             */
+            it('should become an action rather than a destination with the switch on', () => {
                 withSwitch(true);
 
-                expect(experimentsItem()?.href).toBe('/experiments');
-                expect(experimentsItem()?.queryParams).toEqual({
-                    pageId: MOCK_RESPONSE_HEADLESS.page.identifier,
-                    // The language the editor is on. Without it the list's back-link and the
-                    // Configure prefill have to guess which version of the page was meant.
-                    language_id: MOCK_RESPONSE_HEADLESS.viewAs.language.id
+                expect(experimentsItem()?.href).toBeUndefined();
+                expect(experimentsItem()?.queryParams).toBeUndefined();
+            });
+
+            // FR-001. Activating it opens the panel; nothing navigates.
+            it('should open the panel when the item is activated with the switch on', () => {
+                withSwitch(true);
+                const panel = spectator.inject(DotExperimentsPanelStore, true);
+
+                spectator.component.handleItemAction('experiments');
+
+                expect(panel.isOpen()).toBe(true);
+                expect(panel.view()).toBe('list');
+            });
+
+            /**
+             * That the panel reaches the screen at all, which nothing here asserted before: these
+             * tests watched the store and stopped there, so the whole mounting path — dynamic
+             * import, component class, `NgComponentOutlet` — was covered only by opening the
+             * editor and looking at it.
+             *
+             * `waitFor` rather than a fixed delay: the chunk is a promise, and how many turns of
+             * the microtask queue it takes is an implementation detail of the bundler, not
+             * something a test should encode.
+             */
+            it('should put the panel on screen once the editor opens it', async () => {
+                withSwitch(true);
+
+                spectator.component.handleItemAction('experiments');
+                spectator.flushEffects();
+
+                await vi.waitFor(() => {
+                    spectator.detectChanges();
+                    expect(spectator.query(byTestId('experiments-panel'))).not.toBeNull();
                 });
+            });
+
+            /**
+             * The one failure this panel can have before it exists. A deploy pointing at a hash
+             * the CDN has already dropped fails exactly here, and unreported it leaves the editor
+             * with an Experiments item that does nothing at all — no panel, no message, nothing in
+             * the console to chase.
+             *
+             * The close is asserted alongside the toast because it is part of the report, not
+             * tidying up: the store would otherwise still say open, and the loader only fires on
+             * that transition, so a second click would be swallowed and the editor could not even
+             * retry.
+             */
+            it('should report a chunk that never arrives, and not leave the panel open on nothing', async () => {
+                panelChunk.shouldFail = true;
+                withSwitch(true);
+
+                const add = vi.spyOn(spectator.inject(MessageService, true), 'add');
+                const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+                spectator.component.handleItemAction('experiments');
+                spectator.flushEffects();
+
+                await vi.waitFor(() => expect(add).toHaveBeenCalled());
+                spectator.detectChanges();
+
+                expect(add).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
+                expect(logged).toHaveBeenCalled();
+                expect(spectator.inject(DotExperimentsPanelStore, true).isOpen()).toBe(false);
+                expect(spectator.query(byTestId('experiments-panel'))).toBeNull();
+            });
+
+            /**
+             * The entry point answers with where the editor already is.
+             *
+             * Standing on a variant and asking for the panel meant asking for *that* experiment;
+             * the list made the editor search for what the banner above them was already naming.
+             */
+            describe('opening where the editor is', () => {
+                const onAVariantOf = (experimentId: string) => {
+                    withSwitch(true);
+                    const current = spectator.inject(UVEStore, true).pageParams();
+                    patchState(writableStore(), {
+                        pageParams: {
+                            ...(current as DotPageApiParams),
+                            variantName: 'variant-b',
+                            experimentId
+                        }
+                    });
+                };
+
+                it('should open on the experiment the page is showing', () => {
+                    onAVariantOf('exp-1');
+                    const panel = spectator.inject(DotExperimentsPanelStore, true);
+
+                    spectator.component.handleItemAction('experiments');
+
+                    expect(panel.isOpen()).toBe(true);
+                    expect(panel.view()).toBe('configure');
+                    expect(panel.experimentId()).toBe('exp-1');
+                });
+
+                /**
+                 * The two doors out of an experiment have to agree. The banner's back arrow takes
+                 * the editor off the variant; this one has to as well, or the banner survives it
+                 * and goes on announcing a variant the editor has already left behind.
+                 */
+                it('should take the editor off the variant on the way', () => {
+                    onAVariantOf('exp-1');
+                    spectator.component.handleItemAction('experiments');
+
+                    // Asserted on the params themselves rather than on which writer was used:
+                    // leaving the control patches, leaving a real variant loads, and what the
+                    // editor sees is the same either way — nothing left claiming a variant.
+                    const params = spectator.inject(UVEStore, true).pageParams();
+                    expect(params?.['experimentId']).toBeFalsy();
+                    expect(getIsDefaultVariant(params?.['variantName'])).toBe(true);
+                });
+
+                /** A panel put aside to go and look at a variant gets its own place back. */
+                it('should resume a suspended panel rather than rebuild it', () => {
+                    onAVariantOf('exp-9');
+                    const panel = spectator.inject(DotExperimentsPanelStore, true);
+                    panel.showResults('exp-9');
+                    panel.suspendForVariant();
+                    spectator.component.handleItemAction('experiments');
+
+                    expect(panel.isOpen()).toBe(true);
+                    expect(panel.view()).toBe('results');
+                    expect(panel.experimentId()).toBe('exp-9');
+                    expect(
+                        getIsDefaultVariant(
+                            spectator.inject(UVEStore, true).pageParams()?.['variantName']
+                        )
+                    ).toBe(true);
+                });
+
+                /** Nothing to leave, so nothing is loaded — the canvas is not touched at all. */
+                it('should open on the list when the page names no experiment', () => {
+                    withSwitch(true);
+                    const panel = spectator.inject(DotExperimentsPanelStore, true);
+                    const load = vi.spyOn(pageApi(), 'pageLoad');
+
+                    spectator.component.handleItemAction('experiments');
+
+                    expect(panel.isOpen()).toBe(true);
+                    expect(panel.view()).toBe('list');
+                    expect(load).not.toHaveBeenCalled();
+                });
+            });
+
+            // FR-044. Nothing of the panel is reachable or observable on the shipped default.
+            it('should leave the panel closed with the switch off', () => {
+                withSwitch(false);
+
+                expect(spectator.inject(DotExperimentsPanelStore, true).isOpen()).toBe(false);
+            });
+
+            /**
+             * FR-005 / D5, and the single most likely way to break this feature by accident.
+             *
+             * The natural way to add a flag to this editor is `uveStore.flags()[…]` — the batched
+             * read, which maps a **missing key to enabled** because most flags ship on. This one
+             * ships off and sits beside the visitor-facing kill switch, so reading it that way
+             * would expose unfinished work on any response that simply did not carry it.
+             *
+             * Asserted through the absent-key case rather than by spying on `flags()`: if the
+             * shell ever switched to the batch, this test fails, and it fails for the reason that
+             * matters rather than for the mechanism used.
+             */
+            it('should stay legacy when the key is absent, which the batched flag read would call enabled', () => {
+                dotPropertiesServiceMock.getKey.mockReturnValue(of(FEATURE_FLAG_NOT_FOUND));
+                spectator = createComponent();
+                spectator.detectChanges();
+
+                expect(experimentsItem()?.href).toBe(
+                    `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`
+                );
+                expect(spectator.inject(DotExperimentsPanelStore, true).isOpen()).toBe(false);
             });
 
             // T057 / FR-023. The switch changes the destination, never who may reach it.
@@ -1643,7 +2037,7 @@ describe('DotEmaShellComponent', () => {
                 const before = experimentsItem()?.href;
 
                 withSwitch(true);
-                expect(experimentsItem()?.href).toBe('/experiments');
+                expect(experimentsItem()?.href).toBeUndefined();
 
                 withSwitch(false);
                 expect(experimentsItem()?.href).toBe(before);

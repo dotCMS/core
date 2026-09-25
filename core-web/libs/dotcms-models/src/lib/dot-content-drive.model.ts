@@ -189,7 +189,26 @@ export interface DotContentDriveQueryFilters {
      * Text to search for.
      */
     text: string;
+
+    /**
+     * Which fields {@link text} is matched against.
+     *
+     * Sits here rather than at the top level because it qualifies `text` and means nothing without
+     * it — the same reason {@link filterFolders} lives here. Omit it for the historical behaviour:
+     * an absent scope is processed exactly as it was before the field existed, which is what keeps
+     * the AssetPicker unaffected.
+     *
+     * Not to be confused with a *browse* scope, which says where you are browsing rather than which
+     * fields a search reads.
+     */
+    searchScope?: 'TITLE' | 'ALL_FIELDS';
 }
+
+/**
+ * Which slice of content a Content Drive listing is asked for: the whole current site at any
+ * depth, only what sits at the site root, or System Host alone.
+ */
+export type DotContentDriveBrowseScope = 'ALL' | 'ROOT' | 'SYSTEM_HOST';
 
 /**
  * Request body for the /api/v1/drive/search endpoint.
@@ -226,6 +245,15 @@ export interface DotContentDriveSearchRequest {
      * @default true
      */
     includeSystemHost?: boolean;
+
+    /**
+     * Which slice of content to list. Omitting it means today's behavior, and it carries no
+     * default for that reason: at the site root an omitted scope and `ALL` agree, but inside a
+     * folder they do not, so defaulting it would turn folder requests into listings of every
+     * descendant. Only valid with a site-root `assetPath`; naming one alongside a folder path is
+     * refused by the endpoint.
+     */
+    browseScope?: DotContentDriveBrowseScope;
 
     /**
      * List of language identifiers to include in the search.
@@ -480,3 +508,38 @@ export const DOT_BULK_UPLOAD_FAILURE_REASONS = [
 ] as const;
 
 export type DotBulkUploadFailureReason = (typeof DOT_BULK_UPLOAD_FAILURE_REASONS)[number];
+
+/**
+ * Why a folder in a bulk delete could not be removed.
+ *
+ * The closed set fixed by the submission contract
+ * (`specs/37063-bulk-folder-delete-frontend/contracts/client-requirements.md` CR-04), carried as
+ * `results[].reason` on a `FAILED` item. Adding a member is a change to both halves of #37063 —
+ * and to folder copy (#37062) and move (#37165), which read the same outcome shape.
+ *
+ * Four of these are delete's own; `PERMISSION_DENIED` and `UNCLASSIFIED` already existed in the
+ * shared batch vocabulary. `UNCLASSIFIED` is also what an **unrecognised** value renders as: a
+ * reason the client does not know must still name its folder and still report it as failed
+ * (frontend FR-030), never swallow it.
+ *
+ * Here rather than beside the copy that renders it, for the same reason as
+ * {@link DOT_BULK_UPLOAD_FAILURE_REASONS}: this is a **wire** vocabulary read by a `data-access`
+ * service, and a service there cannot import a type out of a portlet. Mapping a reason to product
+ * copy is the portlet's business and stays there.
+ */
+export const DOT_FOLDER_DELETE_FAILURE_REASONS = [
+    /** No rights on the folder, or on something inside it. */
+    'PERMISSION_DENIED',
+    /** The path no longer resolves, or does not name a folder. */
+    'PATH_NOT_FOUND',
+    /** A system folder or site root; refused outright. */
+    'PROTECTED_FOLDER',
+    /** Locked or referenced content inside blocked the delete. */
+    'IN_USE',
+    /** An ancestor in the same submission removed it first — not a failure to be alarmed by. */
+    'COVERED_BY_PARENT',
+    /** Anything else, and the fallback for a value this client does not recognise. */
+    'UNCLASSIFIED'
+] as const;
+
+export type DotFolderDeleteFailureReason = (typeof DOT_FOLDER_DELETE_FAILURE_REASONS)[number];

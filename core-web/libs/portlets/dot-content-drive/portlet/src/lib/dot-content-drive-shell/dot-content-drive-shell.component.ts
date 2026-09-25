@@ -18,6 +18,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
@@ -29,6 +30,7 @@ import { catchError } from 'rxjs/operators';
 import {
     AddToBundleService,
     DotCurrentUserService,
+    DotFolderBulkDeleteRefusalKind,
     DotFolderService,
     DotUploadFileService,
     DotWorkflowsActionsService,
@@ -66,20 +68,23 @@ import {
     DotKeyboardShortcutUnregister,
     hasOverlayAbove,
     DotMessagePipe,
+    DotStatusToastComponent,
     DotToastComponent,
     DotUploadDropzoneComponent,
-    DotUploadTypeSelectorComponent
+    DotUploadTypeSelectorComponent,
+    STATUS_TOAST_KEY
 } from '@dotcms/ui';
 
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
+import { DotContentDriveScopeBarComponent } from '../components/dot-content-drive-scope-bar/dot-content-drive-scope-bar.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
-    ACTION_CENTER_DIALOG_STYLE,
+    ACTION_CENTER_DIALOG_CLASS,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
@@ -87,9 +92,11 @@ import {
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
     UPLOAD_BATCH_OPERATION,
-    NEW_CONTENT_MARKER
+    NEW_CONTENT_MARKER,
+    ROOT_PATH
 } from '../shared/constants';
 import {
+    OUTCOME_KIND,
     DotContentDriveContentTypeSelectorPayload,
     DotContentDriveDialog,
     DotContentDriveSortOrder,
@@ -103,16 +110,18 @@ import { provideContentDriveFieldFilterHost } from '../store/content-drive-field
 import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { provideContentDriveRelationshipPicker } from '../store/content-drive-relationship-picker';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
+import { describeFolderDeleteOutcome } from '../utils/folder-delete-outcome';
 import {
     canAddChildrenTo,
     encodeFilters,
     isFolder,
+    browsedFolderRef,
     normalizeFolderRef,
-    toFolderRef
+    toFolderRef,
+    uploadIndicatorKey
 } from '../utils/functions';
 import { refuseOverCeiling } from '../utils/upload-ceilings';
 import { describeUploadFailures } from '../utils/upload-failures';
-
 @Component({
     selector: 'dot-content-drive-shell',
     imports: [
@@ -130,10 +139,13 @@ import { describeUploadFailures } from '../utils/upload-failures';
         MessageModule,
         DotMessagePipe,
         DotUploadDropzoneComponent,
+        DotStatusToastComponent,
         DotToastComponent,
         DotEditContentSidePanelComponent,
         ProgressSpinnerModule,
-        DotContentDriveActionCenterComponent
+        ButtonModule,
+        DotContentDriveActionCenterComponent,
+        DotContentDriveScopeBarComponent
     ],
     providers: [
         DotContentDriveStore,
@@ -164,7 +176,7 @@ import { describeUploadFailures } from '../utils/upload-failures';
     templateUrl: './dot-content-drive-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_1fr]',
+        class: 'grid relative h-full grid-cols-[min-content_1fr_min-content] grid-rows-[min-content_min-content_min-content_1fr]',
         // Bound here rather than with addEventListener: Angular unbinds it when the shell is
         // destroyed. A hand-rolled window listener outlives the portlet unless every teardown path
         // remembers to remove it, and then a stale closure keeps guarding the page on a count that
@@ -231,6 +243,15 @@ export class DotContentDriveShellComponent implements OnDestroy {
     readonly $treeExpanded = this.#store.isTreeVisuallyExpanded;
 
     /**
+     * Whether the scope bar has anything to say.
+     *
+     * Only all site content gets one: the site root and System Host each answer the question the
+     * bar asks simply by being chosen, leaving nothing for its sentence to qualify or its toggle to
+     * decide.
+     */
+    readonly $allSiteContentSelected = this.#store.$allSiteContentSelected;
+
+    /**
      * Folder a dropped file lands in. The shared dropzone is presentational, so the target comes
      * from here rather than the dropzone reaching into the store itself.
      */
@@ -267,7 +288,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /** Inodes any in-flight run is acting on, so the grid can mark those rows. */
-    readonly $busyRows = this.#store.busyRows;
+    readonly $busyRows = this.#store.allBusyRows;
 
     /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
@@ -366,12 +387,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     /**
-     * @see ACTION_CENTER_DIALOG_STYLE
+     * @see ACTION_CENTER_DIALOG_CLASS
      */
-    readonly $dialogStyle = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
-            ? ACTION_CENTER_DIALOG_STYLE
-            : undefined
+    readonly $dialogRootClass = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? ACTION_CENTER_DIALOG_CLASS : ''
     );
 
     /**
@@ -495,6 +514,23 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
+
+    /**
+     * Whether the last search failed to run, as opposed to running and matching nothing.
+     *
+     * The two used to be indistinguishable: a query that could not execute was logged and reported
+     * as an empty result, so a user searching for content they were looking at was told it did not
+     * exist (issue #37532). The store now records the failure; this is what puts it on screen.
+     */
+    readonly $searchFailed = computed(() => this.#store.status() === DotContentDriveStatus.ERROR);
+
+    /**
+     * Re-runs the current search after a failure. `loadItems` re-reads the live filter state and
+     * resets the status itself, so the retry needs nothing beyond the call.
+     */
+    protected onRetrySearch(): void {
+        this.#store.loadItems();
+    }
 
     /**
      * Extra table columns for the current selection: the selected single content type's "Show In
@@ -664,7 +700,133 @@ export class DotContentDriveShellComponent implements OnDestroy {
         !affectedFolders?.length ||
         affectedFolders
             .map(normalizeFolderRef)
-            .includes(toFolderRef(this.#store.currentSite()?.hostname, this.#store.path()));
+            .includes(browsedFolderRef(this.#store.currentSite()?.hostname, this.#store.path()));
+
+    /**
+     * The action currently being applied, surfaced here because the run outlives the Action Center
+     * dialog. Once the user closes that dialog the toolbar is the only place still reporting the run,
+     * so without this the work would continue with no indication until the completion toast fired.
+     */
+    readonly $actionExecution = this.#store.toolbarRun;
+
+    /**
+     * How many runs are in flight. With several at once the store leaves the run undefined on
+     * purpose, so keying anything off the run alone would go quiet exactly when the most is
+     * happening.
+     */
+    readonly $activeRunCount = this.#store.toolbarRunCount;
+
+    readonly $hasRunInFlight = computed(() => this.$activeRunCount() > 0);
+
+    /**
+     * Resolved indicator label. Built here rather than in the template because `DotMessagePipe` takes
+     * `string[]` arguments and the item count is a number.
+     *
+     * The action name is escaped because this label is bound with `[innerHTML]` — the message itself
+     * carries a `<b>`, which is the only reason it is not plain interpolation. For a workflow action
+     * that name is `WorkflowAction.name` straight from the backend, so without this a name containing
+     * markup becomes real DOM. Angular's sanitizer already drops event-handler attributes, so this is
+     * not an XSS fix; what it stops is structural injection that survives sanitizing — an `<img>`
+     * pointing at an arbitrary URL, a link, or markup that simply breaks the toolbar's layout.
+     */
+    readonly $actionExecutionLabel = computed(() => {
+        const execution = this.$actionExecution();
+
+        // Several at once: name none of them and report the number instead (FR-017).
+        if (!execution) {
+            return this.$activeRunCount() > 1
+                ? this.#dotMessageService.get(
+                      'content-drive.action-center.applying-many',
+                      String(this.$activeRunCount())
+                  )
+                : '';
+        }
+
+        // A run says whatever it brought, and nothing otherwise.
+        //
+        // There used to be an "Applying X to Y" fallback here for runs with no copy of their own.
+        // Nothing could reach it: only an *unmarked* run arrives here (`toolbarRun` filters to
+        // `targets.length === 0`, because a run whose rows are marked in the grid is already
+        // telling the author where it is), and every unmarked run is an upload, which names
+        // itself. Its one real effect was on uploads before they had their own words, where it
+        // produced "Applying Upload to demo.dotcms.com" -- a sentence for an action performed ON
+        // content rather than for files going INTO a place.
+        //
+        // So a run arriving with no `labelKey` is one nobody has written words for, and inventing
+        // some is what caused that. Silence is the honest answer, and the effect above raises
+        // nothing for an empty label.
+        //
+        // The count is the only thing interpolated. It is a number this code produced, so nothing
+        // here needs escaping even though the message carries its own `<b>` and is therefore bound
+        // with `[innerHTML]`. Anything author-written that is ever added to these messages does.
+        return execution.labelKey
+            ? this.#dotMessageService.get(execution.labelKey, String(execution.total))
+            : '';
+    });
+
+    /** What the status toast is currently saying, so an unchanged run is not re-raised. */
+    #shownRunLabel: string | undefined;
+
+    /**
+     * Mirrors the run in flight into the status toast.
+     *
+     * The toolbar used to draw this itself, at the end of the filter row. It moved because the row
+     * is where the user works — filter chips come and go beside it — and a status that appears and
+     * disappears there shifts the controls under the pointer. A toast says the same thing without
+     * competing for that space, and gives the in-flight state and its outcome one surface instead
+     * of an indicator here and a toast elsewhere.
+     *
+     * Sticky while the run lasts and cleared when it settles: the outcome toast that follows is
+     * raised by the shell, which is where results are turned into copy.
+     *
+     * The percentage the old indicator could show is deliberately not carried over. Nothing ever
+     * sets a run's `processed` — `updateExternalRun` has no callers — so it could not render, and
+     * the app's HTTP backend does not report upload progress either.
+     */
+    readonly runToastSync = effect(() => {
+        const running = this.$hasRunInFlight();
+        const label = this.$actionExecutionLabel();
+
+        untracked(() => {
+            if (!running) {
+                this.#shownRunLabel = undefined;
+                this.#messageService.clear(STATUS_TOAST_KEY);
+
+                return;
+            }
+
+            // A run with nothing to say raises nothing rather than an empty pill.
+            if (!label) {
+                this.#shownRunLabel = undefined;
+                this.#messageService.clear(STATUS_TOAST_KEY);
+
+                return;
+            }
+
+            // Only when the wording actually changes. PrimeNG has no update, so re-reporting means
+            // clearing and raising again — and the old inline indicator simply changed its text,
+            // so re-animating on every store touch would be a behaviour this replaced, not kept.
+            // The label does change while runs are in flight: a second run starting collapses it to
+            // the count form, and finishing brings the named form back.
+            if (label === this.#shownRunLabel) {
+                return;
+            }
+
+            this.#shownRunLabel = label;
+            this.#messageService.clear(STATUS_TOAST_KEY);
+            this.#messageService.add({
+                key: STATUS_TOAST_KEY,
+                severity: 'info',
+                summary: label,
+                icon: 'pi pi-spin pi-spinner',
+                sticky: true,
+                // PrimeNG reads this off the message, not the outlet, and defaults to closable.
+                // A status is not the reader's to dismiss: it reports work already under way and
+                // clears itself when that work settles.
+                closable: false
+            });
+        });
+    });
 
     /**
      * Reports a finished workflow action as a toast, refreshes the grid, and closes the dialog if it
@@ -703,7 +865,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
             affectedFolders,
             failures,
             duplicateSubmission,
-            baseType
+            baseType,
+            outcomeKind
         } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
@@ -785,7 +948,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
         const refusingFolderIsOnScreen =
             affectedRefs.length === 1 &&
             affectedRefs[0] ===
-                toFolderRef(this.#store.currentSite()?.hostname, this.#store.path());
+                browsedFolderRef(this.#store.currentSite()?.hostname, this.#store.path());
 
         // Narrowed the same way the upload itself narrows the selection: the tree's load-more row
         // is a node without a folder behind it, so it carries no filter to name.
@@ -795,17 +958,50 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 ? (selectedNodeData as DotFolderTreeNodeContentData)
                 : undefined;
 
-        const failureGroups = duplicateSubmission
-            ? []
-            : describeUploadFailures(
-                  failures,
-                  (key, ...args) => this.#dotMessageService.get(key, ...args),
-                  {
-                      folderFilter: refusingFolderIsOnScreen
-                          ? selectedFolder?.filesMasks
-                          : undefined
-                  }
-              );
+        const isFolderDelete = OUTCOME_KIND.FOLDER_DELETE === outcomeKind;
+
+        if (isFolderDelete) {
+            // The listing and the sidebar tree load separately, so refreshing one is not refreshing
+            // the other — and a tree still offering a folder the listing has already dropped is how
+            // an author navigates into nothing (FR-036).
+            //
+            // Only for a delete: an upload changes a folder's *contents*, not the hierarchy, so
+            // reloading the tree for one is a request that can only return the same tree.
+            this.#store.loadFolders();
+        }
+
+        // One describer per vocabulary, one rendering path for both. The reason sets barely overlap,
+        // so resolving a delete's `IN_USE` through upload's mapping would land on the unclassified
+        // fallback — a reason that HAS copy, rendered as though it had none.
+        //
+        // Delete's lines come back as a single group rather than upload's warn/error split. Upload
+        // splits because a name the folder refuses and a permission the author lacks are different
+        // kinds of news; for delete every line is already "this folder survived, here is why", so
+        // the split would separate lines the author reads as one list. Severity follows whether
+        // anything actually failed, so a run whose only shortfall is skipped folders does not
+        // arrive in red.
+        const failureGroups = isFolderDelete
+            ? failures?.length
+                ? [
+                      {
+                          severity: (failedCount > 0 ? 'error' : 'warn') as 'error' | 'warn',
+                          lines: describeFolderDeleteOutcome(failures, (key, ...args) =>
+                              this.#dotMessageService.get(key, ...args)
+                          )
+                      }
+                  ]
+                : []
+            : duplicateSubmission
+              ? []
+              : describeUploadFailures(
+                    failures,
+                    (key, ...args) => this.#dotMessageService.get(key, ...args),
+                    {
+                        folderFilter: refusingFolderIsOnScreen
+                            ? selectedFolder?.filesMasks
+                            : undefined
+                    }
+                );
 
         if (announce) {
             // One message per severity (developer's call), and the counts ride with the first of
@@ -819,9 +1015,13 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 ? failureGroups.map((group, index) => ({
                       severity: group.severity,
                       summary: this.#dotMessageService.get(
-                          'error' === group.severity
-                              ? 'content-drive.upload.toast.failed'
-                              : 'content-drive.upload.toast.incomplete'
+                          isFolderDelete
+                              ? 'error' === group.severity
+                                  ? 'content-drive.delete.toast.failed'
+                                  : 'content-drive.delete.toast.incomplete'
+                              : 'error' === group.severity
+                                ? 'content-drive.upload.toast.failed'
+                                : 'content-drive.upload.toast.incomplete'
                       ),
                       // The counts belong to the batch, not to a severity, so they are stated once
                       // and in the message the author reads first.
@@ -892,6 +1092,53 @@ export class DotContentDriveShellComponent implements OnDestroy {
             }
 
             this.#store.clearActionExecutionResult();
+        });
+    });
+
+    /**
+     * The words for each refusal the delete endpoint reasoned about.
+     *
+     * Here rather than in the store for the same reason {@link #describeSubmissionRefusal} is: the
+     * store carries the kind, the component decides what an author reads. `UNCLASSIFIED` has an
+     * entry so the map is total, though the store routes that one through
+     * `DotHttpErrorManagerService` instead and it should not arrive.
+     *
+     * None of them names a number or a folder. The ceiling is in the server's prose, which is not
+     * localised and so is not rendered, and the overlap body carries no structured field naming the
+     * folder it collided on — a shortfall against FR-040 recorded in the contract rather than
+     * papered over by parsing a sentence.
+     */
+    readonly #folderDeleteRefusalKeys: Record<DotFolderBulkDeleteRefusalKind, string> = {
+        EMPTY_SELECTION: 'content-drive.delete.refused.empty-selection',
+        OVER_MAX_PATHS: 'content-drive.delete.refused.over-max-paths',
+        NOT_ENTITLED: 'content-drive.delete.refused.not-entitled',
+        OVERLAPPING_RUN: 'content-drive.delete.refused.overlapping-run',
+        UNCLASSIFIED: 'content-drive.delete.refused.unclassified'
+    };
+
+    /**
+     * Says why a bulk folder delete never became a run, and consumes the refusal.
+     *
+     * Its own effect rather than a branch of the outcome drain: a refusal is not an outcome. Nothing
+     * ran, so there are no counts to report, nothing to reload, and no dialog state to settle — the
+     * only thing owed to the author is the sentence (FR-041).
+     */
+    readonly folderDeleteRefusalEffect = effect(() => {
+        const kind = this.#store.folderDeleteRefusal();
+
+        untracked(() => {
+            if (!kind) {
+                return;
+            }
+
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.delete.refused.title'),
+                detail: this.#dotMessageService.get(this.#folderDeleteRefusalKeys[kind]),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            this.#store.clearFolderDeleteRefusal();
         });
     });
 
@@ -1021,8 +1268,14 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return;
         }
 
-        if (data.path != currentPath) {
-            this.#store.setPath(data.path);
+        // The tree tells its site row apart from a folder by giving it an empty path. As a
+        // *location* that means the site root, `/`, which is a different thing from all site
+        // content — and all site content is what an absent location means. Translating here keeps
+        // the tree's own representation untouched while stopping the two collapsing into one.
+        const location = data.path === '' ? ROOT_PATH : data.path;
+
+        if (location != currentPath) {
+            this.#store.setPath(location);
         }
     });
 
@@ -1257,7 +1510,16 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * @returns {boolean} Whether the drop may proceed
      */
     #canDropInto(targetFolder?: DotFolderTreeNodeData): boolean {
-        if (canAddChildrenTo(targetFolder, this.#store.siteCanAddChildren())) {
+        // No target means no folder is selected, which is every scope that is not a folder: all
+        // site content and System Host. `canAddChildrenTo` answers `true` for an absent target
+        // because it has nothing to judge, so asking it there would wave the drop through on the
+        // site's answer while the Upload button beside it is correctly disabled. The store's gate
+        // already knows which scope is open and whose permission applies.
+        const allowed = targetFolder
+            ? canAddChildrenTo(targetFolder, this.#store.siteCanAddChildren())
+            : this.#store.$canAddChildren();
+
+        if (allowed) {
             return true;
         }
 
@@ -1496,11 +1758,15 @@ export class DotContentDriveShellComponent implements OnDestroy {
             // action there is nothing to guard against here: each submission carries its own
             // freshly chosen files, so two uploads at once is legitimate rather than a double-fire.
             operation: `${UPLOAD_BATCH_OPERATION}:${(this.#uploadSequence += 1)}`,
-            actionName: this.#dotMessageService.get('content-drive.upload'),
+            // Its own wording rather than the workflow sentence. Without this the run reads
+            // "Applying Upload to demo.dotcms.com" — a phrasing for an action applied TO content,
+            // which is not what putting files INTO a place is.
+            //
+            // The caller picks singular or plural because it is the only place that knows how
+            // many files were chosen. The messages spell the noun out rather than hedging with
+            // "file(s)", which is what the count is for.
+            labelKey: uploadIndicatorKey(files.length),
             total: files.length,
-            // `||`, not `??`: the site root's node carries an *empty* path, which is present but
-            // names nothing, so the indicator would read "Applying Upload to " with a blank target.
-            targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
             // Empty on purpose. The indicator speaks only for runs with nothing to mark, since a
             // run over rows is already reported by those rows dimming. An upload's content does not
             // exist until the run creates it, so the indicator is its only surface — naming the
@@ -1535,10 +1801,14 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 // id" reads as "is a folder" and sends a site id as `folderId`, which the server
                 // answers 404 to, correctly: that folder does not exist. An empty `path` is what
                 // marks the row as the site itself.
+                //
+                // The last fallback is the *browsed* host, not the site in the switcher: with
+                // System Host selected the switcher still shows a site, and that site is context
+                // rather than the destination.
                 ...(hostFolder?.id && hostFolder.path
                     ? { folderId: hostFolder.id }
                     : {
-                          siteId: hostFolder?.id ?? this.#store.currentSite()?.identifier ?? ''
+                          siteId: hostFolder?.id ?? this.#store.$newContentHostId() ?? ''
                       })
             })
             .subscribe({
@@ -1577,10 +1847,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
                     const backgroundRunId = this.#store.startExternalRun({
                         operation: `${UPLOAD_BATCH_OPERATION}:${event.handle.jobId}`,
-                        actionName: this.#dotMessageService.get('content-drive.upload'),
-                        labelKey: 'content-drive.upload.indicator.background',
+                        labelKey: uploadIndicatorKey(submitted, { backgrounded: true }),
                         total: submitted,
-                        targetLabel: hostFolder?.path || this.#store.currentSite()?.hostname,
                         targets: []
                     });
 
@@ -1592,12 +1860,23 @@ export class DotContentDriveShellComponent implements OnDestroy {
                     this.#store.trackUploadJob(
                         event.handle.jobId,
                         [
-                            toFolderRef(
-                                hostFolder?.hostname ?? this.#store.currentSite()?.hostname,
-                                // Same reason: an empty path is the site root, which normalises to
-                                // `//hostname` — the ref the listing computes when browsing it.
-                                hostFolder?.path || '/'
-                            )
+                            hostFolder?.hostname
+                                ? toFolderRef(
+                                      hostFolder.hostname,
+                                      // An empty path is the site root, which normalises to
+                                      // `//hostname` — the ref the listing computes when browsing it.
+                                      hostFolder.path || ROOT_PATH
+                                  )
+                                : // No folder chosen means the batch lands wherever the sidebar is
+                                  // pointing, which is exactly what the browsed reference describes.
+                                  // Rebuilding it from the switcher's site instead named the site
+                                  // root while the files were going to System Host, so the run and
+                                  // the listing disagreed about where they had landed and the grid
+                                  // was never refreshed.
+                                  browsedFolderRef(
+                                      this.#store.currentSite()?.hostname,
+                                      this.#store.path()
+                                  )
                         ],
                         backgroundRunId,
                         // Carried to the outcome because a resubmission means opposite things by
@@ -1606,22 +1885,14 @@ export class DotContentDriveShellComponent implements OnDestroy {
                         baseType
                     );
 
-                    // The one notification this flow raises, and the only in-flight fact worth
-                    // one: until the handle existed, leaving lost the batch and the page guard
-                    // said so; now leaving costs nothing. That rule changed with no visible
-                    // cause, and the indicator cannot report it — it says work is happening, not
-                    // that the author is released from it.
-                    this.#messageService.add({
-                        severity: 'info',
-                        summary: this.#dotMessageService.get(
-                            'content-drive.upload.toast.backgrounded'
-                        ),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.upload.toast.backgrounded-detail',
-                            String(submitted)
-                        ),
-                        life: SUCCESS_MESSAGE_LIFE
-                    });
+                    // No notification here any more. This used to raise one, because the
+                    // indicator could say work was happening but not that the page guard had
+                    // released the author. The status toast that replaced the indicator says
+                    // "in the background" itself, and having both on screen meant a backgrounded
+                    // upload announced itself twice, once wide and once compact.
+                    //
+                    // What is genuinely lost is the sentence spelling out that the author may
+                    // leave the page. The wording carries the fact; it no longer argues for it.
 
                     // Nothing else to do, and deliberately nothing. A `202` means the batch is queued,
                     // not that any file exists, so reloading here refetches a folder whose files
@@ -1719,7 +1990,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return;
         }
 
-        const { folderName, pathToMove, dragItems } = this.getMoveMetadata(event);
+        const { pathToMove, dragItems } = this.getMoveMetadata(event);
 
         const dragItemsInodes = dragItems.contentlets.map((item) => item.inode);
         const assetContentletsCount = dragItems.contentlets.length;
@@ -1729,9 +2000,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // which the indicator says better and without stacking up over the outcome that follows.
         const runId = this.#store.startExternalRun({
             operation: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
-            actionName: this.#dotMessageService.get('content-drive.context-menu.move'),
             total: assetContentletsCount,
-            targetLabel: folderName,
             targets: dragItemsInodes
         });
 

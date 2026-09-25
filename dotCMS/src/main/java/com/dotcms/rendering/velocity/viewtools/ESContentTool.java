@@ -1,9 +1,11 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.featureflag.FeatureFlagName;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -11,6 +13,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
@@ -31,6 +34,16 @@ import com.liferay.portal.model.User;
 // ES-DECOMMISSION: Velocity ViewTool exposes SearchResponse and ESSearchResults in deprecated
 // bridge methods. Already delegates to neutral SearchAPI — remove esSearch, esSearchRaw at R7 cutover.
 public class ESContentTool implements ViewTool {
+
+	/** How often, at most, the Phase 3 override warning is logged — a busy template calls it per render. */
+	private static final int LEGACY_SEARCH_WARNING_INTERVAL_MILLIS = 5 * 60 * 1000;
+
+	private static final String LEGACY_SEARCH_WARNING = "A template called the deprecated "
+			+ "Elasticsearch-only $estool.esSearch()/$estool.esRaw() in Phase 3 of the OpenSearch "
+			+ "migration. It returned null because "
+			+ FeatureFlagName.FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL + " is enabled, so "
+			+ "the block using it renders without results. Migrate these calls to $estool.search()/"
+			+ "$estool.raw(), then turn the flag off.";
 
 	private HttpServletRequest req;
 	private User user = null;
@@ -89,27 +102,68 @@ public class ESContentTool implements ViewTool {
 
 	/**
 	 * @deprecated Use {@link #search(String)} for vendor-neutral access.
-	 *             This method returns Elasticsearch-specific types and will be removed in v26.08.04.
-	 *             Velocity templates using {@code $results.hits}, {@code $results.aggregations},
-	 *             or {@code $results.response} must migrate to the neutral equivalents exposed by
-	 *             {@link ContentSearchResults}.
+	 *             This method returns Elasticsearch-specific types and will be removed in a future release.
+	 *             {@code $results.hits}, {@code $results.aggregations} and {@code $results.response}
+	 *             continue to resolve on {@link ContentSearchResults}. What changes is
+	 *             {@code $item.map.fieldName}, which no longer resolves: {@link #search(String)}
+	 *             returns {@code ContentMap} objects rather than contentlets, so fields are read
+	 *             directly as {@code $item.fieldName}. The old expression yields nothing and does
+	 *             not error.
+	 *             <p>In Phase 3 of the OpenSearch migration this fails the page render, or returns
+	 *             {@code null} when {@code FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL}
+	 *             is enabled — see {@link #returnsNullInFinalPhase()}.</p>
 	 */
 	@Deprecated(forRemoval = true)
 	@SuppressWarnings("deprecation")
 	public ESSearchResults esSearch(final String esQuery) throws DotSecurityException, DotDataException {
+		if (returnsNullInFinalPhase()) {
+			return null;
+		}
 		return APILocator.getContentletAPI().esSearch(esQuery, mode.showLive, user, true);
 	}
 
 	/**
 	 * @deprecated Use {@link #raw(String)} for vendor-neutral access.
-	 *             This method returns an Elasticsearch-specific type and will be removed in v26.08.04.
+	 *             This method returns an Elasticsearch-specific type and will be removed in a future release.
 	 *             <p>Like {@link #raw(String)}, the query is lowercased before execution, so mixed-case
 	 *             field names resolve to the physical index field name.</p>
+	 *             <p>{@code $raw.toString()} no longer returns JSON. {@link #raw(String)} returns a
+	 *             {@code ContentSearchResponse} record whose {@code toString()} is the record
+	 *             default. Use {@code $json.generate($raw)}, which emits the neutral response shape
+	 *             ({@code tookInMillis}, {@code hits.totalHits}, and
+	 *             {@code index} / {@code id} / {@code score} / {@code sourceAsMap}) rather than
+	 *             Elasticsearch's envelope. Nothing errors, so a consumer expecting JSON silently
+	 *             receives something else.</p>
+	 *             <p>In Phase 3 of the OpenSearch migration this fails the page render, or returns
+	 *             {@code null} when {@code FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL}
+	 *             is enabled — see {@link #returnsNullInFinalPhase()}.</p>
 	 */
 	@Deprecated(forRemoval = true)
 	@SuppressWarnings("deprecation")
 	public SearchResponse esRaw(final String esQuery) throws DotSecurityException, DotDataException {
+		if (returnsNullInFinalPhase()) {
+			return null;
+		}
 		return APILocator.getContentletAPI().esSearchRaw(esQuery, mode.showLive, user, true);
+	}
+
+	/**
+	 * Whether the deprecated {@link #esSearch(String)} / {@link #esRaw(String)} should return
+	 * {@code null} instead of querying. Only in Phase 3, and only when support has enabled
+	 * {@link FeatureFlagName#FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL}: by default the
+	 * API underneath throws there, which fails the page render so the frozen Elasticsearch copy is
+	 * never served silently. With the flag on the page renders without those results instead, and a
+	 * rate-limited warning names the migration to do.
+	 */
+	private static boolean returnsNullInFinalPhase() {
+		if (!IndexConfigHelper.MigrationPhase.current().isMigrationComplete()
+				|| !Config.getBooleanProperty(
+						FeatureFlagName.FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL, false)) {
+			return false;
+		}
+		Logger.warnEvery(ESContentTool.class, "legacy-es-search-phase3-returns-null",
+				LEGACY_SEARCH_WARNING, LEGACY_SEARCH_WARNING_INTERVAL_MILLIS);
+		return true;
 	}
 
 }

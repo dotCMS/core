@@ -34,7 +34,7 @@ services and ports is in **Environment**; the limited-user (non-admin OS) varian
 | `OS_ENDPOINTS` | URL of the OpenSearch (new engine) cluster. Inside the lab network it is `https://opensearch3:9200`; from your machine the same cluster is `https://localhost:9201`. Must be a **separate** instance from ES — pointing it at the ES URL or at the ES address is what the safety guards in Groups 1–2 detect. |
 | `OS_AUTH_TYPE` | Authentication scheme dotCMS uses to talk to OpenSearch (`BASIC` for these cases). |
 | `OS_AUTH_BASIC_USER` / `OS_AUTH_BASIC_PASSWORD` | Credentials dotCMS uses for OpenSearch. The lab stack provisions the restricted `dotcms-es-user` on both engines and connects dotCMS with it by default (Group 16 exercises that path explicitly); its password is the `$ES_USER_PW` value in the compose file. An `admin` account exists too — `admin`/`admin` on the old engine, `$OS_ADMIN_PW` on the new one — but that is the direct-`curl` credential, not what dotCMS authenticates with. |
-| `OS_TLS_ENABLED` | Whether the OpenSearch connection uses TLS (`false` for the open dev stack; the limited-user stack uses HTTPS plus `OS_TLS_TRUST_SELF_SIGNED=true`). |
+| `OS_TLS_ENABLED` | Whether the OpenSearch connection uses TLS. The lab serves HTTPS with a self-signed certificate, so set it to `true` together with `OS_TLS_TRUST_SELF_SIGNED=true`. |
 
 > A phase change is re-read on each routing decision, so the **routing** (which engine gets writes /
 > serves reads) takes effect without a restart; every cluster node must carry the same value. **But the
@@ -158,7 +158,8 @@ OS_ENDPOINTS=https://localhost:9201
 OS_AUTH_TYPE=BASIC
 OS_AUTH_BASIC_USER=dotcms-es-user
 OS_AUTH_BASIC_PASSWORD=<the $ES_USER_PW value from the compose file>
-OS_TLS_ENABLED=false
+OS_TLS_ENABLED=true
+OS_TLS_TRUST_SELF_SIGNED=true
 ```
 
 ### Multi-node setup (Group 3)
@@ -844,12 +845,26 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 - **Steps:**
   1. Confirm content is searchable in Phase 2.
   2. Break OpenSearch reads (stop OS or remove the OS working index).
-  3. Run the same search again.
+  3. Search again — but **change the query on every call** (see the warning below).
+  4. Also search a content type you have **not** queried since the server started, so its count is
+     not cached either. That variant used to fail differently: a `500` instead of an empty `200`.
 - **Expected Result:**
-  - The search still returns the correct result (served from ES).
-  - The log shows an ERROR similar to
-    `OS read failed in Phase 2 — falling back to ES. OS index may be stale or unavailable. Cause: …`
+  - The search still returns the correct result (served from ES), for every content type that has
+    live content. Not zero results, and not a `500`.
+  - The log shows an ERROR naming the operation and the root cause, similar to
+    `OS read failed in Phase 2 [indexCount] — falling back to ES. OS index may be stale or
+    unavailable. Cause: … / root cause: ConnectException: Connection refused`
 - **Type:** Manual
+
+> ⚠️ **This case gave a false PASS before #37413 and can do so again.** Repeating an *identical*
+> search returns the pre-outage result from the query cache, which is indistinguishable from a
+> working fallback. Vary the query — a different `offset` on each call is enough — or you are
+> testing the cache, not the fallback. A count is cached without `offset` in its key, so also
+> exercise a content type never queried since startup.
+>
+> A second false-pass route: if a *count* is what fails, some paths propagate the error while the
+> *search* path used to convert it to an empty result on the spot. Check the returned total, not
+> just the absence of an error.
 
 ## TC-040 — Phase 3 does NOT auto-rollback (negative case)
 

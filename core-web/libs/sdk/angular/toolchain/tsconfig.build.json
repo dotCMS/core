@@ -1,0 +1,40 @@
+{
+    "compilerOptions": {
+        "target": "es2022",
+        "useDefineForClassFields": false,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
+        "module": "preserve",
+        "moduleResolution": "bundler",
+        "lib": ["dom", "dom.iterable", "es2022"],
+        "declaration": true,
+        "declarationMap": true,
+        "inlineSources": true,
+        "types": [],
+        "baseUrl": ".",
+        "paths": {
+            "@tinymce/tinymce-angular": ["node_modules/@tinymce/tinymce-angular"],
+            "rxjs": ["node_modules/rxjs"],
+            "rxjs/*": ["node_modules/rxjs/*"],
+            "tslib": ["node_modules/tslib"],
+            "@dotcms/client": ["../../../../dist/libs/sdk/client/index.d.ts"],
+            "@dotcms/types": ["../../../../dist/libs/sdk/types/index.d.ts"],
+            "@dotcms/types/internal": ["../../../../dist/libs/sdk/types/internal.d.ts"],
+            "@dotcms/uve": ["../../../../dist/libs/sdk/uve/index.d.ts"],
+            "@dotcms/uve/internal": ["../../../../dist/libs/sdk/uve/internal.d.ts"]
+        }
+    },
+    "angularCompilerOptions": {
+        "compilationMode": "partial",
+        "enableI18nLegacyMessageIdFormat": false,
+        "strictInjectionParameters": true,
+        "strictInputAccessModifiers": true,
+        "strictTemplates": true
+    },
+    "include": ["../src/**/*.ts"],
+    "exclude": ["../src/**/*.spec.ts", "../src/**/*.test.ts", "../src/test-setup.ts"]
+}

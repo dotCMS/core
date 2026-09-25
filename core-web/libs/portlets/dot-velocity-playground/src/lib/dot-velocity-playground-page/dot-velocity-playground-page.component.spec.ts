@@ -23,6 +23,27 @@ import { DotVelocityPlaygroundService } from '../services/dot-velocity-playgroun
 
 type StoreOverrides = Partial<Record<string, Mock>>;
 
+const MONACO_CTRL_CMD = 2048;
+const MONACO_ENTER = 3;
+
+/** Stubs the global Monaco namespace and returns a fake editor that records its actions. */
+const createFakeEditor = () => {
+    vi.stubGlobal('monaco', {
+        ...((globalThis as { monaco?: object }).monaco ?? {}),
+        KeyMod: { CtrlCmd: MONACO_CTRL_CMD },
+        KeyCode: { Enter: MONACO_ENTER },
+        // onEditorInit also registers the Velocity language on the same global.
+        languages: { getLanguages: () => [], register: vi.fn(), setMonarchTokensProvider: vi.fn() }
+    });
+    const addAction = vi.fn();
+
+    return {
+        editor: { addAction },
+        /** Simulates Monaco dispatching the Cmd/Ctrl + Enter keybinding. */
+        pressRunShortcut: () => addAction.mock.calls[0][0].run()
+    };
+};
+
 const buildStoreMock = (overrides: StoreOverrides = {}) => ({
     code: vi.fn().mockReturnValue(''),
     wrapCode: vi.fn().mockReturnValue(true),
@@ -121,6 +142,58 @@ describe('DotVelocityPlaygroundPageComponent', () => {
             expect(btn).toBeTruthy();
             if (btn) spectator.click(btn);
             expect(store.runScript).toHaveBeenCalled();
+        });
+    });
+
+    describe('run keyboard shortcut', () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('binds Cmd/Ctrl + Enter on the script editor', () => {
+            setup();
+            const { editor } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="velocity-playground-editor"]',
+                'init',
+                editor
+            );
+            expect(editor.addAction).toHaveBeenCalledWith(
+                expect.objectContaining({ keybindings: [MONACO_CTRL_CMD | MONACO_ENTER] })
+            );
+        });
+
+        it('runs the script when the shortcut is pressed', () => {
+            const store = setup({ canRun: vi.fn().mockReturnValue(true) });
+            const { editor, pressRunShortcut } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="velocity-playground-editor"]',
+                'init',
+                editor
+            );
+            pressRunShortcut();
+            expect(store.runScript).toHaveBeenCalled();
+        });
+
+        it('is a no-op while a script is already running (canRun is false)', () => {
+            const store = setup({ canRun: vi.fn().mockReturnValue(false) });
+            const { editor, pressRunShortcut } = createFakeEditor();
+            spectator.triggerEventHandler(
+                '[data-testid="velocity-playground-editor"]',
+                'init',
+                editor
+            );
+            pressRunShortcut();
+            expect(store.runScript).not.toHaveBeenCalled();
+        });
+
+        it('states the shortcut in the Run button tooltip', () => {
+            setup();
+            const messageService = spectator.inject(DotMessageService);
+            expect(messageService.get).toHaveBeenCalledWith(
+                'velocityPlayground.action.run.tooltip',
+                spectator.component.runShortcutLabel
+            );
         });
     });
 

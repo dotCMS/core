@@ -1,17 +1,34 @@
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
-    DotCMSContentTypeField
+    DotCMSContentTypeField,
+    DotCMSFieldType,
+    DotCMSFieldTypes,
+    FieldOf
 } from '@dotcms/dotcms-models';
 
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import {
+    CALENDAR_FIELD_TYPES,
+    FLATTENED_FIELD_TYPES,
+    UNCASTED_FIELD_TYPES
+} from '../../models/dot-edit-content-field.constant';
 import { EditContentQueryParams } from '../../store/edit-content.store';
 import {
+    castSingleSelectableValue,
     getSingleSelectableFieldOptions,
     parseCalendarTimestamp
 } from '../../utils/functions.util';
 import { orderedKeyValueText } from '../../utils/key-value-order.util';
 import { getRelationshipFromContentlet } from '../../utils/relationshipFromContentlet';
+
+/**
+ * The contentlet a resolver is handed.
+ *
+ * New content has none, so every resolver falls back to the field's default value for an
+ * absent one — the resolution specs assert exactly that. The signature says so rather than
+ * leaving each resolver to guess.
+ */
+export type ResolvedContentlet = DotCMSContentlet | null | undefined;
 
 /**
  * A function that provides a default resolution value for a contentlet field.
@@ -22,8 +39,23 @@ import { getRelationshipFromContentlet } from '../../utils/relationshipFromConte
  * @returns {*} The resolved value for the field.
  */
 export type FnResolutionValue<T> = (
-    contentlet: DotCMSContentlet,
+    contentlet: ResolvedContentlet,
     field: DotCMSContentTypeField,
+    queryParams?: EditContentQueryParams,
+    isManualTranslation?: boolean
+) => T;
+
+/**
+ * The same signature, narrowed to one field type.
+ *
+ * A resolver declared with this receives the arm its key registers it under, checked by the
+ * compiler rather than assumed. `FnResolutionValue` alone cannot give that guarantee here:
+ * this library compiles with `strict: false`, so parameters compare bivariantly and a narrowed
+ * parameter on a union-wide signature is accepted without being verified (FR-007).
+ */
+export type FnResolutionValueFor<K extends DotCMSFieldType, T> = (
+    contentlet: ResolvedContentlet,
+    field: FieldOf<K>,
     queryParams?: EditContentQueryParams,
     isManualTranslation?: boolean
 ) => T;
@@ -51,6 +83,41 @@ const defaultResolutionFn: FnResolutionValue<string> = (
     if (contentlet) {
         return contentlet[field.variable] ?? field.defaultValue;
     }
+    return isManualTranslation ? null : field.defaultValue;
+};
+
+/**
+ * Resolves a Checkbox or Multi-Select field, whose value is a set of selected options.
+ *
+ * For a contentlet that has already been saved the stored value is authoritative: a field the
+ * user cleared comes back with its key absent from the payload, and that absence means "nothing
+ * selected", not "no value supplied". Falling back to `field.defaultValue` there re-checks a box
+ * the user deliberately cleared, and saving that screen writes the default back to the database.
+ *
+ * The default still seeds the form when there is no contentlet yet — new content — which is the
+ * only point a Content Type default is meant to apply.
+ *
+ * Returns `null`, not `''`, for the cleared case. `castResolvedValue` flattens these two field
+ * types with `split(',')`, which turns `''` into `['']` — an array of length one that Angular's
+ * `Validators.required` accepts, so a required field would pass validation with nothing selected.
+ * `null` survives that path untouched and stays empty.
+ *
+ * Scoped to these two types only, matching what already shipped on the backend. The same
+ * re-application of a default to saved content is still live for every other field type on
+ * `defaultResolutionFn` — that is remaining exposure, not intended behaviour.
+ *
+ * @see https://github.com/dotCMS/core/issues/35416
+ */
+const selectionResolutionFn: FnResolutionValue<string | null> = (
+    contentlet,
+    field,
+    _queryParams,
+    isManualTranslation
+) => {
+    if (contentlet) {
+        return contentlet[field.variable] ?? null;
+    }
+
     return isManualTranslation ? null : field.defaultValue;
 };
 
@@ -280,32 +347,116 @@ const selectResolutionFn: FnResolutionValue<string> = (
  * This enables each field type to properly process its own data.
  *
  */
-export const resolutionValue: Record<
-    FIELD_TYPES,
-    FnResolutionValue<string | string[] | Date | number | Record<string, unknown> | null>
-> = {
-    [FIELD_TYPES.BINARY]: defaultResolutionFn,
-    [FIELD_TYPES.FILE]: defaultResolutionFn,
-    [FIELD_TYPES.IMAGE]: defaultResolutionFn,
-    [FIELD_TYPES.BLOCK_EDITOR]: blockEditorResolutionFn,
-    [FIELD_TYPES.CHECKBOX]: defaultResolutionFn,
-    [FIELD_TYPES.CONSTANT]: defaultResolutionFn,
-    [FIELD_TYPES.CUSTOM_FIELD]: defaultResolutionFn,
-    [FIELD_TYPES.DATE]: dateResolutionFn,
-    [FIELD_TYPES.DATE_AND_TIME]: dateResolutionFn,
-    [FIELD_TYPES.TIME]: dateResolutionFn,
-    [FIELD_TYPES.HIDDEN]: defaultResolutionFn,
-    [FIELD_TYPES.HOST_FOLDER]: hostFolderResolutionFn,
-    [FIELD_TYPES.JSON]: defaultResolutionFn,
-    [FIELD_TYPES.KEY_VALUE]: keyValueResolutionFn,
-    [FIELD_TYPES.MULTI_SELECT]: defaultResolutionFn,
-    [FIELD_TYPES.RADIO]: defaultResolutionFn,
-    [FIELD_TYPES.SELECT]: selectResolutionFn,
-    [FIELD_TYPES.TAG]: defaultResolutionFn,
-    [FIELD_TYPES.TEXT]: textFieldResolutionFn,
-    [FIELD_TYPES.TEXTAREA]: defaultResolutionFn,
-    [FIELD_TYPES.WYSIWYG]: defaultResolutionFn,
-    [FIELD_TYPES.CATEGORY]: categoryResolutionFn,
-    [FIELD_TYPES.RELATIONSHIP]: relationshipResolutionFn,
-    [FIELD_TYPES.LINE_DIVIDER]: emptyResolutionFn
+export type ResolvedFormValue = string | string[] | Date | number | Record<string, unknown> | null;
+
+/**
+ * Keyed by the discriminant so each entry is checked against **its own** arm. A plain
+ * `Record<DotCMSFieldType, FnResolutionValue<...>>` gives every entry the whole union, so a
+ * resolver narrowed to the wrong field type would still compile (FR-007). Resolvers that
+ * accept the union, as all of them do today, remain assignable to a narrower parameter.
+ */
+export const resolutionValue: {
+    [K in DotCMSFieldType]: FnResolutionValueFor<K, ResolvedFormValue>;
+} = {
+    [DotCMSFieldTypes.BINARY]: defaultResolutionFn,
+    [DotCMSFieldTypes.FILE]: defaultResolutionFn,
+    [DotCMSFieldTypes.IMAGE]: defaultResolutionFn,
+    [DotCMSFieldTypes.BLOCK_EDITOR]: blockEditorResolutionFn,
+    [DotCMSFieldTypes.CHECKBOX]: selectionResolutionFn,
+    [DotCMSFieldTypes.CONSTANT]: defaultResolutionFn,
+    [DotCMSFieldTypes.CUSTOM_FIELD]: defaultResolutionFn,
+    [DotCMSFieldTypes.DATE]: dateResolutionFn,
+    [DotCMSFieldTypes.DATE_AND_TIME]: dateResolutionFn,
+    [DotCMSFieldTypes.TIME]: dateResolutionFn,
+    [DotCMSFieldTypes.HIDDEN]: defaultResolutionFn,
+    [DotCMSFieldTypes.HOST_FOLDER]: hostFolderResolutionFn,
+    [DotCMSFieldTypes.JSON]: defaultResolutionFn,
+    [DotCMSFieldTypes.KEY_VALUE]: keyValueResolutionFn,
+    [DotCMSFieldTypes.MULTI_SELECT]: selectionResolutionFn,
+    [DotCMSFieldTypes.RADIO]: defaultResolutionFn,
+    [DotCMSFieldTypes.SELECT]: selectResolutionFn,
+    [DotCMSFieldTypes.TAG]: defaultResolutionFn,
+    [DotCMSFieldTypes.TEXT]: textFieldResolutionFn,
+    [DotCMSFieldTypes.TEXTAREA]: defaultResolutionFn,
+    [DotCMSFieldTypes.WYSIWYG]: defaultResolutionFn,
+    [DotCMSFieldTypes.CATEGORY]: categoryResolutionFn,
+    [DotCMSFieldTypes.RELATIONSHIP]: relationshipResolutionFn,
+    [DotCMSFieldTypes.LINE_DIVIDER]: emptyResolutionFn,
+    // The four layout types. The map used to be keyed by the local FIELD_TYPES enum, which
+    // never declared them, so they simply had no entry — invisible because the lookup was
+    // reached through an `as FIELD_TYPES` assertion. Keyed by the shared vocabulary the map is
+    // exhaustive by construction, and a layout field resolves to '' because it holds no value
+    // of its own: rows, columns and dividers arrange other fields, they do not carry data.
+    [DotCMSFieldTypes.ROW]: emptyResolutionFn,
+    [DotCMSFieldTypes.COLUMN]: emptyResolutionFn,
+    [DotCMSFieldTypes.TAB_DIVIDER]: emptyResolutionFn,
+    [DotCMSFieldTypes.COLUMN_BREAK]: emptyResolutionFn
+};
+
+/**
+ * Turns a contentlet's stored value into the value its form control holds.
+ *
+ * **This is the single transformation path** — what issue #31911 asked for and did not get. The
+ * work used to run in two stages that each branched on the field type: `resolutionValue` read
+ * the value out of the contentlet, then `getFinalCastedValue` cast it again, and both reached
+ * their branch through a `fieldType` assertion. Two passes meant two places to keep in step,
+ * and they had already drifted — `resolutionValue` covered 24 field types while the vocabulary
+ * had 28.
+ *
+ * The stages are still distinguishable inside this function, and deliberately so: reading a
+ * value out of a contentlet and casting it for a control are different jobs, and several field
+ * types need only the first. What has gone is the second dispatch on field type and the
+ * assertion that reached it — callers now have one function to call and one place to look.
+ *
+ * @param contentlet The contentlet being edited, or null during manual translation.
+ * @param field The field whose control is being populated.
+ * @param queryParams Query params from the URL, used to seed a field on a new contentlet.
+ * @param isManualTranslation Whether the form is being re-initialised for a manual translation.
+ * @returns The value for the form control, or null when there is none.
+ */
+const castResolvedValue = (value: unknown, field: DotCMSContentTypeField): unknown => {
+    if (CALENDAR_FIELD_TYPES.includes(field.fieldType)) {
+        return value;
+    }
+
+    if (FLATTENED_FIELD_TYPES.includes(field.fieldType)) {
+        return (value as string)?.split(',').map((item) => item.trim());
+    }
+
+    if (value === undefined || UNCASTED_FIELD_TYPES.includes(field.fieldType)) {
+        return value;
+    }
+
+    if (field.fieldType === DotCMSFieldTypes.JSON) {
+        // Indented on purpose: Monaco would otherwise show the value as one flat line.
+        return JSON.stringify(value, null, 2);
+    }
+
+    return castSingleSelectableValue(value, field.dataType);
+};
+
+export const resolveFieldValue = (
+    contentlet: DotCMSContentlet | null,
+    field: DotCMSContentTypeField,
+    queryParams?: EditContentQueryParams,
+    isManualTranslation = false
+): unknown => {
+    // The map is keyed by the discriminant, so the lookup yields the union of every entry's
+    // signature and TypeScript cannot correlate it with `field` on its own. The assertion is
+    // confined to this one dispatch; the entries themselves are checked arm by arm above.
+    const resolve = resolutionValue[field.fieldType] as FnResolutionValue<ResolvedFormValue>;
+
+    // Exhaustive by construction — the map is keyed by the vocabulary — but the content type
+    // arrives from the backend, whose set of field types is open (FR-013). A plugin's field
+    // type reaches here with no resolver, and the form shows it as unsupported rather than
+    // failing to build.
+    if (!resolve) {
+        console.warn(`No resolution function found for field type: ${field.fieldType}`);
+
+        return null;
+    }
+
+    const value = resolve(contentlet, field, queryParams, isManualTranslation);
+
+    return castResolvedValue(value, field) ?? null;
 };

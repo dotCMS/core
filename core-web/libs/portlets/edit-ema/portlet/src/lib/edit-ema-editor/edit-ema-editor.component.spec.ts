@@ -58,6 +58,7 @@ import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dot
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
@@ -109,7 +110,7 @@ import {
 import { ActionPayload, ContentletPayload, VTLFile } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
-import { IframeAccessMode } from '../store/models';
+import { IframeAccessMode, PageType } from '../store/models';
 
 global.URL.createObjectURL = vi.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -627,10 +628,18 @@ describe('EditEmaEditorComponent', () => {
                 expect(toolbar).not.toBeNull();
             });
 
-            it('should hide components when the store changes for a variant', () => {
-                // Dialog may remain in DOM when appended to body
-                const componentsToHide = ['palette', 'dropzone', 'contentlet-tools'];
-
+            /**
+             * Reversed by #37308 — this used to assert the opposite.
+             *
+             * The name said "for a variant", but no variant term ever gated these: they sit under
+             * `editorCanEditContent()`, and what hid them was the RUNNING experiment this spec's
+             * `DotExperimentsService` mock returns for `i-have-a-running-experiment`. That guard is
+             * gone, so the editing tools a variant fix actually needs — the palette to add with, the
+             * dropzone to drop on, the contentlet tools to edit with — are present while the
+             * experiment runs. The shell's warning banner is what tells the editor the run's results
+             * will now mix data from before and after the change.
+             */
+            it('should keep the palette while a variant experiment is running', () => {
                 spectator.detectChanges();
 
                 spectator.activatedRouteStub.setQueryParam('variantName', 'hello-there');
@@ -639,6 +648,12 @@ describe('EditEmaEditorComponent', () => {
                 pageApi().pageLoad({
                     url: 'index',
                     language_id: '5',
+                    // Carried deliberately. `editorCanEditContent` is
+                    // `editorHasAccessToEditMode() && viewMode === EDIT`, and this call replaces the
+                    // params the describe set up — so omitting the mode hides the palette for a
+                    // reason that has nothing to do with the experiment, and the assertion stops
+                    // testing what it names.
+                    mode: UVE_MODE.EDIT,
                     [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
                     variantName: 'hello-there',
                     experimentId: 'i-have-a-running-experiment'
@@ -646,9 +661,10 @@ describe('EditEmaEditorComponent', () => {
 
                 spectator.detectChanges();
 
-                componentsToHide.forEach((testId) => {
-                    expect(spectator.query(byTestId(testId))).toBeNull();
-                });
+                // Only the palette: `contentlet-tools` needs a hovered contentlet area and
+                // `dropzone` needs active drag bounds, so neither renders in a static fixture
+                // whatever this guard does.
+                expect(spectator.query(byTestId('palette'))).not.toBeNull();
             });
 
             it('should show the editor components when there is a running experiement and initialize the editor in a default variant', async () => {
@@ -1000,6 +1016,181 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(spectator.component.$showLockOverlay()).toBe(false);
                 });
+            });
+        });
+
+        describe('$handleReloadContentEffect — headless provenance gate (#37097)', () => {
+            // Precondition for reaching the headless-specific branch under test at all: the
+            // effect's first gate returns immediately (no message, not even UVE_RELOAD_PAGE)
+            // when `pageType === TRADITIONAL || !isClientReady` — that gate is unrelated to
+            // this bug (it predates #36410) and stays untouched, so every case below sets
+            // isClientReady true to exercise the branch the fix actually changes.
+            let postMessageSpy: MockInstance;
+
+            beforeEach(() => {
+                // `this.iframe` (used by sendMessageToIframe/reloadIframeContent) is a getter
+                // that unwraps to DotUveIframeComponent's own inner <iframe> ElementRef — NOT
+                // the `[data-testId="iframe"]` host element the outer beforeEach mocks (that's
+                // the <dot-uve-iframe> wrapper). Spy on the REAL jsdom-provided contentWindow
+                // in place — replacing it wholesale (as the outer mock does for the wrapper)
+                // breaks jsdom's own async iframe `load` event plumbing for later tests.
+                const realContentWindow = spectator.component.iframe?.nativeElement.contentWindow;
+                if (!realContentWindow) {
+                    throw new Error(
+                        'expected the real jsdom iframe contentWindow to be present — check the outer beforeEach'
+                    );
+                }
+                postMessageSpy = vi
+                    .spyOn(realContentWindow, 'postMessage')
+                    .mockImplementation(() => undefined);
+                // Spectator store type doesn't satisfy WritableStateSource but runtime works —
+                // same cast withPage.spec.ts's patchStoreState helper documents.
+                patchState(store as Parameters<typeof patchState>[0], { isClientReady: true });
+                postMessageSpy.mockClear();
+            });
+
+            it('should send UVE_RELOAD_PAGE (never UVE_SET_PAGE_DATA) when no GraphQL request was ever registered', () => {
+                // requestMetadata null, pageAssetResponse.source rest (the initial REST load
+                // from the outer beforeEach's store.pageLoad)
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+            });
+
+            it('should send UVE_RELOAD_PAGE (never UVE_SET_PAGE_DATA) when the GraphQL request is registered but not yet resolved', () => {
+                store.setCustomClient({ query: 'query', variables: {} });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+            });
+
+            it('should send UVE_RELOAD_PAGE (never UVE_SET_PAGE_DATA) when the GraphQL request was registered then aborted/failed, leaving a stale REST asset', () => {
+                // This is the row #36410's gate could not distinguish from the row above —
+                // requestMetadata is non-null in both, so the old `hasClientQuery` check let
+                // this one through. `source` distinguishes it correctly.
+                store.setCustomClient({ query: 'query', variables: {} });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+            });
+
+            it('should send UVE_SET_PAGE_DATA (never UVE_RELOAD_PAGE) once the stored asset is GraphQL-sourced', () => {
+                store.setCustomClient({ query: 'query', variables: {} });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'graphql' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    '*'
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    expect.anything()
+                );
+            });
+
+            describe('bounded reload — regression from #37097 post-merge QA', () => {
+                // QA on the merged fix found an endless client reload loop: every CLIENT_READY
+                // re-announcement unconditionally re-patches requestMetadata (setCustomClient),
+                // which changes pageAsset()'s reference and re-fires this effect. If the asset
+                // is still REST-sourced (GraphQL never resolved — slow, aborted, or permanently
+                // broken), the effect resent UVE_RELOAD_PAGE on every re-fire, and each reload
+                // the client performs triggers a fresh CLIENT_READY, looping indefinitely.
+                it('should send UVE_RELOAD_PAGE only once across repeated CLIENT_READY-style re-announcements while the asset stays REST-sourced', () => {
+                    store.setCustomClient({ query: 'query', variables: {} });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+
+                    // Simulate the client's browser reload re-announcing itself several times
+                    // (a duplicate CLIENT_READY unconditionally re-patches requestMetadata,
+                    // which is exactly what changes pageAsset()'s reference and re-fires the
+                    // effect) while the fetch still never resolves to GraphQL.
+                    for (let i = 0; i < 10; i++) {
+                        store.setCustomClient({ query: 'query', variables: { attempt: `${i}` } });
+                        spectator.flushEffects();
+                    }
+
+                    const reloadCalls = postMessageSpy.mock.calls.filter(
+                        ([message]) => message?.name === __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    );
+                    expect(reloadCalls.length).toBe(1);
+                    expect(postMessageSpy).not.toHaveBeenCalledWith(
+                        expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                        expect.anything()
+                    );
+                });
+
+                it('should send a fresh UVE_RELOAD_PAGE once the asset resolves to GraphQL and later regresses to REST on a new page', () => {
+                    store.setCustomClient({ query: 'query', variables: {} });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+                    postMessageSpy.mockClear();
+
+                    // Resolves: clears the pending flag.
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'graphql' });
+                    spectator.flushEffects();
+                    postMessageSpy.mockClear();
+
+                    // A new navigation (markPageLoading) resets pageReloadPending so a fresh
+                    // REST-sourced streak on the NEW page gets its own single reload request,
+                    // rather than being silently suppressed by a stale flag from the old page.
+                    // markPageLoading also resets isClientReady (unrelated pre-existing gate),
+                    // so re-establish it the way a genuine post-navigation CLIENT_READY would.
+                    store.markPageLoading();
+                    patchState(store as Parameters<typeof patchState>[0], {
+                        isClientReady: true
+                    });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+
+                    const reloadCalls = postMessageSpy.mock.calls.filter(
+                        ([message]) => message?.name === __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    );
+                    expect(reloadCalls.length).toBe(1);
+                });
+            });
+
+            it('should never touch the iframe for a TRADITIONAL page regardless of source (regression)', () => {
+                // Spectator store type doesn't satisfy WritableStateSource but runtime works —
+                // same cast withPage.spec.ts's patchStoreState helper documents.
+                patchState(store as Parameters<typeof patchState>[0], {
+                    pageType: PageType.TRADITIONAL
+                });
+                store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                spectator.flushEffects();
+
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                    expect.anything()
+                );
+                expect(postMessageSpy).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE }),
+                    expect.anything()
+                );
             });
         });
 
@@ -3534,8 +3725,68 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(windowOpenSpy).toHaveBeenCalledWith(externalUrl, '_blank');
+                    expect(openedLink.href).toBe(externalUrl);
+                    expect(openedLink.target).toBe('_blank');
+                    expect(openedLink.click).toHaveBeenCalled();
                     expect(pageLoadSpy).not.toHaveBeenCalled();
+                });
+
+                // Without it the anchor also navigates the iframe to the external
+                // site, which refuses to be framed and blanks the canvas.
+                it('should keep the iframe on the page when opening an external URL', () => {
+                    const mockEvent = createMockEvent('https://external-site.com/page');
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                describe('absolute URLs to the edited site', () => {
+                    beforeEach(() => {
+                        const pageAsset = store.pageAsset();
+
+                        vi.spyOn(store, 'pageAsset').mockReturnValue({
+                            ...pageAsset,
+                            site: {
+                                ...pageAsset?.site,
+                                hostname: 'www.site.com',
+                                aliases: 'site.com\nalias.site.com'
+                            }
+                        } as ReturnType<typeof store.pageAsset>);
+                    });
+
+                    it('should load a link to the site hostname inside the editor', () => {
+                        const mockEvent = createMockEvent(
+                            'https://www.site.com/news?anno_pubblicazione=2025'
+                        );
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/news',
+                            anno_pubblicazione: '2025'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should load a link to a site alias inside the editor', () => {
+                        const mockEvent = createMockEvent('https://alias.site.com/news');
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/news' });
+                    });
+
+                    it('should still open a different site in a new tab', () => {
+                        const mockEvent = createMockEvent('https://other-site.com/news');
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).toHaveBeenCalled();
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
                 });
 
                 it('should load page asset with pathname only for internal URL without query params', () => {
@@ -3740,14 +3991,16 @@ describe('EditEmaEditorComponent', () => {
                         vi.spyOn(store, 'pageParams').mockReturnValue(samePathPageParams());
                     });
 
-                    it('should not trigger pageLoad for hash-only navigation on same page', () => {
+                    // Cancelled so the link can't load outside the editor; the
+                    // iframe is scrolled instead of reloaded.
+                    it('should cancel hash-only navigation on same page without reloading', () => {
                         const hashUrl = 'http://localhost:3000/current-page#sectionA';
                         const mockEvent = createMockEvent(hashUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
                         expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
                     });
 
                     it('should not trigger pageLoad for hash-only with complex id', () => {
@@ -3759,34 +4012,105 @@ describe('EditEmaEditorComponent', () => {
                         expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
 
-                    it('should not trigger pageLoad for query-only navigation on same page', () => {
+                    // Traditional pages render in an iframe UVE writes itself, so a
+                    // browser-handled query change leaves it blank and never reaches
+                    // the Page API (#36999). It has to go through pageLoad.
+                    it('should trigger pageLoad with the new query for query-only navigation on same page', () => {
                         const queryUrl = 'http://localhost:3000/current-page?tab=2';
                         const mockEvent = createMockEvent(queryUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            tab: '2'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
                     });
 
-                    it('should not trigger pageLoad for multiple query params on same page', () => {
+                    it('should pass every query param for multiple query params on same page', () => {
                         const queryUrl =
                             'http://localhost:3000/current-page?filter=value&sort=date';
                         const mockEvent = createMockEvent(queryUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            filter: 'value',
+                            sort: 'date'
+                        });
                     });
 
-                    it('should not trigger pageLoad when both hash and query are present on same path', () => {
+                    it('should trigger pageLoad when both hash and query are present on same path', () => {
                         const combinedUrl = 'http://localhost:3000/current-page?tab=2#section';
                         const mockEvent = createMockEvent(combinedUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            tab: '2'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should load a new language for a same-path language_id link', () => {
+                        const languageUrl = 'http://localhost:3000/current-page?language_id=3';
+                        const mockEvent = createMockEvent(languageUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            language_id: '3'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    describe('when the current page already carries a page query param', () => {
+                        beforeEach(() => {
+                            vi.spyOn(store, 'pageParams').mockReturnValue({
+                                ...samePathPageParams(),
+                                mode: UVE_MODE.EDIT,
+                                device: 'mobile',
+                                anno_pubblicazione: '2025'
+                            });
+                        });
+
+                        it('should clear it when the link no longer sets it', () => {
+                            const mockEvent = createMockEvent('http://localhost:3000/current-page');
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/current-page',
+                                anno_pubblicazione: undefined
+                            });
+                        });
+
+                        it('should replace it when the link sets a new value', () => {
+                            const mockEvent = createMockEvent(
+                                'http://localhost:3000/current-page?anno_pubblicazione=2024'
+                            );
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/current-page',
+                                anno_pubblicazione: '2024'
+                            });
+                        });
+
+                        it('should still scroll a hash-only link without reloading', () => {
+                            const mockEvent = createMockEvent(
+                                'http://localhost:3000/current-page#section'
+                            );
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).not.toHaveBeenCalled();
+                        });
                     });
 
                     it('should trigger pageLoad when navigating to different page with hash', () => {

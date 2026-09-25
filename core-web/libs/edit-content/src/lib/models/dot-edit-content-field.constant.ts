@@ -2,26 +2,35 @@ import { MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
 
 import { SelectItem } from 'primeng/api';
 
-import { ComponentStatus } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSFieldType, DotCMSFieldTypes } from '@dotcms/dotcms-models';
 import { PrincipalConfiguration } from '@dotcms/ui';
 
 import { CustomFieldConfig } from './dot-edit-content-custom-field.interface';
-import { FIELD_TYPES } from './dot-edit-content-field.enum';
 
-export const CALENDAR_FIELD_TYPES = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
-
-export const CALENDAR_FIELD_TYPES_WITH_TIME = [FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
-
-export const FLATTENED_FIELD_TYPES = [
-    FIELD_TYPES.CHECKBOX,
-    FIELD_TYPES.MULTI_SELECT,
-    FIELD_TYPES.TAG
+// Typed as the vocabulary rather than left to infer a narrower literal union: `.includes()`
+// rejects a wider argument, and that mismatch is exactly what the `as FIELD_TYPES` assertions
+// at the call sites used to paper over (issue #37670, FR-006).
+export const CALENDAR_FIELD_TYPES: DotCMSFieldType[] = [
+    DotCMSFieldTypes.DATE,
+    DotCMSFieldTypes.DATE_AND_TIME,
+    DotCMSFieldTypes.TIME
 ];
 
-export const UNCASTED_FIELD_TYPES = [
-    FIELD_TYPES.BLOCK_EDITOR,
-    FIELD_TYPES.KEY_VALUE,
-    FIELD_TYPES.CATEGORY
+export const CALENDAR_FIELD_TYPES_WITH_TIME: DotCMSFieldType[] = [
+    DotCMSFieldTypes.DATE_AND_TIME,
+    DotCMSFieldTypes.TIME
+];
+
+export const FLATTENED_FIELD_TYPES: DotCMSFieldType[] = [
+    DotCMSFieldTypes.CHECKBOX,
+    DotCMSFieldTypes.MULTI_SELECT,
+    DotCMSFieldTypes.TAG
+];
+
+export const UNCASTED_FIELD_TYPES: DotCMSFieldType[] = [
+    DotCMSFieldTypes.BLOCK_EDITOR,
+    DotCMSFieldTypes.KEY_VALUE,
+    DotCMSFieldTypes.CATEGORY
 ];
 
 export const TAB_FIELD_CLAZZ = 'com.dotcms.contenttype.model.field.ImmutableTabDividerField';

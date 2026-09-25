@@ -1,4 +1,4 @@
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotCMSFieldTypes } from '@dotcms/dotcms-models';
 
 /**
  * Option parsing for the field-filter chips, shared with `@dotcms/edit-content`.
@@ -180,7 +180,15 @@ export const getSingleSelectableFieldOptions = (
  * @returns The content type ID, or null if not found
  */
 export function getContentTypeIdFromRelationship(field: DotCMSContentTypeField): string | null {
-    if (!field?.relationships?.velocityVar) {
+    // Narrowed rather than required as a parameter: callers such as the field-filter chip and
+    // the content-drive picker iterate over every field on a content type and hand this
+    // whatever they are holding. A non-relationship field returns null here exactly as it did
+    // before, when `relationships` was simply absent from it.
+    if (field?.fieldType !== DotCMSFieldTypes.RELATIONSHIP) {
+        return null;
+    }
+
+    if (!field.relationships?.velocityVar) {
         return null;
     }
 

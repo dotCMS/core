@@ -16,7 +16,7 @@ import { createFakeSite, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveDialogFolderComponent } from './dot-content-drive-dialog-folder.component';
 
-import { DEFAULT_FILE_ASSET_TYPES } from '../../../shared/constants';
+import { DEFAULT_FILE_ASSET_TYPES, SYSTEM_HOST_PATH } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
 const mockSite = createFakeSite({
@@ -228,6 +228,17 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/');
+        });
+
+        it('should not paste a location that is not a folder path into the preview', () => {
+            // System Host reaches the dialog as the location `SYSTEM_HOST`, which is a reserved
+            // word rather than a path — that is what tells it apart from a folder. Concatenated
+            // onto the hostname it produced `//demo.dotcms.comSYSTEM_HOST/`, a path that resolves
+            // to nothing, and the dialog showed it to the user as where their folder would land.
+            store.path.mockReturnValue(SYSTEM_HOST_PATH);
+            component.folderForm.get('name')?.setValue('new-folder');
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/new-folder/');
         });
 
         it('should handle path with trailing slash', () => {
