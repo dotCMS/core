@@ -116,6 +116,7 @@
             "@dotcms/ai/sandbox": ["libs/sdk/ai/src/sandbox/index.ts"],
             "@dotcms/ai/adapter": ["libs/sdk/ai/src/adapter/index.ts"],
             "@dotcms/ai/spec": ["libs/sdk/ai/src/spec/index.ts"],
+            "@dotcms/ai/tools": ["libs/sdk/ai/src/tools/index.ts"],
             "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"],
             "@dotcms/portlets/dot-roles/portlet": ["libs/portlets/dot-roles/src/index.ts"],
             "@dotcms/portlets/dot-agents/portlet": ["libs/portlets/dot-agents/src/index.ts"],

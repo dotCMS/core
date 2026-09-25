@@ -42,6 +42,18 @@ export interface DotCMSContext {
     currentUser: CurrentUserSummary | null;
 }
 
+/**
+ * The endpoints loading instance context reads — all `GET`. Exported as the one source of
+ * truth for anything that must permit the context load: a tool's own allow-list names these
+ * rather than repeating the paths, so a loader that changes its endpoint changes them too.
+ */
+export const CONTEXT_PATHS = {
+    contentTypes: '/api/v1/contenttype',
+    sites: '/api/v1/site',
+    languages: '/api/v2/languages',
+    currentUser: '/api/v1/users/current'
+} as const;
+
 type RequestFn = (...args: unknown[]) => unknown | Promise<unknown>;
 
 function getRequestFn(adapter: Adapter): RequestFn {
@@ -78,7 +90,7 @@ function asBool(value: unknown): boolean {
 async function loadContentTypes(request: RequestFn): Promise<ContentTypeSummary[]> {
     const raw = await request({
         method: 'GET',
-        path: '/api/v1/contenttype',
+        path: CONTEXT_PATHS.contentTypes,
         query: { per_page: 200, orderby: 'name' }
     });
     const list = asArray(unwrapEntity(raw));
@@ -105,7 +117,7 @@ async function loadSites(request: RequestFn): Promise<SiteSummary[]> {
     for (let page = 0; page < 100; page += 1) {
         const raw = await request({
             method: 'GET',
-            path: '/api/v1/site',
+            path: CONTEXT_PATHS.sites,
             query: { per_page: pageSize, page, archive: true }
         });
         const batch = asArray(unwrapEntity(raw));
@@ -130,7 +142,7 @@ async function loadSites(request: RequestFn): Promise<SiteSummary[]> {
 async function loadLanguages(request: RequestFn): Promise<LanguageSummary[]> {
     const raw = await request({
         method: 'GET',
-        path: '/api/v2/languages'
+        path: CONTEXT_PATHS.languages
     });
     const list = asArray(unwrapEntity(raw));
     return list.map((item) => {
@@ -149,7 +161,7 @@ async function loadLanguages(request: RequestFn): Promise<LanguageSummary[]> {
 async function loadCurrentUser(request: RequestFn): Promise<CurrentUserSummary | null> {
     const raw = await request({
         method: 'GET',
-        path: '/api/v1/users/current'
+        path: CONTEXT_PATHS.currentUser
     });
     const entity = unwrapEntity(raw);
     if (!entity || typeof entity !== 'object') return null;

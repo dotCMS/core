@@ -1,9 +1,17 @@
 import { vi } from 'vitest';
 
-import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
+import { createPage, PAGE_CREATE_ENDPOINTS } from './page-create';
+import { splitUrlPath } from './shared/page-path';
 
-import { createPage } from './page-create';
-import { splitUrlPath } from './page-path';
+import { HttpError, ValidationError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
+import { unlistedCalls } from '../toolkit/endpoints';
+
+// Every request the fakes below see. After each test, all of them must be endpoints the
+// page_create tool owns — otherwise the operation works here and is refused in production.
+const seen: RequestOptions[] = [];
+afterEach(() => {
+    expect(unlistedCalls(PAGE_CREATE_ENDPOINTS, seen.splice(0))).toEqual([]);
+});
 
 describe('splitUrlPath', () => {
     it('splits a path with an explicit leaf into folder + leaf', () => {
@@ -118,6 +126,7 @@ describe('createPage', () => {
     };
 
     function fakeRuntime(handlers: {
+        onTemplate?: () => unknown;
         onCreateFolders?: (body: unknown) => unknown;
         onFire?: (body: unknown, query: unknown) => unknown;
         onLive?: () => unknown;
@@ -133,6 +142,7 @@ describe('createPage', () => {
         const sites = handlers.sites ?? [DEMO_SITE];
         const calls: Array<{ method?: string; path: string; body?: unknown; query?: unknown }> = [];
         const request = vi.fn(async (options: RequestOptions) => {
+            seen.push(options);
             calls.push({
                 method: options.method,
                 path: options.path,
@@ -145,6 +155,9 @@ describe('createPage', () => {
                 );
                 const ct = contentTypes.find((c) => c.id === idOrVar || c.variable === idOrVar);
                 return { entity: ct ?? {} };
+            }
+            if (options.path.startsWith('/api/v1/templates/')) {
+                return handlers.onTemplate?.() ?? {};
             }
             if (options.path.startsWith('/api/v1/folder/createfolders/')) {
                 return handlers.onCreateFolders?.(options.body) ?? { entity: [] };
@@ -192,6 +205,45 @@ describe('createPage', () => {
         expect(fireCall).toBeGreaterThan(folderCall);
     });
 
+    describe('failure codes', () => {
+        const PAGE = {
+            site: 'demo.dotcms.com',
+            urlPath: '/books/index',
+            title: 'Books',
+            template: 'tmpl-1'
+        };
+
+        it('reports a template that does not exist as a VALIDATION error', async () => {
+            const { runtime } = fakeRuntime({
+                onTemplate: () => {
+                    throw new HttpError(404, 'Not Found', '');
+                }
+            });
+
+            await expect(createPage({ dotcms: runtime, ...PAGE })).rejects.toBeInstanceOf(
+                ValidationError
+            );
+        });
+
+        it('keeps the fire’s own error, so a 5xx stays a retryable HTTP failure', async () => {
+            // The note about the already-created folder is added to that error, not a new one:
+            // rewrapping it in a plain Error turned every fire failure into UNKNOWN, telling
+            // the model not to retry a call that was safe and likely to succeed.
+            const { runtime } = fakeRuntime({
+                onCreateFolders: () => ({ entity: [{ path: '/books', identifier: 'folder-123' }] }),
+                onFire: () => {
+                    throw new HttpError(503, 'Service Unavailable', 'restarting');
+                }
+            });
+
+            const error = await createPage({ dotcms: runtime, ...PAGE }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(HttpError);
+            expect((error as HttpError).status).toBe(503);
+            expect((error as Error).message).toMatch(/HTTP 503[\s\S]*folder-123[\s\S]*SAFE/);
+        });
+    });
+
     it('fires the page with the leaf url and the created folder id, not the full path', async () => {
         let firedBody: { contentlet: Record<string, unknown> } | undefined;
         const { runtime } = fakeRuntime({
@@ -212,10 +264,10 @@ describe('createPage', () => {
 
         // The url must be the bare leaf — never "/books/index", which dotCMS would collapse.
         const contentlet = firedBody?.contentlet ?? {};
-        expect(contentlet.url).toBe('index');
-        expect(contentlet.hostFolder).toBe('folder-123');
-        expect(contentlet.contentType).toBe('htmlpageasset');
-        expect(contentlet.template).toBe('tmpl-1');
+        expect(contentlet['url']).toBe('index');
+        expect(contentlet['hostFolder']).toBe('folder-123');
+        expect(contentlet['contentType']).toBe('htmlpageasset');
+        expect(contentlet['template']).toBe('tmpl-1');
     });
 
     it('fires with indexPolicy=WAIT_FOR', async () => {
@@ -236,7 +288,7 @@ describe('createPage', () => {
             template: 't'
         });
 
-        expect(firedQuery?.indexPolicy).toBe('WAIT_FOR');
+        expect(firedQuery?.['indexPolicy']).toBe('WAIT_FOR');
     });
 
     it('skips folder creation for a root page', async () => {
@@ -277,12 +329,12 @@ describe('createPage', () => {
         const contentlet = firedBody?.contentlet ?? {};
         // The regression: contentHost must be the resolved identifier, never the raw hostname —
         // a hostname here NPEs the fire for a root page (no folder to anchor the host).
-        expect(contentlet.contentHost).toBe('site-uuid-1');
-        expect(contentlet.contentHost).not.toBe('demo.dotcms.com');
+        expect(contentlet['contentHost']).toBe('site-uuid-1');
+        expect(contentlet['contentHost']).not.toBe('demo.dotcms.com');
         // Trap #3: a root page has no folder, so hostFolder must fall back to the SITE id (a
         // concrete HOST_OR_FOLDER value), never undefined — otherwise the fire 500s with
         // "Host.getIdentifier() ... host is null".
-        expect(contentlet.hostFolder).toBe('site-uuid-1');
+        expect(contentlet['hostFolder']).toBe('site-uuid-1');
         // Root page still creates no folder.
         expect(calls.some((c) => c.path.includes('createfolders'))).toBe(false);
     });
@@ -314,9 +366,9 @@ describe('createPage', () => {
         const contentlet = firedBody?.contentlet ?? {};
         // Both location keys point at the non-default site id — this is exactly the manual recovery
         // that worked ("explicit host + hostFolder = site id").
-        expect(contentlet.contentHost).toBe('site-uuid-2');
-        expect(contentlet.hostFolder).toBe('site-uuid-2');
-        expect(contentlet.hostFolder).not.toBeUndefined();
+        expect(contentlet['contentHost']).toBe('site-uuid-2');
+        expect(contentlet['hostFolder']).toBe('site-uuid-2');
+        expect(contentlet['hostFolder']).not.toBeUndefined();
         expect(calls.some((c) => c.path.includes('createfolders'))).toBe(false);
     });
 
@@ -339,10 +391,10 @@ describe('createPage', () => {
         });
 
         const contentlet = firedBody?.contentlet ?? {};
-        expect(contentlet.contentHost).toBe('site-uuid-1');
+        expect(contentlet['contentHost']).toBe('site-uuid-1');
         // A nested page anchors on its created folder id (which carries the host) — NOT the
         // site-id fallback that only a root page uses.
-        expect(contentlet.hostFolder).toBe('folder-123');
+        expect(contentlet['hostFolder']).toBe('folder-123');
         // The createfolders path is called with the resolved UUID, not the hostname.
         const folderCall = calls.find((c) => c.path.includes('createfolders'));
         expect(folderCall?.path).toContain('site-uuid-1');
@@ -365,7 +417,7 @@ describe('createPage', () => {
             template: 't'
         });
 
-        expect((firedBody?.contentlet ?? {}).contentHost).toBe('site-uuid-1');
+        expect((firedBody?.contentlet ?? {})['contentHost']).toBe('site-uuid-1');
     });
 
     it('throws a clear error when the site is neither a known hostname nor identifier', async () => {
@@ -464,9 +516,9 @@ describe('createPage', () => {
 
             expect(manifest.contentType).toBe('landingPage');
             const contentlet = firedBody?.contentlet ?? {};
-            expect(contentlet.contentType).toBe('landingPage');
-            expect(contentlet.campaign).toBe('summer');
-            expect(contentlet.subtitle).toBe('Hot deals');
+            expect(contentlet['contentType']).toBe('landingPage');
+            expect(contentlet['campaign']).toBe('summer');
+            expect(contentlet['subtitle']).toBe('Hot deals');
         });
 
         it('throws listing missing user-required fields before firing', async () => {
@@ -565,9 +617,9 @@ describe('createPage', () => {
             });
 
             const contentlet = firedBody?.contentlet ?? {};
-            expect(contentlet.title).toBe('Real Title');
-            expect(contentlet.template).toBe('real-tmpl');
-            expect(contentlet.url).toBe('index');
+            expect(contentlet['title']).toBe('Real Title');
+            expect(contentlet['template']).toBe('real-tmpl');
+            expect(contentlet['url']).toBe('index');
         });
     });
 });

@@ -1,5 +1,6 @@
-import type { DotCMSRuntime } from '@dotcms/ai/runtime';
 import type { DotCMSColumnContainer } from '@dotcms/types';
+
+import type { DotCMSRuntime } from '../../../runtime';
 
 /**
  * Response shapes and probes shared by more than one page tool.
@@ -26,7 +27,7 @@ import type { DotCMSColumnContainer } from '@dotcms/types';
  * reason — these tools never read it, and requiring it would assert a field that may be
  * absent. `@dotcms/dotcms-models` also ships a `DotLayoutRow`, but it is the editor-side
  * model (fully required, and its barrel pulls Angular into the transitive graph), so it is
- * the wrong contract for an MCP server parsing a REST response.
+ * the wrong contract for a tool parsing a REST response.
  */
 export interface LayoutRow {
     columns?: Array<{ containers?: Array<Pick<DotCMSColumnContainer, 'identifier' | 'uuid'>> }>;
@@ -44,7 +45,7 @@ interface ContentLiveResponse {
  * oversight. The two previous copies disagreed here: one swallowed every error into `false`,
  * which conflates "this is not live" with "we could not find out" — and for the transfer
  * manifest those are opposite conclusions, since a read failure reported as not-live sends
- * the caller off to re-publish assets that were already fine. `assets-transfer` needs the
+ * the caller off to re-publish assets that were already fine. `upload-assets` needs the
  * distinction, so the shared primitive is the honest one and the caller that wants a
  * best-effort answer catches for itself.
  */

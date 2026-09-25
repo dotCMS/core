@@ -1,8 +1,21 @@
 import { vi } from 'vitest';
 
-import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
+import {
+    buildManifest,
+    MAX_INCLUDED_HTML_CHARS,
+    PAGE_VERIFY_ENDPOINTS,
+    verifyPage
+} from './page-verify';
 
-import { buildManifest, MAX_INCLUDED_HTML_CHARS, verifyPage } from './page-verify';
+import { HttpError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
+import { unlistedCalls } from '../toolkit/endpoints';
+
+// Every request the fake below sees. After each test, all of them must be endpoints the
+// page_verify tool owns — otherwise the operation works here and is refused in production.
+const seen: RequestOptions[] = [];
+afterEach(() => {
+    expect(unlistedCalls(PAGE_VERIFY_ENDPOINTS, seen.splice(0))).toEqual([]);
+});
 
 const DEFAULT_CONTAINER = '//demo.dotcms.com/application/containers/default/';
 
@@ -251,6 +264,7 @@ describe('verifyPage', () => {
     function fakeRuntime(over?: { render?: unknown; sites?: unknown[]; renderThrows?: unknown }) {
         const calls: Array<{ path: string; query?: unknown }> = [];
         const request = vi.fn(async (options: RequestOptions) => {
+            seen.push(options);
             calls.push({ path: options.path, query: options.query });
             if (options.path.startsWith('/api/v1/page/render')) {
                 if (over?.renderThrows) {
@@ -277,8 +291,8 @@ describe('verifyPage', () => {
         const m = await verifyPage({ dotcms: runtime, path: '/about-us' });
 
         const render = calls.find((c) => c.path.startsWith('/api/v1/page/render'));
-        expect((render?.query as Record<string, unknown>)?.host_id).toBeUndefined();
-        expect((render?.query as Record<string, unknown>)?.mode).toBe('LIVE');
+        expect((render?.query as Record<string, unknown>)?.['host_id']).toBeUndefined();
+        expect((render?.query as Record<string, unknown>)?.['mode']).toBe('LIVE');
         expect(m.site).toBe('(default)');
     });
 
@@ -292,7 +306,7 @@ describe('verifyPage', () => {
         });
 
         const render = calls.find((c) => c.path.startsWith('/api/v1/page/render'));
-        expect((render?.query as Record<string, unknown>)?.host_id).toBe('site-uuid-2');
+        expect((render?.query as Record<string, unknown>)?.['host_id']).toBe('site-uuid-2');
         expect(m.site).toBe('other.example.com');
     });
 
@@ -302,7 +316,7 @@ describe('verifyPage', () => {
         await verifyPage({ dotcms: runtime, path: '/x', site: 'site-uuid-2' });
 
         const render = calls.find((c) => c.path.startsWith('/api/v1/page/render'));
-        expect((render?.query as Record<string, unknown>)?.host_id).toBe('site-uuid-2');
+        expect((render?.query as Record<string, unknown>)?.['host_id']).toBe('site-uuid-2');
     });
 
     it('throws a clear error for an unknown site', async () => {
@@ -319,8 +333,8 @@ describe('verifyPage', () => {
         await verifyPage({ dotcms: runtime, path: '/x', languageId: 2, mode: 'WORKING' });
 
         const render = calls.find((c) => c.path.startsWith('/api/v1/page/render'));
-        expect((render?.query as Record<string, unknown>)?.language_id).toBe(2);
-        expect((render?.query as Record<string, unknown>)?.mode).toBe('WORKING');
+        expect((render?.query as Record<string, unknown>)?.['language_id']).toBe(2);
+        expect((render?.query as Record<string, unknown>)?.['mode']).toBe('WORKING');
     });
 
     it('surfaces a 404 render as a manifest verdict, not a throw', async () => {

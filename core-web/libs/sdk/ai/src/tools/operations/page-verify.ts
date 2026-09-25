@@ -1,8 +1,19 @@
-import { HttpError, type DotCMSRuntime } from '@dotcms/ai/runtime';
+import { LayoutRow } from './shared/page-common';
+import { normalizePagePath } from './shared/page-path';
+import { RESOLVE_ENDPOINTS, resolveSite } from './shared/resolve';
 
-import { LayoutRow } from './page-common';
-import { normalizePagePath } from './page-path';
-import { resolveSite } from './resolve';
+import { HttpError, type DotCMSRuntime } from '../../runtime';
+import { CONTEXT_ENDPOINTS, type Endpoint } from '../toolkit/endpoints';
+
+/**
+ * Every endpoint `verifyPage` calls — all reads. The `page_verify` tool enforces exactly this
+ * list, and `page-verify.spec.ts` checks every request against it. Add a request, add it here.
+ */
+export const PAGE_VERIFY_ENDPOINTS: readonly Endpoint[] = [
+    ...CONTEXT_ENDPOINTS,
+    ...RESOLVE_ENDPOINTS,
+    'GET /api/v1/page/render/**'
+];
 
 /** Render modes the verify tool supports. LIVE = published; WORKING = latest saved (pre-publish). */
 export type VerifyMode = 'LIVE' | 'WORKING';
@@ -150,7 +161,7 @@ export async function verifyPage(options: VerifyPageOptions): Promise<VerifyPage
         mode
     };
     if (resolvedSite) {
-        query.host_id = resolvedSite.identifier;
+        query['host_id'] = resolvedSite.identifier;
     }
 
     const { status, body } = await renderPage(options.dotcms, uri, query);

@@ -1,24 +1,24 @@
 import { vi } from 'vitest';
 
-import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import type { DotCMSRuntime, RequestOptions } from '@dotcms/ai/runtime';
+import { UPLOAD_ASSETS_ENDPOINTS, uploadAssets } from './upload-assets';
 
-import { downloadAssets, uploadAssets } from './assets-transfer';
+import { ValidationError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
+import { unlistedCalls } from '../toolkit/endpoints';
+
+/** Every request the fake sees, checked against the upload_assets tool's endpoints. */
+const seen: RequestOptions[] = [];
 
 /**
- * Exercises `uploadAssets` / `downloadAssets` end to end against a fake runtime and a real
- * temp directory.
+ * Exercises `uploadAssets` end to end against a fake runtime and a real temp directory: the
+ * manifest, the per-file failure isolation, and the whole publish-then-verify path. (The glob
+ * filter itself is covered by `shared/glob.spec.ts`.)
  *
- * The sibling spec covers only `splitIncludePatterns` and `includeMatcher`, which left the
- * transfer behaviour itself — the manifest, the per-file failure isolation, and the whole
- * publish-then-verify path — with no coverage at all, in the file carrying the most error
- * handling in the server.
- *
- * A real temp dir rather than a mocked `fs`: these functions walk directories, read bytes and
- * write files, and mocking that surface would mostly test the mock.
+ * A real temp dir rather than a mocked `fs`: this function walks directories and reads bytes,
+ * and mocking that surface would mostly test the mock.
  */
 
 const SITE = '//demo.dotcms.com/application/themes/travel';
@@ -33,6 +33,7 @@ function fakeRuntime(options?: FakeOptions) {
     let uploadCount = 0;
 
     const request = vi.fn(async (opts: RequestOptions) => {
+        seen.push(opts);
         calls.push(opts);
 
         const custom = options?.onRequest?.(opts);
@@ -59,18 +60,6 @@ function fakeRuntime(options?: FakeOptions) {
     return { runtime: { request } as unknown as DotCMSRuntime, calls };
 }
 
-/** The binary envelope `downloadAssetBytes` expects back from an asset read. */
-function binary(text: string) {
-    const base64 = Buffer.from(text, 'utf8').toString('base64');
-
-    return {
-        __dotcmsBinary: true as const,
-        contentType: 'text/css',
-        base64,
-        byteLength: Buffer.byteLength(text)
-    };
-}
-
 /** Count how many requests hit a given path. */
 function callsTo(calls: RequestOptions[], path: string): number {
     return calls.filter((call) => call.path === path).length;
@@ -78,6 +67,11 @@ function callsTo(calls: RequestOptions[], path: string): number {
 
 describe('uploadAssets', () => {
     let src: string;
+
+    // Everything an upload requests must be an endpoint the upload_assets tool owns.
+    afterEach(() => {
+        expect(unlistedCalls(UPLOAD_ASSETS_ENDPOINTS, seen.splice(0))).toEqual([]);
+    });
 
     beforeEach(async () => {
         src = await mkdtemp(join(tmpdir(), 'dot-upload-'));
@@ -104,6 +98,24 @@ describe('uploadAssets', () => {
         expect(manifest.failures).toEqual([]);
         expect(manifest.files.map((file) => file.path).sort()).toEqual(['main.vtl', 'style.css']);
         expect(callsTo(calls, '/api/v2/assets/publish')).toBe(2);
+    });
+
+    it('streams each file from disk as a Blob, never as base64 in memory', async () => {
+        const { runtime, calls } = fakeRuntime();
+
+        await uploadAssets({ dotcms: runtime, src, dest: SITE, publish: true, verify: false });
+
+        const parts = calls
+            .filter((call) => call.path === '/api/v2/assets/publish')
+            .map((call) => call.formData?.['file'] as { name: string; data?: string; blob?: Blob });
+        expect(parts.map((part) => part.data)).toEqual([undefined, undefined]);
+        const sent = await Promise.all(
+            parts.map(async (part) => [part.name, await part.blob?.text()])
+        );
+        expect(Object.fromEntries(sent)).toEqual({
+            'main.vtl': '#set($x = 1)',
+            'style.css': '.a{color:red}'
+        });
     });
 
     it('records a per-file failure without abandoning the rest of the batch', async () => {
@@ -306,8 +318,8 @@ describe('uploadAssets', () => {
         const { runtime } = fakeRuntime({
             onRequest: (opts) => {
                 if (opts.path === '/api/v2/assets/publish') {
-                    const data = (opts.formData as { file?: { data?: string } })?.file?.data;
-                    if (data === '') {
+                    const blob = (opts.formData as { file?: { blob?: Blob } })?.file?.blob;
+                    if (blob?.size === 0) {
                         throw new Error('HTTP 400 empty body rejected');
                     }
                 }
@@ -328,137 +340,134 @@ describe('uploadAssets', () => {
         expect(manifest.warnings.join(' ')).toMatch(/0 bytes[\s\S]*single newline/);
         expect(empty?.bytes).toBe(1);
     });
-});
 
-describe('downloadAssets', () => {
-    let dest: string;
+    describe('limits', () => {
+        // The model chooses `src`, so without a bound one call can pick a multi-gigabyte file —
+        // held in memory while it is sent — or a tree of a million files.
+        it('skips a file over maxFileBytes without reading or sending it, and uploads the rest', async () => {
+            await writeFile(join(src, 'big.bin'), Buffer.alloc(2048));
+            const { runtime, calls } = fakeRuntime();
 
-    beforeEach(async () => {
-        dest = await mkdtemp(join(tmpdir(), 'dot-download-'));
+            const manifest = await uploadAssets({
+                dotcms: runtime,
+                src,
+                dest: SITE,
+                publish: true,
+                verify: false,
+                maxFileBytes: 1024
+            });
+
+            expect(manifest.files.map((file) => file.path).sort()).toEqual([
+                'main.vtl',
+                'style.css'
+            ]);
+            expect(manifest.failures).toEqual([
+                {
+                    path: 'big.bin',
+                    error: expect.stringMatching(/2048 bytes.*1024-byte upload limit/)
+                }
+            ]);
+            expect(callsTo(calls, '/api/v2/assets/publish')).toBe(2);
+        });
+
+        it('refuses more than maxFiles files before uploading any of them', async () => {
+            const { runtime, calls } = fakeRuntime();
+
+            const error = await uploadAssets({
+                dotcms: runtime,
+                src,
+                dest: SITE,
+                publish: true,
+                verify: false,
+                maxFiles: 1
+            }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(ValidationError);
+            expect((error as Error).message).toMatch(/more than 1 file/);
+            expect(calls).toEqual([]);
+        });
+
+        it('counts only the files `include` selects', async () => {
+            const { runtime } = fakeRuntime();
+
+            const manifest = await uploadAssets({
+                dotcms: runtime,
+                src,
+                dest: SITE,
+                include: '*.css',
+                publish: true,
+                verify: false,
+                maxFiles: 1
+            });
+
+            expect(manifest.files.map((file) => file.path)).toEqual(['style.css']);
+        });
     });
 
-    afterEach(async () => {
-        await rm(dest, { recursive: true, force: true });
-    });
+    describe('with a root', () => {
+        // `src` comes from the model. The root is what stops a hosted server's upload_assets
+        // from reading any directory the process can — and then serving it back through dotCMS.
+        let root: string;
 
-    /** A `_search` page followed by the per-asset byte reads. */
-    function searchRuntime(assets: Array<{ identifier: string; path: string }>, bytes = 'body') {
-        return fakeRuntime({
-            onRequest: (opts) => {
-                if (opts.path === '/api/content/_search') {
-                    return { entity: { jsonObjectView: { contentlets: assets } } };
-                }
-                if (opts.path?.startsWith('/api/v2/assets/')) {
-                    return binary(bytes);
-                }
-
-                return undefined;
-            }
-        });
-    }
-
-    it('writes each enumerated asset to disk and reports it', async () => {
-        const { runtime } = searchRuntime([
-            { identifier: 'a1', path: '//demo.dotcms.com/application/themes/travel/style.css' }
-        ]);
-
-        const manifest = await downloadAssets({
-            dotcms: runtime,
-            path: '//demo.dotcms.com/application/themes/travel',
-            dest,
-            recursive: true,
-            overwrite: 'overwrite'
+        beforeEach(async () => {
+            root = await mkdtemp(join(tmpdir(), 'dot-root-'));
         });
 
-        expect(manifest.count).toBe(1);
-        expect(await readFile(join(dest, 'style.css'), 'utf8')).toBe('body');
-    });
-
-    it('explains a zero-match instead of reporting an empty success', async () => {
-        const { runtime } = searchRuntime([]);
-
-        const manifest = await downloadAssets({
-            dotcms: runtime,
-            path: '//demo.dotcms.com/application/themes/nope',
-            dest,
-            recursive: true,
-            overwrite: 'overwrite'
+        afterEach(async () => {
+            await rm(root, { recursive: true, force: true });
         });
 
-        expect(manifest.count).toBe(0);
-        expect(manifest.warnings.length).toBeGreaterThan(0);
-    });
+        it('uploads from a directory inside the root', async () => {
+            const inside = join(root, 'theme');
+            await mkdir(inside);
+            await writeFile(join(inside, 'style.css'), '.a{}');
+            const { runtime } = fakeRuntime();
 
-    it('records a per-asset failure rather than aborting the batch', async () => {
-        const { runtime } = fakeRuntime({
-            onRequest: (opts) => {
-                if (opts.path === '/api/content/_search') {
-                    return {
-                        entity: {
-                            jsonObjectView: {
-                                contentlets: [
-                                    { identifier: 'a1', path: '//demo.dotcms.com/a/one.css' },
-                                    { identifier: 'a2', path: '//demo.dotcms.com/a/two.css' }
-                                ]
-                            }
-                        }
-                    };
-                }
-                if (opts.path === '/api/v2/assets/a1') {
-                    throw new Error('HTTP 404 Not Found');
-                }
-                if (opts.path?.startsWith('/api/v2/assets/')) {
-                    return binary('ok');
-                }
+            const manifest = await uploadAssets({
+                dotcms: runtime,
+                root,
+                src: inside,
+                dest: SITE,
+                publish: true,
+                verify: false
+            });
 
-                return undefined;
-            }
+            expect(manifest.count).toBe(1);
         });
 
-        const manifest = await downloadAssets({
-            dotcms: runtime,
-            path: '//demo.dotcms.com/a',
-            dest,
-            recursive: true,
-            overwrite: 'overwrite'
+        it('refuses a src outside the root before reading or requesting anything', async () => {
+            const { runtime, calls } = fakeRuntime();
+
+            const error = await uploadAssets({
+                dotcms: runtime,
+                root,
+                src, // a sibling temp dir, outside the root
+                dest: SITE,
+                publish: true,
+                verify: false
+            }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(ValidationError);
+            expect((error as Error).message).toContain('`src` must be inside');
+            expect(calls).toEqual([]);
         });
 
-        expect(manifest.failures).toHaveLength(1);
-        expect(manifest.count).toBe(1);
-    });
+        it('refuses a src that is a symlink inside the root pointing out of it', async () => {
+            const link = join(root, 'looks-inside');
+            await symlink(src, link);
+            const { runtime, calls } = fakeRuntime();
 
-    it('stops paginating when a page adds nothing new', async () => {
-        // The termination guard. If the backend ignores `offset` every page comes back full
-        // of the same identifiers: the short-page exit never fires, `seen` de-dupes so the
-        // result stops growing, and the loop would spin forever issuing identical POSTs.
-        const page = Array.from({ length: 500 }, (_, i) => ({
-            identifier: `id-${i}`,
-            path: `//demo.dotcms.com/a/file-${i}.css`
-        }));
-        const { runtime, calls } = fakeRuntime({
-            onRequest: (opts) => {
-                if (opts.path === '/api/content/_search') {
-                    // Always the SAME page, regardless of offset.
-                    return { entity: { jsonObjectView: { contentlets: page } } };
-                }
-                if (opts.path?.startsWith('/api/v2/assets/')) {
-                    return binary('x');
-                }
+            const error = await uploadAssets({
+                dotcms: runtime,
+                root,
+                src: link,
+                dest: SITE,
+                publish: true,
+                verify: false
+            }).catch((e: unknown) => e);
 
-                return undefined;
-            }
+            expect(error).toBeInstanceOf(ValidationError);
+            expect(calls).toEqual([]);
         });
-
-        const manifest = await downloadAssets({
-            dotcms: runtime,
-            path: '//demo.dotcms.com/a',
-            dest,
-            recursive: true,
-            overwrite: 'overwrite'
-        });
-
-        // Two searches: the first yields 500 new ids, the second adds none and breaks.
-        expect(callsTo(calls, '/api/content/_search')).toBe(2);
-        expect(manifest.count).toBe(500);
     });
 });

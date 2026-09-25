@@ -15,6 +15,7 @@ export type DotCMSErrorCode =
     | 'VALIDATION' // adapter input failed its schema / request options invalid
     | 'POLICY' // allow-list / policy rejected the call before it reached the wire
     | 'HTTP' // dotCMS returned a non-2xx response
+    | 'NETWORK' // the request never got a response: refused, reset, DNS failure, …
     | 'TIMEOUT' // sandbox wall-clock (or a per-call timeout) elapsed
     | 'ABORT' // the call was aborted (e.g. the sandbox timed out mid-flight)
     | 'SANDBOX' // the model-authored code threw while executing
@@ -114,6 +115,48 @@ export class HttpError extends DotCMSError {
     detail(): Record<string, unknown> {
         return { status: this.status, statusText: this.statusText, body: this.body };
     }
+}
+
+/**
+ * The request never got a response — the connection was refused or reset, the host did not
+ * resolve, the socket timed out. Distinct from `HttpError` (the instance answered, with an
+ * error) because the two call for opposite reactions: this one is usually worth retrying.
+ */
+export class NetworkError extends DotCMSError {
+    readonly code = 'NETWORK' as const;
+    readonly method: string;
+    readonly path: string;
+    /** The platform's own reason, e.g. `ECONNREFUSED`, when it gave one. */
+    readonly reason?: string;
+
+    constructor(method: string, path: string, cause: unknown) {
+        const reason = networkReason(cause);
+        super(
+            `Request ${method} ${path} could not reach the dotCMS instance` +
+                (reason ? ` (${reason})` : '') +
+                '. The instance may be down, unreachable or restarting; this is worth retrying.',
+            { cause }
+        );
+        this.method = method;
+        this.path = path;
+        this.reason = reason;
+    }
+
+    override detail(): Record<string, unknown> {
+        return { method: this.method, path: this.path, reason: this.reason };
+    }
+}
+
+/** The most specific reason a failed `fetch` carries — undici nests it under `cause`. */
+function networkReason(error: unknown): string | undefined {
+    const nested = (error as { cause?: { code?: unknown; message?: unknown } })?.cause;
+    const code = nested?.code ?? (error as { code?: unknown })?.code;
+    if (typeof code === 'string' && code) {
+        return code;
+    }
+    const message = nested?.message ?? (error as { message?: unknown })?.message;
+
+    return typeof message === 'string' && message ? message : undefined;
 }
 
 /** A timeout elapsed (sandbox wall-clock, per-adapter-call, or context load). */

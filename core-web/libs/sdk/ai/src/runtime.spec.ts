@@ -1,7 +1,13 @@
 import { vi } from 'vitest';
 
 import { createRuntime } from './runtime';
-import { HttpError, PolicyError } from './sandbox/errors';
+import {
+    AbortError,
+    HttpError,
+    NetworkError,
+    PolicyError,
+    ValidationError
+} from './sandbox/errors';
 
 /** Build a minimal JSON Response stub. */
 function jsonResponse(body: unknown, init?: { ok?: boolean; status?: number }): Response {
@@ -56,6 +62,32 @@ describe('createRuntime.request (direct, no worker)', () => {
         await expect(dotcms.request({ path: '/api/v1/missing' })).rejects.toBeInstanceOf(HttpError);
     });
 
+    it('maps a request that never got a response to a typed NetworkError', async () => {
+        // What undici throws for a refused connection: a TypeError with the reason under cause.
+        fetchMock.mockRejectedValue(
+            Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } })
+        );
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+
+        const error = await dotcms.request({ path: '/api/v1/site' }).catch((e: unknown) => e);
+
+        expect(error).toBeInstanceOf(NetworkError);
+        expect(error).toMatchObject({
+            code: 'NETWORK',
+            reason: 'ECONNREFUSED',
+            path: '/api/v1/site'
+        });
+    });
+
+    it('still reports an aborted request as AbortError, not a network failure', async () => {
+        fetchMock.mockRejectedValue(
+            Object.assign(new Error('The operation was aborted'), { name: 'AbortError' })
+        );
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+
+        await expect(dotcms.request({ path: '/api/v1/site' })).rejects.toBeInstanceOf(AbortError);
+    });
+
     it('rejects a call that fails the allow-list with a PolicyError, before any fetch', async () => {
         const dotcms = createRuntime({
             url: 'https://demo.dotcms.com',
@@ -69,6 +101,27 @@ describe('createRuntime.request (direct, no worker)', () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it.each([
+        ['a dot-segment', '/api/v1/site/../contenttype'],
+        ['an encoded dot-segment', '/api/v1/site/%2e%2e/contenttype'],
+        ['a backslash dot-segment', '/api/v1/site/..\\contenttype']
+    ])('judges the resolved path, so %s cannot escape the allow-list', async (_label, path) => {
+        // Each of these starts with the allowed prefix, and each is sent by `fetch` as
+        // `/api/v1/contenttype`. Checked as raw strings they all passed.
+        const dotcms = createRuntime({
+            url: 'https://demo.dotcms.com',
+            token: 't',
+            allow: ['/api/v1/site']
+        });
+
+        const error = await dotcms.request({ path }).catch((e: unknown) => e);
+
+        expect(error).toBeInstanceOf(PolicyError);
+        expect((error as PolicyError).path).toBe('/api/v1/contenttype');
+        expect((error as PolicyError).message).toContain('resolves to /api/v1/contenttype');
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('allows a call whose path matches an allow-list prefix', async () => {
         fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
         const dotcms = createRuntime({
@@ -78,6 +131,64 @@ describe('createRuntime.request (direct, no worker)', () => {
         });
 
         await expect(dotcms.request({ path: '/api/v1/site/123' })).resolves.toEqual({ ok: true });
+    });
+
+    describe('refuses an entry that is not a path', () => {
+        // The allow-list is a security boundary, so a malformed entry must fail closed and
+        // loudly. `''` used to match every path — every path starts with `'' + '/'` — so a
+        // typo or an unset variable silently opened the whole API.
+        it.each([[''], ['   '], ['api/v1/content'], ['//api/v1/content']])(
+            'refuses %j when the runtime is created',
+            (entry) => {
+                expect(() =>
+                    createRuntime({ url: 'https://demo.dotcms.com', token: 't', allow: [entry] })
+                ).toThrow(ValidationError);
+            }
+        );
+
+        it("keeps '/' as the explicit way to allow every path", async () => {
+            fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
+            const dotcms = createRuntime({
+                url: 'https://demo.dotcms.com',
+                token: 't',
+                allow: ['/']
+            });
+
+            await expect(dotcms.request({ path: '/api/v1/site/123' })).resolves.toEqual({
+                ok: true
+            });
+        });
+    });
+
+    describe('matches whole path segments', () => {
+        // An entry names an endpoint and everything under it — not every path that happens to
+        // begin with the same characters. As raw `startsWith`, allowing `/api/v1/content` also
+        // allowed `/api/v1/contenttype`, `/api/v1/contentrelationships`, and so on.
+        const allow = ['/api/v1/content', '/api/v1/page/'];
+
+        it.each([
+            ['/api/v1/contenttype', 'a sibling that extends the last segment'],
+            ['/api/v1/contentrelationships/abc', 'a sibling with a subpath'],
+            ['/api/v1/pages', 'a sibling of an entry written with a trailing slash']
+        ])('refuses %s (%s)', async (path) => {
+            const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't', allow });
+
+            await expect(dotcms.request({ path })).rejects.toBeInstanceOf(PolicyError);
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            ['/api/v1/content', 'the entry itself'],
+            ['/api/v1/content/abc-123', 'a path under it'],
+            ['/api/v1/content/abc/versions', 'a deeper path under it'],
+            ['/api/v1/page', 'an entry written with a trailing slash, without it'],
+            ['/api/v1/page/render/about-us', 'a path under an entry written with a trailing slash']
+        ])('allows %s (%s)', async (path) => {
+            fetchMock.mockResolvedValue(jsonResponse({ ok: true }));
+            const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't', allow });
+
+            await expect(dotcms.request({ path })).resolves.toEqual({ ok: true });
+        });
     });
 
     it('fires the onCall observability hook without leaking the token', async () => {
@@ -113,6 +224,117 @@ describe('createRuntime.request (direct, no worker)', () => {
         const p = dotcms.request({ path: '/api/v1/site' }, { signal: controller.signal });
         controller.abort();
         await expect(p).rejects.toMatchObject({ code: 'ABORT' });
+    });
+});
+
+describe('createRuntime.request — streaming file bodies (host only)', () => {
+    // A file goes to dotCMS and comes back out without ever being held whole in memory: the
+    // upload hands `fetch` a Blob it reads as it sends, the download hands the body stream
+    // to a sink that writes it. Neither is reachable from sandboxed code — a Blob the host
+    // opened from disk and a function are both things only the host can supply.
+    const fetchMock = vi.fn();
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        global.fetch = fetchMock as unknown as typeof fetch;
+    });
+
+    /** A 200 response whose body is `chunks`, and whose decoders fail the test if used. */
+    function streamResponse(chunks: string[], signal?: AbortSignal | null, hang = false) {
+        const encoder = new TextEncoder();
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                signal?.addEventListener('abort', () =>
+                    controller.error(new DOMException('The operation was aborted', 'AbortError'))
+                );
+                for (const chunk of chunks) controller.enqueue(encoder.encode(chunk));
+                if (!hang) controller.close();
+            }
+        });
+        const unused = () => {
+            throw new Error('the body was decoded instead of streamed');
+        };
+
+        return {
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            headers: {
+                get: (n: string) =>
+                    n.toLowerCase() === 'content-type' ? 'application/octet-stream' : null
+            },
+            body,
+            json: vi.fn(unused),
+            text: vi.fn(unused),
+            arrayBuffer: vi.fn(unused)
+        } as unknown as Response;
+    }
+
+    /** Everything a stream yields, as text. */
+    async function readAll(stream: ReadableStream<Uint8Array>): Promise<string> {
+        return new Response(stream).text();
+    }
+
+    it('sends a Blob file field as the multipart file part, unchanged', async () => {
+        fetchMock.mockResolvedValue(jsonResponse({ entity: { identifier: 'a-1' } }));
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+
+        await dotcms.request({
+            method: 'PUT',
+            path: '/api/v2/assets/publish',
+            formData: {
+                path: '//demo.dotcms.com/application/style.css',
+                file: { name: 'style.css', type: 'text/css', blob: new Blob(['.a{color:red}']) }
+            }
+        });
+
+        const form = fetchMock.mock.calls[0][1].body as FormData;
+        const part = form.get('file') as File;
+        expect(part.name).toBe('style.css');
+        expect(await part.text()).toBe('.a{color:red}');
+    });
+
+    it('hands a successful body to onBody and resolves to what it returns', async () => {
+        const response = streamResponse(['hello ', 'world']);
+        fetchMock.mockResolvedValue(response);
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+
+        const result = await dotcms.request({
+            path: '/api/v2/assets/a-1',
+            onBody: async (body, info) => ({ text: await readAll(body), type: info.contentType })
+        });
+
+        expect(result).toEqual({ text: 'hello world', type: 'application/octet-stream' });
+        expect(response.arrayBuffer).not.toHaveBeenCalled();
+    });
+
+    it('reports an error response as HttpError without calling onBody', async () => {
+        fetchMock.mockResolvedValue(jsonResponse({ message: 'nope' }, { ok: false, status: 404 }));
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+        const onBody = vi.fn();
+
+        await expect(
+            dotcms.request({ path: '/api/v2/assets/missing', onBody })
+        ).rejects.toBeInstanceOf(HttpError);
+        expect(onBody).not.toHaveBeenCalled();
+    });
+
+    it('keeps the abort signal in force until the sink has consumed the body', async () => {
+        // The body is still arriving when the caller aborts. Had the request settled at the
+        // headers, the transfer would carry on unbounded after the deadline had "fired".
+        fetchMock.mockImplementation(async (_url: string, init: RequestInit) =>
+            streamResponse(['partial'], init.signal, true)
+        );
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 20);
+
+        const pending = dotcms.request(
+            { path: '/api/v2/assets/a-1', onBody: (body) => readAll(body) },
+            { signal: controller.signal }
+        );
+
+        await expect(pending).rejects.toBeInstanceOf(AbortError);
     });
 });
 

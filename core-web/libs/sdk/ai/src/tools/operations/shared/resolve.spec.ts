@@ -1,8 +1,17 @@
 import { vi } from 'vitest';
 
-import { HttpError, type DotCMSRuntime, type RequestOptions } from '@dotcms/ai/runtime';
+import { RESOLVE_ENDPOINTS, resolveLanguageId, resolveSite } from './resolve';
 
-import { resolveLanguageId, resolveSite } from './resolve';
+import { HttpError, type DotCMSRuntime, type RequestOptions } from '../../../runtime';
+import { unlistedCalls } from '../../toolkit/endpoints';
+
+// Every request the fake below sees. After each test, all of them must be in the shared
+// RESOLVE_ENDPOINTS every page tool includes — otherwise resolution works here and is refused
+// in production.
+const seen: RequestOptions[] = [];
+afterEach(() => {
+    expect(unlistedCalls(RESOLVE_ENDPOINTS, seen.splice(0))).toEqual([]);
+});
 
 const DEMO_SITE = {
     identifier: '48190c8c-42c4-46af-8d1a-0cd5db894797',
@@ -25,6 +34,7 @@ function fakeRuntime(options?: {
 }) {
     const calls: RequestOptions[] = [];
     const request = vi.fn(async (opts: RequestOptions) => {
+        seen.push(opts);
         calls.push(opts);
 
         return options?.onRequest ? options.onRequest(opts) : {};
