@@ -14,6 +14,7 @@ import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -63,11 +64,8 @@ public class LayoutResource implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * Portlet ids that open this resource during the Tools Beta. Replace with
-     * {@code PortletID.TOOLS} / {@code PortletID.TOOLS_BETA} once #37574 (PR #37678) merges.
-     */
-    static final String[] TOOLS_PORTLET_IDS = {"tools", "tools-beta"};
+    /** Portlet ids that open this resource: the Tools portlet and its beta alias. */
+    static final String[] TOOLS_PORTLET_IDS = {PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString()};
 
     private static final String OP_CREATE = "create";
     private static final String OP_UPDATE = "update";
