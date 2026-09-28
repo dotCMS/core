@@ -73,20 +73,28 @@
          document that was there all along (issue #37532). The message sits above the listing rather
          than replacing it, so it explains the empty grid instead of hiding it. -->
     @if ($searchFailed()) {
+        <!-- Spaced like the scope bar beside it (dot-content-drive-scope-bar): full width, with its
+             px-4 py-2 padding (1rem by 0.5rem) and square corners, so the two bars line up. The
+             message keeps its own font and colours; only the spacing is shared. Set as design
+             tokens, not classes: Lara's small message pads its content 0.5rem by 0.625rem, and a
+             utility class does not win over the theme. -->
         <p-message
+            [dt]="{ root: { borderRadius: '0' }, content: { sm: { padding: '0.5rem 1rem' } } }"
             [pt]="{ text: { class: 'w-full' } }"
             severity="error"
+            size="small"
             data-testid="search-error-state"
             role="alert"
-            class="block p-4">
-            <div class="flex w-full flex-wrap items-center justify-between gap-2">
+            class="block">
+            <div class="flex w-full items-center justify-between gap-4">
                 <span>{{ 'content-drive.search.error.message' | dm }}</span>
-                <p-button
-                    [label]="'content-drive.search.error.retry' | dm"
+                <button
+                    type="button"
+                    class="shrink-0 cursor-pointer font-semibold underline"
                     data-testid="search-error-retry"
-                    severity="secondary"
-                    size="small"
-                    (onClick)="onRetrySearch()" />
+                    (click)="onRetrySearch()">
+                    {{ 'content-drive.search.error.retry' | dm }}
+                </button>
             </div>
         </p-message>
     }

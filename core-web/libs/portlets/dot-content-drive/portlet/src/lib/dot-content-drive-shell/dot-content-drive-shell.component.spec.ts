@@ -1917,9 +1917,7 @@ describe('DotContentDriveShellComponent', () => {
         it('should re-run the search when the user retries', () => {
             failSearch();
 
-            // The testid lands on the <p-button> host; the clickable element is the <button> it
-            // renders inside.
-            spectator.click('[data-testid="search-error-retry"] button');
+            spectator.click(byTestId('search-error-retry'));
 
             expect(store.loadItems).toHaveBeenCalled();
         });
