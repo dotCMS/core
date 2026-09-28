@@ -1243,6 +1243,23 @@ describe('DotContentDriveSidebarComponent', () => {
             });
         });
 
+        it('should not scroll on load when the selection is the site root', () => {
+            // The site row is the tree's first row, so there is nothing to bring into view. The
+            // reveal centred it anyway, and in Firefox-based browsers that left the tree scrolled
+            // to its middle with the selected root out of sight.
+            contentDriveStore.selectedNode.mockReturnValue({
+                key: 'site-root',
+                label: 'demo.dotcms.com',
+                data: { id: 'site-id', hostname: 'demo.dotcms.com', path: '', type: 'folder' },
+                leaf: false
+            });
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+
         it('should not scroll while the tree is still loading', () => {
             contentDriveStore.selectedNode.mockReturnValue(targetNode);
 

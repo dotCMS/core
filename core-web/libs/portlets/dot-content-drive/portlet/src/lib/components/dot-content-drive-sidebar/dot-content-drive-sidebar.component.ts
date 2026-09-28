@@ -281,8 +281,17 @@ export class DotContentDriveSidebarComponent {
             return;
         }
 
+        const selected = this.$selectedNode();
+
+        // The site row is the tree's first row, so there is nothing to bring into view. Centring it
+        // anyway left Firefox-based browsers scrolled to the middle of the tree, with the selected
+        // root out of sight. It is told apart by having no folder path.
+        if (selected?.data && !selected.data.path) {
+            return;
+        }
+
         // Instant, not smooth: this is where the tree should have opened, not a place to animate to.
-        this.#revealNode(this.$selectedNode(), 'instant');
+        this.#revealNode(selected, 'instant');
     });
 
     /** A folder opened from the table whose branch the store is still loading. */
