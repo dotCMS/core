@@ -494,7 +494,9 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         getQuickActions(this.$selectedItems(), {
             isAdmin: this.#store.currentUserIsAdmin(),
             hasPushPublishEnvironments: this.$hasPushPublishEnvironments(),
-            canAddChildren: this.#store.$canAddChildren()
+            // Where the duplicates can land, which in all site content is each folder's own
+            // parent rather than one folder to gate against.
+            canAddChildren: this.#store.$canDuplicateHere()
         })
     );
 

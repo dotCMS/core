@@ -756,6 +756,50 @@ export const DotContentDriveStore = signalStore(
             const $allSiteContentSelected = computed(() => !path());
             const $systemHostSelected = computed(() => path() === SYSTEM_HOST_PATH);
 
+            /**
+             * Whether the browsed folder accepts new children.
+             *
+             * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
+             * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
+             * the contentlet checkin path never checks it, so that one is gated here for consistency
+             * rather than as a preview of a refusal — otherwise uploading would quietly allow what
+             * creating a folder in the same place forbids.
+             *
+             * Computed here rather than in each consumer because three surfaces gate on it — the New
+             * menu, the Upload button and the drop zone — and three copies of the folder-then-site
+             * fallback would be three chances to disagree.
+             *
+             * A node with no permissions is the site root, whose parent is the host rather than a
+             * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
+             * in flight, and an instance too old to report the field. Starting disabled would flicker
+             * the affordances off and on for the common case, and the server refuses the write anyway.
+             */
+            const $canAddChildren = computed(() => {
+                // System Host is a real destination, so this is a permission answer — but about
+                // System Host, not about whichever site the switcher happens to show.
+                if ($systemHostSelected()) {
+                    return systemHostCanAddChildren() !== false;
+                }
+
+                // All site content spans every folder, so it names no single place — but content
+                // added here lands on the site root, and that is whose permission decides. Asked
+                // before the node below on purpose: selecting all site content clears the tree
+                // selection, and a node left over from before it was cleared would be answering
+                // about a folder that is not the destination.
+                if ($allSiteContentSelected()) {
+                    return siteCanAddChildren() !== false;
+                }
+
+                const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
+                    ?.permissions;
+
+                if (!permissions?.length) {
+                    return siteCanAddChildren() !== false;
+                }
+
+                return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
+            });
+
             return {
                 /**
                  * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
@@ -796,50 +840,17 @@ export const DotContentDriveStore = signalStore(
                     $systemHostSelected() ? SYSTEM_HOST.identifier : currentSite()?.identifier
                 ),
 
+                $canAddChildren,
+
                 /**
-                 * Whether the browsed folder accepts new children.
+                 * Whether Duplicate may be offered where the author is browsing (#37062).
                  *
-                 * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
-                 * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
-                 * the contentlet checkin path never checks it, so that one is gated here for consistency
-                 * rather than as a preview of a refusal — otherwise uploading would quietly allow what
-                 * creating a folder in the same place forbids.
-                 *
-                 * Computed here rather than in each consumer because three surfaces gate on it — the New
-                 * menu, the Upload button and the drop zone — and three copies of the folder-then-site
-                 * fallback would be three chances to disagree.
-                 *
-                 * A node with no permissions is the site root, whose parent is the host rather than a
-                 * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
-                 * in flight, and an instance too old to report the field. Starting disabled would flicker
-                 * the affordances off and on for the common case, and the server refuses the write anyway.
+                 * The browsed folder's own answer, except in all site content. The listing spans
+                 * every folder there, a search included, so each duplicate lands in its own parent
+                 * rather than the site root and there is no single folder to gate against
+                 * (FR-005b, US6 acceptance scenario 4). The server refuses per folder instead.
                  */
-                $canAddChildren: computed(() => {
-                    // System Host is a real destination, so this is a permission answer — but about
-                    // System Host, not about whichever site the switcher happens to show.
-                    if ($systemHostSelected()) {
-                        return systemHostCanAddChildren() !== false;
-                    }
-
-                    // All site content spans every folder, so it names no single place — but content
-                    // added here lands on the site root, and that is whose permission decides. Asked
-                    // before the node below on purpose: selecting all site content clears the tree
-                    // selection, and a node left over from before it was cleared would be answering
-                    // about a folder that is not the destination.
-                    if ($allSiteContentSelected()) {
-                        return siteCanAddChildren() !== false;
-                    }
-
-                    const permissions = (
-                        selectedNode()?.data as { permissions?: string[] } | undefined
-                    )?.permissions;
-
-                    if (!permissions?.length) {
-                        return siteCanAddChildren() !== false;
-                    }
-
-                    return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
-                })
+                $canDuplicateHere: computed(() => $allSiteContentSelected() || $canAddChildren())
             };
         }
     ),

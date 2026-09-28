@@ -244,7 +244,11 @@ describe('DotContentDriveActionCenterComponent', () => {
                 ),
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
                 hasPushPublishEnvironments: mockHasPushPublishEnvironments,
-                $canAddChildren: mockCanAddChildren,
+                // Duplicate gates on where its copies can land, which the store answers as
+                // `$canDuplicateHere`. The browsed folder's own answer is pinned to allowed so a
+                // component reading it instead is caught.
+                $canAddChildren: signal(true),
+                $canDuplicateHere: mockCanAddChildren,
                 // The folder being browsed, which seeds the move destination picker.
                 currentSite: mockCurrentSite,
                 path: mockPath,

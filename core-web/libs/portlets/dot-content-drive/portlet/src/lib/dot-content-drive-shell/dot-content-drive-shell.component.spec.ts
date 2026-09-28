@@ -269,6 +269,8 @@ describe('DotContentDriveShellComponent', () => {
                     // Read by the toolbar (rendered for real here) and the drop zone: both gate
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
+                    // Read by the folder menu the shell renders, to gate Duplicate.
+                    $canDuplicateHere: canAddChildrenSignal,
                     siteCanAddChildren: siteCanAddChildrenSignal,
                     // The sidebar this shell renders reads it to decide whether to offer the
                     // System Host entry at all.

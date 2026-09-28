@@ -191,7 +191,7 @@ export class DotFolderListViewContextMenuComponent {
      * The signal is read before anything else so it stays a dependency of this effect.
      */
     readonly canAddChildrenEffect = effect(() => {
-        this.#store.$canAddChildren();
+        this.#store.$canDuplicateHere();
 
         this.$memoizedMenuItems.set({});
     });
@@ -253,12 +253,13 @@ export class DotFolderListViewContextMenuComponent {
                 });
             }
 
-            // Duplicating needs READ on the folder and add-children where its duplicate lands, which is
-            // the folder being browsed (#37062). Right after Folder Settings: it makes something new
-            // from the folder rather than configuring or publishing it.
+            // Duplicating needs READ on the folder and add-children where its duplicate lands: the
+            // folder being browsed, or, in all site content, the folder's own parent, which the
+            // server checks (#37062). Right after Folder Settings: it makes something new from the
+            // folder rather than configuring or publishing it.
             if (
                 contentlet.permissions?.includes(PERMISSIONS_TYPE.READ) &&
-                this.#store.$canAddChildren()
+                this.#store.$canDuplicateHere()
             ) {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('content-drive.action-center.duplicate'),

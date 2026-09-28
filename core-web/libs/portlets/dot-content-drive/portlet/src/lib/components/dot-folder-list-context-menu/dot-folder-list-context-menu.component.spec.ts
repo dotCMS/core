@@ -1252,6 +1252,24 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     );
                 });
 
+                it('should show Duplicate in All site content, even when the site root refuses new children', async () => {
+                    // The listing spans every folder, so each duplicate lands in its own parent
+                    // rather than the site root, and there is no single folder to gate against
+                    // (US6 acceptance scenario 4). The server refuses per folder.
+                    store.initContentDrive({
+                        currentSite: { hostname: 'demo.dotcms.com' } as never,
+                        path: undefined,
+                        filters: {},
+                        isTreeExpanded: true
+                    });
+                    patchState(store, { siteCanAddChildren: false } as never);
+                    component.$memoizedMenuItems.set({});
+
+                    await rightClick(readable);
+
+                    expect(duplicateItem()).toBeDefined();
+                });
+
                 it('should not show Duplicate when the folder carries no permissions at all', async () => {
                     await rightClick({ ...mockFolder, permissions: undefined } as never);
 
