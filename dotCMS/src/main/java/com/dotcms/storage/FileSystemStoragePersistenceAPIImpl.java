@@ -89,14 +89,18 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     }
 
     /**
-     * Maps a storage key to its path on disk. Keys are lowercased, as they always have been.
+     * Maps a storage key to its path on disk. Keys are lowercased, as they always have been, except
+     * in the groups that keep mixed-case names while S3 asset storage is enabled.
      *
      * @param groupName the group the key belongs to
      * @param path      the storage key
      * @return the path to use under the group's folder
      */
     private String normalizePath(final String groupName, final String path) {
-        return path.toLowerCase();
+        return AssetStorageFeature.isEnabled()
+                && (com.dotcms.storage.binary.BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equalsIgnoreCase(groupName)
+                || com.dotcms.storage.binary.BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equalsIgnoreCase(groupName))
+                ? path : path.toLowerCase();
     }
 
     @Override
