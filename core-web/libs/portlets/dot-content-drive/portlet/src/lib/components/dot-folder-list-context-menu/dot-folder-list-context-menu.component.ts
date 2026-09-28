@@ -181,6 +181,21 @@ export class DotFolderListViewContextMenuComponent {
         this.$memoizedMenuItems.set({});
     });
 
+    /**
+     * Drops the memo when the add-children answer for the browsed folder changes.
+     *
+     * Duplicate is offered only where its copy may land, and that answer is decided when the menu is
+     * built. The site lookup is asynchronous and reads as allowed until it settles, so a menu cached
+     * before it would go on offering a duplicate the server then refuses.
+     *
+     * The signal is read before anything else so it stays a dependency of this effect.
+     */
+    readonly canAddChildrenEffect = effect(() => {
+        this.#store.$canAddChildren();
+
+        this.$memoizedMenuItems.set({});
+    });
+
     readonly closeOnContextMenuReset = effect(() => {
         const data = this.#store.contextMenu();
 
@@ -722,7 +737,24 @@ export class DotFolderListViewContextMenuComponent {
      * @param folder the right-clicked folder
      */
     #duplicateFolder(folder: DotContentDriveActionableFolder): void {
-        const assetPaths = toFolderAssetPaths([folder], this.#store.currentSite()?.hostname ?? '');
+        const hostname = this.#store.currentSite()?.hostname;
+
+        if (!hostname) {
+            // Without a site the path would come out as `///path/`, and the started toast would
+            // report a run that could not happen. Refused the way the single-folder delete is.
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.action-center.duplicate'),
+                detail: this.#dotMessageService.get(
+                    'content-drive.dialog.duplicate-folder.no-site'
+                ),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            return;
+        }
+
+        const assetPaths = toFolderAssetPaths([folder], hostname);
 
         this.#store.executeDuplicate(
             this.#dotMessageService.get('content-drive.action-center.duplicate'),

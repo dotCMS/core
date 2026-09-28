@@ -770,6 +770,28 @@ describe('DotContentDriveActionCenterComponent', () => {
                 ]);
             });
 
+            it('should refuse with an error instead of submitting when no site is resolved', () => {
+                // Without a site the paths would come out as `///blogs/alpha/`. Delete refuses the
+                // same case, and so must this.
+                const messageService = spectator.inject(MessageService);
+                mockCurrentSite.set(undefined);
+
+                executeQuickAction('DUPLICATE');
+
+                expect(store.executeDuplicate).not.toHaveBeenCalled();
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        summary: 'content-drive.dialog.duplicate-folder.no-site'
+                    })
+                );
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        summary: 'content-drive.action-center.toast.duplicate-started'
+                    })
+                );
+            });
+
             it('should toast at trigger that the duplication runs in the background', () => {
                 const messageService = spectator.inject(MessageService);
 

@@ -1214,6 +1214,44 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     expect(duplicateItem()).toBeUndefined();
                 });
 
+                it('should drop Duplicate from a cached menu once the browsed folder refuses new children', async () => {
+                    // Decided when the menu is built, and the menu is cached per folder, so a menu
+                    // cached before the answer changed would go on offering a duplicate the server
+                    // then refuses.
+                    await rightClick(readable);
+                    expect(duplicateItem()).toBeDefined();
+
+                    patchState(store, {
+                        selectedNode: { data: { permissions: [PERMISSIONS_TYPE.READ] } }
+                    } as never);
+                    spectator.flushEffects();
+
+                    await rightClick(readable);
+
+                    expect(duplicateItem()).toBeUndefined();
+                });
+
+                it('should refuse with an error instead of submitting when no site is resolved', async () => {
+                    vi.spyOn(store, 'executeDuplicate');
+
+                    await rightClick(readable);
+                    patchState(store, { currentSite: undefined } as never);
+                    duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(store.executeDuplicate).not.toHaveBeenCalled();
+                    expect(messageService.add).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            severity: 'error',
+                            detail: 'content-drive.dialog.duplicate-folder.no-site'
+                        })
+                    );
+                    expect(messageService.add).not.toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            summary: 'content-drive.action-center.toast.duplicate-started'
+                        })
+                    );
+                });
+
                 it('should not show Duplicate when the folder carries no permissions at all', async () => {
                     await rightClick({ ...mockFolder, permissions: undefined } as never);
 

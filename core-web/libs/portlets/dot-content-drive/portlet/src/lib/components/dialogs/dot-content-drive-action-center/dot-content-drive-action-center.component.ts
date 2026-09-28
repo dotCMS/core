@@ -824,10 +824,21 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * Backgrounded like Refresh, so the only feedback until it finishes is a toast saying it started.
      */
     private fireDuplicate(quickAction: DotActionCenterQuickAction): void {
-        const assetPaths = toFolderAssetPaths(
-            this.$includedItems(),
-            this.#store.currentSite()?.hostname ?? ''
-        );
+        const hostname = this.#store.currentSite()?.hostname;
+
+        if (!hostname) {
+            // Without a site every path would come out as `///path/`. Matches how delete refuses.
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get(
+                    'content-drive.dialog.duplicate-folder.no-site'
+                )
+            });
+
+            return;
+        }
+
+        const assetPaths = toFolderAssetPaths(this.$includedItems(), hostname);
 
         if (!assetPaths.length) {
             return;
