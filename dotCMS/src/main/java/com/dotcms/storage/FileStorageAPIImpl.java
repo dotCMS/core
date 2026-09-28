@@ -86,12 +86,12 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     @Override
     public Map<String, Serializable> generateRawBasicMetaData(final File binary) {
-        return this.generateBasicMetaData(binary, s -> true); // raw = no filter
+        return withLocalBinary(binary, () -> this.generateBasicMetaData(binary, s -> true)); // raw = no filter
     }
 
     @Override
     public Map<String, Serializable> generateRawFullMetaData(final File binary, long maxLength) {
-        return this.generateFullMetaData(binary, s -> true, maxLength); // raw = no filter
+        return withLocalBinary(binary, () -> this.generateFullMetaData(binary, s -> true, maxLength)); // raw = no filter
     }
 
     /**
@@ -281,10 +281,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
     private Map<String, Serializable> generateMetadataFromFile(final File binary,
             final GenerateMetadataConfig configuration, final StorageKey storageKey, final Map<String, Serializable> onlyHasCustomMetadataMap, final StoragePersistenceAPI storage) throws DotDataException {
-        validateBinary(binary);
-
-        final long maxLength = configuration.getMaxLength();
-        Map<String, Serializable> metadataMap = generateMetaDataBasedOnConfig(binary, configuration, maxLength);
+        Map<String, Serializable> metadataMap = withLocalBinary(binary, () -> {
+            validateBinary(binary);
+            return generateMetaDataBasedOnConfig(binary, configuration, configuration.getMaxLength());
+        });
 
         if (configuration.isStore()) {
             //if the group/bucket doesn't exist create it — only needed when actually writing.
@@ -293,6 +293,21 @@ public class FileStorageAPIImpl implements FileStorageAPI {
             storeMetadata(storageKey, storage, metadataMap);
         }
         return metadataMap;
+    }
+
+    /** Restore only when generation needs bytes, retaining the cache lease through every file read. */
+    private Map<String, Serializable> withLocalBinary(final File binary,
+            final Supplier<Map<String, Serializable>> generation) {
+        if (!AssetStorageFeature.isEnabled() || binary == null) {
+            return generation.get();
+        }
+        final var assets = APILocator.getBinaryAssetStorageAPI();
+        try (var lease = assets.acquireCacheLease(); var input = assets.openLocalFile(binary)) {
+            return generation.get();
+        } catch (final java.io.IOException | DotDataException failure) {
+            throw new com.dotmarketing.exception.DotRuntimeException(
+                    "Unable to restore binary for metadata: " + binary, failure);
+        }
     }
 
     private void validateBinary(final File binary) {
