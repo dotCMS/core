@@ -1,6 +1,13 @@
 package com.dotcms.jobs.business.processor.impl;
 
 import com.dotcms.jobs.business.batch.BatchFailureReason;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.Executors;
+import java.time.Duration;
+import com.dotmarketing.util.Config;
+import com.dotcms.jobs.business.processor.ProgressTracker;
+import com.dotcms.jobs.business.processor.NoRetryPolicy;
 import java.util.stream.Collectors;
 import java.util.Set;
 import java.util.Optional;
@@ -46,14 +53,40 @@ import javax.enterprise.context.Dependent;
  * Progress is reported once per completed folder, the finest step that can be observed.
  * <p>
  * Cancellation takes effect between folders: the folder in progress finishes, and every folder
- * not yet reached is recorded SKIPPED with no reason. Retry and heartbeat arrive in their own
- * phase.
+ * not yet reached is recorded SKIPPED with no reason.
+ * <p>
+ * <b>Liveness.</b> One folder can take a long time, and the queue marks a run abandoned when its
+ * {@code updated_at} stops moving. So while each folder is being duplicated a background ticker
+ * calls {@link ProgressTracker#heartbeat()} every third of the abandonment threshold, the same way
+ * {@code FolderBulkDeleteProcessor} does. The heartbeat only proves the run is alive; progress still
+ * moves once per completed folder.
+ * <p>
+ * <b>Never retried.</b> Duplication is not idempotent: running it again creates a second set of
+ * duplicates. Hence {@link NoRetryPolicy}, which does stop an abandoned run from running again:
+ * {@code JobQueueManagerAPIImpl.processJobWithRetry} routes a job coming back from ABANDONED
+ * through the same retry check as a failed one, so this processor goes to ABANDONED_PERMANENTLY.
+ * {@code BulkUploadProcessor}'s Javadoc claims the opposite and is wrong. Bulk delete leaves the
+ * annotation off because re-running a delete is harmless; re-running a duplicate is not.
  *
  * @author dotCMS
  */
 @Dependent
 @Queue(FolderBulkDuplicateHelper.QUEUE_NAME)
+@NoRetryPolicy
 public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
+
+    /** The property the queue's abandonment detector reads, deliberately not cached here. */
+    private static final String ABANDONMENT_THRESHOLD_MINUTES_KEY =
+            "JOB_ABANDONMENT_THRESHOLD_MINUTES";
+    private static final int DEFAULT_ABANDONMENT_THRESHOLD_MINUTES = 30;
+    private static final int HEARTBEAT_INTERVAL_DIVISOR = 3;
+
+    /**
+     * Test-only override for the heartbeat interval, so a test can tick well under the one-minute
+     * floor of the abandonment threshold. Nothing outside this process needs to know it.
+     */
+    private static final String HEARTBEAT_INTERVAL_MILLIS_KEY =
+            "FOLDER_BULK_DUPLICATE_HEARTBEAT_INTERVAL_MILLIS";
 
     private final AtomicInteger successCount = new AtomicInteger();
     private final AtomicInteger failedCount = new AtomicInteger();
@@ -97,7 +130,13 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
             final String path = paths.get(index);
             final Folder source = duplicable.get(path);
             if (source != null) {
-                duplicateOne(duplicator, source, path, user);
+                // Started just before the folder and stopped the instant it returns, on every exit.
+                final ScheduledExecutorService heartbeat = startHeartbeat(job);
+                try {
+                    duplicateOne(duplicator, source, path, user);
+                } finally {
+                    heartbeat.shutdownNow();
+                }
             }
 
             final int completed = this.processedCount.incrementAndGet();
@@ -112,6 +151,34 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
                 "Bulk folder duplicate job [%s] finished: %d succeeded, %d failed, %d skipped",
                 job.id(), this.successCount.get(), this.failedCount.get(),
                 this.skippedCount.get()));
+    }
+
+    /**
+     * Starts a background ticker calling {@link ProgressTracker#heartbeat()}, at a third of the
+     * abandonment threshold so one slow tick cannot itself cause a false abandonment. The caller
+     * shuts it down.
+     */
+    private ScheduledExecutorService startHeartbeat(final Job job) {
+        final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        job.progressTracker().ifPresent(tracker -> {
+            final long intervalMillis = heartbeatIntervalMillis();
+            executor.scheduleAtFixedRate(tracker::heartbeat, intervalMillis, intervalMillis,
+                    TimeUnit.MILLISECONDS);
+        });
+        return executor;
+    }
+
+    /**
+     * A third of the abandonment threshold, floored at one minute's worth, unless the test-only
+     * override is set. Read fresh on every call, so {@code Config.setProperty} takes effect at once.
+     */
+    private long heartbeatIntervalMillis() {
+        final int thresholdMinutes = Config.getIntProperty(ABANDONMENT_THRESHOLD_MINUTES_KEY,
+                DEFAULT_ABANDONMENT_THRESHOLD_MINUTES);
+        final long derivedFromThreshold = Duration.ofMinutes(Math.max(thresholdMinutes, 1))
+                .dividedBy(HEARTBEAT_INTERVAL_DIVISOR)
+                .toMillis();
+        return Config.getLongProperty(HEARTBEAT_INTERVAL_MILLIS_KEY, derivedFromThreshold);
     }
 
     /**
