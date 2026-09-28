@@ -5,21 +5,19 @@ import {
     DotCMSContentTypeFieldVariable,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutTab,
+    DotCMSFieldTypes,
     DotLanguage,
     UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
-import { castSingleSelectableValue } from '@dotcms/ui';
 
 import { CustomFieldConfig } from '../models/dot-edit-content-custom-field.interface';
 import {
     CALENDAR_FIELD_TYPES,
     DEFAULT_CUSTOM_FIELD_CONFIG,
     FLATTENED_FIELD_TYPES,
-    TAB_FIELD_CLAZZ,
-    UNCASTED_FIELD_TYPES
+    TAB_FIELD_CLAZZ
 } from '../models/dot-edit-content-field.constant';
-import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 import { Tab } from '../models/dot-edit-content-form.interface';
 import { UIState } from '../models/dot-edit-content.model';
@@ -29,38 +27,6 @@ import { UIState } from '../models/dot-edit-content.model';
 // `@dotcms/ui` is bundled into a legacy host that must not pull `edit-content` in. Pure functions
 // with no Angular surface, re-exported here so every caller in this library is untouched.
 export { castSingleSelectableValue, getSingleSelectableFieldOptions } from '@dotcms/ui';
-
-/**
- * This function is used to cast the value to a correct type for the Angular Form
- *
- * @param value
- * @param field
- * @returns
- */
-export const getFinalCastedValue = (
-    // Nullable: the resolution functions return null for absent values, and the guard
-    // below already treats undefined as "leave as-is".
-    value: object | string | number | null | undefined,
-    field: DotCMSContentTypeField
-) => {
-    if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        return value;
-    }
-
-    if (FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        return (value as string)?.split(',').map((value) => value.trim());
-    }
-
-    if (value === undefined || UNCASTED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
-        return value;
-    }
-
-    if (field.fieldType === FIELD_TYPES.JSON) {
-        return JSON.stringify(value, null, 2); // This is a workaround to avoid the Monaco Editor to show the value as a string and keep the formatting
-    }
-
-    return castSingleSelectableValue(value, field.dataType);
-};
 
 export const transformLayoutToTabs = (
     firstTabTitle: string,
@@ -224,9 +190,7 @@ export const stringToJson = (value: string) => {
  */
 
 export const isFilteredType = (field: DotCMSContentTypeField): boolean => {
-    return Object.values(NON_FORM_CONTROL_FIELD_TYPES).includes(
-        field.fieldType as NON_FORM_CONTROL_FIELD_TYPES
-    );
+    return NON_FORM_CONTROL_FIELD_TYPES.includes(field.fieldType);
 };
 
 /**
@@ -258,7 +222,9 @@ export const transformFormDataFn = (contentType: DotCMSContentType | null): Tab[
 
     const renderedMap = new Map<string, string>();
     contentType.fields.forEach((field) => {
-        if (field.rendered) {
+        // `rendered` belongs to the Custom field arm alone — it is the server-rendered markup a
+        // custom field ships with. `in` narrows to it without a cast.
+        if ('rendered' in field && field.rendered) {
             renderedMap.set(field.id, field.rendered);
         }
     });
@@ -398,7 +364,7 @@ export const prepareContentletForCopy = (
     fields?: DotCMSContentTypeField[]
 ): DotCMSContentlet => {
     const clearedBinaryFields = (fields ?? [])
-        .filter((f) => f.fieldType === FIELD_TYPES.BINARY)
+        .filter((f) => f.fieldType === DotCMSFieldTypes.BINARY)
         .reduce((acc, f) => ({ ...acc, [f.variable]: null }), {});
 
     return {
@@ -492,9 +458,7 @@ export const isFlattenedField = (
     fieldValue: unknown,
     field: DotCMSContentTypeField
 ): fieldValue is string[] => {
-    return (
-        Array.isArray(fieldValue) && FLATTENED_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)
-    );
+    return Array.isArray(fieldValue) && FLATTENED_FIELD_TYPES.includes(field.fieldType);
 };
 
 /**
@@ -505,7 +469,7 @@ export const isFlattenedField = (
  * @returns True if the field is a calendar field
  */
 export const isCalendarField = (field: DotCMSContentTypeField): boolean => {
-    return CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES);
+    return CALENDAR_FIELD_TYPES.includes(field.fieldType);
 };
 
 /**
@@ -605,7 +569,7 @@ export const processFieldValue = (
     }
 
     // Handle category fields: join inode array into comma-separated string for the API
-    if (field.fieldType === FIELD_TYPES.CATEGORY && Array.isArray(fieldValue)) {
+    if (field.fieldType === DotCMSFieldTypes.CATEGORY && Array.isArray(fieldValue)) {
         return fieldValue.join(',');
     }
 
@@ -620,7 +584,7 @@ export const processFieldValue = (
     // expects a JSON string — sending an object causes it to be stored as
     // Map.toString(), corrupting the field on save.
     if (
-        field.fieldType === FIELD_TYPES.BLOCK_EDITOR &&
+        field.fieldType === DotCMSFieldTypes.BLOCK_EDITOR &&
         fieldValue &&
         typeof fieldValue === 'object'
     ) {

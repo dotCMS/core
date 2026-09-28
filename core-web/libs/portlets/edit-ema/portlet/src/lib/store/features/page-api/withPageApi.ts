@@ -28,7 +28,20 @@ import {
 } from '../../../shared/models';
 import { compareUrlPaths, getIframeAccessMode, isForwardOrPage } from '../../../utils';
 import { PageType, UVEState } from '../../models';
-import { PageSnapshot } from '../page/withPage';
+import { PageAssetSource, PageSnapshot } from '../page/withPage';
+
+/**
+ * Shared shape for `pageReload`'s REST/GraphQL branches. Named and explicit so both
+ * branches of the ternary resolve to the same type — an inferred union here (each branch's
+ * `map()` producing a structurally different literal type) breaks overload resolution on the
+ * subsequent `.pipe(switchMap(...))`, collapsing `pageResult` to `unknown` at compile time
+ * (a real `tsc`/esbuild error that Jest's `isolatedModules` config does not catch).
+ */
+type PageReloadPayload = {
+    pageAsset: DotCMSPageAsset;
+    content?: Record<string, unknown>;
+    source: PageAssetSource;
+};
 
 /**
  * Interface defining the methods provided by withPageApi
@@ -74,6 +87,7 @@ export interface WithPageApiDeps {
     setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
+        source?: PageAssetSource;
     }) => void;
     rollbackPageAssetResponse: () => boolean;
 
@@ -81,6 +95,7 @@ export interface WithPageApiDeps {
     addHistory: (response: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
+        source?: PageAssetSource;
     }) => void;
     resetHistoryToCurrent: () => void;
 
@@ -141,6 +156,26 @@ export function withPageApi(deps: WithPageApiDeps) {
             const dotPageLayoutService = inject(DotPageLayoutService);
             const iframeMessenger = inject(UveIframeMessengerService);
             const dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+
+            /**
+             * Sends the current page asset to the headless client only when it is
+             * GraphQL-sourced (or the page is traditional) — never REST-shaped. When it
+             * can't push, tells the client to reload itself instead, so it re-syncs rather
+             * than being left showing a stale optimistic edit. See dotCMS/core#37097: this
+             * mirrors the primary reload effect's gate for the senders that bypass it
+             * (rollback-after-failed-save paths).
+             */
+            const sendPageDataIfGraphQLSourced = () => {
+                const asset = deps.pageAsset();
+                const canPush =
+                    store.pageType() === PageType.TRADITIONAL || asset?.source === 'graphql';
+
+                if (canPush && asset?.clientResponse) {
+                    iframeMessenger.sendPageData(asset.clientResponse);
+                } else {
+                    iframeMessenger.reloadPage();
+                }
+            };
 
             return {
                 /**
@@ -316,8 +351,12 @@ export function withPageApi(deps: WithPageApiDeps) {
                                         tap(({ experiment, languages }) => {
                                             const payload =
                                                 graphQLContent !== undefined
-                                                    ? { pageAsset, content: graphQLContent }
-                                                    : { pageAsset };
+                                                    ? {
+                                                          pageAsset,
+                                                          content: graphQLContent,
+                                                          source: 'graphql' as const
+                                                      }
+                                                    : { pageAsset, source: 'rest' as const };
 
                                             // Both writes land in the same synchronous tap.
                                             // Angular batches them before flushing effects, so
@@ -361,39 +400,39 @@ export function withPageApi(deps: WithPageApiDeps) {
                             }
                         }),
                         switchMap(() => {
+                            const pageParams = store.pageParams();
+                            const requestWithParams = deps.$requestWithParams();
+
+                            if (!pageParams) {
+                                return EMPTY;
+                            }
+
                             // Thread content through the stream value so the payload shape
                             // naturally encodes whether this is a GraphQL reload:
                             // - non-GraphQL emits { pageAsset }         → 'content' NOT in payload
                             // - GraphQL emits     { pageAsset, content } → 'content' IN payload
                             // setPageAsset in withPage.ts uses 'content' in payload to decide
                             // whether to clear the existing content, so this preserves original semantics.
-                            const requestWithParams = deps.$requestWithParams();
-                            const pageParams = store.pageParams();
-
-                            // Annotated rather than left to inference: an unannotated `let`
-                            // assigned in two branches evolves differently with and without
-                            // `strict`, and collapsed to `unknown` under the project's current
-                            // flags.
-                            let pageRequest: Observable<{
-                                pageAsset: DotCMSPageAsset;
-                                content?: Record<string, unknown>;
-                            }>;
-                            if (requestWithParams) {
-                                pageRequest = dotPageApiService
-                                    .getGraphQLPage(requestWithParams)
-                                    .pipe(
-                                        map(({ pageAsset, content }) => ({ pageAsset, content }))
-                                    );
-                            } else if (pageParams) {
-                                pageRequest = dotPageApiService
-                                    .get(pageParams)
-                                    .pipe(map((pageAsset) => ({ pageAsset })));
-                            } else {
-                                // Nothing identifies a page to reload. Unreachable in practice — a
-                                // reload follows a load — and the Page API request this used to
-                                // send with null params could only fail.
-                                return EMPTY;
-                            }
+                            // `source` tags provenance explicitly for the headless push gate — see #37097.
+                            const pageRequest: Observable<PageReloadPayload> =
+                                !deps.requestMetadata() || !requestWithParams
+                                    ? dotPageApiService.get(pageParams).pipe(
+                                          map(
+                                              (pageAsset): PageReloadPayload => ({
+                                                  pageAsset,
+                                                  source: 'rest'
+                                              })
+                                          )
+                                      )
+                                    : dotPageApiService.getGraphQLPage(requestWithParams).pipe(
+                                          map(
+                                              ({ pageAsset, content }): PageReloadPayload => ({
+                                                  pageAsset,
+                                                  content,
+                                                  source: 'graphql'
+                                              })
+                                          )
+                                      );
 
                             return pageRequest.pipe(
                                 switchMap((pageResult) => {
@@ -467,32 +506,35 @@ export function withPageApi(deps: WithPageApiDeps) {
 
                             return dotPageApiService.save(payload).pipe(
                                 switchMap(() => {
-                                    const requestWithParams = deps.$requestWithParams();
-
-                                    let pageRequest: Observable<DotCMSPageAsset>;
-                                    if (requestWithParams) {
-                                        pageRequest = dotPageApiService
-                                            .getGraphQLPage(requestWithParams)
-                                            .pipe(
-                                                tap((response) =>
-                                                    deps.setPageAsset({
-                                                        pageAsset: response.pageAsset,
-                                                        content: response.content
-                                                    })
-                                                ),
-                                                map((response) => response.pageAsset)
-                                            );
-                                    } else if (pageParams) {
-                                        pageRequest = dotPageApiService
-                                            .get(pageParams)
-                                            .pipe(
-                                                tap((pageAsset) => deps.setPageAsset({ pageAsset }))
-                                            );
-                                    } else {
+                                    if (!pageParams) {
                                         // The containers were saved; there is just nothing to
                                         // re-fetch the page with.
                                         return EMPTY;
                                     }
+
+                                    const requestWithParams = deps.$requestWithParams();
+                                    const pageRequest =
+                                        !deps.requestMetadata() || !requestWithParams
+                                            ? dotPageApiService.get(pageParams).pipe(
+                                                  tap((pageAsset) =>
+                                                      deps.setPageAsset({
+                                                          pageAsset,
+                                                          source: 'rest'
+                                                      })
+                                                  )
+                                              )
+                                            : dotPageApiService
+                                                  .getGraphQLPage(requestWithParams)
+                                                  .pipe(
+                                                      tap((response) =>
+                                                          deps.setPageAsset({
+                                                              pageAsset: response.pageAsset,
+                                                              content: response.content,
+                                                              source: 'graphql'
+                                                          })
+                                                      ),
+                                                      map((response) => response.pageAsset)
+                                                  );
 
                                     return pageRequest.pipe(
                                         catchError((e) => {
@@ -581,36 +623,35 @@ export function withPageApi(deps: WithPageApiDeps) {
                                      * rendered page HTML.                                                 *
                                      **********************************************************************/
                                     switchMap(() => {
-                                        const requestWithParams = deps.$requestWithParams();
                                         const pageParams = store.pageParams();
 
-                                        if (requestWithParams) {
-                                            return dotPageApiService
-                                                .getGraphQLPage(requestWithParams)
-                                                .pipe(
-                                                    tap((response) =>
-                                                        deps.setPageAsset({
-                                                            pageAsset: response.pageAsset,
-                                                            content: response.content
-                                                        })
-                                                    ),
-                                                    map((response) => response.pageAsset)
-                                                );
+                                        if (!pageParams) {
+                                            return EMPTY;
                                         }
 
-                                        if (pageParams) {
-                                            return dotPageApiService
-                                                .get(pageParams)
-                                                .pipe(
-                                                    tap((pageAsset) =>
-                                                        deps.setPageAsset({ pageAsset })
-                                                    )
-                                                );
-                                        }
+                                        const requestWithParams = deps.$requestWithParams();
 
-                                        // The layout was saved; there is nothing to re-fetch the
-                                        // rendered page with.
-                                        return EMPTY;
+                                        return !deps.requestMetadata() || !requestWithParams
+                                            ? dotPageApiService.get(pageParams).pipe(
+                                                  tap((pageAsset) =>
+                                                      deps.setPageAsset({
+                                                          pageAsset,
+                                                          source: 'rest'
+                                                      })
+                                                  )
+                                              )
+                                            : dotPageApiService
+                                                  .getGraphQLPage(requestWithParams)
+                                                  .pipe(
+                                                      tap((response) =>
+                                                          deps.setPageAsset({
+                                                              pageAsset: response.pageAsset,
+                                                              content: response.content,
+                                                              source: 'graphql'
+                                                          })
+                                                      ),
+                                                      map((response) => response.pageAsset)
+                                                  );
                                     }),
                                     tap(
                                         () => {
@@ -656,10 +697,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                             const rolledBack = deps.rollbackPageAssetResponse();
 
                             if (rolledBack) {
-                                const rolledBackResponse = deps.pageAsset()?.clientResponse;
-                                if (rolledBackResponse) {
-                                    iframeMessenger.sendPageData(rolledBackResponse);
-                                }
+                                sendPageDataIfGraphQLSourced();
                             }
 
                             return throwError(() => error);
@@ -689,10 +727,7 @@ export function withPageApi(deps: WithPageApiDeps) {
                                 const rolledBack = deps.rollbackPageAssetResponse();
 
                                 if (rolledBack) {
-                                    const rolledBackResponse = deps.pageAsset()?.clientResponse;
-                                    if (rolledBackResponse) {
-                                        iframeMessenger.sendPageData(rolledBackResponse);
-                                    }
+                                    sendPageDataIfGraphQLSourced();
                                 }
 
                                 return throwError(() => error);

@@ -14,6 +14,8 @@ import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
+    DotCMSDataTypes,
+    DotCMSFieldTypes,
     DotCMSTempFile,
     DotCMSWorkflowStatus,
     FeaturedFlags,
@@ -24,7 +26,6 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { WYSIWYG_MOCK } from '../fields/dot-edit-content-wysiwyg-field/mocks/dot-edit-content-wysiwyg-field.mock';
 import { DISABLED_WYSIWYG_FIELD } from '../models/disabledWYSIWYG.constant';
-import { FIELD_TYPES } from '../models/dot-edit-content-field.enum';
 import { DotFormData } from '../models/dot-edit-content-form.interface';
 import { DotWorkflowState } from '../models/dot-edit-content.model';
 
@@ -35,6 +36,7 @@ export const TEXT_FIELD_MOCK: DotCMSContentTypeField = {
     dataType: 'TEXT',
     fieldType: 'Text',
     fieldTypeLabel: 'Text',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'A helper text',
@@ -59,6 +61,7 @@ export const TEXT_AREA_FIELD_MOCK: DotCMSContentTypeField = {
     defaultValue: 'Some value',
     fieldType: 'Textarea',
     fieldTypeLabel: 'Textarea',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'Some hint',
@@ -285,6 +288,7 @@ export const DATE_FIELD_MOCK: DotCMSContentTypeField = {
     dataType: 'DATE',
     fieldType: 'Date',
     fieldTypeLabel: 'Date',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'A hint text',
@@ -309,6 +313,7 @@ export const DATE_AND_TIME_FIELD_MOCK: DotCMSContentTypeField = {
     defaultValue: 'now',
     fieldType: 'Date-and-Time',
     fieldTypeLabel: 'Date and Time',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'A hint text',
@@ -333,6 +338,7 @@ export const TIME_FIELD_MOCK: DotCMSContentTypeField = {
     dataType: 'DATE',
     fieldType: 'Time',
     fieldTypeLabel: 'Time',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'A hint text',
@@ -357,6 +363,7 @@ export const TAG_FIELD_MOCK: DotCMSContentTypeField = {
     defaultValue: 'some, tags, separated, by, comma',
     fieldType: 'Tag',
     fieldTypeLabel: 'Tag',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'Some hint',
@@ -380,6 +387,7 @@ export const CHECKBOX_FIELD_MOCK: DotCMSContentTypeField = {
     dataType: 'TEXT',
     fieldType: 'Checkbox',
     fieldTypeLabel: 'Checkbox',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'A hint text',
@@ -404,6 +412,7 @@ export const MULTI_SELECT_FIELD_MOCK: DotCMSContentTypeField = {
     dataType: 'LONG_TEXT',
     fieldType: 'Multi-Select',
     fieldTypeLabel: 'Multi Select',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'A hint text',
@@ -428,6 +437,7 @@ export const BLOCK_EDITOR_FIELD_MOCK: DotCMSContentTypeField = {
     dataType: 'LONG_TEXT',
     fieldType: 'Story-Block',
     fieldTypeLabel: 'Block Editor',
+    forceIncludeInApi: false,
     fieldVariables: [
         {
             clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
@@ -576,6 +586,7 @@ export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
     dataType: 'LONG_TEXT',
     fieldType: 'Custom-Field',
     fieldTypeLabel: 'Custom Field',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     iDate: 1700516848000,
@@ -595,11 +606,13 @@ export const CUSTOM_FIELD_MOCK: DotCMSContentTypeField = {
 
 export const JSON_FIELD_MOCK: DotCMSContentTypeField = {
     id: '96909fa20a00497cd3b766b52edac0ec',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
+    clazz: DotCMSClazzes.JSON,
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
-    dataType: 'TEXT',
+    // LONG_TEXT, not TEXT — a JSON field stores long text.
+    dataType: DotCMSDataTypes.LONG_TEXT,
     fieldType: 'JSON-Field',
     fieldTypeLabel: 'jsonField',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'A hint text',
@@ -619,11 +632,14 @@ export const JSON_FIELD_MOCK: DotCMSContentTypeField = {
 
 export const KEY_VALUE_MOCK: DotCMSContentTypeField = {
     id: '96909fa20a00497cd3b766b52edac0ec',
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableJSONField',
+    // Was ImmutableJSONField while fieldType said Key-Value — a contradiction the flat
+    // interface could not express, let alone reject.
+    clazz: DotCMSClazzes.KEY_VALUE,
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
-    dataType: 'TEXT',
+    dataType: DotCMSDataTypes.LONG_TEXT,
     fieldType: 'Key-Value',
     fieldTypeLabel: 'KeyValue',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'A hint text',
@@ -667,11 +683,21 @@ export const HOST_FOLDER_TEXT_MOCK: DotCMSContentTypeField = {
 
 export const CATEGORY_MOCK: DotCMSContentTypeField = {
     id: '96909fa20a00497cd3b766b52edac0ec',
+    // `categories` is required on the category arm and this mock never carried it — the very
+    // property issue #37670 cites as the reason for per-type typing.
+    categories: {
+        categoryName: 'Category',
+        inode: '38a3f133-85e1-4b07-b55e-179f38303b90',
+        key: 'category',
+        sortOrder: 0
+    },
     clazz: DotCMSClazzes.CATEGORY,
     contentTypeId: '93ebaff75f3e3887bea73ecd04588dc9',
-    dataType: 'TEXT',
+    // SYSTEM, not TEXT — a category field's value is a system reference.
+    dataType: DotCMSDataTypes.SYSTEM,
     fieldType: 'Category',
     fieldTypeLabel: 'Category',
+    forceIncludeInApi: false,
     fieldVariables: [],
     fixed: false,
     hint: 'A hint text',
@@ -885,7 +911,11 @@ function getAllFields(data: DotCMSContentTypeLayoutRow[]) {
 
 export const DOT_MESSAGE_SERVICE_MOCK = new MockDotMessageService({});
 
-export const CALENDAR_FIELD_TYPES = [FIELD_TYPES.DATE, FIELD_TYPES.DATE_AND_TIME, FIELD_TYPES.TIME];
+export const CALENDAR_FIELD_TYPES = [
+    DotCMSFieldTypes.DATE,
+    DotCMSFieldTypes.DATE_AND_TIME,
+    DotCMSFieldTypes.TIME
+];
 
 /* LAYOUT/FORM MOCKS */
 
@@ -1186,6 +1216,7 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             dataType: 'SYSTEM',
             fieldType: 'Row',
             fieldTypeLabel: 'Row',
+            forceIncludeInApi: false,
             fieldVariables: [],
             fixed: false,
             iDate: 1697051073000,
@@ -1207,6 +1238,7 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             dataType: 'SYSTEM',
             fieldType: 'Column',
             fieldTypeLabel: 'Column',
+            forceIncludeInApi: false,
             fieldVariables: [],
             fixed: false,
             iDate: 1697051073000,
@@ -1229,6 +1261,7 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             defaultValue: 'Placeholder',
             fieldType: 'Text',
             fieldTypeLabel: 'Text',
+            forceIncludeInApi: false,
             fieldVariables: [],
             fixed: false,
             hint: 'A hint Text 2',
@@ -1251,6 +1284,7 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             dataType: 'TEXT',
             fieldType: 'Text',
             fieldTypeLabel: 'Text',
+            forceIncludeInApi: false,
             fieldVariables: [],
             fixed: false,
             iDate: 1697051107001,
@@ -1272,6 +1306,7 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             dataType: 'SYSTEM',
             fieldType: 'Column',
             fieldTypeLabel: 'Column',
+            forceIncludeInApi: false,
             fieldVariables: [],
             fixed: false,
             iDate: 1697051077000,
@@ -1293,6 +1328,7 @@ export const CONTENT_TYPE_MOCK: DotCMSContentType = {
             dataType: 'TEXT',
             fieldType: 'Text',
             fieldTypeLabel: 'Text',
+            forceIncludeInApi: false,
             fieldVariables: [],
             fixed: false,
             hint: 'A hint text2',

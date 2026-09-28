@@ -124,6 +124,7 @@ let hostStub: {
     setContentTitle: Mock;
     addBreadcrumb: Mock;
     goToSavedContent: Mock;
+    leaveDeletedContent: Mock;
     goToRestoredVersion: Mock;
     goToRelatedContent: Mock;
     goToCrumb: Mock;
@@ -152,6 +153,7 @@ describe('DotRelationshipFieldComponent', () => {
             setContentTitle: vi.fn(),
             addBreadcrumb: vi.fn(),
             goToSavedContent: vi.fn(),
+            leaveDeletedContent: vi.fn(),
             goToRestoredVersion: vi.fn(),
             goToRelatedContent: vi.fn(),
             goToCrumb: vi.fn()
@@ -180,6 +182,10 @@ describe('DotRelationshipFieldComponent', () => {
             isDisabledCreateNewContent: vi.fn().mockReturnValue(false),
             isNewEditorEnabled: vi.fn().mockReturnValue(true),
             selectionMode: vi.fn().mockReturnValue('multiple'),
+            // Published by `prepareField` once it has validated the field's raw `relationships`.
+            // A loaded store always carries one, which is why the component reads it without
+            // guarding.
+            relationships: vi.fn().mockReturnValue({ cardinality: 0, isParentField: true }),
             contentType: vi.fn().mockReturnValue({ id: 'ct-1' }),
             formattedRelationship: vi.fn().mockReturnValue('id-1'),
             lastChangeSource: vi.fn().mockReturnValue('load'),

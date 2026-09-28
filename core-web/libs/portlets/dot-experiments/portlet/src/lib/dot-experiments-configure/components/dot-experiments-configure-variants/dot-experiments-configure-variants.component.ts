@@ -24,6 +24,7 @@ import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
+    DotExperimentStatus,
     DotMessageSeverity,
     DotMessageType,
     MAX_INPUT_TITLE_LENGTH,
@@ -70,6 +71,38 @@ const PREVIEW_URL_PARAMS = 'disabledNavigateMode=true&mode=LIVE';
  * on, rather than confirming something they just did.
  */
 const REFUSAL_MESSAGE_LIFE = 5000;
+
+/**
+ * The statuses whose variants stay read-only (#37308).
+ *
+ * A finished experiment has nothing left to measure, so editing one of its variants could only
+ * misrepresent a result already reported. A running or scheduled one is the case this issue opens
+ * up, and a draft was never closed.
+ */
+const FINISHED_EXPERIMENT_STATUSES: readonly DotExperimentStatus[] = [
+    DotExperimentStatus.ENDED,
+    DotExperimentStatus.ARCHIVED
+];
+
+/**
+ * The statuses whose variants cost something to edit (#37308).
+ *
+ * Running: from the save on, the run measures different content, so its results combine data from
+ * before and after. Scheduled: the edit simply becomes part of what gets measured. Both are
+ * consequences to accept rather than losses to avert — nothing collected is discarded — which is
+ * why this is a confirmation and not a warning about damage.
+ */
+const LIVE_EXPERIMENT_STATUSES: readonly DotExperimentStatus[] = [
+    DotExperimentStatus.RUNNING,
+    DotExperimentStatus.SCHEDULED
+];
+
+/** Narrowing helpers: the store's experiment is optional, so its status may be absent. */
+const isFinished = (status?: DotExperimentStatus): boolean =>
+    !!status && FINISHED_EXPERIMENT_STATUSES.includes(status);
+
+const isLive = (status?: DotExperimentStatus): boolean =>
+    !!status && LIVE_EXPERIMENT_STATUSES.includes(status);
 
 /**
  * The single row drawn while no experiment exists yet (#37003).
@@ -177,7 +210,14 @@ export class DotExperimentsConfigureVariantsComponent {
 
         // Evaluated per row because only the control condition varies by row. NOT `!!disabledTooltipKey`:
         // that is null for the control on an editable draft, which would open the Original for editing (FR-008).
-        const experimentIsReadOnly = this.store.$isLocked();
+        //
+        // Reads the status directly rather than `$isLocked()` (#37308). `$isLocked` means
+        // `status !== DRAFT`, which used to be the same question — every non-draft variant opened
+        // read-only. It no longer is: a running or scheduled experiment's variant is editable, and
+        // only a finished one stays frozen. `$isLocked` itself must keep its meaning, because it
+        // also freezes the configuration form's name, description, traffic allocation, goal,
+        // scheduling and Save. Widening it here would unfreeze all of those.
+        const experimentIsFinished = isFinished(this.store.experiment()?.status);
 
         return this.store.$variants().map((variant, index) => {
             const isControl = isControlVariant(variant);
@@ -191,7 +231,7 @@ export class DotExperimentsConfigureVariantsComponent {
                 copyUrl: previewUrl ? `${previewUrl}&variantName=${variant.id}` : null,
                 disabled: !!disabledTooltipKey,
                 disabledTooltipKey,
-                editorMode: isControl || experimentIsReadOnly ? UVE_MODE.PREVIEW : UVE_MODE.EDIT
+                editorMode: isControl || experimentIsFinished ? UVE_MODE.PREVIEW : UVE_MODE.EDIT
             };
         });
     });
@@ -458,9 +498,52 @@ export class DotExperimentsConfigureVariantsComponent {
         // to the editor on that variant. Suspending rather than closing is what makes the return
         // land on this configuration instead of a fresh list — `close()` discards exactly the
         // state the round trip needs (FR-021, FR-023, FR-025).
-        this.#panel?.suspendForVariant();
+        //
+        // Both steps live in `leave`, and that matters. Suspending runs first, so a confirmation
+        // wrapped around the navigation alone would leave a cancelled attempt with the panel
+        // already suspended: nothing opened, but something changed (#37308).
+        const leave = () => {
+            this.#panel?.suspendForVariant();
 
-        this.#router.navigate(link.commands, { queryParams: link.queryParams });
+            this.#router.navigate(link.commands, { queryParams: link.queryParams });
+        };
+
+        const status = this.store.experiment()?.status;
+
+        // Gated on the resolved mode, not on the gesture. The kebab's Preview action passes
+        // PREVIEW explicitly, and previewing a live variant takes none of the risk this question
+        // is about — asking there would put a dialog in front of the safe way out. The control
+        // never reaches EDIT in any status, so it never asks either.
+        const costsSomething = mode === UVE_MODE.EDIT && isLive(status);
+
+        if (!costsSomething) {
+            leave();
+
+            return;
+        }
+
+        this.#confirmationService.confirm({
+            key: CONFIGURATION_CONFIRM_DIALOG_KEY,
+            header: this.#dotMessageService.get(
+                'experiments.configure.variants.edit-live.confirm.header'
+            ),
+            message: this.#dotMessageService.get(
+                status === DotExperimentStatus.RUNNING
+                    ? 'experiments.configure.variants.edit-live.confirm.running'
+                    : 'experiments.configure.variants.edit-live.confirm.scheduled'
+            ),
+            acceptLabel: this.#dotMessageService.get(
+                'experiments.configure.variants.edit-live.confirm.accept'
+            ),
+            rejectLabel: this.#dotMessageService.get(
+                'experiments.configure.variants.edit-live.confirm.reject'
+            ),
+            rejectButtonStyleClass: 'p-button-secondary',
+            defaultFocus: 'reject',
+            closable: true,
+            closeOnEscape: true,
+            accept: leave
+        });
     }
 
     /** Deleting is irreversible, so it goes through the shell's confirm dialog first. */

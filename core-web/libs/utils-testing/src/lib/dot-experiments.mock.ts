@@ -86,6 +86,7 @@ const ExperimentMocks: Array<DotExperiment> = [
     {
         id: '1111-1111-1111-1111',
         pageId: '456',
+        createdBy: 'dotcms.org.1',
         status: DotExperimentStatus.DRAFT,
         archived: false,
         readyToStart: false,
@@ -104,6 +105,7 @@ const ExperimentMocks: Array<DotExperiment> = [
     {
         id: '2222-2222-2222-2222',
         pageId: '456',
+        createdBy: 'dotcms.org.1',
         status: DotExperimentStatus.DRAFT,
         archived: false,
         readyToStart: false,
@@ -125,6 +127,7 @@ const ExperimentMocks: Array<DotExperiment> = [
     {
         id: '3333-3333-3333-333',
         pageId: '456',
+        createdBy: 'dotcms.org.1',
         status: DotExperimentStatus.DRAFT,
         archived: false,
         readyToStart: false,
@@ -146,6 +149,7 @@ const ExperimentMocks: Array<DotExperiment> = [
     {
         id: '3333-3333-3333-3333',
         pageId: '456',
+        createdBy: 'dotcms.org.1',
         status: DotExperimentStatus.DRAFT,
         archived: false,
         readyToStart: false,
@@ -167,6 +171,7 @@ const ExperimentMocks: Array<DotExperiment> = [
     {
         id: '4444-4444-4444-4444',
         pageId: '456',
+        createdBy: 'dotcms.org.1',
         status: DotExperimentStatus.SCHEDULED,
         archived: false,
         readyToStart: false,
@@ -188,6 +193,7 @@ const ExperimentMocks: Array<DotExperiment> = [
     {
         id: '555-5555-5555-5555',
         pageId: '456',
+        createdBy: 'dotcms.org.1',
         status: DotExperimentStatus.RUNNING,
         archived: false,
         readyToStart: false,

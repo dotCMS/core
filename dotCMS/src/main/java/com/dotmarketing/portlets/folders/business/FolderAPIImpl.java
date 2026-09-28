@@ -470,8 +470,9 @@ public class FolderAPIImpl implements FolderAPI  {
 
 			// recursivily delete
 			for (Folder childFolder : folderChildren) {
-				// sub deletes use system user - if a user has rights to parent
-				// permission (checked above) they can delete to children
+				// sub deletes use the same calling user, not a system user - each subfolder
+				// re-checks that user's own EDIT/EDIT_PERMISSIONS rights (see the top of this
+				// method), never inherited implicitly from the parent's own check
 				if (Logger.isDebugEnabled(getClass())) {
 					Logger.debug(getClass(), "Deleting the folder " + childFolder.getPath());
 				}

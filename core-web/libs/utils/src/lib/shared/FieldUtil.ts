@@ -1,23 +1,35 @@
 import {
+    ContentTypeColumnBreakField,
+    ContentTypeColumnField,
+    ContentTypeRowField,
+    ContentTypeTabDividerField,
     DotCMSClazzes,
+    DotCMSContentTypeBaseField,
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutColumn,
     DotCMSContentTypeLayoutRow,
-    DotCMSDataTypes
+    DotCMSDataTypes,
+    DotCMSFieldTypes
 } from '@dotcms/dotcms-models';
 
 /**
- * Blank template for a content type field. `clazz` is deliberately omitted: `DotCMSClazz` is a
- * union of concrete implementation class names with no "empty" member, and every derived constant
- * supplies its own. Spread this and add `clazz` to obtain a full `DotCMSContentTypeField`.
+ * The properties every field shares, without the three that decide *which* field it is.
+ *
+ * `clazz`, `dataType` and `fieldType` are the discriminants of {@link DotCMSContentTypeField}
+ * and an arm fixes all three together, so a blank template cannot supply them — there is no
+ * such thing as a field of no type. Callers spread this and add the three themselves.
  */
-export const EMPTY_FIELD: Omit<DotCMSContentTypeField, 'clazz'> = {
+type DotCMSContentTypeFieldTemplate = Omit<
+    DotCMSContentTypeBaseField,
+    'clazz' | 'dataType' | 'fieldType'
+>;
+
+export const EMPTY_FIELD: DotCMSContentTypeFieldTemplate = {
     contentTypeId: '',
-    dataType: '',
-    fieldType: '',
     fieldTypeLabel: '',
     fieldVariables: [],
     fixed: false,
+    forceIncludeInApi: false,
     iDate: 0,
     id: '',
     indexed: false,
@@ -30,34 +42,45 @@ export const EMPTY_FIELD: Omit<DotCMSContentTypeField, 'clazz'> = {
     sortOrder: 0,
     unique: false,
     variable: '',
-    defaultValue: undefined,
-    hint: undefined,
-    regexCheck: undefined,
-    values: undefined
+    defaultValue: null,
+    values: null
 };
 
-export const EMPTY_SYSTEM_FIELD: Omit<DotCMSContentTypeField, 'clazz'> = {
+export const EMPTY_SYSTEM_FIELD: DotCMSContentTypeFieldTemplate & {
+    dataType: typeof DotCMSDataTypes.SYSTEM;
+} = {
     ...EMPTY_FIELD,
     dataType: DotCMSDataTypes.SYSTEM
 };
 
-const COLUMN_FIELD = {
+// Each layout field below sets `fieldType` as well as `clazz`. Before the content model
+// became a discriminated union these set `clazz` alone, leaving `fieldType` as the empty
+// string inherited from EMPTY_FIELD — so every row, column and tab this file built carried a
+// class saying one thing and a field type saying nothing. Nothing caught it, because the flat
+// interface typed `fieldType` as a bare `string`. See issue #37670.
+
+const COLUMN_FIELD: ContentTypeColumnField = {
     ...EMPTY_SYSTEM_FIELD,
-    clazz: DotCMSClazzes.COLUMN
+    clazz: DotCMSClazzes.COLUMN,
+    fieldType: DotCMSFieldTypes.COLUMN
 };
 
-const ROW_FIELD = {
+const ROW_FIELD: ContentTypeRowField = {
     ...EMPTY_SYSTEM_FIELD,
-    clazz: DotCMSClazzes.ROW
+    clazz: DotCMSClazzes.ROW,
+    fieldType: DotCMSFieldTypes.ROW
 };
 
-const TAB_FIELD = {
+const TAB_FIELD: ContentTypeTabDividerField = {
     ...EMPTY_SYSTEM_FIELD,
-    clazz: DotCMSClazzes.TAB_DIVIDER
+    clazz: DotCMSClazzes.TAB_DIVIDER,
+    fieldType: DotCMSFieldTypes.TAB_DIVIDER
 };
 
-const COLUMN_BREAK_FIELD = {
+const COLUMN_BREAK_FIELD: ContentTypeColumnBreakField = {
+    ...EMPTY_SYSTEM_FIELD,
     clazz: DotCMSClazzes.COLUMN_BREAK,
+    fieldType: DotCMSFieldTypes.COLUMN_BREAK,
     name: 'Column'
 };
 

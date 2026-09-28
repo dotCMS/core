@@ -1,6 +1,6 @@
 import { merge } from 'rxjs';
 
-import { afterNextRender, computed, DestroyRef, inject, Signal, signal } from '@angular/core';
+import { afterNextRender, computed, DestroyRef, inject, InputSignal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ControlContainer, FormControl, TouchedChangeEvent, Validators } from '@angular/forms';
 
@@ -16,7 +16,9 @@ import { DotEditContentStore } from '../../store/edit-content.store';
  *
  * Note: Child components must define the $field input property.
  */
-export abstract class BaseWrapperField {
+export abstract class BaseWrapperField<
+    TField extends DotCMSContentTypeField = DotCMSContentTypeField
+> {
     protected destroyRef = inject(DestroyRef);
     protected controlContainer = inject(ControlContainer);
 
@@ -28,17 +30,20 @@ export abstract class BaseWrapperField {
     protected editContentStore = inject(DotEditContentStore, { optional: true });
 
     /**
-     * `Signal`, not `InputSignal`: this class only ever *reads* these, and `InputSignal<T>` is
-     * invariant in `T` — declaring one here would force all 17 subclasses to use byte-identical
-     * input types, which they legitimately do not. The custom and JSON fields default `field` to
-     * null, the text area declares both as `input.required<T | null>`, and the other 14 use
-     * `input.required<T>`. `Signal<T>` is covariant, so every one of those satisfies this.
-     *
-     * Nullable because this class's own members already assume it: `$showLabel` returns early on
-     * `!field` and `isRequired` reads `field?.required`.
+     * Parameterised so a wrapper can declare the arm it actually renders. `InputSignal` is
+     * invariant, so a subclass narrowing `$field` to, say, `ContentTypeCalendarField` cannot
+     * satisfy a base that fixes the whole union. Wrappers that render any field leave it at the
+     * default and are unaffected.
      */
-    abstract $field: Signal<DotCMSContentTypeField | null>;
-    abstract $contentlet: Signal<DotCMSContentlet | null>;
+    abstract $field: InputSignal<TField>;
+
+    /**
+     * Nullable because this class's own members already assume it: `$showLabel` returns early on
+     * `!field` and `isRequired` reads `field?.required`. Every subclass declares its contentlet
+     * input the same way (`input.required<DotCMSContentlet | null>`), so `InputSignal` is exact
+     * here rather than needing the covariance `$field` relies on.
+     */
+    abstract $contentlet: InputSignal<DotCMSContentlet | null>;
 
     /**
      * Whether the field should present itself as being in error.

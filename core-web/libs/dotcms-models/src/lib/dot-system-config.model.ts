@@ -63,6 +63,18 @@ export interface DotBulkUploadCeilings {
     maxTotalBytes: number;
 }
 
+/**
+ * The bulk folder delete ceiling the server enforces, as it advertises it on
+ * `/api/v1/appconfiguration`.
+ *
+ * Advertised for the same reason as {@link DotBulkUploadCeilings}: so a client can name the limit
+ * rather than saying "fewer". The server remains the enforcement point.
+ */
+export interface DotFolderBulkDeleteCeilings {
+    /** Folder paths in one submission. */
+    maxPaths: number;
+}
+
 export interface DotSystemConfig {
     logos: DotLogos;
     colors: DotUIColors;
@@ -73,6 +85,8 @@ export interface DotSystemConfig {
     cluster: DotCluster;
     /** Absent on an instance older than the field. See {@link DotBulkUploadCeilings}. */
     bulkUpload?: DotBulkUploadCeilings;
+    /** Absent on an instance older than the field. See {@link DotFolderBulkDeleteCeilings}. */
+    folderBulkDelete?: DotFolderBulkDeleteCeilings;
 }
 
 /**

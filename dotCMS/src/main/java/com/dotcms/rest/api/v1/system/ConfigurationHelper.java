@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteHelper;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadHelper;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
@@ -70,6 +71,8 @@ public class ConfigurationHelper implements Serializable {
 	public static final String BULK_UPLOAD = "bulkUpload";
 	public static final String BULK_UPLOAD_MAX_FILES = "maxFiles";
 	public static final String BULK_UPLOAD_MAX_TOTAL_BYTES = "maxTotalBytes";
+	public static final String FOLDER_BULK_DELETE = "folderBulkDelete";
+	public static final String FOLDER_BULK_DELETE_MAX_PATHS = "maxPaths";
 	public static final String RELEASE_INFO = "releaseInfo";
 	public static final String VERSION = "version";
 	public static final String BUILD_DATE = "buildDate";
@@ -189,6 +192,15 @@ public class ConfigurationHelper implements Serializable {
 				BULK_UPLOAD_MAX_TOTAL_BYTES,
 				Config.getLongProperty(BulkUploadHelper.MAX_TOTAL_BYTES_KEY,
 						BulkUploadHelper.DEFAULT_MAX_TOTAL_BYTES)
+		));
+
+		// The bulk folder delete ceiling (#37063, FR-038), same reasoning as the bulk upload
+		// block above: read through FolderBulkDeleteHelper's own constants rather than repeating
+		// the key/default, so an advertised value can never disagree with the one enforced there.
+		map.put(FOLDER_BULK_DELETE, Map.of(
+				FOLDER_BULK_DELETE_MAX_PATHS,
+				Config.getIntProperty(FolderBulkDeleteHelper.MAX_PATHS_KEY,
+						FolderBulkDeleteHelper.DEFAULT_MAX_PATHS)
 		));
 
 	    map.put(LANGUAGES, APILocator.getLanguageAPI().getLanguages());

@@ -130,6 +130,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Health Monitoring](docs/backend/HEALTH_MONITORING.md) — Health endpoints, log levels
 - [Security Patterns](docs/backend/SECURITY_BACKEND.md) — Input validation, auth, SQL/XSS prevention, secure logging
 - [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) — ES → OpenSearch: deprecated `ContentletAPI` search methods, plugin migration guide
+- [GraphQL Asset Fields Migration](docs/backend/GRAPHQL_ASSET_FIELDS_MIGRATION.md) — Image/File fields now resolve to an interface; existing queries keep working, but `__typename` reports the concrete type and generated types must be regenerated
 - [Telemetry Implementation](docs/backend/TELEMETRY_IMPLEMENTATION.md) — CDI-based metrics system, creating new metrics, `/v1/usage` endpoints
 - [Index Field Emission](docs/backend/INDEX_FIELD_EMISSION.md) — how `loadFields`/`toMap` build the index document; the `_dotraw` zero-padding sort invariant
 - [Jandex Metadata Scanning](docs/backend/JANDEX_METADATA_SCANNING.md) — Fast class/annotation metadata lookup, prefer over reflection

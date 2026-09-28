@@ -29,7 +29,6 @@ import {
     getContentTypeVarRecord,
     getFullPageURL,
     getPersonalization,
-    isExperimentBlockingEdit,
     mapContainerStructureToArrayOfContainers,
     sanitizeURL
 } from '../../../utils';
@@ -121,9 +120,12 @@ export function withEditor() {
 
             const editorHasAccessToEditMode = computed(() => {
                 const isPageEditable = store.pageAsset()?.page?.canEdit;
-                const isExperimentRunning = isExperimentBlockingEdit(store.pageExperiment());
 
-                if (!isPageEditable || isExperimentRunning) {
+                // A live experiment no longer freezes the page (#37308). Editors can fix a variant
+                // mid-run; the shell's warning banner is what tells them the run's results will
+                // then mix data from before and after the change. Nothing here gates on
+                // experiment status any more — and nothing else here may be dropped with it.
+                if (!isPageEditable) {
                     return false;
                 }
 
@@ -143,14 +145,12 @@ export function withEditor() {
                 // their layout — the nav button stays disabled with the
                 // "advanced-template" tooltip.
                 const canDrawTemplate = store.pageAsset()?.template?.drawed;
-                const isExperimentRunning = isExperimentBlockingEdit(store.pageExperiment());
 
-                return (
-                    canEditPage &&
-                    canDrawTemplate &&
-                    !isExperimentRunning &&
-                    !store.$lockIsPageLocked()
-                );
+                // A live experiment no longer blocks the layout either (#37308). Exactly one term
+                // left this expression; the other three still decide it, and each refuses for its
+                // own reason — no edit permission, a hand-coded template with no rows to move, or
+                // a lock held by someone else.
+                return canEditPage && canDrawTemplate && !store.$lockIsPageLocked();
             });
 
             // Public capabilities (exported via EditorComputed interface)

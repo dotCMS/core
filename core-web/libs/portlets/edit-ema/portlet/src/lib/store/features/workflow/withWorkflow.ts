@@ -29,7 +29,7 @@ import { UVE_STATUS } from '../../../shared/enums';
 import { computeIsPageLocked } from '../../../utils';
 import { UVEState } from '../../models';
 
-import type { PageComputed } from '../page/withPage';
+import type { PageAssetSource, PageComputed } from '../page/withPage';
 
 export interface WorkflowLockOptions {
     inode: string;
@@ -84,6 +84,7 @@ interface WorkflowPageApiDeps {
     setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
+        source?: PageAssetSource;
     }) => void;
 }
 
@@ -213,7 +214,10 @@ export function withWorkflow() {
                                         : undefined;
                                 const pageAssetPayload = {
                                     pageAsset: response.pageAsset,
-                                    ...(content !== undefined && { content })
+                                    ...(content !== undefined && { content }),
+                                    source: (content !== undefined
+                                        ? 'graphql'
+                                        : 'rest') as PageAssetSource
                                 };
 
                                 return dotLanguagesService

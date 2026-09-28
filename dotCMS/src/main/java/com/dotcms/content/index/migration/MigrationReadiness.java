@@ -1,5 +1,6 @@
 package com.dotcms.content.index.migration;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import java.util.List;
 import java.util.Map;
 
@@ -18,13 +19,19 @@ import java.util.Map;
  * @param siteSearch the Site Search indices as a list — an open set with no natural key, so a list
  *                   (each entry carries its own {@code indexName})
  * @param verdict    the overall go/no-go for advancing and rolling back, with reasons
+ * @param unreachableEngines the engines that could not be read while building this report, keyed by
+ *                   engine name ({@code Elasticsearch} / {@code OpenSearch}) with the failure reason.
+ *                   The rows are still reported for the engine that answered; the other engine's side
+ *                   of each row carries the same reason (issue #37636). Omitted from the JSON when
+ *                   both engines were read.
  */
 public record MigrationReadiness(
         String clusterId,
         PhaseInfo phase,
         Map<String, MirrorStatus> content,
         List<MirrorStatus> siteSearch,
-        Verdict verdict) {
+        Verdict verdict,
+        @JsonInclude(JsonInclude.Include.NON_EMPTY) Map<String, String> unreachableEngines) {
 
     /**
      * @param current      the current phase ordinal (0–3)

@@ -1,5 +1,9 @@
 import { h } from '@stencil/core';
-import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    ContentTypeTextAreaField,
+    ContentTypeTextField,
+    DotCMSContentTypeField
+} from '@dotcms/dotcms-models';
 import { getFieldVariableValue, setAttributesToTag } from '../utils';
 
 /**
@@ -9,7 +13,7 @@ import { getFieldVariableValue, setAttributesToTag } from '../utils';
  * rather than widening a dozen component props to accept a null they would only have to re-handle.
  */
 export const DotFormFields = {
-    Text: (field: DotCMSContentTypeField) => (
+    Text: (field: ContentTypeTextField) => (
         <dot-textfield
             hint={field.hint}
             label={field.name}
@@ -22,7 +26,7 @@ export const DotFormFields = {
             value={field.defaultValue ?? undefined}
         />
     ),
-    Textarea: (field: DotCMSContentTypeField) => (
+    Textarea: (field: ContentTypeTextAreaField) => (
         <dot-textarea
             hint={field.hint}
             label={field.name}

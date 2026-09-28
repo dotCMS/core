@@ -95,6 +95,7 @@ const mockEditContentHost = {
     setContentTitle: vi.fn(),
     addBreadcrumb: vi.fn(),
     goToSavedContent: vi.fn(),
+    leaveDeletedContent: vi.fn(),
     goToRestoredVersion: vi.fn(),
     goToRelatedContent: vi.fn(),
     goToCrumb: vi.fn()
@@ -722,6 +723,7 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
         setContentTitle: vi.fn(),
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
+        leaveDeletedContent: vi.fn(),
         goToRestoredVersion: vi.fn(),
         goToRelatedContent: vi.fn(),
         goToCrumb: vi.fn()
@@ -1134,6 +1136,7 @@ describe.each([
             setContentTitle: vi.fn(),
             addBreadcrumb: vi.fn(),
             goToSavedContent: vi.fn(),
+            leaveDeletedContent: vi.fn(),
             goToRestoredVersion: vi.fn(),
             goToRelatedContent: vi.fn(),
             goToCrumb: vi.fn()

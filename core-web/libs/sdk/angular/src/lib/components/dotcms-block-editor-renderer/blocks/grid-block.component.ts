@@ -38,11 +38,6 @@ export class DotGridBlock {
 
     blockEditorItem = DotCMSBlockEditorItemComponent;
 
-    /** Span for a column, defaulting when the node declares fewer spans than columns. */
-    columnSpan(index: number): number {
-        return this.columnSpans[index] ?? 6;
-    }
-
     get columnSpans(): number[] {
         const rawCols = Array.isArray(this.node?.attrs?.['columns'])
             ? this.node.attrs['columns']
@@ -52,5 +47,15 @@ export class DotGridBlock {
             rawCols.every((v: unknown) => typeof v === 'number' && Number.isFinite(v))
             ? rawCols
             : [6, 6];
+    }
+
+    /**
+     * Grid span for the column at `index`. The template walks `node.content`, which can hold
+     * more columns than the two in `columnSpans`, so any extra column falls back to 6.
+     */
+    columnSpan(index: number): number {
+        const span: number | undefined = this.columnSpans[index];
+
+        return span ?? 6;
     }
 }

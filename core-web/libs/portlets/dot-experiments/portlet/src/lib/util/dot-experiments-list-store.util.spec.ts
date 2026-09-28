@@ -2,8 +2,11 @@ import { DotExperiment, DotExperimentStatus, GOAL_TYPES } from '@dotcms/dotcms-m
 
 import {
     comparatorFor,
+    isScheduleRangeInverted,
+    parseScheduleBound,
     parseViewState,
     QueryParamReader,
+    scheduleBoundsOf,
     toQueryParams
 } from './dot-experiments-list-store.util';
 
@@ -183,6 +186,9 @@ describe('page filter view state', () => {
         filter: '',
         selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
         selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+        selectedCreators: [],
+        scheduleFrom: null,
+        scheduleTo: null,
         page: DEFAULT_EXPERIMENTS_LIST_PAGE,
         perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
         orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -287,5 +293,310 @@ describe('page filter view state', () => {
         expect(parseViewState(reader({ pageId: String(written['pageId']) })).selectedPageId).toBe(
             'page-1'
         );
+    });
+});
+
+describe('creator filter view state (#37307)', () => {
+    const reader = (params: Record<string, string | string[]>): QueryParamReader => ({
+        get: (key) => {
+            const value = params[key];
+
+            return (Array.isArray(value) ? value[0] : value) ?? null;
+        },
+        getAll: (key) => {
+            const value = params[key];
+
+            return value == null ? [] : Array.isArray(value) ? value : [value];
+        }
+    });
+
+    const DEFAULTS: DotExperimentsListViewState = {
+        filter: '',
+        selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+        selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+        selectedCreators: [],
+        scheduleFrom: null,
+        scheduleTo: null,
+        page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+        perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+        orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+        direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+        selectedPageId: null,
+        selectedPageUrl: null,
+        languageId: null
+    };
+
+    describe('parseViewState', () => {
+        it('should read a single creator from ?created_by=', () => {
+            expect(parseViewState(reader({ created_by: 'dotcms.org.1' })).selectedCreators).toEqual(
+                ['dotcms.org.1']
+            );
+        });
+
+        it('should read every repeat of the param', () => {
+            expect(
+                parseViewState(reader({ created_by: ['dotcms.org.1', 'dotcms.org.2'] }))
+                    .selectedCreators
+            ).toEqual(['dotcms.org.1', 'dotcms.org.2']);
+        });
+
+        it('should default to no creator filter when the param is absent', () => {
+            expect(parseViewState(reader({})).selectedCreators).toEqual([]);
+        });
+
+        it('should RETAIN an id it does not recognise', () => {
+            // Deliberately unlike `status` and `goal`, whose value sets are closed and whose
+            // unknown members are dropped. Any string can be a real user id, so the honest
+            // behaviour is to keep it and let it match nothing (FR-048).
+            expect(
+                parseViewState(reader({ created_by: 'nobody-by-this-id' })).selectedCreators
+            ).toEqual(['nobody-by-this-id']);
+        });
+
+        it('should drop an empty entry rather than filter by the empty string', () => {
+            expect(parseViewState(reader({ created_by: '' })).selectedCreators).toEqual([]);
+        });
+    });
+
+    describe('toQueryParams', () => {
+        it('should write the selected creators to created_by', () => {
+            expect(
+                toQueryParams({ ...DEFAULTS, selectedCreators: ['dotcms.org.1', 'dotcms.org.2'] })[
+                    'created_by'
+                ]
+            ).toEqual(['dotcms.org.1', 'dotcms.org.2']);
+        });
+
+        it('should omit the param entirely while nothing is selected', () => {
+            expect(toQueryParams(DEFAULTS)['created_by']).toBeNull();
+        });
+    });
+
+    it('should round-trip a selection through the address unchanged', () => {
+        const written = toQueryParams({
+            ...DEFAULTS,
+            selectedCreators: ['dotcms.org.1', 'dotcms.org.2']
+        });
+
+        expect(
+            parseViewState(reader(written as Record<string, string | string[]>)).selectedCreators
+        ).toEqual(['dotcms.org.1', 'dotcms.org.2']);
+    });
+});
+
+describe('schedule filter view state (#37307)', () => {
+    const reader = (params: Record<string, string | string[]>): QueryParamReader => ({
+        get: (key) => {
+            const value = params[key];
+
+            return (Array.isArray(value) ? value[0] : value) ?? null;
+        },
+        getAll: (key) => {
+            const value = params[key];
+
+            return value == null ? [] : Array.isArray(value) ? value : [value];
+        }
+    });
+
+    const DEFAULTS: DotExperimentsListViewState = {
+        filter: '',
+        selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+        selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+        selectedCreators: [],
+        scheduleFrom: null,
+        scheduleTo: null,
+        page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+        perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+        orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+        direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+        selectedPageId: null,
+        selectedPageUrl: null,
+        languageId: null
+    };
+
+    const period = (from: string | null, to: string | null) => ({ from, to });
+
+    describe('parseScheduleBound', () => {
+        it('should read a calendar date as that day at local midnight', () => {
+            const parsed = parseScheduleBound('2026-06-01');
+
+            expect([parsed?.getFullYear(), parsed?.getMonth(), parsed?.getDate()]).toEqual([
+                2026, 5, 1
+            ]);
+            expect([parsed?.getHours(), parsed?.getMinutes()]).toEqual([0, 0]);
+        });
+
+        it.each([null, undefined, '', 'not-a-date', 'June 2026', '2026-06'])(
+            'should reject %s',
+            (raw) => {
+                expect(parseScheduleBound(raw)).toBeNull();
+            }
+        );
+
+        /**
+         * `new Date('2026-06-01')` would take all of these, each meaning a different day than the
+         * address appears to name — and an ISO instant would shift the day in every zone but the
+         * writer's. Strictness is what keeps the address and the calendar showing the same day.
+         */
+        it('should reject a shape that is a date but not this format', () => {
+            expect(parseScheduleBound('2026-6-1')).toBeNull();
+            expect(parseScheduleBound('2026-06-01T12:00:00.000Z')).toBeNull();
+        });
+
+        it('should reject a day that does not exist in its month', () => {
+            // `parse` rolls 31 February into March rather than failing, so the round trip is what
+            // catches it — otherwise the filter would silently use a day nobody named.
+            expect(parseScheduleBound('2026-02-31')).toBeNull();
+        });
+    });
+
+    describe('scheduleBoundsOf', () => {
+        /** FR-021: whole local days, which is what makes a single-day period match anything. */
+        it('should open the lower bound at the first instant of its day', () => {
+            const bounds = scheduleBoundsOf(period('2026-06-01', null));
+
+            expect(bounds?.min).toBe(new Date(2026, 5, 1, 0, 0, 0, 0).getTime());
+        });
+
+        it('should close the upper bound at the last instant of its day', () => {
+            const bounds = scheduleBoundsOf(period(null, '2026-06-30'));
+
+            expect(bounds?.max).toBe(new Date(2026, 5, 30, 23, 59, 59, 999).getTime());
+        });
+
+        it('should leave an absent side unbounded rather than absent', () => {
+            // Infinity rather than a missing field, so the comparison downstream has no branches.
+            expect(scheduleBoundsOf(period('2026-06-01', null))?.max).toBe(Infinity);
+            expect(scheduleBoundsOf(period(null, '2026-06-30'))?.min).toBe(-Infinity);
+        });
+
+        it('should return no bounds when neither side is set', () => {
+            expect(scheduleBoundsOf(period(null, null))).toBeNull();
+        });
+
+        it('should return no bounds when both sides are unusable', () => {
+            expect(scheduleBoundsOf(period('nonsense', 'also-nonsense'))).toBeNull();
+        });
+
+        it('should return no bounds for an inverted range, so nothing is filtered', () => {
+            expect(scheduleBoundsOf(period('2026-06-30', '2026-06-01'))).toBeNull();
+        });
+    });
+
+    describe('isScheduleRangeInverted', () => {
+        it('should recognise an end that precedes its start', () => {
+            expect(isScheduleRangeInverted(period('2026-06-30', '2026-06-01'))).toBe(true);
+        });
+
+        it('should accept a period of a single day', () => {
+            // Same date on both ends is a valid one-day period, not an inversion — the bounds
+            // cover the whole day, so from-midnight is never after to-end-of-day.
+            expect(isScheduleRangeInverted(period('2026-06-15', '2026-06-15'))).toBe(false);
+        });
+
+        it('should accept a period in order', () => {
+            expect(isScheduleRangeInverted(period('2026-06-01', '2026-06-30'))).toBe(false);
+        });
+
+        it.each([
+            ['only a start', '2026-06-30', null],
+            ['only an end', null, '2026-06-01'],
+            ['neither', null, null]
+        ])('should not call %s inverted', (_label, from, to) => {
+            expect(isScheduleRangeInverted(period(from, to))).toBe(false);
+        });
+
+        it('should not call an unusable bound inverted', () => {
+            // It is dropped, not inverted: there is nothing to compare it against.
+            expect(isScheduleRangeInverted(period('nonsense', '2026-06-01'))).toBe(false);
+        });
+    });
+
+    describe('parseViewState', () => {
+        it('should read both bounds from the address', () => {
+            const view = parseViewState(
+                reader({ schedule_from: '2026-06-01', schedule_to: '2026-06-30' })
+            );
+
+            expect([view.scheduleFrom, view.scheduleTo]).toEqual(['2026-06-01', '2026-06-30']);
+        });
+
+        it('should read one bound without the other', () => {
+            const view = parseViewState(reader({ schedule_from: '2026-06-01' }));
+
+            expect([view.scheduleFrom, view.scheduleTo]).toEqual(['2026-06-01', null]);
+        });
+
+        it('should default to no period when neither param is present', () => {
+            const view = parseViewState(reader({}));
+
+            expect([view.scheduleFrom, view.scheduleTo]).toEqual([null, null]);
+        });
+
+        it('should drop a bound that is not a date and keep the other (FR-048)', () => {
+            const view = parseViewState(
+                reader({ schedule_from: 'yesterday', schedule_to: '2026-06-30' })
+            );
+
+            expect([view.scheduleFrom, view.scheduleTo]).toEqual([null, '2026-06-30']);
+        });
+
+        it('should keep an inverted range rather than repairing it', () => {
+            // Both dates are real, so parsing has nothing to object to. Whether to apply it is
+            // FR-021a's question, answered by the store, and the user is told — silently swapping
+            // the bounds would answer a question they did not ask.
+            const view = parseViewState(
+                reader({ schedule_from: '2026-06-30', schedule_to: '2026-06-01' })
+            );
+
+            expect([view.scheduleFrom, view.scheduleTo]).toEqual(['2026-06-30', '2026-06-01']);
+        });
+    });
+
+    describe('toQueryParams', () => {
+        it('should write both bounds', () => {
+            const written = toQueryParams({
+                ...DEFAULTS,
+                scheduleFrom: '2026-06-01',
+                scheduleTo: '2026-06-30'
+            });
+
+            expect([written['schedule_from'], written['schedule_to']]).toEqual([
+                '2026-06-01',
+                '2026-06-30'
+            ]);
+        });
+
+        it('should omit the side the period leaves open', () => {
+            const written = toQueryParams({ ...DEFAULTS, scheduleFrom: '2026-06-01' });
+
+            expect(written['schedule_from']).toBe('2026-06-01');
+            expect(written['schedule_to']).toBeNull();
+        });
+
+        it('should omit both while no period is in force', () => {
+            expect(toQueryParams(DEFAULTS)['schedule_from']).toBeNull();
+            expect(toQueryParams(DEFAULTS)['schedule_to']).toBeNull();
+        });
+
+        it('should not adopt the running_from and running_to names (FR-049a)', () => {
+            // #36823 defines those, and they compare the running window rather than the scheduled
+            // start. Sharing the names would assert an equivalence that does not hold.
+            const written = toQueryParams({ ...DEFAULTS, scheduleFrom: '2026-06-01' });
+
+            expect(written['running_from']).toBeUndefined();
+            expect(written['running_to']).toBeUndefined();
+        });
+    });
+
+    it('should round-trip a period through the address unchanged', () => {
+        const written = toQueryParams({
+            ...DEFAULTS,
+            scheduleFrom: '2026-06-01',
+            scheduleTo: '2026-06-30'
+        });
+        const view = parseViewState(reader(written as Record<string, string | string[]>));
+
+        expect([view.scheduleFrom, view.scheduleTo]).toEqual(['2026-06-01', '2026-06-30']);
     });
 });

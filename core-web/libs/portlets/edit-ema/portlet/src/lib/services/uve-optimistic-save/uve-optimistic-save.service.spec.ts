@@ -9,6 +9,7 @@ import { UveOptimisticSaveService } from './uve-optimistic-save.service';
 
 import { ActionPayload, ContentletActionPayload } from '../../shared/models';
 import { UVEStore } from '../../store/dot-uve.store';
+import { PageType } from '../../store/models';
 import { UveIframeMessengerService } from '../iframe-messenger/uve-iframe-messenger.service';
 
 const MOCK_ACTIVE_CONTENTLET: ContentletActionPayload = {
@@ -30,9 +31,13 @@ const MOCK_ACTIVE_CONTENTLET: ContentletActionPayload = {
     pageId: 'page-id'
 } as unknown as ContentletActionPayload;
 
-const createMockPageAsset = (testPropValue = 'initial-value'): DotCMSPageAsset =>
+const createMockPageAsset = (
+    testPropValue = 'initial-value',
+    source: 'rest' | 'graphql' = 'graphql'
+): DotCMSPageAsset =>
     ({
         page: { identifier: 'page-id', title: 'Test Page' },
+        source,
         containers: {
             'container-id': {
                 contentlets: {
@@ -55,13 +60,15 @@ describe('UveOptimisticSaveService', () => {
     let service: UveOptimisticSaveService;
     let pageAssetSignal: ReturnType<typeof signal<DotCMSPageAsset | null>>;
     let includeClientResponse: ReturnType<typeof signal<boolean>>;
+    let pageTypeSignal: ReturnType<typeof signal<PageType>>;
     let mockUveStore: {
         pageAsset: ReturnType<typeof computed>;
         // Declared with the implementation's own signature: a bare `Mock` is
         // `Mock<UnknownFunction>`, and a `vi.fn` with a typed parameter is not assignable to it.
         setPageAsset: Mock<(payload: { pageAsset: DotCMSPageAsset | null }) => void>;
+        pageType: ReturnType<typeof signal<PageType>>;
     };
-    let mockIframeMessenger: { sendPageData: Mock };
+    let mockIframeMessenger: { sendPageData: Mock; reloadPage: Mock };
 
     const createService = createServiceFactory({
         service: UveOptimisticSaveService,
@@ -80,9 +87,11 @@ describe('UveOptimisticSaveService', () => {
     beforeEach(() => {
         pageAssetSignal = signal<DotCMSPageAsset | null>(null);
         includeClientResponse = signal(true);
+        pageTypeSignal = signal<PageType>(PageType.HEADLESS);
 
         mockIframeMessenger = {
-            sendPageData: vi.fn()
+            sendPageData: vi.fn(),
+            reloadPage: vi.fn()
         };
 
         mockUveStore = {
@@ -93,7 +102,8 @@ describe('UveOptimisticSaveService', () => {
             }),
             setPageAsset: vi.fn((payload: { pageAsset: DotCMSPageAsset | null }) => {
                 pageAssetSignal.set(payload?.pageAsset ?? null);
-            })
+            }),
+            pageType: pageTypeSignal
         };
 
         spectator = createService();
@@ -177,6 +187,44 @@ describe('UveOptimisticSaveService', () => {
             service.updateIframeOptimistically(MOCK_ACTIVE_CONTENTLET, { testProp: 'v' });
 
             expect(mockIframeMessenger.sendPageData).not.toHaveBeenCalled();
+        });
+
+        describe('headless provenance gate (#37097)', () => {
+            it('should not push (send reloadPage instead) on a HEADLESS page when the asset is REST-sourced', () => {
+                pageTypeSignal.set(PageType.HEADLESS);
+                pageAssetSignal.set(createMockPageAsset('initial-value', 'rest'));
+
+                service.updateIframeOptimistically(MOCK_ACTIVE_CONTENTLET, {
+                    testProp: 'updated-value'
+                });
+
+                expect(mockIframeMessenger.sendPageData).not.toHaveBeenCalled();
+                expect(mockIframeMessenger.reloadPage).toHaveBeenCalled();
+            });
+
+            it('should push on a HEADLESS page when the asset is GraphQL-sourced', () => {
+                pageTypeSignal.set(PageType.HEADLESS);
+                pageAssetSignal.set(createMockPageAsset('initial-value', 'graphql'));
+
+                service.updateIframeOptimistically(MOCK_ACTIVE_CONTENTLET, {
+                    testProp: 'updated-value'
+                });
+
+                expect(mockIframeMessenger.sendPageData).toHaveBeenCalledTimes(1);
+                expect(mockIframeMessenger.reloadPage).not.toHaveBeenCalled();
+            });
+
+            it('should push on a TRADITIONAL page regardless of source (regression)', () => {
+                pageTypeSignal.set(PageType.TRADITIONAL);
+                pageAssetSignal.set(createMockPageAsset('initial-value', 'rest'));
+
+                service.updateIframeOptimistically(MOCK_ACTIVE_CONTENTLET, {
+                    testProp: 'updated-value'
+                });
+
+                expect(mockIframeMessenger.sendPageData).toHaveBeenCalledTimes(1);
+                expect(mockIframeMessenger.reloadPage).not.toHaveBeenCalled();
+            });
         });
 
         it('should strip .content, .requestMetadata, .clientResponse before cloning', () => {

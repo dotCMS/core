@@ -13,8 +13,8 @@
         [showLoadMorePlusIcon]="true"
         loadMoreTestId="tree-load-more"
         loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
-        (onNodeSelect)="onNodeSelect.emit($event)"
-        (onNodeExpand)="onNodeExpand.emit($event)"
+        (onNodeSelect)="onSelect($event)"
+        (onNodeExpand)="onExpand($event)"
         (onNodeCollapse)="onNodeCollapse.emit($event)"
         (loadMore)="onLoadMore($event)">
         <ng-template #folderTreeNodeLabel let-node>
@@ -29,6 +29,8 @@
                     [attr.data-json-node]="node.data | json"
                     [attr.data-id]="node?.data?.id"
                     [attr.data-node-key]="node.key"
+                    [attr.aria-busy]="isNodeInFlight(node) ? 'true' : null"
+                    [class.opacity-60]="isNodeInFlight(node)"
                     [class]="node.data?.path ? 'font-normal' : 'font-semibold'"
                     [class.active]="$activeDropNode()?.id === node?.data.id">
                     {{ node.label | dotFolderName }}

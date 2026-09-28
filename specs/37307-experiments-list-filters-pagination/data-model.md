@@ -1,0 +1,112 @@
+# Phase 1 Data Model
+
+**Feature**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md)
+
+No persisted entities. Everything below is either an in-memory view model or a wire shape already
+served by an existing endpoint. Validation rules are stated where a requirement depends on them.
+
+---
+
+## Experiment (client view) — extended
+
+`core-web/libs/dotcms-models/src/lib/dot-experiments.model.ts`
+
+Two fields are added to the existing `DotExperiment` interface. Both are already served by the API
+— `createdBy` always, `createdByUserName` since #37304 shipped — and neither exists on the client
+type today, which is the gap "State of the code as found" row 5 records.
+
+| Field | Type | Source | Used by |
+|---|---|---|---|
+| `createdBy` | `string` | Already serialized by `AbstractExperiment` | Creator narrowing (FR-005) |
+| `createdByUserName` | `string` | Added by #37304 (shipped). Never null, absent or blank: the creator's trimmed full name, `System` for the system user, or `unknown` for a deleted user, an orphaned reference, a blank name, or a failed lookup. **Not** the raw id — that was the issue's stated fallback but not what shipped | Created By column (FR-029, FR-029a) |
+
+`createdByUserName` is typed **optional** even though #37304 has shipped, because the portlet and
+the backend are not released as one unit and the column must tolerate a backend that predates it
+(FR-031). Against a current backend the field is always populated.
+
+Existing fields this feature reads: `scheduling: RangeOfDateAndTime | null`, whose
+`startDate: number | null` is an epoch. **Both** shapes mean "unscheduled" for the date filter —
+a null `scheduling`, and a `scheduling` whose `startDate` is null (FR-022).
+
+## Schedule period
+
+Two independent bounds, each a local calendar date (`yyyy-MM-dd`) or absent. Not the five relative
+windows #37307 asks for — see the divergence argued in the spec's User Story 2.
+
+| State | Bounds compared | In the address |
+|---|---|---|
+| neither bound (default) | no constraint | both absent |
+| both bounds | `startOfDay(from) <= startDate <= endOfDay(to)` | both present |
+| lower only | `startDate >= startOfDay(from)` | `schedule_to` absent |
+| upper only | `startDate <= endOfDay(to)` | `schedule_from` absent |
+| end before start | nothing compared; reported instead | both present |
+
+Rules: one period at a time, which follows from the value being a single range rather than from a
+rule to enforce (FR-018); both bounds inclusive and covering **whole local days**, because the
+filter is picked as dates while the data is an instant (FR-021); an open side constrains nothing,
+which is also the state the calendar passes through after the first click (FR-020); a bound that is
+not a date in this exact format is dropped (FR-048); an inverted range is **not applied** and is
+reported in the toolbar, since applying it would empty the table with no visible reason (FR-021a).
+
+Dates rather than instants so the calendar reopens on the days that were picked; the consequence,
+accepted, is that the same link read in another zone selects that reader's days (FR-049a).
+
+## Directory person (chip option)
+
+| Field | Type | Notes |
+|---|---|---|
+| `value` | `string` | The user id. This is what the address stores and what narrowing compares against. |
+| `label` | `string` | Display name. Never used for matching. |
+
+Carries no count, deliberately (FR-010). Labels are cached across pages and searches by the shared
+option list, so a person selected on page 1 stays labelled after a search resets the list (FR-009).
+
+## Listing view state — extended
+
+`DotExperimentsListViewState`, the bag the address serialises and every narrowing reads.
+
+| Existing | `filter`, `selectedStatuses`, `selectedGoals`, `page`, `perPage`, `orderBy`, `direction`, `selectedPageId`, `selectedPageUrl`, `languageId` |
+|---|---|
+| **Added** | `selectedCreators: string[]` — user ids, empty means no constraint. Carried in the address as `created_by` (FR-049) |
+| **Added** | `scheduleFrom: string \| null`, `scheduleTo: string \| null` — local calendar dates, both null means no constraint. Carried in the address as `schedule_from` and `schedule_to`, deliberately not as `running_from`/`running_to` (FR-049a) |
+
+Every field in this bag is a query parameter (FR-045). Transient interface state is deliberately
+**not** here: the search text inside the Created By popover narrows the option list rather than the
+data and never reaches the address (FR-045a), and neither does the resolution-in-flight state
+behind the chip's loading indicator (FR-009e).
+
+## Narrowing chain — where the new links go
+
+```
+siteScopedExperiments
+  -> searchedExperiments
+  -> pageAssetFilteredExperiments
+       |__ statusCounts, goalCounts     <-- counts are snapshotted HERE
+  -> statusFilteredExperiments
+  -> goalFilteredExperiments
+  -> creatorFilteredExperiments         <-- NEW
+  -> scheduleFilteredExperiments        <-- NEW
+  -> filteredExperiments  ->  sortedExperiments  ->  pagedExperiments
+```
+
+Both new links sit **after** the counts snapshot, alongside status and goal. Placing either earlier
+would move the Status and Goal chip numbers, which FR-050 forbids. Order between the two is
+irrelevant to the result — all narrowings compose as a conjunction (FR-007, FR-023) — but is fixed
+here so the chain reads in one direction.
+
+`totalRecords` already derives from `filteredExperiments().length`, so it follows the new filters
+with no change (FR-041).
+
+## State transitions
+
+Both filters change state only through dispatched events, like every other narrowing on this
+screen. Each new event resets `page` to its default in the reducer, exactly as `filterChanged`,
+`statusesChanged` and `goalsChanged` already do (FR-041).
+
+| Event | Effect |
+|---|---|
+| creators changed | `selectedCreators` replaced, `page` reset |
+| schedule period changed | `scheduleFrom` and `scheduleTo` both replaced, `page` reset — one event carrying both bounds, so no half-applied period is ever on screen |
+| hydrated from URL | both fields replaced from the parsed address |
+| site changed | both survive, like search, status and goal; only paging and page scope reset (spec edge case) |
+| page narrowing cleared / clear filters | both cleared |

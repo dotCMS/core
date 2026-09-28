@@ -76,6 +76,7 @@ describe('LocalesFeature', () => {
         setContentTitle: vi.fn(),
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
+        leaveDeletedContent: vi.fn(),
         goToRestoredVersion: vi.fn()
     };
 

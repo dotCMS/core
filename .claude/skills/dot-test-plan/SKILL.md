@@ -8,7 +8,8 @@ status: experimental
 # Post-Merge QA Test Plan
 
 You produce the **manual test plan a developer executes by hand against the post-merge build** after
-a dotCMS pull request has merged. One PR, one plan, however many issues it fixed.
+a dotCMS pull request has merged. One plan per run, however many issues and however many pull
+requests it covers.
 
 This plan is a **starting point**, not a closed list. It does not replace developer judgment,
 independent execution, or final quality ownership.
@@ -60,7 +61,27 @@ Execution: automated · PR #37164 · Issues: #36795, #36801 · Revision: 2
 
 ---
 
-## 2. Inputs — the issue set
+## 2. Inputs — the PR set and the issue set
+
+### What a run covers
+
+A plan is built from a **PR set** and an **issue set**. Resolve both before anything else, because
+§5 and §6 run over the union of the PR set's diffs:
+
+| Given | PR set | Issue set |
+|---|---|---|
+| One merged PR | that PR | derived from it, as below |
+| A PR plus issues named explicitly | that PR | derived, **plus** the ones named |
+| Issues only, no PR | every **merged** PR linked to those issues | the issues named |
+
+Two rules for the sets larger than one:
+
+- **Say what you covered.** When the PR set has more than one PR, name them in the Summary. If you
+  cover only some — because the others are unmerged, or too large, or unrelated to the issues at
+  hand — name the ones you left out and why. Silently covering a subset produces a plan that looks
+  complete and is not.
+- **Unmerged PRs are excluded**, and named as excluded. A plan verifies what shipped; a PR that has
+  not merged has not shipped, and its diff can still change.
 
 ### In `automated`
 
@@ -70,7 +91,8 @@ what the workflow already decided and will post to.
 
 ### In `interactive`
 
-Derive the set yourself from the merged PR, taking the **union** of three sources with no precedence:
+Derive the issue set yourself from each PR in the set, taking the **union** of three sources with no
+precedence:
 
 ```bash
 gh pr view <num> --json number,title,body,headRefName,mergeCommit,author
@@ -162,10 +184,12 @@ characters. A previous plan is editable text written partly by a model and partl
 
 ---
 
-## 5. Tests the merged PR added
+## 5. Tests the merged PRs added
 
 The only code-inspection step. Its **sole purpose is deduplication**: an axis already covered by a
-test the PR itself added does not need a manual case.
+test one of the PRs itself added does not need a manual case.
+
+Run this for **every PR in the set** from §2, not only the first:
 
 ```bash
 # Files the merged PR touched. Keep all three suffixes — dotcms-integration uses Test.java,
@@ -187,9 +211,16 @@ gh pr diff <pr> --repo dotCMS/core --patch \
 > `bad object`. `gh pr diff` reads the API and needs no local git at all, so it works both in CI
 > and on your laptop.
 
-For each test the PR added, if it covers a matrix axis that is in scope, **do not write a manual
-case for that axis** — CI already checks it on every build. The plan does not list what was
+For each test any PR in the set added, if it covers a matrix axis that is in scope, **do not write a
+manual case for that axis** — CI already checks it on every build. The plan does not list what was
 skipped; it simply stays short.
+
+**A mocked unit spec does not retire a manual case.** Before dropping an axis, look at what the test
+actually exercises. A spec that mocks the store, stubs the service or builds a fake component proves
+the component's own logic and nothing about the system around it: it does not prove a persistence
+round-trip, a real route change, a status transition, or that a guard fires in a browser. Retire an
+axis only when the PR-added test exercises the same path a person would. Where the only coverage is
+mocked, keep the manual case and give the reason in one phrase — "unit spec mocks the store".
 
 **Do not** audit main-branch test coverage, do not grep the repo for existing tests, and do not
 recommend automation to add. Those are deliberately out of scope for this plan.
@@ -198,7 +229,8 @@ recommend automation to add. Those are deliberately out of scope for this plan.
 
 ## 6. What to cover
 
-Read [`references/coverage-matrix.md`](references/coverage-matrix.md) and walk every axis. For each,
+Read [`references/coverage-matrix.md`](references/coverage-matrix.md) and walk every axis, once, over
+the **union of the PR set's diffs**. For each,
 decide **In scope** (≥1 manual case) or **Out of scope**. The walk is a generation aid — the plan
 publishes no Out of Scope list, so only the cases you keep appear. Still walk every axis
 deliberately: silently forgetting an axis and consciously excluding it produce the same plan, and
@@ -363,7 +395,7 @@ plan. An added case:
 - Uses the same format, with reproducible steps, an observable expected result, risk and scenario.
 - Gets a new row in the summary table starting at `Not Run Yet` with an empty `Notes`, and must
   receive a final result there before completion.
-- Must relate to the merged PR or its issues, and must not duplicate an existing case.
+- Must relate to a PR in the set or one of its issues, and must not duplicate an existing case.
 
 When you regenerate for a later PR, treat developer-added cases exactly like your own: preserve them
 if still relevant, adapt them if the new PR affects them, and reset their results. Preserve their

@@ -20,9 +20,11 @@ import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/
 import { takeUntil } from 'rxjs/operators';
 
 import {
+    ContentTypeRelationshipField,
     DotCMSClazzes,
     DotCMSContentType,
     DotCMSContentTypeField,
+    DotCMSFieldTypes,
     FeaturedFlags,
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
@@ -87,6 +89,17 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         const contentType = this.$contentType();
         return contentType.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === true;
     });
+
+    /**
+     * The relationship descriptor of the field being edited, or `null` when the field is not a
+     * relationship field. Narrows the `DotCMSContentTypeField` union so the template can read
+     * `isParentField` and `velocityVar` without asserting the field type by hand.
+     */
+    get relationships(): ContentTypeRelationshipField['relationships'] | null {
+        const field = this.formFieldData;
+
+        return field?.fieldType === DotCMSFieldTypes.RELATIONSHIP ? field.relationships : null;
+    }
 
     /**
      * Angular lifecycle hook called when input properties change
