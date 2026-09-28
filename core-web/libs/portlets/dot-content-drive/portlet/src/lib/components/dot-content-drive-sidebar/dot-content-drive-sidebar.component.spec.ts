@@ -1329,6 +1329,78 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(contentDriveStore.loadChildFolders).not.toHaveBeenCalled();
         });
 
+        describe('once the store has loaded the branch of a folder opened from the table', () => {
+            const standIn: DotFolderTreeNodeItem = {
+                key: 'table-node',
+                label: '/documents/images/',
+                data: {
+                    id: 'table-node',
+                    hostname: 'demo.dotcms.com',
+                    path: '/documents/images/',
+                    type: 'folder',
+                    fromTable: true
+                },
+                leaf: false
+            };
+
+            /** The tree's own node for the folder, which the store selects once it has loaded. */
+            const loaded: DotFolderTreeNodeItem = {
+                ...standIn,
+                key: 'images-node',
+                data: { ...standIn.data, id: 'images-node', fromTable: undefined }
+            };
+
+            const spyOnScroll = () => {
+                const scrollIntoView = vi.fn();
+                const nativeElement =
+                    spectator.query(DotTreeFolderComponent)?.elementRef.nativeElement;
+                vi.spyOn(nativeElement, 'querySelector').mockReturnValue({
+                    scrollIntoView
+                } as unknown as HTMLElement);
+
+                return scrollIntoView;
+            };
+
+            it('should scroll the tree to it', () => {
+                // Its row does not exist while the branch loads, so the scroll has to wait for the
+                // tree's own node rather than happen on the click.
+                const scrollIntoView = spyOnScroll();
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                spectator.component.handleSelectedNodeFromTable(standIn);
+                spectator.component.revealLoadedFolder(loaded);
+                spectator.detectChanges();
+
+                expect(scrollIntoView).toHaveBeenCalledWith({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            });
+
+            it('should scroll only once, not every time the selection is published again', () => {
+                const scrollIntoView = spyOnScroll();
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                spectator.component.handleSelectedNodeFromTable(standIn);
+                spectator.component.revealLoadedFolder(loaded);
+                spectator.detectChanges();
+                spectator.component.revealLoadedFolder({ ...loaded });
+                spectator.detectChanges();
+
+                expect(scrollIntoView).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not scroll for a folder selected in the tree itself', () => {
+                // A tree click is already under the pointer.
+                const scrollIntoView = spyOnScroll();
+
+                spectator.component.revealLoadedFolder(loaded);
+                spectator.detectChanges();
+
+                expect(scrollIntoView).not.toHaveBeenCalled();
+            });
+        });
+
         it('should handle selectedNode with fromTable flag', () => {
             const mockScrollIntoView = vi.fn();
             // Create a proper mock element that extends HTMLElement

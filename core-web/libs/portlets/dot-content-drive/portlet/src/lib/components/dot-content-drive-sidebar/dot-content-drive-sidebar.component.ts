@@ -245,8 +245,14 @@ export class DotContentDriveSidebarComponent {
             // level into the tree on screen. Walking the levels here as well fetched them twice,
             // and whichever answer landed last dropped the other's.
             if (!this.#findNodeByPath(data.path, this.$folders())) {
+                // Its row does not exist yet, so the scroll waits for the tree's own node:
+                // `revealLoadedFolder` brings it into view once the store selects it.
+                this.#awaitingReveal = data.path;
+
                 return;
             }
+
+            this.#awaitingReveal = undefined;
 
             const segments = data.path.split('/').filter(Boolean).slice(0, -1);
 
@@ -279,9 +285,41 @@ export class DotContentDriveSidebarComponent {
         this.#revealNode(this.$selectedNode(), 'instant');
     });
 
+    /** A folder opened from the table whose branch the store is still loading. */
+    #awaitingReveal: string | undefined;
+
+    /**
+     * Brings a folder opened from the table into view once the store has loaded its branch.
+     *
+     * The table click selects a stand-in, and for a folder the tree did not hold yet there was no
+     * row to scroll to at that moment. The store later selects the tree's own node for it, and that
+     * is when its row exists. Once only, so publishing the same selection again does not pull the
+     * tree back to it while the author is scrolling elsewhere.
+     *
+     * @param {DotFolderTreeNodeItem | undefined} selectedNode - The selected node
+     */
+    readonly revealLoadedFolder = signalMethod<DotFolderTreeNodeItem | undefined>(
+        (selectedNode) => {
+            const data = selectedNode?.data;
+
+            if (
+                !data ||
+                data.type === LOAD_MORE_NODE_TYPE ||
+                data.fromTable ||
+                data.path !== this.#awaitingReveal
+            ) {
+                return;
+            }
+
+            this.#awaitingReveal = undefined;
+            this.#revealNode(selectedNode, 'smooth');
+        }
+    );
+
     constructor() {
         // Call signalMethod with the signal - it will automatically subscribe to changes
         this.handleSelectedNodeFromTable(this.$selectedNode);
+        this.revealLoadedFolder(this.$selectedNode);
         this.revealSelectedNodeOnLoad(this.$loading);
     }
 

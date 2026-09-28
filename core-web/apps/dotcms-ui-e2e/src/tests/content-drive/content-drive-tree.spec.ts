@@ -2,7 +2,7 @@ import { ContentDrivePage } from '@pages';
 
 import { ContentDriveTree } from './helpers/content-drive-tree';
 
-import { test } from '../../fixtures/content-drive.fixture';
+import { expect, test } from '../../fixtures/content-drive.fixture';
 
 /**
  * Journey: Content Drive shared folder tree (#36733)
@@ -161,6 +161,51 @@ test.describe('Content Drive Folder Tree', () => {
             await tree.expectFolderVisible(openChildName);
         } finally {
             await apiHelpers.deleteFolders(site.hostname, [`/${openName}`, `/${parentName}`]);
+        }
+    });
+
+    test('scrolls the tree to a folder opened from the table', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        // Named to sort after the site's own folders, so it sits below the fold of the tree.
+        const site = await apiHelpers.getDefaultSite();
+        const parentName = `zz-cd-scroll-${testSuffix}`;
+        const middleName = `zz-cd-scroll-mid-${testSuffix}`;
+        await apiHelpers.createFolders(site.hostname, [`/${parentName}/${middleName}`]);
+
+        try {
+            const drive = new ContentDrivePage(adminPage);
+            const tree = new ContentDriveTree(adminPage);
+
+            await drive.goTo();
+            await tree.selectFolder(parentName);
+            await drive.expectListContainsTitle(middleName);
+
+            // Back to the top, so only the portlet can bring the folder into view.
+            await adminPage.getByTestId('hierarchy-scroll').evaluate((container) => {
+                [container, ...Array.from(container.querySelectorAll('*'))].forEach((element) => {
+                    element.scrollTop = 0;
+                });
+            });
+            const parentRow = adminPage
+                .getByTestId('sidebar')
+                .getByTestId('tree-node-label')
+                .filter({ hasText: parentName });
+            await expect(parentRow).not.toBeInViewport();
+
+            await drive.listTitles.filter({ hasText: middleName }).first().dblclick();
+
+            await tree.expectFolderSelected(middleName);
+            await expect(
+                adminPage
+                    .getByTestId('sidebar')
+                    .getByTestId('tree-node-label')
+                    .filter({ hasText: middleName })
+            ).toBeInViewport({ timeout: 10000 });
+        } finally {
+            await apiHelpers.deleteFolders(site.hostname, [`/${parentName}`]);
         }
     });
 
