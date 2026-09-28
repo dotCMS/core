@@ -98,8 +98,8 @@ public class FolderBulkDuplicateCompletionListener implements EventSubscriber<Jo
     }
 
     /**
-     * The outcome as it travels to the author: the run's counters and the per-path results. A
-     * cancelled run's unreached folders are among the results, as SKIPPED with no reason.
+     * The outcome as it travels to the author: the run's counters, the per-path results, and, on a
+     * cancelled run, where it stopped.
      * <p>
      * <b>The results are not optional.</b> A counts-only payload leaves an author with "27 of 30
      * duplicated" and no way to learn which three, which is exactly what those per-path records exist
@@ -121,6 +121,11 @@ public class FolderBulkDuplicateCompletionListener implements EventSubscriber<Jo
             payload.put("failedCount", found.get("failedCount"));
             payload.put("skippedCount", found.get("skippedCount"));
             payload.put("results", found.get("results"));
+            if (found.containsKey("stoppedAt")) {
+                // Only on a cancelled run: a client following the push rather than polling the
+                // job still needs to know where the remainder begins.
+                payload.put("stoppedAt", found.get("stoppedAt"));
+            }
         });
 
         return payload;

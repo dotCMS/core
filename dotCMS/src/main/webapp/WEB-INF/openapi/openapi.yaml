@@ -4575,7 +4575,7 @@ paths:
   /v1/assets/folders/_bulkduplicate:
     post:
       description: |-
-        Accepts a list of site-qualified folder paths and answers `202` with a job handle **before any folder is duplicated**. The run is asynchronous, queued to the `folderBulkDuplicate` queue. Follow it with `GET /api/v1/jobs/{jobId}/status`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and watch it with `GET /api/v1/jobs/{jobId}/monitor`. The submitting author is notified on any terminal state.
+        Accepts a list of site-qualified folder paths and answers `202` with a job handle **before any folder is duplicated**. The run is asynchronous, queued to the `folderBulkDuplicate` queue. Follow it with `GET /api/v1/jobs/{jobId}/status`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and watch it with `GET /api/v1/jobs/{jobId}/monitor`. The submitting author is notified on any terminal state. The run's outcome stays readable from the job status indefinitely, since finished jobs are not purged, and the author's notification stays until they dismiss it. A cancelled run's outcome names the first folder it never reached, as `stoppedAt`.
 
         Each folder is duplicated in place, beside its original in the same parent, holding everything the original holds in the same state. The duplicate takes the original's name followed by `_copy`, with `_copy` appended again until the name is free. The outcome identifies each folder by the path that was submitted.
 

@@ -95,6 +95,10 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
     private final AtomicBoolean cancellationRequested = new AtomicBoolean();
     private final List<BatchItemResult> results = new CopyOnWriteArrayList<>();
     private volatile int total;
+    /** The first submitted folder a cancelled run never reached; null when the run was not cut short. */
+    private volatile String stoppedAt;
+    /** The last progress percentage reported, rounded, so a repeat is never sent. */
+    private int lastReportedPercent = -1;
 
     /**
      * Duplicates every submitted folder, in submission order.
@@ -139,9 +143,7 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
                 }
             }
 
-            final int completed = this.processedCount.incrementAndGet();
-            job.progressTracker().ifPresent(
-                    tracker -> tracker.updateProgress(completed / (float) this.total));
+            reportProgress(job, this.processedCount.incrementAndGet());
         }
 
         // Records were made as each decision fell, so put them back in submission order.
@@ -182,13 +184,31 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Records every folder a cancelled run never reached as SKIPPED with no reason. Folders
-     * already decided up front keep the outcome they were given.
+     * Reports progress only when the rounded percentage changes, not after every folder (FR-027):
+     * a report that says nothing new is noise to whoever is following the run.
+     */
+    private void reportProgress(final Job job, final int completed) {
+        final int percent = Math.round(completed * 100f / this.total);
+        if (percent != this.lastReportedPercent) {
+            this.lastReportedPercent = percent;
+            job.progressTracker().ifPresent(
+                    tracker -> tracker.updateProgress(completed / (float) this.total));
+        }
+    }
+
+    /**
+     * Records every folder a cancelled run never reached as SKIPPED with no reason, and the first
+     * of them as where the run stopped. Folders already decided up front keep the outcome they
+     * were given.
      */
     private void recordUnreachedAsSkipped(final List<String> remaining,
             final Map<String, Folder> duplicable) {
         for (final String path : remaining) {
             if (duplicable.containsKey(path)) {
+                if (this.stoppedAt == null) {
+                    // Where the remainder begins, so it can be resubmitted deliberately (FR-032).
+                    this.stoppedAt = path;
+                }
                 record(path, BatchItemStatus.SKIPPED, null, null);
             }
         }
@@ -271,7 +291,10 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
             } else {
                 resolved.put(path, folder);
             }
-        } catch (final NotFoundInDbException | NotFoundException e) {
+        } catch (final NotFoundInDbException | NotFoundException | IllegalArgumentException e) {
+            // Gone, not a folder, or not a path the server can parse: all PATH_NOT_FOUND by the
+            // contract (FR-013). IllegalArgumentException is how the path resolver reports a
+            // path it cannot parse.
             record(path, BatchItemStatus.FAILED, BatchFailureReason.PATH_NOT_FOUND,
                     e.getMessage());
         } catch (final Exception e) {
@@ -395,7 +418,8 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
      * The run's outcome: its counts and one record per submitted folder.
      *
      * @param job the run
-     * @return {@code total}, {@code processed}, the three counts, and {@code results}
+     * @return {@code total}, {@code processed}, the three counts and {@code results}, plus
+     *     {@code stoppedAt} when a cancellation cut the run short
      */
     @Override
     public Map<String, Object> getResultMetadata(final Job job) {
@@ -406,6 +430,9 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
         metadata.put("failedCount", this.failedCount.get());
         metadata.put("skippedCount", this.skippedCount.get());
         metadata.put("results", List.copyOf(this.results));
+        if (this.stoppedAt != null) {
+            metadata.put("stoppedAt", this.stoppedAt);
+        }
         return metadata;
     }
 

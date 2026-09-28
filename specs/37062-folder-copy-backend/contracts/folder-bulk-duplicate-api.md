@@ -54,6 +54,10 @@ Identical to delete, on the generic job API.
 | Cancel | `POST /api/v1/jobs/{jobId}/cancel` | Takes effect between top-level folders, never mid-subtree |
 | Monitor | `GET /api/v1/jobs/{jobId}/monitor` | Server-sent progress; §3 |
 
+**How long it is kept.** A finished run's outcome stays readable from the status address
+indefinitely: the job framework does not purge finished jobs. The durable notification (§6) stays
+until the author dismisses it.
+
 **Differs from delete**: a client has **no reason to read the active-runs listing**. Nothing is
 marked while a duplication runs, so there is no in-flight state to restore after a reload.
 
@@ -74,11 +78,12 @@ Read from the terminal job's result metadata. Keys identical to bulk upload and 
 | Key | Type | Meaning |
 |---|---|---|
 | `total` | number | Folders in the run |
-| `processed` | number | `successCount + failedCount` |
+| `processed` | number | Folders the run reached: every folder except those a cancellation left unreached. Includes folders skipped as `COVERED_BY_PARENT`, which were decided, not unreached |
 | `successCount` | number | |
 | `failedCount` | number | |
 | `skippedCount` | number | Both kinds of skip |
 | `results` | array | One record per folder, in submission order |
+| `stoppedAt` | string, optional | Only on a cancelled run: the first submitted folder it never reached, so the remainder can be resubmitted deliberately |
 
 ### Per-folder record
 
