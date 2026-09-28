@@ -1065,6 +1065,22 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         return ConfigUtils.getAssetTempPath() + File.separator + tempResourceId + File.separator +  tempResourceId + META_TMP;
     }
 
+    private StorageKey temporaryMetadataKey(final String id, final boolean legacy) {
+        if (!TemporaryAssetStorage.validId(id)) {
+            throw new IllegalArgumentException("Invalid temporary resource id");
+        }
+        return new StorageKey.Builder().group(Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA))
+                .path(legacy ? tempResourcePath(id) : TemporaryAssetStorage.metadataPath(id))
+                .storage(legacy ? StorageType.FILE_SYSTEM : StorageType.S3).build();
+    }
+
+    private Map<String, Serializable> temporaryMetadata(final String id) throws DotDataException {
+        // Temporary metadata is mutable: read S3 directly so another node's edits are visible.
+        // Only a genuine absence falls back to pre-feature local metadata, never a storage failure.
+        final Map<String, Serializable> shared = fileStorageAPI.retrieveRawMetaData(temporaryMetadataKey(id, false));
+        return shared != null ? shared : fileStorageAPI.retrieveRawMetaData(temporaryMetadataKey(id, true));
+    }
+
     /**
      * {@inheritDoc}
      * @param tempResourceId
@@ -1074,10 +1090,34 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
     public void putCustomMetadataAttributes(final String tempResourceId,
             final Map<String, Map<String,Serializable>> customAttributesByField) throws DotDataException {
 
+        if (AssetStorageFeature.isEnabled()) {
+            if (customAttributesByField.isEmpty()) {
+                return;
+            }
+            final Map<String, Serializable> previous = temporaryMetadata(tempResourceId);
+            final Map<String, Serializable> updated = new HashMap<>(previous == null ? Map.of() : previous);
+            for (final Map<String, Serializable> attributes : customAttributesByField.values()) {
+                if (attributes.isEmpty()) {
+                    updated.keySet().removeIf(key -> key.startsWith(Metadata.CUSTOM_PROP_PREFIX));
+                } else {
+                    attributes.forEach((key, value) -> updated.put(Metadata.CUSTOM_PROP_PREFIX + key, value));
+                }
+            }
+            // Retain a nonempty record after clearing custom attributes, so a legacy local copy
+            // cannot resurrect an earlier focal point on the next read.
+            updated.put("tempResourceId", tempResourceId);
+            if (!fileStorageAPI.setMetadata(new FetchMetadataParams.Builder().cache(false)
+                    .storageKey(temporaryMetadataKey(tempResourceId, false)).build(), updated)) {
+                throw new DotDataException("Unable to save temporary binary metadata for " + tempResourceId);
+            }
+            return;
+        }
+
         final String metadataBucketName = Config
                 .getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
 
-        customAttributesByField.forEach((fieldName, customAttributes) -> {
+        for (final var entry : customAttributesByField.entrySet()) {
+            final Map<String, Serializable> customAttributes = entry.getValue();
 
             try {
                 final String tempResourcePath = tempResourcePath(tempResourceId);
@@ -1092,9 +1132,12 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
                         .build()), customAttributes);
 
             }catch (Exception e){
+                if (AssetStorageFeature.isEnabled()) {
+                    throw new DotDataException("Unable to save temporary binary metadata for " + tempResourceId, e);
+                }
                 Logger.error(FileMetadataAPIImpl.class, "Error saving custom attributes", e);
             }
-        });
+        }
     }
 
     /**
@@ -1105,6 +1148,11 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
      */
     public Optional<Metadata> getMetadata(final String tempResourceId)
             throws DotDataException {
+
+            if (AssetStorageFeature.isEnabled()) {
+                return Optional.ofNullable(temporaryMetadata(tempResourceId))
+                        .map(values -> new Metadata(tempResourceId, values));
+            }
 
             final StorageType storageType = StoragePersistenceProvider.getStorageType();
             final String metadataBucketName = Config

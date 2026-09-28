@@ -100,7 +100,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return AssetStorageFeature.isEnabled()
                 && (com.dotcms.storage.binary.BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equalsIgnoreCase(groupName)
                 || com.dotcms.storage.binary.BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equalsIgnoreCase(groupName)
-                || com.dotcms.publishing.output.BundleArchiveStorage.GROUP.equalsIgnoreCase(groupName))
+                || com.dotcms.publishing.output.BundleArchiveStorage.GROUP.equalsIgnoreCase(groupName)
+                || TemporaryAssetStorage.GROUP.equalsIgnoreCase(groupName))
                 ? path : path.toLowerCase();
     }
 

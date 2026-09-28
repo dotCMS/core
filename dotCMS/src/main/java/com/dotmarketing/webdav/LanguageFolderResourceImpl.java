@@ -86,7 +86,10 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	 */
 	public CollectionResource createCollection(String newName) {
 		if(dotDavHelper.isTempResource(newName) && isLanguageRoot){
-			dotDavHelper.createTempFolder(File.separator + "system" + File.separator + "languages" + File.separator + newName);
+			final File created = dotDavHelper.createTempFolder(File.separator + "system" + File.separator + "languages" + File.separator + newName);
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				return new TempFolderResourceImpl(created.getPath(), created, true);
+			}
 			File f = new File(File.separator + "system" + File.separator + "languages");
 			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,true);
 			return tr;
@@ -101,6 +104,11 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	public Resource child(String childName) {
 		List<? extends Resource> children = getChildren();
 		for (Resource resource : children) {
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()
+					&& (resource instanceof TempFolderResourceImpl || resource instanceof TempFileResourceImpl)) {
+				if (resource.getName().equals(childName)) return resource;
+				continue;
+			}
 			if(resource instanceof LanguageFolderResourceImpl){
 				String name = ((LanguageFolderResourceImpl)resource).getFolder().getName();
 				if(name.equalsIgnoreCase(childName)){
@@ -121,6 +129,10 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 	 */
 	public List<? extends Resource> getChildren() {
 		File[] children = folder.listFiles();
+		if (children == null && com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			if (folder.exists()) throw new com.dotmarketing.exception.DotRuntimeException("Unable to list language directory " + folder);
+			children = new File[0];
+		}
 		List<Resource> result = new ArrayList<>();
 		for (File file : children) {
 			if(file.getName().endsWith(".properties") || file.getName().endsWith(".native") || file.getName().equals("archived") || folder.getName().equals("archived")){
@@ -134,6 +146,16 @@ public class LanguageFolderResourceImpl implements FolderResource, LockingCollec
 			}
 		}
 		File tempDir = dotDavHelper.getTempDir();
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			final String prefix = Config.getBooleanProperty("WEBDAV_LEGACY_PATHING", false)
+					? "/webdav/autopub/" : "/webdav/live/" + dotDavHelper.getLanguage() + "/";
+			try {
+				result.addAll(dotDavHelper.temporaryChildren(prefix + "system/languages/" + path, true));
+				return result;
+			} catch (IOException failure) {
+				throw new com.dotmarketing.exception.DotRuntimeException("Unable to list WebDAV staging resources", failure);
+			}
+		}
 		File f = new File(tempDir.getPath() + File.separator + "system" + File.separator + "languages" + path);
 		File[] c = f.listFiles();
 		if(c != null){
