@@ -72,7 +72,8 @@ public class FolderBulkDuplicateHelper {
     /**
      * Validates the submission and enqueues the run. Nothing has been duplicated when this returns.
      *
-     * @param form the selected folders
+     * @param form the selected folders; null when the request had no body, which is refused as
+     *             an empty selection
      * @param user the submitting author; the run checks rights as them and notifies them
      * @return the run's handle
      * @throws FolderBulkDuplicateRefusedException the submission is empty, or over the maximum
@@ -81,7 +82,7 @@ public class FolderBulkDuplicateHelper {
     public FolderBulkDuplicateSubmitResponse submit(final FolderBulkDuplicateForm form,
             final User user) throws DotDataException {
 
-        if (form.assetPaths().isEmpty()) {
+        if (form == null || form.assetPaths().isEmpty()) {
             throw new FolderBulkDuplicateRefusedException("EMPTY_SELECTION", ASSET_PATHS_PARAMETER,
                     Response.Status.BAD_REQUEST, "no folder paths were submitted");
         }
