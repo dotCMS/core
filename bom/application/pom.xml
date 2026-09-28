@@ -28,6 +28,8 @@
         <jersey.version>2.47</jersey.version>
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.15.12</micrometer.version>
+        <opentelemetry-javaagent.version>2.31.1</opentelemetry-javaagent.version>
+        <pyroscope-agent.version>2.9.2</pyroscope-agent.version>
         <opensearch.version>3.3.0</opensearch.version>
         <langchain4j.version>1.15.1</langchain4j.version>
         <netty.version>4.1.138.Final</netty.version>
@@ -1632,6 +1634,19 @@
                 <version>${glowroot.version}</version>
                 <classifier>dist</classifier>
                 <type>zip</type>
+            </dependency>
+
+            <!-- JVM agents copied into the Tomcat dist and attached by setenv.sh when
+                 OTEL_JAVAAGENT_ENABLED / PYROSCOPE_AGENT_ENABLED is "true" -->
+            <dependency>
+                <groupId>io.opentelemetry.javaagent</groupId>
+                <artifactId>opentelemetry-javaagent</artifactId>
+                <version>${opentelemetry-javaagent.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.pyroscope</groupId>
+                <artifactId>agent</artifactId>
+                <version>${pyroscope-agent.version}</version>
             </dependency>
 
             <!--
