@@ -141,6 +141,28 @@ test.describe('Content Drive folder duplicate', () => {
             }
         ));
 
+    test('keeps reporting a duplicate across a reload, until it finishes', ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) =>
+        inSeededContainer(
+            { adminPage, apiHelpers, name: `cd-dup-reload-${testSuffix}`, children: ['source'] },
+            async (drive) => {
+                const duplicate = new FolderDuplicate(adminPage);
+                await duplicate.fromContextMenu('source');
+                await drive.expectStatusToastContaining('in the background');
+
+                // The status used to go with the page while the run carried on. It is put back
+                // from the queue's active listing, and the completion ends it and reloads the
+                // listing as it would have.
+                await adminPage.reload();
+                await drive.expectStatusToastContaining('in the background');
+                await drive.expectStatusToastGone();
+                await drive.expectListContainsTitle('source_copy');
+            }
+        ));
+
     test('finds the outcome in the bell after leaving the drive', ({
         adminPage,
         apiHelpers,

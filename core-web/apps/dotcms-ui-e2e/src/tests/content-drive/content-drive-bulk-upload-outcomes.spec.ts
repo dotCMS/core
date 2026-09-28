@@ -94,6 +94,26 @@ test.describe('Content Drive bulk upload outcomes', () => {
             await drive.expectHandedToBackground();
         }));
 
+    test('keeps reporting a batch across a reload, until it finishes', ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) =>
+        inSeededFolder(
+            { adminPage, apiHelpers, name: `cd-reload-${testSuffix}` },
+            async (drive) => {
+                // Enough files that the batch is still being processed when the page comes back.
+                await drive.chooseGeneratedFilesForUpload(60, `reload-${testSuffix}`);
+                await drive.expectHandedToBackground();
+
+                // The status used to go with the page while the batch carried on. It is put
+                // back from the upload queue's active listing, and the completion ends it.
+                await adminPage.reload();
+                await drive.expectStatusToastContaining('in the background');
+                await drive.expectStatusToastGone();
+            }
+        ));
+
     test('names the file that collided, and still uploads the rest', ({
         adminPage,
         apiHelpers,
