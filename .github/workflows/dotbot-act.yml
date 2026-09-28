@@ -6,10 +6,6 @@ on:
   pull_request_review_comment:
     types: [created]
 
-concurrency:
-  group: dotbot-act-${{ github.event.issue.number || github.event.pull_request.number || github.ref }}
-  cancel-in-progress: false
-
 jobs:
   act:
     name: Act on /dotbot comments
@@ -29,6 +25,15 @@ jobs:
       ) &&
       github.actor != 'dependabot[bot]' &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    # Job-level, not workflow-level: every comment on the repo starts this
+    # workflow, and a workflow-level group is joined even when the job below is
+    # skipped. A skipped run would then cancel a waiting /dotbot run. A job
+    # skipped by `if:` never joins the group. queue: max keeps back-to-back
+    # /dotbot requests queued instead of dropping all but the newest.
+    concurrency:
+      group: dotbot-act-${{ github.event.issue.number || github.event.pull_request.number || github.ref }}
+      cancel-in-progress: false
+      queue: max
     runs-on: ubuntu-latest
     permissions:
       contents: write
