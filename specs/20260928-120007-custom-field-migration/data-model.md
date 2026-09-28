@@ -88,5 +88,5 @@ What `pull` and `push` each print to stdout as their last line (FR-015). See
 |---|---|---|
 | `command` | `"pull"` \| `"push"` | |
 | `counts` | map of status → integer | E.g. `{"pending": 7, "alreadyMigrated": 2, ...}` for `pull`; `{"published": 5, "skipped": 1, "failed": 0}` for `push` |
-| `entries` | list (pull) or omitted (push, which has already mutated the manifest on disk) | Enough detail for an agent to decide what to tell the customer next, without re-parsing human-readable text |
+| `entries` | list, for both `pull` and `push` | Enough detail for an agent to decide what to tell the customer next, without re-parsing human-readable text; for `push` this is populated even though `manifest.json` has also already been updated, since it's cheaper for an agent to read the final JSON than re-open the manifest |
 | `exitCode` | integer, mirrors the process's actual exit code | Redundant with the process exit code on purpose — makes the JSON self-describing even if captured out of band |

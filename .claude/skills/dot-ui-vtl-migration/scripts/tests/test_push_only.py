@@ -29,3 +29,17 @@ def test_only_leaves_unmatched_entries_pending(seeded_push_instance, workdir):
     manifest = json.loads((workdir / "manifest.json").read_text())
     entries_by_key = {entry["key"]: entry for entry in manifest["entries"]}
     assert entries_by_key["Blog.author"]["status"] == "pending"
+
+
+def test_only_with_no_matches_warns_and_touches_nothing(seeded_push_instance, workdir, capsys):
+    mcf.push(workdir, dry_run=True, only=["no-such-key"])
+
+    captured = capsys.readouterr()
+    assert "matched none" in captured.err.lower()
+
+    result = parse_last_json(captured.out)
+    assert result["entries"] == []
+    assert result["counts"]["onlyMatched"] == 0
+
+    manifest = json.loads((workdir / "manifest.json").read_text())
+    assert all(entry["status"] == "pending" for entry in manifest["entries"])

@@ -65,6 +65,7 @@ DA_RE = re.compile(r"^/dA/([A-Za-z0-9-]+)(?:/.*)?$")
 # $velutil.mergeTemplate('/static/...') / #parse('static/...'): files shipped inside dotCMS itself
 CORE_FILE_RE = re.compile(r"""(?:mergeTemplate|#parse)\s*\(\s*["']([^"']+)["']""")
 LEGACY_RE = re.compile(r"dojo\.|dijit|dojoType|DotCustomFieldApi\.(?:get|set|onChangeField)\s*\(")
+_PATH_SEPARATORS_RE = re.compile(r"[\\/]")
 
 client = httpx.Client(base_url=BASE_URL, auth=(DOTCMS_USER, DOTCMS_PASS), timeout=60)
 
@@ -84,7 +85,13 @@ class ConfigError(Exception):
 
 def redact(text: str) -> str:
     """Never let DOTCMS_PASS's value reach stdout/stderr, even inside an error message
-    (Constitution Principle III; FR-014 requires naming the *variable*, never its value)."""
+    (Constitution Principle III; FR-014 requires naming the *variable*, never its value).
+
+    This is an exact substring replace, so a short/common `DOTCMS_PASS` (e.g. the documented
+    local default "admin") can over-redact unrelated words that happen to contain it. That
+    failure mode only ever makes a message harder to read, never leaks the credential — real
+    deployments should use a non-trivial password anyway, so this is accepted as-is rather
+    than adding token-boundary-aware masking."""
     if DOTCMS_PASS and DOTCMS_PASS in text:
         return text.replace(DOTCMS_PASS, "***")
     return text
@@ -205,6 +212,30 @@ def emit_result(command: str, counts: dict, entries: list | None = None) -> dict
 # ─── pull ────────────────────────────────────────────────────────────────
 
 
+def sanitize_path_component(value: str, *, fallback: str) -> str:
+    """Neutralizes a server-controlled string (a content-type/field `variable`, or an
+    asset's `fileName`) before it becomes part of a filesystem path under
+    `<workdir>/original/`. Strips path separators and rejects a bare "." or ".." so it can
+    never introduce extra path segments or resolve to the current/parent directory. Never
+    raises — falls back to `fallback` if nothing safe remains."""
+    cleaned = _PATH_SEPARATORS_RE.sub("_", value.strip())
+    return cleaned if cleaned not in ("", ".", "..") else fallback
+
+
+def write_inside(root: Path, relative: str, data: bytes | str) -> None:
+    """Writes `data` to `root / relative`; raises ConfigError if the resolved path would
+    fall outside `root` — the safety net behind sanitize_path_component, in case a future
+    call site forgets to sanitize first."""
+    target = (root / relative).resolve()
+    if not target.is_relative_to(root.resolve()):
+        raise ConfigError(f"refusing to write outside {root}: sanitized path resolved to {target}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if isinstance(data, bytes):
+        target.write_bytes(data)
+    else:
+        target.write_text(data)
+
+
 def binary_field(content: dict) -> str | None:
     """Variable of the binary field holding the code: `asset` (dotAsset), `fileAsset` (FileAsset)."""
     for candidate in ("asset", "fileAsset"):
@@ -252,13 +283,14 @@ class Scan:
         elif MIGRATED_MARKER in values:
             self.inline_migrated.append(owner)
         elif LEGACY_RE.search(values):
+            safe_owner = sanitize_path_component(owner, fallback=f"field-{field['id']}")
             self.inline_fields.append(
                 {
                     "kind": "field",
                     "key": owner,
                     "typeId": content_type["id"],
                     "fieldId": field["id"],
-                    "file": f"fields/{owner}.vtl",
+                    "file": f"fields/{safe_owner}.vtl",
                     "values": values,
                 }
             )
@@ -267,6 +299,10 @@ class Scan:
 
 
 def scan_content_types() -> Scan:
+    # Sequential, one GET per content type (N+1) — fine at the documented scale (spec.md:
+    # "tens to low hundreds of content types," no formal SLA). If a customer instance is
+    # large enough for this to matter, batch/concurrent fetching is the next step, not a
+    # rewrite of the classification logic itself.
     scan = Scan()
     content_types = list_content_types()
     log(f"Scanning {len(content_types)} content types...")
@@ -299,6 +335,7 @@ def pull(workdir: Path) -> int:
     unresolved: list[str] = []
     unpublished: list[str] = []
 
+    # Sequential, two GETs per distinct asset (N+1, same trade-off as scan_content_types).
     log(f"Resolving {len(scan.asset_refs)} /dA/ references...")
     for da_id, owners in scan.asset_refs.items():
         content = call("GET", f"/api/v1/content/{da_id}", fatal=False).get("entity")
@@ -313,7 +350,11 @@ def pull(workdir: Path) -> int:
             unresolved.append(f"{da_id} (download failed, used by {', '.join(owners)})")
             continue
 
-        file_name = content.get("fileName") or content.get("name") or content["title"]
+        file_name = content.get("fileName") or content.get("name") or content.get("title")
+        if not file_name:
+            unresolved.append(f"{da_id} (no fileName/name/title on this content item, used by {', '.join(owners)})")
+            continue
+
         label = f"{content['contentType']} {file_name} ({da_id})"
         if MIGRATED_MARKER in raw.text:
             already_migrated.append(label)
@@ -321,6 +362,7 @@ def pull(workdir: Path) -> int:
         if not content.get("live"):
             unpublished.append(label)
 
+        safe_file_name = sanitize_path_component(file_name, fallback=f"asset-{da_id}")
         entry = {
             "kind": "asset",
             "key": da_id,
@@ -332,16 +374,16 @@ def pull(workdir: Path) -> int:
             "fileName": file_name,
             "label": label,
             "usedBy": owners,
-            "file": f"assets/{da_id}__{file_name}",
+            "file": f"assets/{da_id}__{safe_file_name}",
             "status": "pending",
             "statusReason": None,
         }
-        (original_dir / entry["file"]).write_bytes(raw.content)
+        write_inside(original_dir, entry["file"], raw.content)
         entries.append(entry)
 
     for field in scan.inline_fields:
         values = field.pop("values")
-        (original_dir / field["file"]).write_text(values)
+        write_inside(original_dir, field["file"], values)
         entries.append(
             {
                 **field,
@@ -393,7 +435,14 @@ def entry_matches_only(entry: dict, only: list[str]) -> bool:
 
 def inline_problem(original: bytes, migrated: bytes) -> str | None:
     """The skill's inline output keeps the legacy code verbatim under #else, next to
-    the new code under #if( $structures.isNewEditModeEnabled() ). Per FR-010."""
+    the new code under #if( $structures.isNewEditModeEnabled() ). Per FR-010.
+
+    The verbatim check is substring containment, not a positional match against the actual
+    #else block — so a near-empty original field could in principle satisfy it trivially.
+    Accepted: fields only reach here because LEGACY_RE matched real dojo/dijit/
+    DotCustomFieldApi code (never near-empty in practice), and a false pass here still only
+    weakens this one entry's safety guarantee, not the batch's — it stays visible in the push
+    report either way."""
     if MIGRATED_MARKER.encode() not in migrated:
         return f"no {MIGRATED_MARKER}() branch (three-file output or blocked migration?)"
     if original.strip() not in migrated:
@@ -442,19 +491,27 @@ def push_field(entry: dict, original: str, code: str, dry_run: bool) -> str:
         return f"dry-run: would update field values ({len(code)} chars)"
 
     field["values"] = code
-    return "published" if request("PUT", path, json=field, fatal=False) is not None else "failed: field update request failed"
+    response = request("PUT", path, json=field, fatal=False)
+    if response is None:
+        return "failed: field update request failed"
+    return "published"
 
 
 def push(workdir: Path, dry_run: bool, only: list[str]) -> int:
     preflight_auth()
     manifest = read_manifest(workdir)
 
-    results: list[dict] = []
-    failed = 0
-    for entry in manifest["entries"]:
-        if not entry_matches_only(entry, only):
-            continue
+    matched_entries = [entry for entry in manifest["entries"] if entry_matches_only(entry, only)]
+    if only and not matched_entries:
+        log(
+            f"WARNING: --only {only} matched none of the {len(manifest['entries'])} "
+            f"manifest entries in {manifest_path(workdir)} — nothing to push; "
+            "check the keys against manifest.json"
+        )
 
+    results: list[dict] = []
+    counts = {"published": 0, "skipped": 0, "failed": 0, "dryRun": 0}
+    for entry in matched_entries:
         migrated_file = workdir / "migrated" / entry["file"]
         original_file = workdir / "original" / entry["file"]
 
@@ -474,6 +531,15 @@ def push(workdir: Path, dry_run: bool, only: list[str]) -> int:
         log(f"{entry['label']}: {outcome}")
         results.append({"key": entry["key"], "label": entry["label"], "outcome": outcome})
 
+        if outcome == "published":
+            counts["published"] += 1
+        elif outcome.startswith("skipped: "):
+            counts["skipped"] += 1
+        elif outcome.startswith("dry-run: "):
+            counts["dryRun"] += 1
+        else:
+            counts["failed"] += 1
+
         if not dry_run:
             if outcome == "published":
                 status, reason = "published", None
@@ -481,12 +547,15 @@ def push(workdir: Path, dry_run: bool, only: list[str]) -> int:
                 status, reason = "skipped", outcome.removeprefix("skipped: ")
             else:
                 status, reason = "failed", outcome.removeprefix("failed: ")
-                failed += 1
             # Persisted immediately, not batched to the end of the loop, so an
             # interrupted run still leaves an accurate record (research.md).
             set_entry_status(workdir, manifest, entry["key"], status, reason)
 
-    counts = {"considered": len(results), "failed": failed}
+    if not dry_run:
+        counts.pop("dryRun")
+    if only:
+        counts["onlyMatched"] = len(matched_entries)
+
     result = emit_result("push", counts, entries=results)
     return result["exitCode"]
 

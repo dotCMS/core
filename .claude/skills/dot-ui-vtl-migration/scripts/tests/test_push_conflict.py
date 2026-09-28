@@ -5,6 +5,7 @@ batch still proceeds independently."""
 import json
 
 import migrate_custom_fields as mcf
+from conftest import parse_last_json
 
 
 def test_asset_conflict_is_skipped_not_overwritten(seeded_push_instance, workdir):
@@ -33,7 +34,7 @@ def test_field_conflict_is_skipped_not_overwritten(seeded_push_instance, workdir
     assert "changed on the server since pull" in entry["statusReason"]
 
 
-def test_one_conflicting_entry_does_not_block_the_rest_of_the_batch(seeded_push_instance, workdir):
+def test_one_conflicting_entry_does_not_block_the_rest_of_the_batch(seeded_push_instance, workdir, capsys):
     _transport, _manifest, state = seeded_push_instance
     state.asset_inode = "inode-CHANGED-by-someone-else"
 
@@ -43,3 +44,6 @@ def test_one_conflicting_entry_does_not_block_the_rest_of_the_batch(seeded_push_
     entries_by_key = {entry["key"]: entry for entry in manifest["entries"]}
     assert entries_by_key["asset-a"]["status"] == "skipped"
     assert entries_by_key["Blog.author"]["status"] == "published", "the healthy entry must still go through"
+
+    result = parse_last_json(capsys.readouterr().out)
+    assert result["counts"] == {"published": 1, "skipped": 1, "failed": 0}

@@ -187,6 +187,82 @@ def already_migrated_instance(mock_dotcms):
     return transport, log
 
 
+# ─── an instance whose content-type/field/fileName strings are path-traversal attempts ──
+#
+# One content type named "../../evil" with an in-field legacy VTL field ("widget" — exercises
+# Scan.add_field's owner->file path) and a /dA/ reference whose fileName is
+# "../../../../etc/passwd" (exercises the asset-name->file path).
+
+
+def build_malicious_paths_instance_handler():
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        params = dict(request.url.params)
+
+        if path == "/api/v1/contenttype":
+            if params.get("per_page") == "1":  # preflight_auth()
+                return json_response(load_json("contenttype_list_malicious_page1.json"))
+            if params.get("page") == "2":
+                return json_response(load_json("contenttype_list_malicious_page2.json"))
+            return json_response(load_json("contenttype_list_malicious_page1.json"))
+
+        if path == "/api/v1/contenttype/id/ct-malicious":
+            return json_response(load_json("contenttype_malicious.json"))
+
+        if path == "/api/v1/content/asset-malicious-001":
+            return json_response(load_json("content_asset_malicious.json"))
+
+        if path == "/dA/asset-malicious-001/asset/passwd":
+            return text_response(load_text("asset_malicious_original.vtl"))
+
+        raise AssertionError(f"unexpected request in malicious_paths fixture: {request.method} {request.url}")
+
+    return handler
+
+
+@pytest.fixture
+def malicious_paths_instance(mock_dotcms):
+    transport = mock_dotcms(build_malicious_paths_instance_handler())
+    return transport
+
+
+# ─── an instance whose /dA/ asset has no fileName/name/title at all ──────────────
+#
+# Must be reported as unresolved, not crash pull() with an uncaught KeyError.
+
+
+def build_noname_asset_instance_handler():
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        params = dict(request.url.params)
+
+        if path == "/api/v1/contenttype":
+            if params.get("per_page") == "1":  # preflight_auth()
+                return json_response(load_json("contenttype_list_noname_page1.json"))
+            if params.get("page") == "2":
+                return json_response(load_json("contenttype_list_noname_page2.json"))
+            return json_response(load_json("contenttype_list_noname_page1.json"))
+
+        if path == "/api/v1/contenttype/id/ct-noname":
+            return json_response(load_json("contenttype_noname.json"))
+
+        if path == "/api/v1/content/asset-noname-001":
+            return json_response(load_json("content_asset_noname.json"))
+
+        if path == "/dA/asset-noname-001/asset/unnamed":
+            return text_response(load_text("asset_noname_original.vtl"))
+
+        raise AssertionError(f"unexpected request in noname_asset fixture: {request.method} {request.url}")
+
+    return handler
+
+
+@pytest.fixture
+def noname_asset_instance(mock_dotcms):
+    transport = mock_dotcms(build_noname_asset_instance_handler())
+    return transport
+
+
 # ─── a ready-to-push workdir (manifest + original/migrated files already on disk) ──
 #
 # Used by push tests (US2/US3): simulates the state right after `pull` + the agent's

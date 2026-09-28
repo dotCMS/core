@@ -15,9 +15,10 @@ def test_manifest_reflects_partial_progress_after_a_mid_batch_crash(seeded_push_
     def exploding_push_field(*args, **kwargs):
         raise RuntimeError("simulated crash mid-batch")
 
-    # raising=False: at Red time `push_field` doesn't exist as its own function yet
-    # (US3 hasn't split real publish logic out of push() yet), and this must still
-    # fail as "push never actually raised/crashed", not as a setup AttributeError.
+    # raising=False: keeps this test robust to push_field being refactored away as its
+    # own patchable module attribute in the future (e.g. inlined into push()) — it fails
+    # as a clean "push never actually raised/crashed" assertion in that case, not as a
+    # setup AttributeError.
     monkeypatch.setattr(mcf, "push_field", exploding_push_field, raising=False)
 
     # Manifest entries are processed in order: "asset-a" (asset) then "Blog.author"

@@ -1,0 +1,11 @@
+{
+  "entity": {
+    "identifier": "ident-noname-001",
+    "inode": "inode-noname-001",
+    "languageId": 1,
+    "contentType": "dotAsset",
+    "assetContentAsset": "somehash",
+    "assetVersion": "/dA/asset-noname-001/asset/unnamed",
+    "live": true
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "entity": {
+    "identifier": "ident-malicious-001",
+    "inode": "inode-malicious-001",
+    "languageId": 1,
+    "contentType": "dotAsset",
+    "assetContentAsset": "somehash",
+    "assetVersion": "/dA/asset-malicious-001/asset/passwd",
+    "fileName": "../../../../etc/passwd",
+    "title": "../../../../etc/passwd",
+    "live": true
+  }
+}

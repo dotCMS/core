@@ -24,7 +24,8 @@ is the literal shape.
       "usedBy": ["Blog.author", "Event.organizer"],
       "file": "assets/0ec62ffd3666f23fc5228ef84a481b09__userID.vtl",
       "status": "pending",
-      "statusReason": null
+      "statusReason": null,
+      "previousInode": "abc123..."
     },
     {
       "kind": "field",
@@ -52,6 +53,10 @@ is the literal shape.
   human-readable explanation once `status` is `"skipped"` or `"failed"` (FR-012).
 - `usedBy` always has at least one entry — an item with no owning field would never have been
   discovered in the first place.
+- `previousInode` (asset entries only) is absent until `push` successfully publishes that
+  entry for the first time; from then on it holds the inode that was live immediately before
+  that publish, as an audit trail. It is never removed once set, and is not itself used for any
+  conflict check (the conflict check compares the *current* `inode` against the live server).
 - The manifest on disk after an interrupted `push` reflects every entry's *true* status at the
   moment of interruption (research.md) — an agent or customer resuming work must be able to
   trust it without re-running `pull` first, though re-running `pull` is still the correct way
