@@ -190,7 +190,7 @@ Both carry a `// TODO(#35932)`. Nothing opts out of `strict` itself.
 When you do hit an error: no new `any` — use explicit types. To silence something unavoidable, use
 `@ts-expect-error` with a `// TODO(#issue):` note, never a blanket `@ts-ignore`.
 
-**What enforces this:** for Rollup libs that emit declarations (`"declaration": true`), `@rollup/plugin-typescript` is in the build chain and reports type errors, so the `build` target is the gate — CI runs `nx run-many -t build` (the `build-test` execution in `core-web/pom.xml`). Do **not** add a separate `typecheck` target to those projects; it is redundant. `lint` does not catch type errors — ESLint reports lint rules, not TS diagnostics.
+**What enforces this:** for Rollup libs that emit declarations (`"declaration": true`), `@rollup/plugin-typescript` is in the build chain and reports type errors, so the `build` target is the gate — CI runs `nx run-many -t build` (the `build-test` execution in `core-web/pom.xml`). Do **not** add a separate `typecheck` target to those projects; it is redundant. `lint` does not catch type errors — ESLint reports lint rules, not TS diagnostics. There is no separate diff-scoped gate any more — the workspace-wide `typecheck`/`build` targets are the whole enforcement story now that the baseline itself is strict; a temporary one (`tools/scripts/strict-gate/`) existed only while epic #35932 was in flight and was retired once this section stopped being aspirational.
 
 Vite-based projects are the exception: their builds use esbuild and skip type checking, which is why the Nx Vite plugin infers a separate `typecheck` target for them.
 
