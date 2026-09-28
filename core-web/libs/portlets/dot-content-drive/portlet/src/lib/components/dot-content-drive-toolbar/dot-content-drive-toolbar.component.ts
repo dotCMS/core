@@ -307,11 +307,12 @@ export class DotContentDriveToolbarComponent {
     readonly $defaultLanguageId = computed(() => this.#store.defaultLanguageId() ?? null);
 
     /**
-     * Whether anything is in flight, which is all the toolbar needs to know: it disables the Action
-     * Center while a run is going and says so in the tooltip. Reporting the run is the shell's job,
-     * because the shell owns the outlet it is reported through and outlives every dialog.
+     * Whether anything that locks is in flight, which is all the toolbar needs to know: it disables
+     * the Action Center while such a run is going and says so in the tooltip. A backgrounded run,
+     * such as a folder duplicate, is left out: it is reported, but locks nothing. Reporting runs is
+     * the shell's job, because the shell owns the outlet they are reported through.
      */
-    readonly $activeRunCount = this.#store.toolbarRunCount;
+    readonly $activeRunCount = this.#store.toolbarBlockingRunCount;
 
     readonly $hasRunInFlight = computed(() => this.$activeRunCount() > 0);
 

@@ -1,5 +1,3 @@
-import { ToastMessageOptions } from 'primeng/api';
-
 import {
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
@@ -452,27 +450,6 @@ export const toParentFolderRefs = (assetPaths: string[]): string[] => [
         })
     )
 ];
-
-/**
- * The toast that says a duplication has started.
- *
- * Shared by the Action Center and the folder's right-click menu, so the same run is announced the
- * same way whichever surface started it. The outcome follows later, by push.
- *
- * @param resolve resolves a message key with its arguments
- * @param folderCount how many folders were submitted
- */
-export const duplicateStartedMessage = (
-    resolve: (key: string, ...args: string[]) => string,
-    folderCount: number
-): ToastMessageOptions => ({
-    severity: 'info',
-    summary: resolve('content-drive.action-center.toast.duplicate-started'),
-    detail: resolve(
-        'content-drive.action-center.toast.duplicate-started-detail',
-        String(folderCount)
-    )
-});
 
 /** Contentlet inodes for bulk endpoints (folders dropped). */
 export const toContentletInodes = (items: DotContentDriveItem[]): string[] =>

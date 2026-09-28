@@ -49,7 +49,6 @@ import {
     ADD_TO_BUNDLE_ACTION_ID,
     DotActionCenterQuickAction,
     DUPLICATE_ACTION_ID,
-    duplicateStartedMessage,
     PUSH_PUBLISH_ACTION_ID,
     DELETE_FOLDER_ACTION_ID,
     REFRESH_ACTION_ID,
@@ -270,7 +269,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * local signal would reset to `false` on the new instance and let the same action be fired twice
      * over the same rows.
      */
-    protected readonly $executing = computed(() => this.#store.activeRunCount() > 0);
+    protected readonly $executing = computed(() => this.#store.blockingRunCount() > 0);
     /**
      * Which screen is showing.
      *
@@ -821,7 +820,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * Duplicates the checked folders in place.
      *
      * No confirmation: nothing is overwritten or removed, and each duplicate lands beside its original.
-     * Backgrounded like Refresh, so the only feedback until it finishes is a toast saying it started.
+     * The status indicator reports the run until it finishes or the server refuses it, so nothing is
+     * announced here: a start announced before the server answers contradicts a refusal.
      */
     private fireDuplicate(quickAction: DotActionCenterQuickAction): void {
         const hostname = this.#store.currentSite()?.hostname;
@@ -847,12 +847,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         const actionName = this.#dotMessageService.get(quickAction.name);
         this.#store.executeDuplicate(actionName, assetPaths);
 
-        this.#messageService.add(
-            duplicateStartedMessage(
-                (key, ...args) => this.#dotMessageService.get(key, ...args),
-                assetPaths.length
-            )
-        );
         this.handOffToToolbar();
     }
 

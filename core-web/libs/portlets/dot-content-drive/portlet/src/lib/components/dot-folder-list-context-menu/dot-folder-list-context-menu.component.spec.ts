@@ -1250,11 +1250,6 @@ describe('DotFolderListViewContextMenuComponent', () => {
                             detail: 'content-drive.dialog.duplicate-folder.no-site'
                         })
                     );
-                    expect(messageService.add).not.toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            summary: 'content-drive.action-center.toast.duplicate-started'
-                        })
-                    );
                 });
 
                 it('should not show Duplicate when the folder carries no permissions at all', async () => {
@@ -1285,18 +1280,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     expect(alertConfirmService.confirm).not.toHaveBeenCalled();
                 });
 
-                it('should say at trigger that it runs in the background, as the bulk action does', async () => {
+                it('should not announce a start the server can still refuse, as the bulk action does not', async () => {
+                    // The status indicator reports the run until it ends, and a refusal ends it.
                     vi.spyOn(store, 'executeDuplicate');
 
                     await rightClick(readable);
                     duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
-                    expect(messageService.add).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            severity: 'info',
-                            summary: 'content-drive.action-center.toast.duplicate-started'
-                        })
-                    );
+                    expect(messageService.add).not.toHaveBeenCalled();
                 });
 
                 it('should sit right after Folder Settings', async () => {

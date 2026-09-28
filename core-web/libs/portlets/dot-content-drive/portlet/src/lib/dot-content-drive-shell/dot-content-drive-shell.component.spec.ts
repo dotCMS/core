@@ -301,6 +301,10 @@ describe('DotContentDriveShellComponent', () => {
                     activeRunCount: signal(0),
                     toolbarRun: toolbarRunSignal,
                     toolbarRunCount: toolbarRunCountSignal,
+                    // The Action Center and the toolbar lock only on runs that are not
+                    // backgrounded, and both render inside the shell.
+                    blockingRunCount: signal(0),
+                    toolbarBlockingRunCount: toolbarRunCountSignal,
                     busyRows: signal<string[]>([]),
                     allBusyRows: signal<string[]>([]),
                     endExternalRun: vi.fn(),

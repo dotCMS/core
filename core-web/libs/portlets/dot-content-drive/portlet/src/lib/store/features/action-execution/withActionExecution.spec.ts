@@ -456,7 +456,88 @@ describe('withActionExecution', () => {
             store.executeDuplicate('Duplicate', [ALPHA]);
 
             expect(store.busyRows()).toEqual([]);
-            expect(store.actionExecution()).toBeUndefined();
+            expect(store.blockingRunCount()).toBe(0);
+            expect(store.toolbarBlockingRunCount()).toBe(0);
+        });
+
+        /**
+         * The run is reported on the status indicator while it lasts (developer decision,
+         * 2026-09-28): without it, nothing on screen said a duplicate was under way.
+         */
+        describe('the status indicator', () => {
+            it('should report the run, counting the folders submitted', () => {
+                build();
+                duplicate.mockReturnValue(accepted('job-1'));
+
+                store.executeDuplicate('Duplicate', [ALPHA, BETA]);
+
+                expect(store.toolbarRun()).toEqual(
+                    expect.objectContaining({
+                        labelKey: 'content-drive.duplicate.indicator',
+                        total: 2
+                    })
+                );
+            });
+
+            it('should name a single folder in the singular', () => {
+                build();
+                duplicate.mockReturnValue(accepted('job-1'));
+
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                expect(store.toolbarRun()?.labelKey).toBe('content-drive.duplicate.indicator.one');
+            });
+
+            it('should report two duplicates at once as two runs', () => {
+                // Each needs its own key: with no rows to mark they would otherwise share one, and
+                // the first to finish would end the other's report too.
+                build();
+                duplicate.mockReturnValue(new Subject());
+
+                store.executeDuplicate('Duplicate', [ALPHA]);
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                expect(store.toolbarRunCount()).toBe(2);
+            });
+
+            it('should end the report when the completion arrives', () => {
+                build();
+                duplicate.mockReturnValue(accepted('job-1'));
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                store.reportDuplicateCompleted('Duplicate', {
+                    jobId: 'job-1',
+                    state: 'SUCCESS',
+                    total: 1,
+                    successCount: 1,
+                    failedCount: 0,
+                    skippedCount: 0,
+                    results: [{ key: ALPHA, status: 'SUCCESS' }]
+                });
+
+                expect(store.toolbarRunCount()).toBe(0);
+            });
+
+            it('should end the report when the server refuses the run', () => {
+                // So a refusal is never on screen beside a report saying the run is going.
+                build();
+                duplicate.mockReturnValue(
+                    throwError(() => ({ kind: 'OVER_MAX_PATHS', message: 'prose' }))
+                );
+
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                expect(store.toolbarRunCount()).toBe(0);
+            });
+
+            it('should end the report when the submission fails', () => {
+                build();
+                duplicate.mockReturnValue(throwError(() => new Error('boom')));
+
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                expect(store.toolbarRunCount()).toBe(0);
+            });
         });
 
         it('should report a submission failure and track nothing, since no completion is coming', () => {

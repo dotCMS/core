@@ -50,7 +50,7 @@ import {
 import { DotContentDriveContextMenu } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { duplicateStartedMessage, toFolderAssetPaths } from '../../utils/action-center';
+import { toFolderAssetPaths } from '../../utils/action-center';
 import { isFolder } from '../../utils/functions';
 
 /**
@@ -759,12 +759,6 @@ export class DotFolderListViewContextMenuComponent {
         this.#store.executeDuplicate(
             this.#dotMessageService.get('content-drive.action-center.duplicate'),
             assetPaths
-        );
-        this.#messageService.add(
-            duplicateStartedMessage(
-                (key, ...args) => this.#dotMessageService.get(key, ...args),
-                assetPaths.length
-            )
         );
     }
 

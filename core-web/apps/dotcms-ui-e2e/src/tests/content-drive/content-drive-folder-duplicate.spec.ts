@@ -78,7 +78,10 @@ test.describe('Content Drive folder duplicate', () => {
             async (drive, duplicate) => {
                 await duplicate.fromContextMenu('source');
 
+                // Reported while it runs, and cleared once it has finished.
+                await drive.expectStatusToastContaining('in the background');
                 await duplicate.expectDuplicateShown('source_copy');
+                await drive.expectStatusToastGone();
                 await drive.expectOutcomeContaining('ran on 1 item');
                 await drive.expectNotificationContaining('1 folder(s) duplicated.');
             }

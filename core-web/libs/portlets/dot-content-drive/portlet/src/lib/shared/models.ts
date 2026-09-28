@@ -227,6 +227,13 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
     operation: string;
     /** The inodes the run is acting on. Drives the guard, and the per-row busy marks. */
     targets: string[];
+    /**
+     * Reported on the status indicator, but locks nothing.
+     *
+     * For work that leaves everything it touches usable while it runs, such as a folder duplicate:
+     * the author is told it is under way without the Action Center being refused meanwhile.
+     */
+    backgrounded?: boolean;
 }
 
 /**

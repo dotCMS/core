@@ -10,7 +10,7 @@ import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
@@ -188,6 +188,9 @@ describe('DotContentDriveActionCenterComponent', () => {
     // run when there is exactly one, this one says whether anything is in flight at all. The
     // dialog gates on the count, so with several runs it stays gated rather than opening up.
     const mockActiveRunCount = signal(0);
+    // How many of those runs lock the dialog. Follows the count above unless a test says
+    // otherwise, since only a backgrounded run tells them apart.
+    const mockBlockingRunCountOverride = signal<number | undefined>(undefined);
     // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
     // is both the non-admin case and the still-loading one — see `isLockedByAnotherUser`.
     const mockCurrentUserIsAdmin = signal<boolean>(false);
@@ -236,6 +239,9 @@ describe('DotContentDriveActionCenterComponent', () => {
                 items: mockItems,
                 actionExecution: mockActionExecution,
                 activeRunCount: mockActiveRunCount,
+                blockingRunCount: computed(
+                    () => mockBlockingRunCountOverride() ?? mockActiveRunCount()
+                ),
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
                 hasPushPublishEnvironments: mockHasPushPublishEnvironments,
                 $canAddChildren: mockCanAddChildren,
@@ -324,6 +330,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         ]);
         mockActionExecution.set(undefined);
         mockActiveRunCount.set(0);
+        mockBlockingRunCountOverride.set(undefined);
         mockCurrentUserIsAdmin.set(false);
         mockHasPushPublishEnvironments.set(false);
         mockCanAddChildren.set(true);
@@ -785,24 +792,17 @@ describe('DotContentDriveActionCenterComponent', () => {
                         summary: 'content-drive.dialog.duplicate-folder.no-site'
                     })
                 );
-                expect(messageService.add).not.toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        summary: 'content-drive.action-center.toast.duplicate-started'
-                    })
-                );
             });
 
-            it('should toast at trigger that the duplication runs in the background', () => {
+            it('should not announce a start the server can still refuse', () => {
+                // The status indicator reports the run from submission until it ends, and a
+                // refusal ends it. A toast raised here stayed on screen beside "The duplicate did
+                // not start" whenever the server refused the run.
                 const messageService = spectator.inject(MessageService);
 
                 executeQuickAction('DUPLICATE');
 
-                expect(messageService.add).toHaveBeenCalledWith(
-                    expect.objectContaining({
-                        severity: 'info',
-                        summary: 'content-drive.action-center.toast.duplicate-started'
-                    })
-                );
+                expect(messageService.add).not.toHaveBeenCalled();
             });
         });
 
@@ -1744,6 +1744,20 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(spectator.component['$pathToMove']()).toBe('');
             expect(store.clearDialogDrillDown).toHaveBeenCalled();
+        });
+
+        it('should stay usable while only a background run is in flight', () => {
+            // A folder duplicate is reported on the indicator but locks nothing.
+            goToConfigure();
+            chooseDestination();
+            mockActiveRunCount.set(1);
+            mockBlockingRunCountOverride.set(0);
+            spectator.detectChanges();
+
+            spectator.component['onContinueFromConfigure']();
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
         });
 
         it('should keep the configuration step inert while an action is in flight', () => {

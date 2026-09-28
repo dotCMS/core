@@ -63,6 +63,7 @@ import { browsedFolderRef, normalizeFolderRef } from '../../../utils/functions';
  * change the other.
  */
 const DELETE_FOLDER_OPERATION = 'DELETE_FOLDER';
+const DUPLICATE_FOLDER_OPERATION = 'DUPLICATE_FOLDER';
 
 interface WithActionExecutionState {
     /**
@@ -143,7 +144,7 @@ interface WithActionExecutionState {
      * so only ids in here are acted on. Never registered as a run, because a folder being duplicated
      * stays fully usable and must not read as busy.
      */
-    duplicateJobs: Record<string, { affectedFolders: string[] }>;
+    duplicateJobs: Record<string, { affectedFolders: string[]; runId?: string }>;
     /**
      * Folder duplications this page has already reported, by job id.
      *
@@ -247,6 +248,21 @@ export function withActionExecution() {
                 () => Object.values(runs()).filter((run) => run.targets.length === 0).length
             ),
             /**
+             * How many runs lock the Action Center dialog while they last.
+             *
+             * A backgrounded run is left out: it is reported, but what it acts on stays usable.
+             */
+            blockingRunCount: computed(
+                () => Object.values(runs()).filter((run) => !run.backgrounded).length
+            ),
+            /** The indicator's runs that also refuse opening the Action Center from the toolbar. */
+            toolbarBlockingRunCount: computed(
+                () =>
+                    Object.values(runs()).filter(
+                        (run) => run.targets.length === 0 && !run.backgrounded
+                    ).length
+            ),
+            /**
              * Every inode any in-flight run is acting on.
              *
              * Keyed by inode, not identifier: the language filter is multi-select, so one identifier
@@ -282,6 +298,9 @@ export function withActionExecution() {
                  */
                 const runKey = (operation: string, targets: string[]): string =>
                     `${operation}:${targets.join(',')}`;
+
+                /** Tells duplicates apart, which share an operation and mark no rows. */
+                let duplicateSequence = 0;
 
                 /**
                  * Registers a run and returns its key.
@@ -546,10 +565,11 @@ export function withActionExecution() {
                      * outcome can be reported.
                      *
                      * Submit and stop, like {@link executeRefresh}: nothing waits and no deadline is
-                     * started. Unlike every other action, nothing is registered as a run and no repeat
-                     * is refused. Duplicating a folder leaves it fully usable, so nothing is marked
-                     * busy, and asking for the same folders twice is the author's choice: the server
-                     * names each duplicate apart.
+                     * started. The run is reported on the status indicator until its completion or
+                     * a refusal ends it, but it is backgrounded: duplicating a folder leaves it fully
+                     * usable, so nothing is marked busy and nothing is locked. No repeat is refused
+                     * either; asking for the same folders twice is the author's choice, and the
+                     * server names each duplicate apart.
                      *
                      * @param actionName label for the outcome, kept for the completion report
                      * @param assetPaths site-qualified folder paths, such as `//demo.dotcms.com/blogs/`
@@ -563,12 +583,28 @@ export function withActionExecution() {
 
                         const affectedFolders = toParentFolderRefs(assetPaths);
 
+                        // Unique per submission: with no rows to mark, two duplicates would
+                        // otherwise share one key, and the first to finish would end both reports.
+                        const runId = startRun({
+                            operation: `${DUPLICATE_FOLDER_OPERATION}:${(duplicateSequence += 1)}`,
+                            total: assetPaths.length,
+                            targets: [],
+                            labelKey:
+                                assetPaths.length === 1
+                                    ? 'content-drive.duplicate.indicator.one'
+                                    : 'content-drive.duplicate.indicator',
+                            backgrounded: true
+                        });
+
                         folderBulkDuplicateService
                             .duplicate(assetPaths)
                             .pipe(
                                 take(1),
                                 catchError((refusal: DotFolderBulkDuplicateRefusal) => {
-                                    // No job was created, so no completion event is coming for it.
+                                    // No job was created, so no completion event is coming for it,
+                                    // and the report ends here rather than beside the refusal.
+                                    endRun(runId);
+
                                     const kind = refusal?.kind ?? 'UNCLASSIFIED';
 
                                     // The kinds the endpoint reasoned about get their own words, as
@@ -597,13 +633,15 @@ export function withActionExecution() {
                             )
                             .subscribe((response) => {
                                 if (!response?.jobId) {
+                                    endRun(runId);
+
                                     return;
                                 }
 
                                 patchState(store, {
                                     duplicateJobs: {
                                         ...store.duplicateJobs(),
-                                        [response.jobId]: { affectedFolders }
+                                        [response.jobId]: { affectedFolders, runId }
                                     }
                                 });
                             });
@@ -638,12 +676,18 @@ export function withActionExecution() {
 
                         const tracked = store.duplicateJobs();
                         // `hasOwnProperty`, not `in`: a jobId of `constructor` would read as tracked.
-                        const affectedFolders = Object.prototype.hasOwnProperty.call(
+                        const trackedJob = Object.prototype.hasOwnProperty.call(
                             tracked,
                             event.jobId
                         )
-                            ? tracked[event.jobId].affectedFolders
+                            ? tracked[event.jobId]
                             : undefined;
+                        const affectedFolders = trackedJob?.affectedFolders;
+
+                        // Whatever the outcome, the run is over, so its report ends now.
+                        if (trackedJob?.runId) {
+                            endRun(trackedJob.runId);
+                        }
 
                         const remaining = { ...tracked };
                         delete remaining[event.jobId];
