@@ -134,13 +134,19 @@ export function withSidebar() {
                     }
                 });
 
-                const page$ = levelLoaded
+                // Typed up front: left to inference, the union of the two branches defeats the
+                // operator overloads below under strict mode.
+                const page$: Observable<
+                    { folders: DotFolderTreeNodeItem[]; totalEntries: number } | undefined
+                > = levelLoaded
                     ? of(undefined)
                     : getFolderNodesByPath(levelPath, site, dotFolderService);
 
                 return page$.pipe(
                     switchMap((page) =>
-                        page?.folders.some((folder) => folder.data?.path === path)
+                        page?.folders.some(
+                            (folder: DotFolderTreeNodeItem) => folder.data?.path === path
+                        )
                             ? of({ page, pinned: undefined })
                             : resolveHierarchyAncestor(
                                   levelPath,

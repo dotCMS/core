@@ -1303,7 +1303,7 @@ describe('DotContentDriveSidebarComponent', () => {
         /** The mock tree with `/documents/images/` loaded under `/documents/`. */
         const treeWithImagesLoaded = (): DotFolderTreeNodeItem[] =>
             mockTreeNodes.map((node) =>
-                node.data.path === '/documents/'
+                node.data?.path === '/documents/'
                     ? {
                           ...node,
                           children: [

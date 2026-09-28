@@ -685,8 +685,8 @@ describe('withSidebar - a location the tree has not loaded', () => {
         service: rootPathStoreMock,
         providers: [
             mockProvider(DotFolderService, {
-                searchFolders: vi.fn(({ path }: { path: string }) =>
-                    searchResult(levels[path] ?? [])
+                searchFolders: vi.fn(({ path }: { path?: string }) =>
+                    searchResult(levels[path ?? ''] ?? [])
                 )
             })
         ]
@@ -703,8 +703,8 @@ describe('withSidebar - a location the tree has not loaded', () => {
     // whole file, and the next test's store loads its tree as it is created, before a `beforeEach`
     // could step in. A test that makes it hang would otherwise leave that tree never loading.
     afterEach(() => {
-        folderService.searchFolders.mockImplementation(({ path }: { path: string }) =>
-            searchResult(levels[path] ?? [])
+        folderService.searchFolders.mockImplementation(({ path }: { path?: string }) =>
+            searchResult(levels[path ?? ''] ?? [])
         );
     });
 

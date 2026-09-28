@@ -1497,7 +1497,7 @@ describe('DotFolderListViewComponent', () => {
             const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'));
             const modUserName = 'modUserName' in firstItem ? firstItem.modUserName : 'Unknown';
 
-            expect(modUserNameColumn.getAttribute('title')).toBe(modUserName);
+            expect(modUserNameColumn?.getAttribute('title')).toBe(modUserName);
         });
 
         it('should have a mod date column', () => {

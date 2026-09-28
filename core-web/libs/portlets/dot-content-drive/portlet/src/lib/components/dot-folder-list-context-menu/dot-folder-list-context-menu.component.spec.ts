@@ -1207,7 +1207,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 it('should not show Duplicate when the author cannot add folders where they are browsing', async () => {
                     // Every duplicate lands in that folder, so every one would be refused (FR-005).
-                    patchState(store, { siteCanAddChildren: false } as never);
+                    patchState(store as never, { siteCanAddChildren: false } as never);
 
                     await rightClick(readable);
 
@@ -1228,7 +1228,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         label: '',
                         data: { path: '', type: 'folder', permissions: [PERMISSIONS_TYPE.READ] }
                     };
-                    patchState(store, { folders: [browsed], selectedNode: browsed } as never);
+                    patchState(
+                        store as never,
+                        { folders: [browsed], selectedNode: browsed } as never
+                    );
                     spectator.flushEffects();
 
                     await rightClick(readable);
@@ -1240,7 +1243,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     vi.spyOn(store, 'executeDuplicate');
 
                     await rightClick(readable);
-                    patchState(store, { currentSite: undefined } as never);
+                    patchState(store as never, { currentSite: undefined } as never);
                     duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
                     expect(store.executeDuplicate).not.toHaveBeenCalled();
@@ -1262,7 +1265,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         filters: {},
                         isTreeExpanded: true
                     });
-                    patchState(store, { siteCanAddChildren: false } as never);
+                    patchState(store as never, { siteCanAddChildren: false } as never);
                     component.$memoizedMenuItems.set({});
 
                     await rightClick(readable);
