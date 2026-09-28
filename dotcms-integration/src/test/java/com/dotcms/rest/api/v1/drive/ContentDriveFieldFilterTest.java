@@ -558,20 +558,28 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
     }
 
     /**
-     * A malformed (non-date) range bound with Lucene special characters must not break the query
-     * (no 500, no injection): it is escaped and simply matches nothing.
+     * A malformed (non-date) range bound with Lucene special characters is rejected as a bad
+     * request (HTTP 400) before any query is built (issue #37488): no 500, and no injection. It
+     * used to be escaped and sent to the index, which rejected the query; that failure was
+     * swallowed and the filter silently matched nothing, which is no longer how index failures are
+     * handled.
      */
     @Test
-    public void testMalformedDateBoundIsSafe() throws DotDataException, DotSecurityException {
+    public void testMalformedDateBoundIsRejected() {
         final Map<String, Object> range = new java.util.HashMap<>();
         range.put("from", "not-a-date\"] OR title:*");
         range.put("to", "*");
-        final Set<String> inodes = driveInodes(baseRequest()
-                .userSearchable(Map.of(DATE_VAR, range))
-                .build());
-        assertFalse(inodes.contains(angularWithTags.getInode()));
-        assertFalse(inodes.contains(reactWithVue.getInode()));
-        assertFalse(inodes.contains(angularNoTags.getInode()));
+        try {
+            driveInodes(baseRequest()
+                    .userSearchable(Map.of(DATE_VAR, range))
+                    .build());
+            fail("A non-date range bound must be rejected with a BadRequestException");
+        } catch (final BadRequestException expected) {
+            // Expected: HTTP 400. The field-naming message is in the response entity, not in
+            // getMessage(), which JAX-RS fixes to "HTTP 400 Bad Request".
+        } catch (final DotDataException | DotSecurityException unexpected) {
+            fail("Expected a BadRequestException, got " + unexpected);
+        }
     }
 
     /**
@@ -823,7 +831,7 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
      * FR-030 / SC-012: field filters must match every character of the Lucene reserved set
      * literally, exactly as SC-010 requires for the search box.
      *
-     * <p>Convergence finding (2026-09-15): {@link #testMalformedDateBoundIsSafe} and the reserved
+     * <p>Convergence finding (2026-09-15): {@link #testMalformedDateBoundIsRejected} and the reserved
      * character coverage seeded in {@code ContentDriveLiteralTextSearchTest} each check one fixed
      * string containing a handful of reserved characters — not the exhaustive, one-title-per-
      * character sweep {@code ContentDriveLiteralTextSearchTest#everyReservedCharacterInATitle_}

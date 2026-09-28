@@ -4,6 +4,7 @@ import com.dotcms.browser.FieldSearchCriteria;
 import com.dotcms.browser.FieldSearchCriteria.FilterKind;
 import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RadioField;
@@ -36,6 +37,7 @@ public class ContentDriveFieldFilterResolverTest {
 
     private static final String RADIO_VAR = "runReport";
     private static final String CHECKBOX_VAR = "active";
+    private static final String DATE_VAR = "postingDate";
 
     private final ContentDriveFieldFilterResolver resolver = new ContentDriveFieldFilterResolver();
 
@@ -61,6 +63,13 @@ public class ContentDriveFieldFilterResolverTest {
                 .indexed(true)
                 .build();
 
+        final Field date = FieldBuilder.builder(DateTimeField.class)
+                .name(DATE_VAR)
+                .variable(DATE_VAR)
+                .searchable(true)
+                .indexed(true)
+                .build();
+
         final ContentType type = ImmutableSimpleContentType.builder()
                 .name("Filter Fixture")
                 .variable("filterFixture")
@@ -69,7 +78,7 @@ public class ContentDriveFieldFilterResolverTest {
 
         // Seeds the lazy field list directly. `fields()` otherwise resolves through
         // APILocator.getContentTypeFieldAPI(), which would need a database.
-        type.constructWithFields(List.of(radio, checkbox));
+        type.constructWithFields(List.of(radio, checkbox, date));
 
         return type;
     }
@@ -125,6 +134,43 @@ public class ContentDriveFieldFilterResolverTest {
     public void emptyFiltersResolveToNothing() {
         assertTrue(resolver.parse(Map.of(), contentType()).isEmpty());
         assertTrue(resolver.parse(null, null).isEmpty());
+    }
+
+    /**
+     * A date range bound that is not a date is a bad request (issue #37488). Before, it was escaped
+     * and sent to the index, which rejected the query; the failure was swallowed and the filter
+     * silently matched nothing. Rejecting it here keeps user input from ever surfacing as a
+     * server-side index failure.
+     */
+    @Test
+    public void dateRangeWithUnparseableBoundIsRejected() {
+        final ContentType type = contentType();
+        for (final String bad : List.of("not-a-date", "not-a-date\"] OR title:*", "2024-13-45")) {
+            assertThrows("from=" + bad, BadRequestException.class,
+                    () -> resolver.parse(Map.of(DATE_VAR, Map.of("from", bad)), type));
+            assertThrows("to=" + bad, BadRequestException.class,
+                    () -> resolver.parse(Map.of(DATE_VAR, Map.of("to", bad)), type));
+        }
+    }
+
+    /**
+     * The shapes the client sends are accepted: a date, a wall-clock date-time, an instant, and
+     * {@code *} or a missing bound for an open-ended range.
+     */
+    @Test
+    public void dateRangeWithValidOrOpenBoundsIsAccepted() {
+        final ContentType type = contentType();
+        final List<Map<String, String>> ranges = List.of(
+                Map.of("from", "2024-01-01"),
+                Map.of("from", "2024-01-01T10:30:00", "to", "2024-12-31T23:59:59"),
+                Map.of("to", "2024-06-01T00:00:00Z"),
+                Map.of("from", "*", "to", "2025-01-01"));
+        for (final Map<String, String> range : ranges) {
+            final List<FieldSearchCriteria> criteria =
+                    resolver.parse(Map.of(DATE_VAR, range), type);
+            assertEquals("criteria for " + range, 1, criteria.size());
+            assertEquals(FilterKind.RANGE, criteria.get(0).getKind());
+        }
     }
 
     /** An unknown field name is a bad request rather than a silently ignored filter. */

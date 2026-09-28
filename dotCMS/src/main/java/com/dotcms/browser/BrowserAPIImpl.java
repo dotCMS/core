@@ -1021,15 +1021,20 @@ public class BrowserAPIImpl implements BrowserAPI {
      * <p>Each ES sub-query carries its candidates as {@code +inode:(id1 OR id2 ...)}, so the
      * chunk is split into batches that respect both the boolean-clause limit and the index
      * server's maximum query-string length ({@link #BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY}).
-     * One batch runs directly; several run in parallel. If the base query alone leaves no room
-     * for any inode, the chunk is not sent to ES at all: the condition is logged and the chunk
-     * contributes no matches, the same outcome as any other failed sub-query.</p>
+     * One batch runs directly; several run in parallel.</p>
+     *
+     * <p>Any sub-query that cannot run fails the whole call rather than contributing an empty
+     * set: silently dropping a chunk's matches would return an incomplete page as a successful
+     * response (issue #37488). User input that could break an index query is rejected with
+     * HTTP 400 before this point, so what fails here is the index itself, or a base query too
+     * long to leave room for the inode restriction.</p>
      *
      * @param browserQuery The {@link BrowserQuery} containing search criteria (filter, fileName)
      * @param inodes       The set of inodes to filter through Elasticsearch text search
      * @return A filtered set of inodes that match the text search criteria
+     * @throws DotDataException if a sub-query fails or times out, or no sub-query can be built
      */
-    Set<String> processESDirectly(BrowserQuery browserQuery, Set<String> inodes) {
+    Set<String> processESDirectly(BrowserQuery browserQuery, Set<String> inodes) throws DotDataException {
         if (inodes == null || inodes.isEmpty()) {
             return new LinkedHashSet<>();
         }
@@ -1048,11 +1053,12 @@ public class BrowserAPIImpl implements BrowserAPI {
                 totalInodes, maxInodesByClauses, maxQueryLength, batches.size()));
 
         if (batches.isEmpty()) {
-            Logger.error(this, String.format(
-                    "ES filtering skipped for %d inodes: the base query is %d characters, leaving no "
+            final String errorMsg = String.format(
+                    "ES filtering cannot run for %d inodes: the base query is %d characters, leaving no "
                             + "room for the inode restriction within the %d-character budget (%s)",
-                    totalInodes, baseQueryLength, maxQueryLength, BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY));
-            return new LinkedHashSet<>();
+                    totalInodes, baseQueryLength, maxQueryLength, BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY);
+            Logger.error(this, errorMsg);
+            throw new DotDataException(errorMsg);
         }
         if (batches.size() == 1) {
             return processSingleESQuery(browserQuery, inodes, startTime);
@@ -1207,8 +1213,11 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param startTime    The time when this method was called, for performance analysis purposes.
      *
      * @return A set of Inodes matching the query.
+     * @throws DotDataException if the search fails; see {@link #processESDirectly} for why it is
+     *                          not swallowed.
      */
-    private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes, final long startTime) {
+    private Set<String> processSingleESQuery(final BrowserQuery browserQuery, final Set<String> inodes,
+            final long startTime) throws DotDataException {
         final boolean live = !browserQuery.showWorking;
         final SearchAPI searchAPI = APILocator.getSearchAPI();
         final List<String> collectedInodes = new ArrayList<>();
@@ -1233,24 +1242,17 @@ public class BrowserAPIImpl implements BrowserAPI {
                 inodes.size(), collectedInodes.size(), duration));
 
         } catch (final Exception e) {
-            // Deliberately swallowed, and it is worth saying why rather than leaving it to look
-            // like an oversight. Raising this instead was tried while fixing #37532 and reverted:
-            // once the term is escaped (see buildAllFieldsScopedQuery/buildTitleScopedQuery) no
-            // user input can break the query, so what remains here is infrastructure failure — and
-            // raising it also broke the guarantee that a Lucene-injection attempt is escaped,
-            // matches nothing, and does NOT produce a 500 (see
-            // ContentDriveFieldFilterTest#testMalformedDateBoundIsSafe).
-            //
-            // This does NOT give the shell's error banner (dot-content-drive-shell.component.html)
-            // full coverage, and the comment should not be read as claiming it does: the request
-            // still completes with HTTP 200 here, falling through to whatever was collected into
-            // `collectedInodes` before the failure — a short, silently partial result rather than
-            // an explicit error. The banner only fires for failures the front end can itself
-            // observe (network/transport errors surfacing as a failed HTTP call); a query that
-            // fails inside this method never becomes one. Narrower than the ideal, wider than
-            // nothing: still strictly better than the pre-#37532 state, where EVERY failure here
-            // (including a reserved-character term) looked exactly like this.
-            Logger.error(this, String.format("Single ES query failed for %d inodes: %s", inodes.size(), getErrorMessage(e)), e);
+            // Raised, not swallowed (issue #37488). Swallowing it returned whatever had been
+            // collected so far as a successful page, silently missing this sub-query's matches.
+            // That was a deliberate trade-off while user input could still break the query: a
+            // non-date range bound reached the index, and raising would have turned it into a 500.
+            // Such a bound is now rejected with HTTP 400 by ContentDriveFieldFilterResolver, and
+            // text terms are escaped (#37532), so a failure here is the index itself and the
+            // request should fail visibly. The Content Drive shell shows its error banner for it.
+            final String errorMsg = String.format("Single ES query failed for %d inodes: %s",
+                    inodes.size(), getErrorMessage(e));
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
         }
 
         return new LinkedHashSet<>(collectedInodes);
@@ -1265,9 +1267,11 @@ public class BrowserAPIImpl implements BrowserAPI {
      * @param maxQueryLength The query-string length budget the batches were sized for (logging only).
      * @param startTime      When the caller started, for performance logging.
      * @return The inodes that matched, across all sub-queries.
+     * @throws DotDataException if any sub-query fails or times out, or the overall wait does
      */
     private Set<String> processMultipleESQueries(final BrowserQuery browserQuery,
-            final List<List<String>> subBatches, final int maxQueryLength, final long startTime) {
+            final List<List<String>> subBatches, final int maxQueryLength, final long startTime)
+            throws DotDataException {
         final Set<String> allResults = Collections.synchronizedSet(new LinkedHashSet<>());
         final int totalInodes = subBatches.stream().mapToInt(List::size).sum();
 
@@ -1287,46 +1291,45 @@ public class BrowserAPIImpl implements BrowserAPI {
                 .supplyAsync(() -> {
                     Logger.debug(BrowserAPIImpl.this, String.format("Processing ES sub-query %d/%d: %d inodes",
                         batchIndex, batchCount, batch.size()));
-                    return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
+                    try {
+                        return processSingleESQuery(browserQuery, new LinkedHashSet<>(batch), System.currentTimeMillis());
+                    } catch (final DotDataException e) {
+                        // Unchecked so it completes the future exceptionally; unwrapped below.
+                        throw new DotRuntimeException(e.getMessage(), e);
+                    }
                 }, submitter)
-                .orTimeout(60, TimeUnit.SECONDS)
-                .exceptionally(throwable -> {
-                    // Same partial-result trade-off as processSingleESQuery's catch block, one
-                    // level up: a timed-out or failed chunk contributes an empty set rather than
-                    // failing the whole request, so the other chunks' hits still come back with
-                    // HTTP 200 and this chunk's rows are simply missing from the page.
-                    Logger.error(BrowserAPIImpl.this, String.format("ES sub-query %d failed: %s",
-                        batchIndex, throwable.getMessage()), throwable);
-                    return new LinkedHashSet<>();
-                });
+                .orTimeout(60, TimeUnit.SECONDS);
         }
 
-        // Collect results from all sub-queries
+        // Collect results from all sub-queries. A failed or timed-out sub-query fails the whole
+        // call instead of contributing an empty set (issue #37488; see processESDirectly).
         try {
             CompletableFuture<Void> allFutures = CompletableFuture.allOf(futures);
             allFutures.get(120, TimeUnit.SECONDS);
 
             for (CompletableFuture<Set<String>> future : futures) {
-                try {
-                    Set<String> batchResults = future.get();
-                    allResults.addAll(batchResults);
-                } catch (Exception e) {
-                    Logger.warn(this, "Failed to get result from ES sub-query future: " + e.getMessage());
-                    Thread.currentThread().interrupt();
-                }
+                allResults.addAll(future.get());
             }
 
             final long totalDuration = System.currentTimeMillis() - startTime;
             Logger.info(this, String.format("Multiple ES queries completed: %d inodes in %d sub-queries → %d matches in %d ms",
                 totalInodes, batchCount, allResults.size(), totalDuration));
 
-        } catch (InterruptedException e) {
-            Logger.error(this, "Multiple ES queries interrupted: " + e.getMessage(), e);
+        } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (ExecutionException e) {
-            Logger.error(this, "Multiple ES queries execution error: " + e.getMessage(), e);
-        } catch (TimeoutException e) {
-            Logger.error(this, "Multiple ES queries timed out: " + e.getMessage(), e);
+            final String errorMsg = "Multiple ES queries interrupted: " + e.getMessage();
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
+        } catch (final ExecutionException e) {
+            final String errorMsg = String.format("ES sub-query failed (%d sub-queries, %d inodes): %s",
+                    batchCount, totalInodes, getErrorMessage(e));
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, null != e.getCause() ? e.getCause() : e);
+        } catch (final TimeoutException e) {
+            final String errorMsg = String.format("Multiple ES queries timed out (%d sub-queries, %d inodes)",
+                    batchCount, totalInodes);
+            Logger.error(this, errorMsg, e);
+            throw new DotDataException(errorMsg, e);
         }
 
         return allResults;
@@ -2093,8 +2096,8 @@ public class BrowserAPIImpl implements BrowserAPI {
      * matches nothing. We parse the value and reformat it to {@link #ES_QUERY_DATE_PATTERN}
      * ({@code yyyy-MM-dd'T'HH:mm:ss}, literal {@code T} — a space would break Lucene range parsing)
      * in the server timezone, matching how date fields are indexed ({@code ESMappingAPIImpl}).
-     * Values that can't be parsed as a date are passed through unchanged (already ES-formatted or
-     * open bound).
+     * A blank bound or {@code *} is an open bound. A value that can't be parsed as a date is
+     * escaped; Content Drive rejects such a value with HTTP 400 before it gets here.
      *
      * @param raw The raw bound value.
      * @return The normalized bound, or the original value if it isn't a recognizable date.
@@ -2106,12 +2109,13 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
         final Date parsed = parseFlexibleDate(value);
         if (null == parsed) {
-            // For a date-typed field the bound should be a date. If it isn't, don't let the raw
-            // value reach the Lucene query_string as-is — escape it so a crafted value can't alter
-            // the query structure (an escaped non-date simply matches nothing).
+            // Content Drive rejects a non-date bound with HTTP 400 before a query is built
+            // (ContentDriveFieldFilterResolver), so this only happens for a BrowserQuery assembled
+            // directly. The value is still escaped so a crafted one cannot alter the query
+            // structure; the index rejects the resulting range and the request fails (#37488).
             Logger.warn(this, String.format(
-                    "Unparseable date range bound '%s'; escaping it (the criterion will match "
-                            + "nothing).", value));
+                    "Unparseable date range bound '%s'; escaping it (the index will reject the "
+                            + "range).", value));
             return ESUtils.escape(value);
         }
         final String normalized = new SimpleDateFormat(ES_QUERY_DATE_PATTERN).format(parsed);
@@ -2124,10 +2128,15 @@ public class BrowserAPIImpl implements BrowserAPI {
      * Best-effort parse of a date bound across the ISO-8601 shapes the client sends: instant (with
      * offset/{@code Z}), offset date-time, local date-time, and date-only. Naive (zone-less) inputs
      * are resolved in the JVM default zone, the same zone the reformat and indexing use, so the
-     * boundary stays consistent. Returns {@code null} when none match (the raw value is then passed
-     * through unchanged).
+     * boundary stays consistent. Returns {@code null} when none match.
+     *
+     * <p>Public so Content Drive's field-filter resolver can reject a non-date bound with HTTP 400
+     * using exactly the rules this class later applies to it (issue #37488).</p>
+     *
+     * @param value The trimmed bound value.
+     * @return The parsed date, or {@code null} when the value is not a recognizable date.
      */
-    private Date parseFlexibleDate(final String value) {
+    public static Date parseFlexibleDate(final String value) {
         Date date = Try.of(() -> Date.from(Instant.parse(value))).getOrNull();
         if (null == date) {
             date = Try.of(() -> Date.from(OffsetDateTime.parse(value).toInstant())).getOrNull();

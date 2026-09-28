@@ -182,13 +182,11 @@ public class ContentDriveLiteralTextSearchTest extends IntegrationTestBase {
      * must now simply run. This is the case that used to fail, get logged, and reach the user as
      * "No results found".
      *
-     * <p>Note what this test does <b>not</b> claim. An earlier attempt made the browsing service
-     * raise query failures instead of swallowing them; it was reverted. Once the term is escaped,
-     * no user input can break the query, so what remained was infrastructure failure — and raising
-     * it broke the guarantee that a Lucene-injection attempt is escaped, matches nothing, and does
-     * not produce a 500 ({@code ContentDriveFieldFilterTest#testMalformedDateBoundIsSafe}).
-     * Failures the front end can observe still surface there as an error banner rather than an
-     * empty grid.</p>
+     * <p>Since #37488 the browsing service raises index failures instead of swallowing them, so
+     * this test also proves the escaped term never reaches the index as a broken query: if it did,
+     * the search would now fail rather than return an empty page. The one other user input that
+     * could break an index query, a non-date range bound, is rejected with HTTP 400 before any
+     * query is built ({@code ContentDriveFieldFilterTest#testMalformedDateBoundIsRejected}).</p>
      */
     @Test
     public void injectionShapedTerm_runsSafely_andMatchesNothing() throws Exception {

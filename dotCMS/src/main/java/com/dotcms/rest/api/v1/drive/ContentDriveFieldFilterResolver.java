@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.drive;
 
+import com.dotcms.browser.BrowserAPIImpl;
 import com.dotcms.browser.FieldSearchCriteria;
 import com.dotcms.browser.FieldSearchCriteria.FilterKind;
 import com.dotcms.browser.FieldSearchCriteria.RoutingBucket;
@@ -173,7 +174,33 @@ public class ContentDriveFieldFilterResolver {
                     "Field '%s' range filter must set at least one non-empty 'from'/'to' bound.",
                     fieldVariable));
         }
+        checkDateBound(fieldVariable, FROM_KEY, from);
+        checkDateBound(fieldVariable, TO_KEY, to);
         return FieldSearchCriteria.range(fieldVariable, field, contentType, bucket, from, to);
+    }
+
+    /**
+     * Rejects a range bound that is not a date, using the same parsing the query builder applies
+     * later ({@link BrowserAPIImpl#parseFlexibleDate(String)}). A missing bound and {@code *} mean
+     * open-ended and are accepted. Without this, a non-date reached the index as an invalid range
+     * query; now that index failures fail the request, it must be caught here as bad input
+     * (HTTP 400) instead of surfacing as a server error (issue #37488).
+     *
+     * @param fieldVariable The field the range filters on, for the error message.
+     * @param boundName     {@code from} or {@code to}, for the error message.
+     * @param bound         The trimmed bound, or {@code null} when absent.
+     * @throws BadRequestException when the bound is set and is not a recognizable date.
+     */
+    private static void checkDateBound(final String fieldVariable, final String boundName,
+            final String bound) {
+        if (null == bound || "*".equals(bound)) {
+            return;
+        }
+        if (null == BrowserAPIImpl.parseFlexibleDate(bound)) {
+            throw new BadRequestException(String.format(
+                    "Field '%s' range '%s' bound is not a valid date; use ISO-8601, e.g. "
+                            + "2024-01-31 or 2024-01-31T10:30:00.", fieldVariable, boundName));
+        }
     }
 
     /**
