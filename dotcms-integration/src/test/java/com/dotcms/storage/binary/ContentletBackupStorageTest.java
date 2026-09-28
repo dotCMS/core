@@ -312,6 +312,40 @@ public class ContentletBackupStorageTest {
         }
     }
 
+    @Test
+    void directCleanFieldQueuesArchivingInsteadOfUploadingInline() throws Exception {
+        final var type = new ContentTypeDataGen().nextPersisted();
+        String identifier = null;
+        try {
+            final var field = new FieldDataGen().velocityVarName("heroImage").contentTypeId(type.id())
+                    .type(BinaryField.class).nextPersisted();
+            ContentTypeDataGen.addField(field);
+            final var generator = new ContentletDataGen(type);
+            generator.setProperty("heroImage", source("field-direct", "direct clean bytes"));
+            final Contentlet content = generator.nextPersisted();
+            identifier = content.getIdentifier();
+            final String originalKey = BinaryAssetReference.find(content.getInode(), "heroImage");
+            final var backups = spy(ContentletBackupStorage.getInstance());
+            try (var factory = mockStatic(ContentletBackupStorage.class, CALLS_REAL_METHODS)) {
+                factory.when(ContentletBackupStorage::getInstance).thenReturn(backups);
+                APILocator.getContentletAPI().cleanField(
+                        new com.dotcms.contenttype.transform.contenttype.StructureTransformer(type).asStructure(),
+                        new java.util.Date(),
+                        new com.dotcms.contenttype.transform.field.LegacyFieldTransformer(field).asOldField(),
+                        APILocator.systemUser(), false);
+            }
+            // The call must not upload recovery archives while its caller waits and holds row locks.
+            verify(backups, never()).storeField(anyString(), anyString(), anyString(), anyList(), anyList());
+            assertEquals(originalKey, BinaryAssetReference.find(content.getInode(), "heroImage"),
+                    "Archiving and clearing happen in the queued job, not inline");
+            assertEquals(1, fieldJobs("type", type.id()).size(),
+                    "A direct call queues the same cleanup request as field deletion");
+        } finally {
+            ContentTypeDataGen.remove(type);
+            if (identifier != null) removeBackups(identifier);
+        }
+    }
+
     private List<com.dotcms.jobs.business.job.Job> fieldJobs(String owner, String id) throws Exception {
         final var rows = new DotConnect().setSQL("select id from job where queue_name = ? and parameters ->> ? = ?")
                 .addParam(BinaryFieldCleanupProcessor.QUEUE).addParam(owner).addParam(id).loadObjectResults();

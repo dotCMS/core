@@ -26,7 +26,6 @@ class BinaryFieldCleanupProcessorTest {
             CleanUpFieldReferencesJob.triggerCleanUpJob(mock(BinaryField.class), mock(com.liferay.portal.model.User.class));
             transactions.verify(() -> HibernateUtil.addCommitListenerNoThrow(any()));
             assertThrows(DotDataException.class, () -> BinaryFieldCleanupProcessor.enqueue("type", "image", new Date()));
-            assertThrows(DotDataException.class, () -> BinaryFieldCleanupProcessor.clean("type", null, "image"));
             final Job job = mock(Job.class);
             assertThrows(JobProcessingException.class, () -> new BinaryFieldCleanupProcessor().process(job));
             locator.verifyNoInteractions();

@@ -151,12 +151,15 @@ With the flag on, deleting a binary field records a `binaryFieldCleanup` request
 transaction as the field deletion. Requests cover historical and working versions up to the
 deletion time; values from a later field with the same name are kept.
 
-Cleanup locks each content row, uploads and verifies a recovery ZIP, then clears the old field
-reference and records the exact cleanup inventory in a transaction. A separate step checks that
+Cleanup runs as a queued job, never inside the caller's request. It handles one content row per
+transaction: it locks that row, rechecks that it was not edited after the field was removed,
+uploads and verifies a recovery ZIP, clears the old field reference, records the exact cleanup
+inventory, and advances the job's saved cursor, all in the row's own commit. Only that row is locked
+while its archive uploads, and a retry resumes after the last committed row. A separate step checks that
 the archived files are no longer referenced and that the ZIP is still available before deleting
 metadata, originals and renditions. It never deletes a whole field prefix, so uploads made after
 the inventory was captured survive a retry. Direct submissions through the public job endpoint are
-rejected; only the field deletion API creates this work. With the flag off, scheduling and local
+rejected; only field deletion and `ContentletAPI.cleanField` create this work. With the flag off, scheduling and local
 trash behave as before.
 
 ## Deleted-content recovery archives

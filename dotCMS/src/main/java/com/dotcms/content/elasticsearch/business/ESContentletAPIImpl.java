@@ -1823,7 +1823,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // Binary fields have nothing to do with database.
         if (field instanceof BinaryField) {
             if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
-                com.dotcms.storage.binary.BinaryFieldCleanupProcessor.clean(structure.getInode(), deletionDate, field.variable());
+                // Archiving uploads to S3; queue it so this caller neither waits nor holds row locks.
+                com.dotcms.storage.binary.BinaryFieldCleanupProcessor.enqueue(structure.getInode(), field.variable(),
+                        deletionDate == null ? new Date() : deletionDate);
                 return;
             }
             int batchSize = 500;
