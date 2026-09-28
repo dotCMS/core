@@ -87,6 +87,11 @@ public abstract class BinaryField extends Field {
 
 		if (value instanceof File) {
 			final File file = (File) value;
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				return Optional.of(BinaryFieldType.builder().value(file.getName())
+						.storageKey(com.dotcms.storage.binary.BinaryAssetReference.keyOf(file))
+                        .metadataStorageKey(com.dotcms.storage.binary.BinaryAssetReference.metadataKeyOf(file)));
+			}
 			return Optional.of(BinaryFieldType.builder().value(file.getName()));
 		}
 
