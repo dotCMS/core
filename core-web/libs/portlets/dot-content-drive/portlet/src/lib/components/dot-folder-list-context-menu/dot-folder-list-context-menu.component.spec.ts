@@ -1221,9 +1221,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     await rightClick(readable);
                     expect(duplicateItem()).toBeDefined();
 
-                    patchState(store, {
-                        selectedNode: { data: { permissions: [PERMISSIONS_TYPE.READ] } }
-                    } as never);
+                    // Through a node the tree really holds: the store keeps the selection in step
+                    // with the tree, and replaces a node the tree does not own with the one it does.
+                    const browsed = {
+                        key: 'site-root',
+                        label: '',
+                        data: { path: '', type: 'folder', permissions: [PERMISSIONS_TYPE.READ] }
+                    };
+                    patchState(store, { folders: [browsed], selectedNode: browsed } as never);
                     spectator.flushEffects();
 
                     await rightClick(readable);

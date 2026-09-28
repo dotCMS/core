@@ -97,6 +97,73 @@ test.describe('Content Drive Folder Tree', () => {
         await drive.expectListContainsTitle(childName);
     });
 
+    test('shows each folder opened from the table in the tree, loading its branch as it goes @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        // The tree only holds what it has fetched. Opening a folder from the table whose node was
+        // never loaded used to clear the tree's selection, so the sidebar showed nothing.
+        const site = await apiHelpers.getDefaultSite();
+        const parentName = `cd-open-${testSuffix}`;
+        const middleName = `cd-open-mid-${testSuffix}`;
+        const leafName = `cd-open-leaf-${testSuffix}`;
+        await apiHelpers.createFolders(site.hostname, [`/${parentName}/${middleName}/${leafName}`]);
+
+        try {
+            const drive = new ContentDrivePage(adminPage);
+            const tree = new ContentDriveTree(adminPage);
+
+            await drive.goTo();
+            await tree.selectFolder(parentName);
+            await drive.expectListContainsTitle(middleName);
+
+            await drive.listTitles.filter({ hasText: middleName }).first().dblclick();
+            await tree.expectFolderSelected(middleName);
+            await drive.expectListContainsTitle(leafName);
+
+            await drive.listTitles.filter({ hasText: leafName }).first().dblclick();
+            await tree.expectFolderSelected(leafName);
+        } finally {
+            await apiHelpers.deleteFolders(site.hostname, [`/${parentName}`]);
+        }
+    });
+
+    test('keeps an open branch open while it loads the branch of a folder opened from the table', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        // Loading the missing branch used to rebuild the whole tree, which collapsed every other
+        // branch the author had open and read as the sidebar blinking.
+        const site = await apiHelpers.getDefaultSite();
+        const openName = `cd-kept-${testSuffix}`;
+        const openChildName = `cd-kept-child-${testSuffix}`;
+        const parentName = `cd-open2-${testSuffix}`;
+        const middleName = `cd-open2-mid-${testSuffix}`;
+        await apiHelpers.createFolders(site.hostname, [
+            `/${openName}/${openChildName}`,
+            `/${parentName}/${middleName}`
+        ]);
+
+        try {
+            const drive = new ContentDrivePage(adminPage);
+            const tree = new ContentDriveTree(adminPage);
+
+            await drive.goTo();
+            await tree.expandFolder(openName);
+            await tree.expectFolderVisible(openChildName);
+
+            await tree.selectFolder(parentName);
+            await drive.listTitles.filter({ hasText: middleName }).first().dblclick();
+
+            await tree.expectFolderSelected(middleName);
+            await tree.expectFolderVisible(openChildName);
+        } finally {
+            await apiHelpers.deleteFolders(site.hostname, [`/${openName}`, `/${parentName}`]);
+        }
+    });
+
     test('toggles sidebar tree collapsed and expanded @critical', async ({
         adminPage,
         apiHelpers,

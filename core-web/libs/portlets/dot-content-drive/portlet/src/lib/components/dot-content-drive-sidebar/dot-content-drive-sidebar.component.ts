@@ -241,6 +241,13 @@ export class DotContentDriveSidebarComponent {
                 return;
             }
 
+            // A folder the tree does not hold yet is the store's to load (`revealFolder`), level by
+            // level into the tree on screen. Walking the levels here as well fetched them twice,
+            // and whichever answer landed last dropped the other's.
+            if (!this.#findNodeByPath(data.path, this.$folders())) {
+                return;
+            }
+
             const segments = data.path.split('/').filter(Boolean).slice(0, -1);
 
             this.recursiveExpandOneNode(segments);

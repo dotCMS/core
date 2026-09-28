@@ -1283,6 +1283,52 @@ describe('DotContentDriveSidebarComponent', () => {
     });
 
     describe('handleSelectedNodeFromTable', () => {
+        /** The mock tree with `/documents/images/` loaded under `/documents/`. */
+        const treeWithImagesLoaded = (): DotFolderTreeNodeItem[] =>
+            mockTreeNodes.map((node) =>
+                node.data.path === '/documents/'
+                    ? {
+                          ...node,
+                          children: [
+                              {
+                                  key: 'images-node',
+                                  label: '/documents/images/',
+                                  data: {
+                                      id: 'images-node',
+                                      hostname: 'demo.dotcms.com',
+                                      path: '/documents/images/',
+                                      type: 'folder'
+                                  },
+                                  leaf: true
+                              }
+                          ]
+                      }
+                    : node
+            );
+
+        it('should leave loading the branch to the store when the folder is not in the tree yet', () => {
+            // The store loads the missing levels into the tree on screen. Walking them here too
+            // fetched the same levels twice, and whichever answer landed last dropped the other.
+            const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
+            contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+            spectator.component.handleSelectedNodeFromTable({
+                key: 'table-node',
+                label: '/documents/images/',
+                data: {
+                    id: 'table-node',
+                    hostname: 'demo.dotcms.com',
+                    path: '/documents/images/',
+                    type: 'folder',
+                    fromTable: true
+                },
+                leaf: false
+            });
+
+            expect(recursiveExpandSpy).not.toHaveBeenCalled();
+            expect(contentDriveStore.loadChildFolders).not.toHaveBeenCalled();
+        });
+
         it('should handle selectedNode with fromTable flag', () => {
             const mockScrollIntoView = vi.fn();
             // Create a proper mock element that extends HTMLElement
@@ -1313,10 +1359,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 leaf: false
             };
 
-            // Setup folders - mockTreeNodes already includes a node with path '/documents/' (folder-1)
-            // The path '/documents/images/' split and filtered gives ['documents', 'images']
-            // slice(0, -1) removes the last segment, so it becomes ['documents']
-            contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+            // The folder is already in the tree, under `/documents/`, so only its ancestors need
+            // opening. The path '/documents/images/' gives the ancestor segments ['documents'].
+            contentDriveStore.folders.mockReturnValue(treeWithImagesLoaded());
             contentDriveStore.loadChildFolders.mockReturnValue(
                 of({ folders: [], totalEntries: 0 })
             );
@@ -1362,7 +1407,7 @@ describe('DotContentDriveSidebarComponent', () => {
             // Spy on the recursiveExpandOneNode method
             const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
 
-            contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+            contentDriveStore.folders.mockReturnValue(treeWithImagesLoaded());
             contentDriveStore.loadChildFolders.mockReturnValue(
                 of({ folders: [], totalEntries: 0 })
             );
