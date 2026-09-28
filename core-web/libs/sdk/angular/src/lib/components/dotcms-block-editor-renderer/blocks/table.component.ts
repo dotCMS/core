@@ -12,8 +12,8 @@ import { DotCMSBlockEditorItemComponent } from '../item/dotcms-block-editor-item
         <table
             [attr.aria-label]="attrs?.['ariaLabel'] || null"
             [attr.aria-labelledby]="attrs?.['ariaLabelledby'] || null">
-            @if (attrs?.['caption']) {
-                <caption>{{ attrs['caption'] }}</caption>
+            @if (attrs?.['caption']; as caption) {
+                <caption>{{ caption }}</caption>
             }
             <tbody>
                 @for (rowNode of content; track $index) {

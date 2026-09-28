@@ -1,10 +1,7 @@
 @for (node of content; track node) {
-    @if (customRenderers?.[node.type]) {
+    @if (customRenderers?.[node.type]; as renderer) {
         <ng-container
-            *ngTemplateOutlet="
-                customRender;
-                context: { customRender: customRenderers[node.type], node: node }
-            " />
+            *ngTemplateOutlet="customRender; context: { customRender: renderer, node: node }" />
     } @else {
         @switch (node.type) {
             @case (BLOCKS.PARAGRAPH) {

@@ -4,7 +4,9 @@ import {
     DotCMSContentTypeField,
     DotCMSContentTypeLayoutRow,
     DotCMSContentTypeLayoutColumn,
-    DotCMSContentTypeFieldVariable
+    DotCMSContentTypeFieldVariable,
+    ContentTypeTextField,
+    ContentTypeTextAreaField
 } from '@dotcms/dotcms-models';
 
 export const DOT_ATTR_PREFIX = 'dot';
@@ -175,12 +177,13 @@ export const fieldCustomProcess: Record<string, ((value: string) => unknown) | u
 
 /**
  * Renderers keyed by content-type field type. A type with no entry is simply not rendered, which
- * `dot-form-column` already checks for before indexing.
+ * `dot-form-column` already checks for before indexing. The key is the field's `fieldType`
+ * discriminant, so the `Text` / `Textarea` entries narrow to their union arm at the boundary.
  */
 export const fieldMap: Record<string, ((field: DotCMSContentTypeField) => unknown) | undefined> = {
     Time: DotFormFields.Time,
-    Textarea: DotFormFields.Textarea,
-    Text: DotFormFields.Text,
+    Textarea: (field) => DotFormFields.Textarea(field as ContentTypeTextAreaField),
+    Text: (field) => DotFormFields.Text(field as ContentTypeTextField),
     Tag: DotFormFields.Tag,
     Select: DotFormFields.Select,
     Radio: DotFormFields.Radio,
