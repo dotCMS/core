@@ -76,13 +76,25 @@ export class DotUveIframeComponent {
     private readonly iframeClickListener$ = new Subject<void>();
 
     /**
-     * Tracks the last content written into the iframe, keyed by `src + content`.
-     * Prevents destructive re-writes when the reactive effect, the (load) handler,
-     * and the synthetic load fired by doc.close() all converge on insertPageContent
-     * for the same render — which re-executes customer top-level const/let and throws
+     * Tracks the last content + src reference written into the iframe. Prevents
+     * destructive re-writes when the reactive effect, the (load) handler, and the
+     * synthetic load fired by doc.close() all converge on insertPageContent for
+     * the same render — which re-executes customer top-level const/let and throws
      * "Identifier '…' has already been declared".
+     *
+     * `src` must be compared by reference, not by its stringified value: for
+     * traditional pages `$iframeURL` (withEditor.ts) deliberately returns a new
+     * `String('')` object on every load — including a re-navigation to the same
+     * page with byte-identical rendered HTML — to force the native iframe `src`
+     * to reset the browsing context. That reset silently discards whatever
+     * `srcdoc` previously held. Comparing `src` by its stringified value (always
+     * `''`) hid this: content-only dedup skipped rewriting `srcdoc` into the
+     * freshly reset, now-empty document, leaving the canvas permanently blank.
+     * Comparing the `src` signal's own reference re-triggers the write exactly
+     * when (and only when) that native reset has actually happened.
      */
-    private lastWrittenKey: string | null = null;
+    private lastWrittenContent: string | null = null;
+    private lastWrittenSrcRef: unknown = null;
 
     /**
      * Rendered HTML for traditional pages.
@@ -163,10 +175,11 @@ export class DotUveIframeComponent {
             ? addEditorPageScript(pageRender)
             : pageRender;
 
-        const writeKey = `${this.src()}::${content}`;
+        const srcRef = this.src();
 
-        if (writeKey !== this.lastWrittenKey) {
-            this.lastWrittenKey = writeKey;
+        if (content !== this.lastWrittenContent || srcRef !== this.lastWrittenSrcRef) {
+            this.lastWrittenContent = content;
+            this.lastWrittenSrcRef = srcRef;
             // srcdoc navigates the iframe to a fresh browsing context on every
             // unique render, clearing the window's global lexical scope.
             // document.open()/write()/close() reuses the same window object, so

@@ -89,6 +89,7 @@ import io.vavr.control.Try;
 import java.io.IOException;
 import java.sql.Connection;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1610,7 +1611,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 }
                 // Another node is the designated switchover server. Sleep and let it act;
                 // clear local cache so this node picks up the new pointers on the next tick.
-                if (!luckyServer.equals(ConfigUtils.getServerId())) {
+                if (!luckyServer.equals(ConfigUtils.getServerId())
+                        && !stepInForStalledSwitchover(luckyServer, oldInfo.getReindexWorking())) {
                     logSwitchover(oldInfo, luckyServer);
                     DateUtil.sleep(5000);
                     CacheLocator.getIndiciesCache().clearCache();
@@ -1715,7 +1717,9 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 return false;
             }
             // Same cluster-coordination as the ES path: only the oldest node acts.
-            if (!luckyServer.equals(ConfigUtils.getServerId())) {
+            if (!luckyServer.equals(ConfigUtils.getServerId())
+                    && !stepInForStalledSwitchover(luckyServer,
+                            existing.reindexWorking().orElse(null))) {
                 Logger.info(this, "OS switchover: waiting for lucky server " + luckyServer);
                 DateUtil.sleep(5000);
                 CacheLocator.getIndiciesCache().clearCache();
@@ -1972,6 +1976,41 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             Logger.debug(this, "unable to parse time:" + e, e);
         }
         return Optional.empty();
+    }
+
+    /**
+     * How long a server waits for the designated server to promote a finished reindex before doing
+     * it itself. Read once: consulted on every switchover tick.
+     */
+    private static final Lazy<Duration> SWITCHOVER_TAKEOVER_THRESHOLD = Lazy.of(() ->
+            Duration.ofSeconds(Config.getIntProperty("REINDEX_SWITCHOVER_TAKEOVER_SECONDS", 120)));
+
+    private final StalledSwitchoverGuard stalledSwitchoverGuard =
+            new StalledSwitchoverGuard(SWITCHOVER_TAKEOVER_THRESHOLD.get());
+
+    /**
+     * Whether this server, which is not the designated one, should perform the switchover itself
+     * because the designated server has left a finished reindex unpromoted for too long.
+     *
+     * <p>The switchover is only reached once the queue is empty, so the rebuilt indices are
+     * complete; what is missing is the designated server acting on them. It is chosen as the oldest
+     * server that pinged in the last few minutes, and one that keeps pinging without acting would
+     * otherwise keep the full reindex "in progress" forever (issue #36482). Called from the
+     * {@code synchronized} switchover methods only.</p>
+     *
+     * @param luckyServer   the designated server
+     * @param reindexTarget the working index being promoted, identifying this reindex
+     */
+    private boolean stepInForStalledSwitchover(final String luckyServer,
+            final String reindexTarget) {
+        if (!stalledSwitchoverGuard.shouldTakeOver(luckyServer, reindexTarget, Instant.now())) {
+            return false;
+        }
+        Logger.warn(this, String.format("Server %s is designated to switch over the finished "
+                        + "reindex to '%s' but has not done it for over %d s, although it is listed "
+                        + "as alive. This server is doing the switchover instead (issue #36482).",
+                luckyServer, reindexTarget, SWITCHOVER_TAKEOVER_THRESHOLD.get().getSeconds()));
+        return true;
     }
 
     private void logSwitchover(final IndiciesInfo oldInfo, final String luckyServer) {
