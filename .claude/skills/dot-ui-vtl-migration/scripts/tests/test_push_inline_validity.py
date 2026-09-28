@@ -33,3 +33,25 @@ def test_legacy_code_not_preserved_verbatim_is_skipped(seeded_push_instance, wor
     entry = next(e for e in manifest["entries"] if e["key"] == "Blog.author")
     assert entry["status"] == "skipped"
     assert "verbatim" in entry["statusReason"]
+
+
+def test_legacy_code_hidden_in_if_branch_is_skipped(seeded_push_instance, workdir):
+    """Regression for the reviewer-flagged gap: the original bytes are present in the
+    file (inside a comment in the #if branch) but NOT in the #else branch — a
+    substring-anywhere check would wrongly publish this; it must be skipped."""
+    _transport, _manifest, state = seeded_push_instance
+    original = (workdir / "original" / "fields" / "Blog.author.vtl").read_bytes()
+    (workdir / "migrated" / "fields" / "Blog.author.vtl").write_bytes(
+        b"#if( $structures.isNewEditModeEnabled() )\n"
+        b"<!-- kept for reference: " + original + b" -->\n"
+        b"<p>migrated</p>\n"
+        b"#else\n<p>NOT the original code</p>\n#end"
+    )
+
+    mcf.push(workdir, dry_run=False, only=["Blog.author"])
+
+    assert state.field_update_calls == 0
+    manifest = json.loads((workdir / "manifest.json").read_text())
+    entry = next(e for e in manifest["entries"] if e["key"] == "Blog.author")
+    assert entry["status"] == "skipped"
+    assert "verbatim" in entry["statusReason"]

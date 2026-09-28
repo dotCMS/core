@@ -75,6 +75,11 @@ def mock_dotcms(monkeypatch):
         transport = RecordingTransport(handler)
         test_client = httpx.Client(base_url=mcf.BASE_URL, transport=transport)
         monkeypatch.setattr(mcf, "client", test_client)
+        # A valid-looking token by default, so tests don't each have to set one just to
+        # get past preflight_auth()'s "DOTCMS_TOKEN must be set" check. A test that
+        # specifically wants to exercise the missing-token path overrides this back to
+        # "" *after* calling mock_dotcms(...).
+        monkeypatch.setattr(mcf, "DOTCMS_TOKEN", "test-fixture-default-token")
         return transport
 
     return install
@@ -338,9 +343,12 @@ class PushServerState:
         self.field_values = "<script>dojo.ready(function(){});</script>"  # matches "Blog.author"
         self.publish_status = 200
         self.publish_new_inode = "inode-shared-002"
+        self.publish_response_body: bytes | None = None  # override: raw bytes instead of JSON
         self.field_update_status = 200
         self.publish_calls = 0
         self.field_update_calls = 0
+        self.content_get_status = 200  # asset conflict-check GET status (simulate 5xx/transient)
+        self.field_get_status = 200  # field conflict-check GET status (simulate 5xx/transient)
 
 
 def build_push_server_handler(state: PushServerState):
@@ -351,19 +359,31 @@ def build_push_server_handler(state: PushServerState):
             return json_response(load_json("contenttype_list_page1.json"))
 
         if path == "/api/v1/content/ident-shared-001":
+            if state.content_get_status != 200:
+                return json_response({"message": "server error"}, status=state.content_get_status)
             return json_response({"entity": {"inode": state.asset_inode, "identifier": "ident-shared-001"}})
 
         if path == "/api/v1/contenttype/ct-blog/fields/id/field-blog-author":
             if request.method == "GET":
+                if state.field_get_status != 200:
+                    return json_response({"message": "server error"}, status=state.field_get_status)
                 return json_response(
                     {"entity": {"id": "field-blog-author", "variable": "author", "values": state.field_values}}
                 )
             if request.method == "PUT":
                 state.field_update_calls += 1
+                if state.field_update_status == 200:
+                    # Mirrors a real server: the field now holds the migrated code.
+                    state.field_values = json.loads(request.content)["values"]
                 return json_response({"entity": {"id": "field-blog-author"}}, status=state.field_update_status)
 
         if path == "/api/v1/workflow/actions/default/fire/PUBLISH":
             state.publish_calls += 1
+            if state.publish_response_body is not None:
+                return httpx.Response(state.publish_status, content=state.publish_response_body)
+            if state.publish_status == 200:
+                # Mirrors a real server: the identifier's current inode is now the new one.
+                state.asset_inode = state.publish_new_inode
             return json_response({"entity": {"inode": state.publish_new_inode}}, status=state.publish_status)
 
         raise AssertionError(f"unexpected request in push_server fixture: {request.method} {request.url}")
@@ -380,3 +400,153 @@ def seeded_push_instance(mock_dotcms, workdir):
     transport = mock_dotcms(build_push_server_handler(state))
     manifest = seed_push_workdir(workdir)
     return transport, manifest, state
+
+
+# ─── one asset whose live inode a test can advance (publish) or reset (revert) ─────
+#
+# Drives a full pull -> push -> pull flow against a single dA asset, so tests can prove a
+# re-pull skips the binary download when the inode is unchanged since our last publish,
+# and falls back to a real download when it isn't (FR-013).
+
+WIDGET_DOWNLOAD_PATH = "/dA/asset-w1/asset/widget.vtl"
+
+
+class ReversionableAssetState:
+    def __init__(self) -> None:
+        self.inode = "inode-w1-v1"
+        self.migrated_inode = "inode-w1-v2"
+        self.download_calls = 0
+        self.publish_calls = 0
+
+
+def build_reversionable_asset_handler(state: ReversionableAssetState):
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        params = dict(request.url.params)
+
+        if path == "/api/v1/contenttype":
+            if params.get("page") == "2":
+                return json_response({"entity": []})
+            return json_response({"entity": [{"id": "ct-widget", "variable": "Widget"}]})
+
+        if path == "/api/v1/contenttype/id/ct-widget":
+            return json_response(
+                {
+                    "entity": {
+                        "id": "ct-widget",
+                        "variable": "Widget",
+                        "fields": [
+                            {
+                                "id": "field-widget-body",
+                                "variable": "body",
+                                "clazz": mcf.CUSTOM_FIELD_CLAZZ,
+                                "values": '#dotParse("/dA/asset-w1")',
+                            }
+                        ],
+                    }
+                }
+            )
+
+        if path == "/api/v1/content/asset-w1":
+            return json_response(
+                {
+                    "entity": {
+                        "identifier": "asset-w1",
+                        "inode": state.inode,
+                        "languageId": 1,
+                        "contentType": "dotAsset",
+                        "assetContentAsset": "hash",
+                        "assetVersion": WIDGET_DOWNLOAD_PATH,
+                        "fileName": "widget.vtl",
+                        "live": True,
+                    }
+                }
+            )
+
+        if path == WIDGET_DOWNLOAD_PATH:
+            state.download_calls += 1
+            if state.inode == state.migrated_inode:
+                return text_response(f"#if( $structures.{mcf.MIGRATED_MARKER}() )\nnew\n#else\nold\n#end")
+            return text_response("<script>dojo.ready(function(){});</script>")
+
+        if path == "/api/v1/workflow/actions/default/fire/PUBLISH":
+            state.publish_calls += 1
+            state.inode = state.migrated_inode
+            return json_response({"entity": {"inode": state.inode}})
+
+        raise AssertionError(f"unexpected request in reversionable_asset fixture: {request.method} {request.url}")
+
+    return handler
+
+
+@pytest.fixture
+def reversionable_asset_instance(mock_dotcms):
+    state = ReversionableAssetState()
+    transport = mock_dotcms(build_reversionable_asset_handler(state))
+    return transport, state
+
+
+def write_inline_migration(workdir: Path, entry: dict) -> None:
+    """Simulates the agent's migration step for one pulled entry: wraps the original
+    bytes verbatim under #else, the way the skill's inline mode does."""
+    original = (workdir / "original" / entry["file"]).read_bytes()
+    migrated = b"#if( $structures.isNewEditModeEnabled() )\n<p>new</p>\n#else\n" + original + b"\n#end"
+    (workdir / "migrated" / entry["file"]).write_bytes(migrated)
+
+
+# ─── a /dA/<id> where <id> is a pinned inode, not the identifier ───────────────────
+
+
+def build_pinned_asset_handler():
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        params = dict(request.url.params)
+
+        if path == "/api/v1/contenttype":
+            if params.get("page") == "2":
+                return json_response({"entity": []})
+            return json_response({"entity": [{"id": "ct-pinned", "variable": "Pinned"}]})
+
+        if path == "/api/v1/contenttype/id/ct-pinned":
+            return json_response(
+                {
+                    "entity": {
+                        "id": "ct-pinned",
+                        "variable": "Pinned",
+                        "fields": [
+                            {
+                                "id": "field-pinned-code",
+                                "variable": "code",
+                                "clazz": mcf.CUSTOM_FIELD_CLAZZ,
+                                "values": '#dotParse("/dA/inode-pinned-001")',
+                            }
+                        ],
+                    }
+                }
+            )
+
+        if path == "/api/v1/content/inode-pinned-001":
+            # The content API resolves the pinned inode, but reports the real identifier.
+            return json_response(
+                {
+                    "entity": {
+                        "identifier": "ident-real-001",
+                        "inode": "inode-pinned-001",
+                        "languageId": 1,
+                        "contentType": "dotAsset",
+                        "assetContentAsset": "hash",
+                        "assetVersion": "/dA/inode-pinned-001/asset/pinned.vtl",
+                        "fileName": "pinned.vtl",
+                        "live": True,
+                    }
+                }
+            )
+
+        raise AssertionError(f"unexpected request in pinned_asset fixture: {request.method} {request.url}")
+
+    return handler
+
+
+@pytest.fixture
+def pinned_asset_instance(mock_dotcms):
+    return mock_dotcms(build_pinned_asset_handler())

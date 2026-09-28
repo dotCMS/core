@@ -47,3 +47,32 @@ def test_one_conflicting_entry_does_not_block_the_rest_of_the_batch(seeded_push_
 
     result = parse_last_json(capsys.readouterr().out)
     assert result["counts"] == {"published": 1, "skipped": 1, "failed": 0}
+
+
+def test_asset_conflict_check_request_failure_is_failed_not_skipped(seeded_push_instance, workdir):
+    """A transient 5xx on the conflict-check GET is not the same as 'this genuinely
+    changed on the server' — it must be reported as a failure, not a skip, or the
+    customer is wrongly told to just re-run pull."""
+    _transport, _manifest, state = seeded_push_instance
+    state.content_get_status = 500
+
+    mcf.push(workdir, dry_run=False, only=["asset-a"])
+
+    assert state.publish_calls == 0
+    manifest = json.loads((workdir / "manifest.json").read_text())
+    entry = next(e for e in manifest["entries"] if e["key"] == "asset-a")
+    assert entry["status"] == "failed"
+    assert "changed on the server" not in (entry["statusReason"] or "")
+
+
+def test_field_conflict_check_request_failure_is_failed_not_skipped(seeded_push_instance, workdir):
+    _transport, _manifest, state = seeded_push_instance
+    state.field_get_status = 500
+
+    mcf.push(workdir, dry_run=False, only=["Blog.author"])
+
+    assert state.field_update_calls == 0
+    manifest = json.loads((workdir / "manifest.json").read_text())
+    entry = next(e for e in manifest["entries"] if e["key"] == "Blog.author")
+    assert entry["status"] == "failed"
+    assert "changed on the server" not in (entry["statusReason"] or "")

@@ -1,6 +1,7 @@
 """contracts/cli-interface.md's exit-code table: 3 (auth failure — nothing written, no
 credential leak), 2 (invalid config), 1 (some entries failed), 0 (clean run)."""
 
+import json
 import sys
 
 import pytest
@@ -17,12 +18,11 @@ def run_main(monkeypatch, argv):
 
 
 def test_auth_failure_exits_3_and_writes_nothing(mock_dotcms, workdir, monkeypatch, capsys):
-    monkeypatch.setattr(mcf, "DOTCMS_PASS", "sUpers3cr3t-test-only-value")
-
     def handler(request):
         return json_response({"message": "unauthorized"}, status=401)
 
     mock_dotcms(handler)
+    monkeypatch.setattr(mcf, "DOTCMS_TOKEN", "sUpers3cr3t-test-only-value")
 
     code = run_main(monkeypatch, ["--workdir", str(workdir), "pull"])
 
@@ -30,10 +30,23 @@ def test_auth_failure_exits_3_and_writes_nothing(mock_dotcms, workdir, monkeypat
     assert not workdir.exists(), "an auth failure must write nothing at all"
 
     captured = capsys.readouterr()
-    assert "DOTCMS_USER" in captured.err
-    assert "DOTCMS_PASS" in captured.err
+    assert "DOTCMS_TOKEN" in captured.err
     assert "sUpers3cr3t-test-only-value" not in captured.err
     assert "sUpers3cr3t-test-only-value" not in captured.out
+
+
+def test_missing_token_exits_3_before_any_request(mock_dotcms, workdir, monkeypatch, capsys):
+    transport = mock_dotcms(lambda request: (_ for _ in ()).throw(AssertionError("no request should be made")))
+    monkeypatch.setattr(mcf, "DOTCMS_TOKEN", "")
+
+    code = run_main(monkeypatch, ["--workdir", str(workdir), "pull"])
+
+    assert code == 3
+    assert transport.requests == [], "a missing token must fail before any network call"
+    assert not workdir.exists(), "a missing token must write nothing at all"
+
+    captured = capsys.readouterr()
+    assert "DOTCMS_TOKEN" in captured.err
 
 
 def test_bad_config_exits_2_when_push_has_no_manifest(mock_dotcms, workdir, monkeypatch):
@@ -48,6 +61,20 @@ def test_bad_config_exits_2_when_push_has_no_manifest(mock_dotcms, workdir, monk
     code = run_main(monkeypatch, ["--workdir", str(workdir), "push"])
 
     assert code == 2
+
+
+def test_baseurl_mismatch_exits_2_before_touching_any_entry(seeded_push_instance, workdir, monkeypatch):
+    transport, _manifest, _state = seeded_push_instance
+    manifest_path = workdir / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["baseUrl"] = "https://a-completely-different-instance.dotcms.dev"
+    manifest_path.write_text(json.dumps(manifest))
+
+    code = run_main(monkeypatch, ["--workdir", str(workdir), "push"])
+
+    assert code == 2
+    mutating = transport.requests_with_method("PUT", "POST", "DELETE")
+    assert mutating == [], "must never touch an entry once the instance mismatch is detected"
 
 
 def test_some_entries_failed_exits_1(seeded_push_instance, workdir, monkeypatch):

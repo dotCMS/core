@@ -10,6 +10,9 @@ is the literal shape.
 {
   "baseUrl": "https://my-env.dotcms.dev",
   "pulledAt": "2026-09-28T12:00:00.000000",
+  "knownMigrated": {
+    "27d8569d3f029ea3ddaa2d0aaec3286a": "fae0edb3-1b58-4f6c-bdc9-1ff2ebfd689e"
+  },
   "entries": [
     {
       "kind": "asset",
@@ -53,6 +56,15 @@ is the literal shape.
   human-readable explanation once `status` is `"skipped"` or `"failed"` (FR-012).
 - `usedBy` always has at least one entry — an item with no owning field would never have been
   discovered in the first place.
+- `baseUrl` must equal the current `BASE_URL` for `push` to proceed — a mismatch is a
+  configuration error (exit 2) raised before any entry is touched.
+- `push` never reprocesses an entry already in a terminal status (`published`, `skipped`,
+  `failed`) unless it is named explicitly with `--only`.
+- `knownMigrated` maps a dA id to the inode that was confirmed migrated. `pull` writes it,
+  seeded from the previous manifest's `knownMigrated` plus its `published` asset entries, and
+  skips the binary download for an asset only while the server still reports that exact inode.
+  It is rebuilt from scratch on every `pull`, holds only ids seen in that run, and is never read
+  by `push`. A manifest without it (older versions) is valid.
 - `previousInode` (asset entries only) is absent until `push` successfully publishes that
   entry for the first time; from then on it holds the inode that was live immediately before
   that publish, as an audit trail. It is never removed once set, and is not itself used for any

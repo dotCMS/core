@@ -1,6 +1,6 @@
 {
   "entity": {
-    "identifier": "ident-malicious-001",
+    "identifier": "asset-malicious-001",
     "inode": "inode-malicious-001",
     "languageId": 1,
     "contentType": "dotAsset",

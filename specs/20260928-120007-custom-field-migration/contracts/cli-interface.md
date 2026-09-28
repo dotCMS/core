@@ -20,11 +20,10 @@ run and caches it.
 | Var | Required | Default | Notes |
 |---|---|---|---|
 | `BASE_URL` | no | `http://localhost:8080` | The dotCMS instance to talk to |
-| `DOTCMS_USER` | no | `admin@dotcms.com` | Basic auth username |
-| `DOTCMS_PASS` | no | `admin` | Basic auth password — **never** printed, logged, or included in any error/JSON output |
+| `DOTCMS_TOKEN` | **yes**, no default | — | A dotCMS API access token, sent as `Authorization: Bearer <token>`; mint one from the instance's admin UI (Users → select user → API Access Tokens) or `POST /api/v1/authentication/api-token`. **Never** printed, logged, or included in any error/JSON output |
 
-Missing or rejected credentials are a hard failure (exit 3) before anything is written to disk
-(FR-014).
+A missing or rejected token is a hard failure (exit 3) before anything is written to disk, or
+any request is made (FR-014).
 
 ## `pull`
 
@@ -35,10 +34,10 @@ uv run scripts/migrate_custom_fields.py pull [--workdir PATH]
 - Read-only against the instance (FR-008). Writes `<workdir>/original/**`,
   `<workdir>/migrated/{assets,fields}/` (empty, ready for the agent to fill), and
   `<workdir>/manifest.json`.
-- Human-readable classification report to stdout during the run (the existing draft's
-  `report(...)` sections); the final line on stdout is the CLI Result JSON (see
-  data-model.md).
-- Progress lines (`[HH:MM:SS] ...`) and warnings go to stderr.
+- Human-readable classification report to **stderr** during the run (the existing draft's
+  `report(...)` sections); the final line on **stdout** is the CLI Result JSON (see
+  data-model.md) — stdout carries only that one JSON line.
+- Progress lines (`[HH:MM:SS] ...`) and warnings also go to stderr.
 
 ## `push`
 
@@ -68,9 +67,9 @@ uv run scripts/migrate_custom_fields.py push [--workdir PATH] [--dry-run] [--onl
 | Code | Meaning | When |
 |---|---|---|
 | `0` | Success | Every attempted entry either published or was intentionally skipped for a reported reason; for `pull`, discovery completed |
-| `1` | Some entries failed | At least one entry's *publish/update request itself* failed (not merely skipped by a safety gate) |
+| `1` | Some entries failed | For `push`: at least one entry's *publish/update request itself* failed (not merely skipped by a safety gate). For `pull`: at least one `/dA/` reference couldn't be resolved or downloaded |
 | `2` | Invalid arguments or configuration | Bad CLI flags, unreadable `--workdir`, `push` run with no `manifest.json` present, unreachable `BASE_URL` (non-auth network/config failure) |
-| `3` | Authentication failure | The instance rejected the given `DOTCMS_USER`/`DOTCMS_PASS`, or basic auth appears to be disabled on the instance — message names the two env vars and mentions this possibility; nothing is written to disk |
+| `3` | Authentication failure | `DOTCMS_TOKEN` is unset, or the instance rejected it — message names the env var and, on rejection, mentions the token may be revoked/expired or Bearer auth may be disabled; nothing is written to disk |
 
 These are documented in `--help` (Packaging AC) as well as here.
 
@@ -80,5 +79,5 @@ These are documented in `--help` (Packaging AC) as well as here.
   it by hand), followed by exactly one final JSON object — the CLI Result from data-model.md —
   as the very last line. An agent parsing programmatically should read the last line of stdout
   as JSON.
-- **stderr**: everything else — timestamps progress log lines, warnings, and the
-  `FAILED: {method} {path} -> {error}` failure lines. Never contains `DOTCMS_PASS`.
+- **stderr**: everything else — timestamped progress lines, the classification report, warnings,
+  and the `FAILED: {method} {path} -> {error}` failure lines. Never contains `DOTCMS_TOKEN`.

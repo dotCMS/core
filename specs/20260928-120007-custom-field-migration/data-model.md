@@ -61,6 +61,7 @@ One `manifest.json` per `pull` run, living at `<workdir>/manifest.json`. See
 | `baseUrl` | string | Which instance this manifest belongs to — guards against pointing `push` at the wrong instance's workdir |
 | `pulledAt` | ISO-8601 timestamp | When discovery ran |
 | `entries` | list of Manifest Entry | See Migration Item above |
+| `knownMigrated` | map of dA id → inode | Assets confirmed migrated at that exact inode (by `pull`'s marker check, or carried over from a `published` entry of the previous manifest). The next `pull` skips the binary download while the server still reports that inode. Absent/empty is always valid; `push` never reads it |
 
 **Persistence rule** (see research.md): written once after `pull` completes; during `push`,
 written back to disk after *every* entry's outcome is determined, not only once at the end of
@@ -77,6 +78,7 @@ the customer, nothing downloaded or written to a manifest for these:
 | `coreFiles` | Fields loading a file shipped with dotCMS itself — migrated in core, not here |
 | `inlineClean` | In-field VTL with no legacy patterns — nothing to do |
 | `otherPaths` | `#dotParse` by a non-`/dA/` path — out of scope by design |
+| `pinnedVersions` | `#dotParse("/dA/<id>")` where `<id>` is a specific version (inode), not the identifier — out of scope: PUBLISH always lands on the identifier's latest version, so it can't be republished safely. Not a failure |
 | `unresolved` | A referenced dA id that couldn't be resolved or downloaded — reported as a failure, not silently dropped |
 
 ## CLI Result (final JSON summary — the agent-facing contract)

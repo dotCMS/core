@@ -23,14 +23,14 @@ For the full migration rules, all code examples, the DaisyUI styling section, an
 
 Use this workflow when the user asks to migrate **all** custom fields, every legacy field, or "the whole instance" — not a single pasted VTL file.
 
-**Prerequisites**: [`uv`](https://docs.astral.sh/uv/) installed; network access to the target dotCMS instance; a backend user on that instance with edit permissions on content types and publish permissions on the content the referenced assets/fields belong to.
+**Prerequisites**: [`uv`](https://docs.astral.sh/uv/) installed; network access to the target dotCMS instance; a dotCMS API access token (Users → select user → API Access Tokens in the admin UI, or `POST /api/v1/authentication/api-token`) for a user with edit permissions on content types and publish permissions on the content the referenced assets/fields belong to.
 
-1. **Configure and discover.** Set `BASE_URL`, `DOTCMS_USER`, `DOTCMS_PASS` (env vars — the script never prompts), then run:
+1. **Configure and discover.** Set `BASE_URL`, `DOTCMS_TOKEN` (env vars — the script never prompts), then run:
    ```bash
-   BASE_URL=https://my-env.dotcms.dev DOTCMS_USER=... DOTCMS_PASS=... \
+   BASE_URL=https://my-env.dotcms.dev DOTCMS_TOKEN=... \
      uv run scripts/migrate_custom_fields.py pull
    ```
-   This scans every content type, classifies every custom field, downloads what needs migrating into `<workdir>/original/`, and writes `<workdir>/manifest.json`. Fields that are already migrated, load a core-shipped file, or reference code by an unhandled path are reported only — nothing is downloaded or queued for them.
+   This scans every content type, classifies every custom field, downloads what needs migrating into `<workdir>/original/`, and writes `<workdir>/manifest.json`. Fields that are already migrated, load a core-shipped file, reference code by an unhandled path, or pin a specific `/dA/` version (an inode instead of the identifier) are reported only — nothing is downloaded or queued for them. Re-running `pull` after a `push` doesn't re-download what was already published.
 2. **Migrate each file** under `<workdir>/original/` using this skill in its default **inline** mode (see Output Modes below), writing each result to `<workdir>/migrated/` under the same relative path.
 3. **Show the customer a summary** of what changed per file and get their explicit confirmation before publishing anything.
 4. **Preview, then publish**:
@@ -40,7 +40,9 @@ Use this workflow when the user asks to migrate **all** custom fields, every leg
    ```
    `push` independently verifies, per item, that nothing changed on the server since `pull` and that the migrated file is a genuine inline migration (the original code still reachable, verbatim, behind the edit-mode switch) before publishing it — one bad item is skipped and reported, never blocking the rest of the batch. Use `--only <key...>` (a dA id, a content identifier, or a `Type.field` key) to scope a run to specific items.
 
-Exit codes (also in `--help`): `0` success, `1` some entries failed, `2` invalid arguments/configuration, `3` authentication failure (nothing is written).
+Re-running `push` never re-publishes an entry that already finished (`published`, `skipped` or `failed`); name it with `--only` to retry it. `push` refuses to run if the workdir was pulled from a different `BASE_URL`.
+
+Exit codes (also in `--help`): `0` success, `1` some items failed (in `pull`, an unresolvable `/dA/` reference; in `push`, a failed publish/update), `2` invalid arguments/configuration, `3` authentication failure — `DOTCMS_TOKEN` missing or rejected (nothing is written).
 
 ## The Core API Swap (Quick Reference)
 

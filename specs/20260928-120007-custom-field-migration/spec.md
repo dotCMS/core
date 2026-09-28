@@ -122,7 +122,7 @@ Once the customer confirms, the agent publishes each migrated file to the live i
 
 - The customer (or the agent acting on their behalf) already has a dotCMS user with sufficient permission to read all content types, download the files their custom fields reference, and publish content — no separate permission-elevation flow is in scope.
 - "The live instance" means a real, reachable dotCMS environment (e.g., a customer's dev, staging, or production instance) that the agent connects to directly for this session; there is no offline or simulated mode in scope.
-- Login is by username/password against the instance; no other authentication method is in scope for this feature.
+- Login is by a pre-minted dotCMS API access token (Bearer auth); no other authentication method is in scope for this feature.
 - Migrating an unpublished/draft custom field or file is in scope, but publishing it as part of this migration is expected to also promote any other pending changes on that same content live — this is called out to the customer, not specially isolated.
 - A downloadable code file and an in-field code block are the only two shapes of legacy custom-field code this feature acts on; every other shape it encounters is reported, not migrated, by design (out of scope per the source issue).
 - This feature packages and exposes the capability; the actual line-by-line VTL migration logic (old code → old+new branching code) is the existing, separate capability this feature reuses, not something this feature redefines.

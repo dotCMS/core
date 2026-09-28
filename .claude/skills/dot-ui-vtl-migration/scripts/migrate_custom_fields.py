@@ -29,16 +29,17 @@ Usage:
     uv run scripts/migrate_custom_fields.py push --dry-run
     uv run scripts/migrate_custom_fields.py push --only 0ec62ffd3666f23fc5228ef84a481b09 Blog.urlTitle
 
-    BASE_URL=https://my-env.dotcms.dev DOTCMS_USER=... DOTCMS_PASS=... \\
+    BASE_URL=https://my-env.dotcms.dev DOTCMS_TOKEN=... \\
     uv run scripts/migrate_custom_fields.py pull
 
 Exit codes:
     0   success — pull completed, or push completed with no failed entries
-    1   push completed but at least one entry's publish/update request failed
+    1   pull or push completed but at least one item failed (an unresolvable
+        /dA/ reference, or a publish/update request that failed)
     2   invalid arguments or configuration (bad --workdir, unreachable
         BASE_URL, `push` with no manifest.json to read)
-    3   authentication failure — the instance rejected DOTCMS_USER/DOTCMS_PASS,
-        or basic auth may be disabled on the instance; nothing is written
+    3   authentication failure — DOTCMS_TOKEN is missing, or the instance
+        rejected it; nothing is written
 """
 
 import argparse
@@ -53,8 +54,7 @@ from urllib.parse import urlparse
 import httpx
 
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:8080").rstrip("/")
-DOTCMS_USER = os.environ.get("DOTCMS_USER", "admin@dotcms.com")
-DOTCMS_PASS = os.environ.get("DOTCMS_PASS", "admin")
+DOTCMS_TOKEN = os.environ.get("DOTCMS_TOKEN", "")
 
 MANIFEST_STATUSES = {"pending", "published", "skipped", "failed"}
 
@@ -67,11 +67,11 @@ CORE_FILE_RE = re.compile(r"""(?:mergeTemplate|#parse)\s*\(\s*["']([^"']+)["']""
 LEGACY_RE = re.compile(r"dojo\.|dijit|dojoType|DotCustomFieldApi\.(?:get|set|onChangeField)\s*\(")
 _PATH_SEPARATORS_RE = re.compile(r"[\\/]")
 
-client = httpx.Client(base_url=BASE_URL, auth=(DOTCMS_USER, DOTCMS_PASS), timeout=60)
+client = httpx.Client(base_url=BASE_URL, headers={"Authorization": f"Bearer {DOTCMS_TOKEN}"}, timeout=60)
 
 
 class AuthError(Exception):
-    """The instance rejected DOTCMS_USER/DOTCMS_PASS (HTTP 401/403). Maps to exit code 3."""
+    """DOTCMS_TOKEN is missing, or the instance rejected it (HTTP 401/403). Maps to exit code 3."""
 
 
 class ConfigError(Exception):
@@ -84,16 +84,16 @@ class ConfigError(Exception):
 
 
 def redact(text: str) -> str:
-    """Never let DOTCMS_PASS's value reach stdout/stderr, even inside an error message
+    """Never let DOTCMS_TOKEN's value reach stdout/stderr, even inside an error message
     (Constitution Principle III; FR-014 requires naming the *variable*, never its value).
 
-    This is an exact substring replace, so a short/common `DOTCMS_PASS` (e.g. the documented
-    local default "admin") can over-redact unrelated words that happen to contain it. That
-    failure mode only ever makes a message harder to read, never leaks the credential — real
-    deployments should use a non-trivial password anyway, so this is accepted as-is rather
-    than adding token-boundary-aware masking."""
-    if DOTCMS_PASS and DOTCMS_PASS in text:
-        return text.replace(DOTCMS_PASS, "***")
+    This is an exact substring replace, so a short/common `DOTCMS_TOKEN` could in principle
+    over-redact unrelated words that happen to contain it — same trade-off the old password
+    field had. A minted API token is essentially never a short/common word in practice, so
+    this residual risk is smaller than it was for a password, and still only ever makes a
+    message harder to read, never leaks the credential."""
+    if DOTCMS_TOKEN and DOTCMS_TOKEN in text:
+        return text.replace(DOTCMS_TOKEN, "***")
     return text
 
 
@@ -134,8 +134,9 @@ def request(method: str, path: str, *, fatal: bool = True, **kwargs) -> httpx.Re
 
     if response.status_code in (401, 403):
         raise AuthError(
-            f"{BASE_URL} rejected the given DOTCMS_USER/DOTCMS_PASS (HTTP {response.status_code}). "
-            "Check the credentials — note basic auth may be disabled on this instance."
+            f"{BASE_URL} rejected the given DOTCMS_TOKEN (HTTP {response.status_code}). "
+            "Check it hasn't been revoked or expired, and that Bearer auth is enabled on "
+            "this instance."
         )
     if response.is_success:
         return response
@@ -153,9 +154,15 @@ def call(method: str, path: str, **kwargs) -> dict:
 
 
 def preflight_auth() -> None:
-    """Fails fast with AuthError, before any file is written, if credentials are bad
-    (FR-014). Both `pull` and `push` call this before doing anything else, since a
-    push's own per-entry requests use fatal=False and would not otherwise abort early."""
+    """Fails fast with AuthError, before any file is written or request is made, if
+    credentials are bad (FR-014). Both `pull` and `push` call this before doing anything
+    else, since a push's own per-entry requests use fatal=False and would not otherwise
+    abort early."""
+    if not DOTCMS_TOKEN:
+        raise AuthError(
+            "DOTCMS_TOKEN must be set — generate one from the instance's admin UI "
+            "(Users -> select user -> API Access Tokens) or POST /api/v1/authentication/api-token"
+        )
     request("GET", "/api/v1/contenttype", params={"per_page": 1, "page": 1})
 
 
@@ -170,15 +177,39 @@ def read_manifest(workdir: Path) -> dict:
     path = manifest_path(workdir)
     if not path.exists():
         raise ConfigError(f"No manifest at {path}; run `pull` first.")
-    return json.loads(path.read_text())
+    try:
+        return json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        raise ConfigError(f"manifest at {path} is unreadable/corrupt: {e}") from e
 
 
 def write_manifest(workdir: Path, manifest: dict) -> None:
-    manifest_path(workdir).write_text(json.dumps(manifest, indent=2))
+    """Writes manifest.json atomically: a crash between the temp-file write and the
+    final rename leaves the previous manifest.json fully intact, never a truncated or
+    partial file (the per-entry interrupt-safety this design leans on depends on it)."""
+    path = manifest_path(workdir)
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(manifest, indent=2))
+    os.replace(tmp, path)
 
 
 def new_manifest() -> dict:
-    return {"baseUrl": BASE_URL, "pulledAt": datetime.now().isoformat(), "entries": []}
+    return {"baseUrl": BASE_URL, "pulledAt": datetime.now().isoformat(), "entries": [], "knownMigrated": {}}
+
+
+def try_read_previous_manifest(workdir: Path) -> dict:
+    """Best-effort read of a manifest.json left by an earlier pull/push in this workdir,
+    used only to seed pull()'s "already migrated at this inode" skip (FR-013). Never
+    raises: a missing or unreadable file just means nothing can be skipped, which is
+    always safe — every asset then gets the full download + marker check."""
+    path = manifest_path(workdir)
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError) as e:
+        log(f"WARNING: ignoring unreadable previous manifest at {path} ({e}); re-checking every /dA/ reference")
+        return {}
 
 
 def set_entry_status(workdir: Path, manifest: dict, key: str, status: str, reason: str | None = None) -> None:
@@ -321,9 +352,23 @@ def report(title: str, items: list[str]) -> None:
             diag(f"  - {item}")
 
 
+def known_migrated_inodes(previous_manifest: dict) -> dict[str, str]:
+    """da_id -> inode already confirmed migrated, from an earlier run in this workdir:
+    either an earlier pull's own marker check (`knownMigrated`) or an earlier push's
+    successful publish (an asset entry with status "published", whose `inode` push set to
+    the post-publish version). Only ever used to skip a download while the server still
+    reports that exact inode."""
+    known = dict(previous_manifest.get("knownMigrated") or {})
+    for entry in previous_manifest.get("entries", []):
+        if entry.get("kind") == "asset" and entry.get("status") == "published":
+            known[entry["key"]] = entry["inode"]
+    return known
+
+
 def pull(workdir: Path) -> int:
     preflight_auth()
     scan = scan_content_types()
+    known_migrated = known_migrated_inodes(try_read_previous_manifest(workdir))
 
     original_dir = workdir / "original"
     for sub in ("assets", "fields"):
@@ -334,6 +379,8 @@ def pull(workdir: Path) -> int:
     already_migrated: list[str] = []
     unresolved: list[str] = []
     unpublished: list[str] = []
+    pinned_versions: list[str] = []
+    confirmed_migrated: dict[str, str] = {}
 
     # Sequential, two GETs per distinct asset (N+1, same trade-off as scan_content_types).
     log(f"Resolving {len(scan.asset_refs)} /dA/ references...")
@@ -342,6 +389,24 @@ def pull(workdir: Path) -> int:
         field_var = binary_field(content or {})
         if not content or not field_var:
             unresolved.append(f"{da_id} (used by {', '.join(owners)})")
+            continue
+
+        if content.get("identifier") != da_id:
+            # The field pins a specific version (an inode), not the identifier. PUBLISH
+            # always lands on the identifier's latest version and push's conflict check
+            # compares against it, so this can never be migrated safely by this tool.
+            pinned_versions.append(
+                f"{da_id} -> identifier {content.get('identifier')} (used by {', '.join(owners)}); "
+                "edit the field to reference the identifier if it needs migrating"
+            )
+            continue
+
+        if known_migrated.get(da_id) == content["inode"]:
+            # Nothing changed since an earlier run confirmed this exact inode migrated —
+            # the cheap metadata GET above is enough, skip the binary download (FR-013).
+            file_name = content.get("fileName") or content.get("name") or content.get("title") or da_id
+            already_migrated.append(f"{content.get('contentType')} {file_name} ({da_id})")
+            confirmed_migrated[da_id] = content["inode"]
             continue
 
         # `<field>Version` is the /dA/ URL pinned to this exact inode
@@ -358,6 +423,7 @@ def pull(workdir: Path) -> int:
         label = f"{content['contentType']} {file_name} ({da_id})"
         if MIGRATED_MARKER in raw.text:
             already_migrated.append(label)
+            confirmed_migrated[da_id] = content["inode"]
             continue
         if not content.get("live"):
             unpublished.append(label)
@@ -396,6 +462,7 @@ def pull(workdir: Path) -> int:
 
     manifest = new_manifest()
     manifest["entries"] = entries
+    manifest["knownMigrated"] = confirmed_migrated
     write_manifest(workdir, manifest)
 
     diag(f"\n{'=' * 72}\nTo migrate: {len(entries)} files in {original_dir}\n")
@@ -410,6 +477,7 @@ def pull(workdir: Path) -> int:
     report("Load a file shipped with dotCMS (migrate in core, not here)", scan.core_files)
     report("Inline VTL without legacy patterns (nothing to migrate)", scan.inline_clean)
     report("#dotParse with non-/dA/ paths (not handled)", scan.other_paths)
+    report("Pinned /dA/ version references (not handled)", pinned_versions)
     diag(f"\nNext: migrate each file into {workdir / 'migrated'} (same relative path), then run `push`.")
 
     counts = {
@@ -418,6 +486,7 @@ def pull(workdir: Path) -> int:
         "coreFiles": len(scan.core_files),
         "inlineClean": len(scan.inline_clean),
         "otherPaths": len(scan.other_paths),
+        "pinnedVersions": len(pinned_versions),
         "failed": len(unresolved),
     }
     result = emit_result("pull", counts, entries=entries)
@@ -433,19 +502,129 @@ def entry_matches_only(entry: dict, only: list[str]) -> bool:
     return entry["key"] in only or entry.get("identifier") in only
 
 
+_INLINE_HEADER_RE = re.compile(rb"^#if\(\s*\$structures\.isNewEditModeEnabled\(\)\s*\)")
+_DIRECTIVE_NAME_RE = re.compile(rb"[A-Za-z0-9_@]+")
+_BLOCK_OPENERS = {b"if", b"foreach", b"macro", b"define", b"literal"}
+
+
+def _iter_directives(data: bytes):
+    """Yields (name, start, end) for every real Velocity directive in `data` relevant to
+    block nesting/branching (`if`/`foreach`/`macro`/`define`/`literal`/`@name` as block
+    openers, plus `elseif`/`else`/`end`), in source order — mirroring the exact rules
+    SKILL.md's own "Split" algorithm specifies: `##` line comments, `#* *#` block
+    comments and `#[[ ]]#` unparsed blocks are skipped entirely; `\\#end` is an escaped
+    literal, not a directive; a directive name ends at the first character that is not a
+    letter/digit/`_`/`@` (so `#end-date` IS a real `#end`, while `#endDate` is not one of
+    the names tracked here). Directives that never open/close a block (`#set`, `#parse`,
+    `#dotParse`, ...) are real Velocity but irrelevant to locating the top-level `#else`,
+    so they're not yielded."""
+    i, n = 0, len(data)
+    while i < n:
+        b = data[i : i + 1]
+        if b == b"\\":
+            if data[i + 1 : i + 2] in (b"\\", b"#"):
+                i += 2
+                continue
+            i += 1
+            continue
+        if b == b"#":
+            two = data[i : i + 2]
+            if two == b"##":
+                nl = data.find(b"\n", i)
+                i = n if nl == -1 else nl
+                continue
+            if two == b"#*":
+                end = data.find(b"*#", i + 2)
+                i = n if end == -1 else end + 2
+                continue
+            if data[i : i + 3] == b"#[[":
+                end = data.find(b"]]#", i + 3)
+                i = n if end == -1 else end + 3
+                continue
+            j = i + 1
+            brace = data[j : j + 1] == b"{"
+            if brace:
+                j += 1
+            m = _DIRECTIVE_NAME_RE.match(data, j)
+            if not m:
+                i += 1
+                continue
+            name, end_j = m.group(0), m.end()
+            if brace:
+                if data[end_j : end_j + 1] == b"}":
+                    end_j += 1
+                else:
+                    i += 1
+                    continue
+            lname = name.lower()
+            if lname in (b"elseif", b"else", b"end") or lname in _BLOCK_OPENERS:
+                yield (lname, i, end_j)
+            elif name.startswith(b"@"):
+                yield (b"@", i, end_j)
+            i = end_j
+            continue
+        i += 1
+
+
+def locate_top_level_else(migrated: bytes) -> tuple[int, int] | str:
+    """Locates the legacy (`#else`) branch's body in an inline Mode-1 file, reusing the
+    exact rules SKILL.md's `Split` algorithm specifies: line 1 is the fixed header;
+    counting block openers/`#end`s from there, the top-level `#else` is the first one
+    reached while nothing opened after the header is still open, and the matching final
+    `#end` closes the header's own `#if`. Returns (start, end) byte offsets spanning the
+    legacy body (exclusive of the `#else`/`#end` directives themselves), or a diagnostic
+    string — never raises — for a malformed shape (missing header, no top-level `#else`,
+    unbalanced blocks, `#end` before `#else`)."""
+    header = _INLINE_HEADER_RE.match(migrated)
+    if not header:
+        return "migrated file does not start with #if( $structures.isNewEditModeEnabled() ) on line 1"
+
+    depth = 0
+    else_body_start = None
+    end_start = None
+    for name, start, end in _iter_directives(migrated):
+        if start < header.end():
+            continue  # the header's own #if is not itself counted
+        if name == b"end":
+            if depth == 0:
+                end_start = start
+                break
+            depth -= 1
+        elif name == b"else":
+            if depth == 0 and else_body_start is None:
+                else_body_start = end
+        elif name in _BLOCK_OPENERS or name == b"@":
+            depth += 1
+        # 'elseif' never changes depth and is never treated as a branch start
+
+    if else_body_start is None:
+        return "no top-level #else branch found in migrated content (legacy code not located)"
+    if end_start is None:
+        return (
+            "no matching top-level #end found in migrated content "
+            "(unbalanced #if/#foreach/#macro/#define/#literal/#@ block)"
+        )
+    if end_start <= else_body_start:
+        return "malformed structure: #end appears before the top-level #else"
+    return (else_body_start, end_start)
+
+
 def inline_problem(original: bytes, migrated: bytes) -> str | None:
     """The skill's inline output keeps the legacy code verbatim under #else, next to
     the new code under #if( $structures.isNewEditModeEnabled() ). Per FR-010.
 
-    The verbatim check is substring containment, not a positional match against the actual
-    #else block — so a near-empty original field could in principle satisfy it trivially.
-    Accepted: fields only reach here because LEGACY_RE matched real dojo/dijit/
-    DotCustomFieldApi code (never near-empty in practice), and a false pass here still only
-    weakens this one entry's safety guarantee, not the batch's — it stays visible in the push
-    report either way."""
+    Locates the actual top-level #else branch (locate_top_level_else) and requires the
+    original bytes to be verbatim *inside that located range* — not merely present
+    anywhere in the file (e.g. inside the #if branch, or a comment)."""
     if MIGRATED_MARKER.encode() not in migrated:
         return f"no {MIGRATED_MARKER}() branch (three-file output or blocked migration?)"
-    if original.strip() not in migrated:
+
+    located = locate_top_level_else(migrated)
+    if isinstance(located, str):
+        return located
+
+    start, end = located
+    if original.strip() not in migrated[start:end]:
         return "original code is not preserved verbatim in the #else branch"
     return None
 
@@ -454,7 +633,10 @@ def push_asset(entry: dict, code: bytes, dry_run: bool) -> str:
     """Publishes one dA/FileAsset entry. Returns "published", "dry-run: ...",
     "skipped: ..." (FR-009 conflict), or "failed: ...". Never raises for a single
     entry's own failure (FR-011) — request() is always called with fatal=False here."""
-    current = call("GET", f"/api/v1/content/{entry['identifier']}", fatal=False).get("entity")
+    check = request("GET", f"/api/v1/content/{entry['identifier']}", fatal=False)
+    if check is None:
+        return "failed: could not verify current state before publishing (request failed)"
+    current = (check.json() or {}).get("entity") if check.content else None
     if not current or current.get("inode") != entry["inode"]:
         return "skipped: changed on the server since pull (re-run `pull`)"
     if dry_run:
@@ -476,15 +658,25 @@ def push_asset(entry: dict, code: bytes, dry_run: bool) -> str:
     )
     if response is None:
         return "failed: publish request failed"
+    try:
+        new_inode = response.json()["entity"]["inode"]
+    except (json.JSONDecodeError, KeyError, TypeError):
+        # The publish itself may well have succeeded server-side — we just can't confirm
+        # the new inode from this response, so this must not be silently reported as
+        # "published" (FR-011: never crash the batch, but never claim an unconfirmed win).
+        return "failed: publish succeeded but the response could not be parsed — verify manually and re-run `pull`"
     entry["previousInode"] = entry["inode"]
-    entry["inode"] = response.json()["entity"]["inode"]
+    entry["inode"] = new_inode
     return "published"
 
 
 def push_field(entry: dict, original: str, code: str, dry_run: bool) -> str:
     """Publishes one in-field VTL entry. Same return-value contract as push_asset."""
     path = f"/api/v1/contenttype/{entry['typeId']}/fields/id/{entry['fieldId']}"
-    field = call("GET", path, fatal=False).get("entity")
+    check = request("GET", path, fatal=False)
+    if check is None:
+        return "failed: could not verify current state before publishing (request failed)"
+    field = (check.json() or {}).get("entity") if check.content else None
     if not field or (field.get("values") or "") != original:
         return "skipped: changed on the server since pull (re-run `pull`)"
     if dry_run:
@@ -497,11 +689,28 @@ def push_field(entry: dict, original: str, code: str, dry_run: bool) -> str:
     return "published"
 
 
+TERMINAL_STATUSES = {"published", "skipped", "failed"}
+
+
 def push(workdir: Path, dry_run: bool, only: list[str]) -> int:
     preflight_auth()
     manifest = read_manifest(workdir)
 
-    matched_entries = [entry for entry in manifest["entries"] if entry_matches_only(entry, only)]
+    if manifest.get("baseUrl") != BASE_URL:
+        raise ConfigError(
+            f"manifest at {workdir} was pulled from {manifest.get('baseUrl')!r}, but BASE_URL "
+            f"is {BASE_URL!r} — re-run `pull` against this instance, or point --workdir at the "
+            "workdir that matches this BASE_URL"
+        )
+
+    # An explicit --only is treated as "the customer wants this one retried" and bypasses
+    # the terminal-status guard; without it, a terminal entry is never reprocessed (it
+    # would otherwise be republished identically, or wrongly flip published -> skipped).
+    matched_entries = [
+        entry
+        for entry in manifest["entries"]
+        if entry_matches_only(entry, only) and (only or entry.get("status") not in TERMINAL_STATUSES)
+    ]
     if only and not matched_entries:
         log(
             f"WARNING: --only {only} matched none of the {len(manifest['entries'])} "
