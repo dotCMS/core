@@ -1037,8 +1037,8 @@ describe('DotContentDriveStore', () => {
 
             it('should drop the search scope when the term is cleared', () => {
                 store.setGlobalSearch('pricing');
-                store.setSearchScope('TITLE');
-                expect(store.filters()['searchScope']).toBe('TITLE');
+                store.setSearchScope('ALL_FIELDS');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
 
                 store.setGlobalSearch('');
 
@@ -1049,11 +1049,11 @@ describe('DotContentDriveStore', () => {
 
             it('should keep the scope when the term is replaced, not cleared', () => {
                 store.setGlobalSearch('pricing');
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 store.setGlobalSearch('contracts');
 
-                expect(store.filters()['searchScope']).toBe('TITLE');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
                 expect(store.filters()['title']).toBe('contracts');
             });
 
@@ -1076,25 +1076,25 @@ describe('DotContentDriveStore', () => {
 
         describe('setSearchScope', () => {
             it('should record a non-default scope as filter state', () => {
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 expect(store.filters()).toEqual(
-                    withSeeded({ languageId: ['1'], searchScope: 'TITLE' })
+                    withSeeded({ languageId: ['1'], searchScope: 'ALL_FIELDS' })
                 );
             });
 
             it('should remove the key when the scope returns to the default', () => {
-                store.setSearchScope('TITLE');
-
                 store.setSearchScope('ALL_FIELDS');
 
-                // Removed, not set to 'ALL_FIELDS'. A present key counts as a non-default filter,
+                store.setSearchScope('TITLE');
+
+                // Removed, not set to 'TITLE'. A present key counts as a non-default filter,
                 // so storing the default would offer "Clear all" on an unfiltered drive.
                 expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
 
             it('should never store the default, even when set first', () => {
-                store.setSearchScope('ALL_FIELDS');
+                store.setSearchScope('TITLE');
 
                 expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
             });
@@ -1103,39 +1103,39 @@ describe('DotContentDriveStore', () => {
                 store.setGlobalSearch('pricing');
                 store.patchFilters({ contentType: ['Blog'] });
 
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 expect(store.filters()).toEqual(
                     withSeeded({
                         languageId: ['1'],
                         contentType: ['Blog'],
                         title: 'pricing',
-                        searchScope: 'TITLE'
+                        searchScope: 'ALL_FIELDS'
                     })
                 );
             });
 
             it('should keep the scope and the term under separate keys', () => {
                 store.setGlobalSearch('pricing');
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
-                // `title` holds the TERM; `searchScope` holds the mode. A scope whose value is
-                // 'TITLE' beside a filter key named `title` is a collision waiting to happen.
+                // `title` holds the TERM; `searchScope` holds the mode. Title is the default and is
+                // never stored, so only All fields ever sits beside the term.
                 expect(store.filters()['title']).toBe('pricing');
-                expect(store.filters()['searchScope']).toBe('TITLE');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
             });
 
-            it('should reset pagination so the narrowed results start at page 1', () => {
+            it('should reset pagination so the widened results start at page 1', () => {
                 store.setPagination({ offset: 40, limit: 20, page: 3 });
 
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 expect(store.pagination().page).toBe(1);
                 expect(store.pagination().offset).toBe(0);
             });
 
             it('should drop the scope when all filters are cleared', () => {
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 store.clearFilters();
 
@@ -1926,6 +1926,48 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 })
             })
         );
+    });
+
+    /**
+     * The request always names the scope when there is a term (search box cleanup on #37062). The
+     * server's own default is All fields, so leaving Title out of the request would search every
+     * field while the box says Title.
+     */
+    describe('search scope in the request', () => {
+        it('should send Title when a term is present and no scope is stored', () => {
+            store.patchFilters({ title: 'test' });
+
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({ text: 'test', searchScope: 'TITLE' })
+                })
+            );
+        });
+
+        it('should send All fields when that is the stored scope', () => {
+            store.patchFilters({ title: 'test' });
+            store.setSearchScope('ALL_FIELDS');
+
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({ text: 'test', searchScope: 'ALL_FIELDS' })
+                })
+            );
+        });
+
+        it('should send no scope without a term, which the server would reject', () => {
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.not.objectContaining({ searchScope: expect.anything() })
+                })
+            );
+        });
     });
 
     it('should handle pagination', () => {

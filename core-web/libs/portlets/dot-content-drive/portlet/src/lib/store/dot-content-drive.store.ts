@@ -149,16 +149,20 @@ export const DotContentDriveStore = signalStore(
                             filters: {
                                 text: filters()?.title || '',
                                 filterFolders: true,
-                                // Sent only when a term is present and the scope is not the
-                                // default. The server rejects a scope without text as the contract
-                                // error it is, and an omitted scope is processed exactly as it was
-                                // before this field existed — which is what leaves the AssetPicker,
-                                // the one other caller of this endpoint, untouched.
-                                ...(filters()?.title && filters()?.[SEARCH_SCOPE_FILTER_KEY]
+                                // Sent whenever a term is present, as the effective scope: the
+                                // stored one, or the default when none is stored. The default is
+                                // Title and the server's is All Fields, so omitting it would search
+                                // every field while the box says Title. Never sent without a term:
+                                // the server rejects a scope without text as the contract error it
+                                // is. The filters and the address still store the scope only when
+                                // it differs from the default.
+                                ...(filters()?.title
                                     ? {
-                                          searchScope: filters()?.[
-                                              SEARCH_SCOPE_FILTER_KEY
-                                          ] as DotContentDriveSearchScope
+                                          searchScope:
+                                              (filters()?.[
+                                                  SEARCH_SCOPE_FILTER_KEY
+                                              ] as DotContentDriveSearchScope) ??
+                                              DEFAULT_SEARCH_SCOPE
                                       }
                                     : {})
                             },

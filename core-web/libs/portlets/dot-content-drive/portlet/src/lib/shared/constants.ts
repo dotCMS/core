@@ -55,12 +55,15 @@ export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 200;
 export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;
 
 /**
- * The search scope a drive starts on. All Fields is the no-regression choice: a user who does
- * nothing keeps exactly the results they got before the control existed, and the narrower, cheaper
- * path is opt-in.
+ * The search scope a drive starts on. Title, from feedback: an author typing into the box is
+ * usually looking for an item by its name, and matching every field buried the item under
+ * everything that mentioned the word. It is also the cheaper search. All Fields stays one click away.
+ *
+ * The server's own default is still All Fields, so the request names the scope whenever there is a
+ * term (see the store's `$request`), rather than leaving Title to be read as "nothing chosen".
  */
 export const DEFAULT_SEARCH_SCOPE: DotContentDriveSearchScope =
-    DOT_CONTENT_DRIVE_SEARCH_SCOPE.ALL_FIELDS;
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE;
 
 /** The key the search scope travels under, in the filter state and in the address. */
 export const SEARCH_SCOPE_FILTER_KEY = 'searchScope';
