@@ -6,10 +6,11 @@
 3. [Migration Rules](#migration-rules)
 4. [Styling with DaisyUI](#styling-with-daisyui)
 5. [Best Practices](#best-practices)
-6. [Step-by-Step Checklist](#step-by-step-checklist)
-7. [Common Pitfalls](#common-pitfalls)
-8. [Special Cases](#special-cases)
-9. [Complete Migration Examples](#complete-migration-examples)
+6. [Output Modes](#output-modes)
+7. [Step-by-Step Checklist](#step-by-step-checklist)
+8. [Common Pitfalls](#common-pitfalls)
+9. [Special Cases](#special-cases)
+10. [Complete Migration Examples](#complete-migration-examples)
 
 ---
 
@@ -798,6 +799,147 @@ Be consistent when writing `<script>` tags in migrated VTL files:
 - Remove `dijit*` CSS classes
 - Replace inline event handlers with `addEventListener`
 - **Styling:** Prefer DaisyUI component classes + Tailwind utilities over inline styles and ad-hoc custom CSS; preserve custom CSS only when it cannot be replaced by DaisyUI/Tailwind
+
+---
+
+## Output Modes
+
+Every migration keeps the legacy code reachable behind `$structures.isNewEditModeEnabled()`, so an instance can go back to the legacy editor. There are two ways to package that.
+
+| | Inline (default) | Three files with a router |
+|---|---|---|
+| Files | 1 | `<name>_old.vtl`, `<name>_new.vtl`, `<name>.vtl` |
+| Needs a server path | No | Yes, for `#parse` |
+| Who it suits | A Custom Field whose VTL lives in the content type editor; anyone without file access to the server | Custom fields shipped as files, such as the ones committed under `dotCMS/src/main/webapp/WEB-INF/velocity/static/` |
+| Branch not taken | Parsed, not rendered | Never parsed |
+
+Prefer three files when the field is a file on disk, or when "Before emitting inline" below finds a blocking problem. Otherwise use inline.
+
+### The inline shape
+
+The migrated code sits under the `#if` and the original sits under the `#else`. Neither branch is indented; each is copied as a whole. Here is `htmlpage_assets/cachettl_custom_field` collapsed from its `_new` and `_old` files. It was built with the shell command below, not typed. The blank lines before `#else` and `#end` are the newline that layout adds after a branch that already ends with one.
+
+```vtl
+#if( $structures.isNewEditModeEnabled() )
+<script type="application/javascript">
+  DotCustomFieldApi.ready(() => {
+    const cachettlField = DotCustomFieldApi.getField("cachettl");
+    const cachettlbox = document.getElementById("cachettlbox");
+
+    let currentValue = cachettlField.getValue() || "";
+    if (currentValue === "") {
+      currentValue = $config.getIntProperty("DEFAULT_PAGE_CACHE_SECONDS", 15);
+      cachettlField.setValue(currentValue);
+    }
+
+    cachettlbox.value = currentValue;
+
+    cachettlbox.addEventListener("change", () => {
+      cachettlField.setValue(cachettlbox.value);
+    });
+  });
+</script>
+<input type="text" class="input w-full" id="cachettlbox" />
+
+#else
+<script type="application/javascript">
+  dojo.ready(function () {
+    var currentValue = dojo.byId("cachettl").value;
+    if (currentValue === "") {
+      currentValue = $config.getIntProperty("DEFAULT_PAGE_CACHE_SECONDS", 15);
+      dojo.byId("cachettl").value = currentValue;
+    }
+    new dijit.form.TextBox(
+      {
+        name: "cachettlbox",
+        value: currentValue,
+        onChange: function () {
+          dojo.byId("cachettl").value = this.get("value");
+        },
+      },
+      "cachettlbox",
+    );
+  });
+</script>
+<input id="cachettlbox" />
+
+#end
+```
+
+Build it from files on disk with the shell, so the legacy bytes are copied rather than regenerated. That preserves CRLF line endings and a missing final newline, which retyping cannot guarantee:
+
+```sh
+{ printf '#if( $structures.isNewEditModeEnabled() )\n'; cat migrated.vtl; printf '\n#else\n'; cat original.vtl; printf '\n#end'; } > result.vtl
+```
+
+When the user pasted the code instead, put the pasted legacy code in the `#else` exactly as received, with no re-indenting, no reformatting and no translated comments.
+
+### The eager-parse caveat
+
+Velocity compiles the **whole template** before rendering, while `#parse` loads its target only when rendering reaches it. That one difference is why the shapes are not equivalent:
+
+- **Router:** the legacy file is never parsed while the new edit mode is on. A syntax error in it cannot affect the new editor.
+- **Inline:** both branches are parsed every time. A syntax error in the legacy half breaks the field in **both** edit modes.
+- **Macros** are registered when the file is parsed, not when a branch runs. The shipped defaults (`dotCMS/src/main/resources/org/apache/velocity/runtime/defaults/velocity.properties`) set `velocimacro.permissions.allow.inline.local.scope = false` and `velocimacro.permissions.allow.inline.to.replace.global = false`. So an inline macro goes into the global namespace, and a second definition with the same name does not replace the first. Inline, the **first** definition in the file wins in both modes. That is the migrated one, because it sits in the `#if`, so the legacy editor silently runs the new macro. (Checked against Velocity 1.7: `#if( false )` with `#macro(m)NEW#end` in the `#if` branch and `#macro(m)OLD#end` in the `#else` branch renders `NEW`.)
+- **`#set`** runs at render time. Only one branch renders, so the same variable set in both branches does not collide inside the field.
+
+### Before emitting inline
+
+Read both branches and check, in this order:
+
+1. **A `#macro` with the same name in both branches: blocking.** Emit nothing, name the macro, offer three files.
+2. **The legacy branch would not parse on its own: blocking.** Emit nothing, give the line, offer three files. Look for:
+   - an `#if`, `#foreach`, `#macro`, `#define`, `#literal` or `#@name` block without its `#end`;
+   - an `#end` with nothing open;
+   - an `#else` or `#elseif` outside any `#if`.
+3. **The migrated branch would not parse: blocking.** This is a migration bug; fix it.
+4. **The same variable `#set` in both branches: a warning.** Emit, list the names, say only one branch runs.
+
+Emit inline over a blocking finding only when the user explicitly insists, and restate the finding when you do.
+
+**Counting directives the way Velocity 1.7 does** (the grammar is vendored at `dotCMS/src/main/java/org/apache/velocity/runtime/parser/Parser.jjt`):
+
+- `##` starts a comment to the end of the line. `#* … *#` is a block comment. `#[[ … ]]#` is unparsed text. Nothing inside any of them counts.
+- `\#end` is escaped and does not count. `\\#end` is an escaped backslash followed by a real `#end`.
+- `#{if}`, `#{else}` and `#{end}` are the same as `#if`, `#else` and `#end`.
+- A directive name ends at the first character that is not a letter, digit, `_` or `@`:
+  - `#endDate`, `#iffy`, `#fff` and `#else2` are ordinary text.
+  - `#end-date`, `#end.` and `#end'` are an `#end`.
+  - `#elseif` is always `elseif`, never `#else` followed by `if`.
+
+The last rule catches real code. This legacy snippet looks balanced, with one `#if` and one `#end`:
+
+```vtl
+#if( $maxChar )
+<script>dojo.ready(function () { dojo.query('#end-date').style('width', '8em'); });</script>
+#end
+```
+
+But Velocity reads the `#end` inside the selector `'#end-date'` on line 2 as closing the `#if`. The `#end` on line 3 is then stray, and Velocity 1.7 fails with `Encountered "#end" at line 3`. With the router, that breaks only the legacy editor. Inline, it breaks both. Report it and offer three files.
+
+### Converting between modes
+
+Conversion only re-shapes; it never re-migrates. Neither branch changes.
+
+**Collapse** `personas/keytag_custom_field` (router + `_new` + `_old`) into one inline file:
+
+1. Read the router. Its two `#parse` targets are `/static/personas/keytag_custom_field_new.vtl` and `/static/personas/keytag_custom_field_old.vtl`. Check that they are the files you were given.
+2. Run "Before emitting inline" on the two files.
+3. Assemble with the shell command above, with `_new` as `migrated.vtl` and `_old` as `original.vtl`.
+
+**Split** it back:
+
+1. Line 1 is the header. From line 2, count block openers and `#end`s with the rules above. The **top-level** `#else` is the first `#else` line reached while nothing opened after line 1 is still open. Call its line `E`. The final `#end` is the last line; call it `L`. `tag/tag_storage_field_creation` is the case that defeats "take the first `#else`": both of its halves contain their own `#if … #else … #end`.
+2. Extract with line ranges, dropping the one newline the layout added:
+
+   ```sh
+   sed -n "2,$((E-1))p" inline.vtl | perl -pe 'chomp if eof' > keytag_custom_field_new.vtl
+   sed -n "$((E+1)),$((L-1))p" inline.vtl | perl -pe 'chomp if eof' > keytag_custom_field_old.vtl
+   ```
+
+3. Write the router: the Mode 2 shape in `SKILL.md`, tab-indented, with full server paths.
+
+These two commands round-trip all ten migrated custom fields in the repository byte for byte. That includes `tag_storage_field_creation_old.vtl`, which has CRLF line endings and no final newline.
 
 ---
 
