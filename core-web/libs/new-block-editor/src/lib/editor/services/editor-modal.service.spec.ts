@@ -122,18 +122,18 @@ describe('EditorModalService — asset pickers', () => {
         });
 
         it('should restrict the picker to its own mime types', () => {
-            expect(openedConfig().data.mimeTypes).toEqual(mimeTypes);
+            expect(openedConfig().data!.mimeTypes).toEqual(mimeTypes);
         });
 
         it('should title the picker for what it is picking', () => {
             // The picker draws its own header, so the title travels in `data`, not `header`.
-            expect(openedConfig().data.title).toBe(titleKey);
+            expect(openedConfig().data!.title).toBe(titleKey);
             expect(openedConfig().showHeader).toBe(false);
         });
 
         it('should browse the current site in the editor locale', () => {
-            expect(openedConfig().data.site).toBe(SITE);
-            expect(openedConfig().data.languageId).toBe(String(LANGUAGE_ID));
+            expect(openedConfig().data!.site).toBe(SITE);
+            expect(openedConfig().data!.languageId).toBe(String(LANGUAGE_ID));
         });
 
         it('should clear the fullscreen editor shell backdrop', () => {
