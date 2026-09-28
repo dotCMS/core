@@ -36,7 +36,7 @@ overrides through `Config.setProperty` do re-read it, which is how tests switch 
 that mock `Config` statically must call `AssetStorageFeature.reset()` themselves.
 
 With the flag off, the S3 job queues (`binaryAssetCleanup`, `binaryFieldCleanup`,
-`binaryAssetBackfill`) are not registered.
+`binaryAssetBackfill`, `bundleArchiveCleanup`) are not registered.
 
 ### Enabling the flag is not rollback-safe
 
@@ -79,8 +79,8 @@ The storage chain (`ChainableStoragePersistenceAPI`) and its providers change as
 `BinaryAssetStorageAPI` (`APILocator.getBinaryAssetStorageAPI()`) manages binary assets and
 completed renditions through the storage chain. Binary assets use the `binary-assets` group under
 the asset root, laid out as `{inode[0]}/{inode[1]}/{inode}/{field}/{fileName}`. Renditions use the
-`generated-assets` group under the `dotGenerated` root. With the flag on, keys in both groups keep
-their mixed-case names; other groups are still lowercased.
+`generated-assets` group under the `dotGenerated` root. With the flag on, keys in these groups keep
+their mixed-case names, as do publishing bundles (below); other groups are still lowercased.
 
 With the flag on, S3 keeps one immutable copy of each set of bytes for these two groups, at
 `asset-blobs/sha256/<chars-1-2>/<chars-3-4>/<chars-5-6>/<chars-7-8>/<sha256>`
@@ -289,6 +289,21 @@ repair transaction. The copies are uploaded before the commit, so a rollback lis
 them, and their metadata, if the repair rolls back; a failed deletion is logged and leaves an
 unreferenced object behind.
 
+## Publishing bundles
+
+With the flag on, completed push-publishing archives (`<bundle-id>.tar.gz`, including their
+manifest) are stored durably in the `publishing-bundles` group, with the local bundle directory as
+a cache (`BundleArchiveStorage`). Bundle ids keep their case and are checked so an archive cannot
+resolve outside the bundle directory. Generated and received bundles are written to a private
+staging file and published to S3 before they replace the last complete local archive, so an
+incomplete upload never becomes visible. Reading a bundle's manifest or payload restores the
+archive from S3 only when its bytes are needed. Storage failures are reported as failures, not as a
+missing bundle.
+
+Deleting a bundle records a `bundleArchiveCleanup` job after the deletion commits. The job deletes
+the S3 object and keeps the local bytes if remote deletion fails, so the existing queue can retry.
+With the flag off, bundles are written, read and deleted in the bundle directory as before.
+
 ## Local cache eviction
 
 With the flag on, the local asset directory is a cache that `BinaryCacheEvictionJob` can trim.
@@ -400,7 +415,7 @@ stack:
 ```sh
 ./mvnw install -pl :dotcms-core --am -DskipTests -Ddocker.skip
 ./mvnw verify -pl :dotcms-integration -Dmaven.build.cache.enabled=false -Dcoreit.test.skip=false \
-  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest,BinaryAssetStarterRestoreTest
+  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest,BinaryAssetStarterRestoreTest,PublishingArchiveStorageTest
 ```
 
 These default to flag-off mode, where the S3 cases are skipped. To run the S3 cases, create a

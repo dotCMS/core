@@ -187,6 +187,58 @@ class BinaryS3StorageTest {
     }
 
     @Test
+    void publishingArchivesPreserveCaseAndLastCompletedUpload() throws Exception {
+        final var archives = new com.dotcms.publishing.output.BundleArchiveStorage(
+                new ChainableStoragePersistenceAPI(new JsonWriterDelegate(), List.of(fs, s3), mock(Chainable404StorageCache.class)));
+        final String id = "Mixed-Case-Bundle";
+        final String key = com.dotcms.publishing.output.BundleArchiveStorage.GROUP + "/" + id + ".tar.gz";
+        final File source = Files.writeString(root.resolve("archive.tmp"), "last complete archive").toFile();
+        archives.store(id, source);
+        final File local = archives.get(id);
+        assertEquals(id + ".tar.gz", local.getName());
+        assertEquals(Files.readString(source.toPath()), client.getObjectAsString(bucket, key));
+        Files.delete(local.toPath()); // Only this verified test cache copy is cleared.
+        assertTrue(archives.exists(id));
+        assertFalse(local.exists(), "An existence check must not download the archive");
+        assertEquals("last complete archive", Files.readString(archives.get(id).toPath()));
+
+        try (var incomplete = new java.io.InputStream() {
+            int remaining = 10;
+            @Override public int read() throws java.io.IOException {
+                if (--remaining < 0) throw new java.io.IOException("Interrupted upload");
+                return 'x';
+            }
+        }) {
+            assertThrows(java.io.IOException.class, () -> archives.receive(id + ".tar.gz", incomplete));
+        }
+        assertEquals("last complete archive", Files.readString(local.toPath()));
+        assertEquals("last complete archive", client.getObjectAsString(bucket, key));
+        try (var files = Files.list(local.toPath().getParent())) {
+            assertFalse(files.anyMatch(path -> path.getFileName().toString().startsWith(".bundle-upload-")));
+        }
+        assertThrows(IllegalArgumentException.class, () -> archives.get("../outside"));
+        final Path alias = local.toPath().resolveSibling("Alias.tar.gz");
+        Files.createSymbolicLink(alias, local.toPath());
+        assertThrows(IllegalArgumentException.class, () -> archives.get("Alias"));
+        Files.delete(alias);
+        archives.store(id + "-neighbor", source);
+        archives.store(id + ".tar.gz-shadow", source);
+        try (var input = Files.newInputStream(local.toPath())) {
+            archives.delete(id);
+            assertEquals("last complete archive", new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        }
+        assertFalse(archives.get(id).exists());
+        assertFalse(archives.exists(id), "A longer neighboring object key is not the requested archive");
+        assertFalse(client.doesObjectExist(bucket, key));
+        assertEquals("last complete archive", Files.readString(archives.get(id + "-neighbor").toPath()));
+
+        final var failing = mock(StoragePersistenceAPI.class);
+        when(failing.pullFile(anyString(), anyString())).thenThrow(new com.dotmarketing.exception.DotDataException("S3 unavailable"));
+        assertThrows(com.dotmarketing.exception.DotRuntimeException.class,
+                () -> new com.dotcms.publishing.output.BundleArchiveStorage(failing).get(id));
+    }
+
+    @Test
     void immutableReplacementCommitsAndRollsBackWithRealPostgres() throws Exception {
         String jdbc = System.getProperty("s3.test.jdbc");
         org.junit.jupiter.api.Assumptions.assumeTrue(jdbc != null, "Supply s3.test.jdbc for transaction coverage");

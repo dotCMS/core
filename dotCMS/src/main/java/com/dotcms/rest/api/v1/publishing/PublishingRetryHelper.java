@@ -283,7 +283,7 @@ public class PublishingRetryHelper {
             throws DotPublisherException, DotDataException {
 
         // Verify bundle tar.gz file exists
-        final File bundleFile = new File(ConfigUtils.getBundlePath() + File.separator + basicConfig.getId() + ".tar.gz");
+        final File bundleFile = com.dotcms.publishing.output.TarGzipBundleOutput.getBundleTarGzipFile(basicConfig.getId());
         if (!bundleFile.exists()) {
             Logger.warn(this, "No Push Publish Bundle with id: " + bundleId + " found.");
             throw new DotPublisherException("Bundle file not found: " + bundleId);

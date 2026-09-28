@@ -154,6 +154,9 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                         } else {
                             addBundleXMLIntoBundle(config, output);
                         }
+                        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                            output.complete();
+                        }
                     } else {
                         Logger.info(this, "Retrying bundle: " + config.getId()
                                 + ", we don't need to run bundlers again");
@@ -202,6 +205,9 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
             manifestBuilder.close();
             output.copyFile(manifestFile, File.separator + ManifestBuilder.MANIFEST_NAME);
         } catch (final IOException e) {
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                throw new com.dotmarketing.exception.DotRuntimeException("Unable to include bundle manifest", e);
+            }
             Logger.error(PublisherAPIImpl.class, "Error trying to copy the manifest file: " +
                     e.getMessage());
         }
