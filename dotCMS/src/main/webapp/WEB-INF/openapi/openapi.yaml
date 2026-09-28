@@ -4572,6 +4572,34 @@ paths:
       summary: "Delete several folders from one submission, asynchronously"
       tags:
       - Web Assets
+  /v1/assets/folders/_bulkduplicate:
+    post:
+      description: |-
+        Accepts a list of site-qualified folder paths and answers `202` with a job handle **before any folder is duplicated**. The run is asynchronous, queued to the `folderBulkDuplicate` queue. Follow it with `GET /api/v1/jobs/{jobId}/status`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and watch it with `GET /api/v1/jobs/{jobId}/monitor`. The submitting author is notified on any terminal state.
+
+        Each folder is duplicated in place, beside its original in the same parent, holding everything the original holds in the same state. The duplicate takes the original's name followed by `_copy`, with `_copy` appended again until the name is free. The outcome identifies each folder by the path that was submitted.
+
+        One folder failing does not abort the run: every remaining folder is still attempted, and each failure is reported by path with a machine-readable reason.
+      operationId: bulkDuplicateFolders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FolderBulkDuplicateForm"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFolderBulkDuplicateSubmitView"
+          description: Run queued
+        "400":
+          description: "No paths submitted, or more paths than the configured maximum"
+        "403":
+          description: The caller is not entitled to use this operation
+      summary: "Duplicate several folders in place from one submission, asynchronously"
+      tags:
+      - Web Assets
   /v1/assets/folders/_delete:
     post:
       description: Permanently delete a folder and all its contents from the system
@@ -29718,6 +29746,39 @@ components:
         submitted:
           type: integer
           format: int32
+    FolderBulkDuplicateForm:
+      type: object
+      properties:
+        assetPaths:
+          type: array
+          description: "The selected folders, as site-qualified paths. Each is duplicated\
+            \ beside its original, in the same parent"
+          example:
+          - //demo.dotcms.com/blogs/alpha/
+          items:
+            type: string
+            description: "The selected folders, as site-qualified paths. Each is duplicated\
+              \ beside its original, in the same parent"
+            example: "[\"//demo.dotcms.com/blogs/alpha/\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - assetPaths
+    FolderBulkDuplicateSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statusUrl:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     FolderDeletionRequestForm:
       type: object
       properties:
@@ -34769,6 +34830,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/FolderBulkDeleteSubmitResponse"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFolderBulkDuplicateSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/FolderBulkDuplicateSubmitResponse"
         errors:
           type: array
           items:
