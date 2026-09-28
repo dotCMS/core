@@ -1,4 +1,4 @@
-# Feature Specification: Feature-Flag Gates for Analytics and Experiment Endpoints
+# Feature Specification: Feature Gates for Analytics and Experiment Endpoints
 
 **Feature Branch**: `37659-analytics-experiment-flag-gates`
 
@@ -12,190 +12,150 @@
 
 ## User Scenarios & Testing *(mandatory)*
 
-### User Story 1 — Both Features Enabled (Priority: P1)
+### User Story 1 — Both Features Fully Enabled (Priority: P1)
 
-An administrator has both `FEATURE_FLAG_CONTENT_ANALYTICS` and `FEATURE_FLAG_EXPERIMENTS`
-enabled. All analytics and experiment capabilities are fully accessible with no restrictions.
+`FEATURE_FLAG_EXPERIMENTS=true` and the Analytics App is configured for the site. All
+experiment and analytics capabilities are fully accessible with no restrictions.
 
-**Why this priority**: This is the fully-enabled "happy path" that active customers who have both
-flags explicitly set to `true` must not see disrupted. Confirming no regression here protects
-every verified customer currently using analytics or experiments.
-
-**Independent Test**: **Unit tests** cover the gate pass-through logic and payload integrity:
-verify that neither gate blocks the request when both flags are ON, and that the event payload
-reaches the forwarding layer unmodified — no `event_type` filtering applied, no events
-discarded.
-**Integration tests with a mocked analytics backend** verify the forwarding scenarios
-end-to-end — the analytics backend is not available in the test environment, so a mock is
-required to confirm that forwarding succeeds and no payload is blocked or modified. Postman
-tests cannot be used here: success cases require confirming that the event was actually
-forwarded to and accepted by the analytics backend, and that backend is not reachable from
-the Postman test environment.
+**Why this priority**: This is the fully-enabled "happy path" that active customers must not
+see disrupted. Confirming no regression here protects every verified customer currently using
+analytics or experiments.
 
 **Acceptance Scenarios**:
 
-1. **Given** both flags are ON, **When** an administrator calls any experiment endpoint
-   (`/api/v1/experiments/**`), **Then** the endpoint responds normally with no 403.
-2. **Given** both flags are ON, **When** a client POSTs any event type (including `pageview`,
-   `content_click`, etc.) with or without experiment context to
-   `POST /api/v1/analytics/content/event`, **Then** the payload is forwarded to the analytics
-   backend as-is and a success response is returned.
-3. **Given** both flags are ON, **When** an administrator calls any analytics read endpoint
-   (`GET /api/v1/analytics/**`), **Then** the request is proxied to the analytics backend
-   normally.
-4. **Given** both flags are ON, **When** an administrator calls the site auth generation
-   endpoint, **Then** a site auth token is returned successfully.
+1. **Given** both flags are ON, **Then** all experiment and analytics endpoints behave exactly
+   as they do today — no `403`, no blocked operations, no payload changes. This story exists
+   solely to confirm no regression for customers with both features fully enabled.
 
 ---
 
-### User Story 2 — Only Experiments Enabled (Priority: P1)
+### User Story 2 — Limited Experiment Mode (Priority: P1)
 
-An administrator has `FEATURE_FLAG_EXPERIMENTS=true` and `FEATURE_FLAG_CONTENT_ANALYTICS=false`.
-Experiments are running and need to track pageview events, but the broader content analytics
-feature is not licensed or activated.
+`FEATURE_FLAG_EXPERIMENTS=false` and the Analytics App is configured for the site. The
+operator has one free experiment run available (never been used), wants to evaluate the
+experiments feature before committing to a full license. Event collection is active because
+the App is configured; only experiment activation is restricted.
 
-**Why this priority**: This is a supported mixed state — experiments were historically designed
-to operate independently of the full analytics feature. Breaking this case would silently stop
-experiment data collection.
-
-**Independent Test**: Split across three test types. **Unit tests** cover the per-event
-filtering logic: verify that `pageview` events are forwarded, that non-`pageview` events are
-added to `discardedEvents` with `code: "FEATURE_DISABLED"`, that a mixed batch returns `202
-PARTIAL_SUCCESS`, and that an all-non-`pageview` batch returns `400 ERROR` with all events
-discarded and `success: 0`. **Postman** covers scenario 5 (analytics read endpoints return
-`403 FEATURE_DISABLED`) and scenario 2b (all-non-`pageview` batch returns `400 ERROR`) — no
-analytics backend contact needed for either. **Integration tests with a mocked analytics
-backend** cover scenario 1 (all-`pageview` batch forwarded successfully) and scenario 2
-(mixed batch: `pageview` events forwarded, non-`pageview` in `discardedEvents`, `202
-PARTIAL_SUCCESS`) — Postman cannot verify forwarding because the analytics backend is not
-reachable from the Postman test environment. Scenarios 3 and 4 (experiment endpoints
-accessible, siteauth returns a token) verify gate-only behavior and do not require a mocked
-backend.
+**Why this priority**: This is the primary evaluation path for new customers — they must be
+able to run a real experiment with real data collection under the free tier. A broken or
+confusing limited mode would prevent adoption.
 
 **Acceptance Scenarios**:
 
-1. **Given** only experiments is ON, **When** a client POSTs a `pageview` event
-   (with or without experiment context in `context.experiments`) to
-   `POST /api/v1/analytics/content/event`, **Then** the event is forwarded to the analytics
-   backend and a success response is returned.
-2. **Given** only experiments is ON, **When** a client POSTs a batch containing non-`pageview`
-   events alongside `pageview` events, **Then** the system returns `202` with the `pageview`
-   events forwarded and the non-`pageview` events listed in `discardedEvents` with
-   `code: "FEATURE_DISABLED"`.
-2b. **Given** only experiments is ON, **When** a client POSTs a batch where ALL events are
-   non-`pageview`, **Then** the system returns `400` with `status: "ERROR"`, `success: 0`,
-   and all events in `discardedEvents` with `code: "FEATURE_DISABLED"` — nothing is forwarded.
-3. **Given** only experiments is ON, **When** an administrator calls any experiment endpoint
-   (including start and scheduling operations), **Then** the endpoint responds normally — all
-   experiment operations are fully accessible when `FEATURE_FLAG_EXPERIMENTS=true`.
-4. **Given** only experiments is ON, **When** an administrator requests a site auth token,
-   **Then** a site auth token is returned (required for authenticating event sends).
-5. **Given** only experiments is ON, **When** an administrator calls any analytics read/query
-   endpoint (`GET /api/v1/analytics/{path}`), **Then** the system returns `403` — **except**
-   the siteauth endpoint (`/api/v1/analytics/content/siteauth/generate/{siteId}`), which
-   remains accessible as covered by scenario 4 above.
+1. **Given** experiments=OFF and Analytics App is configured and free slot is available,
+   **When** the Experiments portlet loads, **Then** `GET /api/v1/experiments/health` returns
+   `tier: "limited"` and `freeExperimentUsed: false`. The creation form shows: *"You are in
+   limited experiment mode. The maximum experiment duration is 10 days."* The `_schedule`,
+   `_abort`, and `archive` buttons are disabled with an upgrade tooltip.
+2. **Given** experiments=OFF and App configured and free slot available, **When** a backend
+   user calls `_start` with a duration ≤ 10 days, **Then** the experiment starts successfully
+   and event collection is active — `POST /api/v1/analytics/content/event` forwards events
+   to CAEM because the App is configured.
+3. **Given** experiments=OFF and App configured and free slot available, **When** a backend
+   user calls `_start` with a duration > 10 days, **Then** the system returns `400 Bad
+   Request` with a message indicating the 10-day duration limit.
+4. **Given** experiments=OFF and App configured and free slot available, **When** the date
+   picker is used in the creation form, **Then** end dates beyond 10 days from the start
+   date are disabled — the UI enforces the limit before submission.
+5. **Given** experiments=OFF and App configured and free slot is now used (experiment in
+   RUNNING, SCHEDULED, or ENDED state), **When** `GET /api/v1/experiments/health` is called,
+   **Then** it returns `tier: "limited"` and `freeExperimentUsed: true`. The `_start` button
+   is also disabled with an upgrade tooltip.
 
 ---
 
-### User Story 3 — Both Features Disabled (Priority: P2)
+### User Story 3 — Limited / Disabled Mode (Priority: P2)
 
-An administrator has both flags set to `false`. Analytics is fully off and experiments cannot
-be started or scheduled.
+The system enters limited mode when either `FEATURE_FLAG_EXPERIMENTS=false` **or** the
+Analytics App is not configured for the site. Both conditions produce the same user-visible
+behavior: experiment activation is blocked, analytics reads are blocked, and experiment
+management remains accessible. The trigger determines the response code and the health
+endpoint warning (see FRs), but the operator experience is identical.
 
-**Why this priority**: Blocking analytics event collection and experiment activation when
-neither feature is licensed prevents data from flowing to the analytics backend unnecessarily.
-
-**Independent Test**: **Unit tests** cover each gate in isolation — experiment start/scheduling
-operations return `403 FEATURE_DISABLED`; experiment CRUD, results, health, and other lifecycle
-operations remain accessible; analytics read endpoints and siteauth return `403 FEATURE_DISABLED`;
-the event ingest endpoint returns `400` with `status: "ERROR"`, all events in `discardedEvents`
-(`code: "FEATURE_DISABLED"`), and `success: 0` — no backend contact required for any of these.
-**Postman** confirms `403 FEATURE_DISABLED` on admin endpoints and `400 ERROR` with all events
-in `discardedEvents` on ingest.
+**Why this priority**: Ensuring a consistent, clear limited mode regardless of the trigger
+(flag or App config) prevents confusion and closes the path to accidentally running
+experiments without analytics data collection.
 
 **Acceptance Scenarios**:
 
-1. **Given** both flags are OFF, **When** a client POSTs any event batch to
-   `POST /api/v1/analytics/content/event`, **Then** the system returns `400` with
-   `status: "ERROR"`, all events in `discardedEvents` (`code: "FEATURE_DISABLED"`), and no
+1. **Given** the system is in limited mode, **When** `GET /api/v1/experiments/health` is
+   called, **Then** it returns `tier: "limited"` with `freeExperimentUsed: true/false`. If
+   triggered by a missing Analytics App, it also includes `warning: "ANALYTICS_DISABLED"` and
+   the Experiments portlet displays a warning banner.
+2. **Given** the system is in limited mode, **When** `GET /api/v1/analytics/health` is
+   called, **Then** it returns `NOT_CONFIGURED` — the analytics health endpoint always returns
+   a structured response and never returns `503`, even when the App is absent.
+3. **Given** the system is in limited mode, **When** a backend user calls `_start`, `_schedule`,
+   `_abort`, or `archive`, **Then** the system blocks the operation. CRUD, results, health,
+   `_end`, `_cancel`, and `isUserIncluded` remain accessible. When `FEATURE_FLAG_EXPERIMENTS=false`
+   and the free slot is available, `_start` is allowed with a 10-day duration cap (see FR-001).
+4. **Given** the system is in limited mode, **When** a client POSTs any event batch to
+   `POST /api/v1/analytics/content/event`, **Then** the system blocks the request and no
    event reaches the analytics backend.
-2. **Given** both flags are OFF, **When** an administrator calls an experiment `_start` or
-   scheduling operation, **Then** the system returns `403 FEATURE_DISABLED`. All other
-   experiment operations (CRUD, results, `_end`, `_cancel`, `isUserIncluded`, `health`) remain
-   accessible.
-3. **Given** both flags are OFF, **When** an administrator calls any analytics read endpoint
-   or the siteauth endpoint, **Then** the system returns `403 FEATURE_DISABLED`.
+5. **Given** the system is in limited mode, **When** any analytics read/query endpoint
+   (`GET /api/v1/analytics/{path}`) is called, **Then** the system blocks the request.
+6. **Given** the system is in limited mode, **When** the Experiments portlet loads, **Then**
+   it disables `_start` (with upgrade tooltip) when `freeExperimentUsed=true`; disables
+   `_schedule`, `_abort`, and `archive` always (with upgrade tooltip).
 
 ---
-
-### Edge Cases
-
-- What if `event_type` is missing from the payload when analytics=OFF, experiments=ON? The
-  event is forwarded as-is. `event_type` is a required field validated by the analytics
-  backend — rejecting it here would produce a misleading `403` instead of the backend's own
-  validation error, obscuring the real cause for the caller.
 
 ## Requirements *(mandatory)*
 
 ### Contract Changes
 
-This feature introduces new `403` response codes on existing admin endpoints and a new partial
-ingest response model on the event ingest endpoint. No new endpoints are added, no database
-schema changes are made, and no Elasticsearch/OpenSearch index mapping changes are introduced.
+This feature introduces new `403` and `503` response codes on existing endpoints. No new
+endpoints are added, no database schema changes are made, and no Elasticsearch/OpenSearch
+index mapping changes are introduced.
 
-**New `403` response paths on admin endpoints (breaking for callers that do not handle this status code):**
+**New response codes on previously-unrestricted endpoints:**
 
-- `POST /api/v1/experiments/{id}/_start` and scheduling operations — these operations now
-  return `403 FEATURE_DISABLED` when `FEATURE_FLAG_EXPERIMENTS=false`. All other experiment
-  endpoints (CRUD, results, `_end`, `_cancel`, `isUserIncluded`, `health`) remain accessible
-  regardless of flag state.
-- `GET /api/v1/analytics/{path}` (including `/health`) — new `403 FEATURE_DISABLED` when
-  `FEATURE_FLAG_CONTENT_ANALYTICS=false`. Previously this path always proxied upstream.
+- `POST /api/v1/experiments/{id}/_start`, `_schedule`, `_abort`, `archive`:
+  - Returns `403 FEATURE_DISABLED` when `FEATURE_FLAG_EXPERIMENTS=false` and the free slot
+    is already used (`_start`), or always for `_schedule`, `_abort`, `archive`.
+  - Returns `503 Service Unavailable` when `FEATURE_FLAG_EXPERIMENTS=true` but the Analytics
+    App is not configured — activation is blocked because there is no backend to track events.
+  - When `FEATURE_FLAG_EXPERIMENTS=false` and the free slot is available, `_start` is allowed
+    with a 10-day duration cap. CRUD, results, health, `_end`, `_cancel`, and `isUserIncluded`
+    remain accessible; `_schedule`, `_abort`, and `archive` remain blocked.
+- `GET /api/v1/experiments/health` — response shape extended with `tier`, `freeExperimentUsed`,
+  and `warning` fields (see FR-002a); the endpoint itself remains always accessible.
+- `GET /api/v1/analytics/{path}` (including `/health`) — new `503 Service Unavailable` when
+  the Analytics App is not configured for the site. Previously this path always proxied
+  upstream. `503` is used rather than `403` because this is a configuration gap, not a
+  permission failure.
 - `GET /api/v1/analytics/content/siteauth/generate/{siteId}` — new `403 FEATURE_DISABLED`
-  when both flags are `false`. Previously this endpoint always returned a token.
-
-**New partial ingest response on `POST /api/v1/analytics/content/event`:**
-
-This endpoint never returns `403` for flag-related reasons. Instead it always returns `202`
-and reports per-event outcomes. Events that cannot be forwarded due to flag state are listed
-in a `discardedEvents` array alongside the CAEM response fields. The response shape mirrors
-CAEM's existing partial-success contract and adds a `discarded` count and `discardedEvents`
-array:
-
-```json
-{
-  "status": "SUCCESS | PARTIAL_SUCCESS | ERROR",
-  "success": 2,
-  "failed": 1,
-  "discarded": 2,
-  "errors": [
-    { "eventIndex": 2, "field": "events[2].local_time",
-      "code": "INVALID_DATE_FORMAT", "message": "..." }
-  ],
-  "discardedEvents": [
-    { "eventIndex": 1, "event_type": "content_click", "code": "FEATURE_DISABLED",
-      "message": "Content Analytics is disabled. Only pageview events are forwarded." },
-    { "eventIndex": 3, "event_type": "content_impression", "code": "FEATURE_DISABLED",
-      "message": "Content Analytics is disabled. Only pageview events are forwarded." }
-  ]
-}
-```
-
-- `errors` — CAEM validation errors; indexes are re-mapped to the original batch.
-- `discardedEvents` — events filtered by the dotCMS gate before reaching CAEM; always uses original batch indexes.
-- `discarded` — count of discarded events (`discardedEvents.length`).
-- When no events are forwarded (both flags OFF), `success` and `failed` are `0`; all events appear in `discardedEvents`. The HTTP status is `400` and `status` is `ERROR`, mirroring CAEM's own behavior when `successCount == 0`.
-- `status` is promoted to `PARTIAL_SUCCESS` whenever `discarded > 0` but `success > 0`, even if CAEM returned `SUCCESS`. If `success == 0` (all events either gate-discarded or CAEM-rejected), the status is `ERROR` and HTTP is `400`.
+  when `FEATURE_FLAG_EXPERIMENTS=false` and the Analytics App is not configured. Previously
+  this endpoint always returned a token.
+- `POST /api/v1/analytics/content/event`:
+  - `503 Service Unavailable` when the Analytics App is not configured — regardless of the
+    experiments flag state.
+  - Forward as-is when the App is configured — regardless of the experiments flag state.
+    This allows the limited experiment mode to collect event data.
 
 ### Functional Requirements
 
 **ExperimentsResource — `/api/v1/experiments/**`**
 
-- **FR-001**: When `FEATURE_FLAG_EXPERIMENTS=false`, the system MUST return `403 FEATURE_DISABLED`
-  only on experiment start and scheduling operations. All other experiment endpoints — CRUD,
-  `_end`, `_cancel`, `isUserIncluded`, `/{id}/results`, and `/health` — MUST remain accessible
-  regardless of flag state. Rationale: operators must be able to manage, view, and stop
-  experiments even when the flag is off; only activating new runs is restricted.
+- **FR-001**: When `FEATURE_FLAG_EXPERIMENTS=false`, the system operates in **limited experiment
+  mode**. The following rules apply:
+  - **`_start`** — allowed only when the global count of experiments in `{RUNNING, SCHEDULED,
+    ENDED}` across all sites is zero. If the count is ≥ 1, the system MUST return
+    `403 FEATURE_DISABLED`. When `_start` is allowed, the system MUST enforce a maximum
+    10-day duration: if the requested end date exceeds 10 days from the start date, the system
+    MUST return `400 Bad Request` with a message indicating the duration limit. If no end date
+    is provided, the system MUST set it to 10 days from the start date.
+  - **`_schedule`** — MUST always return `403 FEATURE_DISABLED`.
+  - **`_abort`** — MUST always return `403 FEATURE_DISABLED`. Rationale: aborting a running
+    or scheduled experiment resets it to DRAFT, which would allow the client to restart and
+    effectively bypass the one-experiment limit.
+  - **`archive`** — MUST always return `403 FEATURE_DISABLED`. Rationale: archiving a DRAFT
+    experiment without ever running it would consume the free slot; archiving an ENDED
+    experiment could be used to clear the slot and restart.
+  - **All other operations** (CRUD, `_end`, `_cancel`, `isUserIncluded`, `/{id}/results`,
+    `/health`) MUST remain accessible regardless of flag state and slot availability.
+    Rationale: operators must be able to manage, view, and stop experiments even when the
+    flag is off.
   - **Auth ordering** (applies to all endpoints gated by this spec): authentication and
     site-permission checks MUST run before the feature-flag gate. An unauthenticated caller
     MUST receive `401`, not `403` — the gate must not leak feature state to callers who have
@@ -205,29 +165,62 @@ array:
     payload; an invalid or missing `site_auth` returns `400` (malformed request), not `401`.
     This `400` is preserved as-is — the feature-flag gate runs only after `site_auth`
     validation passes, and the existing `400` behavior is not changed by this feature.
-- **FR-002**: When `FEATURE_FLAG_EXPERIMENTS=true`, all experiment endpoints MUST continue to
-  function as they do today with no behavioral change, including start and scheduling operations.
-- **FR-002a**: `GET /api/v1/experiments/health` already produces one of three states via
-  existing health check logic — this behavior is not new and requires no changes. The health
-  endpoint is accessible regardless of `FEATURE_FLAG_EXPERIMENTS` state (it is not gated):
-  - `OK` — required credentials are configured and the analytics backend is reachable.
-  - `NOT_CONFIGURED` — no analytics configuration has been set up for the site.
-  - `CONFIGURATION_ERROR` — configuration exists but is incomplete (missing required
-    credentials) or the analytics backend is unreachable.
-  > **Note**: The Experiments portlet UI calls this endpoint to decide whether to render the
-  > experiments interface. A response of `OK` enables the UI; `NOT_CONFIGURED` or
-  > `CONFIGURATION_ERROR` causes the UI to display an error message to the operator instead.
+- **FR-002**: When `FEATURE_FLAG_EXPERIMENTS=true` **and** the Analytics App is configured for
+  the site, all experiment endpoints MUST continue to function as they do today with no
+  behavioral change, including start and scheduling operations. If the Analytics App is not
+  configured, activation operations (`_start`, `_schedule`, `_abort`, `archive`) return `503`
+  per FR-001.
+- **FR-002a**: `GET /api/v1/experiments/health` is always accessible regardless of
+  `FEATURE_FLAG_EXPERIMENTS` state. It MUST return two pieces of information:
+  1. The existing health state (unchanged): `OK`, `NOT_CONFIGURED`, or `CONFIGURATION_ERROR`.
+  2. **New** — the experiment tier fields:
+     - `tier`: `"limited"` when `FEATURE_FLAG_EXPERIMENTS=false` OR the Analytics App is not
+       configured for the site; `"full"` only when both `FEATURE_FLAG_EXPERIMENTS=true` AND
+       the Analytics App is configured.
+     - `freeExperimentUsed`: `true` if any experiment globally exists in `{RUNNING, SCHEDULED,
+       ENDED}` across all sites; `false` otherwise. Only meaningful when
+       `FEATURE_FLAG_EXPERIMENTS=false`; omitted or null when `tier="full"` or when limited
+       due to App not configured (since `_start` is always blocked by `503` in that case).
+  Additionally, when `FEATURE_FLAG_EXPERIMENTS=true` but the Analytics App is not configured,
+  the response MUST include a `warning` field:
+  - `warning`: `"ANALYTICS_DISABLED"` — present only when experiments=ON and the Analytics
+    App is not configured; omitted otherwise.
+  Example responses:
+  ```json
+  { "health": "OK", "tier": "limited", "freeExperimentUsed": true }
+  ```
+  ```json
+  { "health": "OK", "tier": "limited", "freeExperimentUsed": false,
+    "warning": "ANALYTICS_DISABLED" }
+  ```
+  > **Note**: The Experiments portlet UI calls this endpoint on load to decide whether to
+  > render the experiments interface and to drive button state in limited mode:
+  > - `tier="full"` → all experiment operations enabled normally.
+  > - `tier="limited"`, `freeExperimentUsed=false` → `_start` enabled; `_schedule`, `_abort`,
+  >   and `archive` disabled with tooltip *"Upgrade your plan to unlock this feature. Contact dotCMS."*
+  >   The experiment creation form MUST display an informational message such as *"You are in
+  >   limited experiment mode. The maximum experiment duration is 10 days."* The duration date
+  >   picker MUST restrict the end date to a maximum of 10 days from the selected start date —
+  >   dates beyond that range MUST be disabled in the picker.
+  > - `tier="limited"`, `freeExperimentUsed=true` → `_start`, `_schedule`, `_abort`, and
+  >   `archive` all disabled with tooltip *"Upgrade your plan to unlock this feature. Contact dotCMS."*
+  > - `warning="ANALYTICS_DISABLED"` → the portlet MUST display a dismissable warning banner:
+  >   *"Analytics data collection is currently disabled. Experiments require Analytics to be
+  >   enabled for full functionality. Please contact dotCMS to activate it."* This banner is
+  >   shown alongside the normal experiments interface and does not block usage.
 
 **EventAnalyticsProxyResource — GET endpoints**
 
 - **FR-003**: `GET /api/v1/analytics/{path}` (all read/query paths except siteauth)
-  MUST return `403` when `FEATURE_FLAG_CONTENT_ANALYTICS=false`.
+  MUST return `503 Service Unavailable` when the Analytics App is not configured for the
+  site — this signals a configuration problem, not a permission failure. When the App is
+  configured, requests are proxied to the analytics backend normally.
 - **FR-003a**: `GET /api/v1/analytics/health` is currently a pass-through proxy — it forwards
   the request upstream to CAEM and returns whatever CAEM responds with. This feature changes
-  that behavior when `FEATURE_FLAG_CONTENT_ANALYTICS=true`: dotCMS MUST perform its own
-  health evaluation (verify that the required analytics credentials are configured for the
-  current site, then probe the analytics backend) and return one of three dotCMS-produced
-  states — it MUST NOT pass through the raw upstream response for this path:
+  that behavior unconditionally: dotCMS MUST always perform its own health evaluation (verify
+  that the required Analytics App credentials are configured for the current site, then probe
+  the analytics backend) and return one of three dotCMS-produced states — it MUST NOT pass
+  through the raw upstream response for this path:
   - `OK` — required credentials are configured and the analytics backend is reachable.
   - `NOT_CONFIGURED` — no analytics configuration has been set up for the site.
   - `CONFIGURATION_ERROR` — configuration exists but is incomplete (missing required
@@ -239,8 +232,9 @@ array:
   This is intentional scope beyond "add a gate": the Analytics portlet UI depends on these
   structured states to decide whether to render; a raw proxy response cannot serve that role
   reliably. The health check pattern mirrors the one already implemented for the experiments
-  health endpoint (FR-002a). When `FEATURE_FLAG_CONTENT_ANALYTICS=false`, this endpoint
-  returns `403 FEATURE_DISABLED` per FR-003.
+  health endpoint (FR-002a). The `NOT_CONFIGURED` state now carries the full meaning of
+  "analytics not available for this site" — whether because the App was never set up or
+  because credentials are absent. This endpoint is always accessible; it is never gated.
   > **Note**: The Analytics portlet UI calls this endpoint to decide whether to render the
   > analytics interface. A response of `OK` enables the UI; `NOT_CONFIGURED` or
   > `CONFIGURATION_ERROR` causes the UI to display an error message to the operator instead.
@@ -260,47 +254,34 @@ array:
     assistance."*
   - The Analytics portlet error component already contains the message keys for these states;
     they become reachable once the health check client passes the backend states through.
-- **FR-004**: `GET /api/v1/analytics/content/siteauth/generate/{siteId}` MUST return `403`
-  only when BOTH `FEATURE_FLAG_CONTENT_ANALYTICS=false` AND `FEATURE_FLAG_EXPERIMENTS=false`.
-- **FR-005**: The siteauth endpoint MUST be accessible whenever EITHER
-  `FEATURE_FLAG_CONTENT_ANALYTICS=true` OR `FEATURE_FLAG_EXPERIMENTS=true`, because both
-  features require a valid site auth token to authenticate event sends.
+- **FR-004**: `GET /api/v1/analytics/content/siteauth/generate/{siteId}` MUST return
+  `403 FEATURE_DISABLED` only when `FEATURE_FLAG_EXPERIMENTS=false` AND the Analytics App is
+  not configured for the site. If either condition is met (flag=true or App configured), the
+  endpoint MUST be accessible.
+- **FR-005**: The siteauth endpoint MUST be accessible whenever `FEATURE_FLAG_EXPERIMENTS=true`
+  or the Analytics App is configured, because event sends to CAEM require a valid site auth
+  token.
 
 **EventAnalyticsProxyResource — POST `/api/v1/analytics/content/event`**
 
 - **Gate ordering**: the feature-flag gate introduced by this feature MUST run before the
-  existing `persistenceMode=readonly` check. The gate evaluates flag state and builds the
-  `discardedEvents` list first; `persistenceMode` is checked only for the events that remain
-  after gate filtering. The ordering is:
+  existing `persistenceMode=readonly` check. The ordering is:
   auth → feature-flag gate (this feature) → persistenceMode check → forwarding.
 
-- **FR-006**: When both flags are `false`: all events in the batch are discarded. The endpoint
-  MUST return `400` with `status: "ERROR"`, `success: 0`, `failed: 0`, and all events listed
-  in `discardedEvents` with `code: "FEATURE_DISABLED"`. No call is made to the analytics
-  backend. This mirrors CAEM's own `ERROR` / `400` response when `successCount == 0`.
-- **FR-007**: When both flags are `true`: the system MUST forward the entire payload to the
-  analytics backend as-is. CAEM's response is returned as-is.
-- **FR-008**: When `FEATURE_FLAG_CONTENT_ANALYTICS=false` and `FEATURE_FLAG_EXPERIMENTS=true`:
-  the system MUST inspect the `events` array and apply per-event filtering:
-  - Events where `event_type = "pageview"` (or `event_type` is absent) MUST be forwarded to
-    the analytics backend.
-  - Events where `event_type` is present with any other value MUST be added to `discardedEvents`
-    with `code: "FEATURE_DISABLED"` and NOT forwarded.
-  The forwarded sub-batch is sent to CAEM (re-indexed from 0). dotCMS MUST re-map CAEM's
-  `eventIndex` values in the response back to the original batch indexes. The final response
-  combines CAEM's `status`, `success`, `failed`, and `errors` (with re-mapped indexes) with
-  dotCMS's `discarded` count and `discardedEvents` array.
-  If `event_type` is absent on an event, that event is forwarded without being discarded —
-  `event_type` is enforced by the analytics backend itself, which will return its own
-  validation error through CAEM's `errors` array.
+- **FR-006**: The event ingest gate is driven solely by Analytics App configuration:
+  - If the Analytics App is **not configured**: MUST return `503 Service Unavailable`
+    regardless of `FEATURE_FLAG_EXPERIMENTS` state. No call is made to the analytics backend.
+  - If the Analytics App is **configured**: MUST forward the entire event payload to the
+    analytics backend as-is, for all event types, regardless of `FEATURE_FLAG_EXPERIMENTS`
+    state. CAEM's response is returned as-is. No filtering, no mutation. This allows the
+    limited experiment mode to actually collect event data when the App is set up.
 
 **Feature-disabled error response**
 
-- **FR-009**: Every `403 FEATURE_DISABLED` returned by the admin endpoints (experiments and
-  analytics GET/siteauth) MUST include a machine-readable error code `FEATURE_DISABLED` and
-  a human-readable message in the standard dotCMS error response envelope. This does not apply
-  to the event ingest endpoint, which uses `code: "FEATURE_DISABLED"` inside `discardedEvents`
-  per the ingest response model (Contract Changes section).
+- **FR-009**: Every `403 FEATURE_DISABLED` returned by any gated endpoint MUST include a
+  machine-readable error code `FEATURE_DISABLED` and a human-readable message in the standard
+  dotCMS error response envelope. This applies to all gated endpoints including the event
+  ingest endpoint.
   - Example `403` response body:
     ```json
     { "errors": [{ "errorCode": "FEATURE_DISABLED", "message": "The Experiments feature is currently disabled. Please contact dotCMS to enable it." }] }
@@ -322,26 +303,22 @@ array:
 
 **Flag state refresh**
 
-- **FR-010**: Both `FEATURE_FLAG_EXPERIMENTS` and `FEATURE_FLAG_CONTENT_ANALYTICS` currently
-  support runtime changes without a server restart — an administrator can toggle them in the
-  dotCMS configuration system and all consumers react immediately. This live-toggle capability
-  MUST be removed system-wide for both flags. Every consumer of these flags — the gate
-  introduced by this feature and all existing consumers — MUST read each flag value exactly
-  once at server startup and hold that value for the entire lifetime of the running instance.
-  A runtime configuration change MUST NOT alter any consumer's behavior without a server
-  restart, regardless of the mechanism used to make that change. This is a deliberate design
-  choice: these are paid features, and activation or deactivation MUST require an explicit,
-  intentional restart by an operator.
-  **Breaking change**: the default value for both `FEATURE_FLAG_EXPERIMENTS` and
-  `FEATURE_FLAG_CONTENT_ANALYTICS` MUST change from `true` to `false` **system-wide** —
-  for every consumer of these flags across the system, not only the gate introduced by this
-  feature. This ensures a new deployment without explicit flag configuration is fully
-  disabled: no REST access, no analytics event interception, no experiment serving. Changing
-  the default only in the gate would leave other internal consumers active while the API
-  surface is blocked — an inconsistent state that does not represent "feature disabled."
-  Because the current customer footprint for these features is small, each active customer
-  MUST be verified before release to confirm their configuration explicitly sets the relevant
-  flag(s) to `true`.
+- **FR-010**: `FEATURE_FLAG_EXPERIMENTS` currently supports runtime changes without a server
+  restart — an administrator can toggle it and all consumers react immediately. This live-toggle
+  capability MUST be removed system-wide. Every consumer of this flag MUST read its value
+  exactly once at server startup and hold that value for the entire lifetime of the running
+  instance. A runtime configuration change MUST NOT alter any consumer's behavior without a
+  server restart. The intended activation mechanism is: set the flag value in configuration
+  (via the dotCMS system config UI or a config file), then perform a server restart — at which
+  point the new value is read once at startup and takes effect system-wide. This is a
+  deliberate design choice: experiments is a paid feature, and activation or deactivation
+  MUST require an explicit, intentional restart by an operator.
+  Analytics is no longer controlled by a flag — it is controlled by whether the Analytics App
+  is configured for the site, which takes effect immediately when the App is set or removed.
+  **Breaking change**: the default value for `FEATURE_FLAG_EXPERIMENTS` MUST change from
+  `true` to `false` **system-wide** — for every consumer of this flag across the system.
+  Because the current customer footprint for experiments is small, each active customer MUST
+  be verified before release to confirm their configuration explicitly sets the flag to `true`.
   Rationale: these are paid features — a restart gives operators an explicit, intentional
   activation step rather than an immediate live toggle. `FEATURE_FLAG_CONTENT_ANALYTICS`
   may be re-defaulted to `true` once the feature is considered broadly available.
@@ -359,39 +336,45 @@ array:
 
 ### Key Entities
 
-- **Feature Flag**: A named boolean configuration property. Currently each flag supports
-  runtime changes without a restart; this live-toggle capability MUST be removed system-wide
-  as part of this feature (FR-010). After this change, every consumer of these flags reads
-  the value once at server startup and holds it for the lifetime of the instance — a restart
-  is required for any change to take effect.
-  Relevant flags: `FEATURE_FLAG_CONTENT_ANALYTICS`, `FEATURE_FLAG_EXPERIMENTS`.
-- **Event Payload**: The JSON body sent to `POST /api/v1/analytics/content/event`. Has the
-  shape `{"context": {...}, "events": [...]}`. The `context` object is shared across all
-  events in the batch and contains at minimum `site_auth` and optionally `experiments`. The
-  `events` array holds one or more event objects, each carrying its own `event_type` field
-  (e.g., `"pageview"`, `"content_click"`). Gate logic that inspects `event_type` operates
-  per-event within the array; `context.experiments` is forwarded as-is and never modified
-  by the gate.
-- **Site Auth Token**: A credential generated by the siteauth endpoint and required by the
-  client-side JS snippet to authenticate event sends to the analytics backend. Needed by both
-  the analytics feature and the experiments feature.
+- **Feature Flag**: `FEATURE_FLAG_EXPERIMENTS` — a named boolean configuration property that
+  controls the experiment tier (full access vs limited mode). Currently supports runtime
+  changes without a restart; this live-toggle capability MUST be removed system-wide as part
+  of this feature (FR-010). After this change, the value is read once at server startup and
+  held for the lifetime of the instance — a restart is required for changes to take effect.
+  `FEATURE_FLAG_CONTENT_ANALYTICS` is removed; analytics availability is now determined by
+  whether the Analytics App is configured for the site.
+- **Analytics App**: The site-level App configuration that provides credentials (site auth,
+  bearer token, URL) for connecting to the CAEM analytics backend. When the App is configured
+  for a site, analytics is enabled for that site. When it is absent or incomplete, analytics
+  is not available — the health endpoint returns `NOT_CONFIGURED` or `CONFIGURATION_ERROR`
+  and analytics read endpoints return `403`.
+
+- **Site Auth Validation**: The `site_auth` field in the `POST /api/v1/analytics/content/event`
+  request payload is validated before the feature-flag gate runs. An invalid or missing
+  `site_auth` returns `400 Bad Request` — this is payload validation, not session
+  authentication, and is unaffected by flag or App configuration state.
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: When `FEATURE_FLAG_EXPERIMENTS=false`, experiment start and scheduling operations
-  return `403 FEATURE_DISABLED`; all other experiment operations (CRUD, results, health,
-  lifecycle management) remain accessible.
-- **SC-002**: When `FEATURE_FLAG_CONTENT_ANALYTICS=false` and `FEATURE_FLAG_EXPERIMENTS=true`,
-  only `pageview` events are forwarded to the analytics backend; all other event types are
-  discarded and appear in `discardedEvents`.
-- **SC-003**: When both flags are `true`, no existing analytics or experiment functionality is
-  disrupted — all requests succeed at the same rate as before this change.
-- **SC-004**: When both flags are `false`, no data of any kind reaches the analytics backend
-  through these endpoints.
-- **SC-005**: A flag state change for the gate enforcement takes effect only after a server
-  restart — live toggling without a restart is intentionally not supported for these gates.
+- **SC-001**: When `FEATURE_FLAG_EXPERIMENTS=false` and the Analytics App is configured
+  (limited experiment mode): `_schedule`, `_abort`, and `archive` return `403 FEATURE_DISABLED`;
+  `_start` succeeds once (free slot, max 10-day duration enforced with `400` if exceeded) and
+  returns `403 FEATURE_DISABLED` thereafter; all other experiment operations remain accessible;
+  event ingest forwards to CAEM as-is. The experiments health endpoint returns `tier: "limited"`
+  and `freeExperimentUsed` reflecting slot state; the Experiments portlet disables gated
+  buttons and shows an upgrade tooltip.
+- **SC-002**: When the Analytics App is configured, all event types are forwarded to the
+  analytics backend as-is — event ingest depends solely on App configuration, not on the
+  experiments flag.
+- **SC-003**: When the Analytics App is not configured, no data reaches the analytics backend
+  — event ingest and analytics read requests return `503 Service Unavailable`, and experiment
+  activation operations return `503`. Management operations (CRUD, results, health) remain
+  accessible.
+- **SC-004**: A change to `FEATURE_FLAG_EXPERIMENTS` takes effect only after a server restart
+  — live toggling without a restart is intentionally not supported. Changes to the Analytics
+  App configuration take effect immediately without a restart.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -400,30 +383,27 @@ array:
   not the legacy `com.dotmarketing.*` surface. The `EventLogWebInterceptor` (the original
   Jitsu proxy path) is **explicitly out of scope** — it is being removed and must not be
   modified by this work.
-- **Backward-compatibility expectations**: When both flags are `true` (the fully-enabled state
-  that existing customers have), behavior must be identical to today — no requests that
-  currently succeed may be broken. The gate enforcement is additive: it restricts disabled
-  states, not the enabled state.
-  **Accepted exception — `GET /api/v1/analytics/health`**: the response shape of this
-  endpoint changes even when the flag is `true` (see FR-003a). The Analytics portlet frontend
-  MUST be updated as part of this feature to consume the new response format.
-- **Known related decisions**: Both flags currently support live toggling in other areas of the
-  system. This feature must disable that live-toggle behavior for the gate enforcement so that
-  activating or deactivating these paid features requires a deliberate restart. The plan phase
-  will consult `dotCMS/platform-adrs` for any ADRs governing feature-flag architecture.
+- **Backward-compatibility expectations**: When `FEATURE_FLAG_EXPERIMENTS=true` and the
+  Analytics App is configured (the fully-enabled state that existing customers have), behavior
+  must be identical to today — no requests that currently succeed may be broken. The gate
+  enforcement is additive: it restricts disabled or misconfigured states, not the enabled state.
+  **Accepted exception — `GET /api/v1/analytics/health`**: the response shape of this endpoint
+  changes unconditionally (see FR-003a) — it no longer proxies raw CAEM responses. The
+  Analytics portlet frontend MUST be updated as part of this feature to consume the new format.
+- **Known related decisions**: `FEATURE_FLAG_EXPERIMENTS` currently supports live toggling.
+  This feature must disable that live-toggle behavior so that activating or deactivating
+  experiments requires a deliberate restart. The Analytics App configuration (which replaces
+  `FEATURE_FLAG_CONTENT_ANALYTICS`) takes effect immediately — no restart needed. The plan
+  phase will consult `dotCMS/platform-adrs` for any ADRs governing feature-flag architecture.
 
 ## Assumptions
 
-- Both `FEATURE_FLAG_EXPERIMENTS` and `FEATURE_FLAG_CONTENT_ANALYTICS` currently default to
-  `true` in the codebase when no explicit value is set in configuration. The gate enforcement
-  introduced by this feature must account for this: existing deployments that do not explicitly
-  set these flags are currently running with both features enabled, and the gate behavior must
-  not silently change that.
-- The client-side JS snippet may include `context.experiments` unconditionally regardless of
-  server flag state — the server must handle this gracefully (strip, not reject) when
-  experiments are off but analytics is on.
-- The siteauth token is stateless and does not itself carry feature-flag state — the gate is
-  enforced at the endpoint level, not embedded in the token.
+- `FEATURE_FLAG_EXPERIMENTS` currently defaults to `true` in the codebase when no explicit
+  value is set in configuration. The gate enforcement introduced by this feature must account
+  for this: existing deployments that do not explicitly set this flag are currently running
+  with experiments enabled, and the gate behavior must not silently change that.
+- The siteauth token is stateless and does not carry flag or App configuration state — the
+  gate is enforced at the endpoint level, not embedded in the token.
 - The gates described here are dotCMS-side pre-flight checks and are not a replacement for
   any existing validations in the analytics pipeline.
 - No non-UI consumers of `GET /api/v1/analytics/health` are known; the response-shape change
