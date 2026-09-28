@@ -8,6 +8,7 @@ import java.time.Duration;
 import com.dotmarketing.util.Config;
 import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.processor.NoRetryPolicy;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.Set;
 import java.util.Optional;
@@ -407,14 +408,19 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
     /**
      * The first other submitted path that is a proper ancestor of this one, or {@code null}.
      * Decided from the paths alone, so it does not depend on the order they were submitted in.
-     * Compared lowercased, since folder resolution ignores case. A site root never covers
-     * anything: it is refused, never duplicated, so it has no duplicate to carry the folder.
+     * Compared lowercased, since folder resolution ignores case. Only a site-qualified folder
+     * path can cover another. A site root is refused, and a path with no site in front of it is
+     * never resolved, so neither is duplicated and neither has a duplicate to carry the folder.
+     *
+     * @param path     the submitted path being decided
+     * @param allPaths every path in the submission
+     * @return the covering ancestor as it was submitted, or {@code null} when there is none
      */
-    private static String findCoveringAncestor(final String path, final List<String> allPaths) {
+    static String findCoveringAncestor(final String path, final List<String> allPaths) {
         final String normalizedPath = normalize(path).toLowerCase();
         for (final String other : allPaths) {
             final String normalizedOther = normalize(other).toLowerCase();
-            if (!normalizedOther.equals(normalizedPath) && !isSiteRoot(normalizedOther)
+            if (!normalizedOther.equals(normalizedPath) && canCover(normalizedOther)
                     && normalizedPath.startsWith(normalizedOther)) {
                 return other;
             }
@@ -422,13 +428,30 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
         return null;
     }
 
+    /** Whether a submitted path can be duplicated at all: site-qualified and not a site root. */
+    private static boolean canCover(final String path) {
+        return path.startsWith("//") && !isSiteRoot(path);
+    }
+
     private static String normalize(final String path) {
         return path.endsWith("/") ? path : path + "/";
     }
 
-    /** Whether a site-qualified path names a site root, {@code //hostname/}, not a folder in it. */
-    private static boolean isSiteRoot(final String path) {
-        return normalize(path).replaceFirst("^/+", "").split("/").length <= 1;
+    /** A site-qualified path naming only its site: two slashes, a hostname, an optional slash. */
+    private static final Pattern SITE_ROOT = Pattern.compile("^//[^/]+/?$");
+
+    /**
+     * Whether a path names a site root, {@code //hostname/}, rather than a folder in it.
+     * <p>
+     * Only a site-qualified path can be a site root. A path with no site in front of it, such as
+     * {@code /blogs/} or a bare word, is malformed rather than protected, so it is left for the
+     * resolver to report as not found.
+     *
+     * @param path a submitted path, with or without its trailing slash
+     * @return true when the path is {@code //hostname} or {@code //hostname/}
+     */
+    static boolean isSiteRoot(final String path) {
+        return SITE_ROOT.matcher(path).matches();
     }
 
     private void record(final String path, final BatchItemStatus status,
