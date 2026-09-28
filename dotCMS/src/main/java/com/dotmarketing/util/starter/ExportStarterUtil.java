@@ -483,19 +483,94 @@ public class ExportStarterUtil {
      * @param zip        The {@link ZipOutputStream} which will receive all the streamed data.
      * @param fileFilter The {@link FileFilter} being used to get the appropriate asset data.
      */
-    private void getAssets(final ZipOutputStream zip, final FileFilter fileFilter) {
+    private void getAssets(final ZipOutputStream zip, final FileFilter fileFilter) throws Exception {
 
         Logger.info(this, "Adding all Assets into compressed file:");
+        final Set<String> exported = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? addStoredAssetsToZip(zip, fileFilter) : Set.of();
+        final FileFilter remainingFiles = exported.isEmpty() ? fileFilter : file -> fileFilter.accept(file)
+                && !exported.contains(Paths.get(ConfigUtils.getAssetPath()).toAbsolutePath().normalize()
+                .relativize(file.toPath().toAbsolutePath().normalize()).toString().replace('\\', '/'));
         // add all our b-tree directories
         for (int i = 0; i < assetDirs.length; i++) {
             for (int j = 0; j < assetDirs.length; j++) {
                 final File source = Paths.get(ConfigUtils.getAssetPath() , assetDirs[i] , assetDirs[j]).toFile();
-                addFolderToZip(zip, fileFilter, source);
+                addFolderToZip(zip, remainingFiles, source);
             }
         }
         // finally add the messages folder
         final File source = Paths.get(ConfigUtils.getAssetPath() , "messages").toFile();
-        addFolderToZip(zip, fileFilter, source);
+        addFolderToZip(zip, remainingFiles, source);
+    }
+
+    /** Content references, rather than cache residency, determine the durable assets to export. */
+    private Set<String> addStoredAssetsToZip(final ZipOutputStream zip, final FileFilter filter) throws Exception {
+        final Set<String> exported = new HashSet<>();
+        final var metadataAPI = APILocator.getFileMetadataAPI();
+        final ObjectMapper mapper = new ObjectMapper();
+        String afterInode = "";
+        while (true) {
+            final var rows = new DotConnect().setSQL("select inode, contentlet_as_json from contentlet where inode > ? order by inode")
+                    .addParam(afterInode).setMaxRows(500).loadObjectResults();
+            if (rows.isEmpty()) {
+                return exported;
+            }
+            for (final var row : rows) {
+                final String inode = row.get("inode").toString();
+                afterInode = inode;
+                final String inodePath = inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode;
+                if (!filter.accept(new File(ConfigUtils.getAssetPath(), inodePath))) {
+                    continue;
+                }
+                final Contentlet content = new Contentlet(APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false));
+                final Object persisted = row.get("contentlet_as_json");
+                final String snapshot = persisted == null || persisted.toString().isBlank()
+                        ? APILocator.getContentletJsonAPI().toJson(content) : persisted.toString();
+                for (final var field : com.dotcms.storage.binary.BinaryAssetReference
+                        .fromContentJson(snapshot, inode).entrySet()) {
+                    final File binary = field.getValue().localFile(inode, field.getKey());
+                    content.getMap().put(field.getKey(), binary);
+                    if (!binary.isFile()) {
+                        try (var ignored = APILocator.getBinaryAssetStorageAPI().openLocalFile(binary)) { }
+                    }
+                    if (!filter.accept(binary)) {
+                        continue;
+                    }
+                    boolean excludedParent = false;
+                    for (File parent = binary.getParentFile(); parent != null
+                            && parent.toPath().startsWith(Paths.get(ConfigUtils.getAssetPath())); parent = parent.getParentFile()) {
+                        if (!filter.accept(parent)) {
+                            excludedParent = true;
+                            break;
+                        }
+                    }
+                    if (excludedParent) {
+                        continue;
+                    }
+                    final String revision = com.dotcms.storage.binary.BinaryAssetReference.keyOf(binary, inode, field.getKey());
+                    final String binaryPath = revision == null
+                            ? inodePath + "/" + field.getKey() + "/" + binary.getName() : revision;
+                    addFileToZip(new FileEntry(ZIP_FILE_ASSETS_FOLDER.get() + "/" + binaryPath, binary), zip);
+                    exported.add(binaryPath);
+
+                    final String metadataPath = metadataAPI.getFileName(content, field.getKey());
+                    final var metadata = APILocator.getFileStorageAPI().retrieveRawMetaData(
+                            new com.dotcms.storage.StorageKey.Builder()
+                                    .group(Config.getStringProperty(com.dotcms.storage.StoragePersistenceProvider.METADATA_GROUP_NAME,
+                                            com.dotcms.storage.FileMetadataAPI.DOT_METADATA))
+                                    .path(metadataPath).storage(com.dotcms.storage.StoragePersistenceProvider.getStorageType()).build());
+                    if (metadata != null) {
+                        // Metadata's filesystem provider uses lowercase paths, independently of binary names.
+                        final String path = metadataPath.substring(1).toLowerCase(java.util.Locale.ROOT);
+                        addFileToZip(new FileEntry(ZIP_FILE_ASSETS_FOLDER.get() + "/" + path,
+                                mapper.writeValueAsString(metadata)), zip);
+                        exported.add(path);
+                    } else if (com.dotcms.storage.binary.BinaryAssetReference.metadataKeyOf(binary) != null) {
+                        throw new IOException("Missing referenced metadata during starter export: " + metadataPath);
+                    }
+                }
+            }
+        }
     }
 
     private void addFolderToZip(final ZipOutputStream zip, final FileFilter fileFilter, final File source){
@@ -523,6 +598,9 @@ public class ExportStarterUtil {
                 this.addFileToZip(entry, zip);
 
             } catch (Exception e) {
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    throw new DotRuntimeException("Unable to export asset: " + file.getPath(), e);
+                }
                 Logger.error(this, String.format("Error processing file path for %s: %s",
                         file.getPath(), e.getMessage()));
             }
@@ -580,6 +658,20 @@ public class ExportStarterUtil {
      *                                    file, set this to {@code true}.
      */
     private void streamCompressedData(final OutputStream output, boolean includeStarterData,
+                                     final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets, long maxFileSize) {
+
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+                streamCompressedDataInternal(output, includeStarterData, includeStarterDataAndAssets,
+                        includeAssetsOnly, includeOldAssets, maxFileSize);
+            }
+        } else {
+            streamCompressedDataInternal(output, includeStarterData, includeStarterDataAndAssets,
+                    includeAssetsOnly, includeOldAssets, maxFileSize);
+        }
+    }
+
+    private void streamCompressedDataInternal(final OutputStream output, boolean includeStarterData,
                                      final boolean includeStarterDataAndAssets, boolean includeAssetsOnly, boolean includeOldAssets, long maxFileSize) {
 
 
@@ -738,15 +830,14 @@ public class ExportStarterUtil {
             "and " +
             "  deleted = false";
 
-    private static final String SELECT_ALL_LIVE_WORKING_CONTENTLETS_COUNT=
-            "select " +
-            "count(*) as my_count " +
-            "from (" + SELECT_ALL_LIVE_WORKING_CONTENTLETS + ") testing ";
-
     @CloseDBIfOpened
     BloomFilter<String> getLiveWorkingBloomFilter()  {
+        final String selection = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? SELECT_ALL_LIVE_WORKING_CONTENTLETS.replace("working_inode <> live_inode",
+                        "(live_inode is null or working_inode <> live_inode)")
+                : SELECT_ALL_LIVE_WORKING_CONTENTLETS;
         long contentCount = new DotConnect()
-                .setSQL(SELECT_ALL_LIVE_WORKING_CONTENTLETS_COUNT)
+                .setSQL("select count(*) as my_count from (" + selection + ") testing ")
                 .getInt("my_count");
 
         Logger.info(this.getClass(), "Creating BloomFilter with " + contentCount + " expected size");
@@ -757,7 +848,7 @@ public class ExportStarterUtil {
                 0.01);
 
         try (final Connection conn = DbConnectionFactory.getDataSource().getConnection();
-            final PreparedStatement statement = conn.prepareStatement(SELECT_ALL_LIVE_WORKING_CONTENTLETS)){
+            final PreparedStatement statement = conn.prepareStatement(selection)){
             statement.setFetchSize(5000);
             try (final ResultSet rs = statement.executeQuery()) {
                 int i = 0;

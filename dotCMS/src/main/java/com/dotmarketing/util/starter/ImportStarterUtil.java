@@ -244,8 +244,15 @@ public class ImportStarterUtil {
 
         cleanUpDBFromImport();
 
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            com.dotcms.storage.binary.BinaryAssetBackfill.runAll();
+        }
         Logger.info(ImportStarterUtil.class, "Done Importing");
-        deleteTempFiles();
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled() && DbConnectionFactory.inTransaction()) {
+            HibernateUtil.addSyncCommitListener(this::deleteTempFiles);
+        } else {
+            deleteTempFiles();
+        }
 
     }
 
@@ -602,8 +609,8 @@ public class ImportStarterUtil {
             final VariantFactory variantFactory = FactoryLocator.getVariantFactory();
             for (int j = 0; j < l.size(); j++) {
                 final Variant v = (Variant) l.get(j);
-                // Skip variants already present to avoid PK violations (the variant table is not
-                // cleared by deleteDotCMS()). We DO import the DEFAULT variant from the starter:
+                // Skip variants already present to avoid PK violations (legacy mode preserves them).
+                // Enabled full replacement clears variants, including DEFAULT, before import:
                 // on a fresh install postgres.sql does not seed it and DefaultVariantInitializer
                 // runs only AFTER the starter import (MainServlet line 129 vs 218), so an experiment
                 // referencing the DEFAULT variant would otherwise fail TrafficProportion validation
@@ -634,6 +641,9 @@ public class ImportStarterUtil {
                     }
 
                     APILocator.getUserAPI().save(u, APILocator.getUserAPI().getSystemUser(), false);
+                } else if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    // Cleanup removed these users too; restore their archived values before role links.
+                    FactoryLocator.getUserFactory().save(u);
                 } else {
                     Logger.info(this, "");
                 }
@@ -1078,6 +1088,12 @@ public class ImportStarterUtil {
     }
     private void deleteDotCMS() {
         try {
+            final boolean bulkRestore = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                    && DbConnectionFactory.isPostgres();
+            final Map<String, String> deletionTriggers = Map.of(
+                    "contentlet", "content_versions_check_trigger",
+                    "identifier", "check_child_assets_trigger");
+            final Map<String, String> triggerModes = new HashMap<>();
             /* get a list of all our tables */
             final List<String> _tablesToDelete = new ArrayList<>();
 
@@ -1100,12 +1116,47 @@ public class ImportStarterUtil {
             //these tables should be deleted in this order to avoid conflicts with foreign keys
             _tablesToDelete.addAll(tablesToIgnore);
 
+            if (bulkRestore) {
+                if (!DbConnectionFactory.inTransaction()) {
+                    throw new DotStateException("Starter cleanup requires a transaction");
+                }
+                // Full replacement deletes identifiers after their dependents. These two row hooks
+                // otherwise remove a site's identifier prematurely. Foreign keys remain enforced;
+                // PostgreSQL rolls back the trigger changes together with any failed cleanup.
+                for (final var trigger : deletionTriggers.entrySet()) {
+                    final String mode = new DotConnect().setSQL(
+                            "select tgenabled from pg_trigger where tgrelid = ?::regclass and tgname = ?")
+                            .addParam(trigger.getKey()).addParam(trigger.getValue()).getString("tgenabled");
+                    triggerModes.put(trigger.getKey(), switch (mode) {
+                        case "O" -> "ENABLE";
+                        case "A" -> "ENABLE ALWAYS";
+                        case "R" -> "ENABLE REPLICA";
+                        case "D" -> "DISABLE";
+                        default -> throw new DotStateException("Unknown starter cleanup trigger mode: " + mode);
+                    });
+                    new DotConnect().setSQL("ALTER TABLE " + trigger.getKey()
+                            + " DISABLE TRIGGER " + trigger.getValue()).getResult();
+                }
+            }
             for (final String table : _tablesToDelete) {
                 Logger.info(this, "About to delete all records from " + table);
                 this.deleteTable(table);
                 Logger.info(this, "Deleted all records from " + table);
             }
+            if (bulkRestore) {
+                for (final var trigger : deletionTriggers.entrySet()) {
+                    new DotConnect().setSQL("ALTER TABLE " + trigger.getKey() + " "
+                            + triggerModes.get(trigger.getKey()) + " TRIGGER " + trigger.getValue()).getResult();
+                }
+            }
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                // Raw replacement invalidates users, roles, templates and all other cached entities.
+                CacheLocator.getCacheAdministrator().flushAll();
+            }
         } catch (HibernateException e) {
+            if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                throw new DotRuntimeException("Starter cleanup failed", e);
+            }
             Logger.error(this,e.getMessage(),e);
         }
 
@@ -1115,22 +1166,48 @@ public class ImportStarterUtil {
 
     }
 
-    private List<String> getTablesToIgnore() {
+    static List<String> getTablesToIgnore() {
         final List<String> tablesToIgnore = new ArrayList<>();
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            // Modern workflow tables are not all Hibernate entities. Remove their children before
+            // steps, actions, schemes, roles and content types; steps may reference escalation actions.
+            tablesToIgnore.addAll(List.of("workflow_history", "workflow_comment", "workflowtask_files",
+                    "workflow_task", "workflow_action_mappings", "workflow_action_class_pars",
+                    "workflow_action_class", "workflow_action_step", "workflow_step", "workflow_action",
+                    "workflow_scheme_x_structure", "workflow_scheme"));
+            // The importer handles these outside Hibernate; version pointers precede their assets.
+            tablesToIgnore.addAll(List.of("template_version_info", "container_version_info", "link_version_info",
+                    "template_containers", "template", "dot_containers", "links", "category", "relationship"));
+            tablesToIgnore.addAll(List.of("rule_action_pars", "rule_action", "rule_condition_value",
+                    "rule_condition", "rule_condition_group", "dot_rule", "experiment"));
+        }
         tablesToIgnore.add("cms_layouts_portlets");
         tablesToIgnore.add("layouts_cms_roles");
         tablesToIgnore.add("users_cms_roles");
         tablesToIgnore.add("cms_role");
         tablesToIgnore.add("cms_layout");
 
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            // These are no longer Hibernate entities. Version pointers precede binaries/content types.
+            tablesToIgnore.add("contentlet_version_info");
+            tablesToIgnore.add("contentlet");
+            tablesToIgnore.add("variant");
+            tablesToIgnore.add("folder");
+        }
         tablesToIgnore.add("structure");
-        tablesToIgnore.add("folder");
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            tablesToIgnore.add("folder");
+        }
         tablesToIgnore.add("identifier");
         tablesToIgnore.add("inode");
 
         tablesToIgnore.add("user_");
 
         tablesToIgnore.add("company");
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            // Language is imported directly; content, workflow tasks and company reference it.
+            tablesToIgnore.add("language");
+        }
         tablesToIgnore.add("counter");
         tablesToIgnore.add("image");
         tablesToIgnore.add("portlet");

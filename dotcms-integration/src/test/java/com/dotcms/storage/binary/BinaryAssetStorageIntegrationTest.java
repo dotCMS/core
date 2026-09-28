@@ -515,6 +515,241 @@ public class BinaryAssetStorageIntegrationTest {
         }
     }
 
+    @Test
+    void assetExportIncludesBinaryAndMetadataInBothStorageModes(
+            @org.junit.jupiter.api.io.TempDir java.nio.file.Path uploads) throws Exception {
+        final boolean s3Enabled = Boolean.getBoolean("s3.cms.enabled");
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final String field = FileAssetAPI.BINARY_FIELD;
+        final var metadataAPI = APILocator.getFileMetadataAPI();
+        try {
+            final File upload = Files.writeString(uploads.resolve("ColdExport-MixedCase.Txt"), "cold export original bytes").toFile();
+            final Contentlet asset = new FileAssetDataGen(folder, upload).nextPersisted();
+            metadataAPI.putCustomMetadataAttributes(asset,
+                    java.util.Map.of(field, java.util.Map.of("credit", "Preserved in starter")));
+            final File binary = asset.getBinary(field);
+            final String inode = asset.getInode();
+            final String binaryPath = s3Enabled ? BinaryAssetReference.keyOf(binary)
+                    : inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/" + field + "/" + binary.getName();
+            final String metadataPath = metadataAPI.getFileName(asset, field);
+            final java.nio.file.Path localMetadata = java.nio.file.Path.of(com.dotmarketing.util.ConfigUtils.getAssetPath())
+                    .resolve(metadataPath.substring(1).toLowerCase(java.util.Locale.ROOT));
+            if (s3Enabled) {
+                assertTrue(binaryAssetStorageAPI.evictLocalFile(binary));
+                Files.delete(localMetadata);
+                com.dotmarketing.business.CacheLocator.getMetadataCache().removeMetadata(
+                        metadataAPI.getMetadataCacheKey(asset, field));
+                assertFalse(binary.exists());
+                assertFalse(Files.exists(localMetadata));
+            }
+
+            final java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+            new com.dotmarketing.util.starter.ExportStarterUtil().streamCompressedAssets(output, true, -1);
+            final java.util.Map<String, byte[]> entries = readZipEntries(output.toByteArray());
+            assertArrayEquals(Files.readAllBytes(upload.toPath()), entries.get("assets/" + binaryPath));
+            final byte[] metadataBytes = entries.get("assets/" + metadataPath.substring(1).toLowerCase(java.util.Locale.ROOT));
+            assertNotNull(metadataBytes, "The archive must include metadata restored from S3, including custom attributes");
+            assertEquals("Preserved in starter", new com.fasterxml.jackson.databind.ObjectMapper()
+                    .readTree(metadataBytes).path("dot:credit").asText());
+            assertTrue(binary.exists());
+            if (s3Enabled) {
+                assertEquals(1, new com.dotmarketing.common.db.DotConnect()
+                        .setSQL("select count(*) as draft_count from contentlet_version_info where working_inode = ? and live_inode is null")
+                        .addParam(inode).getInt("draft_count"), "Exercise an unpublished working asset");
+                assertTrue(binaryAssetStorageAPI.evictLocalFile(binary));
+                final java.io.ByteArrayOutputStream workingOnly = new java.io.ByteArrayOutputStream();
+                new com.dotmarketing.util.starter.ExportStarterUtil().streamCompressedAssets(workingOnly, false, -1);
+                assertArrayEquals(Files.readAllBytes(upload.toPath()),
+                        readZipEntries(workingOnly.toByteArray()).get("assets/" + binaryPath),
+                        "Working-only exports must include drafts with no live version");
+                binaryAssetStorageAPI.deleteAllBinaries(inode);
+                assertThrows(com.dotmarketing.exception.DotRuntimeException.class,
+                        () -> new com.dotmarketing.util.starter.ExportStarterUtil()
+                                .streamCompressedAssets(new java.io.ByteArrayOutputStream(), true, -1),
+                        "A referenced but missing S3 binary must fail the export instead of silently omitting it");
+            }
+        } finally {
+            FolderDataGen.remove(folder);
+        }
+    }
+
+    @Test
+    void s3LegacyBackfillResumesWithoutChangingReferencesOrLosingLocalSources(
+            @org.junit.jupiter.api.io.TempDir java.nio.file.Path uploads) throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(Boolean.getBoolean("s3.cms.enabled"));
+        final Folder folder = new FolderDataGen().nextPersisted();
+        final var client = com.amazonaws.services.s3.AmazonS3ClientBuilder.standard()
+                .withEndpointConfiguration(new com.amazonaws.client.builder.AwsClientBuilder.EndpointConfiguration(
+                        System.getProperty("DOT_STORAGE_FILE_METADATA_S3_ENDPOINT"), "us-east-1"))
+                .withPathStyleAccessEnabled(true)
+                .withCredentials(com.dotmarketing.util.UtilMethods.isSet(System.getProperty("DOT_STORAGE_FILE_METADATA_S3_ACCESS_KEY"))
+                        ? new com.amazonaws.auth.AWSStaticCredentialsProvider(new com.amazonaws.auth.BasicAWSCredentials(
+                        System.getProperty("DOT_STORAGE_FILE_METADATA_S3_ACCESS_KEY"),
+                        System.getProperty("DOT_STORAGE_FILE_METADATA_S3_SECRET_ACCESS_KEY")))
+                        : new com.amazonaws.auth.DefaultAWSCredentialsProviderChain())
+                .build();
+        final String bucket = System.getProperty("DOT_STORAGE_FILE_METADATA_S3_BUCKET_NAME");
+        try {
+            final String field = FileAssetAPI.BINARY_FIELD;
+            final var metadataAPI = APILocator.getFileMetadataAPI();
+            final File upload = Files.writeString(uploads.resolve("Legacy-MixedCase.Txt"), "legacy imported bytes").toFile();
+            final Contentlet created = new FileAssetDataGen(folder, upload).nextPersisted();
+            metadataAPI.putCustomMetadataAttributes(created,
+                    java.util.Map.of(field, java.util.Map.of("credit", "Legacy author")));
+            final String inode = created.getInode();
+            final String prefix = inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode;
+            final String key = prefix + "/" + field + "/" + upload.getName();
+            final var local = java.nio.file.Path.of(com.dotmarketing.util.ConfigUtils.getAssetPath()).resolve(key);
+            Files.createDirectories(local.getParent());
+            Files.copy(upload.toPath(), local);
+            final String metadataPath = "/" + prefix + "/" + field + "-metadata.json";
+            final var localMetadata = java.nio.file.Path.of(com.dotmarketing.util.ConfigUtils.getAssetPath())
+                    .resolve(metadataPath.substring(1).toLowerCase(java.util.Locale.ROOT));
+            final var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            Files.writeString(localMetadata, mapper.writeValueAsString(metadataAPI.getFullMetadataNoCache(created, field).getMap()));
+            final var json = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(
+                    new com.dotmarketing.common.db.DotConnect().setSQL("select contentlet_as_json from contentlet where inode = ?")
+                            .addParam(inode).getString("contentlet_as_json"));
+            ((com.fasterxml.jackson.databind.node.ObjectNode) json.path("fields").path(field)).remove("storageKey");
+            ((com.fasterxml.jackson.databind.node.ObjectNode) json.path("fields").path(field)).remove("metadataStorageKey");
+            new com.dotmarketing.common.db.DotConnect().setSQL("update contentlet set contentlet_as_json = ?::jsonb where inode = ?")
+                    .addParam(mapper.writeValueAsString(json)).addParam(inode).loadResult();
+            com.dotmarketing.business.CacheLocator.getContentletCache().remove(inode);
+            final Contentlet legacy = contentletAPI.find(inode, user, false);
+            assertNull(BinaryAssetReference.find(inode, field));
+            assertFalse(binaryAssetStorageAPI.evictLocalFile(local.toFile()));
+
+            client.putObject(bucket, binaryObjectKey(key), "conflicting destination bytes");
+            assertThrows(com.dotmarketing.exception.DotDataException.class, BinaryAssetBackfill::runAll);
+            assertEquals("legacy imported bytes", Files.readString(local));
+            assertTrue(Files.exists(localMetadata));
+            assertEquals("conflicting destination bytes", client.getObjectAsString(bucket,
+                    binaryObjectKey(key)));
+            client.deleteObject(bucket, binaryObjectKey(key));
+
+            // Existing remote raw bytes must migrate too, including retired field definitions.
+            client.putObject(bucket, binaryObjectKey(key), upload);
+            assertTrue(binaryAssetStorageAPI.evictLocalFile(local.toFile()));
+            final String retiredKey = prefix + "/retiredBinary/Retired-Mixed.Txt";
+            client.putObject(bucket, binaryObjectKey(retiredKey), "retired field bytes");
+            ((com.fasterxml.jackson.databind.node.ObjectNode) json.path("fields")).putObject("retiredBinary")
+                    .put("type", "Binary").put("value", "Retired-Mixed.Txt");
+            new com.dotmarketing.common.db.DotConnect().setSQL("update contentlet set contentlet_as_json = ?::jsonb where inode = ?")
+                    .addParam(mapper.writeValueAsString(json)).addParam(inode).loadResult();
+
+            var progress = BinaryAssetBackfill.runBatch("", 1);
+            int copied = progress.binaries();
+            while (!progress.complete()) {
+                final String cursor = progress.afterInode();
+                progress = BinaryAssetBackfill.runBatch(cursor, 1);
+                assertTrue(progress.complete() || !cursor.equals(progress.afterInode()));
+                copied += progress.binaries();
+            }
+            assertTrue(copied > 0);
+            BinaryAssetBackfill.runAll();
+            assertEquals(org.apache.commons.codec.digest.DigestUtils.sha256Hex("legacy imported bytes"),
+                    client.getObjectMetadata(bucket, binaryObjectKey(key))
+                            .getUserMetaDataOf("dotcms-blob-sha256"));
+            assertEquals(org.apache.commons.codec.digest.DigestUtils.sha256Hex("retired field bytes"),
+                    client.getObjectMetadata(bucket, binaryObjectKey(retiredKey))
+                            .getUserMetaDataOf("dotcms-blob-sha256"));
+            assertNull(BinaryAssetReference.find(inode, field), "Backfill must preserve legacy content references");
+            assertTrue(binaryAssetStorageAPI.evictLocalFile(local.toFile()));
+            Files.delete(localMetadata);
+            com.dotmarketing.business.CacheLocator.getMetadataCache().removeMetadata(metadataAPI.getMetadataCacheKey(legacy, field));
+            assertEquals("legacy imported bytes", Files.readString(contentletAPI.find(inode, user, false).getBinary(field).toPath()));
+            assertEquals("Legacy author", metadataAPI.getMetadata(legacy, field).getCustomMeta().get("credit"));
+        } finally {
+            client.shutdown();
+            FolderDataGen.remove(folder);
+        }
+    }
+
+    @Test
+    void legacyImageAndFileBytesSurviveMigrationExportAndRecoveryWithoutChangingFieldTypes(
+            @org.junit.jupiter.api.io.TempDir java.nio.file.Path uploads) throws Exception {
+        org.junit.jupiter.api.Assumptions.assumeTrue(Boolean.getBoolean("s3.cms.enabled"));
+        final ContentType type = new ContentTypeDataGen().nextPersisted();
+        String archiveKey = null;
+        final var backups = ContentletBackupStorage.getInstance();
+        try {
+            for (final var field : java.util.Map.<String, Class<? extends Field>>of(
+                    "title", TextField.class,
+                    "legacyImage", com.dotcms.contenttype.model.field.ImageField.class,
+                    "legacyFile", com.dotcms.contenttype.model.field.FileField.class).entrySet()) {
+                ContentTypeDataGen.addField(new FieldDataGen().velocityVarName(field.getKey())
+                        .contentTypeId(type.id()).type(field.getValue()).nextPersisted());
+            }
+            final Contentlet content = new ContentletDataGen(type).setProperty("title", "Legacy file inventory").nextPersisted();
+            final String inode = content.getInode();
+            final String prefix = inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode;
+            final var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            final var json = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(
+                    new com.dotmarketing.common.db.DotConnect().setSQL("select contentlet_as_json from contentlet where inode = ?")
+                            .addParam(inode).getString("contentlet_as_json"));
+            final var fields = (com.fasterxml.jackson.databind.node.ObjectNode) json.path("fields");
+            fields.putObject("legacyImage").put("type", "Image").put("value", "Legacy-Mixed.PNG");
+            fields.putObject("legacyFile").put("type", "File").put("value", "Document-Mixed.Txt");
+            fields.putObject("retiredBinary").put("type", "Binary").put("value", "Retired-Mixed.Txt");
+            fields.putObject("linkedImage").put("type", "Image").put("value", "other-asset-identifier");
+            fields.putObject("externalFile").put("type", "File").put("value", "https://example.com/file.txt");
+            final var expected = new java.util.HashMap<String, byte[]>();
+            final var localFiles = new java.util.ArrayList<java.nio.file.Path>();
+            for (String field : java.util.List.of("legacyImage", "legacyFile", "retiredBinary")) {
+                final String key = prefix + "/" + field + "/" + fields.path(field).path("value").asText();
+                final var local = java.nio.file.Path.of(com.dotmarketing.util.ConfigUtils.getAssetPath(), key);
+                Files.createDirectories(local.getParent());
+                if (field.equals("legacyImage")) {
+                    javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(20, 10,
+                            java.awt.image.BufferedImage.TYPE_INT_RGB), "png", local.toFile());
+                } else {
+                    Files.writeString(local, "original " + field + " bytes");
+                }
+                expected.put("assets/" + key, Files.readAllBytes(local));
+                localFiles.add(local);
+                assertFalse(binaryAssetStorageAPI.evictLocalFile(local.toFile()), "Unmigrated legacy bytes must stay local");
+            }
+            final String metadataPath = prefix + "/legacyimage-metadata.json";
+            final var localMetadata = java.nio.file.Path.of(com.dotmarketing.util.ConfigUtils.getAssetPath(), metadataPath);
+            Files.writeString(localMetadata, "{\"dot:credit\":\"Legacy image author\"}");
+            final String snapshot = mapper.writeValueAsString(json);
+            new com.dotmarketing.common.db.DotConnect().setSQL("update contentlet set contentlet_as_json = ?::jsonb where inode = ?")
+                    .addParam(snapshot).addParam(inode).loadResult();
+            com.dotmarketing.business.CacheLocator.getContentletCache().remove(inode);
+            BinaryAssetBackfill.runAll();
+            assertEquals(json, mapper.readTree(new com.dotmarketing.common.db.DotConnect()
+                    .setSQL("select contentlet_as_json from contentlet where inode = ?").addParam(inode)
+                    .getString("contentlet_as_json")), "Migration must not turn linked-field strings into binary values");
+            assertEquals("Legacy-Mixed.PNG", contentletAPI.find(inode, user, false).get("legacyImage"));
+            for (var local : localFiles) assertTrue(binaryAssetStorageAPI.evictLocalFile(local.toFile()));
+            Files.delete(localMetadata);
+            final var output = new java.io.ByteArrayOutputStream();
+            new com.dotmarketing.util.starter.ExportStarterUtil().streamCompressedAssets(output, true, -1);
+            final var exported = readZipEntries(output.toByteArray());
+            assertEquals("Legacy-Mixed.PNG", contentletAPI.find(inode, user, false).get("legacyImage"),
+                    "Export must not replace a cached Image field's string with a File");
+            for (var entry : expected.entrySet()) assertArrayEquals(entry.getValue(), exported.get(entry.getKey()), entry.getKey());
+            assertEquals("Legacy image author", mapper.readTree(exported.get("assets/" + metadataPath)).path("dot:credit").asText());
+            for (var local : localFiles) assertTrue(binaryAssetStorageAPI.evictLocalFile(local.toFile()));
+            Files.deleteIfExists(localMetadata);
+            com.dotmarketing.db.HibernateUtil.startTransaction();
+            try {
+                archiveKey = backups.store(content);
+                com.dotmarketing.db.HibernateUtil.commitTransaction();
+            } finally { com.dotmarketing.db.HibernateUtil.rollbackTransaction(); }
+            try (var archive = backups.open(archiveKey)) {
+                final var recovered = readZipEntries(archive.readAllBytes());
+                for (var entry : expected.entrySet()) assertArrayEquals(entry.getValue(), recovered.get(entry.getKey()), entry.getKey());
+                assertEquals(json, mapper.readTree(recovered.get("contentlet.json")));
+                assertEquals("Legacy image author", mapper.readTree(recovered.get("assets/" + metadataPath)).path("dot:credit").asText());
+            }
+        } finally {
+            if (archiveKey != null) com.dotcms.storage.AmazonS3StoragePersistenceAPIImpl.withPlainPaths()
+                    .deleteObjectAndReferences(ContentletBackupStorage.GROUP, archiveKey);
+            ContentTypeDataGen.remove(type);
+        }
+    }
+
     private String binaryObjectKey(String path) {
         final String namespace = System.getProperty("DOT_STORAGE_FILE_METADATA_S3_NAMESPACE", "");
         return (namespace.isEmpty() ? "" : "asset-namespaces/" + namespace + "/")
