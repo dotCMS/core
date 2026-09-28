@@ -102,6 +102,78 @@ class AssetStorageFeatureTest {
     }
 
     @Test
+    void bothCropEnginesUsePinnedPointOnlyWhenFeatureIsEnabled() {
+        try (var locator = mockStatic(com.dotmarketing.business.APILocator.class)) {
+            final var javaCrop = new com.dotmarketing.image.filter.CropImageFilter() {
+                java.util.Optional<java.awt.Point> focal(Map<String, String[]> parameters) {
+                    return calcFocalPoint(new java.awt.image.BufferedImage(100, 100,
+                            java.awt.image.BufferedImage.TYPE_INT_RGB), parameters);
+                }
+            };
+            final var nativeCrop = new com.dotmarketing.image.vips.VipsCropImageFilter() {
+                java.util.Optional<java.awt.Point> focal(Map<String, String[]> parameters) {
+                    return calcFocalPoint(new java.awt.Dimension(100, 100), parameters);
+                }
+            };
+            final Map<String, String[]> parameters = new java.util.HashMap<>();
+            parameters.put("fp", new String[]{"0.25,0.5"});
+            parameters.put(com.dotmarketing.image.filter.ImageFilter.RESOLVED_CROP_FOCAL_POINT,
+                    new String[]{"0.75,0.5"});
+            assertEquals(new java.awt.Point(75, 50), javaCrop.focal(parameters).orElseThrow());
+            assertEquals(javaCrop.focal(parameters), nativeCrop.focal(parameters));
+            parameters.put(com.dotmarketing.image.filter.ImageFilter.RESOLVED_CROP_FOCAL_POINT, new String[]{""});
+            assertTrue(javaCrop.focal(parameters).isEmpty());
+            assertTrue(nativeCrop.focal(parameters).isEmpty());
+            Config.setProperty(AssetStorageFeature.FLAG, false);
+            assertEquals(new java.awt.Point(25, 50), javaCrop.focal(parameters).orElseThrow());
+            assertEquals(javaCrop.focal(parameters), nativeCrop.focal(parameters));
+        }
+    }
+
+    @Test
+    void metadataReadErrorsPropagateOnlyWhenEnabledIncludingLegacyFocalLookup() throws Exception {
+        final var storage = mock(StoragePersistenceAPI.class);
+        doThrow(new DotDataException("metadata unavailable")).when(storage).pullObject(anyString(), anyString(), any());
+        final var provider = mock(StoragePersistenceProvider.class);
+        when(provider.getStorage(any())).thenReturn(storage);
+        final var metadataCache = mock(com.dotmarketing.portlets.contentlet.business.MetadataCache.class);
+        when(metadataCache.getMetadataMap(anyString())).thenReturn(null);
+        final var metadata = new FileStorageAPIImpl(new JsonReaderDelegate<>(Map.class), new JsonWriterDelegate(),
+                mock(MetadataGenerator.class), provider, metadataCache);
+        final var request = new FetchMetadataParams.Builder().cache(false).storageKey(new StorageKey.Builder()
+                .group("metadata").path("/asset-metadata.json").storage(StorageType.DEFAULT_CHAIN).build()).build();
+        assertThrows(DotDataException.class, () -> metadata.retrieveMetaData(request));
+        Config.setProperty(AssetStorageFeature.FLAG, false);
+        assertNull(metadata.retrieveMetaData(request), "Disabled reads retain legacy failure handling");
+
+        final var content = new com.dotmarketing.portlets.contentlet.model.Contentlet();
+        content.setInode("abc123");
+        content.getMap().put("HeroImage", root.resolve("Photo.PNG").toFile());
+        final var contentAPI = mock(com.dotmarketing.portlets.contentlet.business.ContentletAPI.class);
+        when(contentAPI.find(eq("abc123"), any(), eq(false))).thenReturn(content);
+        try (var locator = mockStatic(com.dotmarketing.business.APILocator.class);
+             var caches = mockStatic(com.dotmarketing.business.CacheLocator.class);
+             var paths = mockStatic(ConfigUtils.class)) {
+            paths.when(ConfigUtils::getAssetPath).thenReturn(root.toString());
+            locator.when(com.dotmarketing.business.APILocator::getFileStorageAPI).thenReturn(metadata);
+            locator.when(com.dotmarketing.business.APILocator::getContentletAPI).thenReturn(contentAPI);
+            final var tempFiles = mock(com.dotcms.rest.api.v1.temp.TempFileAPI.class);
+            locator.when(com.dotmarketing.business.APILocator::getTempFileAPI).thenReturn(tempFiles);
+            caches.when(com.dotmarketing.business.CacheLocator::getMetadataCache).thenReturn(metadataCache);
+            final var contentMetadata = new FileMetadataAPIImpl();
+            locator.when(com.dotmarketing.business.APILocator::getFileMetadataAPI).thenReturn(contentMetadata);
+            final var focal = new com.dotmarketing.image.focalpoint.FocalPointAPIImpl();
+            assertTrue(focal.readFocalPoint("abc123", "HeroImage").isEmpty());
+            Config.setProperty(AssetStorageFeature.FLAG, true);
+            assertThrows(com.dotmarketing.exception.DotRuntimeException.class,
+                    () -> focal.readFocalPoint("abc123", "HeroImage"));
+            verify(storage, times(4)).pullObject(anyString(), anyString(), any());
+            doReturn(null).when(storage).pullObject(anyString(), anyString(), any());
+            assertTrue(focal.readFocalPoint("abc123", "HeroImage").isEmpty(), "Missing metadata is not an outage");
+        }
+    }
+
+    @Test
     void databaseQueryFailuresAreNotReportedAsMissingObjectsWhenEnabled() throws Exception {
         final var connection = mock(java.sql.Connection.class);
         final var queryFailure = new DotDataException("database query failed", new java.sql.SQLException("offline"));
@@ -246,6 +318,25 @@ class AssetStorageFeatureTest {
             content.setInode("abc123");
             content.getMap().put("HeroImage", "MyFile.PNG");
             assertEquals(path.toFile(), content.getBinary("HeroImage"));
+            locator.verify(com.dotmarketing.business.APILocator::getBinaryAssetStorageAPI, never());
+        }
+    }
+
+    @Test
+    void disabledExporterKeepsLegacyFilterParametersWithoutStorageCalls() throws Exception {
+        Config.setProperty(AssetStorageFeature.FLAG, false);
+        File original = Files.writeString(root.resolve("Original.png"), "x".repeat(60)).toFile();
+        Map<String, String[]> parameters = new java.util.HashMap<>();
+        try (var locator = mockStatic(com.dotmarketing.business.APILocator.class);
+             var engine = mockStatic(com.dotmarketing.image.ImageEngine.class)) {
+            var filters = mock(com.dotmarketing.image.filter.ImageFilterAPI.class);
+            when(filters.resolveFilters(any())).thenReturn(Map.of());
+            engine.when(com.dotmarketing.image.ImageEngine::resolve).thenReturn(filters);
+            var result = new com.dotmarketing.portlets.contentlet.business.exporter.ImageFilterExporter()
+                    .exportContent(original, parameters);
+            assertEquals(original, result.getDataFile());
+            assertArrayEquals(new String[0], parameters.get("filter"));
+            assertArrayEquals(new String[0], parameters.get("filters"));
             locator.verify(com.dotmarketing.business.APILocator::getBinaryAssetStorageAPI, never());
         }
     }
@@ -551,6 +642,36 @@ class AssetStorageFeatureTest {
             }
             start.countDown();
             for (var future : futures) future.get(20, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    void warmRenditionSurvivesRemoteOutageWithoutRemoteVerification() throws Exception {
+        try (var paths = mockStatic(ConfigUtils.class);
+             var locator = mockStatic(com.dotmarketing.business.APILocator.class);
+             var engine = mockStatic(com.dotmarketing.image.ImageEngine.class)) {
+            paths.when(ConfigUtils::getDotGeneratedPath).thenReturn(root.resolve("generated").toString());
+            File original = root.resolve("Original.png").toFile();
+            javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(80, 60, 1), "PNG", original);
+            Map<String, String[]> params = new java.util.HashMap<>();
+            params.put("resize_w", new String[]{"32"});
+            params.put("fieldVarName", new String[]{"HeroImage"});
+            params.put("assetInodeOrIdentifier", new String[]{"abc123"});
+            File rendition = new com.dotmarketing.image.filter.ResizeImageFilter().getResultsFile(original, params);
+            Files.createDirectories(rendition.toPath().getParent());
+            javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(32, 24, 1), "PNG", rendition);
+            var storage = mock(StoragePersistenceAPI.class);
+            when(storage.pullFile(anyString(), anyString())).thenReturn(rendition);
+            when(storage.hasDurableCopy(anyString(), anyString(), any())).thenThrow(new DotDataException("S3 unavailable"));
+            locator.when(com.dotmarketing.business.APILocator::getBinaryAssetStorageAPI)
+                    .thenReturn(new BinaryAssetStorageAPIImpl(storage));
+            var filters = mock(com.dotmarketing.image.filter.ImageFilterAPI.class);
+            when(filters.resolveFilters(any())).thenReturn(Map.of("resize", com.dotmarketing.image.filter.ResizeImageFilter.class));
+            engine.when(com.dotmarketing.image.ImageEngine::resolve).thenReturn(filters);
+            var result = new com.dotmarketing.portlets.contentlet.business.exporter.ImageFilterExporter().exportContent(original, params);
+            assertEquals(rendition, result.getDataFile());
+            verify(storage, never()).hasDurableCopy(anyString(), anyString(), any());
+            verify(storage, never()).pushFile(anyString(), anyString(), any(), any());
         }
     }
 }

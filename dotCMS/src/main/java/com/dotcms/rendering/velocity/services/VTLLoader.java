@@ -80,7 +80,8 @@ public class VTLLoader implements DotLoader {
 
     }
 
-    InputStream streamFile(String filePath) throws IOException {
+    InputStream streamFile(String filePath) throws IOException, DotDataException {
+        final boolean s3 = com.dotcms.storage.AssetStorageFeature.isEnabled();
         boolean serveFile = false;
         Logger.debug(this, "Not a CMS Velocity File : " + filePath);
 
@@ -96,13 +97,19 @@ public class VTLLoader implements DotLoader {
         if (!f.exists()) {
             f = new java.io.File(filePath);
         }
-        if (!f.exists()) {
+        if (!f.exists() && !s3) {
             throw new ResourceNotFoundException("cannot find resource");
         }
         String canon = f.getCanonicalPath();
         File dynamicContent = new File(ConfigUtils.getDynamicContentPath());
 
-        if (assetRealCanoncalPath != null && canon.startsWith(assetRealCanoncalPath)) {
+        if (s3) {
+            final java.nio.file.Path path = f.getCanonicalFile().toPath();
+            serveFile = (assetRealCanoncalPath != null && path.startsWith(assetRealCanoncalPath))
+                    || (velocityCanoncalPath != null && path.startsWith(velocityCanoncalPath))
+                    || (assetCanoncalPath != null && path.startsWith(assetCanoncalPath))
+                    || path.startsWith(dynamicContent.getCanonicalFile().toPath());
+        } else if (assetRealCanoncalPath != null && canon.startsWith(assetRealCanoncalPath)) {
             serveFile = true;
         } else if (velocityCanoncalPath != null && canon.startsWith(velocityCanoncalPath)) {
             serveFile = true;
@@ -115,7 +122,9 @@ public class VTLLoader implements DotLoader {
             Logger.warn(this, "POSSIBLE HACK ATTACK DotResourceLoader: " + lookingFor);
             throw new ResourceNotFoundException("cannot find resource");
         }
-        return new BufferedInputStream(Files.newInputStream(f.toPath()));
+        return new BufferedInputStream(s3
+                ? com.dotmarketing.business.APILocator.getBinaryAssetStorageAPI().openLocalFile(f)
+                : Files.newInputStream(f.toPath()));
 
     }
 
