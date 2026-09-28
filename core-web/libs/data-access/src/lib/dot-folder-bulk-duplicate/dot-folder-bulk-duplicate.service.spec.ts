@@ -126,7 +126,9 @@ describe('DotFolderBulkDuplicateService', () => {
      * (#37062, FR-015 as amended). Filtered to what is genuinely in progress, as delete's is.
      */
     describe('readActiveRuns', () => {
-        const ACTIVE_URL = '/api/v1/jobs/folderBulkDuplicate/active';
+        // One large page: the listing pages at 20 by default and is not scoped to the reader, so
+        // other authors' runs could otherwise push this author's own past the first page.
+        const ACTIVE_URL = '/api/v1/jobs/folderBulkDuplicate/active?pageSize=100';
 
         const flushJobs = (jobs: unknown[]): void => {
             spectator.expectOne(ACTIVE_URL, HttpMethod.GET).flush({ entity: { jobs } });

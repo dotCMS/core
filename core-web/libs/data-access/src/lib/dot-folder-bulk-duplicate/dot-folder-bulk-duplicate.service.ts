@@ -44,6 +44,13 @@ const BULK_DUPLICATE_URL = '/api/v1/assets/folders/_bulkduplicate';
 /** The runs of this queue still in progress, for any user. */
 const ACTIVE_URL = '/api/v1/jobs/folderBulkDuplicate/active';
 
+/**
+ * One large page of the active listing. The endpoint pages at 20 by default and is not scoped to the
+ * reader, so on a busy instance other authors' runs could otherwise push this author's own past the
+ * first page and they would never be restored.
+ */
+const ACTIVE_PAGE_SIZE = 100;
+
 /** One entry of the active listing, as far as this client reads it. */
 interface ActiveRunEntry {
     id: string;
@@ -112,21 +119,25 @@ export class DotFolderBulkDuplicateService {
      * @returns the runs in progress, for every user; the caller keeps its own
      */
     readActiveRuns(): Observable<DotFolderDuplicateActiveRun[]> {
-        return this.#http.get<{ entity?: { jobs?: ActiveRunEntry[] } }>(ACTIVE_URL).pipe(
-            map((response) => response?.entity?.jobs ?? []),
-            map((jobs) =>
-                jobs
-                    .filter((job) => isJobInProgress(job?.state))
-                    .map(
-                        (job): DotFolderDuplicateActiveRun => ({
-                            id: job.id,
-                            userId: job.parameters?.userId,
-                            assetPaths: job.parameters?.assetPaths ?? []
-                        })
-                    )
-            ),
-            catchError(() => of([] as DotFolderDuplicateActiveRun[]))
-        );
+        return this.#http
+            .get<{ entity?: { jobs?: ActiveRunEntry[] } }>(ACTIVE_URL, {
+                params: { pageSize: ACTIVE_PAGE_SIZE }
+            })
+            .pipe(
+                map((response) => response?.entity?.jobs ?? []),
+                map((jobs) =>
+                    jobs
+                        .filter((job) => isJobInProgress(job?.state))
+                        .map(
+                            (job): DotFolderDuplicateActiveRun => ({
+                                id: job.id,
+                                userId: job.parameters?.userId,
+                                assetPaths: job.parameters?.assetPaths ?? []
+                            })
+                        )
+                ),
+                catchError(() => of([] as DotFolderDuplicateActiveRun[]))
+            );
     }
 
     #toRefusal(response: HttpErrorResponse): DotFolderBulkDuplicateRefusal {

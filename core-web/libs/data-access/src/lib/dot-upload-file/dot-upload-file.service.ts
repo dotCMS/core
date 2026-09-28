@@ -217,7 +217,11 @@ export class DotUploadFileService {
                         };
                     }[];
                 };
-            }>(this.#ACTIVE_UPLOADS_URL)
+            }>(this.#ACTIVE_UPLOADS_URL, {
+                // One large page: the listing pages at 20 by default and is not scoped to the
+                // reader, so other authors' batches could push this author's own past the first.
+                params: { pageSize: 100 }
+            })
             .pipe(
                 map((response) => response?.entity?.jobs ?? []),
                 map((jobs) =>

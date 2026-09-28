@@ -298,7 +298,9 @@ describe('DotUploadFileService', () => {
      * back (#37062). Filtered to what is genuinely in progress, as delete's are.
      */
     describe('readActiveUploads', () => {
-        const ACTIVE_URL = '/api/v1/jobs/assetBulkUpload/active';
+        // One large page: the listing pages at 20 by default and is not scoped to the reader, so
+        // other authors' runs could otherwise push this author's own past the first page.
+        const ACTIVE_URL = '/api/v1/jobs/assetBulkUpload/active?pageSize=100';
 
         const flushJobs = (jobs: unknown[]): void => {
             spectator.expectOne(ACTIVE_URL, HttpMethod.GET).flush({ entity: { jobs } });

@@ -74,6 +74,13 @@ const QUEUE_NAME = 'folderBulkDelete';
 const ACTIVE_URL = `/api/v1/jobs/${QUEUE_NAME}/active`;
 
 /**
+ * One large page of the active listing. The endpoint pages at 20 by default and is not scoped to the
+ * reader, so on a busy instance other authors' runs could otherwise push this author's own past the
+ * first page and their folders would never be marked.
+ */
+const ACTIVE_PAGE_SIZE = 100;
+
+/**
  * Submission for Content Drive bulk folder delete (#37063).
  *
  * **Written against a contract, not against a running server.** The server half is specified and
@@ -114,31 +121,35 @@ export class DotFolderBulkDeleteService {
      * Answers with an empty list rather than erroring: see the `catchError` below.
      */
     readActiveRuns(): Observable<DotFolderDeleteActiveRun[]> {
-        return this.#http.get<{ entity?: { jobs?: ActiveRunEntry[] } }>(ACTIVE_URL).pipe(
-            map((response) => response?.entity?.jobs ?? []),
-            // THE filter. The endpoint is called "active" but answers with every run in a
-            // NON-TERMINAL state, failed and abandoned ones included. Without this, folders
-            // whose delete already failed are reported as still being deleted, and they stay
-            // that way until the framework moves the run on (contract CR-10).
-            map((jobs) => jobs.filter((job) => isJobInProgress(job?.state))),
-            map((jobs) =>
-                jobs.map(
-                    (job): DotFolderDeleteActiveRun => ({
-                        id: job.id,
-                        state: job.state,
-                        // A run with no readable paths marks nothing, which is the same outcome as
-                        // not knowing about it — better than dropping the run and losing its id.
-                        paths: (job.parameters?.paths ?? [])
-                            .map((entry) => entry?.path)
-                            .filter((path): path is string => !!path)
-                    })
-                )
-            ),
-            // Never surfaced to the author: they did not ask for this read, and a listing that
-            // renders unmarked is exactly the behaviour Content Drive has today. Marking
-            // degrades; the portlet does not (FR-022, SC-010).
-            catchError(() => of([] as DotFolderDeleteActiveRun[]))
-        );
+        return this.#http
+            .get<{ entity?: { jobs?: ActiveRunEntry[] } }>(ACTIVE_URL, {
+                params: { pageSize: ACTIVE_PAGE_SIZE }
+            })
+            .pipe(
+                map((response) => response?.entity?.jobs ?? []),
+                // THE filter. The endpoint is called "active" but answers with every run in a
+                // NON-TERMINAL state, failed and abandoned ones included. Without this, folders
+                // whose delete already failed are reported as still being deleted, and they stay
+                // that way until the framework moves the run on (contract CR-10).
+                map((jobs) => jobs.filter((job) => isJobInProgress(job?.state))),
+                map((jobs) =>
+                    jobs.map(
+                        (job): DotFolderDeleteActiveRun => ({
+                            id: job.id,
+                            state: job.state,
+                            // A run with no readable paths marks nothing, which is the same outcome as
+                            // not knowing about it — better than dropping the run and losing its id.
+                            paths: (job.parameters?.paths ?? [])
+                                .map((entry) => entry?.path)
+                                .filter((path): path is string => !!path)
+                        })
+                    )
+                ),
+                // Never surfaced to the author: they did not ask for this read, and a listing that
+                // renders unmarked is exactly the behaviour Content Drive has today. Marking
+                // degrades; the portlet does not (FR-022, SC-010).
+                catchError(() => of([] as DotFolderDeleteActiveRun[]))
+            );
     }
 
     /**
