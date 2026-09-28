@@ -251,8 +251,9 @@ everything, the third passes everything.
   it through their fallback. This is the intended meaning of deleting a section, not an error.
 - **Two admins editing at once.** The reorder and tool-list writes replace the whole list, so
   two admins editing the same section or the section order concurrently overwrite each other,
-  last writer wins. Accepted as a known limitation for an administrator-only surface; no version
-  check is added.
+  last writer wins. A section created while a reorder is in progress may keep its own position
+  instead of the one the reorder assigns; the next reorder includes it. Accepted as a known
+  limitation for an administrator-only surface; no version check or lock is added.
 - **Rejection statuses.** A missing portlet grant is reported as 401 Unauthorized, as every
   portlet-gated endpoint in the product does. A portlet holder who is not a CMS Administrator is
   reported as 403 Forbidden, as the modern operations that grant sections to roles do. The

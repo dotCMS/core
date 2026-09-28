@@ -379,8 +379,8 @@ public class LayoutResource implements Serializable {
         final User user = initWrite(request, response, OP_REORDER);
         requireBody(form);
         final List<String> sent = null == form.getLayoutIds() ? List.of() : form.getLayoutIds();
-        // Check completeness and write in one transaction, so a section created by another admin
-        // between the check and the write cannot be left out of the order.
+        // Check completeness and write in one transaction. This narrows, but does not close, the
+        // window in which a section another admin creates concurrently keeps its own position.
         LocalTransaction.wrap(() -> {
             helper.validateOrder(sent, layoutApi.findAllLayouts());
             layoutApi.setTabOrders(helper.positions(sent));
