@@ -52,14 +52,16 @@ final class FolderDuplicator {
     private final ContentletAPI contentletAPI;
 
     FolderDuplicator() {
-        this.folderAPI = APILocator.getFolderAPI();
-        this.contentletAPI = APILocator.getContentletAPI();
+        this(APILocator.getContentletAPI());
     }
 
-    // RED STUB (#37062 T056): a seam for the rollback test; documented in T057.
+    /**
+     * @param contentletAPI copies the contentlets the walk leaves behind; a test passes one that
+     *                      fails, to prove a failure rolls the whole duplicate back
+     */
     FolderDuplicator(final ContentletAPI contentletAPI) {
         this.folderAPI = APILocator.getFolderAPI();
-        this.contentletAPI = APILocator.getContentletAPI();
+        this.contentletAPI = contentletAPI;
     }
 
     /**

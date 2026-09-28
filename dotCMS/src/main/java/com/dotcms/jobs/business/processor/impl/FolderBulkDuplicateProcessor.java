@@ -45,7 +45,9 @@ import javax.enterprise.context.Dependent;
  * the next folder is attempted, so every submitted folder ends with exactly one outcome record.
  * Progress is reported once per completed folder, the finest step that can be observed.
  * <p>
- * Cancellation, retry, heartbeat and notification arrive with their own stories.
+ * Cancellation takes effect between folders: the folder in progress finishes, and every folder
+ * not yet reached is recorded SKIPPED with no reason. Retry and heartbeat arrive in their own
+ * phase.
  *
  * @author dotCMS
  */
@@ -84,7 +86,15 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
 
         final Map<String, Folder> duplicable = decideUpFront(paths, duplicator, user);
 
-        for (final String path : paths) {
+        for (int index = 0; index < paths.size(); index++) {
+            // Honoured between folders, never inside one, so a folder is always fully duplicated
+            // or not duplicated at all.
+            if (this.cancellationRequested.get()) {
+                recordUnreachedAsSkipped(paths.subList(index, paths.size()), duplicable);
+                break;
+            }
+
+            final String path = paths.get(index);
             final Folder source = duplicable.get(path);
             if (source != null) {
                 duplicateOne(duplicator, source, path, user);
@@ -102,6 +112,19 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
                 "Bulk folder duplicate job [%s] finished: %d succeeded, %d failed, %d skipped",
                 job.id(), this.successCount.get(), this.failedCount.get(),
                 this.skippedCount.get()));
+    }
+
+    /**
+     * Records every folder a cancelled run never reached as SKIPPED with no reason. Folders
+     * already decided up front keep the outcome they were given.
+     */
+    private void recordUnreachedAsSkipped(final List<String> remaining,
+            final Map<String, Folder> duplicable) {
+        for (final String path : remaining) {
+            if (duplicable.containsKey(path)) {
+                record(path, BatchItemStatus.SKIPPED, null, null);
+            }
+        }
     }
 
     /**
@@ -290,7 +313,7 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Records that cancellation was asked for. Honouring it arrives with its own story.
+     * Asks the run to stop before its next folder.
      *
      * @param job the run
      * @throws JobCancellationException never
