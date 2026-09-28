@@ -347,6 +347,55 @@
       "response": []
     },
     {
+      "name": "Refuses a caller with no back-end user",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('401 Unauthorized', function () { pm.response.to.have.status(401); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/assets/folders/_bulkduplicate",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "folders",
+            "_bulkduplicate"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assetPaths\": [\"//default/any/\"]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Cleanup",
       "item": [
         {

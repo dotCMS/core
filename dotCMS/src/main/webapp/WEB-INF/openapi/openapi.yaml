@@ -4595,8 +4595,8 @@ paths:
           description: Run queued
         "400":
           description: "No paths submitted, or more paths than the configured maximum"
-        "403":
-          description: The caller is not entitled to use this operation
+        "401":
+          description: "No authenticated user, or the user is not a back-end user"
       summary: "Duplicate several folders in place from one submission, asynchronously"
       tags:
       - Web Assets

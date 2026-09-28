@@ -29,8 +29,8 @@ import org.junit.jupiter.api.Test;
  * <p>
  * Drives {@link FolderBulkDuplicateHelper} injected through CDI, the convention
  * {@code FolderBulkDeleteResourceIT} follows, so a deployment Weld would refuse is noticed. The
- * exception mapper and the backend-user requirement behind {@code 403 NOT_ENTITLED} live on the
- * resource, so they are checked over the wire by the Postman collection, not here.
+ * exception mapper and the back-end-user requirement behind {@code 401} live on the resource, so
+ * they are checked over the wire by the Postman collection, not here.
  */
 @EnableWeld
 public class FolderBulkDuplicateResourceIT extends Junit5WeldBaseTest {

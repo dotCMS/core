@@ -94,8 +94,8 @@ public class FolderBulkDuplicateResource {
                                     schema = @Schema(implementation = ResponseEntityFolderBulkDuplicateSubmitView.class))),
                     @ApiResponse(responseCode = "400", description =
                             "No paths submitted, or more paths than the configured maximum"),
-                    @ApiResponse(responseCode = "403", description =
-                            "The caller is not entitled to use this operation")
+                    @ApiResponse(responseCode = "401", description =
+                            "No authenticated user, or the user is not a back-end user")
             })
     public Response bulkDuplicate(@Context final HttpServletRequest request,
                                   @Context final HttpServletResponse response,

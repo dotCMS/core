@@ -36,7 +36,7 @@ Same field name and shape as bulk delete's request.
 |---|---|---|---|
 | `400` | `EMPTY_SELECTION` | `assetPaths` | Missing or empty, or no submitted path is usable |
 | `400` | `OVER_MAX_PATHS` | `assetPaths` | More distinct paths than the configured maximum (§5). The number may appear in `message`, but `message` is diagnostic text; the client's source for the number is the advertised configuration. |
-| `403` | `NOT_ENTITLED` | none | Caller not entitled to the operation at all. Rights on an individual folder are **not** a submission refusal; see §4. |
+| `401` | none | none | No authenticated user, or a user who is not a back-end user. This is the generic role check every back-end REST resource uses, bulk delete's included, so the body carries no refusal code of its own; a client tells it apart by the status alone. Rights on an individual folder are **not** a submission refusal; see §4. |
 
 **Differs from delete**: there is **no `409 OVERLAPPING_RUN`**. Duplication carries no overlap guard,
 because two runs over the same folders cannot interfere: nothing is destroyed and the naming rule gives
