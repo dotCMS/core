@@ -1493,6 +1493,13 @@ describe('DotFolderListViewComponent', () => {
             expect(modUserNameColumn.textContent.trim()).toBe(modUserName);
         });
 
+        it('should offer the full editor name on hover, since a long one is clipped to the column', () => {
+            const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'));
+            const modUserName = 'modUserName' in firstItem ? firstItem.modUserName : 'Unknown';
+
+            expect(modUserNameColumn.getAttribute('title')).toBe(modUserName);
+        });
+
         it('should have a mod date column', () => {
             const modDateColumn = spectator.query(byTestId('item-mod-date'));
 
