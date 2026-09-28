@@ -1,5 +1,6 @@
 import { ContentDrivePage } from '@pages';
 import { type Page } from '@playwright/test';
+import { Portlet } from '@utils/portlets';
 
 import { FolderDuplicate } from './helpers/content-drive-duplicate';
 
@@ -13,15 +14,19 @@ import { type ContentDriveApiHelpers, test } from '../../fixtures/content-drive.
  * reload to show the duplicate. The durable notification is checked too, since it is what an
  * author who left the portlet finds.
  *
+ * Two things are answered by an intercepted response rather than a real one, because neither can
+ * be provoked on demand: each submission refusal (a licence, a configured ceiling), and a folder the
+ * author may not add to (a limited user). The rest of each flow is real.
+ *
  * Covered elsewhere, and why:
  *
- * - The add-children gate and a parent the author cannot add to need a second, limited login. The
- *   refusal itself is proven by `FolderBulkDuplicateProcessorIT`, and the gate's rendering by the
- *   portlet's unit tests.
+ * - The server returning each refusal, and refusing a parent the author cannot add to, is the
+ *   backend suite's (`FolderBulkDuplicateResourceIT`, `FolderBulkDuplicateProcessorIT`).
  * - A cancelled run needs a duplicate slow enough to stop, which no fixture here is.
  *   `FolderBulkDuplicateCancellationIT` covers it.
- * - Each refusal's wording is unit-tested against the copy it renders. What cannot be shown here is
- *   the server returning that reason, which the backend suite owns.
+ * - Another author's open Content Drive is not expected to reload. The portlet reloads on the
+ *   completion pushed to the submitter; the `COPY_FOLDER` event the copy also raises is not one it
+ *   listens to.
  */
 test.describe.configure({ timeout: 300000 });
 
@@ -38,12 +43,15 @@ async function inSeededContainer(
         adminPage,
         apiHelpers,
         name,
-        children
+        children,
+        beforeOpen
     }: {
         adminPage: Page;
         apiHelpers: ContentDriveApiHelpers;
         name: string;
         children: string[];
+        /** Runs before the drive loads, which is when a route has to be in place. */
+        beforeOpen?: (duplicate: FolderDuplicate) => Promise<void>;
     },
     body: (drive: ContentDrivePage, duplicate: FolderDuplicate) => Promise<void>
 ): Promise<void> {
@@ -59,9 +67,11 @@ async function inSeededContainer(
         await apiHelpers.clearNotifications();
 
         const drive = new ContentDrivePage(adminPage);
+        const duplicate = new FolderDuplicate(adminPage);
+        await beforeOpen?.(duplicate);
         await drive.goTo();
         await drive.openFolder(name);
-        await body(drive, new FolderDuplicate(adminPage));
+        await body(drive, duplicate);
     } finally {
         await apiHelpers.deleteFolders(site.hostname, [container]);
     }
@@ -130,4 +140,83 @@ test.describe('Content Drive folder duplicate', () => {
                 await drive.expectListContainsTitle('inner');
             }
         ));
+
+    test('finds the outcome in the bell after leaving the drive', ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) =>
+        inSeededContainer(
+            { adminPage, apiHelpers, name: `cd-dup-away-${testSuffix}`, children: ['source'] },
+            async (drive, duplicate) => {
+                // Left straight away, before the run can finish: the toast belongs to a page the
+                // author is no longer on, so the bell is what tells them.
+                await duplicate.fromContextMenu('source');
+                await adminPage.goto(Portlet.Content);
+
+                await drive.expectNotificationContaining('1 folder(s) duplicated.');
+
+                await drive.goTo();
+                await drive.openFolder(`cd-dup-away-${testSuffix}`);
+                await duplicate.expectDuplicateShown('source_copy');
+            }
+        ));
+
+    test('does not offer Duplicate where the author cannot add folders', ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const name = `cd-dup-gate-${testSuffix}`;
+
+        return inSeededContainer(
+            {
+                adminPage,
+                apiHelpers,
+                name,
+                children: ['source'],
+                beforeOpen: (duplicate) => duplicate.withoutAddChildrenOn(name)
+            },
+            // Every duplicate would land in the folder being browsed, where the author may not add.
+            (_drive, duplicate) => duplicate.expectNotOffered('source')
+        );
+    });
+
+    for (const refusal of [
+        {
+            errorCode: 'OVER_MAX_PATHS',
+            status: 400,
+            sentence: 'You selected more folders than one duplicate allows'
+        },
+        {
+            errorCode: 'NOT_ENTITLED',
+            status: 403,
+            sentence: 'You are not allowed to duplicate folders in bulk'
+        },
+        { errorCode: 'EMPTY_SELECTION', status: 400, sentence: 'No folders were submitted' }
+    ]) {
+        test(`says in its own words why the server refused the duplicate: ${refusal.errorCode}`, ({
+            adminPage,
+            apiHelpers,
+            testSuffix
+        }) =>
+            inSeededContainer(
+                {
+                    adminPage,
+                    apiHelpers,
+                    name: `cd-dup-refused-${testSuffix}`,
+                    children: ['source'],
+                    beforeOpen: (duplicate) =>
+                        duplicate.refuseSubmissionsWith(refusal.status, refusal.errorCode)
+                },
+                async (drive, duplicate) => {
+                    await duplicate.fromContextMenu('source');
+
+                    await drive.expectToastContaining('The duplicate did not start');
+                    await drive.expectToastContaining(refusal.sentence);
+                    // Nothing is running, so nothing may still say it is.
+                    await drive.expectStatusToastGone();
+                }
+            ));
+    }
 });
