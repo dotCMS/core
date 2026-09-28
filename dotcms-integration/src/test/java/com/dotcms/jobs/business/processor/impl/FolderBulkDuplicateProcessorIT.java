@@ -4,8 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.dotcms.Junit5WeldBaseTest;
+import java.lang.reflect.Proxy;
+import java.lang.reflect.InvocationTargetException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import java.util.ArrayList;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.PermissionAPI;
@@ -572,6 +577,65 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
             assertFalse(assetsUnder(parent).containsKey("child_copy"), "childFirst=" + childFirst);
             assertEquals("folder", assetsUnder(duplicateOf(parent)).get("child"));
         }
+    }
+
+    /**
+     * Method to test: {@link FolderDuplicator#duplicate(Folder, User)}
+     * Given Scenario: A folder holding a file (which the shipped walk copies) and a custom-type
+     * contentlet (which the second pass copies), with the second pass made to fail
+     * ExpectedResult: No duplicate of the folder is left at all, not even the walk's part of it, so
+     * the walk and the second pass share one transaction (US4, FR-026)
+     */
+    @Test
+    public void test_duplicate_failureInTheSecondPass_leavesNoDuplicate() throws Exception {
+        final Folder source = folder();
+        new FileAssetDataGen(source, "a file").nextPersisted();
+        final ContentType type = new ContentTypeDataGen().host(site).nextPersisted();
+        new ContentletDataGen(type.id()).host(site).folder(source).nextPersisted();
+
+        assertThrows(Exception.class,
+                () -> new FolderDuplicator(failingCopy()).duplicate(source, admin));
+
+        assertFalse(assetsUnderParentOf(source).containsKey(source.getName() + "_copy"),
+                "the walk's part of the duplicate must roll back with the failed second pass");
+    }
+
+    /**
+     * Method to test: {@link FolderDuplicator#duplicate(Folder, User)}
+     * Given Scenario: The second pass fails on a contentlet in a child folder, deep in the tree,
+     * after the top folder's own content was already copied
+     * ExpectedResult: No duplicate of the top folder is left, so the whole subtree shares the one
+     * transaction, not only the top folder (US4, FR-026)
+     */
+    @Test
+    public void test_duplicate_failureInAChildFolder_leavesNoDuplicate() throws Exception {
+        final Folder source = folder();
+        new FileAssetDataGen(source, "a file").nextPersisted();
+        final Folder child = new FolderDataGen().parent(source).name("child").nextPersisted();
+        final ContentType type = new ContentTypeDataGen().host(site).nextPersisted();
+        new ContentletDataGen(type.id()).host(site).folder(child).nextPersisted();
+
+        assertThrows(Exception.class,
+                () -> new FolderDuplicator(failingCopy()).duplicate(source, admin));
+
+        assertFalse(assetsUnderParentOf(source).containsKey(source.getName() + "_copy"),
+                "a failure deep in the tree must roll back the whole duplicate");
+    }
+
+    /** A contentlet API whose copy always fails, and which otherwise behaves as the real one. */
+    private static ContentletAPI failingCopy() {
+        final ContentletAPI real = APILocator.getContentletAPI();
+        return (ContentletAPI) Proxy.newProxyInstance(ContentletAPI.class.getClassLoader(),
+                new Class<?>[]{ContentletAPI.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("copyContentlet")) {
+                        throw new DotDataException("injected failure in the second pass");
+                    }
+                    try {
+                        return method.invoke(real, args);
+                    } catch (final InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                });
     }
 
     /** Everything directly under a folder's parent, the place its duplicate would land. */

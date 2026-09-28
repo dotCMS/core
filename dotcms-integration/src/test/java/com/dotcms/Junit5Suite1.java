@@ -17,6 +17,8 @@ import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteMemoryCeilingIT;
 import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteNotificationIT;
 import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteProcessorIT;
 import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteResumeIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDuplicateCancellationIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDuplicateNotificationIT;
 import com.dotcms.jobs.business.processor.impl.FolderBulkDuplicateProcessorIT;
 import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteOverlapIT;
 import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteResourceIT;
@@ -70,7 +72,9 @@ import org.junit.platform.suite.api.Suite;
         FolderBulkDeleteHeartbeatIT.class,
         FolderBulkDeleteMemoryCeilingIT.class,
         FolderBulkDuplicateResourceIT.class,
-        FolderBulkDuplicateProcessorIT.class
+        FolderBulkDuplicateProcessorIT.class,
+        FolderBulkDuplicateCancellationIT.class,
+        FolderBulkDuplicateNotificationIT.class
 })
 public class Junit5Suite1 {
 

@@ -2,6 +2,7 @@ package com.dotcms.jobs.business.processor.impl;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
@@ -51,6 +52,12 @@ final class FolderDuplicator {
     private final ContentletAPI contentletAPI;
 
     FolderDuplicator() {
+        this.folderAPI = APILocator.getFolderAPI();
+        this.contentletAPI = APILocator.getContentletAPI();
+    }
+
+    // RED STUB (#37062 T056): a seam for the rollback test; documented in T057.
+    FolderDuplicator(final ContentletAPI contentletAPI) {
         this.folderAPI = APILocator.getFolderAPI();
         this.contentletAPI = APILocator.getContentletAPI();
     }
@@ -143,6 +150,11 @@ final class FolderDuplicator {
     /**
      * The identifiers the walk copies from one folder, computed with the walk's own calls: file
      * assets that are working and not archived, and working pages.
+     * <p>
+     * <b>Deliberately the same calls, not an equivalent query.</b> The walk lists pages through the
+     * search index, not the database, so a page saved but not yet indexed is skipped by it. A
+     * database query would count that page as carried and it would be lost from the duplicate.
+     * Asking the walk's own question is the only way every item lands exactly once.
      */
     private Set<String> carriedByTheWalk(final Folder folder, final User systemUser)
             throws Exception {
@@ -174,6 +186,21 @@ final class FolderDuplicator {
                 .loadObjectResults().stream()
                 .map(row -> String.valueOf(row.get("id")))
                 .toList();
+    }
+
+    /**
+     * Where a folder's duplicate lands: the folder it sits in, or its site when it sits at the
+     * root. What the author needs add-children rights on.
+     *
+     * @param source the folder to be duplicated
+     * @return the parent folder, or the site
+     * @throws Exception the parent could not be read
+     */
+    Permissionable parentOf(final Folder source) throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final Folder parentFolder = parentFolderOf(source, systemUser);
+        return parentFolder != null ? parentFolder
+                : APILocator.getHostAPI().find(source.getHostId(), systemUser, false);
     }
 
     /** The folder the source sits in, or {@code null} when it sits at its site's root. */
