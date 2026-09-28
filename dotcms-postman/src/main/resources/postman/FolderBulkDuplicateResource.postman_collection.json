@@ -1,0 +1,432 @@
+{
+  "info": {
+    "_postman_id": "1185452b-d5a5-4164-8767-49adaa80c55a",
+    "name": "FolderBulkDuplicateResource",
+    "description": "Postman collection for POST /api/v1/assets/folders/_bulkduplicate (#37062).\n\nCovers the happy path end to end (submit, follow the job to a terminal state, find the duplicate beside its source), the advertised ceiling, and the two 400 refusals. This is what verifies the exception mapper over the wire, which the helper-level integration tests cannot see. It creates its own folder and deletes it, and its duplicate, in the final request.\n\nContract: specs/37062-folder-copy-backend/contracts/folder-bulk-duplicate-api.md",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Setup",
+      "item": [
+        {
+          "name": "Get default site",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n    const entity = pm.response.json().entity;\n    pm.collectionVariables.set(\"hostname\", entity.hostname);\n});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/site/defaultSite",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "site",
+                "defaultSite"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create test folder",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code should be 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.collectionVariables.set(\"folderPath\", \"//\" + pm.collectionVariables.get(\"hostname\") + \"/bulk-duplicate-test/\");"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/folder/createfolders/{{hostname}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "folder",
+                "createfolders",
+                "{{hostname}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\"/bulk-duplicate-test/\"]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Accepts a selection and answers 202 with a handle",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('202 Accepted', function () { pm.response.to.have.status(202); });\n\npm.test('Response carries jobId, statusUrl, submitted', function () {\n    const entity = pm.response.json().entity;\n    pm.expect(entity.jobId).to.be.a('string').and.not.empty;\n    pm.expect(entity.statusUrl).to.eql('/api/v1/jobs/' + entity.jobId + '/status');\n    pm.expect(entity.submitted).to.eql(1);\n    pm.collectionVariables.set('jobId', entity.jobId);\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/assets/folders/_bulkduplicate",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "folders",
+            "_bulkduplicate"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"assetPaths\": [\"{{folderPath}}\"]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Answers immediately with a handle, before any folder is duplicated."
+      },
+      "response": []
+    },
+    {
+      "name": "Waiting for the duplication to finish",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const elapsed = Date.now() - parseInt(pm.collectionVariables.get('pollStart'));\nconst state = pm.response.json().entity.state;\nconst terminal = ['SUCCESS', 'FAILED', 'FAILED_PERMANENTLY', 'CANCELED', 'ABANDONED_PERMANENTLY'].includes(state);\n\nif (!terminal && elapsed < 60000) {\n    setTimeout(function () {}, 2000);\n    pm.execution.setNextRequest('Waiting for the duplication to finish');\n} else {\n    pm.collectionVariables.unset('pollStart');\n    pm.test('The run finished successfully', function () {\n        pm.expect(state).to.eql('SUCCESS');\n    });\n}"
+            ]
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('pollStart')) {\n    pm.collectionVariables.set('pollStart', Date.now());\n}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/jobs/{{jobId}}/status",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "jobs",
+            "{{jobId}}",
+            "status"
+          ]
+        },
+        "description": "Polls the job the submission returned until it reaches a terminal state, for at most a minute."
+      },
+      "response": []
+    },
+    {
+      "name": "The duplicate sits beside its source",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', function () { pm.response.to.have.status(200); });\n\npm.test('The duplicate is named after its source, plus _copy', function () {\n    pm.expect(pm.response.json().entity.name).to.eql('bulk-duplicate-test_copy');\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/assets",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"assetPath\": \"//{{hostname}}/bulk-duplicate-test_copy/\"}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "Each folder is duplicated in place, in its own parent, under its name plus _copy."
+      },
+      "response": []
+    },
+    {
+      "name": "Advertises the ceiling in the app configuration",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200 OK', function () { pm.response.to.have.status(200); });\n\npm.test('folderBulkDuplicate.maxPaths is the enforced default', function () {\n    pm.expect(pm.response.json().entity.config.folderBulkDuplicate.maxPaths).to.eql(50);\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/appconfiguration",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "appconfiguration"
+          ]
+        },
+        "description": "Read from the same constant the endpoint enforces, so a client can refuse an over-ceiling selection before submitting it."
+      },
+      "response": []
+    },
+    {
+      "name": "Refuses an empty selection",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is EMPTY_SELECTION', function () {\n    const error = pm.response.json().errors[0];\n    pm.expect(error.errorCode).to.eql('EMPTY_SELECTION');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/assets/folders/_bulkduplicate",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "folders",
+            "_bulkduplicate"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"assetPaths\": []\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Refuses a selection over the configured maximum",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is OVER_MAX_PATHS, distinct from EMPTY_SELECTION', function () {\n    const error = pm.response.json().errors[0];\n    pm.expect(error.errorCode).to.eql('OVER_MAX_PATHS');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/assets/folders/_bulkduplicate",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "folders",
+            "_bulkduplicate"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"assetPaths\": [\"//default/not-real-0/\", \"//default/not-real-1/\", \"//default/not-real-2/\", \"//default/not-real-3/\", \"//default/not-real-4/\", \"//default/not-real-5/\", \"//default/not-real-6/\", \"//default/not-real-7/\", \"//default/not-real-8/\", \"//default/not-real-9/\", \"//default/not-real-10/\", \"//default/not-real-11/\", \"//default/not-real-12/\", \"//default/not-real-13/\", \"//default/not-real-14/\", \"//default/not-real-15/\", \"//default/not-real-16/\", \"//default/not-real-17/\", \"//default/not-real-18/\", \"//default/not-real-19/\", \"//default/not-real-20/\", \"//default/not-real-21/\", \"//default/not-real-22/\", \"//default/not-real-23/\", \"//default/not-real-24/\", \"//default/not-real-25/\", \"//default/not-real-26/\", \"//default/not-real-27/\", \"//default/not-real-28/\", \"//default/not-real-29/\", \"//default/not-real-30/\", \"//default/not-real-31/\", \"//default/not-real-32/\", \"//default/not-real-33/\", \"//default/not-real-34/\", \"//default/not-real-35/\", \"//default/not-real-36/\", \"//default/not-real-37/\", \"//default/not-real-38/\", \"//default/not-real-39/\", \"//default/not-real-40/\", \"//default/not-real-41/\", \"//default/not-real-42/\", \"//default/not-real-43/\", \"//default/not-real-44/\", \"//default/not-real-45/\", \"//default/not-real-46/\", \"//default/not-real-47/\", \"//default/not-real-48/\", \"//default/not-real-49/\", \"//default/not-real-50/\"]}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "description": "51 paths against the default ceiling of 50. Refused before any path is resolved, so the folders need not exist."
+      },
+      "response": []
+    },
+    {
+      "name": "Cleanup",
+      "item": [
+        {
+          "name": "Delete the test folder and its duplicate",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 OK', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/folder/{{hostname}}",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "folder",
+                "{{hostname}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "[\"/bulk-duplicate-test/\", \"/bulk-duplicate-test_copy/\"]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "jwt",
+      "value": ""
+    },
+    {
+      "key": "hostname",
+      "value": ""
+    },
+    {
+      "key": "folderPath",
+      "value": ""
+    },
+    {
+      "key": "jobId",
+      "value": ""
+    },
+    {
+      "key": "pollStart",
+      "value": ""
+    }
+  ]
+}
