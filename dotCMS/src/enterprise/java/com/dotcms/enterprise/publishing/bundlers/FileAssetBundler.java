@@ -371,7 +371,16 @@ public class FileAssetBundler implements IBundler {
 		else {
 		    //only write if changed
 			if(!output.exists(filePath) || output.lastModified(filePath) != cal.getTimeInMillis()){
-				File oldAsset = new File(APILocator.getFileAssetAPI().getRealAssetPathIgnoreExtensionCase(fileAssetWrapper.getAsset().getInode(), fileAssetWrapper.getAsset().getUnderlyingFileName()));
+                final File oldAsset = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                        ? APILocator.getBinaryAssetStorageAPI().getBinaryFile(fileAssetWrapper.getAsset().getInode(), FileAssetAPI.BINARY_FIELD)
+                        : new File(APILocator.getFileAssetAPI().getRealAssetPathIgnoreExtensionCase(fileAssetWrapper.getAsset().getInode(), fileAssetWrapper.getAsset().getUnderlyingFileName()));
+				if (oldAsset == null) {
+					Logger.warn(this, String.format(
+							"Binary file not found for inode '%s' (underlying name: '%s') — skipping bundle",
+							fileAssetWrapper.getAsset().getInode(),
+							fileAssetWrapper.getAsset().getUnderlyingFileName()));
+					return;
+				}
 				if(output.exists(filePath)) {
 					output.delete(filePath);
 				}

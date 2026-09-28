@@ -21,18 +21,23 @@ import java.util.zip.GZIPOutputStream;
 public class TarGzipBundleOutput extends BundleOutput {
     private File tarGzipFile;
     private TarArchiveOutputStream tarArchiveOutputStream;
+    private java.nio.file.Path stagedArchive;
     private int GZIP_OUTPUT_STREAM_BUFFER_SIZE = Config
             .getIntProperty("GZIP_OUTPUT_STREAM_BUFFER_SIZE", 65536);
 
     public TarGzipBundleOutput(final PublisherConfig publisherConfig) throws IOException {
         super(publisherConfig);
 
-        tarGzipFile = getBundleTarGzipFile(publisherConfig.getId());
+        tarGzipFile = BundleArchiveStorage.localArchive(publisherConfig.getId());
     }
 
     @Override
     public void create() throws IOException {
-        final OutputStream outputStream = Files.newOutputStream(tarGzipFile.toPath());
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            Files.createDirectories(tarGzipFile.toPath().getParent());
+            stagedArchive = Files.createTempFile(tarGzipFile.toPath().getParent(), ".bundle-build-", ".tmp");
+        }
+        final OutputStream outputStream = Files.newOutputStream(stagedArchive == null ? tarGzipFile.toPath() : stagedArchive);
 
         tarArchiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(outputStream, GZIP_OUTPUT_STREAM_BUFFER_SIZE));
 
@@ -42,8 +47,22 @@ public class TarGzipBundleOutput extends BundleOutput {
     }
 
     public static File getBundleTarGzipFile(final String bundleId) {
-        final String fileName = String.format("%s%s%s.tar.gz",ConfigUtils.getBundlePath(),File.separator,bundleId);
-        return new File(fileName);
+        return BundleArchiveStorage.getInstance().get(bundleId);
+    }
+
+    @Override
+    public boolean bundleFileExists() {
+        return com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? BundleArchiveStorage.getInstance().exists(publisherConfig.getId()) : super.bundleFileExists();
+    }
+
+    @Override
+    public void complete() throws IOException {
+        if (stagedArchive != null) {
+            tarArchiveOutputStream.close();
+            tarArchiveOutputStream = null;
+            BundleArchiveStorage.getInstance().store(publisherConfig.getId(), stagedArchive.toFile());
+        }
     }
 
     @Override
@@ -68,8 +87,14 @@ public class TarGzipBundleOutput extends BundleOutput {
 
     @Override
     public void close() throws IOException {
-        if (UtilMethods.isSet(tarArchiveOutputStream)) {
-            tarArchiveOutputStream.close();
+        try {
+            if (UtilMethods.isSet(tarArchiveOutputStream)) {
+                tarArchiveOutputStream.close();
+            }
+        } finally {
+            if (stagedArchive != null) {
+                Files.deleteIfExists(stagedArchive);
+            }
         }
     }
 
@@ -95,7 +120,13 @@ public class TarGzipBundleOutput extends BundleOutput {
                 tarArchiveEntry.setSize(source.length());
 
                 tarArchiveOutputStream.putArchiveEntry(tarArchiveEntry);
-                IOUtils.copy(new FileInputStream(source), tarArchiveOutputStream);
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    try (var input = Files.newInputStream(source.toPath())) {
+                        IOUtils.copy(input, tarArchiveOutputStream);
+                    }
+                } else {
+                    IOUtils.copy(new FileInputStream(source), tarArchiveOutputStream);
+                }
             } finally {
                 tarArchiveOutputStream.closeArchiveEntry();
             }
