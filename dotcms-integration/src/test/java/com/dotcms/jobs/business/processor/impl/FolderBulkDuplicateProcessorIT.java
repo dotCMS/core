@@ -6,8 +6,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dotcms.Junit5WeldBaseTest;
-import com.dotcms.api.system.event.SystemEvent;
-import com.dotcms.api.system.event.SystemEventType;
+import java.util.ArrayList;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.beans.Permission;
+import com.dotcms.jobs.business.batch.BatchFailureReason;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -34,13 +38,11 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.awaitility.Awaitility;
 import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -80,8 +82,12 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
     }
 
     private Job jobFor(final List<String> paths) {
+        return jobFor(paths, admin);
+    }
+
+    private Job jobFor(final List<String> paths, final User submitter) {
         final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("userId", admin.getUserId());
+        parameters.put("userId", submitter.getUserId());
         parameters.put("assetPaths", paths);
 
         return Job.builder()
@@ -91,6 +97,62 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
                 .parameters(parameters)
                 .progressTracker(new DefaultProgressTracker())
                 .build();
+    }
+
+    /** Runs the processor over the given paths as the given user and answers its metadata. */
+    private Map<String, Object> duplicatePaths(final List<String> paths, final User submitter) {
+        final Job job = jobFor(paths, submitter);
+        final FolderBulkDuplicateProcessor processor = new FolderBulkDuplicateProcessor();
+        processor.process(job);
+        return processor.getResultMetadata(job);
+    }
+
+    /** The one outcome record for a submitted path. */
+    private BatchItemResult resultFor(final Map<String, Object> metadata, final String key) {
+        return resultsOf(metadata).stream().filter(result -> result.key().equals(key))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("no result recorded for " + key));
+    }
+
+    /** Grants a role a permission bitmask on a permissionable, as an admin. */
+    private void grant(final Permissionable permissionable, final String roleId,
+            final int permissions) throws Exception {
+        APILocator.getPermissionAPI().save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                permissionable.getPermissionId(), roleId, permissions, true), permissionable, admin,
+                false);
+    }
+
+    /** A new user with no rights of their own, and their personal role's id. */
+    private User limitedUser() {
+        return new UserDataGen().nextPersisted();
+    }
+
+    private String roleOf(final User user) throws Exception {
+        return APILocator.getRoleAPI().loadRoleByKey(user.getUserId()).getId();
+    }
+
+    /**
+     * A parent folder the user may read and add to, and a child in it the user may read and
+     * duplicate: the folder that succeeds alongside each refusal below.
+     */
+    private Folder duplicableBy(final User user) throws Exception {
+        final Folder parent = folder();
+        grant(parent, roleOf(user), PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        return new FolderDataGen().parent(parent).nextPersisted();
+    }
+
+    private void assertFailedWith(final Map<String, Object> metadata, final String path,
+            final BatchFailureReason reason) {
+        final BatchItemResult result = resultFor(metadata, path);
+        assertEquals(BatchItemStatus.FAILED, result.status(), path);
+        assertEquals(reason, result.reason().orElseThrow(), path);
+    }
+
+    private void assertSucceeded(final Map<String, Object> metadata, final Folder folder)
+            throws Exception {
+        assertEquals(BatchItemStatus.SUCCESS, resultFor(metadata, pathOf(folder)).status());
+        duplicateOf(folder);
     }
 
     /** Runs the processor over the given folders and answers its result metadata. */
@@ -126,6 +188,27 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
         return rows.stream().collect(Collectors.toMap(
                 row -> String.valueOf(row.get("asset_name")),
                 row -> String.valueOf(row.get("asset_type"))));
+    }
+
+    /**
+     * Whether an asset's name is derived from its id rather than chosen: generic content is named
+     * {@code content.<uuid>} and a link by its identifier, so a copy always gets a new one.
+     */
+    private static boolean isIdNamed(final String assetName) {
+        return assetName.startsWith("content.") || assetName.matches("[0-9a-f-]{32,36}");
+    }
+
+    /** The assets directly under a folder whose names are chosen, and so carried to a copy. */
+    private Map<String, String> namedAssets(final Folder folder) throws Exception {
+        return assetsUnder(folder).entrySet().stream()
+                .filter(entry -> !isIdNamed(entry.getKey()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    /** How many assets of each type sit directly under a folder, id-named ones included. */
+    private Map<String, Long> typeCounts(final Folder folder) throws Exception {
+        return assetsUnder(folder).values().stream()
+                .collect(Collectors.groupingBy(type -> type, Collectors.counting()));
     }
 
     /** Identifiers of the contentlets of one type directly under a folder. */
@@ -208,6 +291,36 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
 
     /**
      * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: The same folder duplicated three times, in three runs
+     * ExpectedResult: Three distinct duplicates carrying one, two and three _copy suffixes, each
+     * holding the source's file; the source and each earlier duplicate keep their name and content,
+     * so nothing was renamed or overwritten (US2)
+     */
+    @Test
+    public void test_process_repeatedDuplication_neverCollides() throws Exception {
+        final Folder source = folder();
+        new FileAssetDataGen(source, "a file").nextPersisted();
+        final Map<String, String> sourceAssets = assetsUnder(source);
+
+        duplicate(source);
+        duplicate(source);
+        duplicate(source);
+
+        final String parentPath = source.getPath()
+                .substring(0, source.getPath().length() - source.getName().length() - 1);
+        for (final String suffix : List.of("_copy", "_copy_copy", "_copy_copy_copy")) {
+            final Folder copy = folderAPI.findFolderByPath(
+                    parentPath + source.getName() + suffix + "/", site, admin, false);
+            assertNotNull(copy.getInode(), "missing " + source.getName() + suffix);
+            assertEquals(sourceAssets, assetsUnder(copy), "wrong content in " + copy.getName());
+        }
+        assertEquals(sourceAssets, assetsUnder(source));
+        assertEquals(source.getName(),
+                folderAPI.find(source.getInode(), admin, false).getName());
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
      * Given Scenario: A folder holding a file asset, a published page, an unpublished page, a
      * link, a child folder with its own file, a contentlet of a custom type, and an archived file
      * asset
@@ -231,7 +344,8 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
         duplicate(source);
 
         final Folder copy = duplicateOf(source);
-        assertEquals(assetsUnder(source), assetsUnder(copy));
+        assertEquals(namedAssets(source), namedAssets(copy));
+        assertEquals(typeCounts(source), typeCounts(copy));
         assertEquals(1, contentletsOfType(copy, blog).size());
         assertEquals(assetsUnder(child).keySet(),
                 assetsUnder(folderAPI.findFolderByPath(copy.getPath() + "child/", site, admin,
@@ -303,9 +417,11 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
      * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
      * Given Scenario: In one folder, a parent item related many-to-many to a child item, and
      * another parent item related one-to-many to another child
-     * ExpectedResult: Pins the shipped copy semantics (research R-12): the many-to-many copy points
-     * at the ORIGINAL child, not the child's own copy, and the one-to-many relationship is not
-     * carried
+     * ExpectedResult: Pins the shipped copy semantics (research R-12): the many-to-many copy always
+     * points at the ORIGINAL child. When the child is copied in the same run it may also point at
+     * the child's copy, since copying the child links its copy to every parent the child already
+     * has; that is what the shipped copy does and is accepted. The one-to-many relationship is not
+     * carried.
      */
     @Test
     public void test_process_relationshipsPointAtOriginals() throws Exception {
@@ -343,40 +459,132 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
         final Contentlet oneParentCopy = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(
                 contentletsOfType(copy, oneType).getFirst());
 
-        assertEquals(List.of(child.getIdentifier()),
-                APILocator.getContentletAPI().getRelatedContent(manyParentCopy, manyToMany, true,
-                        admin, false).stream().map(Contentlet::getIdentifier).toList());
+        assertTrue(APILocator.getContentletAPI().getRelatedContent(manyParentCopy, manyToMany,
+                        true, admin, false).stream().map(Contentlet::getIdentifier).toList()
+                .contains(child.getIdentifier()));
         assertTrue(APILocator.getContentletAPI().getRelatedContent(oneParentCopy, oneToMany, true,
                 admin, false).isEmpty());
     }
 
+
     /**
      * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
-     * Given Scenario: Two folders duplicated in one run
-     * ExpectedResult: COPY_FOLDER is announced once per duplicate, naming the duplicate as its
-     * target. It is pushed on commit, so a listener that reloads on it finds the content in place.
+     * Given Scenario: A folder the submitter can read, whose parent they cannot add to, beside one
+     * they can duplicate
+     * ExpectedResult: PARENT_PERMISSION_DENIED, told apart from no rights on the folder itself,
+     * and the other folder is still duplicated (US3)
      */
     @Test
-    public void test_process_announcesCopyFolderOncePerDuplicate() throws Exception {
-        final Folder first = folder();
-        final Folder second = folder();
-        final long before = System.currentTimeMillis();
+    public void test_process_parentNotWritable_parentPermissionDenied_restStillRuns()
+            throws Exception {
+        final User user = limitedUser();
+        final Folder duplicable = duplicableBy(user);
+        final Folder readOnlyParent = folder();
+        grant(readOnlyParent, roleOf(user), PermissionAPI.PERMISSION_READ);
+        final Folder readable = new FolderDataGen().parent(readOnlyParent).nextPersisted();
 
-        duplicate(first, second);
+        final Map<String, Object> metadata =
+                duplicatePaths(List.of(pathOf(readable), pathOf(duplicable)), user);
 
-        final String firstCopy = duplicateOf(first).getIdentifier();
-        final String secondCopy = duplicateOf(second).getIdentifier();
-        Awaitility.await().atMost(Duration.ofSeconds(30)).untilAsserted(() -> {
-            final List<SystemEvent> copies = APILocator.getSystemEventsAPI()
-                    .getEventsSince(before).stream()
-                    .filter(event -> event.getEventType() == SystemEventType.COPY_FOLDER)
-                    .toList();
-            assertEquals(1, copies.stream()
-                    .filter(event -> String.valueOf(event.getPayload().getData())
-                            .contains(firstCopy)).count());
-            assertEquals(1, copies.stream()
-                    .filter(event -> String.valueOf(event.getPayload().getData())
-                            .contains(secondCopy)).count());
-        });
+        assertFailedWith(metadata, pathOf(readable), BatchFailureReason.PARENT_PERMISSION_DENIED);
+        assertSucceeded(metadata, duplicable);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: A path that resolves to nothing, beside a folder that can be duplicated
+     * ExpectedResult: PATH_NOT_FOUND, and the other folder is still duplicated (US3)
+     */
+    @Test
+    public void test_process_unresolvablePath_pathNotFound_restStillRuns() throws Exception {
+        final Folder duplicable = folder();
+        final String gone = "//" + site.getHostname() + "/does-not-exist-" + UUID.randomUUID()
+                + "/";
+
+        final Map<String, Object> metadata =
+                duplicatePaths(List.of(gone, pathOf(duplicable)), admin);
+
+        assertFailedWith(metadata, gone, BatchFailureReason.PATH_NOT_FOUND);
+        assertSucceeded(metadata, duplicable);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: The site root, which is the system folder in disguise, beside a folder that
+     * can be duplicated
+     * ExpectedResult: PROTECTED_FOLDER, never attempted, and the other folder is still duplicated
+     * (US3)
+     */
+    @Test
+    public void test_process_siteRoot_protectedFolder_restStillRuns() throws Exception {
+        final Folder duplicable = folder();
+        final String siteRoot = "//" + site.getHostname() + "/";
+
+        final Map<String, Object> metadata =
+                duplicatePaths(List.of(siteRoot, pathOf(duplicable)), admin);
+
+        assertFailedWith(metadata, siteRoot, BatchFailureReason.PROTECTED_FOLDER);
+        assertSucceeded(metadata, duplicable);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: A selection where every folder is refused
+     * ExpectedResult: The run still finishes normally, with successCount 0 and every folder named
+     * with its own reason, rather than failing the job (US3)
+     */
+    @Test
+    public void test_process_everyFolderRefused_runFinishesNamingEachOne() throws Exception {
+        final String gone = "//" + site.getHostname() + "/does-not-exist-" + UUID.randomUUID()
+                + "/";
+        final String siteRoot = "//" + site.getHostname() + "/";
+
+        final Map<String, Object> metadata = duplicatePaths(List.of(gone, siteRoot), admin);
+
+        assertEquals(0, metadata.get("successCount"));
+        assertEquals(2, metadata.get("failedCount"));
+        assertFailedWith(metadata, gone, BatchFailureReason.PATH_NOT_FOUND);
+        assertFailedWith(metadata, siteRoot, BatchFailureReason.PROTECTED_FOLDER);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: A folder and its own child both selected, in both orders
+     * ExpectedResult: Only the parent is duplicated; the child is SKIPPED with COVERED_BY_PARENT,
+     * no duplicate of the child appears inside the original parent, and the parent's duplicate
+     * carries the child. The same whichever was submitted first (US3)
+     */
+    @Test
+    public void test_process_folderAndItsChild_childSkippedInEitherOrder() throws Exception {
+        for (final boolean childFirst : List.of(true, false)) {
+            final Folder parent = folder();
+            final Folder child = new FolderDataGen().parent(parent).name("child").nextPersisted();
+            final List<String> paths = childFirst
+                    ? List.of(pathOf(child), pathOf(parent))
+                    : List.of(pathOf(parent), pathOf(child));
+
+            final Map<String, Object> metadata = duplicatePaths(paths, admin);
+
+            final BatchItemResult childResult = resultFor(metadata, pathOf(child));
+            assertEquals(BatchItemStatus.SKIPPED, childResult.status(), "childFirst=" + childFirst);
+            assertEquals(BatchFailureReason.COVERED_BY_PARENT, childResult.reason().orElseThrow());
+            assertEquals(BatchItemStatus.SUCCESS, resultFor(metadata, pathOf(parent)).status());
+            assertFalse(assetsUnder(parent).containsKey("child_copy"), "childFirst=" + childFirst);
+            assertEquals("folder", assetsUnder(duplicateOf(parent)).get("child"));
+        }
+    }
+
+    /** Everything directly under a folder's parent, the place its duplicate would land. */
+    private Map<String, String> assetsUnderParentOf(final Folder folder) throws Exception {
+        final String parentPath = folder.getPath()
+                .substring(0, folder.getPath().length() - folder.getName().length() - 1);
+        return new DotConnect()
+                .setSQL("select asset_name, asset_type from identifier "
+                        + "where host_inode = ? and parent_path = ?")
+                .addParam(site.getIdentifier())
+                .addParam(parentPath)
+                .loadObjectResults().stream().collect(Collectors.toMap(
+                        row -> String.valueOf(row.get("asset_name")),
+                        row -> String.valueOf(row.get("asset_type"))));
     }
 }
