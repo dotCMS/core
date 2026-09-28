@@ -94,11 +94,25 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
     private final AtomicInteger processedCount = new AtomicInteger();
     private final AtomicBoolean cancellationRequested = new AtomicBoolean();
     private final List<BatchItemResult> results = new CopyOnWriteArrayList<>();
+    private final PermissionAPI permissionAPI;
     private volatile int total;
     /** The first submitted folder a cancelled run never reached; null when the run was not cut short. */
     private volatile String stoppedAt;
     /** The last progress percentage reported, rounded, so a repeat is never sent. */
     private int lastReportedPercent = -1;
+
+    /** Used by CDI and the job framework's reflection fallback. */
+    public FolderBulkDuplicateProcessor() {
+        this(APILocator.getPermissionAPI());
+    }
+
+    /**
+     * @param permissionAPI answers the batch read and add-children checks; a test passes one that
+     *                      fails, to prove a failed check is not reported as a refusal
+     */
+    FolderBulkDuplicateProcessor(final PermissionAPI permissionAPI) {
+        this.permissionAPI = permissionAPI;
+    }
 
     /**
      * Duplicates every submitted folder, in submission order.
@@ -240,8 +254,13 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
         }
 
         // Read on the folder itself, checked as the author for the whole selection at once.
-        final Set<String> readable = permitted(resolved.values(), PermissionAPI.PERMISSION_READ,
-                user);
+        final Set<String> readable;
+        try {
+            readable = permitted(resolved.values(), PermissionAPI.PERMISSION_READ, user);
+        } catch (final PermissionCheckFailedException e) {
+            recordCheckFailure(resolved.keySet(), e);
+            return Map.of();
+        }
         final Map<String, Permissionable> parents = new LinkedHashMap<>();
         for (final Map.Entry<String, Folder> entry : resolved.entrySet()) {
             if (readable.contains(entry.getValue().getPermissionId())) {
@@ -254,8 +273,14 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
         }
 
         // Add-children where each duplicate lands, again in one round-trip.
-        final Set<String> writableParents = permitted(parents.values(),
-                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user);
+        final Set<String> writableParents;
+        try {
+            writableParents = permitted(parents.values(),
+                    PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user);
+        } catch (final PermissionCheckFailedException e) {
+            recordCheckFailure(parents.keySet(), e);
+            return Map.of();
+        }
         final Map<String, Folder> duplicable = new LinkedHashMap<>();
         for (final Map.Entry<String, Permissionable> entry : parents.entrySet()) {
             if (writableParents.contains(entry.getValue().getPermissionId())) {
@@ -319,7 +344,10 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
 
     /**
      * The permission ids, among the given items, the author holds a permission on, resolved in one
-     * round-trip. A failure to check reads as holding none, so nothing is duplicated on a guess.
+     * round-trip.
+     *
+     * @throws PermissionCheckFailedException the check itself could not run. That is not a
+     *                                        refusal, and the caller must not report it as one.
      */
     private Set<String> permitted(final Collection<? extends Permissionable> items,
             final int permission, final User user) {
@@ -327,15 +355,36 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
             return Set.of();
         }
         try {
-            return APILocator.getPermissionAPI()
+            return this.permissionAPI
                     .filterCollection(List.<Permissionable>copyOf(items), permission, user, false)
                     .stream()
                     .map(Permissionable::getPermissionId)
                     .collect(Collectors.toSet());
         } catch (final Exception e) {
-            Logger.warn(this, "Unable to check permissions for the selection: " + e.getMessage(),
-                    e);
-            return Set.of();
+            throw new PermissionCheckFailedException(e);
+        }
+    }
+
+    /**
+     * Records every folder a failed permission check covered as FAILED / UNCLASSIFIED, with the
+     * error as its diagnostic. Reporting them as denied would hide the real failure behind a reason
+     * that is not true.
+     */
+    private void recordCheckFailure(final Collection<String> paths,
+            final PermissionCheckFailedException e) {
+        Logger.warn(this, "Unable to check permissions for the selection: "
+                + e.getCause().getMessage(), e.getCause());
+        for (final String path : paths) {
+            record(path, BatchItemStatus.FAILED, BatchFailureReason.UNCLASSIFIED,
+                    "Unable to check permissions: " + e.getCause().getMessage());
+        }
+    }
+
+    /** A batch permission check that could not run, as opposed to one that said no. */
+    private static final class PermissionCheckFailedException extends RuntimeException {
+
+        PermissionCheckFailedException(final Throwable cause) {
+            super(cause);
         }
     }
 

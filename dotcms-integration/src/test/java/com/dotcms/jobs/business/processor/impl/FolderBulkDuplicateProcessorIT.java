@@ -677,6 +677,45 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
                 });
     }
 
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: The batch permission check itself fails, say on a database error, for a
+     * selection the submitter could otherwise duplicate
+     * ExpectedResult: Each folder is FAILED with UNCLASSIFIED, carrying the error as its
+     * diagnostic, never PERMISSION_DENIED: a check that could not run is not a refusal, and
+     * reporting it as one would hide the real failure (PR review finding)
+     */
+    @Test
+    public void test_process_permissionCheckFails_unclassifiedNotPermissionDenied()
+            throws Exception {
+        final Folder first = folder();
+        final Folder second = folder();
+        final PermissionAPI real = APILocator.getPermissionAPI();
+        final PermissionAPI failingCheck = (PermissionAPI) Proxy.newProxyInstance(
+                PermissionAPI.class.getClassLoader(), new Class<?>[]{PermissionAPI.class},
+                (proxy, method, args) -> {
+                    if (method.getName().equals("filterCollection")) {
+                        throw new DotDataException("injected failure in the permission check");
+                    }
+                    try {
+                        return method.invoke(real, args);
+                    } catch (final InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                });
+        final Job job = jobFor(List.of(pathOf(first), pathOf(second)));
+        final FolderBulkDuplicateProcessor processor =
+                new FolderBulkDuplicateProcessor(failingCheck);
+
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        assertFailedWith(metadata, pathOf(first), BatchFailureReason.UNCLASSIFIED);
+        assertFailedWith(metadata, pathOf(second), BatchFailureReason.UNCLASSIFIED);
+        assertTrue(resultFor(metadata, pathOf(first)).message().orElseThrow()
+                .contains("injected failure"));
+    }
+
     /** Everything directly under a folder's parent, the place its duplicate would land. */
     private Map<String, String> assetsUnderParentOf(final Folder folder) throws Exception {
         final String parentPath = folder.getPath()
