@@ -75,6 +75,10 @@ public class DotResourceLoader extends ResourceLoader {
 
             } catch (Exception e) {
                 Logger.warn(this, "filePath: " + filePath + ", msg:" + e.getMessage(), e);
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()
+                        && e instanceof com.dotmarketing.exception.DotDataException) {
+                    throw new org.apache.velocity.exception.VelocityException("Unable to load stored resource: " + key.path, e);
+                }
                 CacheLocator.getVeloctyResourceCache().addMiss(key.path);
                 throw new ResourceNotFoundException("Cannot parse velocity file : " + key.path, e);
             }

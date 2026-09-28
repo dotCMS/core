@@ -387,6 +387,30 @@ per direct child record on every listing, and that includes the tombstone of eve
 child, so it grows with the number of temporary names ever written directly in that folder until
 tombstones can be reclaimed.
 
+## Renditions and rendering
+
+With the flag on, completed image-filter outputs are uploaded to the `generated-assets` group as
+they are produced, at `generated-assets/{first}/{second}/{inode}/dotGenerated_...`, with the same
+relative layout under the local `dotGenerated` root. A cold read restores a completed rendition
+from S3 without running the filter again. Warm hits do not contact S3, so an S3 outage does not
+break a cached response and a warm read cannot republish an invalidated object. Incomplete filter
+outputs are never uploaded or evicted. Thumbnail invalidation and source deletion target that
+inode's directory. With the flag off, renditions keep the existing two-character layout. Existing
+rendition objects are not moved to the new layout.
+
+Rendition keys include the original's revision key, so replacing bytes under the same inode and
+filename never selects the previous revision's rendition. Crops read the focal point from the
+content's metadata snapshot, including focal points saved on a temporary upload, and the Java and
+native crop engines use the same pinned coordinates. Image-filter execution holds a cache lease
+while it reads the original.
+
+Compiled Sass output also uses the `generated-assets` group. Its key covers the source and
+dependency bytes, site, live or working mode, compiler options and application build, so a cold
+node restores a matching CSS output without running Sass. Source maps keep their existing private,
+uncached behavior. Markdown files are read through the protected FileAsset stream, and VTL and
+included files are opened through the binary asset API, so a file whose local copy was evicted is
+restored from S3 before it is rendered.
+
 ## Local cache eviction
 
 With the flag on, the local asset directory is a cache that `BinaryCacheEvictionJob` can trim.
@@ -485,7 +509,7 @@ docker run -d --rm --name binary-cleanup-postgres-test \
   -e POSTGRES_DB=binary_storage_test postgres:16-alpine
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest,BundleArchiveStorageTest,FileAssetBundlerTest,TemporaryAssetStorageTest,WebdavAssetStorageTest,TemporaryMetadataStorageTest,WebdavTemporaryStorageTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest,BundleArchiveStorageTest,FileAssetBundlerTest,TemporaryAssetStorageTest,WebdavAssetStorageTest,TemporaryMetadataStorageTest,WebdavTemporaryStorageTest,ImageFilterExporterFocalPointTest,ImageFilterExporterTest,ImageFilterExporterSharedStoreTest,ImageFilterExporterEngineSelectionTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002 \
   -Ds3.test.jdbc=jdbc:postgresql://127.0.0.1:19003/binary_storage_test
 
@@ -498,7 +522,7 @@ stack:
 ```sh
 ./mvnw install -pl :dotcms-core --am -DskipTests -Ddocker.skip
 ./mvnw verify -pl :dotcms-integration -Dmaven.build.cache.enabled=false -Dcoreit.test.skip=false \
-  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest,BinaryAssetStarterRestoreTest,PublishingArchiveStorageTest,DotWebdavHelperTest
+  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest,BinaryAssetStarterRestoreTest,PublishingArchiveStorageTest,DotWebdavHelperTest,AssetTemplateStorageTest,CSSAssetStorageTest
 ```
 
 These default to flag-off mode, where the S3 cases are skipped. To run the S3 cases, create a
