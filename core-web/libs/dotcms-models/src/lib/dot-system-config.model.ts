@@ -79,8 +79,9 @@ export interface DotFolderBulkDeleteCeilings {
  * The bulk folder duplication ceiling the server enforces, as it advertises it on
  * `/api/v1/appconfiguration` (#37062).
  *
- * Read from the same constant the endpoint enforces with, so a client can refuse an over-ceiling
- * selection before submitting it. The server remains the enforcement point.
+ * Modelled because the server sends it, as {@link DotFolderBulkDeleteCeilings} is. Nothing reads it
+ * yet: Content Drive does not check the ceiling before submitting, and an over-ceiling selection is
+ * refused by the server with its own message. The server is the enforcement point.
  */
 export interface DotFolderBulkDuplicateCeilings {
     /** Distinct folders in one submission. */

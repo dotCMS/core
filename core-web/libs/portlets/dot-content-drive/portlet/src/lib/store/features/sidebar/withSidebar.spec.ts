@@ -699,6 +699,15 @@ describe('withSidebar - a location the tree has not loaded', () => {
         spectator.flushEffects();
     });
 
+    // Re-armed after each test rather than before: `mockProvider` builds this `vi.fn` once for the
+    // whole file, and the next test's store loads its tree as it is created, before a `beforeEach`
+    // could step in. A test that makes it hang would otherwise leave that tree never loading.
+    afterEach(() => {
+        folderService.searchFolders.mockImplementation(({ path }: { path: string }) =>
+            searchResult(levels[path] ?? [])
+        );
+    });
+
     it('should load the branch down to it and select it', () => {
         // Only the root level is loaded: `documents` has never been expanded.
         patchState(store as never, { path: '/documents/images/' } as never);
@@ -743,6 +752,42 @@ describe('withSidebar - a location the tree has not loaded', () => {
         spectator.flushEffects();
 
         expect(findNodeByPath(store.folders(), '/documents/')?.loading).toBe(true);
+    });
+
+    /** What the table selects when a folder is double-clicked: a node the tree does not own. */
+    const standIn = (path: string): DotFolderTreeNodeItem => ({
+        key: `table-${path}`,
+        label: path,
+        data: {
+            id: `table-${path}`,
+            hostname: mockSite.hostname,
+            path,
+            type: 'folder',
+            fromTable: true
+        },
+        leaf: false
+    });
+
+    it('should leave the selection a folder opened from the table made in place', () => {
+        // The sidebar reacts to that selection to expand and scroll to the folder. Swapping it for
+        // the tree's own node as soon as it arrived hid it from the sidebar, which then did
+        // neither; the tree shows the stand-in selected by its key anyway.
+        const opened = standIn('/documents/');
+        store.setSelectedNode(opened);
+        patchState(store as never, { path: '/documents/' } as never);
+        spectator.flushEffects();
+
+        expect(store.selectedNode()).toBe(opened);
+    });
+
+    it('should clear the selection when the folder opened from the table cannot be found', () => {
+        // Kept while its branch loads, but a folder that turned out not to exist must not stay
+        // looking selected.
+        store.setSelectedNode(standIn('/gone/'));
+        patchState(store as never, { path: '/gone/' } as never);
+        spectator.flushEffects();
+
+        expect(store.selectedNode()).toBeUndefined();
     });
 
     it('should not keep reloading for a folder that does not exist', () => {

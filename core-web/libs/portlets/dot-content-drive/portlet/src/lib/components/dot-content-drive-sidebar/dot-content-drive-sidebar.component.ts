@@ -245,8 +245,8 @@ export class DotContentDriveSidebarComponent {
             // level into the tree on screen. Walking the levels here as well fetched them twice,
             // and whichever answer landed last dropped the other's.
             if (!this.#findNodeByPath(data.path, this.$folders())) {
-                // Its row does not exist yet, so the scroll waits for the tree's own node:
-                // `revealLoadedFolder` brings it into view once the store selects it.
+                // Its row does not exist yet, so the scroll waits for the tree to gain the
+                // folder's node: `revealLoadedFolder` brings it into view then.
                 this.#awaitingReveal = data.path;
 
                 return;
@@ -291,35 +291,29 @@ export class DotContentDriveSidebarComponent {
     /**
      * Brings a folder opened from the table into view once the store has loaded its branch.
      *
-     * The table click selects a stand-in, and for a folder the tree did not hold yet there was no
-     * row to scroll to at that moment. The store later selects the tree's own node for it, and that
-     * is when its row exists. Once only, so publishing the same selection again does not pull the
-     * tree back to it while the author is scrolling elsewhere.
+     * For a folder the tree did not hold yet there was no row to scroll to at the click. Keyed on
+     * the tree gaining its node rather than on the selection, because the selection does not change
+     * when that happens: the stand-in the table selected stays selected. Once only, so the tree
+     * changing again later does not pull it back while the author is scrolling elsewhere.
      *
-     * @param {DotFolderTreeNodeItem | undefined} selectedNode - The selected node
+     * @param {DotFolderTreeNodeItem[]} folders - The tree
      */
-    readonly revealLoadedFolder = signalMethod<DotFolderTreeNodeItem | undefined>(
-        (selectedNode) => {
-            const data = selectedNode?.data;
+    readonly revealLoadedFolder = signalMethod<DotFolderTreeNodeItem[]>((folders) => {
+        const path = this.#awaitingReveal;
+        const node = path ? this.#findNodeByPath(path, folders) : undefined;
 
-            if (
-                !data ||
-                data.type === LOAD_MORE_NODE_TYPE ||
-                data.fromTable ||
-                data.path !== this.#awaitingReveal
-            ) {
-                return;
-            }
-
-            this.#awaitingReveal = undefined;
-            this.#revealNode(selectedNode, 'smooth');
+        if (!node) {
+            return;
         }
-    );
+
+        this.#awaitingReveal = undefined;
+        this.#revealNode(node, 'smooth');
+    });
 
     constructor() {
         // Call signalMethod with the signal - it will automatically subscribe to changes
         this.handleSelectedNodeFromTable(this.$selectedNode);
-        this.revealLoadedFolder(this.$selectedNode);
+        this.revealLoadedFolder(this.$folders);
         this.revealSelectedNodeOnLoad(this.$loading);
     }
 
@@ -373,6 +367,10 @@ export class DotContentDriveSidebarComponent {
      */
     protected onNodeSelect(event: TreeNodeSelectEvent): void {
         const { node } = event;
+
+        // A folder opened from the table may still be loading its branch. Once the author has
+        // picked another folder here, scrolling back to that one when it lands would undo this.
+        this.#awaitingReveal = undefined;
 
         this.#store.setSelectedNode(node);
     }

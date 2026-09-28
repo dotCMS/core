@@ -1343,13 +1343,6 @@ describe('DotContentDriveSidebarComponent', () => {
                 leaf: false
             };
 
-            /** The tree's own node for the folder, which the store selects once it has loaded. */
-            const loaded: DotFolderTreeNodeItem = {
-                ...standIn,
-                key: 'images-node',
-                data: { ...standIn.data, id: 'images-node', fromTable: undefined }
-            };
-
             const spyOnScroll = () => {
                 const scrollIntoView = vi.fn();
                 const nativeElement =
@@ -1361,14 +1354,15 @@ describe('DotContentDriveSidebarComponent', () => {
                 return scrollIntoView;
             };
 
-            it('should scroll the tree to it', () => {
-                // Its row does not exist while the branch loads, so the scroll has to wait for the
-                // tree's own node rather than happen on the click.
+            it('should scroll the tree to it once the tree holds it', () => {
+                // Its row does not exist while the branch loads, so the scroll waits for the tree
+                // to gain the folder's node. The selection does not change when that happens: the
+                // stand-in the table selected stays selected.
                 const scrollIntoView = spyOnScroll();
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
                 spectator.component.handleSelectedNodeFromTable(standIn);
-                spectator.component.revealLoadedFolder(loaded);
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
                 spectator.detectChanges();
 
                 expect(scrollIntoView).toHaveBeenCalledWith({
@@ -1377,24 +1371,41 @@ describe('DotContentDriveSidebarComponent', () => {
                 });
             });
 
-            it('should scroll only once, not every time the selection is published again', () => {
+            it('should scroll only once, not every time the tree changes afterwards', () => {
                 const scrollIntoView = spyOnScroll();
                 contentDriveStore.folders.mockReturnValue(mockTreeNodes);
 
                 spectator.component.handleSelectedNodeFromTable(standIn);
-                spectator.component.revealLoadedFolder(loaded);
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
                 spectator.detectChanges();
-                spectator.component.revealLoadedFolder({ ...loaded });
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
                 spectator.detectChanges();
 
                 expect(scrollIntoView).toHaveBeenCalledTimes(1);
             });
 
-            it('should not scroll for a folder selected in the tree itself', () => {
+            it('should not scroll once the author has selected another folder in the tree', () => {
+                // Its branch can arrive after the author has moved on; pulling the tree back to
+                // it then would undo the choice they just made.
+                const scrollIntoView = spyOnScroll();
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                spectator.component.handleSelectedNodeFromTable(standIn);
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', {
+                    originalEvent: new Event('click'),
+                    node: mockTreeNodes[1]
+                });
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+
+                expect(scrollIntoView).not.toHaveBeenCalled();
+            });
+
+            it('should not scroll when no folder was opened from the table', () => {
                 // A tree click is already under the pointer.
                 const scrollIntoView = spyOnScroll();
 
-                spectator.component.revealLoadedFolder(loaded);
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
                 spectator.detectChanges();
 
                 expect(scrollIntoView).not.toHaveBeenCalled();

@@ -402,18 +402,24 @@ test.describe('Content Drive Search Scope', () => {
     }) => {
         await seed(request, apiHelpers, testSuffix);
         const drive = new ContentDrivePage(adminPage);
+        const search = new ContentDriveSearchScope(adminPage);
 
         await drive.goTo();
+        // All Fields, because that is the scope that reads a term as literal text. Title, the
+        // default, deliberately splits it on punctuation the way the index does, so `(a+b)` there
+        // means words starting with "a" and "b", and rows legitimately match.
+        await search.choose('ALL_FIELDS');
 
         // The term is treated as literal text (FR-027): the capture's predicate already proves
         // the request answered 200 — an unescaped term would have failed the query before any
-        // results could render (FR-029), surfacing as the search error toast and a stale grid.
+        // results could render (FR-029), surfacing as the search error banner and a stale grid.
         await drive.captureSearchPayload(
             () => drive.searchField.fill('(a+b)'),
             (payload) => payload.filters.text === '(a+b)'
         );
 
         await expect(adminPage.locator('.p-toast-message')).toHaveCount(0);
+        await expect(adminPage.getByTestId('search-error-state')).toHaveCount(0);
         await expect(drive.listTitles).toHaveCount(0);
     });
 

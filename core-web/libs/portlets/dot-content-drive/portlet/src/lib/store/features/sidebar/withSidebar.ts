@@ -309,7 +309,17 @@ export function withSidebar() {
                                 return of(undefined);
                             }
 
-                            return revealLevel(generateAllParentPaths(path), 0, currentSite);
+                            return revealLevel(generateAllParentPaths(path), 0, currentSite).pipe(
+                                tap(() => {
+                                    // Its selection was kept while the branch loaded. A folder
+                                    // that turned out not to exist must not go on looking selected.
+                                    const found = findNodeByPath(store.folders(), path);
+
+                                    if (!found && store.selectedNode()?.data?.path === path) {
+                                        patchState(store, { selectedNode: undefined });
+                                    }
+                                })
+                            );
                         })
                     )
                 ),
@@ -444,11 +454,15 @@ export function withSidebar() {
                             const awaitingBranch =
                                 unloadedFolder && store.selectedNode()?.data?.path === path;
 
-                            // By identity, not path: the tree marks a node selected only when it
-                            // is that node, so the stand-in a table click selects never looked
-                            // selected even when its folder was loaded. The tree's own node
-                            // replaces it once it exists.
-                            if (!awaitingBranch && store.selectedNode() !== match) {
+                            // By path, not identity. A table click selects a stand-in for the
+                            // folder, which the tree shows selected by its key, and the sidebar
+                            // reacts to that stand-in to expand and scroll to the folder. Swapping
+                            // it for the tree's own node hid it from the sidebar, which then did
+                            // neither.
+                            if (
+                                !awaitingBranch &&
+                                store.selectedNode()?.data?.path !== match?.data?.path
+                            ) {
                                 patchState(store, { selectedNode: match });
                             }
 
