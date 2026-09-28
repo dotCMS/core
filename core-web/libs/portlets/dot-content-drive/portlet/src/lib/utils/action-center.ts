@@ -1,14 +1,17 @@
+import { ToastMessageOptions } from 'primeng/api';
+
 import {
-    PERMISSIONS_TYPE,
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
     DotBulkActionView,
     DotCMSContentlet,
+    DotContentDriveActionableItem,
     DotContentDriveItem,
-    DotCountWorkflowAction
+    DotCountWorkflowAction,
+    PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 
-import { isFolder } from './functions';
+import { isFolder, normalizeFolderRef } from './functions';
 import { WORKFLOW_ACTION_ID } from './workflow-actions';
 
 /**
@@ -102,12 +105,25 @@ export const eligibleForDelete = (item: DotContentDriveItem): boolean => {
     );
 };
 
+/**
+ * Duplicate the selected folders in place, backed by `_bulkduplicate`.
+ *
+ * Each duplicate lands beside its original, in the same parent, under a name the server derives, so
+ * there is nothing to configure and no destination to pick. Job-backed like {@link REFRESH_ACTION_ID}:
+ * the endpoint answers `202` and the outcome arrives by push.
+ *
+ * Folders only, and sent as site-qualified paths rather than identifiers, because that is what the
+ * endpoint takes. A contentlet in the selection is left out of the count rather than failing.
+ */
+export const DUPLICATE_ACTION_ID = 'DUPLICATE';
+
 export type DotActionCenterQuickActionId =
     | WORKFLOW_ACTION_ID
     | typeof ADD_TO_BUNDLE_ACTION_ID
     | typeof PUSH_PUBLISH_ACTION_ID
     | typeof REFRESH_ACTION_ID
-    | typeof DELETE_FOLDER_ACTION_ID;
+    | typeof DELETE_FOLDER_ACTION_ID
+    | typeof DUPLICATE_ACTION_ID;
 
 /** Quick action as rendered in the dialog (with eligibility counts). */
 export interface DotActionCenterQuickAction {
@@ -176,6 +192,14 @@ export interface DotActionCenterContext {
      * until the answer arrives, rather than enabling for a moment and then retracting.
      */
     hasPushPublishEnvironments?: boolean;
+    /**
+     * Whether the author may add folders where they are browsing, which is where every duplicate
+     * lands.
+     *
+     * `undefined` reads as allowed, the same as the store's own gate: the lookup may still be in
+     * flight, and the server refuses per folder regardless.
+     */
+    canAddChildren?: boolean;
 }
 
 /**
@@ -211,6 +235,12 @@ interface DotActionCenterQuickActionDef {
     requiresEnvironments?: boolean;
     /** Needs the CMS Administrator role before it can run. See {@link REFRESH_ACTION_ID}. */
     requiresAdmin?: boolean;
+    /**
+     * Needs the author to be able to add folders where they are browsing, and is withheld outright
+     * when they cannot, since everything it would create lands there. See
+     * {@link DotActionCenterContext.canAddChildren}.
+     */
+    requiresAddChildren?: boolean;
     /**
      * Runs on folders as well as contentlets.
      *
@@ -262,7 +292,7 @@ export const isLockedByAnotherUser = (
 /**
  * Quick actions in display order (fixed — rows never reshuffle).
  *
- * Order: Lock, Unlock, Add to Bundle, Push Publish, Refresh.
+ * Order: Lock, Unlock, Add to Bundle, Push Publish, Refresh, Duplicate.
  *
  * **Scope: the old search toolbar's bulk operations, and only those.** Publish, Unpublish, Archive,
  * Unarchive and Delete used to sit here as well, fired through
@@ -347,6 +377,20 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         // the whole gate and not half of it.
         eligibleWhen: () => true,
         requiresAdmin: true
+    },
+    {
+        id: DUPLICATE_ACTION_ID,
+        nameKey: 'content-drive.action-center.duplicate',
+        icon: 'content_copy',
+        // READ is what copying a folder needs on the folder itself. A row whose rights are unknown
+        // is kept, so the server decides rather than the client guessing a refusal. Whether the
+        // author can add to the parent is a question about the browsed folder, not the row, and is
+        // answered before this list is shown at all.
+        eligibleWhen: (item) =>
+            isFolder(item) && (item.permissions?.includes(PERMISSIONS_TYPE.READ) ?? true),
+        supportsFolders: true,
+        foldersOnly: true,
+        requiresAddChildren: true
     }
 ];
 
@@ -374,6 +418,61 @@ export const excludeFolders = (items: DotContentDriveItem[]): DotCMSContentlet[]
 export const toDistinctIdentifiers = (items: DotContentDriveItem[]): string[] => [
     ...new Set(items.map((item) => item.identifier).filter(Boolean))
 ];
+
+/**
+ * Site-qualified paths for the folders in a selection, such as `//demo.dotcms.com/blogs/alpha/`, in
+ * the form `_bulkduplicate` takes. Contentlets are dropped.
+ *
+ * Every path ends with a slash: the endpoint resolves an asset path, and the trailing slash is what
+ * makes it name the folder rather than a file of the same name.
+ */
+export const toFolderAssetPaths = (
+    items: DotContentDriveActionableItem[],
+    hostname: string
+): string[] =>
+    items
+        .filter(isFolder)
+        .map(
+            (folder) =>
+                `//${hostname}${folder.path.endsWith('/') ? folder.path : `${folder.path}/`}`
+        );
+
+/**
+ * The distinct parents of the given folder paths, as `//hostname/path` folder refs.
+ *
+ * A duplicate lands in its original's parent, so these are the folders whose listing a finished run
+ * changes. A folder at the site root yields the site's own ref.
+ */
+export const toParentFolderRefs = (assetPaths: string[]): string[] => [
+    ...new Set(
+        assetPaths.map((assetPath) => {
+            const ref = normalizeFolderRef(assetPath);
+
+            return ref.slice(0, ref.lastIndexOf('/'));
+        })
+    )
+];
+
+/**
+ * The toast that says a duplication has started.
+ *
+ * Shared by the Action Center and the folder's right-click menu, so the same run is announced the
+ * same way whichever surface started it. The outcome follows later, by push.
+ *
+ * @param resolve resolves a message key with its arguments
+ * @param folderCount how many folders were submitted
+ */
+export const duplicateStartedMessage = (
+    resolve: (key: string, ...args: string[]) => string,
+    folderCount: number
+): ToastMessageOptions => ({
+    severity: 'info',
+    summary: resolve('content-drive.action-center.toast.duplicate-started'),
+    detail: resolve(
+        'content-drive.action-center.toast.duplicate-started-detail',
+        String(folderCount)
+    )
+});
 
 /** Contentlet inodes for bulk endpoints (folders dropped). */
 export const toContentletInodes = (items: DotContentDriveItem[]): string[] =>
@@ -406,6 +505,12 @@ export const getQuickActions = (
             : quickAction.supportsFolders
               ? items
               : contentlets;
+
+        // Withheld when everything it creates would land where the author cannot add, which is a
+        // question about the browsed folder rather than any selected row.
+        if (quickAction.requiresAddChildren && context.canAddChildren === false) {
+            return [];
+        }
 
         // Withheld for the selection as a whole, before any per-item counting. An action the author
         // cannot use on anything they picked is not an action with a count of zero — it is one that

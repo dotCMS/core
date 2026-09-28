@@ -1,6 +1,7 @@
 import {
     DotBulkUploadFailureReason,
-    DotFolderDeleteFailureReason
+    DotFolderDeleteFailureReason,
+    DotFolderBulkDuplicateReason
 } from './dot-content-drive.model';
 
 /**
@@ -42,7 +43,10 @@ export interface DotBatchOutcome<TReason extends string = string> {
     processed: number;
     successCount: number;
     failedCount: number;
-    /** Never attempted, because the run was cancelled before reaching them. */
+    /**
+     * Never attempted: the run was cancelled before reaching them, or, for a folder operation,
+     * another selected folder already covers them.
+     */
     skippedCount: number;
     /**
      * `true` when this run was a resubmission of a batch that had already succeeded.
@@ -60,7 +64,11 @@ export interface DotBatchItemResult<TReason extends string = string> {
     /** Generic on purpose: a file name for an upload, a folder path elsewhere. */
     key: string;
     status: 'SUCCESS' | 'FAILED' | 'SKIPPED';
-    /** Present only on `FAILED`. This is what a client maps to product copy. */
+    /**
+     * Present on every `FAILED`, and on a `SKIPPED` item only when the skip has a named cause, such as
+     * a folder another selected folder already covers. A skip without one was never reached before a
+     * cancellation. This is what a client maps to product copy.
+     */
     reason?: TReason;
     /** Diagnostic, for logs. Never shown to a user. */
     message?: string;
@@ -127,6 +135,34 @@ export interface DotBulkUploadSubmitResponse {
  */
 export interface DotBulkUploadCompletedEvent extends Partial<
     DotBatchOutcome<DotBulkUploadFailureReason>
+> {
+    state: DotJobState;
+    jobId?: string;
+}
+
+/** The `202` answer to a bulk folder duplication: a handle, not an outcome. */
+export interface DotFolderBulkDuplicateSubmitResponse {
+    jobId: string;
+    /** Ready to follow as it is, so the queue name is not the client's to hardcode. */
+    statusUrl: string;
+    /**
+     * Distinct folders the **server** accepted into the run, after collapsing repeats. It equals the
+     * `total` the outcome later reports, so it is the number a client displays.
+     */
+    submitted: number;
+}
+
+/**
+ * The payload of a `BULK_FOLDER_DUPLICATE_COMPLETED` system event.
+ *
+ * Pushed when a run settles, scoped to whoever submitted it, so `jobId` is how a client tells its
+ * own run from another tab's. The counters and `results` are optional for the same reason the upload
+ * event's are: a job that ended without recording an outcome carries only `state`, and a caller must
+ * treat that as a failure, not as a clean run over nothing. Each result's `key` is a folder path as
+ * submitted.
+ */
+export interface DotFolderBulkDuplicateCompletedEvent extends Partial<
+    DotBatchOutcome<DotFolderBulkDuplicateReason>
 > {
     state: DotJobState;
     jobId?: string;

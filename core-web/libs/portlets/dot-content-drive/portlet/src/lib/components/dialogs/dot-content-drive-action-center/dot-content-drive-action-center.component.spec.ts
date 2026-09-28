@@ -55,6 +55,16 @@ const contentlet = (
 const folder = (inode: string): DotContentDriveItem =>
     ({ type: 'folder', inode, identifier: inode }) as unknown as DotContentDriveItem;
 
+/** A folder as drive search lists it: identifier, path and the viewer's rights as role names. */
+const folderRow = (identifier: string, path: string): DotContentDriveItem =>
+    ({
+        type: 'folder',
+        inode: identifier,
+        identifier,
+        path,
+        permissions: ['READ', 'EDIT', 'CAN_ADD_CHILDREN']
+    }) as unknown as DotContentDriveItem;
+
 const BULK_ACTIONS_RESPONSE = {
     schemes: [
         {
@@ -185,6 +195,8 @@ describe('DotContentDriveActionCenterComponent', () => {
     // gates on it too. `undefined` is "not looked up yet" and reads as disabled; the mapping from a
     // lookup (empty list, or a failure) onto this flag is asserted in `withPushPublishEnvironments`.
     const mockHasPushPublishEnvironments = signal<boolean | undefined>(undefined);
+    /** Whether the author may add folders where they are browsing; gates Duplicate (#37062). */
+    const mockCanAddChildren = signal(true);
     // Where Content Drive is browsing. Only the hostname and path matter to this dialog.
     const mockCurrentSite = signal<{ hostname: string } | undefined>({
         hostname: 'demo.dotcms.com'
@@ -226,6 +238,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 activeRunCount: mockActiveRunCount,
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
                 hasPushPublishEnvironments: mockHasPushPublishEnvironments,
+                $canAddChildren: mockCanAddChildren,
                 // The folder being browsed, which seeds the move destination picker.
                 currentSite: mockCurrentSite,
                 path: mockPath,
@@ -240,7 +253,8 @@ describe('DotContentDriveActionCenterComponent', () => {
                 executeAddToBundle: vi.fn(),
                 executePushPublish: vi.fn(),
                 executeRefresh: vi.fn(),
-                executeFolderBulkDelete: vi.fn()
+                executeFolderBulkDelete: vi.fn(),
+                executeDuplicate: vi.fn()
             }),
             // The trigger toast for a backgrounded reindex goes through PrimeNG's MessageService,
             // which in the app resolves to the shell's instance so the toast outlives this dialog.
@@ -312,6 +326,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         mockActiveRunCount.set(0);
         mockCurrentUserIsAdmin.set(false);
         mockHasPushPublishEnvironments.set(false);
+        mockCanAddChildren.set(true);
         pushPublishEnvironments = [];
         mockCurrentSite.set({ hostname: 'demo.dotcms.com' });
         mockPath.set('/blogs');
@@ -688,6 +703,85 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
             expect(store.executeQuickAction).not.toHaveBeenCalled();
+        });
+
+        describe('Duplicate', () => {
+            const ALPHA = folderRow('f-alpha', '/blogs/alpha/');
+            const BETA = folderRow('f-beta', '/blogs/beta/');
+
+            beforeEach(() => {
+                mockItems.set([ALPHA, BETA]);
+                mockSelectedItems.set([ALPHA, BETA]);
+            });
+
+            it('should not offer Duplicate when the author cannot add folders where they are browsing', () => {
+                mockCanAddChildren.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query('[data-testid="quick-action-DUPLICATE"]')).toBeNull();
+            });
+
+            it('should leave out a folder the author cannot read, and submit only the others', () => {
+                const unreadable = {
+                    ...(BETA as object),
+                    permissions: ['EDIT']
+                } as unknown as DotContentDriveItem;
+                mockItems.set([ALPHA, unreadable]);
+                mockSelectedItems.set([ALPHA, unreadable]);
+
+                executeQuickAction('DUPLICATE');
+
+                expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                    '//demo.dotcms.com/blogs/alpha/'
+                ]);
+            });
+
+            it('should go straight to the preview, with nothing to configure and no destination', () => {
+                openQuickActionPreview('DUPLICATE');
+
+                expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+                // The configure panel stays in the page, hidden, so what proves there was nothing to
+                // configure is that it offers no Continue and holds neither destination picker.
+                expect(spectator.query('[data-testid="action-configure-continue"]')).toBeNull();
+                expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeNull();
+                expect(
+                    spectator.query('[data-testid="action-configure-bundle-target"]')
+                ).toBeNull();
+            });
+
+            it("should execute through its own store method with the folders' site-qualified paths", () => {
+                executeQuickAction('DUPLICATE');
+
+                expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                    '//demo.dotcms.com/blogs/alpha/',
+                    '//demo.dotcms.com/blogs/beta/'
+                ]);
+                expect(store.executeQuickAction).not.toHaveBeenCalled();
+            });
+
+            it('should send only the folders left checked in the preview', () => {
+                openQuickActionPreview('DUPLICATE');
+                toggleRow(0);
+                spectator.click('[data-testid="action-preview-execute"]');
+                spectator.detectChanges();
+
+                expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                    '//demo.dotcms.com/blogs/beta/'
+                ]);
+            });
+
+            it('should toast at trigger that the duplication runs in the background', () => {
+                const messageService = spectator.inject(MessageService);
+
+                executeQuickAction('DUPLICATE');
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'info',
+                        summary: 'content-drive.action-center.toast.duplicate-started'
+                    })
+                );
+            });
         });
 
         it('should execute Refresh through its own store method, not the workflow fire', () => {

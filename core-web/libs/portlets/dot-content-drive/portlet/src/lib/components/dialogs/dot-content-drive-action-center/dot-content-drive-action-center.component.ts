@@ -48,6 +48,8 @@ import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     ADD_TO_BUNDLE_ACTION_ID,
     DotActionCenterQuickAction,
+    DUPLICATE_ACTION_ID,
+    duplicateStartedMessage,
     PUSH_PUBLISH_ACTION_ID,
     DELETE_FOLDER_ACTION_ID,
     REFRESH_ACTION_ID,
@@ -60,7 +62,8 @@ import {
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
     requiredInputKinds,
-    toDistinctIdentifiers
+    toDistinctIdentifiers,
+    toFolderAssetPaths
 } from '../../../utils/action-center';
 import { isFolder } from '../../../utils/functions';
 
@@ -491,7 +494,8 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         // it answered. Read as a signal so a late resolution still recomputes the rows.
         getQuickActions(this.$selectedItems(), {
             isAdmin: this.#store.currentUserIsAdmin(),
-            hasPushPublishEnvironments: this.$hasPushPublishEnvironments()
+            hasPushPublishEnvironments: this.$hasPushPublishEnvironments(),
+            canAddChildren: this.#store.$canAddChildren()
         })
     );
 
@@ -719,6 +723,13 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * Actions section.
      */
     private executeQuickAction(quickAction: DotActionCenterQuickAction): void {
+        // Duplicate sends folder paths rather than inodes, so it branches before anything reads one.
+        if (quickAction.id === DUPLICATE_ACTION_ID) {
+            this.fireDuplicate(quickAction);
+
+            return;
+        }
+
         const inodes = this.$includedItems().map((item) => item.inode);
 
         if (!inodes.length) {
@@ -802,6 +813,34 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             quickAction.id,
             this.#dotMessageService.get(quickAction.name),
             inodes
+        );
+        this.handOffToToolbar();
+    }
+
+    /**
+     * Duplicates the checked folders in place.
+     *
+     * No confirmation: nothing is overwritten or removed, and each duplicate lands beside its original.
+     * Backgrounded like Refresh, so the only feedback until it finishes is a toast saying it started.
+     */
+    private fireDuplicate(quickAction: DotActionCenterQuickAction): void {
+        const assetPaths = toFolderAssetPaths(
+            this.$includedItems(),
+            this.#store.currentSite()?.hostname ?? ''
+        );
+
+        if (!assetPaths.length) {
+            return;
+        }
+
+        const actionName = this.#dotMessageService.get(quickAction.name);
+        this.#store.executeDuplicate(actionName, assetPaths);
+
+        this.#messageService.add(
+            duplicateStartedMessage(
+                (key, ...args) => this.#dotMessageService.get(key, ...args),
+                assetPaths.length
+            )
         );
         this.handOffToToolbar();
     }

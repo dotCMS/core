@@ -1,4 +1,4 @@
-import { signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Observable, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,15 +10,18 @@ import {
     DotBulkRefreshService,
     DotEventsSocket,
     DotFolderBulkDeleteService,
+    DotFolderBulkDuplicateService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotSystemEventType,
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
 import {
     DotBulkRefreshCompletedEvent,
     DotBulkUploadCompletedEvent,
-    DotFolderBulkDeleteSubmitResponse
+    DotFolderBulkDeleteSubmitResponse,
+    DotFolderBulkDuplicateCompletedEvent
 } from '@dotcms/dotcms-models';
 
 import { withActionExecution } from './withActionExecution';
@@ -107,10 +110,17 @@ describe('withActionExecution', () => {
         (): Observable<DotFolderBulkDeleteSubmitResponse> =>
             new Subject<DotFolderBulkDeleteSubmitResponse>()
     );
+    const duplicate = vi.fn();
     const handle = vi.fn();
 
     /** Lets a test push a completion event onto the socket the feature subscribes to on init. */
     let socketEvents: Subject<DotBulkRefreshCompletedEvent>;
+    /**
+     * Its own stream, because the shared one reaches every subscription: main's folder delete
+     * handler reports completions it is not tracking, so a duplication pushed there would come back
+     * as a delete result and a test could pass for the wrong reason.
+     */
+    let duplicateSocketEvents: Subject<DotFolderBulkDuplicateCompletedEvent>;
 
     const createService = createServiceFactory({
         service: actionExecutionStoreMock,
@@ -120,14 +130,21 @@ describe('withActionExecution', () => {
             mockProvider(PushPublishService, { pushPublishAssets }),
             mockProvider(DotBulkRefreshService, { refresh }),
             mockProvider(DotFolderBulkDeleteService, { submit: submitFolderBulkDelete }),
+            mockProvider(DotFolderBulkDuplicateService, { duplicate }),
             mockProvider(DotHttpErrorManagerService, { handle }),
             mockProvider(DotMessageService, { get: (key: string) => key }),
-            mockProvider(DotEventsSocket, { on: () => socketEvents.asObservable() })
+            mockProvider(DotEventsSocket, {
+                on: (type: DotSystemEventType) =>
+                    type === DotSystemEventType.BULK_FOLDER_DUPLICATE_COMPLETED
+                        ? duplicateSocketEvents.asObservable()
+                        : socketEvents.asObservable()
+            })
         ]
     });
 
     const build = () => {
         socketEvents = new Subject<DotBulkRefreshCompletedEvent>();
+        duplicateSocketEvents = new Subject<DotFolderBulkDuplicateCompletedEvent>();
         spectator = createService();
         store = spectator.service;
     };
@@ -140,6 +157,7 @@ describe('withActionExecution', () => {
         refresh.mockReset();
         submitFolderBulkDelete.mockReset();
         submitFolderBulkDelete.mockImplementation(() => new Subject());
+        duplicate.mockReset();
         handle.mockReset();
     });
 
@@ -407,6 +425,341 @@ describe('withActionExecution', () => {
 
             store.executeRefresh('Refresh', ['inode-1']);
 
+            expect(handle).toHaveBeenCalled();
+        });
+    });
+
+    describe('executeDuplicate', () => {
+        const ALPHA = '//demo.dotcms.com/blogs/alpha/';
+        const BETA = '//demo.dotcms.com/blogs/beta/';
+        const accepted = (jobId: string) =>
+            of({ jobId, statusUrl: `/api/v1/jobs/${jobId}/status`, submitted: 1 });
+
+        it('should submit the folder paths and track the run by its job id', () => {
+            build();
+            duplicate.mockReturnValue(accepted('job-1'));
+
+            store.executeDuplicate('Duplicate', [ALPHA, BETA]);
+
+            expect(duplicate).toHaveBeenCalledWith([ALPHA, BETA]);
+            // The parent is where the duplicates land, so it is what a completion refreshes.
+            expect(store.duplicateJobs()).toEqual({
+                'job-1': expect.objectContaining({ affectedFolders: ['//demo.dotcms.com/blogs'] })
+            });
+        });
+
+        it('should mark nothing busy and leave the portlet unlocked', () => {
+            // A folder being duplicated stays fully usable, unlike one being deleted (FR-014).
+            build();
+            duplicate.mockReturnValue(accepted('job-1'));
+
+            store.executeDuplicate('Duplicate', [ALPHA]);
+
+            expect(store.busyRows()).toEqual([]);
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should report a submission failure and track nothing, since no completion is coming', () => {
+            build();
+            duplicate.mockReturnValue(throwError(() => new Error('boom')));
+
+            store.executeDuplicate('Duplicate', [ALPHA]);
+
+            expect(handle).toHaveBeenCalled();
+            expect(store.duplicateJobs()).toEqual({});
+        });
+
+        /**
+         * Refusals, told apart the way a bulk folder delete's are (developer decision, 2026-09-28):
+         * the store holds the kind, and the shell picks the words.
+         */
+        describe('refusals', () => {
+            const refuseWith = (kind: string, status = 400) => {
+                duplicate.mockReturnValue(
+                    throwError(() => ({
+                        kind,
+                        message: 'server prose, never rendered',
+                        response: new HttpErrorResponse({ status })
+                    }))
+                );
+            };
+
+            it.each(['EMPTY_SELECTION', 'OVER_MAX_PATHS', 'NOT_ENTITLED'])(
+                'should surface %s as itself, not as a generic error',
+                (kind) => {
+                    build();
+                    refuseWith(kind);
+
+                    store.executeDuplicate('Duplicate', [ALPHA]);
+
+                    expect(store.folderDuplicateRefusal()).toBe(kind);
+                    expect(handle).not.toHaveBeenCalled();
+                }
+            );
+
+            it('should leave an unclassified refusal to the HTTP error manager', () => {
+                // A transport failure, or a body with no code: that path still redirects on a 401.
+                build();
+                refuseWith('UNCLASSIFIED', 500);
+
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                expect(store.folderDuplicateRefusal()).toBeUndefined();
+                expect(handle).toHaveBeenCalled();
+            });
+
+            it('should track nothing for a refused submission, since no run exists', () => {
+                build();
+                refuseWith('OVER_MAX_PATHS');
+
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                expect(store.duplicateJobs()).toEqual({});
+            });
+
+            it('should consume the refusal once it has been said', () => {
+                build();
+                refuseWith('OVER_MAX_PATHS');
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                store.clearFolderDuplicateRefusal();
+
+                expect(store.folderDuplicateRefusal()).toBeUndefined();
+            });
+        });
+
+        it('should not submit anything for an empty selection', () => {
+            build();
+
+            store.executeDuplicate('Duplicate', []);
+
+            expect(duplicate).not.toHaveBeenCalled();
+        });
+
+        it("should submit the same folders again when asked, since a second duplicate is the author's choice", () => {
+            // Duplicating twice is legitimate and the server names each duplicate apart, so nothing
+            // here second-guesses a repeat (developer decision, 2026-09-25).
+            build();
+            duplicate.mockReturnValue(accepted('job-1'));
+
+            store.executeDuplicate('Duplicate', [ALPHA]);
+            store.executeDuplicate('Duplicate', [ALPHA]);
+
+            expect(duplicate).toHaveBeenCalledTimes(2);
+        });
+
+        it('should submit different folders alongside a run in flight', () => {
+            build();
+            duplicate.mockReturnValue(new Subject());
+
+            store.executeDuplicate('Duplicate', [ALPHA]);
+            store.executeDuplicate('Duplicate', [BETA]);
+
+            expect(duplicate).toHaveBeenCalledTimes(2);
+        });
+
+        it('should not be blocked by another action already running', () => {
+            build();
+            fireDefaultAction.mockReturnValue(new Subject());
+            duplicate.mockReturnValue(accepted('job-1'));
+
+            store.executeQuickAction('lock-id', 'Lock', ['inode-1']);
+            store.executeDuplicate('Duplicate', [ALPHA]);
+
+            expect(duplicate).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    /**
+     * Reports a finished duplication the way bulk folder delete reports a finished delete
+     * (developer decision, 2026-09-28): ownership is the server's answer, a run from before a reload
+     * is still reported, and a redelivered completion is reported once.
+     */
+    describe('reportDuplicateCompleted', () => {
+        const ALPHA = '//demo.dotcms.com/blogs/alpha/';
+        const BETA = '//demo.dotcms.com/blogs/beta/';
+        const GAMMA = '//demo.dotcms.com/blogs/gamma/';
+
+        const completed = (
+            overrides: Partial<DotFolderBulkDuplicateCompletedEvent> = {}
+        ): DotFolderBulkDuplicateCompletedEvent => ({
+            jobId: 'job-1',
+            state: 'SUCCESS',
+            total: 3,
+            successCount: 2,
+            failedCount: 1,
+            skippedCount: 0,
+            results: [
+                { key: ALPHA, status: 'SUCCESS' },
+                { key: BETA, status: 'FAILED', reason: 'PERMISSION_DENIED', message: 'diagnostic' },
+                { key: GAMMA, status: 'SUCCESS' }
+            ],
+            ...overrides
+        });
+
+        /** Submits a duplication so `job-1` is tracked, as a real run would be. */
+        const submitted = () => {
+            build();
+            duplicate.mockReturnValue(
+                of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status', submitted: 3 })
+            );
+            store.executeDuplicate('Duplicate', [ALPHA, BETA, GAMMA]);
+        };
+
+        it('should report the pushed completion of a run this store submitted', () => {
+            submitted();
+
+            duplicateSocketEvents.next(completed());
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    outcomeKind: 'folderDuplicate',
+                    successCount: 2,
+                    failedCount: 1
+                })
+            );
+        });
+
+        it('should still report the run after the author has navigated to another folder', () => {
+            // Tracking lives in the portlet store, not in the dialog that started the run, so
+            // closing the Action Center and browsing elsewhere loses nothing (#37062 US4). Where the
+            // duplicates landed is kept too, so the shell can decide whether to reload what is on
+            // screen now.
+            submitted();
+            patchState(store as never, { path: '/somewhere/else/' } as never);
+
+            duplicateSocketEvents.next(completed());
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    successCount: 2,
+                    affectedFolders: ['//demo.dotcms.com/blogs']
+                })
+            );
+        });
+
+        it("should report the server's counts and the parent the duplicates landed in", () => {
+            submitted();
+
+            store.reportDuplicateCompleted('Duplicate', completed());
+
+            expect(store.actionExecutionResults()).toEqual([
+                expect.objectContaining({
+                    actionName: 'Duplicate',
+                    successCount: 2,
+                    failedCount: 1,
+                    skippedCount: 0,
+                    affectedFolders: ['//demo.dotcms.com/blogs'],
+                    backgrounded: true
+                })
+            ]);
+        });
+
+        it('should carry the records that did not succeed, keyed by the submitted folder path', () => {
+            submitted();
+
+            store.reportDuplicateCompleted('Duplicate', completed());
+
+            expect(store.actionExecutionResult()?.failures).toEqual([
+                expect.objectContaining({
+                    key: BETA,
+                    status: 'FAILED',
+                    reason: 'PERMISSION_DENIED'
+                })
+            ]);
+        });
+
+        it('should stop tracking the run once it is reported', () => {
+            submitted();
+
+            store.reportDuplicateCompleted('Duplicate', completed());
+
+            expect(store.duplicateJobs()).toEqual({});
+        });
+
+        it('should report a completion for a run this page did not submit', () => {
+            // A reload empties the map, and the completion is addressed to this author either way.
+            // Leaving it unreported meant a duplicate appeared with no word that the run finished.
+            build();
+
+            store.reportDuplicateCompleted('Duplicate', completed({ jobId: 'before-the-reload' }));
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ successCount: 2, failedCount: 1 })
+            );
+        });
+
+        it('should leave the affected folders open for a run this page did not submit', () => {
+            // Nothing here remembers where it landed, and "unknown" must mean "reload", not "none".
+            build();
+
+            store.reportDuplicateCompleted('Duplicate', completed({ jobId: 'before-the-reload' }));
+
+            expect(store.actionExecutionResult()?.affectedFolders).toBeUndefined();
+        });
+
+        it('should report a completion once, however many times it is delivered', () => {
+            submitted();
+
+            store.reportDuplicateCompleted('Duplicate', completed());
+            store.reportDuplicateCompleted('Duplicate', completed());
+
+            expect(store.actionExecutionResults()).toHaveLength(1);
+        });
+
+        it('should ignore a completion carrying no job id', () => {
+            submitted();
+
+            store.reportDuplicateCompleted('Duplicate', completed({ jobId: undefined }));
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report a cancelled run as an outcome rather than a fault', () => {
+            submitted();
+
+            store.reportDuplicateCompleted(
+                'Duplicate',
+                completed({
+                    state: 'CANCELED',
+                    successCount: 1,
+                    failedCount: 0,
+                    skippedCount: 2,
+                    results: [
+                        { key: ALPHA, status: 'SUCCESS' },
+                        { key: BETA, status: 'SKIPPED' },
+                        { key: GAMMA, status: 'SKIPPED' }
+                    ]
+                })
+            );
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ successCount: 1, skippedCount: 2 })
+            );
+            expect(handle).not.toHaveBeenCalled();
+        });
+
+        it.each([['FAILED_PERMANENTLY'], ['ABANDONED_PERMANENTLY']])(
+            'should report a %s run as an error and record no result',
+            (state) => {
+                submitted();
+
+                store.reportDuplicateCompleted('Duplicate', completed({ state } as never));
+
+                expect(store.actionExecutionResult()).toBeUndefined();
+                expect(handle).toHaveBeenCalled();
+            }
+        );
+
+        it('should report counts that do not account for every folder as an error', () => {
+            submitted();
+
+            store.reportDuplicateCompleted(
+                'Duplicate',
+                completed({ total: 5, successCount: 2, failedCount: 1, skippedCount: 0 })
+            );
+
+            expect(store.actionExecutionResult()).toBeUndefined();
             expect(handle).toHaveBeenCalled();
         });
     });

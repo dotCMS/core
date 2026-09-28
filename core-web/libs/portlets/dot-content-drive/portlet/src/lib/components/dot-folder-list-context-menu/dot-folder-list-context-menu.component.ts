@@ -50,6 +50,7 @@ import {
 import { DotContentDriveContextMenu } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { duplicateStartedMessage, toFolderAssetPaths } from '../../utils/action-center';
 import { isFolder } from '../../utils/functions';
 
 /**
@@ -234,6 +235,19 @@ export class DotFolderListViewContextMenuComponent {
                             payload: contentlet
                         });
                     }
+                });
+            }
+
+            // Duplicating needs READ on the folder and add-children where its duplicate lands, which is
+            // the folder being browsed (#37062). Right after Folder Settings: it makes something new
+            // from the folder rather than configuring or publishing it.
+            if (
+                contentlet.permissions?.includes(PERMISSIONS_TYPE.READ) &&
+                this.#store.$canAddChildren()
+            ) {
+                folderMenuItems.push({
+                    label: this.#dotMessageService.get('content-drive.action-center.duplicate'),
+                    command: () => this.#duplicateFolder(contentlet)
                 });
             }
 
@@ -696,6 +710,30 @@ export class DotFolderListViewContextMenuComponent {
             assetIdentifier: identifier,
             title: this.#dotMessageService.get('contenttypes.content.push_publish')
         });
+    }
+
+    /**
+     * Duplicates one folder in place, as a batch of one through the same run as the Action Center.
+     *
+     * No confirmation: nothing is overwritten or removed, and the duplicate lands beside the
+     * original. The outcome is reported by the shell when the pushed completion arrives, the same
+     * toast the bulk action gets.
+     *
+     * @param folder the right-clicked folder
+     */
+    #duplicateFolder(folder: DotContentDriveActionableFolder): void {
+        const assetPaths = toFolderAssetPaths([folder], this.#store.currentSite()?.hostname ?? '');
+
+        this.#store.executeDuplicate(
+            this.#dotMessageService.get('content-drive.action-center.duplicate'),
+            assetPaths
+        );
+        this.#messageService.add(
+            duplicateStartedMessage(
+                (key, ...args) => this.#dotMessageService.get(key, ...args),
+                assetPaths.length
+            )
+        );
     }
 
     /**

@@ -75,6 +75,18 @@ export interface DotFolderBulkDeleteCeilings {
     maxPaths: number;
 }
 
+/**
+ * The bulk folder duplication ceiling the server enforces, as it advertises it on
+ * `/api/v1/appconfiguration` (#37062).
+ *
+ * Read from the same constant the endpoint enforces with, so a client can refuse an over-ceiling
+ * selection before submitting it. The server remains the enforcement point.
+ */
+export interface DotFolderBulkDuplicateCeilings {
+    /** Distinct folders in one submission. */
+    maxPaths: number;
+}
+
 export interface DotSystemConfig {
     logos: DotLogos;
     colors: DotUIColors;
@@ -87,6 +99,8 @@ export interface DotSystemConfig {
     bulkUpload?: DotBulkUploadCeilings;
     /** Absent on an instance older than the field. See {@link DotFolderBulkDeleteCeilings}. */
     folderBulkDelete?: DotFolderBulkDeleteCeilings;
+    /** Absent on an instance older than the field. See {@link DotFolderBulkDuplicateCeilings}. */
+    folderBulkDuplicate?: DotFolderBulkDuplicateCeilings;
 }
 
 /**
@@ -102,6 +116,7 @@ export interface SystemConfigEntity {
         license: DotSystemLicense;
         cluster: DotCluster;
         bulkUpload?: DotBulkUploadCeilings;
+        folderBulkDuplicate?: DotFolderBulkDuplicateCeilings;
         // Other config properties we don't need for the system config
         [key: string]: unknown;
     };

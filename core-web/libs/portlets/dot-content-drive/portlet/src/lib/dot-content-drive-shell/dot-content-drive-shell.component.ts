@@ -31,6 +31,7 @@ import {
     AddToBundleService,
     DotCurrentUserService,
     DotFolderBulkDeleteRefusalKind,
+    DotFolderBulkDuplicateRefusalKind,
     DotFolderService,
     DotUploadFileService,
     DotWorkflowsActionsService,
@@ -111,6 +112,7 @@ import { provideContentDriveFilterFacade } from '../store/content-drive-filter-f
 import { provideContentDriveRelationshipPicker } from '../store/content-drive-relationship-picker';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { describeFolderDeleteOutcome } from '../utils/folder-delete-outcome';
+import { describeFolderDuplicateOutcome } from '../utils/folder-duplicate-outcome';
 import {
     canAddChildrenTo,
     encodeFilters,
@@ -959,14 +961,23 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 : undefined;
 
         const isFolderDelete = OUTCOME_KIND.FOLDER_DELETE === outcomeKind;
+        const isFolderDuplicate = OUTCOME_KIND.FOLDER_DUPLICATE === outcomeKind;
+        // Delete and duplication read the same way (#37062): one line builder, one toast layout,
+        // each in its own words.
+        const isFolderOutcome = isFolderDelete || isFolderDuplicate;
+        const describeFolderLines = isFolderDuplicate
+            ? describeFolderDuplicateOutcome
+            : describeFolderDeleteOutcome;
 
-        if (isFolderDelete) {
+        if (isFolderOutcome) {
             // The listing and the sidebar tree load separately, so refreshing one is not refreshing
             // the other — and a tree still offering a folder the listing has already dropped is how
             // an author navigates into nothing (FR-036).
             //
-            // Only for a delete: an upload changes a folder's *contents*, not the hierarchy, so
-            // reloading the tree for one is a request that can only return the same tree.
+            // Only for a folder operation: an upload changes a folder's *contents*, not the
+            // hierarchy, so reloading the tree for one is a request that can only return the same
+            // tree. A duplication adds folders, so the tree needs them as much as a delete needs
+            // them gone (FR-030).
             this.#store.loadFolders();
         }
 
@@ -980,12 +991,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // the split would separate lines the author reads as one list. Severity follows whether
         // anything actually failed, so a run whose only shortfall is skipped folders does not
         // arrive in red.
-        const failureGroups = isFolderDelete
+        const failureGroups = isFolderOutcome
             ? failures?.length
                 ? [
                       {
                           severity: (failedCount > 0 ? 'error' : 'warn') as 'error' | 'warn',
-                          lines: describeFolderDeleteOutcome(failures, (key, ...args) =>
+                          lines: describeFolderLines(failures, (key, ...args) =>
                               this.#dotMessageService.get(key, ...args)
                           )
                       }
@@ -1019,9 +1030,13 @@ export class DotContentDriveShellComponent implements OnDestroy {
                               ? 'error' === group.severity
                                   ? 'content-drive.delete.toast.failed'
                                   : 'content-drive.delete.toast.incomplete'
-                              : 'error' === group.severity
-                                ? 'content-drive.upload.toast.failed'
-                                : 'content-drive.upload.toast.incomplete'
+                              : isFolderDuplicate
+                                ? 'error' === group.severity
+                                    ? 'content-drive.duplicate.toast.failed'
+                                    : 'content-drive.duplicate.toast.incomplete'
+                                : 'error' === group.severity
+                                  ? 'content-drive.upload.toast.failed'
+                                  : 'content-drive.upload.toast.incomplete'
                       ),
                       // The counts belong to the batch, not to a severity, so they are stated once
                       // and in the message the author reads first.
@@ -1139,6 +1154,42 @@ export class DotContentDriveShellComponent implements OnDestroy {
             });
 
             this.#store.clearFolderDeleteRefusal();
+        });
+    });
+
+    /**
+     * The sentence for each way the server can refuse a folder duplication before any run exists
+     * (#37062). Delete's kinds minus the overlap one, which duplication cannot produce.
+     * `UNCLASSIFIED` goes through `DotHttpErrorManagerService` instead and should not arrive.
+     */
+    readonly #folderDuplicateRefusalKeys: Record<DotFolderBulkDuplicateRefusalKind, string> = {
+        EMPTY_SELECTION: 'content-drive.duplicate.refused.empty-selection',
+        OVER_MAX_PATHS: 'content-drive.duplicate.refused.over-max-paths',
+        NOT_ENTITLED: 'content-drive.duplicate.refused.not-entitled',
+        UNCLASSIFIED: 'content-drive.duplicate.refused.unclassified'
+    };
+
+    /**
+     * Says why a folder duplication never became a run, and consumes the refusal. Mirrors
+     * {@link folderDeleteRefusalEffect}: a refusal is not an outcome, so there are no counts and
+     * nothing to reload.
+     */
+    readonly folderDuplicateRefusalEffect = effect(() => {
+        const kind = this.#store.folderDuplicateRefusal();
+
+        untracked(() => {
+            if (!kind) {
+                return;
+            }
+
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.duplicate.refused.title'),
+                detail: this.#dotMessageService.get(this.#folderDuplicateRefusalKeys[kind]),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            this.#store.clearFolderDuplicateRefusal();
         });
     });
 

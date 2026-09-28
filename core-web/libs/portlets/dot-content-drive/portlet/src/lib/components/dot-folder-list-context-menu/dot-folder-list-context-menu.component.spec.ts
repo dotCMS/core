@@ -1160,6 +1160,116 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
             });
 
+            /**
+             * Duplicate for one folder (#37062 US3). The same run as the Action Center's, submitted
+             * as a batch of one, so its outcome is reported the same way.
+             */
+            describe('duplicate', () => {
+                const DUPLICATE = 'content-drive.action-center.duplicate';
+
+                const readable: DotContentDriveFolder = {
+                    ...mockFolder,
+                    permissions: [PERMISSIONS_TYPE.READ]
+                };
+
+                const rightClick = (folder: DotContentDriveFolder) =>
+                    component.getMenuItems({
+                        triggeredEvent: mockEvent,
+                        contentlet: folder,
+                        showAddToBundle: false
+                    });
+
+                const duplicateItem = () =>
+                    component.$items().find((item) => item.label === DUPLICATE);
+
+                beforeEach(() => {
+                    // Paths are site-qualified, so the browsed site has to be a real one.
+                    store.initContentDrive({
+                        currentSite: { hostname: 'demo.dotcms.com' } as never,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: true
+                    });
+                    component.$memoizedMenuItems.set({});
+                });
+
+                it('should show Duplicate when the folder can be read and the author can add here', async () => {
+                    await rightClick(readable);
+
+                    expect(duplicateItem()).toBeDefined();
+                });
+
+                it('should not show Duplicate when the folder cannot be read', async () => {
+                    await rightClick({ ...mockFolder, permissions: [PERMISSIONS_TYPE.EDIT] });
+
+                    expect(duplicateItem()).toBeUndefined();
+                });
+
+                it('should not show Duplicate when the author cannot add folders where they are browsing', async () => {
+                    // Every duplicate lands in that folder, so every one would be refused (FR-005).
+                    patchState(store, { siteCanAddChildren: false } as never);
+
+                    await rightClick(readable);
+
+                    expect(duplicateItem()).toBeUndefined();
+                });
+
+                it('should not show Duplicate when the folder carries no permissions at all', async () => {
+                    await rightClick({ ...mockFolder, permissions: undefined } as never);
+
+                    expect(duplicateItem()).toBeUndefined();
+                });
+
+                it("should submit that one folder's site-qualified path", async () => {
+                    vi.spyOn(store, 'executeDuplicate');
+
+                    await rightClick(readable);
+                    duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                        '//demo.dotcms.com/documents/'
+                    ]);
+                });
+
+                it('should run straight away, without asking for confirmation', async () => {
+                    // Nothing is overwritten or removed: the duplicate lands beside the original.
+                    const alertConfirmService = spectator.inject(DotAlertConfirmService);
+                    vi.spyOn(store, 'executeDuplicate');
+
+                    await rightClick(readable);
+                    duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(alertConfirmService.confirm).not.toHaveBeenCalled();
+                });
+
+                it('should say at trigger that it runs in the background, as the bulk action does', async () => {
+                    vi.spyOn(store, 'executeDuplicate');
+
+                    await rightClick(readable);
+                    duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
+
+                    expect(messageService.add).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            severity: 'info',
+                            summary: 'content-drive.action-center.toast.duplicate-started'
+                        })
+                    );
+                });
+
+                it('should sit right after Folder Settings', async () => {
+                    await rightClick({
+                        ...mockFolder,
+                        permissions: [PERMISSIONS_TYPE.READ, PERMISSIONS_TYPE.EDIT]
+                    });
+
+                    expect(labels(component.$items())).toEqual([
+                        'content-drive.context-menu.actions',
+                        'content-drive.context-menu.edit-folder',
+                        DUPLICATE
+                    ]);
+                });
+            });
+
             describe('item order', () => {
                 it('should order settings, permissions, then the push group', async () => {
                     pushPublishEnvironments = [{ id: 'env-1', name: 'Production' }];

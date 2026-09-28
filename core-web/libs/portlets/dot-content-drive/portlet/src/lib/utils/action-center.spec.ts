@@ -11,6 +11,7 @@ import {
     ADD_TO_BUNDLE_ACTION_ID,
     DELETE_FOLDER_ACTION_ID,
     eligibleForDelete,
+    DUPLICATE_ACTION_ID,
     eligibleContentlets,
     excludeFolders,
     getQuickActions,
@@ -22,7 +23,9 @@ import {
     requiredInputKinds,
     toActionCenterSchemes,
     toContentletInodes,
+    toFolderAssetPaths,
     toHostFolderValue,
+    toParentFolderRefs,
     toPathToMove
 } from './action-center';
 import { WORKFLOW_ACTION_ID } from './workflow-actions';
@@ -48,6 +51,19 @@ const folder = (inode: string): DotContentDriveItem =>
  */
 const actionableFolder = (identifier: string): DotContentDriveItem =>
     ({ type: 'folder', identifier }) as unknown as DotContentDriveItem;
+
+/**
+ * A folder as the listing delivers it from drive search: identifier, path, and the viewer's rights on
+ * it as role names. `permissions` is omitted to model a row whose rights are unknown.
+ */
+const folderRow = (identifier: string, path: string, permissions?: string[]): DotContentDriveItem =>
+    ({
+        type: 'folder',
+        identifier,
+        inode: identifier,
+        path,
+        ...(permissions ? { permissions } : {})
+    }) as unknown as DotContentDriveItem;
 
 /** An action that fires straight from the selection. */
 const NO_INPUTS = {
@@ -177,15 +193,73 @@ describe('action-center utils', () => {
 
         it('should offer only the folder-capable actions for a folder-only selection', () => {
             // Add to Bundle and Push Publish both resolve a folder identifier server-side; the rest
-            // are contentlet-only, so a folder-only selection must not offer them. Delete joins
-            // them as of #37063 — folder-only, and the only destructive one.
+            // are contentlet-only, so a folder-only selection must not offer them. Delete (#37063)
+            // and Duplicate (#37062) join them, both acting on folders only.
             const ids = getQuickActions([actionableFolder('f1')]).map((action) => action.id);
 
             expect(ids).toEqual([
                 ADD_TO_BUNDLE_ACTION_ID,
                 PUSH_PUBLISH_ACTION_ID,
-                DELETE_FOLDER_ACTION_ID
+                DELETE_FOLDER_ACTION_ID,
+                DUPLICATE_ACTION_ID
             ]);
+        });
+
+        describe('Duplicate', () => {
+            const duplicateOf = (items: DotContentDriveItem[]) =>
+                getQuickActions(items).find((action) => action.id === DUPLICATE_ACTION_ID);
+
+            it('should count only the selected folders, keyed by identifier', () => {
+                const duplicate = duplicateOf([
+                    contentlet({ inode: 'a', identifier: 'id-a' }),
+                    folderRow('f1', '/blogs/alpha/', ['READ']),
+                    folderRow('f2', '/blogs/beta/', ['READ'])
+                ]);
+
+                expect(duplicate?.eligibleInodes).toEqual(['f1', 'f2']);
+                expect(duplicate?.count).toBe(2);
+            });
+
+            it('should not be offered for a selection with no folders in it', () => {
+                // Dropped rather than shown at a count of 0: it does not apply to what is selected.
+                expect(duplicateOf([contentlet({ inode: 'a' })])).toBeUndefined();
+            });
+
+            it('should leave out a folder whose rights say it cannot be read', () => {
+                const duplicate = duplicateOf([
+                    folderRow('f1', '/blogs/alpha/', ['READ']),
+                    folderRow('f2', '/blogs/beta/', ['EDIT'])
+                ]);
+
+                expect(duplicate?.eligibleInodes).toEqual(['f1']);
+            });
+
+            it('should not be offered when the author cannot add folders where they are browsing', () => {
+                // Every duplicate lands there, so every one would be refused (FR-005). Withheld
+                // outright, the way Delete drops an action that can only fail.
+                const offered = getQuickActions([folderRow('f1', '/blogs/alpha/', ['READ'])], {
+                    isAdmin: false,
+                    canAddChildren: false
+                }).map((action) => action.id);
+
+                expect(offered).not.toContain(DUPLICATE_ACTION_ID);
+            });
+
+            it('should be offered while that answer is not known yet', () => {
+                // Unknown reads as allowed, as the store's own gate does, so the row does not
+                // flicker off and back on while the lookup is in flight.
+                const offered = getQuickActions([folderRow('f1', '/blogs/alpha/', ['READ'])], {
+                    isAdmin: false
+                }).map((action) => action.id);
+
+                expect(offered).toContain(DUPLICATE_ACTION_ID);
+            });
+
+            it('should keep a folder whose rights are unknown, so the server decides', () => {
+                const duplicate = duplicateOf([folderRow('f1', '/blogs/alpha/')]);
+
+                expect(duplicate?.eligibleInodes).toEqual(['f1']);
+            });
         });
 
         it('should key the folder-capable actions on identifiers, since a folder has no inode', () => {
@@ -600,6 +674,44 @@ describe('action-center utils', () => {
             // Push Publish takes folders, so it counts all three; Refresh is contentlet-only.
             expect(byId.get(PUSH_PUBLISH_ACTION_ID)).toBe(3);
             expect(byId.get(REFRESH_ACTION_ID)).toBe(2);
+        });
+    });
+
+    describe('toFolderAssetPaths', () => {
+        it('should build a site-qualified path for each folder', () => {
+            expect(
+                toFolderAssetPaths(
+                    [folderRow('f1', '/blogs/alpha/'), folderRow('f2', '/blogs/beta/')],
+                    'demo.dotcms.com'
+                )
+            ).toEqual(['//demo.dotcms.com/blogs/alpha/', '//demo.dotcms.com/blogs/beta/']);
+        });
+
+        it('should end every path with a slash, as the endpoint expects a folder', () => {
+            expect(
+                toFolderAssetPaths([folderRow('f1', '/blogs/alpha')], 'demo.dotcms.com')
+            ).toEqual(['//demo.dotcms.com/blogs/alpha/']);
+        });
+
+        it('should leave contentlets out', () => {
+            expect(
+                toFolderAssetPaths(
+                    [contentlet({ inode: 'a' }), folderRow('f1', '/blogs/alpha/')],
+                    'demo.dotcms.com'
+                )
+            ).toEqual(['//demo.dotcms.com/blogs/alpha/']);
+        });
+    });
+
+    describe('toParentFolderRefs', () => {
+        it('should name each distinct parent once, in folder-ref form', () => {
+            expect(
+                toParentFolderRefs([
+                    '//demo.dotcms.com/blogs/alpha/',
+                    '//demo.dotcms.com/blogs/beta/',
+                    '//demo.dotcms.com/news/'
+                ])
+            ).toEqual(['//demo.dotcms.com/blogs', '//demo.dotcms.com']);
         });
     });
 

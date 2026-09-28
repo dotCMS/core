@@ -1,6 +1,7 @@
 import {
     DotBatchItemResult,
     DotBulkUploadFailureReason,
+    DotFolderBulkDuplicateReason,
     DotFolderDeleteFailureReason,
     DotCMSContentTypeField,
     DotContentDriveActionableFolder,
@@ -242,7 +243,8 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
  */
 export const OUTCOME_KIND = {
     UPLOAD: 'upload',
-    FOLDER_DELETE: 'folderDelete'
+    FOLDER_DELETE: 'folderDelete',
+    FOLDER_DUPLICATE: 'folderDuplicate'
 } as const;
 
 export type DotContentDriveOutcomeKind = (typeof OUTCOME_KIND)[keyof typeof OUTCOME_KIND];
@@ -275,7 +277,9 @@ export interface DotContentDriveActionExecutionResult {
      * reasons are the point of a partial outcome, and the reason codes are what map to product copy
      * rather than the server's diagnostic message, which is never shown.
      */
-    failures?: DotBatchItemResult<DotBulkUploadFailureReason | DotFolderDeleteFailureReason>[];
+    failures?: DotBatchItemResult<
+        DotBulkUploadFailureReason | DotFolderDeleteFailureReason | DotFolderBulkDuplicateReason
+    >[];
     /**
      * Which vocabulary {@link failures} speaks, and therefore which describer resolves it to copy.
      *

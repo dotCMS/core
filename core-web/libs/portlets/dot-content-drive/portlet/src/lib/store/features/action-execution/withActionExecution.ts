@@ -18,6 +18,9 @@ import { catchError, take } from 'rxjs/operators';
 import {
     AddToBundleService,
     DotBulkRefreshService,
+    DotFolderBulkDuplicateRefusal,
+    DotFolderBulkDuplicateRefusalKind,
+    DotFolderBulkDuplicateService,
     DotEventsSocket,
     DotFolderBulkDeleteRefusal,
     DotFolderBulkDeleteRefusalKind,
@@ -35,6 +38,7 @@ import {
     DotFolderBulkDeleteCompletedEvent,
     DotBulkUploadCompletedEvent,
     DotBundle,
+    DotFolderBulkDuplicateCompletedEvent,
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 
@@ -46,6 +50,7 @@ import {
     DotContentDriveUploadJob,
     DotContentDriveState
 } from '../../../shared/models';
+import { toParentFolderRefs } from '../../../utils/action-center';
 import { browsedFolderRef, normalizeFolderRef } from '../../../utils/functions';
 
 /**
@@ -130,6 +135,30 @@ interface WithActionExecutionState {
      * what still redirects on a 401 and reports a license wall properly.
      */
     folderDeleteRefusal: DotFolderBulkDeleteRefusalKind | undefined;
+    /**
+     * Folder duplications this store submitted, keyed by job id, with the parents the duplicates land
+     * in.
+     *
+     * Same reasoning as {@link refreshJobIds}: the completion event is scoped to the submitting user,
+     * so only ids in here are acted on. Never registered as a run, because a folder being duplicated
+     * stays fully usable and must not read as busy.
+     */
+    duplicateJobs: Record<string, { affectedFolders: string[] }>;
+    /**
+     * Folder duplications this page has already reported, by job id.
+     *
+     * Same reason as {@link settledFolderDeleteJobs}: a run from before a reload is reported from an
+     * empty {@link duplicateJobs}, so removal from that map cannot be what stops a redelivered
+     * completion being reported twice.
+     */
+    settledDuplicateJobs: string[];
+    /**
+     * A folder duplication the server refused, as the kind it refused it for.
+     *
+     * Same split as {@link folderDeleteRefusal}: the store holds the kind, the shell picks the words.
+     * `UNCLASSIFIED` never lands here; it goes through `DotHttpErrorManagerService`.
+     */
+    folderDuplicateRefusal: DotFolderBulkDuplicateRefusalKind | undefined;
 }
 
 /**
@@ -158,7 +187,10 @@ export function withActionExecution() {
             uploadJobs: {},
             folderDeleteJobs: {},
             settledFolderDeleteJobs: [],
-            folderDeleteRefusal: undefined
+            folderDeleteRefusal: undefined,
+            duplicateJobs: {},
+            settledDuplicateJobs: [],
+            folderDuplicateRefusal: undefined
         }),
         withComputed(({ runs, actionExecutionResults }) => ({
             /**
@@ -232,6 +264,7 @@ export function withActionExecution() {
                 pushPublishService = inject(PushPublishService),
                 bulkRefreshService = inject(DotBulkRefreshService),
                 folderBulkDeleteService = inject(DotFolderBulkDeleteService),
+                folderBulkDuplicateService = inject(DotFolderBulkDuplicateService),
                 destroyRef = inject(DestroyRef)
             ) => {
                 /**
@@ -508,6 +541,171 @@ export function withActionExecution() {
                      * far it got, and reporting those as a result would turn a failure into a green
                      * toast - the exact misleading success this endpoint exists to remove.
                      */
+                    /**
+                     * Submits folders to be duplicated in place, and remembers the job so its pushed
+                     * outcome can be reported.
+                     *
+                     * Submit and stop, like {@link executeRefresh}: nothing waits and no deadline is
+                     * started. Unlike every other action, nothing is registered as a run and no repeat
+                     * is refused. Duplicating a folder leaves it fully usable, so nothing is marked
+                     * busy, and asking for the same folders twice is the author's choice: the server
+                     * names each duplicate apart.
+                     *
+                     * @param actionName label for the outcome, kept for the completion report
+                     * @param assetPaths site-qualified folder paths, such as `//demo.dotcms.com/blogs/`
+                     */
+                    executeDuplicate: (_actionName: string, assetPaths: string[]): void => {
+                        // `_actionName` is kept for symmetry with the other submits; the completion
+                        // resolves its own label, since a run can outlive the page that named it.
+                        if (!assetPaths.length) {
+                            return;
+                        }
+
+                        const affectedFolders = toParentFolderRefs(assetPaths);
+
+                        folderBulkDuplicateService
+                            .duplicate(assetPaths)
+                            .pipe(
+                                take(1),
+                                catchError((refusal: DotFolderBulkDuplicateRefusal) => {
+                                    // No job was created, so no completion event is coming for it.
+                                    const kind = refusal?.kind ?? 'UNCLASSIFIED';
+
+                                    // The kinds the endpoint reasoned about get their own words, as
+                                    // a bulk delete's do. The server's sentence is logged, not shown:
+                                    // it is not localised.
+                                    if ('UNCLASSIFIED' !== kind) {
+                                        console.warn(
+                                            `Content drive folder duplicate refused: ${kind}`,
+                                            refusal?.message
+                                        );
+                                        patchState(store, { folderDuplicateRefusal: kind });
+
+                                        return EMPTY;
+                                    }
+
+                                    // A transport failure, or a body with no code. This path still
+                                    // redirects on a 401 and reports a license wall properly.
+                                    httpErrorManagerService.handle(
+                                        refusal?.response ??
+                                            new HttpErrorResponse({ error: refusal })
+                                    );
+
+                                    return EMPTY;
+                                }),
+                                takeUntilDestroyed(destroyRef)
+                            )
+                            .subscribe((response) => {
+                                if (!response?.jobId) {
+                                    return;
+                                }
+
+                                patchState(store, {
+                                    duplicateJobs: {
+                                        ...store.duplicateJobs(),
+                                        [response.jobId]: { affectedFolders }
+                                    }
+                                });
+                            });
+                    },
+
+                    /**
+                     * Reports a finished duplication, from the pushed completion event.
+                     *
+                     * Mirrors {@link reportFolderDeleteCompleted}, so the two folder operations
+                     * settle the same way. Ownership is the server's answer: the completion is
+                     * addressed to the submitter only, so every one that arrives belongs to this
+                     * author. What {@link duplicateJobs} adds is where the duplicates landed, which
+                     * a run from before a reload no longer knows, and then the listing reloads
+                     * whatever folder is on screen.
+                     *
+                     * Only SUCCESS and CANCELED are outcomes, and only when the counters close over
+                     * `total`. A run that died still carries the counters it reached, and reporting
+                     * those would read as a finished duplication.
+                     */
+                    reportDuplicateCompleted: (
+                        actionName: string,
+                        event: DotFolderBulkDuplicateCompletedEvent
+                    ): void => {
+                        if (!event.jobId) {
+                            return;
+                        }
+
+                        // The only reason to see one twice is redelivery.
+                        if (store.settledDuplicateJobs().includes(event.jobId)) {
+                            return;
+                        }
+
+                        const tracked = store.duplicateJobs();
+                        // `hasOwnProperty`, not `in`: a jobId of `constructor` would read as tracked.
+                        const affectedFolders = Object.prototype.hasOwnProperty.call(
+                            tracked,
+                            event.jobId
+                        )
+                            ? tracked[event.jobId].affectedFolders
+                            : undefined;
+
+                        const remaining = { ...tracked };
+                        delete remaining[event.jobId];
+                        patchState(store, {
+                            duplicateJobs: remaining,
+                            settledDuplicateJobs: [...store.settledDuplicateJobs(), event.jobId]
+                        });
+
+                        if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({
+                                    status: 500,
+                                    statusText: `The duplication did not report a usable outcome (state: ${event.state})`
+                                })
+                            );
+
+                            return;
+                        }
+
+                        const closes =
+                            undefined !== event.total &&
+                            (event.successCount ?? 0) +
+                                (event.failedCount ?? 0) +
+                                (event.skippedCount ?? 0) ===
+                                event.total;
+
+                        if (!closes) {
+                            // Trusting the zeros would report a run over nothing, and substituting
+                            // the number submitted would claim every folder was duplicated.
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({
+                                    status: 500,
+                                    statusText:
+                                        'The duplication did not report an outcome for every folder'
+                                })
+                            );
+
+                            return;
+                        }
+
+                        patchState(store, {
+                            actionExecutionResults: [
+                                ...store.actionExecutionResults(),
+                                {
+                                    actionName,
+                                    successCount: event.successCount ?? 0,
+                                    failedCount: event.failedCount ?? 0,
+                                    skippedCount: event.skippedCount ?? 0,
+                                    // The names and reasons are the point of a partial outcome.
+                                    failures: (event.results ?? []).filter(
+                                        (item) => 'SUCCESS' !== item.status
+                                    ),
+                                    outcomeKind: OUTCOME_KIND.FOLDER_DUPLICATE,
+                                    // Absent for a run from before a reload, which means "reload
+                                    // regardless" rather than "nothing changed".
+                                    ...(affectedFolders ? { affectedFolders } : {}),
+                                    backgrounded: true
+                                }
+                            ]
+                        });
+                    },
+
                     executeRefresh: (actionName: string, inodes: string[]): void => {
                         if (!inodes.length) {
                             return;
@@ -1031,6 +1229,11 @@ export function withActionExecution() {
                      *
                      * @param affectedFolders where the batch landed, as `//hostname/path` refs
                      */
+                    /** Consumes a duplication refusal once the shell has said it. */
+                    clearFolderDuplicateRefusal: (): void => {
+                        patchState(store, { folderDuplicateRefusal: undefined });
+                    },
+
                     /** Consumes the refusal once the shell has said it. */
                     clearFolderDeleteRefusal: (): void => {
                         patchState(store, { folderDeleteRefusal: undefined });
@@ -1229,6 +1432,19 @@ export function withActionExecution() {
                     .subscribe((event) => {
                         store.reportFolderDeleteCompleted(
                             dotMessageService.get('content-drive.context-menu.delete-folder'),
+                            event
+                        );
+                    });
+
+                // Duplication reports the same way: the run settles itself, nothing here polls.
+                eventsSocket
+                    .on<DotFolderBulkDuplicateCompletedEvent>(
+                        DotSystemEventType.BULK_FOLDER_DUPLICATE_COMPLETED
+                    )
+                    .pipe(takeUntilDestroyed(destroyRef))
+                    .subscribe((event) => {
+                        store.reportDuplicateCompleted(
+                            dotMessageService.get('content-drive.action-center.duplicate'),
                             event
                         );
                     });
