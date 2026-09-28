@@ -12,7 +12,6 @@ import {
 describe('publishingStatusBucket (pure fn)', () => {
     const cases: Array<[PublishAuditStatus, 'success' | 'danger' | 'warn' | 'info']> = [
         [PublishAuditStatus.SUCCESS, 'success'],
-        [PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY, 'success'],
         [PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY, 'success'],
         [PublishAuditStatus.SUCCESS_WITH_WARNINGS, 'warn'],
         [PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS, 'danger'],
@@ -28,6 +27,7 @@ describe('publishingStatusBucket (pure fn)', () => {
         [PublishAuditStatus.SCHEDULED, 'info'],
         [PublishAuditStatus.BUNDLING, 'warn'],
         [PublishAuditStatus.SENDING_TO_ENDPOINTS, 'warn'],
+        [PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY, 'warn'],
         [PublishAuditStatus.PUBLISHING_BUNDLE, 'warn'],
         [PublishAuditStatus.RECEIVED_BUNDLE, 'warn']
     ];
