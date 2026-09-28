@@ -139,12 +139,22 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
     /**
      * A parent folder the user may read and add to, and a child in it the user may read and
      * duplicate: the folder that succeeds alongside each refusal below.
+     * <p>
+     * The child is granted READ itself: an individual permission on the parent does not reach the
+     * folders under it, so without it the child would be unreadable.
      */
     private Folder duplicableBy(final User user) throws Exception {
         final Folder parent = folder();
         grant(parent, roleOf(user), PermissionAPI.PERMISSION_READ
                 | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
-        return new FolderDataGen().parent(parent).nextPersisted();
+        return readableChildOf(parent, user);
+    }
+
+    /** A new folder under the parent, which the user is granted READ on directly. */
+    private Folder readableChildOf(final Folder parent, final User user) throws Exception {
+        final Folder child = new FolderDataGen().parent(parent).nextPersisted();
+        grant(child, roleOf(user), PermissionAPI.PERMISSION_READ);
+        return child;
     }
 
     private void assertFailedWith(final Map<String, Object> metadata, final String path,
@@ -506,7 +516,7 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
         final Folder duplicable = duplicableBy(user);
         final Folder readOnlyParent = folder();
         grant(readOnlyParent, roleOf(user), PermissionAPI.PERMISSION_READ);
-        final Folder readable = new FolderDataGen().parent(readOnlyParent).nextPersisted();
+        final Folder readable = readableChildOf(readOnlyParent, user);
 
         final Map<String, Object> metadata =
                 duplicatePaths(List.of(pathOf(readable), pathOf(duplicable)), user);
