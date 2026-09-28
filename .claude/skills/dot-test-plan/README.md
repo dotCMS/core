@@ -51,7 +51,16 @@ changes nothing.
 
 "post-merge test plan", "QA plan for PR #X", "verify this merged fix", "regression checklist for the
 merged PR", "what should QA exercise post-merge", "test plan for issue #X", "qa-postfix plan" — or
-automatically, when a PR labeled `Area : Backend` or `Area : Frontend` merges.
+automatically, when an opted-in PR merges.
+
+**Automatic runs are opt-in.** A merged PR is planned only when it carries **`PR : dotbot review`**
+*and* `Area : Backend` or `Area : Frontend`. Either label alone is not enough. That is the same label
+that requests a dotbot code review, so one gesture gets both: the review while the PR is open, and
+the test plan after it merges.
+
+Running it by hand from Actions → *Claude AI Post-Merge Test Plan* → **Run workflow** skips the
+opt-in check — useful when the label was added after the merge — but the PR must still be merged and
+still needs an `Area :` label.
 
 Force it with `/dot-test-plan`.
 
