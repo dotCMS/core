@@ -298,3 +298,33 @@ export interface DotFolderDeleteActiveRun {
     /** The folders this run was submitted to delete. Empty if the run recorded none. */
     paths: string[];
 }
+
+/**
+ * A bulk folder duplicate still in progress, as the queue's active listing reports it (#37062).
+ *
+ * Read so a reload can put the run's status back. The submitter travels with it because the
+ * listing is not scoped to the reader, and only the submitter is sent the completion that ends it.
+ */
+export interface DotFolderDuplicateActiveRun {
+    id: string;
+    /** Who submitted the run. Absent if the run recorded none. */
+    userId?: string;
+    /** The folders the run was submitted to duplicate. Empty if it recorded none. */
+    assetPaths: string[];
+}
+
+/**
+ * A bulk upload batch still being processed, as the queue's active listing reports it (#37062).
+ *
+ * Read so a reload can put the batch's status back. Same reason as
+ * {@link DotFolderDuplicateActiveRun} for carrying the submitter.
+ */
+export interface DotBulkUploadActiveRun {
+    id: string;
+    /** Who submitted the batch. Absent if it recorded none. */
+    userId?: string;
+    /** How many files the batch holds. */
+    fileCount: number;
+    /** The base type the batch was submitted as, which its outcome's wording depends on. */
+    baseType?: string;
+}

@@ -1,6 +1,9 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
-import { DotFolderBulkDuplicateSubmitResponse } from '@dotcms/dotcms-models';
+import {
+    DotFolderBulkDuplicateSubmitResponse,
+    DotFolderDuplicateActiveRun
+} from '@dotcms/dotcms-models';
 
 import {
     DotFolderBulkDuplicateRefusal,
@@ -115,6 +118,68 @@ describe('DotFolderBulkDuplicateService', () => {
         it('should not recognise an overlap refusal, which duplication cannot produce', () => {
             // The contract has no overlap guard for duplication, so no copy exists for one.
             expect(refuse(409, 'OVERLAPPING_RUN')?.kind).toBe('UNCLASSIFIED');
+        });
+    });
+
+    /**
+     * The runs still going when Content Drive opens, so a reload can put their status back
+     * (#37062, FR-015 as amended). Filtered to what is genuinely in progress, as delete's is.
+     */
+    describe('readActiveRuns', () => {
+        const ACTIVE_URL = '/api/v1/jobs/folderBulkDuplicate/active';
+
+        const flushJobs = (jobs: unknown[]): void => {
+            spectator.expectOne(ACTIVE_URL, HttpMethod.GET).flush({ entity: { jobs } });
+        };
+
+        it("should read the queue's active runs", () => {
+            spectator.service.readActiveRuns().subscribe();
+
+            spectator.expectOne(ACTIVE_URL, HttpMethod.GET);
+        });
+
+        it('should keep only runs that are genuinely in progress', () => {
+            // The listing returns every non-terminal run, failed and abandoned ones included.
+            let runs: DotFolderDuplicateActiveRun[] | undefined;
+            spectator.service.readActiveRuns().subscribe((result) => (runs = result));
+
+            flushJobs([
+                { id: 'running', state: 'RUNNING', parameters: { assetPaths: ['//x/a/'] } },
+                { id: 'pending', state: 'PENDING', parameters: { assetPaths: ['//x/b/'] } },
+                { id: 'failed', state: 'FAILED', parameters: { assetPaths: ['//x/c/'] } },
+                { id: 'done', state: 'SUCCESS', parameters: { assetPaths: ['//x/d/'] } }
+            ]);
+
+            expect(runs?.map((run) => run.id)).toEqual(['running', 'pending']);
+        });
+
+        it('should unpack who submitted each run and which folders it duplicates', () => {
+            let runs: DotFolderDuplicateActiveRun[] | undefined;
+            spectator.service.readActiveRuns().subscribe((result) => (runs = result));
+
+            flushJobs([
+                {
+                    id: 'job-1',
+                    state: 'RUNNING',
+                    parameters: { userId: 'dotcms.org.1', assetPaths: ['//x/a/', '//x/b/'] }
+                }
+            ]);
+
+            expect(runs).toEqual([
+                { id: 'job-1', userId: 'dotcms.org.1', assetPaths: ['//x/a/', '//x/b/'] }
+            ]);
+        });
+
+        it('should answer with no runs when the listing cannot be read', () => {
+            // Nothing asked for this read, so a failure must leave the portlet as it is.
+            let runs: DotFolderDuplicateActiveRun[] | undefined;
+            spectator.service.readActiveRuns().subscribe((result) => (runs = result));
+
+            spectator
+                .expectOne(ACTIVE_URL, HttpMethod.GET)
+                .flush('boom', { status: 500, statusText: 'Server Error' });
+
+            expect(runs).toEqual([]);
         });
     });
 });

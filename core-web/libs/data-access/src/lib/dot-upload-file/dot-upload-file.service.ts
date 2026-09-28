@@ -6,11 +6,14 @@ import { inject, Injectable } from '@angular/core';
 import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import {
+    DotBulkUploadActiveRun,
     DotBulkUploadEvent,
     DotBulkUploadForm,
     DotBulkUploadSubmitResponse,
     DotCMSContentlet,
-    DotCMSTempFile
+    DotCMSTempFile,
+    DotJobState,
+    isJobInProgress
 } from '@dotcms/dotcms-models';
 import { getFileMetadata, getFileVersion } from '@dotcms/utils';
 
@@ -44,6 +47,8 @@ export class DotUploadFileService {
     readonly #BASE_URL = '/api/v1/workflow/actions/default';
     /** The batch endpoint. Job-backed, so it answers a handle rather than a contentlet. */
     readonly #BULK_UPLOAD_URL = '/api/v1/assets/_bulkupload';
+    /** The batches of the upload queue still in progress, for any user. */
+    readonly #ACTIVE_UPLOADS_URL = '/api/v1/jobs/assetBulkUpload/active';
     readonly #http = inject(HttpClient);
     readonly #uploadService = inject(DotUploadService);
     readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
@@ -189,6 +194,48 @@ export class DotUploadFileService {
      * @param form Target and base type for the whole batch, plus the declared total size.
      * @returns The accepted run's handle. Nothing has been created yet.
      */
+    /**
+     * Reads the batches still being processed, so a reload can put their status back (#37062).
+     *
+     * Filtered to batches genuinely in progress: the listing answers with every non-terminal run,
+     * failed and abandoned ones included. A failure answers with no batches; nothing asked for this
+     * read, so it must not surface.
+     *
+     * @returns the batches in progress, for every user; the caller keeps its own
+     */
+    readActiveUploads(): Observable<DotBulkUploadActiveRun[]> {
+        return this.#http
+            .get<{
+                entity?: {
+                    jobs?: {
+                        id: string;
+                        state: DotJobState;
+                        parameters?: {
+                            userId?: string;
+                            baseType?: string;
+                            stagedFiles?: unknown[];
+                        };
+                    }[];
+                };
+            }>(this.#ACTIVE_UPLOADS_URL)
+            .pipe(
+                map((response) => response?.entity?.jobs ?? []),
+                map((jobs) =>
+                    jobs
+                        .filter((job) => isJobInProgress(job?.state))
+                        .map(
+                            (job): DotBulkUploadActiveRun => ({
+                                id: job.id,
+                                userId: job.parameters?.userId,
+                                fileCount: job.parameters?.stagedFiles?.length ?? 0,
+                                baseType: job.parameters?.baseType
+                            })
+                        )
+                ),
+                catchError(() => of([] as DotBulkUploadActiveRun[]))
+            );
+    }
+
     uploadFilesByBaseType(files: File[], form: DotBulkUploadForm): Observable<DotBulkUploadEvent> {
         if (!files.length) {
             // Nothing to create, so nothing worth a request — and an empty batch is one of the

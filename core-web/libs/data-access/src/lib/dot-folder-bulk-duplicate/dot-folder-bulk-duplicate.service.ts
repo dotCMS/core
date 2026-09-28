@@ -5,7 +5,12 @@ import { inject, Injectable } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
-import { DotFolderBulkDuplicateSubmitResponse } from '@dotcms/dotcms-models';
+import {
+    DotFolderBulkDuplicateSubmitResponse,
+    DotFolderDuplicateActiveRun,
+    DotJobState,
+    isJobInProgress
+} from '@dotcms/dotcms-models';
 
 /**
  * Why a duplication was refused before any run was created.
@@ -35,6 +40,16 @@ interface RefusalBody {
 }
 
 const BULK_DUPLICATE_URL = '/api/v1/assets/folders/_bulkduplicate';
+
+/** The runs of this queue still in progress, for any user. */
+const ACTIVE_URL = '/api/v1/jobs/folderBulkDuplicate/active';
+
+/** One entry of the active listing, as far as this client reads it. */
+interface ActiveRunEntry {
+    id: string;
+    state: DotJobState;
+    parameters?: { userId?: string; assetPaths?: string[] };
+}
 
 /**
  * Submits a selection of folders to be duplicated through
@@ -87,6 +102,33 @@ export class DotFolderBulkDuplicateService {
      * `400`s: telling an author they selected nothing when they hit the ceiling sends them to the
      * wrong fix.
      */
+    /**
+     * Reads the duplicates still in progress, so a reload can put their status back.
+     *
+     * Filtered to runs genuinely in progress: the listing answers with every non-terminal run,
+     * failed and abandoned ones included. A failure answers with no runs; nothing asked for this
+     * read, so it must not surface.
+     *
+     * @returns the runs in progress, for every user; the caller keeps its own
+     */
+    readActiveRuns(): Observable<DotFolderDuplicateActiveRun[]> {
+        return this.#http.get<{ entity?: { jobs?: ActiveRunEntry[] } }>(ACTIVE_URL).pipe(
+            map((response) => response?.entity?.jobs ?? []),
+            map((jobs) =>
+                jobs
+                    .filter((job) => isJobInProgress(job?.state))
+                    .map(
+                        (job): DotFolderDuplicateActiveRun => ({
+                            id: job.id,
+                            userId: job.parameters?.userId,
+                            assetPaths: job.parameters?.assetPaths ?? []
+                        })
+                    )
+            ),
+            catchError(() => of([] as DotFolderDuplicateActiveRun[]))
+        );
+    }
+
     #toRefusal(response: HttpErrorResponse): DotFolderBulkDuplicateRefusal {
         const error = ((response.error ?? {}) as RefusalBody).errors?.[0];
         const message = error?.message;

@@ -37,11 +37,14 @@ import {
     DotBulkRefreshCompletedEvent,
     DotFolderBulkDeleteCompletedEvent,
     DotBulkUploadCompletedEvent,
+    DotBulkUploadActiveRun,
     DotBundle,
     DotFolderBulkDuplicateCompletedEvent,
+    DotFolderDuplicateActiveRun,
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 
+import { UPLOAD_BATCH_OPERATION } from '../../../shared/constants';
 import {
     OUTCOME_KIND,
     DotContentDriveActionExecution,
@@ -51,7 +54,7 @@ import {
     DotContentDriveState
 } from '../../../shared/models';
 import { toParentFolderRefs } from '../../../utils/action-center';
-import { browsedFolderRef, normalizeFolderRef } from '../../../utils/functions';
+import { browsedFolderRef, normalizeFolderRef, uploadIndicatorKey } from '../../../utils/functions';
 
 /**
  * The operation key a bulk folder delete run is registered under.
@@ -158,6 +161,14 @@ interface WithActionExecutionState {
      */
     settledDuplicateJobs: string[];
     /**
+     * Upload batches whose completion this page has seen, tracked or not, by job id.
+     *
+     * So a batch restored after a reload is not restored once its completion has already arrived:
+     * it can finish between the active listing being read and being applied, and a report
+     * restored then would have nothing left to end it.
+     */
+    settledUploadJobs: string[];
+    /**
      * A folder duplication the server refused, as the kind it refused it for.
      *
      * Same split as {@link folderDeleteRefusal}: the store holds the kind, the shell picks the words.
@@ -195,6 +206,7 @@ export function withActionExecution() {
             folderDeleteRefusal: undefined,
             duplicateJobs: {},
             settledDuplicateJobs: [],
+            settledUploadJobs: [],
             folderDuplicateRefusal: undefined
         }),
         withComputed(({ runs, actionExecutionResults }) => ({
@@ -1303,6 +1315,84 @@ export function withActionExecution() {
                         patchState(store, { folderDeleteRefusal: undefined });
                     },
 
+                    /**
+                     * Puts back the status of this author's duplicates still running when the
+                     * page loaded (FR-015 as amended, #37062).
+                     *
+                     * Each is registered as the run a fresh submission registers, backgrounded,
+                     * and tracked by its job id, so the completion that follows ends it and is
+                     * reported. Skipped: a run this page already tracks, and one whose completion
+                     * has already arrived.
+                     *
+                     * @param runs the author's own runs from the queue's active listing
+                     */
+                    restoreDuplicateRuns: (runs: DotFolderDuplicateActiveRun[]): void => {
+                        runs.filter(
+                            (run) =>
+                                run.assetPaths.length > 0 &&
+                                !Object.prototype.hasOwnProperty.call(
+                                    store.duplicateJobs(),
+                                    run.id
+                                ) &&
+                                !store.settledDuplicateJobs().includes(run.id)
+                        ).forEach((run) => {
+                            const runId = startRun({
+                                operation: `${DUPLICATE_FOLDER_OPERATION}:${run.id}`,
+                                total: run.assetPaths.length,
+                                targets: [],
+                                labelKey: duplicateIndicatorKey(run.assetPaths.length),
+                                backgrounded: true
+                            });
+
+                            patchState(store, {
+                                duplicateJobs: {
+                                    ...store.duplicateJobs(),
+                                    [run.id]: {
+                                        affectedFolders: toParentFolderRefs(run.assetPaths),
+                                        runId
+                                    }
+                                }
+                            });
+                        });
+                    },
+
+                    /**
+                     * Puts back the status of this author's upload batches still being processed
+                     * when the page loaded (#37062).
+                     *
+                     * Each is registered as the background run an accepted batch registers, and
+                     * tracked by its job id, so the completion that follows ends it and is
+                     * reported. The folder it landed in is not known from the listing, so the
+                     * listing reloads regardless when it ends. Skipped: a batch this page already
+                     * tracks, and one whose completion has already arrived.
+                     *
+                     * @param runs the author's own batches from the queue's active listing
+                     */
+                    restoreUploadRuns: (runs: DotBulkUploadActiveRun[]): void => {
+                        runs.filter(
+                            (run) =>
+                                run.fileCount > 0 &&
+                                !Object.prototype.hasOwnProperty.call(store.uploadJobs(), run.id) &&
+                                !store.settledUploadJobs().includes(run.id)
+                        ).forEach((run) => {
+                            const runId = startRun({
+                                operation: `${UPLOAD_BATCH_OPERATION}:${run.id}`,
+                                labelKey: uploadIndicatorKey(run.fileCount, {
+                                    backgrounded: true
+                                }),
+                                total: run.fileCount,
+                                targets: []
+                            });
+
+                            patchState(store, {
+                                uploadJobs: {
+                                    ...store.uploadJobs(),
+                                    [run.id]: { affectedFolders: [], runId, baseType: run.baseType }
+                                }
+                            });
+                        });
+                    },
+
                     trackUploadJob: (
                         jobId: string,
                         affectedFolders: string[] = [],
@@ -1336,6 +1426,12 @@ export function withActionExecution() {
                         // an inherited member. Server ids are UUIDs so it is unreachable today, and
                         // this is the shape the rest of the codebase already uses for a lookup keyed
                         // by a value that did not come from here.
+                        if (event.jobId) {
+                            patchState(store, {
+                                settledUploadJobs: [...store.settledUploadJobs(), event.jobId]
+                            });
+                        }
+
                         if (
                             !event.jobId ||
                             !Object.prototype.hasOwnProperty.call(tracked, event.jobId)

@@ -6,10 +6,11 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY, SubscriptionLike } from 'rxjs';
+import { EMPTY, forkJoin, of, SubscriptionLike } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { computed, effect, EffectRef, inject, untracked } from '@angular/core';
+import { computed, DestroyRef, effect, EffectRef, inject, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
@@ -17,7 +18,10 @@ import { catchError, take } from 'rxjs/operators';
 import {
     DotContentDriveService,
     DotCurrentUserService,
-    DotLanguagesService
+    DotFolderBulkDeleteService,
+    DotFolderBulkDuplicateService,
+    DotLanguagesService,
+    DotUploadFileService
 } from '@dotcms/data-access';
 import {
     DotCMSContentTypeField,
@@ -856,6 +860,11 @@ export const DotContentDriveStore = signalStore(
     ),
     withHooks((store) => {
         let systemHostGate: EffectRef | undefined;
+        const destroyRef = inject(DestroyRef);
+        const folderBulkDeleteService = inject(DotFolderBulkDeleteService);
+        const folderBulkDuplicateService = inject(DotFolderBulkDuplicateService);
+        const uploadFileService = inject(DotUploadFileService);
+        const currentUserService = inject(DotCurrentUserService);
 
         return {
             onInit() {
@@ -865,10 +874,39 @@ export const DotContentDriveStore = signalStore(
                 store.loadSitePermissions(store.currentSite);
                 // Once, not per site: System Host belongs to none of them.
                 store.loadSystemHostPermissions();
-                // Fire-and-forget on purpose: the listing renders unmarked and marks appear when
-                // this answers. Nothing here is awaited, and a failure leaves the portlet exactly as
-                // it is today (FR-022, FR-023).
-                store.establishInFlightFolders();
+                // Runs still going from before this page loaded, from every queue in one read, then
+                // routed to whichever part of the store owns each (#37062, FR-015 as amended).
+                //
+                // Fire-and-forget on purpose: the listing renders unmarked and marks and statuses
+                // appear when this answers. Nothing here is awaited, every read answers `[]` on
+                // failure, and a failure leaves the portlet exactly as it is today (FR-022,
+                // FR-023).
+                //
+                // Only the author's own duplicates and uploads come back. The listings are not
+                // scoped to the reader, and only the submitter is sent the completion that ends a
+                // run, so anyone else's restored status would never go away. Delete marks every
+                // author's runs, as it always has: the folders are in use either way.
+                forkJoin({
+                    deletes: folderBulkDeleteService.readActiveRuns(),
+                    duplicates: folderBulkDuplicateService.readActiveRuns(),
+                    uploads: uploadFileService.readActiveUploads(),
+                    user: currentUserService.getCurrentUser().pipe(catchError(() => of(null)))
+                })
+                    .pipe(take(1), takeUntilDestroyed(destroyRef))
+                    .subscribe(({ deletes, duplicates, uploads, user }) => {
+                        store.applyInFlightFolders(deletes);
+
+                        const userId = user?.userId;
+
+                        if (!userId) {
+                            return;
+                        }
+
+                        store.restoreDuplicateRuns(
+                            duplicates.filter((run) => run.userId === userId)
+                        );
+                        store.restoreUploadRuns(uploads.filter((run) => run.userId === userId));
+                    });
 
                 /**
                  * Sends a user who cannot read System Host back to all site content.

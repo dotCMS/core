@@ -389,6 +389,13 @@ offered, says it will act on four, and acts on four.
 - **FR-015**: The client MUST NOT read the listing of in-flight runs, and MUST NOT restore any
   in-flight state on load. There is nothing to restore: no folder's appearance depends on whether a
   run is working on it.
+  *Amended after sign-off (2026-09-28, developer decision).* There is now something to restore: the
+  background status FR-011a asks for, which a reload lost while the run carried on. On load the
+  client reads the queue's active listing and puts the status back for each of **the author's own**
+  runs still in progress, and the completion that follows ends it as it would have. Only the
+  author's own, because the listing is not scoped to the reader and only the submitter is sent the
+  completion. Still no folder is marked (FR-014). The same read restores bulk upload's background
+  status, and delete's in-flight folders come from it too.
 - **FR-016**: The action MUST join the guard the existing actions already follow, which refuses a
   repeat of the **same operation on the same items** and nothing wider. A duplication running on one
   set of folders MUST NOT prevent an unrelated action, nor a duplication of different folders, from

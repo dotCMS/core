@@ -861,6 +861,136 @@ describe('withActionExecution', () => {
         });
     });
 
+    /**
+     * Runs still going when the page loads (developer decision, 2026-09-28: FR-015 amended). The
+     * status indicator was lost on a reload while the run carried on; it is put back from the
+     * queues' active listings, and the completion that follows ends it.
+     */
+    describe('restoring runs in progress after a reload', () => {
+        const ALPHA = '//demo.dotcms.com/blogs/alpha/';
+        const BETA = '//demo.dotcms.com/blogs/beta/';
+
+        const duplicateCompleted = (jobId: string): DotFolderBulkDuplicateCompletedEvent => ({
+            jobId,
+            state: 'SUCCESS',
+            total: 2,
+            successCount: 2,
+            failedCount: 0,
+            skippedCount: 0,
+            results: [
+                { key: ALPHA, status: 'SUCCESS' },
+                { key: BETA, status: 'SUCCESS' }
+            ]
+        });
+
+        const uploadCompleted = (jobId: string): DotBulkUploadCompletedEvent =>
+            ({
+                jobId,
+                state: 'SUCCESS',
+                total: 3,
+                processed: 3,
+                successCount: 3,
+                failedCount: 0,
+                skippedCount: 0
+            }) as DotBulkUploadCompletedEvent;
+
+        describe('a duplicate', () => {
+            it('should be reported on the indicator again, without locking anything', () => {
+                build();
+
+                store.restoreDuplicateRuns([{ id: 'job-9', assetPaths: [ALPHA, BETA] }]);
+
+                expect(store.toolbarRun()).toEqual(
+                    expect.objectContaining({
+                        labelKey: 'content-drive.duplicate.indicator',
+                        total: 2
+                    })
+                );
+                expect(store.blockingRunCount()).toBe(0);
+            });
+
+            it('should end the report and state the outcome when its completion arrives', () => {
+                build();
+                store.restoreDuplicateRuns([{ id: 'job-9', assetPaths: [ALPHA, BETA] }]);
+
+                duplicateSocketEvents.next(duplicateCompleted('job-9'));
+
+                expect(store.toolbarRunCount()).toBe(0);
+                expect(store.actionExecutionResult()).toEqual(
+                    expect.objectContaining({ affectedFolders: ['//demo.dotcms.com/blogs'] })
+                );
+            });
+
+            it('should not restore a run whose completion has already arrived', () => {
+                // It can finish between the listing being read and being applied; restoring it
+                // then would leave a report that nothing is left to end.
+                build();
+                store.reportDuplicateCompleted('Duplicate', duplicateCompleted('job-9'));
+
+                store.restoreDuplicateRuns([{ id: 'job-9', assetPaths: [ALPHA, BETA] }]);
+
+                expect(store.toolbarRunCount()).toBe(0);
+            });
+
+            it('should not report a run this page is already tracking a second time', () => {
+                build();
+                duplicate.mockReturnValue(
+                    of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status', submitted: 1 })
+                );
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                store.restoreDuplicateRuns([{ id: 'job-1', assetPaths: [ALPHA] }]);
+
+                expect(store.toolbarRunCount()).toBe(1);
+            });
+        });
+
+        describe('an upload', () => {
+            it('should be reported on the indicator again, as its background run is', () => {
+                build();
+
+                store.restoreUploadRuns([{ id: 'up-9', fileCount: 3, baseType: 'DOTASSET' }]);
+
+                expect(store.toolbarRun()).toEqual(
+                    expect.objectContaining({
+                        labelKey: 'content-drive.upload.indicator.background',
+                        total: 3
+                    })
+                );
+            });
+
+            it('should end the report and state the outcome when its completion arrives', () => {
+                build();
+                store.restoreUploadRuns([{ id: 'up-9', fileCount: 3, baseType: 'DOTASSET' }]);
+
+                store.reportUploadCompleted('Upload', uploadCompleted('up-9'));
+
+                expect(store.toolbarRunCount()).toBe(0);
+                expect(store.actionExecutionResult()).toEqual(
+                    expect.objectContaining({ successCount: 3, backgrounded: true })
+                );
+            });
+
+            it('should not restore a batch whose completion has already arrived', () => {
+                build();
+                store.reportUploadCompleted('Upload', uploadCompleted('up-9'));
+
+                store.restoreUploadRuns([{ id: 'up-9', fileCount: 3, baseType: 'DOTASSET' }]);
+
+                expect(store.toolbarRunCount()).toBe(0);
+            });
+
+            it('should not report a batch this page is already tracking a second time', () => {
+                build();
+                store.trackUploadJob('up-1');
+
+                store.restoreUploadRuns([{ id: 'up-1', fileCount: 3, baseType: 'DOTASSET' }]);
+
+                expect(store.toolbarRunCount()).toBe(0);
+            });
+        });
+    });
+
     describe('reportUploadCompleted', () => {
         const completed = (
             overrides: Partial<DotBulkUploadCompletedEvent> = {}

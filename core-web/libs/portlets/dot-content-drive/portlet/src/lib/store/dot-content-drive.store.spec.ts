@@ -4,7 +4,7 @@ import {
     mockProvider,
     SpyObject
 } from '@openng/spectator/vitest';
-import { NEVER, of, Subject, throwError } from 'rxjs';
+import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { Mock, Mocked, describe, expect, vi } from 'vitest';
 
 import { Location } from '@angular/common';
@@ -17,6 +17,7 @@ import {
     AddToBundleService,
     DotBulkRefreshService,
     DotFolderBulkDeleteService,
+    DotFolderBulkDuplicateService,
     DotEventsSocket,
     DotMessageService,
     PushPublishService,
@@ -26,6 +27,7 @@ import {
     DotFolderService,
     DotHttpErrorManagerService,
     DotPropertiesService,
+    DotUploadFileService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -1434,6 +1436,128 @@ describe('DotContentDriveStore - onInit', () => {
         );
         expect(store.isTreeExpanded()).toBe(true);
         expect(store.currentSite()).toBe(MOCK_SITES[2]);
+    });
+});
+
+/**
+ * Runs still going when Content Drive opens (developer decision, 2026-09-28: FR-015 amended). One
+ * read of every queue's active listing, routed to whichever part of the store owns each: delete
+ * marks the folders it covers, duplicate and upload put their status back.
+ */
+describe('DotContentDriveStore - runs in progress on load', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let currentUser$: Observable<DotCurrentUser>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, {
+                snapshot: {
+                    queryParams: {
+                        path: '/initial/test/path',
+                        filters: 'contentType:InitialTestContentType',
+                        isTreeExpanded: 'true'
+                    }
+                }
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[2])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn(() => currentUser$)
+            }),
+            mockProvider(DotContentDriveService, {
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() =>
+                    of([{ id: 'delete-1', state: 'RUNNING', paths: ['//demo.com/gone/'] }])
+                )
+            }),
+            mockProvider(DotFolderBulkDuplicateService, {
+                readActiveRuns: vi.fn(() =>
+                    of([
+                        { id: 'mine', userId: 'me', assetPaths: ['//demo.com/a/'] },
+                        { id: 'theirs', userId: 'someone-else', assetPaths: ['//demo.com/b/'] }
+                    ])
+                )
+            }),
+            mockProvider(DotUploadFileService, {
+                readActiveUploads: vi.fn(() =>
+                    of([
+                        { id: 'upload-mine', userId: 'me', fileCount: 2 },
+                        { id: 'upload-theirs', userId: 'someone-else', fileCount: 1 }
+                    ])
+                )
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: vi.fn().mockReturnValue(of(mockLocales))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    const build = () => {
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    beforeEach(() => {
+        currentUser$ = of({ userId: 'me', admin: false } as DotCurrentUser);
+    });
+
+    it("should restore the author's own duplicates and uploads, and no one else's", () => {
+        // The listings are not scoped to the reader, and only the submitter is sent the completion
+        // that ends a run: another author's restored status would never go away.
+        build();
+
+        expect(Object.keys(store.duplicateJobs())).toEqual(['mine']);
+        expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
+        expect(store.toolbarRunCount()).toBe(2);
+    });
+
+    it('should mark the folders a delete is working on from the same read', () => {
+        // Unlike the others, delete marks every author's runs: the folders are in use either way.
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should restore no status when it cannot tell who the author is', () => {
+        currentUser$ = throwError(() => new Error('boom'));
+        build();
+
+        expect(store.toolbarRunCount()).toBe(0);
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
     });
 });
 

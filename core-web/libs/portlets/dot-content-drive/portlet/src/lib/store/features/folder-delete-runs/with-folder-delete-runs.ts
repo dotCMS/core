@@ -22,6 +22,7 @@ import {
 import {
     DotContentDriveItem,
     DotFolderBulkDeleteCompletedEvent,
+    DotFolderDeleteActiveRun,
     DotFolderDeleteAnnouncementEvent
 } from '@dotcms/dotcms-models';
 import {
@@ -275,14 +276,28 @@ export function withFolderDeleteRuns() {
                     });
                 };
 
+                /**
+                 * **Replaces** the set from a reading of the queue's in-flight runs.
+                 *
+                 * Replaces rather than merges: this is what recovers from a run that died without
+                 * announcing its end. Inheriting what the client was previously told would keep
+                 * such a folder marked forever (FR-020b).
+                 */
+                const applyInFlightFolders = (runs: DotFolderDeleteActiveRun[]): void => {
+                    patchState(store, {
+                        folderDeleteRuns: runs.reduce<Record<string, string[]>>((acc, run) => {
+                            acc[run.id] = run.paths.map(normalizeFolderRef);
+
+                            return acc;
+                        }, {}),
+                        folderDeleteRunsEstablished: true
+                    });
+                };
+
                 return {
-                    /**
-                     * Reads the queue's in-flight runs and **replaces** the set from them.
-                     *
-                     * Replaces rather than merges: this is what recovers from a run that died
-                     * without announcing its end. Inheriting what the client was previously told
-                     * would keep such a folder marked forever (FR-020b).
-                     */
+                    applyInFlightFolders,
+
+                    /** Reads the queue's in-flight runs and replaces the set from them. */
                     establishInFlightFolders: (): void => {
                         folderBulkDeleteService
                             .readActiveRuns()
@@ -293,19 +308,7 @@ export function withFolderDeleteRuns() {
                                 catchError(() => EMPTY),
                                 takeUntilDestroyed(destroyRef)
                             )
-                            .subscribe((runs) => {
-                                patchState(store, {
-                                    folderDeleteRuns: runs.reduce<Record<string, string[]>>(
-                                        (acc, run) => {
-                                            acc[run.id] = run.paths.map(normalizeFolderRef);
-
-                                            return acc;
-                                        },
-                                        {}
-                                    ),
-                                    folderDeleteRunsEstablished: true
-                                });
-                            });
+                            .subscribe(applyInFlightFolders);
                     },
 
                     /** Marks a folder a run has just started working on. */
