@@ -854,27 +854,33 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
-            // A hash with no query is an in-page anchor. Scroll the iframe
-            // ourselves: left to the browser, the link would load outside the
-            // editor instead of scrolling.
-            if (url.hash && !url.search) {
-                e.preventDefault();
-                scrollIframeToFragment(this.contentWindow, url.hash);
+        // A same-page hash with no query is an in-page anchor. Scroll the iframe
+        // ourselves: left to the browser, the link would load outside the editor
+        // instead of scrolling.
+        const isSamePageAnchor =
+            !!url.hash &&
+            !url.search &&
+            isSamePageNavigation(href, this.uveStore.pageParams()?.url ?? '');
 
-                return;
-            }
+        if (isSamePageAnchor) {
+            e.preventDefault();
+            scrollIframeToFragment(this.contentWindow, url.hash);
 
-            // Anything else re-renders the page through the Page API below. Left to
-            // the browser, the iframe of a traditional page navigates on its own and
-            // comes back blank, and the new query never reaches the page render
-            // (#36999, #37327). The previous link's query is cleared first, so a link
-            // without a filter removes it instead of inheriting it through the
-            // `pageLoad` merge.
-            for (const key of this.#pageOwnedParamKeys()) {
-                if (!(key in urlQueryParams)) {
-                    urlQueryParams[key] = undefined;
-                }
+            return;
+        }
+
+        // Anything else loads through the Page API below. Left to the browser, the
+        // iframe of a traditional page navigates on its own and comes back blank,
+        // and the new query never reaches the page render (#36999, #37327).
+        //
+        // The previous link's query is cleared first, so the link's own query is
+        // the whole query of the next page instead of inheriting the old one through
+        // the `pageLoad` merge. That holds for any link, not only same-path ones:
+        // `/folder/` and `/folder/index` are the same page under two paths, and a
+        // filter must not follow the editor to another page either.
+        for (const key of this.#pageOwnedParamKeys()) {
+            if (!(key in urlQueryParams)) {
+                urlQueryParams[key] = undefined;
             }
         }
 
@@ -909,7 +915,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * such as a filter a page link added.
      *
      * `pageLoad` merges new params over the current ones, so these would otherwise
-     * survive every later load of the same page. Setting them to `undefined` clears
+     * survive every later link navigation. Setting them to `undefined` clears
      * them: `undefined` values are left out of both the Page API request and the
      * admin URL. Editor params (language, persona, mode, variant, device…) are not
      * returned, so they still follow the editor.
