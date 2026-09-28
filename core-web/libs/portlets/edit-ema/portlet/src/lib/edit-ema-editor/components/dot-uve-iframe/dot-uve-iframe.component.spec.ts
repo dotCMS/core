@@ -621,6 +621,25 @@ describe('DotUveIframeComponent', () => {
             expect(mockIframe.srcdoc).toBe(mockPageRender);
         });
 
+        it('should re-write srcdoc when src is a new object reference with the same stringified value (traditional-page reset)', () => {
+            // Mirrors withEditor.ts's $iframeURL: TRADITIONAL pages always feed a
+            // brand-new `String('')` object on every load — even a re-navigation to
+            // the same page with byte-identical content — to force a native iframe
+            // reset. The dedup guard must not be fooled by two distinct String
+            // objects that stringify to the same value; otherwise the native reset
+            // wipes the iframe and the srcdoc write is wrongly skipped, leaving the
+            // canvas permanently blank (issue #37327).
+            spectator.setInput('src', new String('') as unknown as string);
+            component.onIframeLoad();
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
+
+            mockIframe.srcdoc = 'SENTINEL';
+            spectator.setInput('src', new String('') as unknown as string);
+            component.onIframeLoad();
+
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
+        });
+
         it('should still call handleInlineScripts on de-duplicated calls', () => {
             const handleSpy = vi.spyOn(component as any, 'handleInlineScripts');
             component.onIframeLoad();
