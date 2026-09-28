@@ -181,6 +181,16 @@ public class BinaryExporterServlet extends HttpServlet {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+                serveBinary(req, resp);
+            }
+        } else {
+            serveBinary(req, resp);
+        }
+    }
+
+    private void serveBinary(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String servletPath = req.getServletPath();
 		String uri = req.getRequestURI().substring(servletPath.length());
 		String[] uriPieces = uri.split("/");

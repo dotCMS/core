@@ -57,6 +57,12 @@ class MetadataGeneratorImpl implements MetadataGenerator {
         try {
             final TikaUtils tikaUtils = new TikaUtils();
 
+            if (AssetStorageFeature.isEnabled() && tikaUtils.extractorVersion() != null) {
+                return SharedExtractedMetadata.getInstance().get(binary, tikaUtils.extractorVersion(),
+                        com.dotmarketing.business.APILocator.getFileMetadataAPI().getBinaryMetadataVersion(),
+                        (int) maxLength, snapshot -> serializable(tikaUtils.getForcedMetaDataMap(snapshot, (int) maxLength)));
+            }
+
             final Map<String, Object> metaDataMap = tikaUtils
                     .getForcedMetaDataMap(binary, (int) maxLength);
             return metaDataMap.entrySet().stream()
@@ -64,9 +70,18 @@ class MetadataGeneratorImpl implements MetadataGenerator {
                             collect(Collectors.toMap(Entry::getKey,
                                     e -> (Serializable) e.getValue()));
         } catch (Exception e) {
+            if (AssetStorageFeature.isEnabled() && (e instanceof com.dotmarketing.exception.DotDataException
+                    || e instanceof java.io.IOException)) {
+                throw new com.dotmarketing.exception.DotRuntimeException("Unable to read or publish shared metadata", e);
+            }
             Logger.warnAndDebug(MetadataGeneratorImpl.class, e.getMessage(), e);
         }
         return ImmutableMap.of();
+    }
+
+    private static Map<String, Serializable> serializable(Map<String, Object> values) {
+        return values.entrySet().stream().filter(entry -> entry.getValue() instanceof Serializable)
+                .collect(Collectors.toMap(Entry::getKey, entry -> (Serializable) entry.getValue()));
     }
 
     @Override
