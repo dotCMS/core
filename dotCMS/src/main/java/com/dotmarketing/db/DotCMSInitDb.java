@@ -111,7 +111,12 @@ public class DotCMSInitDb {
 		
 	    loadStarterSiteData() ;
 
-        DbConnectionFactory.closeAndCommit();
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            // Import cleanup is a commit listener: keep its input until durable backfill and DB commit succeed.
+            HibernateUtil.closeAndCommitTransaction();
+        } else {
+            DbConnectionFactory.closeAndCommit();
+        }
 
         removeAnyOldMetadata();
         MaintenanceUtil.flushCache();

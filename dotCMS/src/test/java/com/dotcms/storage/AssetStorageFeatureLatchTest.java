@@ -3,6 +3,7 @@ package com.dotcms.storage;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mockStatic;
 
+import com.dotcms.storage.binary.BinaryAssetBackfillProcessor;
 import com.dotcms.storage.binary.BinaryAssetCleanupProcessor;
 import com.dotcms.storage.binary.BinaryFieldCleanupProcessor;
 import com.dotmarketing.util.Config;
@@ -13,8 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 class AssetStorageFeatureLatchTest {
-    private static final List<Class<?>> S3_PROCESSORS = List.of(BinaryAssetCleanupProcessor.class,
-            BinaryFieldCleanupProcessor.class);
+    private static final List<Class<?>> S3_PROCESSORS = List.of(BinaryAssetBackfillProcessor.class,
+            BinaryAssetCleanupProcessor.class, BinaryFieldCleanupProcessor.class);
 
     private String previous;
 
