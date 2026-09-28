@@ -857,11 +857,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         // A same-page hash with no query is an in-page anchor. Scroll the iframe
         // ourselves: left to the browser, the link would load outside the editor
         // instead of scrolling.
-        if (
-            isSamePageNavigation(href, this.uveStore.pageParams()?.url ?? '') &&
-            url.hash &&
-            !url.search
-        ) {
+        const isSamePageAnchor =
+            !!url.hash &&
+            !url.search &&
+            isSamePageNavigation(href, this.uveStore.pageParams()?.url ?? '');
+
+        if (isSamePageAnchor) {
             e.preventDefault();
             scrollIframeToFragment(this.contentWindow, url.hash);
 
