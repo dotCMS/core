@@ -177,6 +177,21 @@ final class FolderDuplicator {
     /**
      * Every contentlet directly under a folder, one identifier per item whatever its versions,
      * languages or archived state.
+     * <p>
+     * <b>Why the identifier table, and why not paged.</b> The plan named
+     * {@code BrowserAPI.getContentUnderParentFromDB}, read a page at a time. That lookup answers
+     * one row per language version and filters by the query's user, so its rows would have to be
+     * collapsed back to identifiers before copying. One identifier is exactly the unit
+     * {@link ContentletAPI#copyContentlet} works in, since it copies every version in every
+     * language of the item it is given. Both reads come from the database, not the search index.
+     * Paging is not needed: this reads only identifiers, a few dozen bytes each, and each
+     * contentlet is loaded one at a time as it is copied, so what is held at once stays bounded
+     * by one folder's identifiers, never the whole subtree.
+     *
+     * @param folder the source folder whose direct contents are read
+     * @param site   the site the folder belongs to
+     * @return the identifiers of the contentlets directly under the folder
+     * @throws DotDataException the query failed
      */
     private List<String> contentletIdentifiersUnder(final Folder folder, final Host site)
             throws DotDataException {
