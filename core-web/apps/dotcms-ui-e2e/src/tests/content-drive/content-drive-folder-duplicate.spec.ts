@@ -156,9 +156,15 @@ test.describe('Content Drive folder duplicate', () => {
 
                 await drive.expectNotificationContaining('1 folder(s) duplicated.');
 
+                // Back with a real page load, as an author returning later would, which also
+                // closes the notifications panel left open over the page.
+                await adminPage.goto('about:blank');
                 await drive.goTo();
                 await drive.openFolder(`cd-dup-away-${testSuffix}`);
-                await duplicate.expectDuplicateShown('source_copy');
+                // The listing, not the tree: opening a folder there selects it without expanding
+                // it, so its children are not in the tree yet. The tree catching up as a run ends
+                // is what the other tests check.
+                await drive.expectListContainsTitle('source_copy');
             }
         ));
 
