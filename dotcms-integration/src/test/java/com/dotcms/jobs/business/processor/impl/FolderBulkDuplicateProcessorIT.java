@@ -585,6 +585,31 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
 
     /**
      * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: The path of a file rather than a folder, spelled with and without the
+     * trailing slash the submission adds, beside a folder that can be duplicated
+     * ExpectedResult: PATH_NOT_FOUND for both, and the file's folder is not duplicated in its
+     * place; the other folder is still duplicated (FR-013)
+     */
+    @Test
+    public void test_process_pathNamesAFile_pathNotFound_restStillRuns() throws Exception {
+        final Folder duplicable = folder();
+        final Folder holder = folder();
+        final Contentlet file = new FileAssetDataGen(holder, "a file").nextPersisted();
+        final String filePath = pathOf(holder)
+                + APILocator.getIdentifierAPI().find(file.getIdentifier()).getAssetName();
+        final String filePathWithSlash = filePath + "/";
+
+        final Map<String, Object> metadata = duplicatePaths(
+                List.of(filePath, filePathWithSlash, pathOf(duplicable)), admin);
+
+        assertFailedWith(metadata, filePath, BatchFailureReason.PATH_NOT_FOUND);
+        assertFailedWith(metadata, filePathWithSlash, BatchFailureReason.PATH_NOT_FOUND);
+        assertFalse(assetsUnderParentOf(holder).containsKey(holder.getName() + "_copy"));
+        assertSucceeded(metadata, duplicable);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
      * Given Scenario: The site root, which is the system folder in disguise, beside a folder that
      * can be duplicated
      * ExpectedResult: PROTECTED_FOLDER, never attempted, and the other folder is still duplicated

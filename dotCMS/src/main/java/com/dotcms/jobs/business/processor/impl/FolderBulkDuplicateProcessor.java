@@ -29,9 +29,8 @@ import com.dotcms.jobs.business.processor.Cancellable;
 import com.dotcms.jobs.business.processor.JobProcessor;
 import com.dotcms.jobs.business.processor.Queue;
 import com.dotcms.rest.api.v1.asset.bulkduplicate.FolderBulkDuplicateHelper;
-import com.dotcms.rest.api.v1.asset.WebAssetHelper;
-import com.dotcms.rest.api.v1.asset.view.FolderView;
-import com.dotcms.rest.api.v1.asset.view.WebAssetView;
+import com.dotcms.rest.api.v1.asset.AssetPathResolver;
+import com.dotcms.rest.api.v1.asset.ResolvedAssetAndPath;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
@@ -236,7 +235,7 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
     private Map<String, Folder> decideUpFront(final List<String> paths,
             final FolderDuplicator duplicator, final User user) {
 
-        final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+        final AssetPathResolver pathResolver = AssetPathResolver.newInstance();
         final User systemUser = APILocator.systemUser();
         final Map<String, Folder> resolved = new LinkedHashMap<>();
 
@@ -250,7 +249,7 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
                 record(path, BatchItemStatus.FAILED, BatchFailureReason.PROTECTED_FOLDER,
                         "a site root is not a folder that can be duplicated");
             } else {
-                resolveInto(resolved, webAssetHelper, path, systemUser);
+                resolveInto(resolved, pathResolver, path, systemUser);
             }
         }
 
@@ -298,16 +297,23 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
     /**
      * Resolves a path to its folder as the system user, so whether the author may read it is
      * decided by the batch check rather than an exception, recording the path's failure when it
-     * does not name a folder that can be duplicated.
+     * does not name a folder that can be duplicated. A path that names a file is not found.
+     *
+     * @param resolved     collects each path that resolved to a folder, keyed by the path
+     * @param pathResolver turns a site-qualified path into its site and folder
+     * @param path         the submitted path
+     * @param systemUser   the user the lookup runs as
      */
     private void resolveInto(final Map<String, Folder> resolved,
-            final WebAssetHelper webAssetHelper, final String path, final User systemUser) {
+            final AssetPathResolver pathResolver, final String path, final User systemUser) {
         try {
-            final WebAssetView assetInfo = webAssetHelper.getAssetInfo(path, systemUser);
-            final Folder folder = assetInfo instanceof FolderView
-                    ? APILocator.getFolderAPI()
-                            .find(((FolderView) assetInfo).inode(), systemUser, false)
-                    : null;
+            // The resolver alone: it finds the site and the folder by path and nothing more.
+            // WebAssetHelper.getAssetInfo would also list the folder's whole contents, which is
+            // costly for a large folder and is thrown away here before the heartbeat starts.
+            final ResolvedAssetAndPath resolvedPath = pathResolver.resolve(path, systemUser);
+            final Folder folder = UtilMethods.isSet(resolvedPath.asset())
+                    ? null
+                    : resolvedPath.resolvedFolder();
             if (folder == null || !UtilMethods.isSet(folder.getInode())) {
                 record(path, BatchItemStatus.FAILED, BatchFailureReason.PATH_NOT_FOUND,
                         "the path does not resolve to a folder");
