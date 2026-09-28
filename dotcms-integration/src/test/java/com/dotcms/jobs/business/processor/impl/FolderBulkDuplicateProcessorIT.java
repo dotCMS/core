@@ -474,6 +474,26 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
 
     /**
      * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: A folder the submitter cannot read, beside one they can duplicate
+     * ExpectedResult: The unreadable one fails with PERMISSION_DENIED and is not duplicated; the
+     * other is still duplicated (US3)
+     */
+    @Test
+    public void test_process_unreadableFolder_permissionDenied_restStillRuns() throws Exception {
+        final User user = limitedUser();
+        final Folder duplicable = duplicableBy(user);
+        final Folder unreadable = folder();
+
+        final Map<String, Object> metadata =
+                duplicatePaths(List.of(pathOf(unreadable), pathOf(duplicable)), user);
+
+        assertFailedWith(metadata, pathOf(unreadable), BatchFailureReason.PERMISSION_DENIED);
+        assertFalse(assetsUnderParentOf(unreadable).containsKey(unreadable.getName() + "_copy"));
+        assertSucceeded(metadata, duplicable);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
      * Given Scenario: A folder the submitter can read, whose parent they cannot add to, beside one
      * they can duplicate
      * ExpectedResult: PARENT_PERMISSION_DENIED, told apart from no rights on the folder itself,
