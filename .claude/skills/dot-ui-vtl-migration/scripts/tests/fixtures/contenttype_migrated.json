@@ -1,0 +1,20 @@
+{
+  "entity": {
+    "id": "ct-migrated",
+    "variable": "MigratedType",
+    "fields": [
+      {
+        "id": "field-migrated-code",
+        "variable": "code",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "#dotParse(\"/dA/asset-migrated-001\")"
+      },
+      {
+        "id": "field-migrated-inlinedone",
+        "variable": "inlineDone",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "#if( $structures.isNewEditModeEnabled() )\n<p>new</p>\n#else\n<p>old, already migrated</p>\n#end"
+      }
+    ]
+  }
+}

@@ -3,7 +3,7 @@ name: dot-ui-vtl-migration
 owner: "@dotcms/falcon"
 status: active
 description: >
-  Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. By default it returns a single inline file ready to paste into the Custom Field: the migrated code inside #if( $structures.isNewEditModeEnabled() ) and the original legacy code, untouched, inside #else, with no #parse and no extra files. On request it produces three files instead (_old.vtl, _new.vtl and a #parse router), and it converts existing migrations between the two shapes. Use this skill whenever a user asks to migrate, update, or convert a VTL file, custom field template, or dotCMS field that uses any of: DotCustomFieldApi.get(), DotCustomFieldApi.set(), DotCustomFieldApi.onChangeField(), dojo.ready(), dojo.byId(), dijit.byId(), dijit.form.*, dojoType attributes, or any Dojo/Dijit pattern. Also trigger when the user pastes a VTL snippet and asks "what needs to change" or "can you update this", asks for an inline, single-file or one-file migration ("un solo archivo"), wants to paste the result into the content type editor, or wants to collapse a _new/_old/router migration into one file or split an inline one. If in doubt, use this skill.
+  Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. By default it returns a single inline file ready to paste into the Custom Field: the migrated code inside #if( $structures.isNewEditModeEnabled() ) and the original legacy code, untouched, inside #else, with no #parse and no extra files. On request it produces three files instead (_old.vtl, _new.vtl and a #parse router), and it converts existing migrations between the two shapes. Use this skill whenever a user asks to migrate, update, or convert a VTL file, custom field template, or dotCMS field that uses any of: DotCustomFieldApi.get(), DotCustomFieldApi.set(), DotCustomFieldApi.onChangeField(), dojo.ready(), dojo.byId(), dijit.byId(), dijit.form.*, dojoType attributes, or any Dojo/Dijit pattern. Also trigger when the user pastes a VTL snippet and asks "what needs to change" or "can you update this", asks for an inline, single-file or one-file migration ("un solo archivo"), wants to paste the result into the content type editor, or wants to collapse a _new/_old/router migration into one file or split an inline one. Also trigger when the user asks to migrate ALL custom fields, every legacy field, or "the whole instance" — this skill bundles a `scripts/migrate_custom_fields.py` tool that finds, downloads, and safely republishes every legacy custom field across a live dotCMS instance in one guided session (see "Migrate a whole instance" below). If in doubt, use this skill.
 ---
 
 # VTL Migration: Legacy API → DotCustomFieldApi
@@ -11,6 +11,36 @@ description: >
 You are migrating DotCMS VTL custom field templates from Dojo/Dijit-era APIs to the modern `DotCustomFieldApi`. The goal is **identical functionality with modern, clean code** and **semantic styling with DaisyUI**.
 
 For the full migration rules, all code examples, the DaisyUI styling section, and the step-by-step checklist, read `references/migration-guide.md`.
+
+## Available scripts
+
+- **`scripts/migrate_custom_fields.py`** — finds every legacy custom field on a live dotCMS instance, downloads what needs migrating, and (after you've migrated each file with this skill) safely republishes the results. Self-contained (PEP 723 inline dependencies); run it with [uv](https://docs.astral.sh/uv/) directly from the skill root — no separate install step:
+  ```bash
+  uv run scripts/migrate_custom_fields.py --help
+  ```
+
+## Migrate a whole instance
+
+Use this workflow when the user asks to migrate **all** custom fields, every legacy field, or "the whole instance" — not a single pasted VTL file.
+
+**Prerequisites**: [`uv`](https://docs.astral.sh/uv/) installed; network access to the target dotCMS instance; a backend user on that instance with edit permissions on content types and publish permissions on the content the referenced assets/fields belong to.
+
+1. **Configure and discover.** Set `BASE_URL`, `DOTCMS_USER`, `DOTCMS_PASS` (env vars — the script never prompts), then run:
+   ```bash
+   BASE_URL=https://my-env.dotcms.dev DOTCMS_USER=... DOTCMS_PASS=... \
+     uv run scripts/migrate_custom_fields.py pull
+   ```
+   This scans every content type, classifies every custom field, downloads what needs migrating into `<workdir>/original/`, and writes `<workdir>/manifest.json`. Fields that are already migrated, load a core-shipped file, or reference code by an unhandled path are reported only — nothing is downloaded or queued for them.
+2. **Migrate each file** under `<workdir>/original/` using this skill in its default **inline** mode (see Output Modes below), writing each result to `<workdir>/migrated/` under the same relative path.
+3. **Show the customer a summary** of what changed per file and get their explicit confirmation before publishing anything.
+4. **Preview, then publish**:
+   ```bash
+   uv run scripts/migrate_custom_fields.py push --dry-run
+   uv run scripts/migrate_custom_fields.py push
+   ```
+   `push` independently verifies, per item, that nothing changed on the server since `pull` and that the migrated file is a genuine inline migration (the original code still reachable, verbatim, behind the edit-mode switch) before publishing it — one bad item is skipped and reported, never blocking the rest of the batch. Use `--only <key...>` (a dA id, a content identifier, or a `Type.field` key) to scope a run to specific items.
+
+Exit codes (also in `--help`): `0` success, `1` some entries failed, `2` invalid arguments/configuration, `3` authentication failure (nothing is written).
 
 ## The Core API Swap (Quick Reference)
 
