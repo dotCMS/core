@@ -66,6 +66,10 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	public Resource child(String childName) {
 		List<? extends Resource> children = getChildren();
 		for (Resource resource : children) {
+			if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+				if (resource.getName().equals(childName)) return resource;
+				continue;
+			}
 			if(resource instanceof TempFolderResourceImpl){
 				String name = ((TempFolderResourceImpl)resource).getFolder().getName();
 				if(name.equalsIgnoreCase(childName)){
@@ -85,6 +89,20 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 * @see com.bradmcevoy.http.CollectionResource#getChildren()
 	 */
 	public List<? extends Resource> getChildren() {
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			try {
+				final var storage = com.dotcms.storage.WebdavTemporaryStorage.getInstance();
+				final List<Resource> result = new ArrayList<>();
+				for (var entry : storage.children(folder)) {
+					final File file = storage.file(entry.path());
+					result.add(entry.directory() ? new TempFolderResourceImpl(file.getPath(), file, isAutoPub)
+							: new TempFileResourceImpl(file, file.getPath(), isAutoPub));
+				}
+				return result;
+			} catch (Exception failure) {
+				throw new com.dotmarketing.exception.DotRuntimeException("Unable to list WebDAV staging directory", failure);
+			}
+		}
 		File[] children = folder.listFiles();
 		List<Resource> result = new ArrayList<>();
 		for (File file : children) {
@@ -147,6 +165,10 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 * @see com.bradmcevoy.http.Resource#getModifiedDate()
 	 */
 	public Date getModifiedDate() {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            final var entry = com.dotcms.storage.WebdavTemporaryStorage.getInstance().stat(folder);
+            return entry == null ? null : new Date(entry.modified());
+        }
 		return new Date(folder.lastModified());
 	}
 
@@ -161,7 +183,11 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 * @see com.bradmcevoy.http.Resource#getUniqueId()
 	 */
 	public String getUniqueId() {
-		return folder.hashCode() + "";
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            try { return "webdav-temporary:" + com.dotcms.storage.WebdavTemporaryStorage.getInstance().key(folder); }
+            catch (IOException failure) { throw new com.dotmarketing.exception.DotRuntimeException(failure); }
+        }
+        return folder.hashCode() + "";
 	}
 
 	/* (non-Javadoc)
@@ -169,6 +195,10 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 */
 	public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException {
 		File f = new File(folder.getPath() + File.separator + newName);
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			DotWebdavHelper.writeCompletedTempFile(f, in);
+			return new TempFileResourceImpl(f, f.getPath(), isAutoPub);
+		}
 		if(!f.exists()){
 			String p = f.getPath().substring(0,f.getPath().lastIndexOf(File.separator));
 			File fe = new File(p);
@@ -196,8 +226,15 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 			try {
 				String p = tr.getFolder().getPath();
 				File dest = new File(tr.getFolder().getPath() + File.separator + name);
-				FileUtil.copyDirectory(folder, dest);
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()
+                        && dest.getCanonicalFile().equals(folder.getCanonicalFile())) return;
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    com.dotcms.storage.WebdavTemporaryStorage.getInstance().copy(folder, dest);
+                } else {
+                    FileUtil.copyDirectory(folder, dest);
+                }
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 				return;
 			}
@@ -209,6 +246,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 			try {
 				dotDavHelper.copyTempDirToStorage(folder, p + name, user,isAutoPub);
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 			}
 		}else if(collRes instanceof LanguageFolderResourceImpl){
@@ -220,6 +258,14 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 * @see com.bradmcevoy.http.DeletableResource#delete()
 	 */
 	public void delete() {
+		if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+			try {
+				com.dotcms.storage.WebdavTemporaryStorage.getInstance().delete(folder);
+				return;
+			} catch (Exception failure) {
+				throw new com.dotmarketing.exception.DotRuntimeException("Unable to delete WebDAV staging directory", failure);
+			}
+		}
 		folder.delete();
 	}
 
@@ -246,9 +292,17 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
 				File dest = new File(tr.getFolder().getPath() + File.separator + name);
-				FileUtil.copyDirectory(folder, dest);
-				FileUtil.deltree(folder, true);
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()
+                        && dest.getCanonicalFile().equals(folder.getCanonicalFile())) return;
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    com.dotcms.storage.WebdavTemporaryStorage.getInstance().copy(folder, dest);
+                } else {
+                    FileUtil.copyDirectory(folder, dest);
+                }
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()) delete();
+                else FileUtil.deltree(folder, true);
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 				return;
 			}
@@ -259,16 +313,20 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 				p = p + "/";
 			try {
 				dotDavHelper.copyTempDirToStorage(folder, p + name, user, isAutoPub);
-				FileUtil.deltree(folder, true);
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()) delete();
+                else FileUtil.deltree(folder, true);
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 			}
 		}else if(collRes instanceof HostResourceImpl){
 			HostResourceImpl hr = (HostResourceImpl)collRes;
 			try {
 				dotDavHelper.copyTempDirToStorage(folder, "/" + hr.getHost().getHostname() + "/"+ name, user, isAutoPub);
-				FileUtil.deltree(folder, true);
+                if (com.dotcms.storage.AssetStorageFeature.isEnabled()) delete();
+                else FileUtil.deltree(folder, true);
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 			}
 		}else if(collRes instanceof LanguageFolderResourceImpl){
@@ -280,6 +338,7 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 	 * @see com.bradmcevoy.http.PropFindableResource#getCreateDate()
 	 */
 	public Date getCreateDate() {
+		 if (com.dotcms.storage.AssetStorageFeature.isEnabled()) return getModifiedDate();
 		 Date dt = new Date(folder.lastModified());
 //       log.debug("static resource modified: " + dt);
        return dt;

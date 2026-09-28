@@ -80,7 +80,8 @@ The storage chain (`ChainableStoragePersistenceAPI`) and its providers change as
 completed renditions through the storage chain. Binary assets use the `binary-assets` group under
 the asset root, laid out as `{inode[0]}/{inode[1]}/{inode}/{field}/{fileName}`. Renditions use the
 `generated-assets` group under the `dotGenerated` root. With the flag on, keys in these groups keep
-their mixed-case names, as do publishing bundles (below); other groups are still lowercased.
+their mixed-case names, as do publishing bundles and temporary uploads (below); other groups are
+still lowercased.
 
 With the flag on, S3 keeps one immutable copy of each set of bytes for these two groups, at
 `asset-blobs/sha256/<chars-1-2>/<chars-3-4>/<chars-5-6>/<chars-7-8>/<sha256>`
@@ -327,6 +328,36 @@ that is already gone succeeds.
 
 With the flag off, bundles are written, read and deleted in the bundle directory as before.
 
+## Temporary uploads
+
+With the flag on, completed temporary uploads (`TempFileAPI`, including the image editor's output)
+are stored in the `temporary-assets` group, with an immutable receipt that records who may use the
+upload and when it expires. Access and expiry are checked before any bytes are downloaded, so
+another node can serve the upload after restoring it into its own local root. Mixed-case and
+nested names are kept. A payload is published only after the upload stream has closed; an
+interrupted upload keeps any existing complete file and never exposes a partial one. Managed
+uploads without a receipt cannot fall back to legacy local access.
+
+Custom metadata for a temporary upload, such as a focal point set before check-in, is stored with
+the upload in S3 and read directly from S3, so an edit made on another node is visible. The
+scheduled `BinaryCleanupJob` also removes expired S3 temporary uploads, and a failure is logged and
+retried on the next run.
+
+## WebDAV temporary files
+
+With the flag on, WebDAV temporary files (the scratch files some clients write before the final
+upload) keep completed payloads and discoverable path records in the `webdav-temporary` group, so
+another node can list and read them. A writer reserves a unique payload, uploads it, and then
+publishes the path record with an S3 conditional write, so a stale writer cannot publish after a
+deletion. Reads materialize immutable local cache files, so an earlier request keeps its bytes
+through a later replacement. Mixed-case temporary names are kept, while normal CMS URLs keep their
+case-insensitive handling.
+
+Cleanup uses S3 server timestamps, protects completed and pending payload references, and
+conditionally replaces expired path records with tombstones. Normal WebDAV uploads still go through
+content check-in, and their reads, copies and overwrites hold the cache lease through the stream.
+With the flag off, WebDAV and temporary uploads use the local filesystem as before.
+
 ## Local cache eviction
 
 With the flag on, the local asset directory is a cache that `BinaryCacheEvictionJob` can trim.
@@ -425,7 +456,7 @@ docker run -d --rm --name binary-cleanup-postgres-test \
   -e POSTGRES_DB=binary_storage_test postgres:16-alpine
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest,BundleArchiveStorageTest,FileAssetBundlerTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest,BundleArchiveStorageTest,FileAssetBundlerTest,TemporaryAssetStorageTest,WebdavAssetStorageTest,TemporaryMetadataStorageTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002 \
   -Ds3.test.jdbc=jdbc:postgresql://127.0.0.1:19003/binary_storage_test
 
@@ -438,7 +469,7 @@ stack:
 ```sh
 ./mvnw install -pl :dotcms-core --am -DskipTests -Ddocker.skip
 ./mvnw verify -pl :dotcms-integration -Dmaven.build.cache.enabled=false -Dcoreit.test.skip=false \
-  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest,BinaryAssetStarterRestoreTest,PublishingArchiveStorageTest
+  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest,BinaryAssetStarterRestoreTest,PublishingArchiveStorageTest,DotWebdavHelperTest
 ```
 
 These default to flag-off mode, where the S3 cases are skipped. To run the S3 cases, create a

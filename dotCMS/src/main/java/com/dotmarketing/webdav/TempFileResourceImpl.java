@@ -38,11 +38,17 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 	private DotWebdavHelper dotDavHelper;
 	private final File file;
     private final String url;
+    private final com.dotcms.storage.WebdavTemporaryStorage.Entry entry;
     private boolean isAutoPub = false;
     private PermissionAPI perAPI; 
     
     public TempFileResourceImpl(File file, String url, boolean isAutoPub) {
-        if( file.isDirectory() ){
+        entry = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? com.dotcms.storage.WebdavTemporaryStorage.getInstance().stat(file) : null;
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled() && entry == null) {
+            throw new IllegalArgumentException("Missing WebDAV staging file: " + url);
+        }
+        if( entry != null ? entry.directory() : file.isDirectory() ){
         	Logger.error(this, "Trying to get a temp file which is actually a directory!!!");
         	throw new IllegalArgumentException("Static resource must be a file, this is a directory: " + file.getAbsolutePath());
         }
@@ -55,7 +61,7 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 
     
     public String getUniqueId() {
-        return file.hashCode() + "";
+        return entry == null ? file.hashCode() + "" : "webdav-temporary:" + entry.path();
     }
     
      
@@ -70,7 +76,7 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
     
     
     public void sendContent(OutputStream out, Range range, Map<String, String> params, String arg3) throws IOException {
-        try(InputStream fis = Files.newInputStream(file.toPath())){
+        try(InputStream fis = Files.newInputStream(getFile().toPath())){
 			BufferedInputStream bin = new BufferedInputStream(fis);
 			final byte[] buffer = new byte[ 1024 ];
 			int n = 0;
@@ -111,14 +117,14 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 
     
     public Date getModifiedDate() {        
-        Date dt = new Date(file.lastModified());
+        Date dt = new Date(entry == null ? file.lastModified() : entry.modified());
 //        log.debug("static resource modified: " + dt);
         return dt;
     }
 
     
     public Long getContentLength() {
-        return file.length();
+        return entry == null ? file.length() : entry.size();
     }
 
     
@@ -152,8 +158,15 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
-				FileUtil.copyFile(file, new File(tr.getFolder().getPath() + File.separator + name));
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    final File destination = new File(tr.getFolder(), name);
+                    if (destination.getCanonicalFile().equals(file.getCanonicalFile())) return;
+                    com.dotcms.storage.WebdavTemporaryStorage.getInstance().copy(file, destination);
+                } else {
+                    FileUtil.copyFile(file, new File(tr.getFolder().getPath() + File.separator + name));
+                }
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 				return;
 			}
@@ -165,6 +178,7 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 					p = p + "/";
 				dotDavHelper.copyTempFileToStorage(file, p + name, user, isAutoPub);
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 			}
 		}else if(collRes instanceof LanguageFolderResourceImpl){
@@ -177,8 +191,9 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 					folder.mkdirs();
 					FileUtil.copyFile(f, new File(folder.getPath() + File.separator + new Date().toString()));
 				}
-				FileUtil.copyFile(file, f);
+				FileUtil.copyFile(getFile(), f);
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 				return;
 			}
@@ -187,6 +202,14 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 
 
 	public void delete() {
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            try {
+                com.dotcms.storage.WebdavTemporaryStorage.getInstance().delete(file);
+                return;
+            } catch (Exception failure) {
+                throw new com.dotmarketing.exception.DotRuntimeException("Unable to delete WebDAV staging file", failure);
+            }
+        }
 		file.delete();
 	}
 
@@ -196,9 +219,16 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
 			try {
-				FileUtil.copyFile(file, new File(tr.getFolder().getPath() + File.separator + name));
-				file.delete();
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                    final File destination = new File(tr.getFolder(), name);
+                    if (destination.getCanonicalFile().equals(file.getCanonicalFile())) return;
+                    com.dotcms.storage.WebdavTemporaryStorage.getInstance().copy(file, destination);
+                } else {
+                    FileUtil.copyFile(file, new File(tr.getFolder().getPath() + File.separator + name));
+                }
+				delete();
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 				return;
 			}
@@ -209,8 +239,9 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 				if(!p.endsWith("/"))
 					p = p + "/";
 				dotDavHelper.copyTempFileToStorage(file, p + name, user, isAutoPub);
-				file.delete();
+				delete();
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 			}
 		}else if(collRes instanceof LanguageFolderResourceImpl){
@@ -223,9 +254,10 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 					folder.mkdirs();
 					FileUtil.copyFile(f, new File(folder.getPath() + File.separator + new Date().toString() + f.getName()));
 				}
-				FileUtil.copyFile(file, f);
-				file.delete();
+				FileUtil.copyFile(getFile(), f);
+				delete();
 			} catch (Exception e) {
+				if (com.dotcms.storage.AssetStorageFeature.isEnabled()) throw new com.dotmarketing.exception.DotRuntimeException(e);
 				Logger.error(this, e.getMessage(), e);
 				return;
 			}
@@ -245,7 +277,16 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 	}
 
 
+    File getLogicalFile() { return file; }
+
 	public File getFile() {
+        if (entry != null) {
+            try {
+                return com.dotcms.storage.WebdavTemporaryStorage.getInstance().materialize(entry);
+            } catch (Exception failure) {
+                throw new com.dotmarketing.exception.DotRuntimeException("Unable to read WebDAV staging file", failure);
+            }
+        }
 		return file;
 	}
 
