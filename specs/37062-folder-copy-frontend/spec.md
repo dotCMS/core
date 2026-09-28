@@ -350,6 +350,12 @@ offered, says it will act on four, and acts on four.
 
 #### Committing
 
+  *Amended after sign-off (2026-09-28, developer decision: match bulk folder delete).* The client
+  does not check a selection against the ceiling before submitting. Bulk delete dropped that
+  courtesy check on main, and duplication follows it: the server is the only guard, and its
+  `OVER_MAX_PATHS` refusal reaches the author as its own sentence, like the empty-selection and
+  not-entitled refusals. The advertised value stays in the configuration type because the server
+  sends it.
 - **FR-007**: The bulk action MUST pass through the same commit step every other bulk action uses,
   where the author sees what will be acted on before pressing the button. It MUST NOT add a
   configuration step, because there is nothing to configure: no destination, no name, no options.
@@ -387,6 +393,10 @@ offered, says it will act on four, and acts on four.
   repeat of the **same operation on the same items** and nothing wider. A duplication running on one
   set of folders MUST NOT prevent an unrelated action, nor a duplication of different folders, from
   starting.
+  *Amended after sign-off (2026-09-28, developer decision).* Duplication does not join the repeat
+  guard. Duplicating the same folders twice is the author's choice, and the server names each
+  duplicate apart. Unrelated actions and duplications of other folders still run alongside, as
+  above.
 - **FR-017**: The client MUST NOT attempt to detect or refuse overlapping runs. Unlike bulk delete,
   the server does not refuse them either, because two copies of the same folder cannot interfere
   (backend FR-033). No submission refusal for overlap exists, and the client MUST NOT carry copy for
@@ -413,6 +423,10 @@ offered, says it will act on four, and acts on four.
   few and acknowledge the remainder as a count, and that remainder MUST be reachable rather than a
   dead end. How many are named before the overflow begins is a design choice for planning; that the
   overflow leads somewhere is the requirement.
+  *Amended after sign-off (2026-09-28, developer decision: match bulk folder delete).* The report
+  uses bulk delete's line builder: up to 8 folders named per reason, and past that a count only.
+  The remainder is not reachable from the toast; it is in the job's own record, the same shortfall
+  bulk delete records.
 - **FR-023**: Each machine-readable reason the server can return MUST map to copy written in the
   product's own words. Failures, at minimum: no rights on the folder, no rights to add to its
   parent, the folder no longer exists, the folder is protected, and a general fallback. Skips: the
