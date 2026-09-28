@@ -465,9 +465,9 @@ describe('withActionExecution', () => {
          * 2026-09-28): without it, nothing on screen said a duplicate was under way.
          */
         describe('the status indicator', () => {
-            it('should report the run, counting the folders submitted', () => {
+            it('should report the run, counting the folders sent until the server answers', () => {
                 build();
-                duplicate.mockReturnValue(accepted('job-1'));
+                duplicate.mockReturnValue(new Subject());
 
                 store.executeDuplicate('Duplicate', [ALPHA, BETA]);
 
@@ -475,6 +475,22 @@ describe('withActionExecution', () => {
                     expect.objectContaining({
                         labelKey: 'content-drive.duplicate.indicator',
                         total: 2
+                    })
+                );
+            });
+
+            it("should take the server's count once it accepts the run", () => {
+                // The server collapses repeated and nested paths, so it can accept fewer folders
+                // than were sent, and the report has to agree with the outcome that follows.
+                build();
+                duplicate.mockReturnValue(accepted('job-1'));
+
+                store.executeDuplicate('Duplicate', [ALPHA, BETA]);
+
+                expect(store.toolbarRun()).toEqual(
+                    expect.objectContaining({
+                        labelKey: 'content-drive.duplicate.indicator.one',
+                        total: 1
                     })
                 );
             });

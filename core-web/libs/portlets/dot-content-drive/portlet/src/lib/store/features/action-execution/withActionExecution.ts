@@ -65,6 +65,10 @@ import { browsedFolderRef, normalizeFolderRef } from '../../../utils/functions';
 const DELETE_FOLDER_OPERATION = 'DELETE_FOLDER';
 const DUPLICATE_FOLDER_OPERATION = 'DUPLICATE_FOLDER';
 
+/** The status indicator's wording for a duplicate of this many folders. */
+const duplicateIndicatorKey = (count: number): string =>
+    count === 1 ? 'content-drive.duplicate.indicator.one' : 'content-drive.duplicate.indicator';
+
 interface WithActionExecutionState {
     /**
      * Every run currently in flight, keyed by its client-allocated id.
@@ -589,10 +593,7 @@ export function withActionExecution() {
                             operation: `${DUPLICATE_FOLDER_OPERATION}:${(duplicateSequence += 1)}`,
                             total: assetPaths.length,
                             targets: [],
-                            labelKey:
-                                assetPaths.length === 1
-                                    ? 'content-drive.duplicate.indicator.one'
-                                    : 'content-drive.duplicate.indicator',
+                            labelKey: duplicateIndicatorKey(assetPaths.length),
                             backgrounded: true
                         });
 
@@ -638,11 +639,30 @@ export function withActionExecution() {
                                     return;
                                 }
 
+                                // The server's count, not the one sent: it collapses repeated and
+                                // nested paths, and the report has to agree with the outcome that
+                                // follows, as a delete's does. Left as sent when the instance is
+                                // older than the field.
+                                const run = store.runs()[runId];
+                                const submitted = response.submitted;
+
                                 patchState(store, {
                                     duplicateJobs: {
                                         ...store.duplicateJobs(),
                                         [response.jobId]: { affectedFolders, runId }
-                                    }
+                                    },
+                                    ...(run && submitted !== undefined
+                                        ? {
+                                              runs: {
+                                                  ...store.runs(),
+                                                  [runId]: {
+                                                      ...run,
+                                                      total: submitted,
+                                                      labelKey: duplicateIndicatorKey(submitted)
+                                                  }
+                                              }
+                                          }
+                                        : {})
                                 });
                             });
                     },
