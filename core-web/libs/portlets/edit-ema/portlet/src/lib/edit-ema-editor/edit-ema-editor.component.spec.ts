@@ -1113,6 +1113,67 @@ describe('EditEmaEditorComponent', () => {
                 );
             });
 
+            describe('bounded reload — regression from #37097 post-merge QA', () => {
+                // QA on the merged fix found an endless client reload loop: every CLIENT_READY
+                // re-announcement unconditionally re-patches requestMetadata (setCustomClient),
+                // which changes pageAsset()'s reference and re-fires this effect. If the asset
+                // is still REST-sourced (GraphQL never resolved — slow, aborted, or permanently
+                // broken), the effect resent UVE_RELOAD_PAGE on every re-fire, and each reload
+                // the client performs triggers a fresh CLIENT_READY, looping indefinitely.
+                it('should send UVE_RELOAD_PAGE only once across repeated CLIENT_READY-style re-announcements while the asset stays REST-sourced', () => {
+                    store.setCustomClient({ query: 'query', variables: {} });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+
+                    // Simulate the client's browser reload re-announcing itself several times
+                    // (a duplicate CLIENT_READY unconditionally re-patches requestMetadata,
+                    // which is exactly what changes pageAsset()'s reference and re-fires the
+                    // effect) while the fetch still never resolves to GraphQL.
+                    for (let i = 0; i < 10; i++) {
+                        store.setCustomClient({ query: 'query', variables: { attempt: `${i}` } });
+                        spectator.flushEffects();
+                    }
+
+                    const reloadCalls = postMessageSpy.mock.calls.filter(
+                        ([message]) => message?.name === __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    );
+                    expect(reloadCalls.length).toBe(1);
+                    expect(postMessageSpy).not.toHaveBeenCalledWith(
+                        expect.objectContaining({ name: __DOTCMS_UVE_EVENT__.UVE_SET_PAGE_DATA }),
+                        expect.anything()
+                    );
+                });
+
+                it('should send a fresh UVE_RELOAD_PAGE once the asset resolves to GraphQL and later regresses to REST on a new page', () => {
+                    store.setCustomClient({ query: 'query', variables: {} });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+                    postMessageSpy.mockClear();
+
+                    // Resolves: clears the pending flag.
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'graphql' });
+                    spectator.flushEffects();
+                    postMessageSpy.mockClear();
+
+                    // A new navigation (markPageLoading) resets pageReloadPending so a fresh
+                    // REST-sourced streak on the NEW page gets its own single reload request,
+                    // rather than being silently suppressed by a stale flag from the old page.
+                    // markPageLoading also resets isClientReady (unrelated pre-existing gate),
+                    // so re-establish it the way a genuine post-navigation CLIENT_READY would.
+                    store.markPageLoading();
+                    patchState(store as Parameters<typeof patchState>[0], {
+                        isClientReady: true
+                    });
+                    store.setPageAsset({ pageAsset: MOCK_RESPONSE_HEADLESS, source: 'rest' });
+                    spectator.flushEffects();
+
+                    const reloadCalls = postMessageSpy.mock.calls.filter(
+                        ([message]) => message?.name === __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    );
+                    expect(reloadCalls.length).toBe(1);
+                });
+            });
+
             it('should never touch the iframe for a TRADITIONAL page regardless of source (regression)', () => {
                 // Spectator store type doesn't satisfy WritableStateSource but runtime works —
                 // same cast withPage.spec.ts's patchStoreState helper documents.
@@ -3664,8 +3725,68 @@ describe('EditEmaEditorComponent', () => {
 
                     spectator.component.handleInternalNav(mockEvent);
 
-                    expect(windowOpenSpy).toHaveBeenCalledWith(externalUrl, '_blank');
+                    expect(openedLink.href).toBe(externalUrl);
+                    expect(openedLink.target).toBe('_blank');
+                    expect(openedLink.click).toHaveBeenCalled();
                     expect(pageLoadSpy).not.toHaveBeenCalled();
+                });
+
+                // Without it the anchor also navigates the iframe to the external
+                // site, which refuses to be framed and blanks the canvas.
+                it('should keep the iframe on the page when opening an external URL', () => {
+                    const mockEvent = createMockEvent('https://external-site.com/page');
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                describe('absolute URLs to the edited site', () => {
+                    beforeEach(() => {
+                        const pageAsset = store.pageAsset();
+
+                        vi.spyOn(store, 'pageAsset').mockReturnValue({
+                            ...pageAsset,
+                            site: {
+                                ...pageAsset?.site,
+                                hostname: 'www.site.com',
+                                aliases: 'site.com\nalias.site.com'
+                            }
+                        } as ReturnType<typeof store.pageAsset>);
+                    });
+
+                    it('should load a link to the site hostname inside the editor', () => {
+                        const mockEvent = createMockEvent(
+                            'https://www.site.com/news?anno_pubblicazione=2025'
+                        );
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/news',
+                            anno_pubblicazione: '2025'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should load a link to a site alias inside the editor', () => {
+                        const mockEvent = createMockEvent('https://alias.site.com/news');
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/news' });
+                    });
+
+                    it('should still open a different site in a new tab', () => {
+                        const mockEvent = createMockEvent('https://other-site.com/news');
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(openedLink.click).toHaveBeenCalled();
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
                 });
 
                 it('should load page asset with pathname only for internal URL without query params', () => {
@@ -3870,14 +3991,16 @@ describe('EditEmaEditorComponent', () => {
                         vi.spyOn(store, 'pageParams').mockReturnValue(samePathPageParams());
                     });
 
-                    it('should not trigger pageLoad for hash-only navigation on same page', () => {
+                    // Cancelled so the link can't load outside the editor; the
+                    // iframe is scrolled instead of reloaded.
+                    it('should cancel hash-only navigation on same page without reloading', () => {
                         const hashUrl = 'http://localhost:3000/current-page#sectionA';
                         const mockEvent = createMockEvent(hashUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
                         expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
                     });
 
                     it('should not trigger pageLoad for hash-only with complex id', () => {
@@ -3889,34 +4012,105 @@ describe('EditEmaEditorComponent', () => {
                         expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
 
-                    it('should not trigger pageLoad for query-only navigation on same page', () => {
+                    // Traditional pages render in an iframe UVE writes itself, so a
+                    // browser-handled query change leaves it blank and never reaches
+                    // the Page API (#36999). It has to go through pageLoad.
+                    it('should trigger pageLoad with the new query for query-only navigation on same page', () => {
                         const queryUrl = 'http://localhost:3000/current-page?tab=2';
                         const mockEvent = createMockEvent(queryUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            tab: '2'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
                     });
 
-                    it('should not trigger pageLoad for multiple query params on same page', () => {
+                    it('should pass every query param for multiple query params on same page', () => {
                         const queryUrl =
                             'http://localhost:3000/current-page?filter=value&sort=date';
                         const mockEvent = createMockEvent(queryUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            filter: 'value',
+                            sort: 'date'
+                        });
                     });
 
-                    it('should not trigger pageLoad when both hash and query are present on same path', () => {
+                    it('should trigger pageLoad when both hash and query are present on same path', () => {
                         const combinedUrl = 'http://localhost:3000/current-page?tab=2#section';
                         const mockEvent = createMockEvent(combinedUrl);
 
                         spectator.component.handleInternalNav(mockEvent);
 
-                        expect(pageLoadSpy).not.toHaveBeenCalled();
-                        expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            tab: '2'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    it('should load a new language for a same-path language_id link', () => {
+                        const languageUrl = 'http://localhost:3000/current-page?language_id=3';
+                        const mockEvent = createMockEvent(languageUrl);
+
+                        spectator.component.handleInternalNav(mockEvent);
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/current-page',
+                            language_id: '3'
+                        });
+                        expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    });
+
+                    describe('when the current page already carries a page query param', () => {
+                        beforeEach(() => {
+                            vi.spyOn(store, 'pageParams').mockReturnValue({
+                                ...samePathPageParams(),
+                                mode: UVE_MODE.EDIT,
+                                device: 'mobile',
+                                anno_pubblicazione: '2025'
+                            });
+                        });
+
+                        it('should clear it when the link no longer sets it', () => {
+                            const mockEvent = createMockEvent('http://localhost:3000/current-page');
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/current-page',
+                                anno_pubblicazione: undefined
+                            });
+                        });
+
+                        it('should replace it when the link sets a new value', () => {
+                            const mockEvent = createMockEvent(
+                                'http://localhost:3000/current-page?anno_pubblicazione=2024'
+                            );
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/current-page',
+                                anno_pubblicazione: '2024'
+                            });
+                        });
+
+                        it('should still scroll a hash-only link without reloading', () => {
+                            const mockEvent = createMockEvent(
+                                'http://localhost:3000/current-page#section'
+                            );
+
+                            spectator.component.handleInternalNav(mockEvent);
+
+                            expect(pageLoadSpy).not.toHaveBeenCalled();
+                        });
                     });
 
                     it('should trigger pageLoad when navigating to different page with hash', () => {

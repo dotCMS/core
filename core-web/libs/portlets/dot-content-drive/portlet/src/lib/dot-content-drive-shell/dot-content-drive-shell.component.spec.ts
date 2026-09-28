@@ -33,6 +33,7 @@ import {
     DotPropertiesService,
     DotRouterService,
     DotSiteService,
+    DotFolderBulkDeleteRefusalKind,
     DotSystemConfigService,
     DotUploadFileService,
     DotWorkflowActionsFireService,
@@ -69,7 +70,7 @@ import { DotContentDriveShellComponent } from './dot-content-drive-shell.compone
 
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
-    ACTION_CENTER_DIALOG_STYLE,
+    ACTION_CENTER_DIALOG_CLASS,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
@@ -105,6 +106,10 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 const editPanelRequestSignal: WritableSignal<EditContentDialogData | null> = signal(null);
 // Module scope: both store mocks in this file read it, and they live in describes that do not
 // share a `beforeEach`. Reset per test rather than re-created, so neither mock captures a stale one.
+/** Nothing refused by default; the refusal tests set it. Module-scoped like its siblings,
+ * because the deep-link describe mounts its own shell without the main block's beforeEach. */
+const folderDeleteRefusalSignal: WritableSignal<DotFolderBulkDeleteRefusalKind | undefined> =
+    signal(undefined);
 const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
 // The site-level answer the drop guard falls back to at the root. Module scope for the same reason
 // as the one above: two store mocks in this file read it from describes with no shared `beforeEach`.
@@ -237,6 +242,7 @@ describe('DotContentDriveShellComponent', () => {
         selectedItemsSignal = signal<DotContentDriveItem[]>([]);
         pageLeaveRequestSubject = new Subject<void>();
         dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
+        folderDeleteRefusalSignal.set(undefined);
         actionExecutionResultSignal = signal<DotContentDriveActionExecutionResult | undefined>(
             undefined
         );
@@ -250,6 +256,8 @@ describe('DotContentDriveShellComponent', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: vi.fn(),
+                    folderDeleteRefusal: folderDeleteRefusalSignal,
+                    clearFolderDeleteRefusal: vi.fn(),
                     // No advertised ceiling by default, which is the case that leaves the refusing
                     // to the server. The gate's own tests set one.
                     uploadCeilings: vi.fn().mockReturnValue(null),
@@ -289,6 +297,7 @@ describe('DotContentDriveShellComponent', () => {
                     toolbarRun: toolbarRunSignal,
                     toolbarRunCount: toolbarRunCountSignal,
                     busyRows: signal<string[]>([]),
+                    allBusyRows: signal<string[]>([]),
                     endExternalRun: vi.fn(),
                     setPagination: vi.fn(),
                     setSort: vi.fn(),
@@ -662,6 +671,44 @@ describe('DotContentDriveShellComponent', () => {
             actionExecutionResultSignal.set(result);
             spectator.detectChanges();
         };
+
+        /**
+         * **FR-041.** The store carries the kind; these tests pin that each one reaches the author
+         * as its own sentence. Before this, every refusal went through `DotHttpErrorManagerService`
+         * and an author who hit a ceiling, selected nothing, or collided with a colleague's delete
+         * all saw the same generic HTTP error.
+         */
+        describe('folder delete refusals', () => {
+            const refuse = (kind: DotFolderBulkDeleteRefusalKind) => {
+                folderDeleteRefusalSignal.set(kind);
+                spectator.detectChanges();
+            };
+
+            it.each([
+                ['EMPTY_SELECTION', 'content-drive.delete.refused.empty-selection'],
+                ['OVER_MAX_PATHS', 'content-drive.delete.refused.over-max-paths'],
+                ['NOT_ENTITLED', 'content-drive.delete.refused.not-entitled'],
+                ['OVERLAPPING_RUN', 'content-drive.delete.refused.overlapping-run']
+            ])('should say %s in its own words', (kind, key) => {
+                refuse(kind as DotFolderBulkDeleteRefusalKind);
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'error', detail: key })
+                );
+            });
+
+            it('should consume the refusal so it is said once', () => {
+                refuse('OVERLAPPING_RUN');
+
+                expect(store.clearFolderDeleteRefusal).toHaveBeenCalled();
+            });
+
+            it('should say nothing while nothing has been refused', () => {
+                spectator.detectChanges();
+
+                expect(messageService.add).not.toHaveBeenCalled();
+            });
+        });
 
         it('should stay silent on a clean success the listing already shows', () => {
             // The rule the PM asked for: success is not announced when the author can see it. The
@@ -1460,7 +1507,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.component.$dialogContentStyle()).toEqual(
                 ACTION_CENTER_DIALOG_CONTENT_STYLE
             );
-            expect(spectator.component.$dialogStyle()).toEqual(ACTION_CENTER_DIALOG_STYLE);
+            expect(spectator.component.$dialogRootClass()).toBe(ACTION_CENTER_DIALOG_CLASS);
         });
 
         it('should render a sub-header with the selected contentlet count', () => {
@@ -1533,9 +1580,42 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('[data-testId="dialog-action-center"]')).toBeNull();
-            expect(spectator.component.$dialogStyle()).toBeUndefined();
+            expect(spectator.component.$dialogRootClass()).toBe('');
             expect(spectator.component.$dialogContentStyle()).toBeUndefined();
             expect(spectator.component.$dialogHeaderClass()).toBe('');
+        });
+
+        it('should not leave the Action Center sizing on the next dialog', () => {
+            // One `p-dialog` serves every type, so whatever one type applies has to come back off
+            // when the next opens. The computeds already return the empty value for a folder —
+            // asserted above — so this covers the half those assertions cannot see: what is still
+            // on the element afterwards. Reported as "open the workflow center, close it, then open
+            // Folder Settings and a style is off", and wrong for the rest of the session, because
+            // the element is reused rather than recreated.
+            const rootOf = () => spectator.query('.p-dialog', { root: true }) as HTMLElement | null;
+
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+            expect(rootOf()?.className).toContain('h-[80vh]');
+
+            const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
+                ?.componentInstance as Dialog;
+            dialogSignal.set(undefined);
+            spectator.detectChanges();
+            dialogComponent.onHide.emit();
+            spectator.detectChanges();
+
+            dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+            spectator.detectChanges();
+            spectator.detectChanges();
+
+            // Both halves: the class comes off, and — the actual defect — no `height`/`width` is
+            // left behind in the root's inline style, which is where the Action Center used to put
+            // its sizing.
+            expect(rootOf()?.className).not.toContain('h-[80vh]');
+            expect(rootOf()?.getAttribute('style') ?? '').not.toContain('height');
+            expect(rootOf()?.getAttribute('style') ?? '').not.toContain('width');
         });
 
         it('should configure the dialog as closable and closeOnEscape', () => {
@@ -4880,6 +4960,58 @@ describe('DotContentDriveShellComponent', () => {
             ]);
         });
     });
+
+    /**
+     * Both surfaces agree once a delete ends (#37063 US6).
+     *
+     * The listing and the sidebar tree load separately, so refreshing one is not refreshing the
+     * other. A tree still offering a folder the listing has already dropped is how an author
+     * navigates into nothing.
+     */
+    describe('folder delete completion (#37063)', () => {
+        const deleteOutcome = (overrides = {}) => ({
+            actionName: 'Delete',
+            outcomeKind: 'folderDelete',
+            successCount: 1,
+            failedCount: 0,
+            skippedCount: 0,
+            backgrounded: true,
+            ...overrides
+        });
+
+        it('should refresh the listing when a delete completes', () => {
+            (store.loadItems as unknown as Mock).mockClear();
+
+            actionExecutionResultSignal.set(deleteOutcome() as never);
+            spectator.detectChanges();
+
+            expect(store.loadItems).toHaveBeenCalled();
+        });
+
+        it('should refresh the sidebar tree when a delete completes', () => {
+            // The listing and the tree load separately, so refreshing one is not refreshing the
+            // other — and a tree still offering a folder the listing has dropped is how an author
+            // navigates into nothing (FR-036).
+            (store.loadFolders as unknown as Mock).mockClear();
+
+            actionExecutionResultSignal.set(deleteOutcome() as never);
+            spectator.detectChanges();
+
+            expect(store.loadFolders).toHaveBeenCalled();
+        });
+
+        /*
+         * NOT asserted here, deliberately: that an *upload* outcome leaves the tree alone.
+         *
+         * The sidebar is rendered inside this component and owns its own effect that reloads the
+         * tree, so `loadFolders` has a caller in this harness with nothing to do with the outcome.
+         * Every form of "was not called" therefore passes or fails on that caller's timing rather
+         * than on the behaviour under test — which is worse than not asserting it, because it reads
+         * as coverage. The guard itself is a single `if (isFolderDelete)` in the shell, visible at
+         * the call site; isolating it would mean a harness that renders the shell without its
+         * sidebar, which is a bigger change than the assertion is worth.
+         */
+    });
 });
 
 /**
@@ -4986,6 +5118,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: vi.fn(),
+                    folderDeleteRefusal: folderDeleteRefusalSignal,
+                    clearFolderDeleteRefusal: vi.fn(),
                     // No advertised ceiling by default, which is the case that leaves the refusing
                     // to the server. The gate's own tests set one.
                     uploadCeilings: vi.fn().mockReturnValue(null),
@@ -5030,6 +5164,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     toolbarRun: signal(undefined),
                     toolbarRunCount: signal(0),
                     busyRows: signal<string[]>([]),
+                    allBusyRows: signal<string[]>([]),
                     endExternalRun: vi.fn(),
                     setPagination: vi.fn(),
                     setSort: vi.fn(),

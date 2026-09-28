@@ -34,11 +34,17 @@ import {
     DotSystemConfigService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    DotCMSFieldType,
+    DotCMSFieldTypes
+} from '@dotcms/dotcms-models';
 import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import { GlobalStore } from '@dotcms/store';
 import { DotKeyValueComponent, DotLanguageVariableSelectorComponent } from '@dotcms/ui';
-import { monacoMock } from '@dotcms/utils-testing';
+import { createFakeTextField, monacoMock } from '@dotcms/utils-testing';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
@@ -61,7 +67,7 @@ import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-t
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
+import { LAYOUT_ONLY_FIELD_TYPES } from '../../models/dot-edit-content-form.enum';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
@@ -101,10 +107,15 @@ declare module '@tiptap/core' {
 
 // This holds the mapping between the field type and the component that should be used to render it.
 // We need to hold this record here, because for some reason the references just fall to undefined.
-const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTestBed> = {
+// Partial on purpose: the four layout types (row, column, tab divider, column break) arrange
+// other fields and render nothing of their own, so they have no component to map to. Every
+// read below goes through `?.`.
+const FIELD_TYPES_COMPONENTS: Partial<
+    Record<DotCMSFieldType, Type<unknown> | DotEditFieldTestBed>
+> = {
     // We had to use unknown because components have different types.
-    [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
-    [FIELD_TYPES.RELATIONSHIP]: {
+    [DotCMSFieldTypes.TEXT]: DotEditContentTextFieldComponent,
+    [DotCMSFieldTypes.RELATIONSHIP]: {
         component: DotEditContentRelationshipFieldComponent,
         providers: [
             mockProvider(DialogService),
@@ -135,7 +146,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             }
         ]
     },
-    [FIELD_TYPES.FILE]: {
+    [DotCMSFieldTypes.FILE]: {
         component: DotEditContentFileFieldComponent,
         providers: [
             {
@@ -144,7 +155,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             }
         ]
     },
-    [FIELD_TYPES.IMAGE]: {
+    [DotCMSFieldTypes.IMAGE]: {
         component: DotEditContentFileFieldComponent,
         providers: [
             {
@@ -153,13 +164,13 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             }
         ]
     },
-    [FIELD_TYPES.TEXTAREA]: DotEditContentTextAreaComponent,
-    [FIELD_TYPES.SELECT]: DotEditContentSelectFieldComponent,
-    [FIELD_TYPES.RADIO]: DotEditContentRadioFieldComponent,
-    [FIELD_TYPES.DATE]: DotEditContentCalendarFieldComponent,
-    [FIELD_TYPES.DATE_AND_TIME]: DotEditContentCalendarFieldComponent,
-    [FIELD_TYPES.TIME]: DotEditContentCalendarFieldComponent,
-    [FIELD_TYPES.HOST_FOLDER]: {
+    [DotCMSFieldTypes.TEXTAREA]: DotEditContentTextAreaComponent,
+    [DotCMSFieldTypes.SELECT]: DotEditContentSelectFieldComponent,
+    [DotCMSFieldTypes.RADIO]: DotEditContentRadioFieldComponent,
+    [DotCMSFieldTypes.DATE]: DotEditContentCalendarFieldComponent,
+    [DotCMSFieldTypes.DATE_AND_TIME]: DotEditContentCalendarFieldComponent,
+    [DotCMSFieldTypes.TIME]: DotEditContentCalendarFieldComponent,
+    [DotCMSFieldTypes.HOST_FOLDER]: {
         component: DotEditContentHostFolderFieldComponent,
         providers: [
             mockProvider(DotEditContentService, {
@@ -167,13 +178,13 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             })
         ]
     },
-    [FIELD_TYPES.TAG]: {
+    [DotCMSFieldTypes.TAG]: {
         component: DotEditContentTagFieldComponent,
         providers: [{ provide: DotEditContentService, useValue: { getTags: () => of([]) } }]
     },
-    [FIELD_TYPES.CHECKBOX]: DotEditContentCheckboxFieldComponent,
-    [FIELD_TYPES.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
-    [FIELD_TYPES.BLOCK_EDITOR]: {
+    [DotCMSFieldTypes.CHECKBOX]: DotEditContentCheckboxFieldComponent,
+    [DotCMSFieldTypes.MULTI_SELECT]: DotEditContentMultiSelectFieldComponent,
+    [DotCMSFieldTypes.BLOCK_EDITOR]: {
         component: DotEditContentBlockEditorComponent,
         imports: [BlockEditorModule],
         providers: [
@@ -196,7 +207,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         ],
         outsideFormControl: true
     },
-    [FIELD_TYPES.CUSTOM_FIELD]: {
+    [DotCMSFieldTypes.CUSTOM_FIELD]: {
         component: DotEditContentCustomFieldComponent,
         providers: [
             mockProvider(DotEditContentService),
@@ -208,7 +219,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             }
         ]
     },
-    [FIELD_TYPES.BINARY]: {
+    [DotCMSFieldTypes.BINARY]: {
         component: DotEditContentFileFieldComponent,
         providers: [
             {
@@ -232,7 +243,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             }
         ]
     },
-    [FIELD_TYPES.JSON]: {
+    [DotCMSFieldTypes.JSON]: {
         component: DotEditContentJsonFieldComponent,
         imports: [
             ReactiveFormsModule,
@@ -245,12 +256,12 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             { provide: MonacoEditorLoaderService, useValue: { isMonacoLoaded$: of(true) } }
         ]
     },
-    [FIELD_TYPES.KEY_VALUE]: {
+    [DotCMSFieldTypes.KEY_VALUE]: {
         component: DotEditContentKeyValueComponent,
         imports: [MockComponent(DotKeyValueComponent)],
         providers: [mockProvider(DotMessageDisplayService)]
     },
-    [FIELD_TYPES.WYSIWYG]: {
+    [DotCMSFieldTypes.WYSIWYG]: {
         component: DotEditContentWYSIWYGFieldComponent,
         imports: [MockComponent(EditorComponent)],
         providers: [
@@ -271,35 +282,41 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             }
         ]
     },
-    [FIELD_TYPES.CATEGORY]: {
+    [DotCMSFieldTypes.CATEGORY]: {
         component: DotEditContentCategoryFieldComponent
     },
-    [FIELD_TYPES.CONSTANT]: {
+    [DotCMSFieldTypes.CONSTANT]: {
         component: null // this field is not being rendered for now.
     },
-    [FIELD_TYPES.HIDDEN]: {
+    [DotCMSFieldTypes.HIDDEN]: {
         component: null // this field is not being rendered for now.
     },
-    [FIELD_TYPES.LINE_DIVIDER]: {
+    [DotCMSFieldTypes.LINE_DIVIDER]: {
         component: DotEditContentLineDividerFieldComponent
     }
 };
 
-describe('FIELD_TYPES and FIELDS_MOCK', () => {
+describe('field types and FIELDS_MOCK', () => {
     it('should be in sync', () => {
+        // Scoped to the field types that actually render. The four layout-only types arrange
+        // other fields and have no component, so a mock for them would assert nothing. The
+        // removed local FIELD_TYPES enum excluded them by omission rather than by intent —
+        // naming the exclusion makes it survive the next person who reads this.
+        const renderable = Object.values(DotCMSFieldTypes).filter(
+            (fieldType) => !LAYOUT_ONLY_FIELD_TYPES.includes(fieldType)
+        );
+
         expect(
-            Object.values(FIELD_TYPES).every((fieldType) =>
-                FIELDS_MOCK.find((f) => f.fieldType === fieldType)
-            )
+            renderable.every((fieldType) => FIELDS_MOCK.find((f) => f.fieldType === fieldType))
         ).toBeTruthy();
     });
 });
 
 const FIELDS_TO_BE_RENDER = FIELDS_MOCK.filter(
     (field) =>
-        field.fieldType !== FIELD_TYPES.CONSTANT &&
-        field.fieldType !== FIELD_TYPES.HIDDEN &&
-        field.fieldType !== FIELD_TYPES.LINE_DIVIDER
+        field.fieldType !== DotCMSFieldTypes.CONSTANT &&
+        field.fieldType !== DotCMSFieldTypes.HIDDEN &&
+        field.fieldType !== DotCMSFieldTypes.LINE_DIVIDER
 );
 
 describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields', (fieldMock) => {
@@ -382,10 +399,10 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
 
     describe(`${fieldMock.fieldType} - ${fieldMock.dataType}`, () => {
         if (
-            fieldMock.fieldType !== FIELD_TYPES.CUSTOM_FIELD &&
-            fieldMock.fieldType !== FIELD_TYPES.DATE &&
-            fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
-            fieldMock.fieldType !== FIELD_TYPES.TIME
+            fieldMock.fieldType !== DotCMSFieldTypes.CUSTOM_FIELD &&
+            fieldMock.fieldType !== DotCMSFieldTypes.DATE &&
+            fieldMock.fieldType !== DotCMSFieldTypes.DATE_AND_TIME &&
+            fieldMock.fieldType !== DotCMSFieldTypes.TIME
         ) {
             it('should render the label', () => {
                 spectator.detectChanges();
@@ -395,10 +412,10 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
         }
 
         if (
-            fieldMock.fieldType !== FIELD_TYPES.DATE &&
-            fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
-            fieldMock.fieldType !== FIELD_TYPES.TIME &&
-            fieldMock.fieldType !== FIELD_TYPES.BLOCK_EDITOR
+            fieldMock.fieldType !== DotCMSFieldTypes.DATE &&
+            fieldMock.fieldType !== DotCMSFieldTypes.DATE_AND_TIME &&
+            fieldMock.fieldType !== DotCMSFieldTypes.TIME &&
+            fieldMock.fieldType !== DotCMSFieldTypes.BLOCK_EDITOR
         ) {
             it('should render the hint if present', () => {
                 spectator.detectChanges();
@@ -415,6 +432,62 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
             expect(component).toBeTruthy();
             expect(component instanceof FIELD_TYPE).toBeTruthy();
         });
+    });
+});
+
+/**
+ * FR-013 (issue #37670): the frontend models 28 field types, the backend's set is open, and a
+ * customer plugin can contribute one this build has never seen. Before the `@default` branch
+ * existed such a field matched no `@case` and rendered nothing — it vanished from the form with
+ * no trace, which is the worst of the available behaviours.
+ */
+describe('DotEditContentFieldComponent - an unmodelled field type', () => {
+    let spectator: Spectator<DotEditContentFieldComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            {
+                provide: ControlContainer,
+                useValue: createFormGroupDirectiveMock()
+            }
+        ]
+    });
+
+    const fieldFromAPluginWeDoNotModel = {
+        ...createFakeTextField({ variable: 'signature' }),
+        fieldType: 'Com.acme.SignaturePad'
+    } as unknown as DotCMSContentTypeField;
+
+    beforeEach(() => {
+        // Set by name rather than through `props`: the input's alias is `field`, which is what
+        // ComponentRef.setInput takes, while Spectator's InferInputSignals keys off the class
+        // member ($field) and so rejects the alias in a props literal.
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('field', fieldFromAPluginWeDoNotModel);
+    });
+
+    it('renders without throwing', () => {
+        expect(() => spectator.detectChanges()).not.toThrow();
+    });
+
+    it('says so, rather than rendering an empty gap', () => {
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('field-unsupported-signature'))).toBeTruthy();
     });
 });
 
@@ -445,11 +518,9 @@ describe('DotEditContentFieldComponent - Line Divider Field', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                field: LINE_DIVIDER_MOCK
-            }
-        });
+        // By name, not through `props`: see the note on the plugin-field suite above.
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('field', LINE_DIVIDER_MOCK);
     });
 
     it('should render the line divider field component', () => {
@@ -520,7 +591,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
 
         spectator = createComponent({
             props: {
-                field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
+                field: FIELDS_MOCK.find((f) => f.fieldType === DotCMSFieldTypes.BINARY),
                 contentType: {
                     baseType: DotCMSBaseTypesContentTypes.FILEASSET
                 } as DotCMSContentType
@@ -679,7 +750,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Non-FILEASSET)'
 
         spectator = createComponent({
             props: {
-                field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
+                field: FIELDS_MOCK.find((f) => f.fieldType === DotCMSFieldTypes.BINARY),
                 contentType: {
                     baseType: 'CONTENT',
                     variable: 'BlogPost'
@@ -755,7 +826,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Null ContentTyp
 
         spectator = createComponent({
             props: {
-                field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
+                field: FIELDS_MOCK.find((f) => f.fieldType === DotCMSFieldTypes.BINARY),
                 contentType: null
             } as unknown,
             providers: [
@@ -829,7 +900,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Title Only)', (
 
         spectator = createComponent({
             props: {
-                field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
+                field: FIELDS_MOCK.find((f) => f.fieldType === DotCMSFieldTypes.BINARY),
                 contentType: {
                     baseType: DotCMSBaseTypesContentTypes.FILEASSET
                 } as DotCMSContentType
@@ -902,7 +973,7 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (FileName Only)'
 
         spectator = createComponent({
             props: {
-                field: FIELDS_MOCK.find((f) => f.fieldType === FIELD_TYPES.BINARY),
+                field: FIELDS_MOCK.find((f) => f.fieldType === DotCMSFieldTypes.BINARY),
                 contentType: {
                     baseType: DotCMSBaseTypesContentTypes.FILEASSET
                 } as DotCMSContentType

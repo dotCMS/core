@@ -6,8 +6,8 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import {
+    ContentTypeCustomField,
     DotCMSContentlet,
-    DotCMSContentTypeField,
     DotRenderModes,
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
@@ -48,11 +48,13 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
     templateUrl: './dot-edit-content-custom-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentCustomFieldComponent extends BaseWrapperField {
+export class DotEditContentCustomFieldComponent extends BaseWrapperField<ContentTypeCustomField> {
     /**
-     * The field to render.
+     * The field to render. Narrowed to the custom-field arm because the native leg hands it to
+     * `dot-native-field`, which only accepts that arm; the dispatcher's `@switch` on `fieldType`
+     * is what guarantees it.
      */
-    $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+    $field = input.required<ContentTypeCustomField>({ alias: 'field' });
     /**
      * The content type to render the field for.
      */

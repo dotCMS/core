@@ -5,11 +5,11 @@ import { Injectable, inject } from '@angular/core';
 import { map, switchMap } from 'rxjs/operators';
 
 import { DotFieldService, DotContentTypeService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeRelationshipField, DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { getRelationshipFromContentlet } from '../../../utils/relationshipFromContentlet';
 import { DEFAULT_RELATIONSHIP_COLUMNS } from '../dot-edit-content-relationship-field.constants';
-import { TableColumn } from '../models/relationship.models';
+import { RelationshipDescriptor, TableColumn } from '../models/relationship.models';
 import {
     getContentTypeIdFromRelationship,
     getFieldHeader,
@@ -64,7 +64,7 @@ export class RelationshipFieldService {
      * });
      * ```
      */
-    prepareField(params: { field: DotCMSContentTypeField; contentlet: DotCMSContentlet }) {
+    prepareField(params: { field: ContentTypeRelationshipField; contentlet: DotCMSContentlet }) {
         const { field, contentlet } = params;
 
         return of({ field, contentlet }).pipe(
@@ -86,17 +86,29 @@ export class RelationshipFieldService {
                     contentlet,
                     variable: field.variable
                 });
-                const isParentField = field?.relationships?.isParentField;
-                const selectionMode = getSelectionModeByCardinality(cardinality, isParentField);
+                // Normalized once, here, and carried through the rest of the pipeline. The type
+                // makes `relationships` required on a relationship field, but it arrives as raw
+                // HTTP JSON: the guards above are what actually establish it, so everything
+                // downstream reads this descriptor instead of the field again. `isParentField`
+                // keeps the long-standing parent-side default for a payload that omits it.
+                const relationships: RelationshipDescriptor = {
+                    cardinality,
+                    isParentField: field.relationships?.isParentField ?? true
+                };
+                const selectionMode = getSelectionModeByCardinality(
+                    relationships.cardinality,
+                    relationships.isParentField
+                );
                 const showFields = extractShowFields(field);
 
-                return of({ cardinality, contentTypeId, data, selectionMode, showFields });
+                return of({ contentTypeId, data, relationships, selectionMode, showFields });
             }),
-            switchMap(({ contentTypeId, data, selectionMode, showFields }) => {
+            switchMap(({ contentTypeId, data, relationships, selectionMode, showFields }) => {
                 return this.#dotContentTypeService.getContentType(contentTypeId).pipe(
                     map((contentType) => ({
                         field,
                         isNewEditorEnabled: isNewEditorEnabled(contentType),
+                        relationships,
                         selectionMode,
                         contentType,
                         contentTypeId,

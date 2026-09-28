@@ -1,6 +1,7 @@
 import {
     DotBatchItemResult,
     DotBulkUploadFailureReason,
+    DotFolderDeleteFailureReason,
     DotCMSContentTypeField,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
@@ -233,6 +234,19 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
  * Counts come from the response, never from the number of items submitted: both endpoints answer 200
  * with per-item failures inside, so an item locked by another user would otherwise read as a success.
  */
+/**
+ * Which vocabulary an outcome's failures speak.
+ *
+ * A named constant rather than the bare strings: the producer in `withActionExecution` and the
+ * consumer in the shell both test it, and two literals that must agree are two chances to typo one.
+ */
+export const OUTCOME_KIND = {
+    UPLOAD: 'upload',
+    FOLDER_DELETE: 'folderDelete'
+} as const;
+
+export type DotContentDriveOutcomeKind = (typeof OUTCOME_KIND)[keyof typeof OUTCOME_KIND];
+
 export interface DotContentDriveActionExecutionResult {
     actionName: string;
     /**
@@ -261,7 +275,17 @@ export interface DotContentDriveActionExecutionResult {
      * reasons are the point of a partial outcome, and the reason codes are what map to product copy
      * rather than the server's diagnostic message, which is never shown.
      */
-    failures?: DotBatchItemResult<DotBulkUploadFailureReason>[];
+    failures?: DotBatchItemResult<DotBulkUploadFailureReason | DotFolderDeleteFailureReason>[];
+    /**
+     * Which vocabulary {@link failures} speaks, and therefore which describer resolves it to copy.
+     *
+     * The reason sets do not overlap beyond `PERMISSION_DENIED` and `UNCLASSIFIED`, so guessing
+     * from the values would resolve a delete's `IN_USE` through upload's mapping and land on the
+     * unclassified fallback — a reason with copy, rendered as though it had none.
+     *
+     * Absent means upload, which is the only producer that predates this field.
+     */
+    outcomeKind?: DotContentDriveOutcomeKind;
     /**
      * The folders whose contents this run changed, as `//hostname/path` references.
      *

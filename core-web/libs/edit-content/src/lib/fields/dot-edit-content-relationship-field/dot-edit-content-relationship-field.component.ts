@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ContentTypeRelationshipField, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotRelationshipFieldComponent } from './components/dot-relationship-field/dot-relationship-field.component';
@@ -39,13 +39,13 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         }
     ]
 })
-export class DotEditContentRelationshipFieldComponent extends BaseWrapperField {
+export class DotEditContentRelationshipFieldComponent extends BaseWrapperField<ContentTypeRelationshipField> {
     /**
      * DotCMS Content Type Field
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeRelationshipField>({ alias: 'field' });
 
     /**
      * DotCMS Contentlet

@@ -7,8 +7,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -483,5 +485,148 @@ public class BrowserAPIImplTest {
                         + "title:hello^5 title:world^5 "
                         + "title:hello world*",
                 BrowserAPIImpl.buildAllFieldsScopedQuery("hello world"));
+    }
+
+    // -----------------------------------------------------------------------------------------
+    // partitionInodesForES — issue #37695: ES sub-queries must stay within the index server's
+    // maximum query-string length (search.query.max_query_string_length, 32,000 by default), not
+    // only within the boolean-clause limit.
+    // -----------------------------------------------------------------------------------------
+
+    /** 32,000 × 0.95: the length budget a sub-query gets with the default configuration. */
+    private static final int DEFAULT_BUDGET = 30_400;
+    /** The clause cap calculateMaxInodesPerESQuery gives a typical base query. */
+    private static final int TYPICAL_CLAUSE_CAP = 876;
+
+    private static List<String> uuids(final int count) {
+        final List<String> inodes = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            inodes.add(UUID.randomUUID().toString());
+        }
+        return inodes;
+    }
+
+    /**
+     * Length of the query string a batch produces, built the same way processSingleESQuery builds
+     * it, so the assertion does not depend on the partitioner's own arithmetic.
+     */
+    private static int queryLength(final List<String> batch, final int baseQueryLength) {
+        return (" +inode:(" + String.join(" OR ", batch) + ") ").length() + baseQueryLength;
+    }
+
+    private static void assertEveryBatchWithinLength(final List<List<String>> batches,
+            final int baseQueryLength, final int maxQueryLength) {
+        for (int i = 0; i < batches.size(); i++) {
+            final int length = queryLength(batches.get(i), baseQueryLength);
+            assertTrue(String.format("Batch %d of %d (%d inodes) is %d characters, over the %d limit",
+                            i + 1, batches.size(), batches.get(i).size(), length, maxQueryLength),
+                    length <= maxQueryLength);
+        }
+    }
+
+    private static List<String> concatenate(final List<List<String>> batches) {
+        final List<String> all = new ArrayList<>();
+        batches.forEach(all::addAll);
+        return all;
+    }
+
+    /**
+     * The reported case: ~2,182 candidates. A clause-sized batch of 876 UUIDs is ~35 KB, which the
+     * server rejects; every batch must fit in the length budget instead.
+     */
+    @Test
+    public void partitionInodesForES_largeCandidateSet_everyBatchWithinLength() {
+        final List<String> inodes = uuids(2_182);
+        final List<List<String>> batches =
+                BrowserAPIImpl.partitionInodesForES(inodes, 120, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP);
+        assertEveryBatchWithinLength(batches, 120, DEFAULT_BUDGET);
+    }
+
+    /** Joined back together, the batches are the input: same order, nothing lost or repeated. */
+    @Test
+    public void partitionInodesForES_isCompleteAndOrderPreserving() {
+        final List<String> inodes = uuids(2_182);
+        final List<List<String>> batches =
+                BrowserAPIImpl.partitionInodesForES(inodes, 120, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP);
+        assertEquals(inodes, concatenate(batches));
+        assertTrue("Every batch must hold at least one inode",
+                batches.stream().noneMatch(List::isEmpty));
+    }
+
+    /** When length is no constraint, the boolean-clause cap still bounds every batch. */
+    @Test
+    public void partitionInodesForES_clauseCapStillApplies() {
+        final List<String> inodes = uuids(500);
+        final List<List<String>> batches =
+                BrowserAPIImpl.partitionInodesForES(inodes, 120, Integer.MAX_VALUE, 100);
+        assertTrue("A batch exceeded the clause cap of 100",
+                batches.stream().allMatch(batch -> batch.size() <= 100));
+        assertEquals(inodes, concatenate(batches));
+    }
+
+    /**
+     * calculateMaxInodesPerESQuery never returns fewer than 100 inodes. With a long base query that
+     * minimum would overflow the length budget, so the length bound must win.
+     */
+    @Test
+    public void partitionInodesForES_lengthBoundOverridesClauseFloor() {
+        final List<String> inodes = uuids(500);
+        final List<List<String>> batches =
+                BrowserAPIImpl.partitionInodesForES(inodes, 29_000, DEFAULT_BUDGET, 100);
+        assertTrue("Expected batches below the 100-inode minimum",
+                batches.stream().allMatch(batch -> batch.size() < 100));
+        assertEveryBatchWithinLength(batches, 29_000, DEFAULT_BUDGET);
+        assertEquals(inodes, concatenate(batches));
+    }
+
+    /**
+     * Legacy inodes are not always 36-character UUIDs. Batches must be packed by the inodes' real
+     * lengths: each batch stays within the budget, and every batch but the last is full, i.e. the
+     * next inode would not have fitted.
+     */
+    @Test
+    public void partitionInodesForES_variableLengthInodes_usesActualLengths() {
+        final List<String> inodes = new ArrayList<>();
+        for (int i = 0; i < 300; i++) {
+            inodes.add(String.valueOf(10_000 + i));
+            inodes.add(UUID.randomUUID().toString());
+        }
+        final int base = 100;
+        final int max = 2_000;
+        final List<List<String>> batches =
+                BrowserAPIImpl.partitionInodesForES(inodes, base, max, 1_000);
+
+        assertEveryBatchWithinLength(batches, base, max);
+        assertEquals(inodes, concatenate(batches));
+        int consumed = 0;
+        for (int i = 0; i < batches.size() - 1; i++) {
+            final List<String> batch = batches.get(i);
+            consumed += batch.size();
+            final List<String> withNext = new ArrayList<>(batch);
+            withNext.add(inodes.get(consumed));
+            assertTrue(String.format("Batch %d could still take the next inode (%d characters)",
+                            i + 1, queryLength(withNext, base)),
+                    queryLength(withNext, base) > max);
+        }
+    }
+
+    /** A base query that leaves no room for even one inode yields no batches, not an oversized one. */
+    @Test
+    public void partitionInodesForES_noRoomForAnyInode_returnsEmpty() {
+        final List<String> inodes = uuids(10);
+        // " +inode:(" + uuid + ") " is 47 characters; leave room for 46.
+        final int base = DEFAULT_BUDGET - 46;
+        assertTrue(BrowserAPIImpl.partitionInodesForES(inodes, base, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP)
+                .isEmpty());
+    }
+
+    /** One inode is one batch; no inodes is no batches. */
+    @Test
+    public void partitionInodesForES_singleAndEmptyInput() {
+        final List<String> one = uuids(1);
+        assertEquals(List.of(one),
+                BrowserAPIImpl.partitionInodesForES(one, 120, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP));
+        assertTrue(BrowserAPIImpl.partitionInodesForES(List.of(), 120, DEFAULT_BUDGET, TYPICAL_CLAUSE_CAP)
+                .isEmpty());
     }
 }

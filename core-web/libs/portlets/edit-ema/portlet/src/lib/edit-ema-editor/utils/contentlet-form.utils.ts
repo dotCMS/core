@@ -1,6 +1,6 @@
 import {
     DotCMSClazzes,
-    DotCMSContentTypeField,
+    DotCMSContentTypeBaseField,
     DotCMSContentTypeLayoutRow
 } from '@dotcms/dotcms-models';
 
@@ -47,10 +47,9 @@ export interface FieldOption {
  * Type representing a content type field suitable for quick editing
  */
 export type QuickEditField = Pick<
-    DotCMSContentTypeField,
+    DotCMSContentTypeBaseField,
     | 'name'
     | 'variable'
-    | 'regexCheck'
     | 'dataType'
     | 'readOnly'
     | 'required'
@@ -59,7 +58,11 @@ export type QuickEditField = Pick<
     | 'defaultValue'
     | 'fieldVariables'
     | 'fieldType'
->;
+> & {
+    // See ContentletField: `regexCheck` lives on four arms, not on every field, so it cannot
+    // come through a Pick over the union.
+    regexCheck?: string;
+};
 
 /**
  * Parses a field values string into an array of {label, value} objects.
@@ -132,7 +135,7 @@ export function getQuickEditFields(layout: DotCMSContentTypeLayoutRow[]): QuickE
         .map((field) => ({
             name: field.name,
             variable: field.variable,
-            regexCheck: field.regexCheck,
+            regexCheck: 'regexCheck' in field ? field.regexCheck : undefined,
             dataType: field.dataType,
             readOnly: field.readOnly,
             required: field.required,

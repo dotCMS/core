@@ -8,10 +8,11 @@ import {
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
+    DotCMSFieldTypes,
     DotLanguage,
     UI_STORAGE_KEY
 } from '@dotcms/dotcms-models';
-import { createFakeContentlet } from '@dotcms/utils-testing';
+import { createFakeContentlet, createFakeTextField } from '@dotcms/utils-testing';
 
 import { MOCK_CONTENTTYPE_2_TABS, MOCK_FORM_CONTROL_FIELDS } from './edit-content.mock';
 import * as functionsUtil from './functions.util';
@@ -29,13 +30,10 @@ import {
     stringToJson,
     transformFormDataFn
 } from './functions.util';
-import { CALENDAR_FIELD_TYPES, JSON_FIELD_MOCK, MULTIPLE_TABS_MOCK } from './mocks';
+import { CALENDAR_FIELD_TYPES } from './mocks';
 
 import { FLATTENED_FIELD_TYPES } from '../models/dot-edit-content-field.constant';
-import {
-    DotEditContentFieldSingleSelectableDataType,
-    FIELD_TYPES
-} from '../models/dot-edit-content-field.enum';
+import { DotEditContentFieldSingleSelectableDataType } from '../models/dot-edit-content-field.enum';
 import { NON_FORM_CONTROL_FIELD_TYPES } from '../models/dot-edit-content-form.enum';
 
 describe('Utils Functions', () => {
@@ -52,7 +50,6 @@ describe('Utils Functions', () => {
     const {
         castSingleSelectableValue,
         getSingleSelectableFieldOptions,
-        getFinalCastedValue,
         isFlattenedField,
         isCalendarField,
         processCalendarFieldValue,
@@ -553,210 +550,6 @@ describe('Utils Functions', () => {
                     expect(fieldType).toBeDefined();
                 }
             );
-        });
-    });
-
-    describe('getFinalCastedValue', () => {
-        describe('DATE_AND_TIME and TIME fields', () => {
-            it.each(['Date-and-Time', 'Time'])(
-                'should return the original value for %s field',
-                (fieldType) => {
-                    const value = '2021-09-01T18:00:00.000Z';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    // DATE_AND_TIME and TIME fields return the original value without conversion
-                    expect(getFinalCastedValue(value, field)).toEqual(value);
-                }
-            );
-
-            it.each(['Date-and-Time', 'Time'])(
-                "should return 'now' string as-is for %s field",
-                (fieldType) => {
-                    const value = 'now';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    // DATE_AND_TIME and TIME fields return the original value
-                    expect(getFinalCastedValue(value, field)).toEqual(value);
-                }
-            );
-
-            it.each(['Date-and-Time', 'Time'])(
-                'should return undefined for %s field when value is undefined',
-                (fieldType) => {
-                    const value = undefined;
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual(undefined);
-                }
-            );
-        });
-
-        describe('DATE field', () => {
-            it('should preserve numeric timestamp for DATE field', () => {
-                const value = 1736899200000;
-                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
-
-                expect(getFinalCastedValue(value, field)).toEqual(value);
-            });
-
-            it('should preserve ISO string for DATE field', () => {
-                const value = '2021-09-01T18:00:00.000Z';
-                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
-
-                expect(getFinalCastedValue(value, field)).toEqual(value);
-            });
-
-            it("should preserve 'now' for DATE field", () => {
-                const value = 'now';
-                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
-
-                expect(getFinalCastedValue(value, field)).toEqual(value);
-            });
-
-            it('should return undefined for DATE field when value is undefined', () => {
-                const value = undefined;
-                const field = { fieldType: 'Date', dataType: 'DATE' } as DotCMSContentTypeField;
-
-                expect(getFinalCastedValue(value, field)).toEqual(undefined);
-            });
-        });
-
-        describe.each([...FLATTENED_FIELD_TYPES])('Flattened Fields', (fieldType) => {
-            describe(fieldType, () => {
-                it('should return an array of the values', () => {
-                    const value = 'value1,value2,value3';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual([
-                        'value1',
-                        'value2',
-                        'value3'
-                    ]);
-                });
-
-                it('should trim the values', () => {
-                    const value = ' value1 , value2 , value3 ';
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual([
-                        'value1',
-                        'value2',
-                        'value3'
-                    ]);
-                });
-
-                it('should return undefined if the value is undefined', () => {
-                    const value = undefined;
-                    const field = { fieldType } as DotCMSContentTypeField;
-
-                    expect(getFinalCastedValue(value, field)).toEqual(undefined);
-                });
-            });
-        });
-
-        describe('No special field', () => {
-            // Asserted through the result rather than by spying on `castSingleSelectableValue`:
-            // that function now lives in `@dotcms/ui` (the shared field filter parses the same
-            // options), so a spy on this module's re-export no longer intercepts the internal
-            // call. The cast is what the test is about, and the result shows it.
-            it.each([
-                ['something', 'value1', 'value1'],
-                ['INTEGER', '42', 42],
-                ['FLOAT', '4.5', 4.5],
-                ['BOOL', 'true', true]
-            ])('should cast the value by its %s dataType', (dataType, value, expected) => {
-                const field = { fieldType: 'something', dataType } as DotCMSContentTypeField;
-
-                expect(getFinalCastedValue(value, field)).toBe(expected);
-            });
-        });
-
-        it('should return undefined value', () => {
-            const value = undefined;
-            const field = {
-                fieldType: 'something',
-                dataType: 'something'
-            } as DotCMSContentTypeField;
-
-            const res = getFinalCastedValue(value, field);
-            expect(res).toBeUndefined();
-        });
-
-        it('should return a JSON value', () => {
-            const value = {
-                attrs: {},
-                content: [],
-                type: 'doc'
-            };
-            const field = {
-                fieldType: 'Story-Block',
-                dataType: 'something'
-            } as DotCMSContentTypeField;
-
-            const res = getFinalCastedValue(value, field);
-            expect(res).toEqual(value);
-        });
-
-        describe('JSON Field', () => {
-            it('should return a JSON value as string keeping the format', () => {
-                const value = {
-                    value1: 'value1',
-                    value2: 'value2',
-                    value3: 'value3'
-                };
-
-                const field = {
-                    fieldType: JSON_FIELD_MOCK.fieldType
-                } as DotCMSContentTypeField;
-
-                const res = getFinalCastedValue(value, field);
-                const formattedValue = JSON.stringify(value, null, 2);
-                expect(res).toBe(formattedValue);
-            });
-        });
-
-        describe('Form Tabs', () => {
-            it('should transform layout to tabs', () => {
-                const expected = [
-                    {
-                        title: 'first tab',
-                        layout: [
-                            {
-                                divider: {
-                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableRowField',
-                                    contentTypeId: 'd46d6404125ac27e6ab68fad09266241',
-                                    dataType: 'SYSTEM',
-                                    fieldType: 'Row',
-                                    fieldTypeLabel: 'Row',
-                                    fieldVariables: [],
-                                    fixed: false,
-                                    forceIncludeInApi: false,
-                                    iDate: 1697051073000,
-                                    id: 'a31ea895f80eb0a3754e4a2292e09a52',
-                                    indexed: false,
-                                    listed: false,
-                                    modDate: 1697051077000,
-                                    name: 'fields-0',
-                                    readOnly: false,
-                                    required: false,
-                                    searchable: false,
-                                    sortOrder: 0,
-                                    unique: false,
-                                    variable: 'fields0'
-                                },
-                                columns: []
-                            }
-                        ]
-                    },
-                    {
-                        title: 'New Tab',
-                        layout: []
-                    }
-                ];
-                const res = functionsUtil.transformLayoutToTabs('first tab', MULTIPLE_TABS_MOCK);
-
-                expect(res).toEqual(expected);
-            });
         });
     });
 
@@ -1307,7 +1100,9 @@ describe('Utils Functions', () => {
     describe('isFilteredType', () => {
         it('should correctly identify filtered and non-filtered field types', () => {
             const allFields = MOCK_CONTENTTYPE_2_TABS.fields;
-            const nonFormControlFieldTypes = Object.values(NON_FORM_CONTROL_FIELD_TYPES);
+            // Read directly: this was an enum, so the test went through Object.values to get at
+            // its members. It is a plain array of field types now.
+            const nonFormControlFieldTypes = NON_FORM_CONTROL_FIELD_TYPES;
 
             // Verify that none of the form control fields are filtered types
             MOCK_FORM_CONTROL_FIELDS.forEach((field) => {
@@ -1321,8 +1116,7 @@ describe('Utils Functions', () => {
             expect(filteredFields.length).toBe(MOCK_FORM_CONTROL_FIELDS.length);
 
             filteredFields.forEach((field) => {
-                const fieldType = field.fieldType as NON_FORM_CONTROL_FIELD_TYPES;
-                expect(nonFormControlFieldTypes.includes(fieldType)).toBe(false);
+                expect(nonFormControlFieldTypes.includes(field.fieldType)).toBe(false);
             });
         });
     });
@@ -1511,7 +1305,7 @@ describe('Utils Functions', () => {
 
             it('should return false for non-array values even with flattened field types', () => {
                 const field = {
-                    fieldType: FIELD_TYPES.CHECKBOX
+                    fieldType: DotCMSFieldTypes.CHECKBOX
                 } as unknown as DotCMSContentTypeField;
                 const stringValue = 'not an array';
 
@@ -1519,7 +1313,7 @@ describe('Utils Functions', () => {
             });
 
             it('should return false for array values with non-flattened field types', () => {
-                const field = { fieldType: FIELD_TYPES.TEXT } as unknown as DotCMSContentTypeField;
+                const field = createFakeTextField();
                 const arrayValue = ['value1', 'value2'];
 
                 expect(isFlattenedField(arrayValue, field)).toBe(false);
@@ -1527,7 +1321,7 @@ describe('Utils Functions', () => {
 
             it('should return false for null/undefined values', () => {
                 const field = {
-                    fieldType: FIELD_TYPES.CHECKBOX
+                    fieldType: DotCMSFieldTypes.CHECKBOX
                 } as unknown as DotCMSContentTypeField;
 
                 expect(isFlattenedField(null, field)).toBe(false);
@@ -1547,9 +1341,9 @@ describe('Utils Functions', () => {
 
             it('should return false for non-calendar field types', () => {
                 const nonCalendarTypes = [
-                    FIELD_TYPES.TEXT,
-                    FIELD_TYPES.TEXTAREA,
-                    FIELD_TYPES.CHECKBOX
+                    DotCMSFieldTypes.TEXT,
+                    DotCMSFieldTypes.TEXTAREA,
+                    DotCMSFieldTypes.CHECKBOX
                 ];
 
                 nonCalendarTypes.forEach((fieldType) => {
@@ -1812,7 +1606,7 @@ describe('Utils Functions', () => {
             describe('flattened fields', () => {
                 it('should join array values with commas for flattened fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.CHECKBOX,
+                        fieldType: DotCMSFieldTypes.CHECKBOX,
                         variable: 'checkboxField'
                     } as unknown as DotCMSContentTypeField;
                     const arrayValue = ['option1', 'option2', 'option3'];
@@ -1822,7 +1616,7 @@ describe('Utils Functions', () => {
 
                 it('should handle empty arrays', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.MULTI_SELECT,
+                        fieldType: DotCMSFieldTypes.MULTI_SELECT,
                         variable: 'multiSelectField'
                     } as unknown as DotCMSContentTypeField;
                     const emptyArray: string[] = [];
@@ -1832,7 +1626,7 @@ describe('Utils Functions', () => {
 
                 it('should handle single-item arrays', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.TAG,
+                        fieldType: DotCMSFieldTypes.TAG,
                         variable: 'tagField'
                     } as unknown as DotCMSContentTypeField;
                     const singleItemArray = ['onlyOption'];
@@ -1844,7 +1638,7 @@ describe('Utils Functions', () => {
             describe('category fields', () => {
                 it('should join category inode array into comma-separated string', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.CATEGORY,
+                        fieldType: DotCMSFieldTypes.CATEGORY,
                         variable: 'categoryField'
                     } as unknown as DotCMSContentTypeField;
                     const arrayValue = ['inode1', 'inode2', 'inode3'];
@@ -1854,7 +1648,7 @@ describe('Utils Functions', () => {
 
                 it('should handle empty arrays', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.CATEGORY,
+                        fieldType: DotCMSFieldTypes.CATEGORY,
                         variable: 'categoryField'
                     } as unknown as DotCMSContentTypeField;
                     const emptyArray: string[] = [];
@@ -1864,7 +1658,7 @@ describe('Utils Functions', () => {
 
                 it('should handle single-item arrays', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.CATEGORY,
+                        fieldType: DotCMSFieldTypes.CATEGORY,
                         variable: 'categoryField'
                     } as unknown as DotCMSContentTypeField;
                     const singleItemArray = ['onlyInode'];
@@ -1876,7 +1670,7 @@ describe('Utils Functions', () => {
             describe('calendar fields', () => {
                 it('should process Date objects to timestamps for calendar fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.DATE,
+                        fieldType: DotCMSFieldTypes.DATE,
                         variable: 'dateField'
                     } as unknown as DotCMSContentTypeField;
                     const date = new Date('2025-01-15T10:30:00Z');
@@ -1887,7 +1681,7 @@ describe('Utils Functions', () => {
 
                 it('should process string timestamps for calendar fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.DATE_AND_TIME,
+                        fieldType: DotCMSFieldTypes.DATE_AND_TIME,
                         variable: 'datetimeField'
                     } as unknown as DotCMSContentTypeField;
                     const stringTimestamp = '1737021000000';
@@ -1897,7 +1691,7 @@ describe('Utils Functions', () => {
 
                 it('should handle null values for calendar fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.TIME,
+                        fieldType: DotCMSFieldTypes.TIME,
                         variable: 'timeField'
                     } as unknown as DotCMSContentTypeField;
 
@@ -1908,7 +1702,7 @@ describe('Utils Functions', () => {
             describe('other field types', () => {
                 it('should return string values as-is for text fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.TEXT,
+                        fieldType: DotCMSFieldTypes.TEXT,
                         variable: 'textField'
                     } as unknown as DotCMSContentTypeField;
                     const stringValue = 'some text';
@@ -1918,7 +1712,7 @@ describe('Utils Functions', () => {
 
                 it('should return number values as-is for numeric fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.TEXT,
+                        fieldType: DotCMSFieldTypes.TEXT,
                         variable: 'numericField'
                     } as unknown as DotCMSContentTypeField;
                     const numberValue = 42;
@@ -1928,7 +1722,7 @@ describe('Utils Functions', () => {
 
                 it('should return null/undefined values as-is', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.TEXTAREA,
+                        fieldType: DotCMSFieldTypes.TEXTAREA,
                         variable: 'textareaField'
                     } as unknown as DotCMSContentTypeField;
 
@@ -1940,7 +1734,7 @@ describe('Utils Functions', () => {
             describe('category fields', () => {
                 it('should join array values into comma-separated string for category fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.CATEGORY,
+                        fieldType: DotCMSFieldTypes.CATEGORY,
                         variable: 'categories'
                     } as unknown as DotCMSContentTypeField;
                     const arrayValue = ['inode1', 'inode2'];
@@ -1950,7 +1744,7 @@ describe('Utils Functions', () => {
 
                 it('should return empty string as-is for category fields (not flattened)', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.CATEGORY,
+                        fieldType: DotCMSFieldTypes.CATEGORY,
                         variable: 'categories'
                     } as unknown as DotCMSContentTypeField;
 
@@ -1959,7 +1753,7 @@ describe('Utils Functions', () => {
 
                 it('should return null as-is for category fields', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.CATEGORY,
+                        fieldType: DotCMSFieldTypes.CATEGORY,
                         variable: 'categories'
                     } as unknown as DotCMSContentTypeField;
 
@@ -1970,7 +1764,7 @@ describe('Utils Functions', () => {
             describe('Block Editor fields', () => {
                 it('should stringify object values so the backend does not store them as Map.toString()', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        fieldType: DotCMSFieldTypes.BLOCK_EDITOR,
                         variable: 'blockEditor'
                     } as unknown as DotCMSContentTypeField;
                     const objectValue = {
@@ -1983,7 +1777,7 @@ describe('Utils Functions', () => {
 
                 it('should pass through JSON string values unchanged', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        fieldType: DotCMSFieldTypes.BLOCK_EDITOR,
                         variable: 'blockEditor'
                     } as unknown as DotCMSContentTypeField;
                     const stringValue = '{"type":"doc","content":[{"type":"paragraph"}]}';
@@ -1993,7 +1787,7 @@ describe('Utils Functions', () => {
 
                 it('should pass through null and undefined unchanged', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.BLOCK_EDITOR,
+                        fieldType: DotCMSFieldTypes.BLOCK_EDITOR,
                         variable: 'blockEditor'
                     } as unknown as DotCMSContentTypeField;
 
@@ -2005,7 +1799,7 @@ describe('Utils Functions', () => {
             describe('edge cases', () => {
                 it('should handle fields without specific processing', () => {
                     const field = {
-                        fieldType: FIELD_TYPES.WYSIWYG,
+                        fieldType: DotCMSFieldTypes.WYSIWYG,
                         variable: 'wysiwygField'
                     } as unknown as DotCMSContentTypeField;
                     const complexValue = { html: '<p>content</p>' };

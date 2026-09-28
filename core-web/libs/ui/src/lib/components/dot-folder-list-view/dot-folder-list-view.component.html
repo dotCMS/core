@@ -107,6 +107,12 @@
                  Full `role="grid"` wiring (cell navigation, `aria-rowcount`/`aria-colindex`) is
                  tracked in #37439. -->
             @let isUnselectable = $unselectableSet().has(item[$dataKey()]);
+            <!-- Either key, matching `isNodeInFlight` in the sidebar tree. A run registers
+                 both a folder's inode and its identifier because the search service only
+                 backfills one from the other when the API returned none — so testing inode
+                 alone would mark the folder in the tree and leave it live here, and the two
+                 surfaces are meant to give one answer (FR-014). -->
+            @let isBusyRow = $busyRowsSet().has(item.inode) || $busyRowsSet().has(item.identifier);
 
             <tr
                 class="group transition-colors duration-200"
@@ -118,11 +124,10 @@
                 [pSelectableRowIndex]="rowIndex"
                 [attr.aria-selected]="$selectedKeys().has(item[$dataKey()])"
                 [attr.aria-disabled]="isUnselectable || null"
-                [pSelectableRowDisabled]="
-                    $disabled() || $readOnly() || isUnselectable || $busyRowsSet().has(item.inode)
-                "
-                [class.opacity-60]="$busyRowsSet().has(item.inode)"
-                [class.pointer-events-none]="$busyRowsSet().has(item.inode)"
+                [pSelectableRowDisabled]="$disabled() || $readOnly() || isUnselectable || isBusyRow"
+                [class.opacity-60]="isBusyRow"
+                [attr.aria-busy]="isBusyRow ? 'true' : null"
+                [class.pointer-events-none]="isBusyRow"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item, $event)"
@@ -159,9 +164,7 @@
                                 data-testId="item-radio" />
                         }
                     } @else if ($selectionMode() === 'multiple') {
-                        <p-tableCheckbox
-                            [value]="item"
-                            [disabled]="$disabled() || $busyRowsSet().has(item.inode)" />
+                        <p-tableCheckbox [value]="item" [disabled]="$disabled() || isBusyRow" />
                     } @else {
                         <p-tableRadioButton [value]="item" data-testId="item-radio" />
                     }
@@ -181,7 +184,7 @@
                             class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
                             data-testId="item-thumbnail-box"
                             (click)="onTitleClick($event, item)">
-                            @if ($busyRowsSet().has(item.inode)) {
+                            @if (isBusyRow) {
                                 <i
                                     class="pi pi-spin pi-spinner flex! size-full! items-center! justify-center! text-2xl! text-(--color-palette-primary-500)"
                                     role="status"
