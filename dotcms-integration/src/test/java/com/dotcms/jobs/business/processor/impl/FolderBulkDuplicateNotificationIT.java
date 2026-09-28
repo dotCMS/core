@@ -331,4 +331,25 @@ public class FolderBulkDuplicateNotificationIT extends Junit5WeldBaseTest {
         assertEquals(1, data.get("failedCount"));
         assertNotNull(data.get("results"));
     }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateCompletionListener}
+     * <p>
+     * Given scenario: A cancelled run whose outcome records where it stopped.
+     * <p>
+     * Expected result: The completion push carries {@code stoppedAt}, so a client following the push
+     * rather than polling the job still knows where the remainder begins (FR-032).
+     */
+    @Test
+    public void test_completion_carriesWhereACancelledRunStopped() throws Exception {
+        final User author = new UserDataGen().nextPersisted();
+        final Map<String, Object> result = outcome(1, 0, 2);
+        result.put("stoppedAt", "//default/second/");
+        final Job job = finishedJob(author.getUserId(), JobState.CANCELED, result);
+
+        final Map<String, Object> payload =
+                new FolderBulkDuplicateCompletionListener().payloadFor(job);
+
+        assertEquals("//default/second/", payload.get("stoppedAt"));
+    }
 }

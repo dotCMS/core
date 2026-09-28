@@ -139,7 +139,8 @@ public class FolderBulkDuplicateCancellationIT extends Junit5WeldBaseTest {
      * Method to test: cancelling a {@link FolderBulkDuplicateProcessor} run through the real queue
      * Given Scenario: Four folders, cancelled while the run is in flight
      * ExpectedResult: The job ends CANCELED; every folder has exactly one record, SUCCESS or
-     * SKIPPED and never FAILED; at least one folder was never reached; each SKIPPED folder carries no reason and has no duplicate; each
+     * SKIPPED and never FAILED; at least one folder was never reached, and stoppedAt names the first
+     * of them; each SKIPPED folder carries no reason and has no duplicate; each
      * SUCCESS folder's duplicate holds everything its source holds, so none is partial
      */
     @Test
@@ -168,6 +169,15 @@ public class FolderBulkDuplicateCancellationIT extends Junit5WeldBaseTest {
                     "a cancellation skip carries no reason");
             assertTrue(!duplicateExists(skipped), "a skipped folder must not be duplicated");
         }
+        // Where it stopped, so the remainder can be resubmitted deliberately (FR-032): the first
+        // folder the run never reached, in submission order.
+        final String firstUnreached = results.stream()
+                .filter(r -> r.status() == BatchItemStatus.SKIPPED && r.reason().isEmpty())
+                .findFirst().orElseThrow().key();
+        assertEquals(firstUnreached,
+                job.result().orElseThrow().metadata().orElseThrow().get("stoppedAt"),
+                "a cancelled run must record where it stopped");
+
         for (final Folder completed : foldersWith(folders, results, BatchItemStatus.SUCCESS)) {
             assertEquals(contentletsAt(completed.getPath()),
                     contentletsAt("/" + completed.getName() + "_copy/"),
