@@ -5177,6 +5177,20 @@ describe('DotContentDriveShellComponent', () => {
             ...overrides
         });
 
+        it('should say a stopped delete was cancelled, even when every folder it reached went', () => {
+            // As the bell says it: a cancelled run must not read as a clean one.
+            actionExecutionResultSignal.set(deleteOutcome({ cancelled: true }) as never);
+            spectator.detectChanges();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    summary: 'content-drive.delete.toast.cancelled',
+                    detail: expect.stringContaining('content-drive.delete.toast.cancelled-detail')
+                })
+            );
+        });
+
         it('should refresh the listing when a delete completes', () => {
             (store.loadItems as unknown as Mock).mockClear();
 

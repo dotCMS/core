@@ -1662,6 +1662,18 @@ describe('withActionExecution', () => {
             );
         });
 
+        it('should say a stopped run was cancelled, as the bell says it', () => {
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted(
+                'Delete',
+                completed({ state: 'CANCELED', total: 1, successCount: 1, failedCount: 0 })
+            );
+
+            expect(store.actionExecutionResult()?.cancelled).toBe(true);
+        });
+
         it('should carry the per-folder records, not just the counts', () => {
             // Counts alone tell an author one folder failed and nothing they can act on. The names
             // and reasons are the point of a partial outcome (FR-026).

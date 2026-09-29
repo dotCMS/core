@@ -913,7 +913,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // it reached had succeeded would otherwise read as a clean success. As the bell says it.
         const detail = cancelled
             ? this.#dotMessageService.get(
-                  'content-drive.duplicate.toast.cancelled-detail',
+                  OUTCOME_KIND.FOLDER_DELETE === outcomeKind
+                      ? 'content-drive.delete.toast.cancelled-detail'
+                      : 'content-drive.duplicate.toast.cancelled-detail',
                   actionName,
                   String(successCount),
                   String(failedCount),
@@ -1036,7 +1038,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
                       severity: group.severity,
                       summary: this.#dotMessageService.get(
                           cancelled
-                              ? 'content-drive.duplicate.toast.cancelled'
+                              ? isFolderDelete
+                                  ? 'content-drive.delete.toast.cancelled'
+                                  : 'content-drive.duplicate.toast.cancelled'
                               : isFolderDelete
                                 ? 'error' === group.severity
                                     ? 'content-drive.delete.toast.failed'
@@ -1077,7 +1081,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
                                   : 'success',
                           summary: this.#dotMessageService.get(
                               cancelled
-                                  ? 'content-drive.duplicate.toast.cancelled'
+                                  ? isFolderDelete
+                                      ? 'content-drive.delete.toast.cancelled'
+                                      : 'content-drive.duplicate.toast.cancelled'
                                   : isPartial || duplicateSubmission
                                     ? 'content-drive.upload.toast.incomplete'
                                     : 'content-drive.action-center.toast.executed'

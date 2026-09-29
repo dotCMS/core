@@ -1449,6 +1449,8 @@ export function withActionExecution() {
                                     // reached after a cancel; the default sentence blames
                                     // workflow steps, which a folder does not have.
                                     partialDetailKey: 'content-drive.delete.toast.partial',
+                                    // Said as cancelled whatever the counts, as the bell says it.
+                                    cancelled: 'CANCELED' === event.state,
                                     // Arrived unprompted, possibly minutes after the author moved
                                     // on, so nothing on screen reflects it — the notification is
                                     // the only way they learn (FR-024).
