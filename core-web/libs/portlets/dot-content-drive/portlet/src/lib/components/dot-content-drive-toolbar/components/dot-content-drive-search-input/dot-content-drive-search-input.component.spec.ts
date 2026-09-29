@@ -9,6 +9,7 @@ import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
+import { Popover } from 'primeng/popover';
 import { Tooltip } from 'primeng/tooltip';
 import { ZIndexUtils } from 'primeng/utils';
 
@@ -296,8 +297,18 @@ describe('DotContentDriveSearchInputComponent', () => {
             expect(tooltipOnPage()).toBeNull();
         });
 
-        it('should leave no tooltip behind when the panel is closed by clicking outside it', () => {
+        it('should leave no tooltip behind when the panel is closed by clicking outside it', async () => {
+            // The panel only hears a click outside it once its enter motion has started, which is
+            // where it binds that listener and then emits `onShow`. Clicking before then closes
+            // nothing, and the test would be about timing rather than the tooltips.
+            let listening = false;
+            spectator.query(Popover)?.onShow.subscribe(() => (listening = true));
+
             openPanelAndHover();
+            await vi.waitFor(() => {
+                spectator.detectChanges();
+                expect(listening).toBe(true);
+            });
 
             spectator.click(document.body);
             vi.runAllTimers();
