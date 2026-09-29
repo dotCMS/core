@@ -19,6 +19,9 @@ import {
     AddToBundleService,
     DotBulkRefreshService,
     DotEventsSocket,
+    DotFolderBulkDeleteRefusal,
+    DotFolderBulkDeleteRefusalKind,
+    DotFolderBulkDeleteService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotSystemEventType,
@@ -29,12 +32,14 @@ import {
     DotActionBulkRequestOptions,
     DotAjaxActionResponseView,
     DotBulkRefreshCompletedEvent,
+    DotFolderBulkDeleteCompletedEvent,
     DotBulkUploadCompletedEvent,
     DotBundle,
     DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 
 import {
+    OUTCOME_KIND,
     DotContentDriveActionExecution,
     DotContentDriveActionExecutionResult,
     DotContentDriveRun,
@@ -42,6 +47,17 @@ import {
     DotContentDriveState
 } from '../../../shared/models';
 import { browsedFolderRef, normalizeFolderRef } from '../../../utils/functions';
+
+/**
+ * The operation key a bulk folder delete run is registered under.
+ *
+ * Paired with the run's targets it forms the repeat guard — *this operation over these folders* —
+ * so a delete running for minutes never blocks an unrelated action, nor a delete of different
+ * folders (FR-018). Kept here rather than imported from the quick-action registry: the store's
+ * guard key is its own concern, and tying it to a UI constant would make a rename of one silently
+ * change the other.
+ */
+const DELETE_FOLDER_OPERATION = 'DELETE_FOLDER';
 
 interface WithActionExecutionState {
     /**
@@ -83,6 +99,37 @@ interface WithActionExecutionState {
      * by the time the event lands the author may be looking somewhere else entirely.
      */
     uploadJobs: Record<string, DotContentDriveUploadJob>;
+    /**
+     * Bulk folder deletes this store submitted, by job id, valued by the run they belong to.
+     *
+     * Same reasoning as {@link uploadJobs}: the completion is scoped to the submitting *user*, so a
+     * run fired from another tab or a Login-As session reaches this store too, and only ids in here
+     * are reported. Not persisted — a reload loses them and that run settles silently, which the
+     * durable record still covers.
+     */
+    folderDeleteJobs: Record<string, string>;
+    /**
+     * Bulk folder deletes this page has already reported, by job id.
+     *
+     * Kept because {@link folderDeleteJobs} no longer answers "have we settled this?" on its own.
+     * A run submitted before a reload is reported from an empty map, so removal from that map
+     * cannot be what makes reporting idempotent any more — and the completion is a pushed event,
+     * which a socket reconnect can deliver again.
+     */
+    settledFolderDeleteJobs: string[];
+    /**
+     * A bulk folder delete the server refused, as the kind it refused it for.
+     *
+     * The **kind**, not a sentence: which words go on screen is the shell's decision, the way it
+     * already is for an upload's own submission refusal. Held in state rather than toasted from
+     * here because the store never touches the UI — the shell drains this exactly as it drains
+     * {@link actionExecutionResults}.
+     *
+     * `UNCLASSIFIED` never lands here. It covers a transport failure rather than a refusal the
+     * endpoint reasoned about, and those keep going through `DotHttpErrorManagerService`, which is
+     * what still redirects on a 401 and reports a license wall properly.
+     */
+    folderDeleteRefusal: DotFolderBulkDeleteRefusalKind | undefined;
 }
 
 /**
@@ -108,7 +155,10 @@ export function withActionExecution() {
             runs: {},
             actionExecutionResults: [],
             refreshJobIds: [],
-            uploadJobs: {}
+            uploadJobs: {},
+            folderDeleteJobs: {},
+            settledFolderDeleteJobs: [],
+            folderDeleteRefusal: undefined
         }),
         withComputed(({ runs, actionExecutionResults }) => ({
             /**
@@ -181,6 +231,7 @@ export function withActionExecution() {
                 addToBundleService = inject(AddToBundleService),
                 pushPublishService = inject(PushPublishService),
                 bulkRefreshService = inject(DotBulkRefreshService),
+                folderBulkDeleteService = inject(DotFolderBulkDeleteService),
                 destroyRef = inject(DestroyRef)
             ) => {
                 /**
@@ -750,11 +801,241 @@ export function withActionExecution() {
                     endExternalRun: (runId: string): void => endRun(runId),
 
                     /**
+                     * Submits a bulk folder delete and marks the folders it accepted (#37063 US1).
+                     *
+                     * Two separate identities, deliberately:
+                     *
+                     * - `assetPaths` is what the **server** works in — site-qualified folder paths,
+                     *   the same form the shipped single delete accepts. The caller builds them,
+                     *   because it is the one that knows the site.
+                     * - `targets` is what the **listing** marks by, and must carry **both** a
+                     *   folder's `inode` and its `identifier`: the search service only backfills
+                     *   `inode` from `identifier` when the API returned none, so neither is reliably
+                     *   the key the row actually carries.
+                     *
+                     * The guard is the shared one — this operation over these folders — so a delete
+                     * running for minutes never blocks an unrelated action, or a delete of different
+                     * folders (FR-018).
+                     */
+                    executeFolderBulkDelete: (assetPaths: string[], targets: string[]): void => {
+                        if (!assetPaths.length || isRunning(DELETE_FOLDER_OPERATION, targets)) {
+                            return;
+                        }
+
+                        // No resolved label travels with the run: a run names itself through
+                        // `operation` and an optional `labelKey`, and the toolbar only ever surfaces
+                        // *unmarked* runs (`targets.length === 0`). This one is marked by
+                        // construction, so a label on it could never reach a screen. The outcome
+                        // toast has its own, resolved where that event is handled.
+                        const runId = startRun({
+                            operation: DELETE_FOLDER_OPERATION,
+                            total: assetPaths.length,
+                            targets
+                        });
+
+                        folderBulkDeleteService
+                            .submit(assetPaths)
+                            .pipe(
+                                take(1),
+                                catchError((refusal: DotFolderBulkDeleteRefusal) => {
+                                    // A refusal means no run exists server-side, so nothing will
+                                    // ever arrive to settle this one.
+                                    endRun(runId);
+
+                                    const kind = refusal?.kind ?? 'UNCLASSIFIED';
+
+                                    // The kinds the endpoint reasoned about get their own words
+                                    // (FR-041): an empty selection, too many folders and no
+                                    // entitlement must not all read alike, and an overlap — the one
+                                    // refusal an ordinary author can actually provoke — is
+                                    // actionable where a generic failure is not.
+                                    //
+                                    // The server's own `message` is deliberately not rendered. It is
+                                    // English the server generated, so it is not localised; it is
+                                    // logged instead.
+                                    if ('UNCLASSIFIED' !== kind) {
+                                        console.warn(
+                                            `Content drive folder delete refused: ${kind}`,
+                                            refusal?.message
+                                        );
+                                        patchState(store, { folderDeleteRefusal: kind });
+
+                                        return EMPTY;
+                                    }
+
+                                    // Not a refusal the endpoint reasoned about — a transport
+                                    // failure, or an instance whose body carried no code. This path
+                                    // still redirects on a 401 and reports a license wall properly,
+                                    // which is why it is not replaced wholesale.
+                                    httpErrorManagerService.handle(
+                                        refusal?.response ??
+                                            new HttpErrorResponse({ error: refusal })
+                                    );
+
+                                    return EMPTY;
+                                })
+                            )
+                            .subscribe((handle) => {
+                                // The server's count, not the caller's. The two disagree whenever a
+                                // duplicate or a nested path is dropped, and the first screen has to
+                                // agree with the last (CR-03). Left as submitted when the instance
+                                // is older than the field, which is the honest fallback.
+                                const run = store.runs()[runId];
+
+                                patchState(store, {
+                                    // Remembered so the pushed completion can find its run. The
+                                    // event is scoped to the submitting *user*, so another tab's
+                                    // run reaches this store too and only ids in here are reported.
+                                    folderDeleteJobs: {
+                                        ...store.folderDeleteJobs(),
+                                        [handle.jobId]: runId
+                                    },
+                                    ...(run && handle.submitted !== undefined
+                                        ? {
+                                              runs: {
+                                                  ...store.runs(),
+                                                  [runId]: { ...run, total: handle.submitted }
+                                              }
+                                          }
+                                        : {})
+                                });
+                            });
+                    },
+
+                    /**
+                     * Publishes a finished delete's outcome, or reports that it cannot be trusted.
+                     *
+                     * Mirrors {@link reportUploadCompleted} deliberately: same correlation, same
+                     * refusal to invent numbers. What differs is only the vocabulary of the
+                     * failures it carries.
+                     */
+                    reportFolderDeleteCompleted: (
+                        actionName: string,
+                        event: DotFolderBulkDeleteCompletedEvent
+                    ): void => {
+                        if (!event.jobId) {
+                            return;
+                        }
+
+                        // Already reported here. The only reason to see one twice is redelivery.
+                        if (store.settledFolderDeleteJobs().includes(event.jobId)) {
+                            return;
+                        }
+
+                        const tracked = store.folderDeleteJobs();
+
+                        // **Ownership is the server's answer, not this map's.** The completion is
+                        // pushed with `Visibility.USER` addressed to the submitter, and
+                        // `UserVerifier` delivers it only to sessions whose user matches — so every
+                        // completion that arrives here belongs to this author by construction.
+                        //
+                        // What the map answers is narrower: whether *this page* submitted the run.
+                        // Requiring that was why a delete started before a reload settled in
+                        // silence — the map is store state and the reload emptied it, so the event
+                        // arrived about a run nothing here remembered. The author was left with a
+                        // folder gone from the listing, still sitting in the sidebar tree, and no
+                        // word that their delete had finished (FR-024, FR-036).
+                        //
+                        // `hasOwnProperty`, not `in`: the latter walks the prototype chain, so a
+                        // jobId of `constructor` would read as tracked.
+                        const isLocalRun = Object.prototype.hasOwnProperty.call(
+                            tracked,
+                            event.jobId
+                        );
+                        const runId = isLocalRun ? tracked[event.jobId] : undefined;
+
+                        const remaining = { ...tracked };
+                        delete remaining[event.jobId];
+                        patchState(store, {
+                            folderDeleteJobs: remaining,
+                            settledFolderDeleteJobs: [
+                                ...store.settledFolderDeleteJobs(),
+                                event.jobId
+                            ]
+                        });
+
+                        // Only when this page has a run to end. A reload left none, and the
+                        // indicator it would have quietened went with it.
+                        //
+                        // Ended before the outcome is published, so the indicator is already quiet
+                        // when the message about it appears.
+                        if (undefined !== runId) {
+                            endRun(runId);
+                        }
+
+                        // The state first, because the counters cannot answer this. An abandoned
+                        // run still records the counters it reached, and publishing them would tell
+                        // the author their delete finished when it did not. A cancellation IS worth
+                        // reporting: the author did it, and its counts say how far it got.
+                        if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({
+                                    status: 500,
+                                    statusText: `The delete did not report a usable outcome (state: ${event.state})`
+                                })
+                            );
+
+                            return;
+                        }
+
+                        const closes =
+                            undefined !== event.total &&
+                            (event.successCount ?? 0) +
+                                (event.failedCount ?? 0) +
+                                (event.skippedCount ?? 0) ===
+                                event.total;
+
+                        if (!closes) {
+                            // Either no counters at all, or counters that do not account for every
+                            // folder. Both are unusable: trusting the zeros would report a run over
+                            // nothing, and substituting the number submitted would claim every
+                            // folder was deleted.
+                            httpErrorManagerService.handle(
+                                new HttpErrorResponse({
+                                    status: 500,
+                                    statusText:
+                                        'The delete did not report an outcome for every folder'
+                                })
+                            );
+
+                            return;
+                        }
+
+                        patchState(store, {
+                            actionExecutionResults: [
+                                ...store.actionExecutionResults(),
+                                {
+                                    actionName,
+                                    successCount: event.successCount ?? 0,
+                                    failedCount: event.failedCount ?? 0,
+                                    skippedCount: event.skippedCount ?? 0,
+                                    // Counts alone tell an author a folder failed and nothing they
+                                    // can act on. The names and reasons are the point of a partial
+                                    // outcome (FR-026).
+                                    failures: (event.results ?? []).filter(
+                                        (item) => 'SUCCESS' !== item.status
+                                    ),
+                                    outcomeKind: OUTCOME_KIND.FOLDER_DELETE,
+                                    // Arrived unprompted, possibly minutes after the author moved
+                                    // on, so nothing on screen reflects it — the notification is
+                                    // the only way they learn (FR-024).
+                                    backgrounded: true
+                                }
+                            ]
+                        });
+                    },
+
+                    /**
                      * Remembers a batch this store submitted, so its completion can be told from
                      * another tab's.
                      *
                      * @param affectedFolders where the batch landed, as `//hostname/path` refs
                      */
+                    /** Consumes the refusal once the shell has said it. */
+                    clearFolderDeleteRefusal: (): void => {
+                        patchState(store, { folderDeleteRefusal: undefined });
+                    },
+
                     trackUploadJob: (
                         jobId: string,
                         affectedFolders: string[] = [],
@@ -934,6 +1215,20 @@ export function withActionExecution() {
                     .subscribe((event) => {
                         store.reportUploadCompleted(
                             dotMessageService.get('content-drive.upload'),
+                            event
+                        );
+                    });
+
+                // And the same again for a bulk folder delete. Three operations, one seam: the run
+                // reports itself when it settles, so walking away never loses the outcome.
+                eventsSocket
+                    .on<DotFolderBulkDeleteCompletedEvent>(
+                        DotSystemEventType.BULK_FOLDER_DELETE_COMPLETED
+                    )
+                    .pipe(takeUntilDestroyed(destroyRef))
+                    .subscribe((event) => {
+                        store.reportFolderDeleteCompleted(
+                            dotMessageService.get('content-drive.context-menu.delete-folder'),
                             event
                         );
                     });

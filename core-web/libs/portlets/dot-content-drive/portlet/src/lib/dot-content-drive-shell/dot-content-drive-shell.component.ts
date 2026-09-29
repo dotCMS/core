@@ -30,6 +30,7 @@ import { catchError } from 'rxjs/operators';
 import {
     AddToBundleService,
     DotCurrentUserService,
+    DotFolderBulkDeleteRefusalKind,
     DotFolderService,
     DotUploadFileService,
     DotWorkflowsActionsService,
@@ -83,7 +84,7 @@ import { DotContentDriveToolbarComponent } from '../components/dot-content-drive
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
-    ACTION_CENTER_DIALOG_STYLE,
+    ACTION_CENTER_DIALOG_CLASS,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
@@ -95,6 +96,7 @@ import {
     ROOT_PATH
 } from '../shared/constants';
 import {
+    OUTCOME_KIND,
     DotContentDriveContentTypeSelectorPayload,
     DotContentDriveDialog,
     DotContentDriveSortOrder,
@@ -108,6 +110,7 @@ import { provideContentDriveFieldFilterHost } from '../store/content-drive-field
 import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { provideContentDriveRelationshipPicker } from '../store/content-drive-relationship-picker';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
+import { describeFolderDeleteOutcome } from '../utils/folder-delete-outcome';
 import {
     canAddChildrenTo,
     encodeFilters,
@@ -285,7 +288,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /** Inodes any in-flight run is acting on, so the grid can mark those rows. */
-    readonly $busyRows = this.#store.busyRows;
+    readonly $busyRows = this.#store.allBusyRows;
 
     /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
@@ -384,12 +387,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     /**
-     * @see ACTION_CENTER_DIALOG_STYLE
+     * @see ACTION_CENTER_DIALOG_CLASS
      */
-    readonly $dialogStyle = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
-            ? ACTION_CENTER_DIALOG_STYLE
-            : undefined
+    readonly $dialogRootClass = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? ACTION_CENTER_DIALOG_CLASS : ''
     );
 
     /**
@@ -864,7 +865,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
             affectedFolders,
             failures,
             duplicateSubmission,
-            baseType
+            baseType,
+            outcomeKind
         } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
@@ -956,17 +958,50 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 ? (selectedNodeData as DotFolderTreeNodeContentData)
                 : undefined;
 
-        const failureGroups = duplicateSubmission
-            ? []
-            : describeUploadFailures(
-                  failures,
-                  (key, ...args) => this.#dotMessageService.get(key, ...args),
-                  {
-                      folderFilter: refusingFolderIsOnScreen
-                          ? selectedFolder?.filesMasks
-                          : undefined
-                  }
-              );
+        const isFolderDelete = OUTCOME_KIND.FOLDER_DELETE === outcomeKind;
+
+        if (isFolderDelete) {
+            // The listing and the sidebar tree load separately, so refreshing one is not refreshing
+            // the other — and a tree still offering a folder the listing has already dropped is how
+            // an author navigates into nothing (FR-036).
+            //
+            // Only for a delete: an upload changes a folder's *contents*, not the hierarchy, so
+            // reloading the tree for one is a request that can only return the same tree.
+            this.#store.loadFolders();
+        }
+
+        // One describer per vocabulary, one rendering path for both. The reason sets barely overlap,
+        // so resolving a delete's `IN_USE` through upload's mapping would land on the unclassified
+        // fallback — a reason that HAS copy, rendered as though it had none.
+        //
+        // Delete's lines come back as a single group rather than upload's warn/error split. Upload
+        // splits because a name the folder refuses and a permission the author lacks are different
+        // kinds of news; for delete every line is already "this folder survived, here is why", so
+        // the split would separate lines the author reads as one list. Severity follows whether
+        // anything actually failed, so a run whose only shortfall is skipped folders does not
+        // arrive in red.
+        const failureGroups = isFolderDelete
+            ? failures?.length
+                ? [
+                      {
+                          severity: (failedCount > 0 ? 'error' : 'warn') as 'error' | 'warn',
+                          lines: describeFolderDeleteOutcome(failures, (key, ...args) =>
+                              this.#dotMessageService.get(key, ...args)
+                          )
+                      }
+                  ]
+                : []
+            : duplicateSubmission
+              ? []
+              : describeUploadFailures(
+                    failures,
+                    (key, ...args) => this.#dotMessageService.get(key, ...args),
+                    {
+                        folderFilter: refusingFolderIsOnScreen
+                            ? selectedFolder?.filesMasks
+                            : undefined
+                    }
+                );
 
         if (announce) {
             // One message per severity (developer's call), and the counts ride with the first of
@@ -980,9 +1015,13 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 ? failureGroups.map((group, index) => ({
                       severity: group.severity,
                       summary: this.#dotMessageService.get(
-                          'error' === group.severity
-                              ? 'content-drive.upload.toast.failed'
-                              : 'content-drive.upload.toast.incomplete'
+                          isFolderDelete
+                              ? 'error' === group.severity
+                                  ? 'content-drive.delete.toast.failed'
+                                  : 'content-drive.delete.toast.incomplete'
+                              : 'error' === group.severity
+                                ? 'content-drive.upload.toast.failed'
+                                : 'content-drive.upload.toast.incomplete'
                       ),
                       // The counts belong to the batch, not to a severity, so they are stated once
                       // and in the message the author reads first.
@@ -1053,6 +1092,53 @@ export class DotContentDriveShellComponent implements OnDestroy {
             }
 
             this.#store.clearActionExecutionResult();
+        });
+    });
+
+    /**
+     * The words for each refusal the delete endpoint reasoned about.
+     *
+     * Here rather than in the store for the same reason {@link #describeSubmissionRefusal} is: the
+     * store carries the kind, the component decides what an author reads. `UNCLASSIFIED` has an
+     * entry so the map is total, though the store routes that one through
+     * `DotHttpErrorManagerService` instead and it should not arrive.
+     *
+     * None of them names a number or a folder. The ceiling is in the server's prose, which is not
+     * localised and so is not rendered, and the overlap body carries no structured field naming the
+     * folder it collided on — a shortfall against FR-040 recorded in the contract rather than
+     * papered over by parsing a sentence.
+     */
+    readonly #folderDeleteRefusalKeys: Record<DotFolderBulkDeleteRefusalKind, string> = {
+        EMPTY_SELECTION: 'content-drive.delete.refused.empty-selection',
+        OVER_MAX_PATHS: 'content-drive.delete.refused.over-max-paths',
+        NOT_ENTITLED: 'content-drive.delete.refused.not-entitled',
+        OVERLAPPING_RUN: 'content-drive.delete.refused.overlapping-run',
+        UNCLASSIFIED: 'content-drive.delete.refused.unclassified'
+    };
+
+    /**
+     * Says why a bulk folder delete never became a run, and consumes the refusal.
+     *
+     * Its own effect rather than a branch of the outcome drain: a refusal is not an outcome. Nothing
+     * ran, so there are no counts to report, nothing to reload, and no dialog state to settle — the
+     * only thing owed to the author is the sentence (FR-041).
+     */
+    readonly folderDeleteRefusalEffect = effect(() => {
+        const kind = this.#store.folderDeleteRefusal();
+
+        untracked(() => {
+            if (!kind) {
+                return;
+            }
+
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.delete.refused.title'),
+                detail: this.#dotMessageService.get(this.#folderDeleteRefusalKeys[kind]),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            this.#store.clearFolderDeleteRefusal();
         });
     });
 

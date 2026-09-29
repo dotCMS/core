@@ -1,4 +1,4 @@
-import { DotBatchItemResult, DotBulkUploadFailureReason } from '@dotcms/dotcms-models';
+import { DotBatchItemResult } from '@dotcms/dotcms-models';
 
 import {
     DotUploadFailureSeverity,
@@ -78,7 +78,10 @@ export interface DotUploadFailureGroup {
  * the author supplied, and escaping it is not optional.
  */
 export function describeUploadFailures(
-    results: DotBatchItemResult<DotBulkUploadFailureReason>[] | undefined,
+    // Wide for the same reason as the folder-delete describer: the reason resolvers already fall
+    // back on anything they do not recognise, so the narrow type bought nothing and cost a cast at
+    // the one call site that hands this a shared outcome.
+    results: DotBatchItemResult<string>[] | undefined,
     resolve: ResolveMessage,
     context: DotUploadFailureContext = {}
 ): DotUploadFailureGroup[] {

@@ -185,6 +185,17 @@ describe('RouterEditContentHost', () => {
         });
     });
 
+    describe('leaveDeletedContent', () => {
+        it('should navigate to the content listing filtered by the content type', () => {
+            host.leaveDeletedContent('SimpleWidget');
+
+            expect(router.navigate).toHaveBeenCalledWith(['/c/content'], {
+                replaceUrl: true,
+                queryParams: { filter: 'SimpleWidget' }
+            });
+        });
+    });
+
     describe('goToRestoredVersion', () => {
         it('should not navigate when the inode did not change', () => {
             host.goToRestoredVersion('123', '123');

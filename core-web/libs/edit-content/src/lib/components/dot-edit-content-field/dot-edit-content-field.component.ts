@@ -14,9 +14,11 @@ import {
     DotCMSContentlet,
     DotCMSContentType,
     DotCMSContentTypeField,
+    DotCMSFieldTypes,
     DotSystemTimezone
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentBlockEditorComponent } from '../../fields/dot-edit-content-block-editor/dot-edit-content-block-editor.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
@@ -36,7 +38,6 @@ import { DotEditContentTagFieldComponent } from '../../fields/dot-edit-content-t
 import { DotEditContentTextAreaComponent } from '../../fields/dot-edit-content-text-area/dot-edit-content-text-area.component';
 import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-text-field/dot-edit-content-text-field.component';
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
-import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
 @Component({
     selector: 'dot-edit-content-field',
@@ -50,6 +51,7 @@ import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
+        DotMessagePipe,
         ReactiveFormsModule,
         DotEditContentTextAreaComponent,
         DotEditContentRadioFieldComponent,
@@ -108,7 +110,7 @@ export class DotEditContentFieldComponent {
     /**
      * The field types.
      */
-    readonly fieldTypes = FIELD_TYPES;
+    readonly fieldTypes = DotCMSFieldTypes;
 
     /**
      * Event emitted when the binary field value is updated.

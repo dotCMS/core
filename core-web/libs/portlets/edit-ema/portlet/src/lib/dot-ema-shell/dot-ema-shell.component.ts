@@ -31,6 +31,7 @@ import { SiteService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
     DotCMSContentlet,
+    DotExperimentStatus,
     DotPageToolUrlParams,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
@@ -290,6 +291,38 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     });
 
     protected readonly $showBanner = signal<boolean>(true);
+
+    /**
+     * Whether this page's experiment is live (#37308).
+     *
+     * A live experiment no longer stops the page being edited, so the fact has to stay on screen
+     * for as long as it holds. Deliberately narrower than it looks: it is not gated on edit
+     * permission, on view mode, on the page lock, or on `$showBanner` — the dismissal state the
+     * lock banner uses. A confirmation is answered once; this condition outlives any click, so
+     * there is nothing a close button could truthfully mean.
+     *
+     * Empty when the page has no experiment *and* when the lookup failed, which are
+     * indistinguishable here by design: the shell must not invent a warning it cannot justify.
+     */
+    protected readonly $showExperimentBanner = computed<boolean>(() => {
+        const status = this.uveStore.pageExperiment()?.status;
+
+        return status === DotExperimentStatus.RUNNING || status === DotExperimentStatus.SCHEDULED;
+    });
+
+    /**
+     * Which warning the live experiment earns.
+     *
+     * Two messages, never one shared string. A running experiment is already measuring, so the
+     * cost is that its results will combine data from before and after the edit. A scheduled one
+     * has collected nothing yet, so the same edit is simply part of what it will measure — a fact,
+     * not a caution.
+     */
+    protected readonly $experimentWarningKey = computed<string>(() =>
+        this.uveStore.pageExperiment()?.status === DotExperimentStatus.RUNNING
+            ? 'uve.shell.experiment.running.edit.warning'
+            : 'uve.shell.experiment.scheduled.edit.warning'
+    );
 
     protected readonly $showPageScanner = computed<boolean>(
         () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER] === true
@@ -708,6 +741,24 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      */
     reloadFromDialog() {
         this.uveStore.pageReload();
+    }
+
+    /**
+     * Opens the running experiment beside the page, rather than going to look at it (#37308).
+     *
+     * Unconditional, and that is the point. The panel's other entry point — the nav bar's
+     * Experiments item — only reaches it when `FEATURE_FLAG_EXPERIMENTS_PORTLET` is on, and that
+     * property ships off. The panel store itself never reads the flag, so calling it directly is
+     * what makes this work on a stock build. The alternative, a link to the full-screen reports
+     * screen, would eject the editor from the page they are in the middle of editing — which is
+     * the one thing this banner must not do.
+     */
+    onExperimentBannerLink(): void {
+        const experimentId = this.uveStore.pageExperiment()?.id;
+
+        if (experimentId) {
+            this.experimentsPanel.openResults(experimentId);
+        }
     }
 
     /**

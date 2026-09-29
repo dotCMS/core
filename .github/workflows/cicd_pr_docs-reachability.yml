@@ -1,0 +1,41 @@
+name: 'Docs Reachability — PR validate'
+
+# Fails a PR that leaves a file under docs/ unreachable from root CLAUDE.md or
+# docs/README.md. An unlinked doc is never loaded on demand and silently goes
+# stale — seven were in that state before #37578 rebuilt the index, and the
+# Rock's own ownership split missed ten files for the same reason.
+# Sub-second job, no dependencies. Standalone for now; can fold into
+# cicd_1-pr.yml later, mirroring cicd_pr_skill-lint.yml.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'CLAUDE.md'
+      - 'scripts/validate-docs-reachability.py'
+      - '.github/workflows/cicd_pr_docs-reachability.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-reachability-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reachability:
+    name: Check docs reachability
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            docs
+            scripts
+            CLAUDE.md
+          sparse-checkout-cone-mode: false
+
+      - name: Check every doc is reachable from an index
+        run: python3 scripts/validate-docs-reachability.py --strict --links

@@ -124,6 +124,7 @@ describe('DotContentDriveSidebarComponent', () => {
             }),
             mockProvider(DotContentDriveStore, {
                 initContentDrive: vi.fn(),
+                allBusyRows: vi.fn().mockReturnValue(['inode-a', 'id-a']),
                 systemHostCanAddChildren: systemHostCanAddChildren,
                 systemHostCanRead: systemHostCanRead,
                 currentSite: vi.fn().mockReturnValue(mockSiteDetails),
@@ -1654,6 +1655,24 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
                 expect.objectContaining({ triggeredEvent: event })
             );
+        });
+    });
+
+    /**
+     * In-flight folders reach the tree from the SAME store signal the grid marks rows from
+     * (#37063 US2, T024).
+     *
+     * Two sources would drift, and the drift shows as a folder inert in one surface and usable in
+     * the other — which is worse than marking neither, because it teaches the author that the
+     * marking cannot be trusted.
+     */
+    describe('in-flight folders (#37063)', () => {
+        it('should hand the store’s merged busy rows to the tree', () => {
+            spectator.detectChanges();
+
+            const tree = spectator.query(DotTreeFolderComponent);
+
+            expect(tree?.$inFlightKeys()).toEqual(['inode-a', 'id-a']);
         });
     });
 });

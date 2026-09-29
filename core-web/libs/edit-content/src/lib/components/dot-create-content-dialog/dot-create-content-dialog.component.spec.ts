@@ -187,6 +187,23 @@ describe('DotEditContentDialogComponent', () => {
         expect(onContentSaved).toHaveBeenCalledWith(contentlet);
     });
 
+    it('should not call onContentSaved with content that was saved and then deleted', () => {
+        const onContentSaved = vi.fn();
+        const onCancel = vi.fn();
+        const dialogConfig = spectator.inject(DynamicDialogConfig);
+        dialogConfig.data = { mode: 'edit', contentletInode: 'inode', onContentSaved, onCancel };
+        spectator.detectChanges();
+
+        const host = spectator.inject(OverlayEditContentHost, true);
+        // Save, stay in the dialog, then delete it: the host closes the dialog itself.
+        host.reportSaved({ inode: 'inode' } as DotCMSContentlet);
+        host.leaveDeletedContent('SimpleWidget');
+        onCloseSubject.next(null);
+
+        expect(onContentSaved).not.toHaveBeenCalled();
+        expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
     it('should call onCancel callback only after onClose emits', () => {
         const onCancel = vi.fn();
         const dialogConfig = spectator.inject(DynamicDialogConfig);

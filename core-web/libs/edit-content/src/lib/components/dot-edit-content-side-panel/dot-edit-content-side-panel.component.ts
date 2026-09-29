@@ -191,13 +191,20 @@ export class DotEditContentSidePanelComponent implements OnDestroy {
         // AFTER construction (afterNextRender) on purpose: resolving it in the constructor would
         // cycle through its `DynamicDialogConfig` factory, which depends on this component.
         afterNextRender(() => {
-            this.#injector
-                .get(OverlayEditContentHost)
-                .saved$.pipe(takeUntilDestroyed(this.#destroyRef))
-                .subscribe((contentlet) => {
-                    this.#lastSaved = contentlet;
-                    this.saved.emit(contentlet);
-                });
+            const host = this.#injector.get(OverlayEditContentHost);
+
+            host.saved$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((contentlet) => {
+                this.#lastSaved = contentlet;
+                this.saved.emit(contentlet);
+            });
+
+            // The content was deleted: close without the unsaved-changes guard (nothing is left to
+            // keep) and without reporting a save, so the opener never receives deleted content.
+            host.left$.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe(() => {
+                this.#lastSaved = null;
+                this.#fireCloseCallbacks();
+                this.closed.emit();
+            });
         });
     }
 

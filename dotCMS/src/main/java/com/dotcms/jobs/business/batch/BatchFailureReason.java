@@ -48,6 +48,39 @@ public enum BatchFailureReason {
      */
     STAGED_CONTENT_UNAVAILABLE,
 
+    /**
+     * The path no longer resolves to a folder — it is gone, it is a file, or it is malformed.
+     * Added by bulk folder delete (#37063, spec FR-010, FR-019). Named to match the frontend
+     * half's independently-fixed vocabulary
+     * ({@code DOT_FOLDER_DELETE_FAILURE_REASONS}, PR dotCMS/core#37612) rather than the name
+     * originally drafted here ({@code NOT_FOUND}) — adopted 2026-09-19 so the client copy already
+     * written for this reason is not silently lost to its {@code UNCLASSIFIED} fallback.
+     */
+    PATH_NOT_FOUND,
+
+    /**
+     * The path names a folder the system protects — the system folder, or a site root — and never
+     * deletes. Added by bulk folder delete (#37063, spec FR-011, FR-019).
+     */
+    PROTECTED_FOLDER,
+
+    /**
+     * Content in the subtree was locked by another author and blocked the operation. Added by bulk
+     * folder delete (#37063, spec D-010, FR-019). Named {@code IN_USE} rather than {@code LOCKED}
+     * to match the frontend half's fixed vocabulary — same reconciliation as
+     * {@link #PATH_NOT_FOUND}.
+     */
+    IN_USE,
+
+    /**
+     * An ancestor in the same submission removed this path first, so it was never attempted as its
+     * own unit — pairs with {@link BatchItemStatus#SKIPPED}, never {@link BatchItemStatus#FAILED}.
+     * Added by bulk folder delete (#37063, spec FR-013, FR-019). Named {@code COVERED_BY_PARENT}
+     * rather than {@code ANCESTOR_REMOVED} to match the frontend half's fixed vocabulary — same
+     * reconciliation as {@link #PATH_NOT_FOUND}.
+     */
+    COVERED_BY_PARENT,
+
     /** Anything else. The message carries the detail, for logs only. */
     UNCLASSIFIED
 }

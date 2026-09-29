@@ -26,6 +26,7 @@ export * from './lib/components/dot-asset-search/components/dot-asset-search-dia
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
 export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
 export * from './lib/components/dot-user-filter/dot-user-filter.component';
+export * from './lib/components/dot-user-picker/dot-user-picker.component';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
 export * from './lib/components/dot-chip-filter/constants';
 export * from './lib/components/dot-filter-bar/constants';
@@ -151,6 +152,7 @@ export * from './lib/dialog/fullscreen-dialog';
 
 // Monaco editor presets
 export * from './lib/monaco/editor-options';
+export * from './lib/monaco/run-shortcut';
 
 // Theme
 export * from './lib/theme';

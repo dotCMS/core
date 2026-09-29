@@ -232,6 +232,10 @@ fi
 # GLOWROOT_DATA_DIR: Directory for Glowroot data files. Defaults to $GLOWROOT_SHARED_FOLDER/data if not set.
 # GLOWROOT_AGENT_ID: If set, specifies the agent ID for Glowroot and enables multi-directory mode.
 # GLOWROOT_COLLECTOR_ADDRESS: If set, specifies the collector address for Glowroot.
+# OTEL_JAVAAGENT_ENABLED: If set to "true", the bundled OpenTelemetry Java agent is added to CATALINA_OPTS.
+#   Configure it with the standard OTEL_* variables (e.g. OTEL_EXPORTER_OTLP_ENDPOINT); see add_otel_agent for defaults.
+# PYROSCOPE_AGENT_ENABLED: If set to "true", the bundled Pyroscope profiling agent is added to CATALINA_OPTS.
+#   Configure it with the standard PYROSCOPE_* variables (e.g. PYROSCOPE_SERVER_ADDRESS); see add_pyroscope_agent for defaults.
 
 if [ -z "$CATALINA_TMPDIR" ]; then
       CATALINA_TMPDIR="$CATALINA_HOME/temp"
@@ -283,7 +287,11 @@ add_bytebuddy_agent() {
 
 add_glowroot_agent() {
     if ! echo "$CATALINA_OPTS" | grep -q '\-javaagent:.*glowroot\.jar'; then
-        if [ "$GLOWROOT_ENABLED" = "true" ]; then
+        # A -javaagent pointing at a missing jar aborts JVM startup, so an image built without
+        # Glowroot must ignore a leftover GLOWROOT_ENABLED=true rather than fail to boot
+        if [ "$GLOWROOT_ENABLED" = "true" ] && [ ! -r "$CATALINA_HOME/glowroot/glowroot.jar" ]; then
+          echo "WARNING: GLOWROOT_ENABLED=true but $CATALINA_HOME/glowroot/glowroot.jar is not in this image; starting without Glowroot"
+        elif [ "$GLOWROOT_ENABLED" = "true" ]; then
           echo "Adding Glowroot agent to CATALINA_OPTS"
           export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$CATALINA_HOME/glowroot/glowroot.jar"
 
@@ -309,11 +317,47 @@ add_glowroot_agent() {
     fi
 }
 
+# Both toggles are also read by the agents themselves, where "true" is already their default.
+# Defaults below are exported as env vars (not -D flags) so values containing ';' or '[ ]'
+# survive, and only apply when the operator has not set them.
+add_otel_agent() {
+    [ "$OTEL_JAVAAGENT_ENABLED" = "true" ] || return 0
+    echo "Adding OpenTelemetry agent to CATALINA_OPTS"
+    export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$CATALINA_HOME/otel/opentelemetry-javaagent.jar"
+    # OTEL_SERVICE_NAME wins over service.name in OTEL_RESOURCE_ATTRIBUTES, so only default it when neither is set
+    case "$OTEL_RESOURCE_ATTRIBUTES" in
+        *service.name=*) ;;
+        *) export OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-"dotcms"} ;;
+    esac
+    # Traces only: metrics stay on Micrometer (/dotmgt/metrics) and logs are shipped from stdout
+    export OTEL_METRICS_EXPORTER=${OTEL_METRICS_EXPORTER:-"none"}
+    export OTEL_LOGS_EXPORTER=${OTEL_LOGS_EXPORTER:-"none"}
+    # Keep 10% of new traces, and follow the caller's decision when a trace is propagated in
+    export OTEL_TRACES_SAMPLER=${OTEL_TRACES_SAMPLER:-"parentbased_traceidratio"}
+    export OTEL_TRACES_SAMPLER_ARG=${OTEL_TRACES_SAMPLER_ARG:-"0.1"}
+}
+
+add_pyroscope_agent() {
+    [ "$PYROSCOPE_AGENT_ENABLED" = "true" ] || return 0
+    echo "Adding Pyroscope agent to CATALINA_OPTS"
+    export CATALINA_OPTS="$CATALINA_OPTS -javaagent:$CATALINA_HOME/pyroscope/pyroscope.jar"
+    export PYROSCOPE_APPLICATION_NAME=${PYROSCOPE_APPLICATION_NAME:-"dotcms"}
+    export PYROSCOPE_FORMAT=${PYROSCOPE_FORMAT:-"jfr"}
+    # itimer samples CPU without perf_events access, which most containers don't grant
+    export PYROSCOPE_PROFILER_EVENT=${PYROSCOPE_PROFILER_EVENT:-"itimer"}
+    export PYROSCOPE_PROFILER_ALLOC=${PYROSCOPE_PROFILER_ALLOC:-"512k"}
+    export PYROSCOPE_PROFILER_LOCK=${PYROSCOPE_PROFILER_LOCK:-"10ms"}
+}
+
 # Pre-load byte-buddy-agent so ByteBuddyFactory uses the supplied Instrumentation
 # rather than ByteBuddyAgent.install()'s external-attach path.
 add_bytebuddy_agent
 
 # Run the function to add Glowroot agent settings to CATALINA_OPTS if enabled
 add_glowroot_agent
+
+# Opt-in observability agents; each is independent of Glowroot and of each other
+add_otel_agent
+add_pyroscope_agent
 export CATALINA_OPTS
 export CLASSPATH

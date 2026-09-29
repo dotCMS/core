@@ -13,6 +13,7 @@ import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -373,6 +374,13 @@ public class InferenceClientConformanceTest {
                 parsed.getData().isEmpty());
         assertTrue("The configured model has to appear in the listing a caller picks from",
                 parsed.getData().stream().anyMatch(m -> CHAT_MODEL.equals(m.id())));
+
+        // The library's type has no field for it, so it is read from the wire: the extra field
+        // must be there for a caller that wants it, while the parse above proves it costs a
+        // standard client nothing.
+        final JsonNode firstEntry = MAPPER.readTree(wire).get("data").get(0);
+        assertEquals("Each entry reports the type of the section it was configured in",
+                "chat", firstEntry.get("type").asText());
     }
 
     /**

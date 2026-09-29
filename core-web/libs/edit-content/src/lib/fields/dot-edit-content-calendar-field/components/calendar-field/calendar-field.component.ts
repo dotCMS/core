@@ -15,16 +15,16 @@ import { ButtonModule } from 'primeng/button';
 import { DatePicker, DatePickerModule } from 'primeng/datepicker';
 
 import {
+    ContentTypeCalendarField,
     DotCMSContentlet,
     DotCMSContentType,
-    DotCMSContentTypeField,
+    DotCMSFieldTypes,
     DotSystemTimezone
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import {
     CALENDAR_OPTIONS_PER_TYPE,
-    CalendarTypes,
     convertServerTimeToUtc,
     createUtcDateAtMidnight,
     extractDateComponents,
@@ -34,8 +34,6 @@ import {
 } from './calendar-field.util';
 
 import { CALENDAR_FIELD_TYPES_WITH_TIME } from '../../../../models/dot-edit-content-field.constant';
-import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
-import { FieldType } from '../../../../models/dot-edit-content-field.type';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
 /**
@@ -76,7 +74,7 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      * The field configuration (required).
      * Determines the type of calendar field (date, time, datetime).
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeCalendarField>({ alias: 'field' });
 
     /**
      * Whether the field has an error.
@@ -153,13 +151,13 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
         // Reprocess existing values when timezone becomes available
         effect(() => {
             const systemTimezone = this.$systemTimezone();
-            const fieldType = this.$field().fieldType as FieldType;
+            const fieldType = this.$field().fieldType;
 
             // If timezone is now available and we have a stored value, reprocess it
             if (systemTimezone && this.lastUtcValue !== null) {
                 const displayValue = processExistingValue(
                     this.lastUtcValue,
-                    fieldType as FieldType,
+                    fieldType,
                     systemTimezone
                 );
                 this.internalFormControl.setValue(displayValue);
@@ -200,9 +198,9 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      * Computed based on the field type.
      */
     $fieldTypeConfig = computed(() => {
-        // `fieldType` is typed as a plain string on DotCMSContentTypeField, but only the three
-        // calendar types ever reach this component — it is what the field registry routes here.
-        const fieldType = this.$field().fieldType as CalendarTypes;
+        // No assertion needed: the input is a ContentTypeCalendarField, so `fieldType` is
+        // already one of the three calendar types the config is keyed by.
+        const fieldType = this.$field().fieldType;
 
         return CALENDAR_OPTIONS_PER_TYPE[fieldType];
     });
@@ -216,7 +214,7 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
      * renders an empty slot.
      */
     $showFooterTimezone = computed(() => {
-        const fieldType = this.$field().fieldType as FIELD_TYPES;
+        const fieldType = this.$field().fieldType;
 
         return (
             CALENDAR_FIELD_TYPES_WITH_TIME.includes(fieldType) && !!this.$systemTimezone()?.label
@@ -291,10 +289,10 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
         // Create form value based on field type
         let formValue: Date;
 
-        if (fieldType === FIELD_TYPES.DATE) {
+        if (fieldType === DotCMSFieldTypes.DATE) {
             // For date-only fields: UTC midnight represents "the date" globally
             formValue = createUtcDateAtMidnight(year, month, date);
-        } else if (fieldType === FIELD_TYPES.TIME) {
+        } else if (fieldType === DotCMSFieldTypes.TIME) {
             // For time-only fields: preserve time components but use consistent date base (today)
             // This ensures time is stored consistently regardless of date
             const today = new Date();
@@ -366,7 +364,7 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
             // Process existing value from form/backend (numeric timestamp)
             const displayValue = processExistingValue(
                 utcValue,
-                this.$field().fieldType as FieldType,
+                this.$field().fieldType,
                 this.$systemTimezone()
             );
 

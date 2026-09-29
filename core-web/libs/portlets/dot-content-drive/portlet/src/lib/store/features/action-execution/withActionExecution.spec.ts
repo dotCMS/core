@@ -1,18 +1,25 @@
 import { signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
-import { of, Subject, throwError } from 'rxjs';
+import { Observable, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { HttpErrorResponse } from '@angular/common/http';
 
 import {
     AddToBundleService,
     DotBulkRefreshService,
     DotEventsSocket,
+    DotFolderBulkDeleteService,
     DotHttpErrorManagerService,
     DotMessageService,
     DotWorkflowActionsFireService,
     PushPublishService
 } from '@dotcms/data-access';
-import { DotBulkRefreshCompletedEvent, DotBulkUploadCompletedEvent } from '@dotcms/dotcms-models';
+import {
+    DotBulkRefreshCompletedEvent,
+    DotBulkUploadCompletedEvent,
+    DotFolderBulkDeleteSubmitResponse
+} from '@dotcms/dotcms-models';
 
 import { withActionExecution } from './withActionExecution';
 
@@ -89,6 +96,17 @@ describe('withActionExecution', () => {
     const addToBundle = vi.fn();
     const pushPublishAssets = vi.fn();
     const refresh = vi.fn();
+    /**
+     * Left pending by default: the guard tests need the run still in flight.
+     *
+     * The return type is annotated rather than inferred. Inferring it from the default pins the mock
+     * to `Subject`, and a test that hands it an `of(...)` — which is what a settled submission looks
+     * like — is then rejected for lacking `next`/`error`/`complete` it never needed.
+     */
+    const submitFolderBulkDelete = vi.fn(
+        (): Observable<DotFolderBulkDeleteSubmitResponse> =>
+            new Subject<DotFolderBulkDeleteSubmitResponse>()
+    );
     const handle = vi.fn();
 
     /** Lets a test push a completion event onto the socket the feature subscribes to on init. */
@@ -101,6 +119,7 @@ describe('withActionExecution', () => {
             mockProvider(AddToBundleService, { addToBundle }),
             mockProvider(PushPublishService, { pushPublishAssets }),
             mockProvider(DotBulkRefreshService, { refresh }),
+            mockProvider(DotFolderBulkDeleteService, { submit: submitFolderBulkDelete }),
             mockProvider(DotHttpErrorManagerService, { handle }),
             mockProvider(DotMessageService, { get: (key: string) => key }),
             mockProvider(DotEventsSocket, { on: () => socketEvents.asObservable() })
@@ -119,6 +138,8 @@ describe('withActionExecution', () => {
         addToBundle.mockReset();
         pushPublishAssets.mockReset();
         refresh.mockReset();
+        submitFolderBulkDelete.mockReset();
+        submitFolderBulkDelete.mockImplementation(() => new Subject());
         handle.mockReset();
     });
 
@@ -818,6 +839,359 @@ describe('withActionExecution', () => {
             store.clearActionExecutionResult();
 
             expect(store.actionExecutionResult()).toBeUndefined();
+        });
+    });
+
+    /**
+     * Bulk folder delete (#37063 US1) — the store's half.
+     *
+     * Written before `executeFolderBulkDelete` exists (T010/T011 before T019). Two things are pinned
+     * here rather than in a component spec, because this is where they are actually decided: what the
+     * run is marked with, and how wide the guard is.
+     */
+    describe('executeFolderBulkDelete (#37063)', () => {
+        const PATH_A = '//demo.dotcms.com/old-a/';
+        const PATH_B = '//demo.dotcms.com/old-b/';
+
+        /**
+         * **FR-041 — refusals must be told apart.** "an empty selection, too many folders, and no
+         * entitlement MUST NOT all read the same." The service derives a `kind` for exactly this;
+         * for a while nothing read it and every refusal went to `DotHttpErrorManagerService`, so
+         * the author got one generic HTTP error whichever of them happened.
+         */
+        describe('refusals', () => {
+            const refuseWith = (kind: string, status = 400) => {
+                submitFolderBulkDelete.mockReturnValue(
+                    throwError(() => ({
+                        kind,
+                        message: 'server prose, never rendered',
+                        response: new HttpErrorResponse({ status })
+                    }))
+                );
+            };
+
+            it.each(['EMPTY_SELECTION', 'OVER_MAX_PATHS', 'NOT_ENTITLED', 'OVERLAPPING_RUN'])(
+                'should surface %s as itself, not as a generic error',
+                (kind) => {
+                    build();
+                    refuseWith(kind);
+
+                    store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+                    expect(store.folderDeleteRefusal()).toBe(kind);
+                    // The generic path would have swallowed the distinction.
+                    expect(handle).not.toHaveBeenCalled();
+                }
+            );
+
+            it('should leave an unclassified refusal to the HTTP error manager', () => {
+                // Not a refusal the endpoint reasoned about — a transport failure, or a body with no
+                // code. That path still redirects on a 401 and reports a license wall properly.
+                build();
+                refuseWith('UNCLASSIFIED', 500);
+
+                store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+                expect(store.folderDeleteRefusal()).toBeUndefined();
+                expect(handle).toHaveBeenCalled();
+            });
+
+            it('should end the run a refusal killed', () => {
+                // No run exists server-side, so nothing will ever arrive to settle this one.
+                build();
+                refuseWith('OVERLAPPING_RUN');
+
+                store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+                expect(store.activeRunCount()).toBe(0);
+            });
+
+            it('should consume the refusal once it has been said', () => {
+                build();
+                refuseWith('OVERLAPPING_RUN');
+                store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+                store.clearFolderDeleteRefusal();
+
+                expect(store.folderDeleteRefusal()).toBeUndefined();
+            });
+        });
+
+        it('should mark both the inode and the identifier of every folder', () => {
+            build();
+
+            // Neither field is reliably the key the row carries — the search service only backfills
+            // `inode` from `identifier` when the API returned none — so a run that targets one of them
+            // leaves half the selection looking untouched.
+            store.executeFolderBulkDelete([PATH_A], ['inode-a', 'id-a']);
+
+            expect(store.busyRows()).toEqual(['inode-a', 'id-a']);
+        });
+
+        it('should report the total the SERVER accepted, not the number of rows selected', () => {
+            build();
+
+            // The two disagree whenever the server drops a duplicate or a nested path. Substituting the
+            // selection size turns a partially-accepted submission into a report that overstates it
+            // (FR-025, CR-03) — the same trap every other action in this file already avoids.
+            store.executeFolderBulkDelete([PATH_A, PATH_B], ['inode-a', 'inode-b']);
+
+            expect(store.actionExecution()?.total).toBe(2);
+        });
+
+        it('should refuse a repeat of the same delete over the same folders', () => {
+            build();
+
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+            expect(store.activeRunCount()).toBe(1);
+        });
+
+        it('should allow a second delete over DIFFERENT folders', () => {
+            build();
+
+            // A run lasts minutes. A guard that stopped this would freeze the portlet for the length of
+            // the operation that was made asynchronous precisely so the author could keep working.
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+            store.executeFolderBulkDelete([PATH_B], ['inode-b']);
+
+            expect(store.activeRunCount()).toBe(2);
+        });
+
+        it('should not block an unrelated action, nor be blocked by one', () => {
+            build();
+            fireDefaultAction.mockReturnValue(new Subject());
+
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+            store.executeQuickAction('lock-id', 'Lock', ['inode-z']);
+
+            expect(fireDefaultAction).toHaveBeenCalledTimes(1);
+            expect(store.activeRunCount()).toBe(2);
+        });
+
+        it('should do nothing when there are no paths to delete', () => {
+            build();
+
+            store.executeFolderBulkDelete([], []);
+
+            expect(store.activeRunCount()).toBe(0);
+        });
+    });
+
+    /**
+     * Reporting a finished bulk folder delete (#37063 US4).
+     *
+     * The counts the author reads come from the SERVER. Every other action in this file already
+     * follows that rule for the same reason: substituting the number submitted turns a refusal into
+     * a reported success.
+     */
+    describe('reportFolderDeleteCompleted (#37063)', () => {
+        const completed = (overrides = {}) =>
+            ({
+                state: 'SUCCESS',
+                jobId: 'job-1',
+                total: 3,
+                processed: 3,
+                successCount: 2,
+                failedCount: 1,
+                skippedCount: 0,
+                results: [
+                    { key: '//d/a/', status: 'SUCCESS' },
+                    { key: '//d/b/', status: 'FAILED', reason: 'PERMISSION_DENIED' }
+                ],
+                ...overrides
+            }) as never;
+
+        const submitAndTrack = () => {
+            submitFolderBulkDelete.mockReturnValue(
+                of({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status', submitted: 3 })
+            );
+            store.executeFolderBulkDelete(['//d/a/', '//d/b/', '//d/c/'], ['inode-a']);
+        };
+
+        it('should report the SERVER’s counts, not the number submitted', () => {
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            const result = store.actionExecutionResult();
+
+            expect(result?.successCount).toBe(2);
+            expect(result?.failedCount).toBe(1);
+        });
+
+        it('should carry the per-folder records, not just the counts', () => {
+            // Counts alone tell an author one folder failed and nothing they can act on. The names
+            // and reasons are the point of a partial outcome (FR-026).
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            expect(store.actionExecutionResult()?.failures?.length).toBeGreaterThan(0);
+        });
+
+        it('should end the run it belongs to', () => {
+            build();
+            submitAndTrack();
+            expect(store.activeRunCount()).toBe(1);
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            expect(store.activeRunCount()).toBe(0);
+        });
+
+        /**
+         * **Reversed deliberately.** This used to assert the opposite — that a completion for a run
+         * this store did not submit was ignored — on the reasoning that it would "toast counts for
+         * folders this grid never selected".
+         *
+         * That reasoning mistook which question the jobId map answers. The server pushes this
+         * completion with `Visibility.USER` addressed to the submitter, and `UserVerifier` delivers
+         * it only to sessions whose user matches, so every completion that arrives is already this
+         * author's own run. The map only says whether *this page* submitted it.
+         *
+         * Requiring that is what made a delete started before a reload settle in silence: the map
+         * is store state, the reload emptied it, and the author was left with the folder gone from
+         * the listing, still sitting in the sidebar tree, and no word that their delete had
+         * finished. The outcome is also what triggers the tree reload in the shell, so the silence
+         * cost FR-036 as well as FR-024.
+         */
+        it('should report a completion for a run this page did not submit', () => {
+            // A page that has just reloaded: the run is in flight on the server and this store has
+            // never heard of it.
+            build();
+
+            store.reportFolderDeleteCompleted('Delete', completed({ jobId: 'before-the-reload' }));
+
+            expect(store.actionExecutionResult()?.successCount).toBe(2);
+        });
+
+        it('should not try to end a run when the reload left none', () => {
+            build();
+            expect(store.activeRunCount()).toBe(0);
+
+            store.reportFolderDeleteCompleted('Delete', completed({ jobId: 'before-the-reload' }));
+
+            expect(store.activeRunCount()).toBe(0);
+        });
+
+        it('should report a completion once, however many times it is delivered', () => {
+            // Removing the job from the map used to make this idempotent for free. It cannot any
+            // more, because the reload case reports from an empty map — and a pushed event can be
+            // delivered again on a socket reconnect.
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            expect(store.actionExecutionResults().length).toBe(1);
+        });
+
+        it('should ignore a completion carrying no job id', () => {
+            build();
+
+            store.reportFolderDeleteCompleted('Delete', completed({ jobId: undefined }));
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report a cancelled run without reading as a fault', () => {
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted(
+                'Delete',
+                completed({ state: 'CANCELED', successCount: 1, failedCount: 0, skippedCount: 2 })
+            );
+
+            const result = store.actionExecutionResult();
+
+            expect(result?.failedCount).toBe(0);
+            expect(result?.skippedCount).toBe(2);
+        });
+
+        it('should refuse to invent counts for a run that recorded no outcome', () => {
+            // A run that finished without recording one carries only `state`. Substituting zeros
+            // would claim a clean run over nothing; substituting the submitted count would claim
+            // every folder succeeded.
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', {
+                state: 'FAILED',
+                jobId: 'job-1'
+            } as never);
+
+            expect(store.actionExecutionResult()?.successCount).not.toBe(3);
+        });
+
+        it('should report an outcome once, not once per surface', () => {
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            // The second is for a job already settled and dropped from tracking.
+            expect(store.actionExecutionResults().length).toBe(1);
+        });
+    });
+
+    /**
+     * Leaving does not lose the run, nor its outcome (#37063 US5).
+     *
+     * Holding the run here rather than in the dialog is what makes surviving a close a deliberate
+     * property rather than an accident — the store outlives every dialog, so nothing silently
+     * aborts when one is destroyed.
+     */
+    describe('a folder delete outlives what started it (#37063)', () => {
+        const PATH_A = '//demo.dotcms.com/old-a/';
+
+        it('should keep the run in flight until its OWN completion arrives', () => {
+            build();
+            submitFolderBulkDelete.mockReturnValue(
+                of({ jobId: 'job-1', statusUrl: '/s', submitted: 1 })
+            );
+
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+            // Nothing else settles it: not another action finishing, not a different run's event.
+            store.reportFolderDeleteCompleted('Delete', {
+                state: 'SUCCESS',
+                jobId: 'someone-elses',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0
+            } as never);
+
+            expect(store.activeRunCount()).toBe(1);
+        });
+
+        it('should mark the outcome as backgrounded, so it is announced at all', () => {
+            // By the time it settles the author may be looking somewhere else entirely, so nothing
+            // on screen reflects it. Staying silent would mean a run finished and they never
+            // learned (FR-024).
+            build();
+            submitFolderBulkDelete.mockReturnValue(
+                of({ jobId: 'job-1', statusUrl: '/s', submitted: 1 })
+            );
+            store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+            store.reportFolderDeleteCompleted('Delete', {
+                state: 'SUCCESS',
+                jobId: 'job-1',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0
+            } as never);
+
+            expect(store.actionExecutionResult()?.backgrounded).toBe(true);
         });
     });
 });
