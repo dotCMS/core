@@ -184,9 +184,10 @@ public class ContentDriveLiteralTextSearchTest extends IntegrationTestBase {
      *
      * <p>Since #37488 the browsing service raises index failures instead of swallowing them, so
      * this test also proves the escaped term never reaches the index as a broken query: if it did,
-     * the search would now fail rather than return an empty page. The one other user input that
-     * could break an index query, a non-date range bound, is rejected with HTTP 400 before any
-     * query is built ({@code ContentDriveFieldFilterTest#testMalformedDateBoundIsRejected}).</p>
+     * the search would now fail rather than return an empty page. User input the index cannot use
+     * is answered with HTTP 400 instead: a non-date range bound, and a term or values too long or
+     * too complex to build a query from ({@code ContentDriveFieldFilterTest#testMalformedDateBoundIsRejected},
+     * {@code #testTooComplexSearchTermIsRejected}, {@code #testSearchTermTooLongForTheQueryBudgetIsRejected}).</p>
      */
     @Test
     public void injectionShapedTerm_runsSafely_andMatchesNothing() throws Exception {

@@ -19,6 +19,7 @@ import com.dotcms.rest.api.v1.content.search.handlers.FieldHandlerRegistry;
 import com.dotcms.rest.api.v1.drive.SearchScope;
 import com.dotcms.content.index.SearchAPI;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -72,11 +73,15 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.ArrayDeque;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.IdentityHashMap;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -172,6 +177,12 @@ public class BrowserAPIImpl implements BrowserAPI {
     private static final String INODE_FILTER_PREFIX = " +inode:(";
     private static final String INODE_FILTER_SEPARATOR = " OR ";
     private static final String INODE_FILTER_SUFFIX = ") ";
+
+    // A request must leave room for at least this many UUID inodes per ES sub-query, or it is
+    // rejected as bad input (see baseQueryLeavesRoomForInodes). Matches the floor
+    // calculateMaxInodesPerESQuery applies to the clause cap.
+    private static final int MIN_INODES_PER_ES_QUERY = 100;
+    private static final int UUID_LENGTH = 36;
 
     /**
      * JSON-escapes a Lucene query string so it can be safely interpolated as the string value in
@@ -1083,6 +1094,86 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * {@inheritDoc}
+     *
+     * <p>Only requests that go through the index are checked. The base query is the one every
+     * sub-query of this request would carry.</p>
+     */
+    @Override
+    public boolean esQueryLeavesRoomForInodes(final BrowserQuery browserQuery) {
+        if (!isUseElasticSearchForFiltering(browserQuery)) {
+            return true;
+        }
+        return baseQueryLeavesRoomForInodes(buildBaseESQuery(browserQuery).length(),
+                getESQueryStringLengthBudget());
+    }
+
+    /**
+     * Tells whether a base query leaves room for a useful batch of inodes within the
+     * query-string budget: at least {@link #MIN_INODES_PER_ES_QUERY} UUID inodes, the same floor
+     * {@link #calculateMaxInodesPerESQuery} uses. With less room a request would still run, but
+     * fan out into a large number of tiny sub-queries (issue #37488 review).
+     *
+     * @param baseQueryLength Length of the base query.
+     * @param maxQueryLength  The query-string length budget.
+     * @return {@code true} when the minimum batch fits.
+     */
+    @VisibleForTesting
+    static boolean baseQueryLeavesRoomForInodes(final int baseQueryLength, final int maxQueryLength) {
+        final long minimumBatchLength = INODE_FILTER_PREFIX.length() + INODE_FILTER_SUFFIX.length()
+                + (long) MIN_INODES_PER_ES_QUERY * UUID_LENGTH
+                + (long) (MIN_INODES_PER_ES_QUERY - 1) * INODE_FILTER_SEPARATOR.length();
+        return baseQueryLength + minimumBatchLength <= maxQueryLength;
+    }
+
+    /**
+     * Index error reasons that mean the query built from the user's search term or filter values
+     * was too complex for the index to build: a wildcard it cannot determinize (its effort limit,
+     * or its maximum automaton size), or more boolean clauses than it allows. Matched in lower
+     * case. A generic {@code query_shard_exception} is deliberately not on this list: it is also
+     * how the index reports a mapping that has not caught up, which is not the user's doing
+     * (see {@code OSSearchAPIImpl#searchFailure}).
+     */
+    private static final List<String> QUERY_TOO_COMPLEX_REASONS = List.of(
+            "determinizing automaton", "too_complex_to_determinize", "input automaton is too large",
+            "too_many_clauses", "maxclausecount");
+
+    /**
+     * Tells whether an index failure means the query built from the user's input was too complex
+     * for the index to build ({@link #QUERY_TOO_COMPLEX_REASONS}). The reason is looked for in the
+     * whole chain: the OpenSearch client carries it in a cause's message, the Elasticsearch client
+     * in a suppressed exception holding the response body.
+     *
+     * @param failure The failure raised by the search.
+     * @return {@code true} when the input, not the index, is at fault.
+     */
+    @VisibleForTesting
+    static boolean isQueryTooComplex(final Throwable failure) {
+        final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        final Deque<Throwable> pending = new ArrayDeque<>();
+        if (null != failure) {
+            pending.push(failure);
+        }
+        while (!pending.isEmpty()) {
+            final Throwable current = pending.pop();
+            if (!seen.add(current)) {
+                continue;
+            }
+            final String message = null == current.getMessage() ? "" : current.getMessage().toLowerCase();
+            if (QUERY_TOO_COMPLEX_REASONS.stream().anyMatch(message::contains)) {
+                return true;
+            }
+            if (null != current.getCause()) {
+                pending.push(current.getCause());
+            }
+            for (final Throwable suppressed : current.getSuppressed()) {
+                pending.push(suppressed);
+            }
+        }
+        return false;
+    }
+
+    /**
      * Splits an ordered list of candidate inodes into the batches that become ES sub-queries.
      * Each batch is sent as {@code " +inode:(id1 OR id2 ...) " + baseQuery} inside a
      * {@code query_string}, so a batch must stay within both the boolean-clause cap and the
@@ -1244,11 +1335,20 @@ public class BrowserAPIImpl implements BrowserAPI {
         } catch (final Exception e) {
             // Raised, not swallowed (issue #37488). Swallowing it returned whatever had been
             // collected so far as a successful page, silently missing this sub-query's matches.
-            // That was a deliberate trade-off while user input could still break the query: a
-            // non-date range bound reached the index, and raising would have turned it into a 500.
-            // Such a bound is now rejected with HTTP 400 by ContentDriveFieldFilterResolver, and
-            // text terms are escaped (#37532), so a failure here is the index itself and the
-            // request should fail visibly. The Content Drive shell shows its error banner for it.
+            // That was a deliberate trade-off while user input could break the query and raising
+            // would have turned it into a 500. Input the index cannot use is now told apart: a
+            // non-date range bound is rejected with HTTP 400 by ContentDriveFieldFilterResolver, a
+            // term or values too long for the query budget by ContentDriveHelper before the search
+            // runs, and a query the index finds too complex to build is raised as
+            // ESQueryTooComplexException, which Content Drive also answers with HTTP 400. Anything
+            // else is the index itself and fails the request visibly: the Content Drive shell
+            // shows its error banner for it.
+            if (isQueryTooComplex(e)) {
+                final String warnMsg = String.format("ES query for %d inodes rejected as too complex "
+                        + "to build from the search input: %s", inodes.size(), getErrorMessage(e));
+                Logger.warn(this, warnMsg);
+                throw new ESQueryTooComplexException(warnMsg, e);
+            }
             final String errorMsg = String.format("Single ES query failed for %d inodes: %s",
                     inodes.size(), getErrorMessage(e));
             Logger.error(this, errorMsg, e);
@@ -1317,15 +1417,23 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         } catch (final InterruptedException e) {
             Thread.currentThread().interrupt();
+            cancelOutstanding(futures);
             final String errorMsg = "Multiple ES queries interrupted: " + e.getMessage();
             Logger.error(this, errorMsg, e);
             throw new DotDataException(errorMsg, e);
         } catch (final ExecutionException e) {
+            cancelOutstanding(futures);
+            final Optional<Throwable> tooComplex = ExceptionUtil.get(e, ESQueryTooComplexException.class);
+            if (tooComplex.isPresent()) {
+                // Already logged by processSingleESQuery; kept as is so the caller can answer 400.
+                throw (ESQueryTooComplexException) tooComplex.get();
+            }
             final String errorMsg = String.format("ES sub-query failed (%d sub-queries, %d inodes): %s",
                     batchCount, totalInodes, getErrorMessage(e));
             Logger.error(this, errorMsg, e);
             throw new DotDataException(errorMsg, null != e.getCause() ? e.getCause() : e);
         } catch (final TimeoutException e) {
+            cancelOutstanding(futures);
             final String errorMsg = String.format("Multiple ES queries timed out (%d sub-queries, %d inodes)",
                     batchCount, totalInodes);
             Logger.error(this, errorMsg, e);
@@ -1333,6 +1441,22 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
 
         return allResults;
+    }
+
+    /**
+     * Cancels the sub-queries that have not finished once the call has already failed, so they
+     * give back their place in the submitter's queue instead of running for a result nobody
+     * reads. {@link CompletableFuture#cancel(boolean)} does not interrupt a search already in
+     * flight; it stops the ones that have not started.
+     *
+     * @param futures The sub-query futures.
+     */
+    private static void cancelOutstanding(final CompletableFuture<?>[] futures) {
+        for (final CompletableFuture<?> future : futures) {
+            if (!future.isDone()) {
+                future.cancel(true);
+            }
+        }
     }
 
     /**
@@ -2069,8 +2193,10 @@ public class BrowserAPIImpl implements BrowserAPI {
 
     /**
      * Normalizes a range bound to a time-of-day ({@code HH:mm:ss}) in the server timezone, matching
-     * how the Time field's {@code _dotraw} value is indexed. Open/blank bounds become {@code *};
-     * unparseable values are escaped so a crafted value can't alter the query structure.
+     * how the Time field's {@code _dotraw} value is indexed. A full date-time contributes its time
+     * of day; a bare time ({@code HH:mm[:ss]}) is taken as is. Open/blank bounds become {@code *};
+     * unparseable values are escaped so a crafted value can't alter the query structure (Content
+     * Drive rejects them with HTTP 400 before they get here).
      *
      * @param raw The raw bound value.
      * @return The {@code HH:mm:ss} bound, {@code *}, or an escaped token.
@@ -2080,6 +2206,12 @@ public class BrowserAPIImpl implements BrowserAPI {
             return "*";
         }
         final Date parsed = parseFlexibleDate(raw.trim());
+        final LocalTime bareTime = null == parsed ? parseBareTime(raw.trim()) : null;
+        if (null != bareTime) {
+            // Already a time of day (e.g. 14:00 from a direct API client): no date or zone to
+            // convert, only normalize to the indexed HH:mm:ss form.
+            return bareTime.format(java.time.format.DateTimeFormatter.ofPattern(ES_QUERY_TIME_PATTERN));
+        }
         if (null == parsed) {
             Logger.warn(this, String.format(
                     "Unparseable time range bound '%s'; escaping it (the criterion will match "
@@ -2122,6 +2254,18 @@ public class BrowserAPIImpl implements BrowserAPI {
         Logger.debug(this, String.format("Date range bound '%s' normalized to '%s'.", value,
                 normalized));
         return normalized;
+    }
+
+    /**
+     * Parses a bare time of day ({@code HH:mm} or {@code HH:mm:ss}, ISO-8601), which a Time field's
+     * range may be given as instead of a full date-time. Public so Content Drive's field-filter
+     * resolver accepts exactly what {@link #normalizeTimeBound} can use (issue #37488 review).
+     *
+     * @param value The trimmed bound value.
+     * @return The parsed time, or {@code null} when the value is not a time of day.
+     */
+    public static LocalTime parseBareTime(final String value) {
+        return Try.of(() -> LocalTime.parse(value)).getOrNull();
     }
 
     /**

@@ -532,6 +532,88 @@ public class ContentDriveFieldFilterTest extends IntegrationTestBase {
                 excluding.contains(timeContent.getInode()));
     }
 
+    /**
+     * A bare time-of-day bound ({@code HH:mm:ss}), as a direct API client sends it, filters a Time
+     * field the same way the UI's full ISO date-time does. It is read in the server timezone, the
+     * one the Time field's {@code _dotraw} value is indexed in (issue #37488 review: a date-only
+     * check would have rejected it with HTTP 400).
+     */
+    @Test
+    public void testTimeFieldRangeAcceptsBareTimes() throws Exception {
+        final String uid = System.currentTimeMillis() + "";
+        final ContentType timeType = new ContentTypeDataGen()
+                .name("DriveFfBareTime_" + uid).velocityVarName("driveFfBareTime_" + uid)
+                .baseContentType(BaseContentType.CONTENT).host(testSite).nextPersisted();
+        new FieldDataGen().type(TimeField.class).name("t").velocityVarName("t")
+                .values("").defaultValue("")
+                .contentTypeId(timeType.id()).searchable(true).indexed(true).nextPersisted();
+        // 14:30 in the server timezone, so the bare bounds below mean the same wall-clock time.
+        final Date timeVal = Date.from(LocalDateTime.of(2020, 3, 1, 14, 30, 0)
+                .atZone(java.time.ZoneId.systemDefault()).toInstant());
+        final Contentlet timeContent = new ContentletDataGen(timeType.id())
+                .setProperty("title", "bare time " + uid).setProperty("t", timeVal)
+                .folder(testFolder).nextPersisted();
+
+        assertTrue("14:30 must match a bare 14:00:00-15:00:00 range",
+                driveInodes(timeRangeRequest(timeType, "14:00:00", "15:00:00"))
+                        .contains(timeContent.getInode()));
+        assertFalse("14:30 must not match a bare 15:00:00-16:00:00 range",
+                driveInodes(timeRangeRequest(timeType, "15:00:00", "16:00:00"))
+                        .contains(timeContent.getInode()));
+    }
+
+    /**
+     * A search term the index cannot turn into a query is a bad request (HTTP 400), not a server
+     * error (issue #37488 review). The term is wrapped in wildcards, and a long, self-repeating one
+     * exceeds the index's effort limit for building the wildcard ("Determinizing automaton ...
+     * would require more than 10000 effort"); how soon depends on the text, not only its length.
+     */
+    @Test
+    public void testTooComplexSearchTermIsRejected() {
+        assertBadRequest(baseRequest()
+                .filters(QueryFilters.builder().text("x".repeat(501))
+                        .searchScope(SearchScope.ALL_FIELDS).build())
+                .build(), "self-repeating search term");
+    }
+
+    /** The same holds for a text field-filter value, which is wrapped in wildcards too. */
+    @Test
+    public void testTooComplexFieldFilterValueIsRejected() {
+        assertBadRequest(baseRequest()
+                .userSearchable(Map.of(TEXT_VAR, "y".repeat(501)))
+                .build(), "self-repeating field-filter value");
+    }
+
+    /**
+     * A search term so long that the query built from it leaves no room for a useful batch of
+     * inodes is a bad request, rejected before anything runs. All Fields repeats the term about
+     * four times, so a varied ~12,000-character term is well past the ~30,400-character budget.
+     * (A shorter varied term can still be served: OpenSearch 3 builds its wildcard, while the older
+     * engine rejects it as too complex, which is also answered with HTTP 400.)
+     */
+    @Test
+    public void testSearchTermTooLongForTheQueryBudgetIsRejected() {
+        final StringBuilder term = new StringBuilder();
+        while (term.length() < 12_000) {
+            term.append(java.util.UUID.randomUUID().toString().replace("-", ""));
+        }
+        assertBadRequest(baseRequest()
+                .filters(QueryFilters.builder().text(term.toString())
+                        .searchScope(SearchScope.ALL_FIELDS).build())
+                .build(), "search term too long for the query budget");
+    }
+
+    private void assertBadRequest(final DriveRequestForm request, final String scenario) {
+        try {
+            driveInodes(request);
+            fail(scenario + " must be rejected with a BadRequestException");
+        } catch (final BadRequestException expected) {
+            // Expected: HTTP 400.
+        } catch (final DotDataException | DotSecurityException unexpected) {
+            fail(scenario + ": expected a BadRequestException, got " + unexpected);
+        }
+    }
+
     private DriveRequestForm timeRangeRequest(final ContentType ct, final String from,
             final String to) {
         final Map<String, Object> range = new java.util.HashMap<>();

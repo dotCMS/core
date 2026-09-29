@@ -4600,6 +4600,9 @@ public class BrowserAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getPaginatedContents_failedParallelESSubQueries_failTheRequest() throws Exception {
+        final int previousMaxLength = Config.getIntProperty(
+                BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY,
+                BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT);
         Config.setProperty(BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY, 2_000);
         try {
             final String uniqueId = UUIDGenerator.shorty();
@@ -4610,8 +4613,7 @@ public class BrowserAPITest extends IntegrationTestBase {
             assertRequestFails(dateFilterQuery(folder, dateRangeCriterion(fixture, NOT_A_DATE, "*")),
                     "parallel sub-queries");
         } finally {
-            Config.setProperty(BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY,
-                    BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT);
+            Config.setProperty(BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY, previousMaxLength);
         }
     }
 
@@ -4626,6 +4628,9 @@ public class BrowserAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_getPaginatedContents_noRoomForInodeRestriction_failsTheRequest() throws Exception {
+        final int previousMaxLength = Config.getIntProperty(
+                BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY,
+                BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT);
         Config.setProperty(BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY, 50);
         try {
             final String uniqueId = UUIDGenerator.shorty();
@@ -4636,8 +4641,7 @@ public class BrowserAPITest extends IntegrationTestBase {
             assertRequestFails(dateFilterQuery(folder, dateRangeCriterion(fixture, "2020-01-01", "*")),
                     "no room for the inode restriction");
         } finally {
-            Config.setProperty(BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY,
-                    BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_DEFAULT);
+            Config.setProperty(BrowserAPIImpl.BROWSER_ES_MAX_QUERY_STRING_LENGTH_KEY, previousMaxLength);
         }
     }
 }

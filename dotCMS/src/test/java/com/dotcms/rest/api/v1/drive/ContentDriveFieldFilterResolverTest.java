@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RadioField;
+import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.rest.exception.BadRequestException;
@@ -38,6 +39,7 @@ public class ContentDriveFieldFilterResolverTest {
     private static final String RADIO_VAR = "runReport";
     private static final String CHECKBOX_VAR = "active";
     private static final String DATE_VAR = "postingDate";
+    private static final String TIME_VAR = "startTime";
 
     private final ContentDriveFieldFilterResolver resolver = new ContentDriveFieldFilterResolver();
 
@@ -70,6 +72,13 @@ public class ContentDriveFieldFilterResolverTest {
                 .indexed(true)
                 .build();
 
+        final Field time = FieldBuilder.builder(TimeField.class)
+                .name(TIME_VAR)
+                .variable(TIME_VAR)
+                .searchable(true)
+                .indexed(true)
+                .build();
+
         final ContentType type = ImmutableSimpleContentType.builder()
                 .name("Filter Fixture")
                 .variable("filterFixture")
@@ -78,7 +87,7 @@ public class ContentDriveFieldFilterResolverTest {
 
         // Seeds the lazy field list directly. `fields()` otherwise resolves through
         // APILocator.getContentTypeFieldAPI(), which would need a database.
-        type.constructWithFields(List.of(radio, checkbox, date));
+        type.constructWithFields(List.of(radio, checkbox, date, time));
 
         return type;
     }
@@ -171,6 +180,47 @@ public class ContentDriveFieldFilterResolverTest {
             assertEquals("criteria for " + range, 1, criteria.size());
             assertEquals(FilterKind.RANGE, criteria.get(0).getKind());
         }
+    }
+
+    /**
+     * A Time field's range also accepts a bare time of day, which API clients send and the query
+     * builder matches against the indexed {@code HH:mm:ss} value, alongside the full ISO date-time
+     * the UI sends. Only the time part of the latter is compared.
+     */
+    @Test
+    public void timeRangeWithBareTimeIsAccepted() {
+        final ContentType type = contentType();
+        final List<Map<String, String>> ranges = List.of(
+                Map.of("from", "14:00:00", "to", "15:00:00"),
+                Map.of("from", "09:30"),
+                Map.of("from", "2025-01-01T14:00:00.000Z", "to", "2025-01-01T15:00:00.000Z"));
+        for (final Map<String, String> range : ranges) {
+            final List<FieldSearchCriteria> criteria =
+                    resolver.parse(Map.of(TIME_VAR, range), type);
+            assertEquals("criteria for " + range, 1, criteria.size());
+            assertEquals(FilterKind.RANGE, criteria.get(0).getKind());
+        }
+    }
+
+    /** A Time field's bound that is neither a time of day nor a date-time is a bad request. */
+    @Test
+    public void timeRangeWithUnparseableBoundIsRejected() {
+        final ContentType type = contentType();
+        for (final String bad : List.of("25:99:00", "noon", "14:00\"] OR title:*")) {
+            assertThrows("from=" + bad, BadRequestException.class,
+                    () -> resolver.parse(Map.of(TIME_VAR, Map.of("from", bad)), type));
+        }
+    }
+
+    /**
+     * A bare time is only a valid bound for a Time field; on a Date-Time field it names no day, so
+     * it stays a bad request.
+     */
+    @Test
+    public void dateRangeWithBareTimeIsRejected() {
+        final ContentType type = contentType();
+        assertThrows(BadRequestException.class,
+                () -> resolver.parse(Map.of(DATE_VAR, Map.of("from", "14:00:00")), type));
     }
 
     /** An unknown field name is a bad request rather than a silently ignored filter. */

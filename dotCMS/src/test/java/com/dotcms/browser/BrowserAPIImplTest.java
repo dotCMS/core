@@ -620,6 +620,59 @@ public class BrowserAPIImplTest {
                 .isEmpty());
     }
 
+    /**
+     * A base query leaves room for inodes only if a sub-query can still hold a useful batch: at
+     * least 100 UUID inodes, the minimum calculateMaxInodesPerESQuery uses. Below that, a request
+     * would fan out into hundreds of tiny sub-queries, so Content Drive rejects it with HTTP 400
+     * (issue #37488 review). 100 UUIDs take 9 + 100 × 36 + 99 × 4 + 2 = 4,007 characters.
+     */
+    @Test
+    public void baseQueryLeavesRoomForInodes_requiresRoomForOneHundredUuids() {
+        assertTrue(BrowserAPIImpl.baseQueryLeavesRoomForInodes(1_000, DEFAULT_BUDGET));
+        assertTrue(BrowserAPIImpl.baseQueryLeavesRoomForInodes(DEFAULT_BUDGET - 4_007, DEFAULT_BUDGET));
+        assertFalse(BrowserAPIImpl.baseQueryLeavesRoomForInodes(DEFAULT_BUDGET - 4_006, DEFAULT_BUDGET));
+        assertFalse(BrowserAPIImpl.baseQueryLeavesRoomForInodes(29_000, DEFAULT_BUDGET));
+    }
+
+    /**
+     * A query the index could not build because the user's term or values made it too complex is
+     * told apart from any other failure, so Content Drive can answer HTTP 400 for it and keep 500
+     * for the rest (issue #37488 review). The reason can sit in a cause, as the OpenSearch client
+     * reports it, or in a suppressed exception carrying the response body, as the Elasticsearch
+     * client does.
+     */
+    @Test
+    public void isQueryTooComplex_recognisesComplexityRejections() {
+        final Exception esStyle = new Exception("Elasticsearch exception [type=search_phase_execution_exception, reason=all shards failed]");
+        esStyle.addSuppressed(new Exception("{\"error\":{\"root_cause\":[{\"type\":\"query_shard_exception\","
+                + "\"reason\":\"failed to create query: Determinizing automaton with 1004 states and 1005 "
+                + "transitions would require more than 10000 effort.\"}]}}"));
+        assertTrue(BrowserAPIImpl.isQueryTooComplex(new Exception("wrapped", esStyle)));
+
+        assertTrue(BrowserAPIImpl.isQueryTooComplex(new RuntimeException(
+                "OS search failed: HTTP 400 — {\"error\":{\"root_cause\":[{\"type\":\"query_shard_exception\","
+                        + "\"reason\":\"failed to create query: input automaton is too large: 1001\"}]}}")));
+        assertTrue(BrowserAPIImpl.isQueryTooComplex(new Exception(
+                "{\"type\":\"too_complex_to_determinize_exception\"}")));
+        assertTrue(BrowserAPIImpl.isQueryTooComplex(new Exception(
+                "{\"type\":\"too_many_clauses\",\"reason\":\"maxClauseCount is set to 1024\"}")));
+    }
+
+    /**
+     * Everything else stays a server-side failure: a shard failure with no complexity reason, a
+     * mapping that has not caught up (issue #37637 keeps that one on the server side), a timeout.
+     */
+    @Test
+    public void isQueryTooComplex_ignoresOtherFailures() {
+        assertFalse(BrowserAPIImpl.isQueryTooComplex(new Exception(
+                "Elasticsearch exception [type=search_phase_execution_exception, reason=all shards failed]")));
+        assertFalse(BrowserAPIImpl.isQueryTooComplex(new Exception(
+                "{\"type\":\"query_shard_exception\",\"reason\":\"failed to create query: field [x] of type "
+                        + "[text] does not support range queries\"}")));
+        assertFalse(BrowserAPIImpl.isQueryTooComplex(new java.util.concurrent.TimeoutException("timed out")));
+        assertFalse(BrowserAPIImpl.isQueryTooComplex(null));
+    }
+
     /** One inode is one batch; no inodes is no batches. */
     @Test
     public void partitionInodesForES_singleAndEmptyInput() {
