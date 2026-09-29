@@ -18,6 +18,8 @@ Only these three are public. Anything under `src/` in the package is internal, e
 
 ## Next.js
 
+The SDK supports Next.js 16 and later.
+
 Call `init` once, in `src/instrumentation-client.ts`:
 
 ```ts

@@ -38,7 +38,7 @@ pnpm nx run sdk-events:build:standalone
 ## How It Is Used
 
 ```ts
-// src/instrumentation-client.ts (Next.js 15.3+): runs after the HTML loads, before hydration
+// src/instrumentation-client.ts: runs after the HTML loads, before hydration
 import { events } from '@dotcms/events';
 
 events.init({
@@ -326,6 +326,7 @@ Dependencies go one way. `pipeline/` imports nothing built on it; the content tr
 - **Runtime**: `analytics`, `@analytics/core`, `@analytics/queue-utils`, `@analytics/router-utils`, `@analytics/storage-utils`.
 - **Peers**: `@dotcms/uve`, declared with the `"0.0.0"` sentinel that the SDK release workflow replaces with the exact release version; the built `.js` imports only `getUVEState` from it. `react` (`>=18`), optional, for `./react` only. The `declared-deps` spec in `sdk-bundle-budgets` fails when a shipped `@dotcms/*` import is not declared.
 - The core stays framework-free: React is imported only in `src/lib/react`, behind `./react`, and Next.js nowhere.
+- **Next.js**: 16 and later, stated in the README and not declared as a peer. Since nothing imports `next`, a peer would enforce nothing the code needs; it would only make npm refuse to install (`ERESOLVE`) in an app on an older Next.js. 16 rather than 15: Next.js supports 15 only until 21 October 2026, and `instrumentation-client.ts`, where the README calls `init`, needs 15.3 anyway.
 
 ## Testing
 
