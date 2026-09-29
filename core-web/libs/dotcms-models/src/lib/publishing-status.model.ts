@@ -48,11 +48,15 @@ export const READY_STATUSES: readonly PublishAuditStatus[] = [
  * In-motion statuses — bundles being packed, sent, or applied at the receiver.
  * Once here, cancellation is best-effort and may leave a partially-shipped
  * archive on one or more endpoints.
+ *
+ * `BUNDLE_SENT_SUCCESSFULLY` belongs here: every endpoint accepted the upload,
+ * but the receivers have not installed the bundle yet.
  */
 export const IN_PROGRESS_STATUSES: readonly PublishAuditStatus[] = [
     PublishAuditStatus.WAITING_FOR_PUBLISHING,
     PublishAuditStatus.BUNDLING,
     PublishAuditStatus.SENDING_TO_ENDPOINTS,
+    PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
     PublishAuditStatus.PUBLISHING_BUNDLE,
     PublishAuditStatus.RECEIVED_BUNDLE
 ] as const;

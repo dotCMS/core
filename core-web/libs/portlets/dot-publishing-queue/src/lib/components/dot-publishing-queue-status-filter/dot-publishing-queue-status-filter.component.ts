@@ -5,7 +5,7 @@ import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { PublishAuditStatus } from '@dotcms/dotcms-models';
+import { IN_PROGRESS_STATUSES, PublishAuditStatus, READY_STATUSES } from '@dotcms/dotcms-models';
 import {
     CHIP_FILTER_LISTBOX_PT,
     CHIP_FILTER_POPOVER_PT,
@@ -40,7 +40,9 @@ interface StatusOption {
  * belongs to exactly one group, so a new enum value forces a placement decision.
  *
  * In-flight statuses change within seconds, so they share one "In progress"
- * option; the row chip still shows the exact status.
+ * option; the row chip still shows the exact status. "Pending" and "In progress"
+ * reuse `READY_STATUSES` / `IN_PROGRESS_STATUSES` so the filter and the shared
+ * model never disagree on what counts as queued or in flight.
  */
 const STATUS_FILTER_GROUPS: readonly StatusFilterGroup[] = [
     {
@@ -51,19 +53,12 @@ const STATUS_FILTER_GROUPS: readonly StatusFilterGroup[] = [
     {
         value: 'pending',
         labelKey: 'publishing-queue.filter.status.pending',
-        codes: [PublishAuditStatus.BUNDLE_REQUESTED]
+        codes: READY_STATUSES
     },
     {
         value: 'in-progress',
         labelKey: 'publishing-queue.filter.status.in-progress',
-        codes: [
-            PublishAuditStatus.BUNDLING,
-            PublishAuditStatus.SENDING_TO_ENDPOINTS,
-            PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
-            PublishAuditStatus.WAITING_FOR_PUBLISHING,
-            PublishAuditStatus.PUBLISHING_BUNDLE,
-            PublishAuditStatus.RECEIVED_BUNDLE
-        ]
+        codes: IN_PROGRESS_STATUSES
     },
     {
         value: 'success',

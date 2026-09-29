@@ -10,6 +10,7 @@ import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ENDPOINT_ONLY_STATUSES, PublishAuditStatus } from '@dotcms/dotcms-models';
+import { DotChipFilterComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueStatusFilterComponent } from './dot-publishing-queue-status-filter.component';
@@ -26,23 +27,36 @@ const GROUP_LABELS: Record<string, string> = {
     'publishing-queue.filter.status.partially-failed': 'Partially failed'
 };
 
-interface StatusOption {
-    value: string;
-    label: string;
-    codes: readonly PublishAuditStatus[];
-}
-
-/** Typed access to the component's protected members. */
-interface StatusFilterInternals {
-    $options: StatusOption[];
-    $selected: { (): string[]; set: (value: string[]) => void };
-    onChange: () => void;
-    onRemoveAll: () => void;
-}
+/** What each option must send to the API, written out so the test pins the mapping itself. */
+const EXPECTED_CODES: Array<[string, PublishAuditStatus[]]> = [
+    ['scheduled', [PublishAuditStatus.SCHEDULED]],
+    ['pending', [PublishAuditStatus.BUNDLE_REQUESTED]],
+    [
+        'in-progress',
+        [
+            PublishAuditStatus.BUNDLING,
+            PublishAuditStatus.SENDING_TO_ENDPOINTS,
+            PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
+            PublishAuditStatus.WAITING_FOR_PUBLISHING,
+            PublishAuditStatus.PUBLISHING_BUNDLE,
+            PublishAuditStatus.RECEIVED_BUNDLE
+        ]
+    ],
+    ['success', [PublishAuditStatus.SUCCESS, PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY]],
+    ['success-with-warnings', [PublishAuditStatus.SUCCESS_WITH_WARNINGS]],
+    [
+        'failed',
+        [
+            PublishAuditStatus.FAILED_TO_BUNDLE,
+            PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS,
+            PublishAuditStatus.FAILED_TO_PUBLISH
+        ]
+    ],
+    ['partially-failed', [PublishAuditStatus.FAILED_TO_SEND_TO_SOME_GROUPS]]
+];
 
 describe('DotPublishingQueueStatusFilterComponent', () => {
     let spectator: Spectator<DotPublishingQueueStatusFilterComponent>;
-    let internals: StatusFilterInternals;
 
     const statusFilter = signal<PublishAuditStatus[]>([]);
     const groups = DotPublishingQueueStatusFilterComponent.STATUS_FILTER_GROUPS;
@@ -72,15 +86,27 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
         return [...(groups.find((g) => g.value === value)?.codes ?? [])];
     }
 
-    function select(values: string[]): void {
-        internals.$selected.set(values);
-        internals.onChange();
+    function openPanel(): void {
+        spectator.triggerEventHandler(DotChipFilterComponent, 'clicked', new Event('click'));
+        spectator.detectChanges();
+    }
+
+    /** Waits for `ngModel` to write the new selection back into the listbox, as the browser does between clicks. */
+    async function clickOption(value: string): Promise<void> {
+        spectator.click(byTestId(`pq-status-filter-item-${value}`));
+        spectator.detectChanges();
+        await spectator.fixture.whenStable();
+    }
+
+    function renderedOptionLabels(): string[] {
+        return spectator
+            .queryAll('[data-testid^="pq-status-filter-item-"]')
+            .map((el) => el.textContent?.trim() ?? '');
     }
 
     beforeEach(() => {
         statusFilter.set([]);
         spectator = createComponent();
-        internals = spectator.component as unknown as StatusFilterInternals;
     });
 
     describe('source-of-truth invariant', () => {
@@ -107,7 +133,9 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
 
     describe('options', () => {
         it('renders the 7 groups in lifecycle order with translated labels', () => {
-            expect(internals.$options.map((o) => o.label)).toEqual([
+            openPanel();
+
+            expect(renderedOptionLabels()).toEqual([
                 'Scheduled',
                 'Pending',
                 'In progress',
@@ -117,31 +145,25 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
                 'Partially failed'
             ]);
         });
-
-        it('groups BUNDLE_SENT_SUCCESSFULLY with the in-progress statuses, not with Success', () => {
-            expect(codesOf('in-progress')).toContain(PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY);
-            expect(codesOf('success')).not.toContain(PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY);
-        });
     });
 
-    describe('selection wiring', () => {
-        it('sends every in-flight status when "In progress" is selected', () => {
-            select(['in-progress']);
+    describe('selection', () => {
+        it.each(EXPECTED_CODES)(
+            'sends exactly its statuses when "%s" is picked',
+            async (value, codes) => {
+                openPanel();
 
-            expect([...statusFilter()].sort()).toEqual(
-                [
-                    PublishAuditStatus.BUNDLING,
-                    PublishAuditStatus.SENDING_TO_ENDPOINTS,
-                    PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
-                    PublishAuditStatus.WAITING_FOR_PUBLISHING,
-                    PublishAuditStatus.PUBLISHING_BUNDLE,
-                    PublishAuditStatus.RECEIVED_BUNDLE
-                ].sort()
-            );
-        });
+                await clickOption(value);
 
-        it('sends the union of statuses when several groups are selected', () => {
-            select(['failed', 'partially-failed']);
+                expect([...statusFilter()].sort()).toEqual([...codes].sort());
+            }
+        );
+
+        it('sends the union of statuses when several options are picked', async () => {
+            openPanel();
+
+            await clickOption('failed');
+            await clickOption('partially-failed');
 
             expect([...statusFilter()].sort()).toEqual(
                 [
@@ -153,23 +175,22 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
             );
         });
 
-        it('marks a group selected only when all of its statuses are in the store filter', () => {
-            statusFilter.set([PublishAuditStatus.SUCCESS]);
-            spectator.detectChanges();
-            expect(internals.$selected()).not.toContain('success');
+        it("drops an option's statuses when it is picked again", async () => {
+            openPanel();
+            await clickOption('scheduled');
+            await clickOption('failed');
 
-            statusFilter.set([
-                PublishAuditStatus.SUCCESS,
-                PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY
-            ]);
-            spectator.detectChanges();
-            expect(internals.$selected()).toEqual(['success']);
+            await clickOption('scheduled');
+
+            expect([...statusFilter()].sort()).toEqual(codesOf('failed').sort());
         });
 
-        it('empties the store filter when every selection is removed', () => {
-            select(['scheduled', 'failed']);
+        it('empties the store filter when the chip is cleared', async () => {
+            openPanel();
+            await clickOption('scheduled');
+            await clickOption('failed');
 
-            internals.onRemoveAll();
+            spectator.click(byTestId('chip-remove'));
 
             expect(statusFilter()).toEqual([]);
         });
@@ -183,6 +204,19 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
             expect(spectator.query(byTestId('chip-values'))).toHaveText(
                 'Scheduled, Partially failed'
             );
+        });
+
+        it('shows a group only when all of its statuses are in the store filter', () => {
+            statusFilter.set([PublishAuditStatus.SUCCESS]);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('chip-values'))).not.toExist();
+
+            statusFilter.set([
+                PublishAuditStatus.SUCCESS,
+                PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY
+            ]);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('chip-values'))).toHaveText('Success');
         });
     });
 });

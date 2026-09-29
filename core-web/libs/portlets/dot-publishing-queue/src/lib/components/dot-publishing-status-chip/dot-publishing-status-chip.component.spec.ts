@@ -57,6 +57,7 @@ describe('DotPublishingStatusChipComponent', () => {
                     'publishing-queue.status.SUCCESS': 'Success',
                     'publishing-queue.status.FAILED_TO_PUBLISH': 'Publish error',
                     'publishing-queue.status.BUNDLING': 'Bundling',
+                    'publishing-queue.status.BUNDLE_SENT_SUCCESSFULLY': 'Sent',
                     'publishing-queue.status.WAITING_FOR_PUBLISHING': 'Waiting'
                 })
             }
@@ -90,6 +91,16 @@ describe('DotPublishingStatusChipComponent', () => {
     it('exposes warn severity for BUNDLING status (in-flight)', () => {
         spectator = createComponent({ props: { status: PublishAuditStatus.BUNDLING } });
         spectator.detectChanges();
+        expect(spectator.component.$bucket()).toBe('warn');
+    });
+
+    it('renders BUNDLE_SENT_SUCCESSFULLY as "Sent" with warn severity (uploaded, not installed yet)', () => {
+        spectator = createComponent({
+            props: { status: PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY }
+        });
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('pq-status-chip'))).toHaveText('Sent');
+        expect(spectator.query(byTestId('pq-status-chip'))).not.toHaveText('Success');
         expect(spectator.component.$bucket()).toBe('warn');
     });
 
