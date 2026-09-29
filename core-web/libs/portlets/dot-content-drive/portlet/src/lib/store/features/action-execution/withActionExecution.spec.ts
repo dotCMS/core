@@ -1012,6 +1012,21 @@ describe('withActionExecution', () => {
                 expect(store.toolbarRunCount()).toBe(0);
             });
 
+            it('should report a batch whose completion arrived before it was restored', () => {
+                // The completion can land while the active listing is still being read. Untracked
+                // then, it was ignored, and the restore skipped it as settled: the author's batch
+                // finished with no outcome and no refresh (review finding).
+                build();
+                store.reportUploadCompleted('Upload', uploadCompleted('up-9'));
+
+                store.restoreUploadRuns([{ id: 'up-9', fileCount: 3, baseType: 'DOTASSET' }]);
+
+                expect(store.actionExecutionResult()).toEqual(
+                    expect.objectContaining({ successCount: 3, backgrounded: true })
+                );
+                expect(store.toolbarRunCount()).toBe(0);
+            });
+
             it('should not report a batch this page is already tracking a second time', () => {
                 build();
                 store.trackUploadJob('up-1');

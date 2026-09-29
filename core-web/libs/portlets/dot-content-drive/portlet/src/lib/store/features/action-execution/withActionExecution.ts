@@ -169,6 +169,18 @@ interface WithActionExecutionState {
      */
     settledUploadJobs: string[];
     /**
+     * Upload completions this page could not place, by job id: batches it was not tracking when
+     * their completion arrived.
+     *
+     * Usually another tab's, and left alone. But a batch of this author's that finishes while the
+     * active listing is still being read arrives here too, and the restore reports it from here
+     * once the listing shows it is theirs, rather than losing its outcome and its refresh.
+     */
+    unclaimedUploadCompletions: Record<
+        string,
+        { actionName: string; event: DotBulkUploadCompletedEvent }
+    >;
+    /**
      * A folder duplication the server refused, as the kind it refused it for.
      *
      * Same split as {@link folderDeleteRefusal}: the store holds the kind, the shell picks the words.
@@ -207,6 +219,7 @@ export function withActionExecution() {
             duplicateJobs: {},
             settledDuplicateJobs: [],
             settledUploadJobs: [],
+            unclaimedUploadCompletions: {},
             folderDuplicateRefusal: undefined
         }),
         withComputed(({ runs, actionExecutionResults }) => ({
@@ -505,6 +518,143 @@ export function withActionExecution() {
                                 confirmSuccess: true
                             });
                         });
+                };
+
+                const trackUploadJob = (
+                    jobId: string,
+                    affectedFolders: string[] = [],
+                    runId?: string,
+                    baseType?: string
+                ): void => {
+                    patchState(store, {
+                        uploadJobs: {
+                            ...store.uploadJobs(),
+                            [jobId]: { affectedFolders, runId, baseType }
+                        }
+                    });
+                };
+
+                /**
+                 * Publishes a finished batch's outcome, or reports that it cannot be trusted.
+                 *
+                 * Mirrors {@link reportRefreshCompleted} deliberately: same correlation, same
+                 * refusal to invent numbers. What differs is that an upload's outcome carries
+                 * the folders it changed, so the shell can decide whether the listing it is
+                 * showing can display the result at all.
+                 */
+                const reportUploadCompleted = (
+                    actionName: string,
+                    event: DotBulkUploadCompletedEvent
+                ): void => {
+                    const tracked = store.uploadJobs();
+
+                    // `hasOwnProperty`, not `in`: the latter walks the prototype chain, so a
+                    // jobId of `constructor` or `toString` would read as tracked and destructure
+                    // an inherited member. Server ids are UUIDs so it is unreachable today, and
+                    // this is the shape the rest of the codebase already uses for a lookup keyed
+                    // by a value that did not come from here.
+                    if (!event.jobId) {
+                        return;
+                    }
+
+                    if (!Object.prototype.hasOwnProperty.call(tracked, event.jobId)) {
+                        // Not ours, as far as this page knows: another tab's batch, or one of
+                        // this author's finishing before the restore has placed it. Silent by
+                        // design — an error here would blame this author for someone else's —
+                        // and held, so the restore can still report it if it is theirs.
+                        patchState(store, {
+                            unclaimedUploadCompletions: {
+                                ...store.unclaimedUploadCompletions(),
+                                [event.jobId]: { actionName, event }
+                            }
+                        });
+
+                        return;
+                    }
+
+                    patchState(store, {
+                        settledUploadJobs: [...store.settledUploadJobs(), event.jobId]
+                    });
+
+                    const { affectedFolders, runId, baseType } = tracked[event.jobId];
+                    const remaining = { ...tracked };
+                    delete remaining[event.jobId];
+                    patchState(store, { uploadJobs: remaining });
+
+                    // The run reporting the server phase outlives the request that started it,
+                    // so this event is the only thing left that knows the batch is over. Ended
+                    // before the outcome is published, so the indicator is already quiet when
+                    // the message about it appears.
+                    if (runId) {
+                        endRun(runId);
+                    }
+
+                    // The state first, because the counters cannot answer this. A run that
+                    // gave up still records the counters it reached, and those can close over
+                    // `total` perfectly well — publishing them would tell the author their
+                    // batch finished when it was abandoned. Only SUCCESS and CANCELED are
+                    // outcomes worth reporting; a cancellation is something the author did, and
+                    // its counts say how far it got before they stopped it.
+                    if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
+                        httpErrorManagerService.handle(
+                            new HttpErrorResponse({
+                                status: 500,
+                                statusText: `The upload did not report a usable outcome (state: ${event.state})`
+                            })
+                        );
+
+                        return;
+                    }
+
+                    const closes =
+                        undefined !== event.total &&
+                        (event.successCount ?? 0) +
+                            (event.failedCount ?? 0) +
+                            (event.skippedCount ?? 0) ===
+                            event.total;
+
+                    if (!closes) {
+                        // Either no counters at all, or counters that do not account for every
+                        // file. Both are unusable: trusting the zeros would report a run over
+                        // nothing, and the author would believe their files were never sent.
+                        httpErrorManagerService.handle(
+                            new HttpErrorResponse({
+                                status: 500,
+                                statusText: 'The upload did not report an outcome for every file'
+                            })
+                        );
+
+                        return;
+                    }
+
+                    patchState(store, {
+                        actionExecutionResults: [
+                            ...store.actionExecutionResults(),
+                            {
+                                actionName,
+                                successCount: event.successCount ?? 0,
+                                skippedCount: event.skippedCount ?? 0,
+                                failedCount: event.failedCount ?? 0,
+                                affectedFolders,
+                                // An upload's shortfall needs its own sentence. The default is the
+                                // workflow one, which explains failures as missing permissions or
+                                // content locked by another user, and skips as the action not being
+                                // on the item's workflow step — none of which an upload can mean.
+                                partialDetailKey: 'content-drive.upload.toast.partial',
+                                // Carried whole rather than summarised here: turning results into
+                                // copy is the shell's business, and the store has no message
+                                // service to do it with.
+                                failures: event.results,
+                                duplicateSubmission: event.duplicateSubmission,
+                                // Carried because the flag alone does not say what happened to the
+                                // folder: see FR-040b.
+                                baseType,
+                                // It arrives unprompted, long after the click, so it announces
+                                // itself and must not interrupt whatever is happening now.
+                                backgrounded: true
+                            }
+                        ]
+                    });
                 };
 
                 return {
@@ -1378,6 +1528,24 @@ export function withActionExecution() {
                      * @param runs the author's own batches from the queue's active listing
                      */
                     restoreUploadRuns: (runs: DotBulkUploadActiveRun[]): void => {
+                        // Finished while the listing was being read: report it now it is known to
+                        // be this author's, instead of restoring a status nothing would end.
+                        runs.forEach((run) => {
+                            const unclaimed = store.unclaimedUploadCompletions();
+
+                            if (!Object.prototype.hasOwnProperty.call(unclaimed, run.id)) {
+                                return;
+                            }
+
+                            const { actionName, event } = unclaimed[run.id];
+                            const remaining = { ...unclaimed };
+                            delete remaining[run.id];
+                            patchState(store, { unclaimedUploadCompletions: remaining });
+
+                            trackUploadJob(run.id, [], undefined, run.baseType);
+                            reportUploadCompleted(actionName, event);
+                        });
+
                         runs.filter(
                             (run) =>
                                 run.fileCount > 0 &&
@@ -1402,135 +1570,9 @@ export function withActionExecution() {
                         });
                     },
 
-                    trackUploadJob: (
-                        jobId: string,
-                        affectedFolders: string[] = [],
-                        runId?: string,
-                        baseType?: string
-                    ): void => {
-                        patchState(store, {
-                            uploadJobs: {
-                                ...store.uploadJobs(),
-                                [jobId]: { affectedFolders, runId, baseType }
-                            }
-                        });
-                    },
+                    trackUploadJob,
 
-                    /**
-                     * Publishes a finished batch's outcome, or reports that it cannot be trusted.
-                     *
-                     * Mirrors {@link reportRefreshCompleted} deliberately: same correlation, same
-                     * refusal to invent numbers. What differs is that an upload's outcome carries
-                     * the folders it changed, so the shell can decide whether the listing it is
-                     * showing can display the result at all.
-                     */
-                    reportUploadCompleted: (
-                        actionName: string,
-                        event: DotBulkUploadCompletedEvent
-                    ): void => {
-                        const tracked = store.uploadJobs();
-
-                        // `hasOwnProperty`, not `in`: the latter walks the prototype chain, so a
-                        // jobId of `constructor` or `toString` would read as tracked and destructure
-                        // an inherited member. Server ids are UUIDs so it is unreachable today, and
-                        // this is the shape the rest of the codebase already uses for a lookup keyed
-                        // by a value that did not come from here.
-                        if (event.jobId) {
-                            patchState(store, {
-                                settledUploadJobs: [...store.settledUploadJobs(), event.jobId]
-                            });
-                        }
-
-                        if (
-                            !event.jobId ||
-                            !Object.prototype.hasOwnProperty.call(tracked, event.jobId)
-                        ) {
-                            // Not ours: another tab's batch, or one already settled. Silent by
-                            // design — an error here would blame this author for someone else's.
-                            return;
-                        }
-
-                        const { affectedFolders, runId, baseType } = tracked[event.jobId];
-                        const remaining = { ...tracked };
-                        delete remaining[event.jobId];
-                        patchState(store, { uploadJobs: remaining });
-
-                        // The run reporting the server phase outlives the request that started it,
-                        // so this event is the only thing left that knows the batch is over. Ended
-                        // before the outcome is published, so the indicator is already quiet when
-                        // the message about it appears.
-                        if (runId) {
-                            endRun(runId);
-                        }
-
-                        // The state first, because the counters cannot answer this. A run that
-                        // gave up still records the counters it reached, and those can close over
-                        // `total` perfectly well — publishing them would tell the author their
-                        // batch finished when it was abandoned. Only SUCCESS and CANCELED are
-                        // outcomes worth reporting; a cancellation is something the author did, and
-                        // its counts say how far it got before they stopped it.
-                        if ('SUCCESS' !== event.state && 'CANCELED' !== event.state) {
-                            httpErrorManagerService.handle(
-                                new HttpErrorResponse({
-                                    status: 500,
-                                    statusText: `The upload did not report a usable outcome (state: ${event.state})`
-                                })
-                            );
-
-                            return;
-                        }
-
-                        const closes =
-                            undefined !== event.total &&
-                            (event.successCount ?? 0) +
-                                (event.failedCount ?? 0) +
-                                (event.skippedCount ?? 0) ===
-                                event.total;
-
-                        if (!closes) {
-                            // Either no counters at all, or counters that do not account for every
-                            // file. Both are unusable: trusting the zeros would report a run over
-                            // nothing, and the author would believe their files were never sent.
-                            httpErrorManagerService.handle(
-                                new HttpErrorResponse({
-                                    status: 500,
-                                    statusText:
-                                        'The upload did not report an outcome for every file'
-                                })
-                            );
-
-                            return;
-                        }
-
-                        patchState(store, {
-                            actionExecutionResults: [
-                                ...store.actionExecutionResults(),
-                                {
-                                    actionName,
-                                    successCount: event.successCount ?? 0,
-                                    skippedCount: event.skippedCount ?? 0,
-                                    failedCount: event.failedCount ?? 0,
-                                    affectedFolders,
-                                    // An upload's shortfall needs its own sentence. The default is the
-                                    // workflow one, which explains failures as missing permissions or
-                                    // content locked by another user, and skips as the action not being
-                                    // on the item's workflow step — none of which an upload can mean.
-                                    partialDetailKey: 'content-drive.upload.toast.partial',
-                                    // Carried whole rather than summarised here: turning results into
-                                    // copy is the shell's business, and the store has no message
-                                    // service to do it with.
-                                    failures: event.results,
-                                    duplicateSubmission: event.duplicateSubmission,
-                                    // Carried because the flag alone does not say what happened to the
-                                    // folder: see FR-040b.
-                                    baseType,
-                                    // It arrives unprompted, long after the click, so it announces
-                                    // itself and must not interrupt whatever is happening now.
-                                    backgrounded: true
-                                }
-                            ]
-                        });
-                    },
+                    reportUploadCompleted,
 
                     /**
                      * Publishes an outcome for a run this store did not fire itself.
