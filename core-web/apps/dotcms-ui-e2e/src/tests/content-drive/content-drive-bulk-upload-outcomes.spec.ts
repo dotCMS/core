@@ -102,15 +102,18 @@ test.describe('Content Drive bulk upload outcomes', () => {
         inSeededFolder(
             { adminPage, apiHelpers, name: `cd-reload-${testSuffix}` },
             async (drive) => {
-                // Enough files that the batch is still being processed when the page comes back.
-                await drive.chooseGeneratedFilesForUpload(60, `reload-${testSuffix}`);
+                // A few files are enough: the page reloads straight after handing the batch off, so
+                // it is still queued or running when the page reads the queue back. More only
+                // lengthens the wait, and CI processes each file in about fifteen seconds.
+                await drive.chooseGeneratedFilesForUpload(8, `reload-${testSuffix}`);
                 await drive.expectHandedToBackground();
 
                 // The status used to go with the page while the batch carried on. It is put
                 // back from the upload queue's active listing, and the completion ends it.
                 await adminPage.reload();
                 await drive.expectStatusToastContaining('in the background');
-                await drive.expectStatusToastGone();
+                // Longer than any other outcome here: the whole batch has to finish first.
+                await drive.expectStatusToastGone(240000);
             }
         ));
 

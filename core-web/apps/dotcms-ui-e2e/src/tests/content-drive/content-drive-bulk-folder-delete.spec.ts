@@ -113,11 +113,10 @@ test.describe('Content Drive bulk folder delete', () => {
                 adminPage,
                 apiHelpers,
                 name: `cd-del-reload-${testSuffix}`,
-                // Enough folders inside that the delete is still running when the page comes back.
-                children: [
-                    'big',
-                    ...Array.from({ length: 150 }, (_, index) => `big/child-${index}`)
-                ]
+                // A few folders inside are enough: the page reloads straight after the delete is
+                // submitted, so it is still queued or running when the page reads the queue back.
+                // Seeding 150 took longer than the whole test budget on CI.
+                children: ['big', ...Array.from({ length: 20 }, (_, index) => `big/child-${index}`)]
             },
             async (_drive, preview) => {
                 await preview.open('DELETE_FOLDER', ['big']);
