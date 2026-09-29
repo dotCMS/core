@@ -194,7 +194,7 @@ describe('DotContentDriveStore', () => {
 
     /**
      * How many folders one duplicate or delete may carry, as the server advertises it (#37062), so
-     * the Action Center can stop an over-ceiling selection and name the limit.
+     * the Action Center can cap the run, and its row's count, at the ceiling.
      */
     describe('folder ceilings', () => {
         it.each([

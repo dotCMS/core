@@ -1219,8 +1219,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
     /**
      * The sentence for a refusal, naming the ceiling when it was one and the server advertises it.
      *
-     * The Action Center already stops an over-ceiling selection, so this is reached only when the
-     * limit was not known to the client, or changed under it. Naming the number then still tells the
+     * The Action Center already sends at most the advertised ceiling, so this is reached only when
+     * the limit was not known to the client, or changed under it. Naming the number then still tells the
      * author how far to narrow the selection, which "fewer" does not.
      *
      * @param kind the refusal
