@@ -3,6 +3,7 @@ package com.dotcms.jobs.business.batch;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -64,6 +65,61 @@ public class BatchFailureReasonTest {
 
         for (final String name : existing) {
             assertTrue("expected pre-existing reason " + name + " to still be present",
+                    names.contains(name));
+        }
+    }
+
+    /**
+     * Method to test: {@link BatchFailureReason#PARENT_PERMISSION_DENIED}
+     * <p>
+     * Given scenario: bulk folder duplication (#37062) needs to tell "no rights on the folder" apart
+     * from "no rights to add to its parent, where the duplicate would land". They send the author to
+     * different places, and the client writes different copy for each.
+     * <p>
+     * Expected result: the value exists under exactly the name the client reads.
+     */
+    @Test
+    public void test_parentPermissionDenied_exists() {
+        assertEquals("PARENT_PERMISSION_DENIED", BatchFailureReason.PARENT_PERMISSION_DENIED.name());
+    }
+
+    /**
+     * Method to test: Jackson serialisation of {@link BatchFailureReason#PARENT_PERMISSION_DENIED}
+     * <p>
+     * Given scenario: the reason travels to the client inside the job's per-folder results.
+     * <p>
+     * Expected result: it serialises to its name and reads back as the same constant.
+     *
+     * @throws Exception if Jackson cannot write or read the value
+     */
+    @Test
+    public void test_parentPermissionDenied_roundTripsThroughJackson() throws Exception {
+        final ObjectMapper mapper = new ObjectMapper();
+
+        final String json = mapper.writeValueAsString(BatchFailureReason.PARENT_PERMISSION_DENIED);
+
+        assertEquals("\"PARENT_PERMISSION_DENIED\"", json);
+        assertEquals(BatchFailureReason.PARENT_PERMISSION_DENIED,
+                mapper.readValue(json, BatchFailureReason.class));
+    }
+
+    /**
+     * Method to test: {@link BatchFailureReason} enum values
+     * <p>
+     * Given scenario: duplication adds one value to an enum bulk upload, bulk refresh and bulk
+     * folder delete already read.
+     * <p>
+     * Expected result: bulk folder delete's four values are still present under the same names, so
+     * the addition is purely additive and rollback-safe for every existing reader.
+     */
+    @Test
+    public void test_bulkFolderDeleteReasons_areUnaffectedByDuplication() {
+        final List<String> names = EnumSet.allOf(BatchFailureReason.class).stream()
+                .map(Enum::name).toList();
+
+        for (final String name : List.of("PATH_NOT_FOUND", "PROTECTED_FOLDER", "IN_USE",
+                "COVERED_BY_PARENT")) {
+            assertTrue("expected bulk delete's reason " + name + " to still be present",
                     names.contains(name));
         }
     }
