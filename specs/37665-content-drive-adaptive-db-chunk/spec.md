@@ -95,6 +95,10 @@ off.
    by at least half.
 3. **Given** a folder the user can read in full (an administrator), **When** the user opens it,
    **Then** the request still makes exactly one pass and latency does not measurably change.
+4. **Given** a folder where the user's visible items are clustered (1 visible in the first chunk,
+   the rest of the page right after it), **When** the user opens the folder, **Then** latency with
+   the flag on is no worse than with the flag off, within run-to-run noise, and no chunk exceeds
+   the per-step growth cap.
 
 ---
 
@@ -150,10 +154,18 @@ size on every iteration.
 ### Edge Cases
 
 - **Nothing visible so far**: there is no ratio to extrapolate from, so the next chunk doubles.
-  Geometric growth caps the overshoot at one chunk's worth of extra rows, while turning a
-  linear walk over the folder into a logarithmic number of passes.
-- **Ratio implies a huge chunk** (for example, 1 visible out of 400 read with 39 still needed):
-  the ceiling caps it.
+  Geometric growth turns a linear walk over the folder into a logarithmic number of passes. The
+  price is overshoot: when the visible items show up early in a doubled chunk, the rows after the
+  page's last item are read for nothing. That overshoot is never larger than the rows already
+  read in the request, and today's loop reads those same rows anyway, over more passes.
+- **Visible items are clustered, not spread evenly** (per subfolder or per content type): the
+  observed ratio is only a sample of the rows read so far, and it can badly underestimate the
+  stretch that comes next. For example, on a 40-item page, 1 visible item sits in the first 400
+  rows and the other 39 sit in the next 400. The ratio projects 39 / (1/400) x 1.5 ≈ 23,400 rows,
+  where today's loop needs one more 400-row chunk. Every row read is loaded and
+  permission-checked. The rows past the page's last item are wasted work, and the next page
+  re-reads them, because it resumes right after that item. The per-step growth cap (FR-003)
+  bounds this: here the loop reads 1,600 rows, not the 7,000 ceiling.
 - **Caller's chunk size already at or above the ceiling** (a very large page size): the chunk
   never grows, because the floor wins over the ceiling. Behavior matches today.
 - **Scan budget nearly used up**: growth never takes a chunk past what is left of the scan budget.
@@ -180,12 +192,18 @@ size on every iteration.
   - **Some items were visible**: the next size is the number of items still needed divided by
     the observed visible-to-read ratio, multiplied by a safety factor. The ratio covers the whole
     request so far. The factor defaults to 1.5 and is configurable, because the ratio is a sample
-    and the next stretch of the folder may be sparser.
-  - **No items were visible yet**: the next size is double the previous chunk's size.
+    and the next stretch of the folder may be sparser. The product (still needed x rows read x
+    safety factor / visible so far) is rounded up to the next whole row, and the limits in FR-003
+    apply after rounding.
+  - **No items were visible yet**: the next size is double the size *requested* for the previous
+    chunk.
 - **FR-002**: The first chunk of every request MUST be requested at today's size: the larger of
   the page size times `BROWSER_DB_CHUNK_FACTOR` and `BROWSER_DB_CHUNK_MIN_SIZE`, clamped to
   `BROWSER_DB_MAX_SCAN_ROWS` as today.
-- **FR-003**: A grown chunk MUST NOT exceed either of these:
+- **FR-003**: A grown chunk MUST NOT exceed any of these:
+  - a per-step growth cap: a configurable multiple of the size requested for the previous chunk,
+    4x by default. The doubling path (2x) never reaches it. It exists to bound the ratio path
+    when visibility is clustered (see Edge Cases);
   - the configurable ceiling, which defaults to 7,000 (the same default as
     `BROWSER_SINGLE_PASS_CHUNK_SIZE`);
   - what is left of the `BROWSER_DB_MAX_SCAN_ROWS` budget, measured the same way as the existing
@@ -204,8 +222,8 @@ size on every iteration.
   order across every page, with no duplicates and no gaps, for both unrestricted and
   permission-limited users.
 - **FR-007**: The feature MUST be controlled by `BROWSER_DB_CHUNK_ADAPTIVE`, which defaults to on.
-  When it is off, every chunk MUST be requested at today's fixed size. The flag, the ceiling and
-  the safety factor MUST take effect on the next request without a restart, the same way
+  When it is off, every chunk MUST be requested at today's fixed size. The flag, the ceiling, the
+  per-step growth cap and the safety factor MUST take effect on the next request without a restart, the same way
   `BROWSER_DB_MAX_SCAN_ROWS` does.
 - **FR-008**: The Elasticsearch-narrowed path (a text search, or an index-routed field filter)
   MUST NOT change. Its chunk size, its time budget (`BROWSER_DB_MAX_SCAN_TIME_MILLIS`) and its row
@@ -242,19 +260,25 @@ size on every iteration.
   difference: within run-to-run noise, where the prototype measured 192 vs 202 ms.
 - **SC-004**: For a user who can read nothing, the number of passes needed to finish a folder
   grows roughly logarithmically with folder size instead of linearly. In the reference case it
-  falls from 54 to 10 or fewer.
+  falls from 54 to 10 or fewer. The prototype measured 6. The bound is looser on purpose, so the
+  test holds when the safety factor, the ceiling or the per-step cap are tuned.
 - **SC-005**: Walking every page of a folder to the end with the feature on and off gives identical
   sequences, for both an administrator and a permission-limited user: 0 duplicated and 0 skipped
   items.
 - **SC-006**: With the feature off, every requested chunk size equals today's fixed size.
-- **SC-007**: Every existing test for the Elasticsearch-narrowed scan (#37211, #37184) passes
+- **SC-007**: With clustered visibility (the fixture in User Story 1, scenario 4), latency with
+  the feature on is no worse than with it off, within run-to-run noise, and no requested chunk
+  exceeds the per-step growth cap.
+- **SC-008**: Every existing test for the Elasticsearch-narrowed scan (#37211, #37184) passes
   without modification.
 
-SC-001 to SC-003 are latency outcomes. They are verified by a manual benchmark that repeats the
-issue's method (same dataset shape, repetitions, warm-up discarded, statistics refreshed first).
-They are not verified by automated assertions, because wall-clock time is not stable in CI. The
-automated tests assert the deterministic proxies in SC-004 to SC-006: pass count, requested chunk
-sizes, and page sequences.
+SC-001 to SC-003, and the latency half of SC-007, are latency outcomes. They are verified by a
+manual benchmark that repeats the issue's method (same dataset shape, repetitions, warm-up
+discarded, statistics refreshed first), with the clustered case added to its matrix. They are not
+verified by automated assertions, because wall-clock time is not stable in CI. The automated tests
+assert the deterministic proxies: pass count (SC-004), requested chunk sizes (SC-006, and the
+per-step cap in SC-007, on a fixture that clusters the visible items right after the first
+chunk), and page sequences (SC-005).
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -283,9 +307,13 @@ sizes, and page sequences.
   measure is out of scope.
 - The ratio covers the whole current request, not only the last chunk. A single sparse chunk
   therefore doesn't swing the estimate too far.
-- The ceiling and the safety factor are new configuration properties. Final key names are settled
-  in the plan; the proposed names are `BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE` and
+- The ceiling, the per-step growth cap and the safety factor are new configuration properties.
+  Final key names are settled in the plan. The proposed names are
+  `BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE`, `BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH` and
   `BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR`.
+- The prototype numbers in Background were measured without the per-step growth cap. The cap does
+  not affect the nothing-visible case (doubling stays under 4x), but it can add a pass in the
+  sparse-visible cases. The manual benchmark re-measures every case with the cap in place.
 - The flag defaults to on, because the gain is measured, and turning it off needs no redeploy.
 - Tests follow Constitution Principle V: they are written, approved by a dev, and confirmed failing
   before any implementation code. The existing chunk-loop tests in `BrowserAPITest`
