@@ -205,7 +205,25 @@ describe('action-center utils', () => {
             ]);
         });
 
+        it('should list Duplicate beside Delete, and Refresh last', () => {
+            const ids = getQuickActions(
+                [contentlet({ inode: 'a', identifier: 'id-a' }), actionableFolder('f1')],
+                { isAdmin: true }
+            ).map((action) => action.id);
+
+            expect(ids.indexOf(DUPLICATE_ACTION_ID)).toBe(ids.indexOf(DELETE_FOLDER_ACTION_ID) + 1);
+            expect(ids.at(-1)).toBe(REFRESH_ACTION_ID);
+        });
+
         describe('Duplicate', () => {
+            it('should name itself as a folder action, as Delete does', () => {
+                const duplicate = getQuickActions([actionableFolder('f1')]).find(
+                    (action) => action.id === DUPLICATE_ACTION_ID
+                );
+
+                expect(duplicate?.name).toBe('content-drive.action-center.duplicate-folder');
+            });
+
             const duplicateOf = (items: DotContentDriveItem[]) =>
                 getQuickActions(items).find((action) => action.id === DUPLICATE_ACTION_ID);
 
@@ -263,8 +281,7 @@ describe('action-center utils', () => {
 
             it('should count only as many folders as one duplicate may carry', () => {
                 // The row says how many the run will act on, and one run carries at most the
-                // ceiling. Every eligible folder is still kept, so the preview can say how many
-                // were left out.
+                // ceiling. Every eligible folder is still kept, and the preview takes the first.
                 const duplicate = getQuickActions(
                     [
                         folderRow('f1', '/blogs/alpha/', ['READ']),

@@ -43,7 +43,6 @@ import {
 import { DotContentDriveActionMoveTargetComponent } from './components/dot-content-drive-action-move-target/dot-content-drive-action-move-target.component';
 import { DotContentDriveActionPreviewComponent } from './components/dot-content-drive-action-preview/dot-content-drive-action-preview.component';
 
-import { ACTION_CENTER_FOLDER_NOTICE_PT } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     ADD_TO_BUNDLE_ACTION_ID,
@@ -252,8 +251,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      */
     protected readonly $hasPushPublishEnvironments = this.#store.hasPushPublishEnvironments;
 
-    /** @see ACTION_CENTER_FOLDER_NOTICE_PT */
-    protected readonly folderNoticePt = ACTION_CENTER_FOLDER_NOTICE_PT;
     /** The single workflow action currently selected, across every scheme. */
     protected readonly $selectedActionId = signal<string | null>(null);
     /**
@@ -471,17 +468,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
     /** Contentlets in the selection — folders are ignored by every bulk endpoint. */
     protected readonly $contentlets = computed(() => excludeFolders(this.$selectedItems()));
-    protected readonly $contentletCount = computed(() => this.$contentlets().length);
-    /**
-     * Folders in the selection, surfaced as a hint so the per-action counts are not confusing.
-     *
-     * They are no longer excluded outright: Add to Bundle and Push Publish take a folder identifier,
-     * and the rest of the actions drop themselves from the list instead. The notice says which,
-     * rather than claiming folders are ignored.
-     */
-    protected readonly $selectedFolderCount = computed(
-        () => this.$selectedItems().length - this.$contentletCount()
-    );
     protected readonly $quickActions = computed<DotActionCenterQuickAction[]>(() =>
         // Fed the whole selection: folder exclusion is per action now, and `getQuickActions` owns
         // that decision from the registry. Pre-filtering here would hide folders from the two
@@ -525,23 +511,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
         return null;
     });
-
-    /**
-     * Whether the selection holds more folders than one run may carry, so the preview lists only
-     * the first of them and says the rest will not be included.
-     */
-    protected readonly $cappedAtCeiling = computed(() => {
-        const ceiling = this.$folderCeiling();
-
-        return ceiling !== null && this.$eligibleCount() > ceiling;
-    });
-
-    /** The over-ceiling notice, in the chosen action's own words. */
-    protected readonly $ceilingMessageKey = computed(() =>
-        this.$pendingQuickAction()?.id === DELETE_FOLDER_ACTION_ID
-            ? 'content-drive.delete.over-ceiling'
-            : 'content-drive.duplicate.over-ceiling'
-    );
 
     /**
      * Label for the preview's back control, which names where it actually goes.
@@ -634,7 +603,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * The preview's rows: what the selected action runs on in this run.
      *
      * A folder action over the ceiling the server advertises lists only the first folders one run
-     * may carry, and the preview says so (#37062). Listed rather than pre-checked, as every other
+     * may carry, the same number its row counts (#37062). Listed rather than pre-checked, as every other
      * action's preview lists what it applies to: the author confirms a run, not a correction.
      */
     protected readonly $previewItems = computed(() => {
@@ -646,9 +615,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
     /** Number of rows the preview lists for the selected action. */
     protected readonly $previewCount = computed(() => this.$previewItems().length);
-
-    /** How many folders were selected for the action, including any past the ceiling. */
-    protected readonly $eligibleCount = computed(() => this.#eligibleItems().length);
 
     /**
      * Inodes among the preview's rows whose lock belongs to another user, for the table to mark.

@@ -255,7 +255,7 @@ test.describe('Content Drive folder duplicate', () => {
             ));
     }
 
-    test('runs only as many folders as one duplicate may carry, and says the rest are excluded', ({
+    test('runs only as many folders as one duplicate may carry', ({
         adminPage,
         apiHelpers,
         testSuffix
@@ -283,10 +283,8 @@ test.describe('Content Drive folder duplicate', () => {
 
                 await preview.open('DUPLICATE', ['alpha', 'beta']);
 
-                // The preview lists what this run carries, and says so, and the author can still
-                // run it after reviewing what is left out.
+                // The preview lists only what this run carries, and still lets it run.
                 await preview.expectListedCount(1);
-                await preview.expectCeilingWarning('duplicates 1 of the 2 folders you selected');
 
                 await preview.execute();
 
@@ -323,7 +321,6 @@ test.describe('Content Drive folder duplicate', () => {
                 const preview = new FolderRunPreview(adminPage);
 
                 await preview.open('DUPLICATE', ['alpha', 'beta']);
-                await preview.expectNoCeilingWarning();
                 await preview.execute();
 
                 await drive.expectToastContaining('You can duplicate up to 5 folders at a time');

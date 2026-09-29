@@ -571,18 +571,15 @@ describe('DotContentDriveActionCenterComponent', () => {
     });
 
     describe('folders in the selection', () => {
-        it('should say which actions the folders are limited to', () => {
+        it('should not claim the folders are limited to bundling and publishing', () => {
+            // Delete and Duplicate act on folders too, so that notice would be wrong.
             mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
 
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testid="folders-limited-message"]')).toBeTruthy();
-        });
-
-        it('should not show the notice when the selection has no folders', () => {
-            spectator.detectChanges();
-
-            expect(spectator.query('[data-testid="folders-limited-message"]')).toBeFalsy();
+            expect(spectator.query('[data-testid="action-center"]')?.textContent).not.toContain(
+                'content-drive.action-center.folders-limited'
+            );
         });
 
         it('should send folders and contentlets in one Add to Bundle call', () => {
@@ -2765,15 +2762,14 @@ describe('DotContentDriveActionCenterComponent', () => {
             ['DUPLICATE', mockFolderDuplicateMaxPaths, 'content-drive.duplicate.over-ceiling'],
             ['DELETE_FOLDER', mockFolderDeleteMaxPaths, 'content-drive.delete.over-ceiling']
         ])(
-            '%s should include only as many folders as one run may carry, and say so',
+            '%s should include only as many folders as one run may carry',
             (actionId, ceiling, key) => {
                 ceiling.set(1);
 
                 openQuickActionPreview(actionId);
 
-                expect(
-                    spectator.query('[data-testid="action-preview-over-ceiling"]')?.textContent
-                ).toContain(key);
+                // The row and the preview already say how many run. No notice on top of that.
+                expect(spectator.element.textContent).not.toContain(key);
                 // Listed, not merely pre-checked: the preview holds what this run can carry, as
                 // the other actions' previews hold what they apply to.
                 expect(previewRows()).toHaveLength(1);
@@ -2809,11 +2805,10 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it.each([['DUPLICATE'], ['DELETE_FOLDER']])(
-            '%s should include every folder and say nothing when no ceiling is advertised',
+            '%s should include every folder when no ceiling is advertised',
             (actionId) => {
                 openQuickActionPreview(actionId);
 
-                expect(spectator.query('[data-testid="action-preview-over-ceiling"]')).toBeNull();
                 expect(previewRows()).toHaveLength(2);
                 expect(executeBadge()).toBe('2');
             }

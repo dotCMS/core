@@ -335,7 +335,9 @@ offered, says it will act on four, and acts on four.
   their absence, and the per-folder outcome remains the only authority (backend FR-012c).
 - **FR-006**: The client MUST read the maximum number of folders one submission may carry from the
   application configuration the server advertises, and MUST check a selection against it before
-  submitting, explaining a selection over the limit in terms of that limit. It MUST NOT hold its own
+  submitting. A selection over the limit runs on the first that many folders: the action's row
+  counts them and its preview lists them, with no separate notice, since those two numbers already
+  say what runs (amended after QA). It MUST NOT hold its own
   copy of the number. This is exactly how bulk upload treats its ceilings today: read from the
   advertised configuration, checked as a courtesy, with the server remaining the enforcer. Where the
   advertised value is absent, on an instance older than the field, the client MUST NOT gate and the

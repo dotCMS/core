@@ -144,15 +144,6 @@ export class FolderRunPreview {
         ).toHaveCount(count);
     }
 
-    /** The warning that the selection is over the ceiling, containing the given words. */
-    async expectCeilingWarning(text: string) {
-        await expect(this.page.getByTestId('action-preview-over-ceiling')).toContainText(text);
-    }
-
-    async expectNoCeilingWarning() {
-        await expect(this.page.getByTestId('action-preview-over-ceiling')).toHaveCount(0);
-    }
-
     /** The folder is marked as being worked on, in the listing. */
     async expectMarkedInFlight(folderName: string) {
         await expect(this.row(folderName).getByTestId('row-busy')).toBeVisible({

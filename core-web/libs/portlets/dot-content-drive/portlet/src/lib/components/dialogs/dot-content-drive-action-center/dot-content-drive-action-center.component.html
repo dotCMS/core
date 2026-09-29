@@ -32,24 +32,6 @@
             <div
                 class="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 py-4"
                 data-testid="action-center">
-                @if ($selectedFolderCount() > 0) {
-                    <!--
-                        Full-bleed via `[pt]` rather than descendant selectors in `styleClass` —
-                        the padding lives on `.p-message-content`, and pass-through targets that
-                        section by name. See `ACTION_CENTER_FOLDER_NOTICE_PT` for why each rule is
-                        there and why both need `!`.
-                    -->
-                    <p-message
-                        severity="info"
-                        [pt]="folderNoticePt"
-                        data-testid="folders-limited-message">
-                        {{
-                            'content-drive.action-center.folders-limited'
-                                | dm: [$selectedFolderCount().toString()]
-                        }}
-                    </p-message>
-                }
-
                 <!-- Quick Actions: system actions fired over the whole eligible selection in one request. -->
                 <section data-testid="quick-actions-section">
                     <h3
@@ -465,28 +447,9 @@
                         runs on the contents" would be false: a content type declaring an action for
                         the destroy system action will fire it (FR-010).
                     -->
-                    @if ($cappedAtCeiling()) {
-                        <!-- One run carries at most the ceiling the server advertises, so the preview
-                         lists only the first of the folders, and says here that the rest are not
-                         included rather than leaving the author to learn it from a refusal. -->
-                        <p-message
-                            class="m-4 shrink-0"
-                            severity="warn"
-                            data-testid="action-preview-over-ceiling">
-                            {{
-                                $ceilingMessageKey()
-                                    | dm
-                                        : [
-                                              ($folderCeiling() ?? 0).toString(),
-                                              $eligibleCount().toString()
-                                          ]
-                            }}
-                        </p-message>
-                    }
-
                     @if ($isDeleteAction()) {
-                        <!-- `shrink-0` as on the sibling above: keeps the warning pinned over the
-                         table rather than squeezed away once the rows fill the column. -->
+                        <!-- `shrink-0` keeps the warning pinned over the table rather than squeezed
+                         away once the rows fill the column. -->
                         <p-message
                             class="m-4 shrink-0"
                             severity="error"

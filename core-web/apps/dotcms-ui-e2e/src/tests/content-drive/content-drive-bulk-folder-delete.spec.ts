@@ -133,7 +133,7 @@ test.describe('Content Drive bulk folder delete', () => {
             }
         ));
 
-    test('runs only as many folders as one delete may carry, and says the rest are excluded', ({
+    test('runs only as many folders as one delete may carry', ({
         adminPage,
         apiHelpers,
         testSuffix
@@ -159,9 +159,8 @@ test.describe('Content Drive bulk folder delete', () => {
             async (_drive, preview) => {
                 await preview.open('DELETE_FOLDER', ['alpha', 'beta']);
 
-                // The preview lists what this run carries, says so, and still lets it run.
+                // The preview lists only what this run carries, and still lets it run.
                 await preview.expectListedCount(1);
-                await preview.expectCeilingWarning('deletes 1 of the 2 folders you selected');
 
                 await preview.execute();
 
@@ -196,7 +195,6 @@ test.describe('Content Drive bulk folder delete', () => {
             },
             async (drive, preview) => {
                 await preview.open('DELETE_FOLDER', ['alpha', 'beta']);
-                await preview.expectNoCeilingWarning();
                 await preview.execute();
 
                 await drive.expectToastContaining('You can delete up to 5 folders at a time');

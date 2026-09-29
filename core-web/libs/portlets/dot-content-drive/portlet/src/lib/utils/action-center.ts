@@ -381,20 +381,8 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         foldersOnly: true
     },
     {
-        id: REFRESH_ACTION_ID,
-        nameKey: 'Refresh',
-        icon: 'refresh',
-        // No row state disqualifies a reindex. Live, archived, locked — none of them change whether
-        // the index copy of a contentlet is stale, which is the only thing this fixes.
-        //
-        // Role-gated, because the endpoint is. See {@link REFRESH_ACTION_ID} for why `isAdmin` is
-        // the whole gate and not half of it.
-        eligibleWhen: () => true,
-        requiresAdmin: true
-    },
-    {
         id: DUPLICATE_ACTION_ID,
-        nameKey: 'content-drive.action-center.duplicate',
+        nameKey: 'content-drive.action-center.duplicate-folder',
         icon: 'content_copy',
         // READ is what copying a folder needs on the folder itself. A row whose rights are unknown
         // is kept, so the server decides rather than the client guessing a refusal. Whether the
@@ -406,6 +394,18 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         supportsFolders: true,
         foldersOnly: true,
         requiresAddChildren: true
+    },
+    {
+        id: REFRESH_ACTION_ID,
+        nameKey: 'Refresh',
+        icon: 'refresh',
+        // No row state disqualifies a reindex. Live, archived, locked — none of them change whether
+        // the index copy of a contentlet is stale, which is the only thing this fixes.
+        //
+        // Role-gated, because the endpoint is. See {@link REFRESH_ACTION_ID} for why `isAdmin` is
+        // the whole gate and not half of it.
+        eligibleWhen: () => true,
+        requiresAdmin: true
     }
 ];
 
@@ -540,7 +540,7 @@ export const getQuickActions = (
             icon: quickAction.icon,
             eligibleInodes,
             // The run carries at most the ceiling, so that is all the row may promise.
-            // `eligibleInodes` keeps every eligible item: the preview says how many were left out.
+            // `eligibleInodes` keeps every eligible item, and the preview takes the first of them.
             count:
                 ceiling === null || ceiling === undefined
                     ? eligibleInodes.length
