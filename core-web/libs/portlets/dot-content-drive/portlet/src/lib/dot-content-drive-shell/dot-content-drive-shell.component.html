@@ -128,8 +128,11 @@
 
 <!-- The run in flight, which the toolbar used to draw at the end of its filter row. Beside the
      outlet above rather than at the top of the template: this shell is a grid, and a component
-     placed first takes the first cell and shifts every panel along. -->
-<dot-status-toast position="bottom-center" />
+     placed first takes the first cell and shifts every panel along.
+
+     In the listing's own cell, over it, and contained there, so it centres on the listing and its
+     paginator rather than on the window, which the tree column and the menu push off centre. -->
+<dot-status-toast position="bottom-center" contained class="col-start-2 row-start-4" />
 
 @if ($contextMenuData()?.showAddToBundle) {
     <dot-add-to-bundle
