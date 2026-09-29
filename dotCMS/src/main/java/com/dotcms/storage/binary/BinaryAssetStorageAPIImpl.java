@@ -97,7 +97,7 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
         this(resolveBinaryStorageProvider(), true);
     }
 
-    /** Selects the S3 chain only when explicitly enabled; initialization failures must be visible. */
+    /** Selects the remote chain only when explicitly enabled; initialization failures must be visible. */
     private static StoragePersistenceAPI resolveBinaryStorageProvider() {
         final StoragePersistenceProvider provider = StoragePersistenceProvider.INSTANCE.get();
         if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
@@ -105,7 +105,7 @@ public class BinaryAssetStorageAPIImpl implements BinaryAssetStorageAPI {
         }
         return new ChainableStoragePersistenceAPIBuilder()
                 .add(provider.getStorage(StorageType.FILE_SYSTEM))
-                .add(com.dotcms.storage.AmazonS3StoragePersistenceAPIImpl.withPlainPaths())
+                .add(StoragePersistenceProvider.remoteObjectStorage())
                 .get();
     }
 
