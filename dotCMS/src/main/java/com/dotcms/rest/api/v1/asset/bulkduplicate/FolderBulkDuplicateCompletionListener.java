@@ -28,9 +28,9 @@ import java.util.Optional;
  * Mirrors {@code FolderBulkDeleteCompletionListener}: pushes
  * {@code BULK_FOLDER_DUPLICATE_COMPLETED} to the submitter alone, carrying the counts and the
  * per-folder results so a client can report without polling, and writes a durable notification
- * worded for a clean, a partial, a failed or a cancelled run. Both are best-effort: a delivery
- * failure is logged and never changes the run's recorded outcome, which was settled before this
- * runs.
+ * worded for a clean, a partial, a failed, a cancelled or an interrupted run. Both are
+ * best-effort: a delivery failure is logged and never changes the run's recorded outcome, which
+ * was settled before this runs.
  *
  * @author dotCMS
  */
@@ -42,6 +42,8 @@ public class FolderBulkDuplicateCompletionListener implements EventSubscriber<Jo
     private static final String NOTIFICATION_FAILED_KEY = "notification.bulkfolderduplicate.failed";
     private static final String NOTIFICATION_CANCELLED_KEY =
             "notification.bulkfolderduplicate.cancelled";
+    private static final String NOTIFICATION_INTERRUPTED_KEY =
+            "notification.bulkfolderduplicate.interrupted";
 
     private final SystemEventsAPI systemEventsAPI;
     private final NotificationAPI notificationAPI;
@@ -138,9 +140,22 @@ public class FolderBulkDuplicateCompletionListener implements EventSubscriber<Jo
 
     /**
      * Records the durable notification, worded on what actually happened.
+     * <p>
+     * A run that ended with no recorded outcome, abandoned when its node died or failed before the
+     * processor could report, has no counts to give. It is worded as interrupted rather than as
+     * "0 duplicated": each folder commits on its own, so some may already be duplicated, and an
+     * author told none were could resubmit and get a second set of copies.
+     *
+     * @param job     the finished run
+     * @param payload the outcome as pushed, carrying the counts when there are any
+     * @param userId  the submitter, who receives the notification
+     * @throws Exception the notification could not be recorded
      */
     private void record(final Job job, final Map<String, Object> payload, final String userId)
             throws Exception {
+
+        final boolean outcomeRecorded =
+                job.result().flatMap(JobResult::metadata).isPresent();
 
         final int succeeded = intValue(payload, "successCount");
         final int failed = intValue(payload, "failedCount");
@@ -154,6 +169,9 @@ public class FolderBulkDuplicateCompletionListener implements EventSubscriber<Jo
             // duplication broke when they stopped it themselves.
             messageKey = NOTIFICATION_CANCELLED_KEY;
             level = NotificationLevel.WARNING;
+        } else if (!outcomeRecorded) {
+            messageKey = NOTIFICATION_INTERRUPTED_KEY;
+            level = NotificationLevel.ERROR;
         } else if (JobState.SUCCESS != job.state() || (0 == succeeded && failed > 0)) {
             messageKey = NOTIFICATION_FAILED_KEY;
             level = NotificationLevel.ERROR;

@@ -335,6 +335,39 @@ public class FolderBulkDuplicateNotificationIT extends Junit5WeldBaseTest {
     /**
      * Method to test: {@link FolderBulkDuplicateCompletionListener}
      * <p>
+     * Given scenario: A run ends with no recorded outcome: abandoned when its node died, or failed
+     * before the processor could report. The queue hands the listener no counts.
+     * <p>
+     * Expected result: The notification says the run was interrupted and some folders may already
+     * be duplicated, not "0 folder(s) duplicated". Each folder commits on its own, so an author told
+     * nothing was duplicated could resubmit and get a second set of copies (PR review finding).
+     */
+    @Test
+    public void test_completion_noRecordedOutcome_doesNotClaimACount() throws Exception {
+        final User author = new UserDataGen().nextPersisted();
+
+        for (final JobState state : List.of(JobState.ABANDONED_PERMANENTLY,
+                JobState.FAILED_PERMANENTLY)) {
+            final Map<String, Object> parameters = new HashMap<>();
+            parameters.put("userId", author.getUserId());
+            final Job job = Job.builder()
+                    .id(UUID.randomUUID().toString())
+                    .queueName(FolderBulkDuplicateHelper.QUEUE_NAME)
+                    .state(state)
+                    .parameters(parameters)
+                    .build();
+
+            final CapturingNotifications captured = listenTo(job);
+
+            assertEquals("notification.bulkfolderduplicate.interrupted", captured.messageKey,
+                    state.name());
+            assertEquals(NotificationLevel.ERROR, captured.level, state.name());
+        }
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateCompletionListener}
+     * <p>
      * Given scenario: A cancelled run whose outcome records where it stopped.
      * <p>
      * Expected result: The completion push carries {@code stoppedAt}, so a client following the push

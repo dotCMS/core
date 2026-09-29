@@ -38,9 +38,9 @@ Same field name and shape as bulk delete's request.
 | `400` | `OVER_MAX_PATHS` | `assetPaths` | More distinct paths than the configured maximum (§5). The number may appear in `message`, but `message` is diagnostic text; the client's source for the number is the advertised configuration. |
 | `401` | none | none | No authenticated user, or a user who is not a back-end user. This is the generic role check every back-end REST resource uses, bulk delete's included, so the body carries no refusal code of its own; a client tells it apart by the status alone. Rights on an individual folder are **not** a submission refusal; see §4. |
 
-**Differs from delete**: there is **no `409 OVERLAPPING_RUN`**. Duplication carries no overlap guard,
-because two runs over the same folders cannot interfere: nothing is destroyed and the naming rule gives
-each duplicate its own name. A client MUST NOT write copy for an overlap refusal.
+**Differs from delete**: there is **no `409 OVERLAPPING_RUN`**. Duplication never refuses an overlap:
+nothing is destroyed, and a duplicate being made in the same place as another waits for it, so each
+duplicate gets its own name. A client MUST NOT write copy for an overlap refusal.
 
 ---
 
@@ -108,7 +108,7 @@ second duplicate carrying the suffix twice.
 | `PATH_NOT_FOUND` | `FAILED` | The path no longer resolves to a folder: gone, a file, or malformed | #37063 |
 | `PROTECTED_FOLDER` | `FAILED` | The system folder or another folder the system refuses to act on | #37063 |
 | `UNCLASSIFIED` | `FAILED` | Anything the server could not attribute, reported rather than guessed | shipped |
-| `COVERED_BY_PARENT` | `SKIPPED` | Another selected folder contains this one, so duplicating that folder already carries it | #37063 |
+| `COVERED_BY_PARENT` | `SKIPPED` | Another selected folder contains this one and was duplicated, so its duplicate carries this one. When that folder is refused or its duplicate fails, this one is duplicated on its own instead | #37063 |
 | *(none)* | `SKIPPED` | The run was cancelled before reaching this folder | shipped convention |
 
 **`COVERED_BY_PARENT` is shared, its meaning is not.** For delete it means the ancestor removed the

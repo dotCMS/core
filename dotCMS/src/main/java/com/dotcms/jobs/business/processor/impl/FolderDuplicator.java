@@ -9,15 +9,16 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.links.factories.LinkFactory;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -33,11 +34,13 @@ import java.util.stream.Collectors;
  * did not carry. Both run inside one transaction, so a failure leaves no partial duplicate, and
  * the {@code COPY_FOLDER} event the walk queues for commit fires only once the content is in place.
  * <p>
- * The complement reads the {@code identifier} table directly: one row per item whatever its
- * versions, languages or archived state, which is the database-first source for folder contents.
- * Each missing identifier is copied with {@link ContentletAPI#copyContentlet}, which copies every
+ * The complement reads the {@code identifier} table directly, for the source and for the
+ * duplicate: one row per item whatever its versions, languages or archived state, which is the
+ * database-first source for folder contents. Each item of the source whose name is absent from the
+ * duplicate is copied with {@link ContentletAPI#copyContentlet}, which copies every
  * version and keeps each one's live and archived state. Relationships therefore point at the
- * originals, as the walk's own copies do.
+ * originals, as the walk's own copies do. Menu links are not contentlets, so the walk's link copies
+ * are kept and only an archived link's copy is archived to match.
  * <p>
  * {@code FolderAPIImpl} and {@code FolderFactoryImpl} are not modified.
  *
@@ -47,6 +50,12 @@ final class FolderDuplicator {
 
     /** The suffix the walk appends, once or more, until the duplicate's name is free. */
     private static final String COPY_SUFFIX = "_copy";
+
+    /** Keeps this lock apart from the other advisory locks keyed on an identifier. */
+    private static final String DUPLICATE_LOCK_PREFIX = "folder-bulk-duplicate:";
+
+    /** What {@link LinkFactory#copyLink} appends to a link's title when the title is taken. */
+    private static final String LINK_COPY_SUFFIX = " (COPY) ";
 
     private final FolderAPI folderAPI;
     private final ContentletAPI contentletAPI;
@@ -78,6 +87,8 @@ final class FolderDuplicator {
             final User systemUser = APILocator.systemUser();
             final Folder parentFolder = parentFolderOf(source, systemUser);
             final Host site = APILocator.getHostAPI().find(source.getHostId(), systemUser, false);
+            waitForOtherDuplicatesLandingIn(parentFolder != null
+                    ? parentFolder.getIdentifier() : site.getIdentifier());
 
             final Set<String> before = childNames(childrenOf(parentFolder, site, systemUser));
             if (parentFolder == null) {
@@ -93,6 +104,29 @@ final class FolderDuplicator {
             copyWhatTheWalkLeftBehind(source, duplicate, site, systemUser);
             return duplicate;
         });
+    }
+
+    /**
+     * Holds, until this transaction ends, a lock on the place the duplicate lands, waiting first
+     * for any other duplicate landing there to commit or roll back.
+     * <p>
+     * Without it two overlapping duplicates of one folder each miss the other's uncommitted copy,
+     * choose the same free name, and the second fails on the identifier the name derives. Waiting
+     * lets the second see the first's copy and choose the next name, so submitting the same folder
+     * twice gives two duplicates however the runs overlap. The lock is Postgres's
+     * transaction-scoped advisory lock, the kind bulk delete takes per site; a single-folder copy
+     * made outside this class does not take it.
+     *
+     * @param parentIdentifier the identifier of the folder or site the duplicate lands in
+     * @throws DotDataException the lock could not be taken
+     */
+    private static void waitForOtherDuplicatesLandingIn(final String parentIdentifier)
+            throws DotDataException {
+        // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, the only runtime
+        // value is bound via addParam
+        new DotConnect().setSQL("SELECT pg_advisory_xact_lock(hashtext(?))")
+                .addParam(DUPLICATE_LOCK_PREFIX + parentIdentifier)
+                .loadObjectResults();
     }
 
     /**
@@ -126,11 +160,13 @@ final class FolderDuplicator {
     private void copyWhatTheWalkLeftBehind(final Folder source, final Folder duplicate,
             final Host site, final User systemUser) throws Exception {
 
-        final Set<String> carried = carriedByTheWalk(source, systemUser);
-        for (final String identifier : contentletIdentifiersUnder(source, site)) {
-            if (!carried.contains(identifier)) {
+        archiveTheCopiesOfArchivedLinks(source, duplicate, systemUser);
+
+        final Set<String> landed = contentletsUnder(duplicate, site).keySet();
+        for (final Map.Entry<String, String> item : contentletsUnder(source, site).entrySet()) {
+            if (!landed.contains(item.getKey())) {
                 final Contentlet contentlet = contentletAPI
-                        .findContentletByIdentifierAnyLanguage(identifier, true);
+                        .findContentletByIdentifierAnyLanguage(item.getValue(), true);
                 if (contentlet != null && UtilMethods.isSet(contentlet.getInode())) {
                     contentletAPI.copyContentlet(contentlet, duplicate, systemUser, false);
                 }
@@ -150,59 +186,84 @@ final class FolderDuplicator {
     }
 
     /**
-     * The identifiers the walk copies from one folder, computed with the walk's own calls: file
-     * assets that are working and not archived, and working pages.
+     * Archives the copy of every archived menu link directly under the source.
      * <p>
-     * <b>Deliberately the same calls, not an equivalent query.</b> The walk lists pages through the
-     * search index, not the database, so a page saved but not yet indexed is skipped by it. A
-     * database query would count that page as carried and it would be lost from the duplicate.
-     * Asking the walk's own question is the only way every item lands exactly once.
+     * The walk copies every working link, archived or not, and {@link LinkFactory#copyLink} keeps
+     * a link's live state but not its archived one, so an archived link would reappear in the
+     * duplicate as active. A link copy keeps no reference to its original, so each archived link is
+     * paired with a copy by the fields the copy carries over. Links that match on all of them are
+     * interchangeable, so which of them is archived makes no difference.
+     *
+     * @throws DotDataException an archived link has no copy to archive
      */
-    private Set<String> carriedByTheWalk(final Folder folder, final User systemUser)
-            throws Exception {
-        final Set<String> carried = new HashSet<>();
-        for (final FileAsset fileAsset : APILocator.getFileAssetAPI()
-                .findFileAssetsByFolder(folder, systemUser, false)) {
-            if (fileAsset.isWorking() && !fileAsset.isArchived()) {
-                carried.add(fileAsset.getIdentifier());
-            }
+    private void archiveTheCopiesOfArchivedLinks(final Folder source, final Folder duplicate,
+            final User systemUser) throws Exception {
+        final List<Link> archived = folderAPI.getLinks(source, true, true, systemUser, false);
+        if (archived.isEmpty()) {
+            return;
         }
-        for (final IHTMLPage page : APILocator.getHTMLPageAssetAPI()
-                .getWorkingHTMLPages(folder, systemUser, false)) {
-            carried.add(page.getIdentifier());
+        final List<Link> unpaired = new ArrayList<>(
+                folderAPI.getLinks(duplicate, true, false, systemUser, false));
+        for (final Link link : archived) {
+            final Link copy = unpaired.stream()
+                    .filter(candidate -> sameLink(link, candidate))
+                    .findFirst()
+                    .orElseThrow(() -> new DotDataException(
+                            "The copy of the archived link " + link.getTitle() + " in "
+                                    + source.getPath() + " is missing"));
+            unpaired.remove(copy);
+            APILocator.getVersionableAPI().setDeleted(copy, true);
         }
-        return carried;
+    }
+
+    /** Whether a copy carries the original's fields, allowing for the title's copy suffix. */
+    private static boolean sameLink(final Link original, final Link copy) {
+        final String title = copy.getTitle();
+        final String copyTitle = title != null && title.endsWith(LINK_COPY_SUFFIX)
+                ? title.substring(0, title.length() - LINK_COPY_SUFFIX.length())
+                : title;
+        return Objects.equals(original.getTitle(), copyTitle)
+                && Objects.equals(original.getUrl(), copy.getUrl())
+                && Objects.equals(original.getProtocal(), copy.getProtocal())
+                && Objects.equals(original.getLinkType(), copy.getLinkType())
+                && Objects.equals(original.getTarget(), copy.getTarget());
     }
 
     /**
-     * Every contentlet directly under a folder, one identifier per item whatever its versions,
-     * languages or archived state.
+     * Every contentlet directly under a folder, as its name in the folder mapped to its
+     * identifier: one entry per item whatever its versions, languages or archived state.
      * <p>
-     * <b>Why the identifier table, and why not paged.</b> The plan named
-     * {@code BrowserAPI.getContentUnderParentFromDB}, read a page at a time. That lookup answers
-     * one row per language version and filters by the query's user, so its rows would have to be
-     * collapsed back to identifiers before copying. One identifier is exactly the unit
+     * <b>Compared by name against what actually landed.</b> Whatever the walk copied sits in the
+     * duplicate under its original's name, so an item of the source whose name is absent from the
+     * duplicate is exactly what the walk left behind. Reading what landed, rather than asking the
+     * walk's own questions again, keeps the second pass off the search index: the walk lists pages
+     * through it, so a page saved but not yet indexed is skipped by the walk, and it is copied here
+     * because its name is missing from the duplicate. Items named after their identifier, such as
+     * generic content, never share a name with a copy, and the walk never carries them anyway.
+     * <p>
+     * <b>Why the identifier table, and why not paged.</b> One identifier is exactly the unit
      * {@link ContentletAPI#copyContentlet} works in, since it copies every version in every
-     * language of the item it is given. Both reads come from the database, not the search index.
-     * Paging is not needed: this reads only identifiers, a few dozen bytes each, and each
-     * contentlet is loaded one at a time as it is copied, so what is held at once stays bounded
-     * by one folder's identifiers, never the whole subtree.
+     * language of the item it is given, and the table holds one row per item. Paging is not
+     * needed: this reads only names and identifiers, a few dozen bytes each, and each contentlet
+     * is loaded one at a time as it is copied, so what is held at once stays bounded by one
+     * folder's items, never the whole subtree. Two such queries per folder are the whole cost of
+     * deciding what to copy.
      *
-     * @param folder the source folder whose direct contents are read
+     * @param folder the folder whose direct contents are read
      * @param site   the site the folder belongs to
-     * @return the identifiers of the contentlets directly under the folder
+     * @return each contentlet's name in the folder, mapped to its identifier
      * @throws DotDataException the query failed
      */
-    private List<String> contentletIdentifiersUnder(final Folder folder, final Host site)
+    private Map<String, String> contentletsUnder(final Folder folder, final Host site)
             throws DotDataException {
         return new DotConnect()
-                .setSQL("SELECT id FROM identifier WHERE host_inode = ? AND parent_path = ? "
-                        + "AND asset_type = 'contentlet'")
+                .setSQL("SELECT id, asset_name FROM identifier WHERE host_inode = ? "
+                        + "AND parent_path = ? AND asset_type = 'contentlet'")
                 .addParam(site.getIdentifier())
                 .addParam(folder.getPath())
                 .loadObjectResults().stream()
-                .map(row -> String.valueOf(row.get("id")))
-                .toList();
+                .collect(Collectors.toMap(row -> String.valueOf(row.get("asset_name")),
+                        row -> String.valueOf(row.get("id"))));
     }
 
     /**

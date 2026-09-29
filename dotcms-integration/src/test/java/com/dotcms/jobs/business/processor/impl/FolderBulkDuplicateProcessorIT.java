@@ -8,6 +8,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.dotcms.Junit5WeldBaseTest;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Method;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import org.awaitility.Awaitility;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.links.model.Link;
 import java.lang.reflect.InvocationTargetException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -672,6 +682,229 @@ public class FolderBulkDuplicateProcessorIT extends Junit5WeldBaseTest {
             assertFalse(assetsUnder(parent).containsKey("child_copy"), "childFirst=" + childFirst);
             assertEquals("folder", assetsUnder(duplicateOf(parent)).get("child"));
         }
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: A folder and its child both selected, by a user who may read and add to
+     * both but may not add where the folder's own duplicate would land
+     * ExpectedResult: The folder is refused with PARENT_PERMISSION_DENIED, so no duplicate carries
+     * the child, and the child is duplicated on its own inside the folder instead of being
+     * reported COVERED_BY_PARENT (PR review finding)
+     */
+    @Test
+    public void test_process_ancestorRefused_descendantDuplicatedOnItsOwn() throws Exception {
+        final User user = limitedUser();
+        final Folder readOnly = folder();
+        grant(readOnly, roleOf(user), PermissionAPI.PERMISSION_READ);
+        final Folder ancestor = new FolderDataGen().parent(readOnly).nextPersisted();
+        grant(ancestor, roleOf(user), PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        final Folder descendant = readableChildOf(ancestor, user);
+
+        final Map<String, Object> metadata =
+                duplicatePaths(List.of(pathOf(ancestor), pathOf(descendant)), user);
+
+        assertFailedWith(metadata, pathOf(ancestor), BatchFailureReason.PARENT_PERMISSION_DENIED);
+        assertSucceeded(metadata, descendant);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: A folder and its child both selected, where the folder's duplicate fails
+     * and rolls back
+     * ExpectedResult: The folder is FAILED with UNCLASSIFIED and the child is duplicated on its
+     * own, since the duplicate that would have carried it no longer exists (PR review finding)
+     */
+    @Test
+    public void test_process_ancestorFailsToDuplicate_descendantDuplicatedOnItsOwn()
+            throws Exception {
+        final Folder ancestor = folder();
+        final ContentType type = new ContentTypeDataGen().host(site).nextPersisted();
+        new ContentletDataGen(type.id()).host(site).folder(ancestor).nextPersisted();
+        final Folder descendant = new FolderDataGen().parent(ancestor).nextPersisted();
+        final Job job = jobFor(List.of(pathOf(descendant), pathOf(ancestor)));
+        final FolderBulkDuplicateProcessor processor = new FolderBulkDuplicateProcessor(
+                APILocator.getPermissionAPI(), new FolderDuplicator(failingCopy()));
+
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        assertFailedWith(metadata, pathOf(ancestor), BatchFailureReason.UNCLASSIFIED);
+        assertSucceeded(metadata, descendant);
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: A folder and its child both selected, in a run cancelled before its first
+     * folder
+     * ExpectedResult: Both are SKIPPED with no reason, like the rest of an unreached remainder. The
+     * child is not COVERED_BY_PARENT, because its parent was never duplicated (PR review finding)
+     */
+    @Test
+    public void test_process_cancelledBeforeTheAncestor_descendantSkippedWithoutReason()
+            throws Exception {
+        final Folder ancestor = folder();
+        final Folder descendant = new FolderDataGen().parent(ancestor).nextPersisted();
+        final Job job = jobFor(List.of(pathOf(ancestor), pathOf(descendant)));
+        final FolderBulkDuplicateProcessor processor = new FolderBulkDuplicateProcessor();
+
+        processor.cancel(job);
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        for (final Folder folder : List.of(ancestor, descendant)) {
+            final BatchItemResult result = resultFor(metadata, pathOf(folder));
+            assertEquals(BatchItemStatus.SKIPPED, result.status(), pathOf(folder));
+            assertTrue(result.reason().isEmpty(), pathOf(folder));
+        }
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: A folder and its child both selected, cancelled while the folder is being
+     * duplicated
+     * ExpectedResult: The folder finishes and its duplicate carries the child, so the child is
+     * still COVERED_BY_PARENT rather than an unreached SKIPPED
+     */
+    @Test
+    public void test_process_cancelledAfterTheAncestor_descendantStillCovered() throws Exception {
+        final Folder ancestor = folder();
+        final ContentType type = new ContentTypeDataGen().host(site).nextPersisted();
+        new ContentletDataGen(type.id()).host(site).folder(ancestor).nextPersisted();
+        final Folder descendant = new FolderDataGen().parent(ancestor).nextPersisted();
+        final Job job = jobFor(List.of(pathOf(descendant), pathOf(ancestor)));
+        final FolderBulkDuplicateProcessor[] running = new FolderBulkDuplicateProcessor[1];
+        final ContentletAPI cancellingCopy = delegatingContentletAPI((method, args) -> {
+            if (method.getName().equals("copyContentlet")) {
+                running[0].cancel(job);
+            }
+        });
+        running[0] = new FolderBulkDuplicateProcessor(APILocator.getPermissionAPI(),
+                new FolderDuplicator(cancellingCopy));
+
+        running[0].process(job);
+
+        final Map<String, Object> metadata = running[0].getResultMetadata(job);
+        assertSucceeded(metadata, ancestor);
+        final BatchItemResult descendantResult = resultFor(metadata, pathOf(descendant));
+        assertEquals(BatchItemStatus.SKIPPED, descendantResult.status());
+        assertEquals(BatchFailureReason.COVERED_BY_PARENT, descendantResult.reason().orElseThrow());
+    }
+
+    /**
+     * Method to test: {@link FolderDuplicator#duplicate(Folder, User)}
+     * Given Scenario: Two duplicates of the same folder overlap: the second starts while the
+     * first is still inside its transaction
+     * ExpectedResult: Both succeed, as two separate duplicates with two different names. The
+     * second waits for the first to commit rather than choosing the same free name and failing
+     * (PR review finding)
+     */
+    @Test
+    public void test_duplicate_twoOverlappingRuns_bothDuplicate() throws Exception {
+        final Folder source = folder();
+        final ContentType type = new ContentTypeDataGen().host(site).nextPersisted();
+        new ContentletDataGen(type.id()).host(site).folder(source).nextPersisted();
+        final CountDownLatch firstInside = new CountDownLatch(1);
+        final CountDownLatch releaseFirst = new CountDownLatch(1);
+        final ContentletAPI pausingCopy = delegatingContentletAPI((method, args) -> {
+            if (method.getName().equals("copyContentlet")) {
+                firstInside.countDown();
+                releaseFirst.await(60, TimeUnit.SECONDS);
+            }
+        });
+        final ExecutorService pool = Executors.newFixedThreadPool(2);
+        try {
+            final Future<Folder> first =
+                    pool.submit(() -> new FolderDuplicator(pausingCopy).duplicate(source, admin));
+            assertTrue(firstInside.await(60, TimeUnit.SECONDS),
+                    "the first duplicate never reached its second pass");
+
+            final Future<Folder> second =
+                    pool.submit(() -> new FolderDuplicator().duplicate(source, admin));
+            // Released only once the second is either waiting on a lock the first holds or has
+            // already given up, so the two transactions really overlap.
+            Awaitility.await().atMost(60, TimeUnit.SECONDS)
+                    .until(() -> second.isDone() || waitingForALock());
+            releaseFirst.countDown();
+
+            final Folder firstCopy = first.get(120, TimeUnit.SECONDS);
+            final Folder secondCopy = second.get(120, TimeUnit.SECONDS);
+            assertFalse(firstCopy.getName().equals(secondCopy.getName()),
+                    "two duplicates of one folder need two names");
+            assertTrue(assetsUnderParentOf(source).containsKey(firstCopy.getName()));
+            assertTrue(assetsUnderParentOf(source).containsKey(secondCopy.getName()));
+        } finally {
+            releaseFirst.countDown();
+            pool.shutdownNow();
+        }
+    }
+
+    /** Whether any database session is waiting on a lock another one holds. */
+    private static boolean waitingForALock() throws DotDataException {
+        return !new DotConnect()
+                .setSQL("select 1 from pg_locks where not granted")
+                .loadObjectResults().isEmpty();
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDuplicateProcessor#process(Job)}
+     * Given Scenario: A folder holding an archived menu link and a file asset whose only version
+     * is in a second language
+     * ExpectedResult: The duplicate holds both, in the same state: the link's copy is archived,
+     * and the file's copy exists in the second language only (PR review suggestion)
+     */
+    @Test
+    public void test_process_duplicateHoldsArchivedLinksAndOtherLanguageItems() throws Exception {
+        final Folder source = folder();
+        final Link archivedLink = new LinkDataGen(source).hostId(site.getIdentifier())
+                .nextPersisted();
+        APILocator.getVersionableAPI().setDeleted(archivedLink, true);
+        final Language second = new LanguageDataGen().nextPersisted();
+        final Contentlet onlyInSecond = new FileAssetDataGen(source, "second language only")
+                .languageId(second.getId()).nextPersisted();
+        final String fileName = nameOf(onlyInSecond.getIdentifier());
+
+        duplicate(source);
+
+        final Folder copy = duplicateOf(source);
+        assertEquals(typeCounts(source), typeCounts(copy));
+        final String linkCopyId = String.valueOf(new DotConnect()
+                .setSQL("select id from identifier where host_inode = ? and parent_path = ? "
+                        + "and asset_type = 'links'")
+                .addParam(site.getIdentifier())
+                .addParam(copy.getPath())
+                .loadObjectResults().getFirst().get("id"));
+        assertTrue(APILocator.getMenuLinkAPI().findWorkingLinkById(linkCopyId, admin, false)
+                .isArchived(), "the archived link's copy must be archived too");
+        final String fileCopyId = identifierOf(copy, fileName);
+        assertTrue(APILocator.getVersionableAPI()
+                .getContentletVersionInfo(fileCopyId, second.getId()).isPresent(),
+                "the file's copy must exist in the second language");
+        assertTrue(APILocator.getVersionableAPI()
+                .getContentletVersionInfo(fileCopyId,
+                        APILocator.getLanguageAPI().getDefaultLanguage().getId()).isEmpty(),
+                "the file's copy must not appear in a language the original was never in");
+    }
+
+    /** Something to run before each call to the real contentlet API, which then answers it. */
+    @FunctionalInterface
+    private interface BeforeCall {
+        void accept(Method method, Object[] args) throws Exception;
+    }
+
+    /** The real contentlet API, with a hook run before every call. */
+    private static ContentletAPI delegatingContentletAPI(final BeforeCall beforeCall) {
+        final ContentletAPI real = APILocator.getContentletAPI();
+        return (ContentletAPI) Proxy.newProxyInstance(ContentletAPI.class.getClassLoader(),
+                new Class<?>[]{ContentletAPI.class}, (proxy, method, args) -> {
+                    beforeCall.accept(method, args);
+                    try {
+                        return method.invoke(real, args);
+                    } catch (final InvocationTargetException e) {
+                        throw e.getCause();
+                    }
+                });
     }
 
     /**

@@ -36,6 +36,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,6 +96,7 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
     private final AtomicBoolean cancellationRequested = new AtomicBoolean();
     private final List<BatchItemResult> results = new CopyOnWriteArrayList<>();
     private final PermissionAPI permissionAPI;
+    private final FolderDuplicator duplicator;
     private volatile int total;
     /** The first submitted folder a cancelled run never reached; null when the run was not cut short. */
     private volatile String stoppedAt;
@@ -111,16 +113,34 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
      *                      fails, to prove a failed check is not reported as a refusal
      */
     FolderBulkDuplicateProcessor(final PermissionAPI permissionAPI) {
-        this.permissionAPI = permissionAPI;
+        this(permissionAPI, new FolderDuplicator());
     }
 
     /**
-     * Duplicates every submitted folder, in submission order.
+     * @param permissionAPI answers the batch read and add-children checks
+     * @param duplicator    duplicates each folder; a test passes one whose copy fails, to prove
+     *                      what happens to the folders under a folder that could not be duplicated
+     */
+    FolderBulkDuplicateProcessor(final PermissionAPI permissionAPI,
+            final FolderDuplicator duplicator) {
+        this.permissionAPI = permissionAPI;
+        this.duplicator = duplicator;
+    }
+
+    /**
+     * Duplicates every submitted folder.
      * <p>
-     * Every refusal that can be known up front is decided before the first copy: a folder inside
-     * another selected folder, a protected folder, a path that no longer resolves, and the two
-     * permission refusals, each checked for the whole selection in one round-trip. What is left is
-     * duplicated one folder at a time.
+     * Every refusal that can be known up front is decided before the first copy: a protected
+     * folder, a path that no longer resolves, and the two permission refusals, each checked for the
+     * whole selection in one round-trip. What is left is duplicated one folder at a time, in
+     * submission order, except that a folder inside another selected folder waits until that
+     * folder is done.
+     * <p>
+     * <b>Coverage is decided once the ancestor has run.</b> A folder inside another selected folder
+     * is SKIPPED with COVERED_BY_PARENT only when that folder was actually duplicated, since only
+     * then does a duplicate carry it. When the ancestor was refused, or its duplicate failed and
+     * rolled back, the folder is duplicated on its own. A folder that fails its own up-front checks
+     * keeps that refusal whatever its ancestors do.
      *
      * @param job the run, carrying {@code assetPaths} and {@code userId}
      */
@@ -129,29 +149,40 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
         final List<String> paths = FolderBulkDuplicateHelper.pathsOf(job.parameters());
         this.total = paths.size();
         final User user = user(job.parameters());
-        final FolderDuplicator duplicator = new FolderDuplicator();
 
         Logger.info(this, String.format(
                 "Bulk folder duplicate job [%s]: duplicating %d path(s) for user [%s]",
                 job.id(), paths.size(), user.getUserId()));
 
-        final Map<String, Folder> duplicable = decideUpFront(paths, duplicator, user);
+        final Map<String, Folder> duplicable = decideUpFront(paths, this.duplicator, user);
+        // Every folder refused up front is already decided, so it counts as processed.
+        final int refusedUpFront = paths.size() - duplicable.size();
+        if (refusedUpFront > 0) {
+            reportProgress(job, this.processedCount.addAndGet(refusedUpFront));
+        }
 
-        for (int index = 0; index < paths.size(); index++) {
+        final List<String> order = ancestorsFirst(duplicable.keySet());
+        final List<String> duplicated = new ArrayList<>();
+        for (int index = 0; index < order.size(); index++) {
             // Honoured between folders, never inside one, so a folder is always fully duplicated
             // or not duplicated at all.
             if (this.cancellationRequested.get()) {
-                recordUnreachedAsSkipped(paths.subList(index, paths.size()), duplicable);
+                recordUnreached(order.subList(index, order.size()), duplicated, paths);
                 break;
             }
 
-            final String path = paths.get(index);
-            final Folder source = duplicable.get(path);
-            if (source != null) {
+            final String path = order.get(index);
+            if (findCoveringAncestor(path, duplicated) != null) {
+                // Its ancestor's duplicate already carries it; duplicating it too would copy it
+                // twice, once inside the ancestor's duplicate and once beside itself.
+                record(path, BatchItemStatus.SKIPPED, BatchFailureReason.COVERED_BY_PARENT, null);
+            } else {
                 // Started just before the folder and stopped the instant it returns, on every exit.
                 final ScheduledExecutorService heartbeat = startHeartbeat(job);
                 try {
-                    duplicateOne(duplicator, source, path, user);
+                    if (duplicateOne(duplicable.get(path), path, user)) {
+                        duplicated.add(path);
+                    }
                 } finally {
                     heartbeat.shutdownNow();
                 }
@@ -167,6 +198,23 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
                 "Bulk folder duplicate job [%s] finished: %d succeeded, %d failed, %d skipped",
                 job.id(), this.successCount.get(), this.failedCount.get(),
                 this.skippedCount.get()));
+    }
+
+    /**
+     * The folders to duplicate, in submission order, except that each one comes after every
+     * other folder in the selection that contains it, so its coverage is known when it is reached.
+     *
+     * @param duplicable the folders cleared up front, in submission order
+     * @return the order they run in
+     */
+    static List<String> ancestorsFirst(final Collection<String> duplicable) {
+        final List<String> all = List.copyOf(duplicable);
+        // A stable sort, so folders at the same depth within the selection keep submission order.
+        return all.stream()
+                .sorted(Comparator.comparingLong(path -> all.stream()
+                        .filter(other -> findCoveringAncestor(path, List.of(other)) != null)
+                        .count()))
+                .toList();
     }
 
     /**
@@ -211,16 +259,23 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
     }
 
     /**
-     * Records every folder a cancelled run never reached as SKIPPED with no reason, and the first
-     * of them as where the run stopped. Folders already decided up front keep the outcome they
-     * were given.
+     * Records the folders a cancelled run never reached. One inside a folder that was duplicated
+     * is COVERED_BY_PARENT, since that duplicate carries it; every other one is SKIPPED with no
+     * reason, and the first of those in submission order is where the run stopped.
+     *
+     * @param unreached  the folders not yet reached, in run order
+     * @param duplicated the folders duplicated before the cancellation
+     * @param paths      every submitted path, in submission order
      */
-    private void recordUnreachedAsSkipped(final List<String> remaining,
-            final Map<String, Folder> duplicable) {
-        for (final String path : remaining) {
-            if (duplicable.containsKey(path)) {
-                if (this.stoppedAt == null) {
-                    // Where the remainder begins, so it can be resubmitted deliberately (FR-032).
+    private void recordUnreached(final List<String> unreached, final List<String> duplicated,
+            final List<String> paths) {
+        for (final String path : unreached) {
+            if (findCoveringAncestor(path, duplicated) != null) {
+                record(path, BatchItemStatus.SKIPPED, BatchFailureReason.COVERED_BY_PARENT, null);
+            } else {
+                // Where the remainder begins, so it can be resubmitted deliberately (FR-032).
+                if (this.stoppedAt == null
+                        || paths.indexOf(path) < paths.indexOf(this.stoppedAt)) {
                     this.stoppedAt = path;
                 }
                 record(path, BatchItemStatus.SKIPPED, null, null);
@@ -240,12 +295,7 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
         final Map<String, Folder> resolved = new LinkedHashMap<>();
 
         for (final String path : paths) {
-            final String coveringAncestor = findCoveringAncestor(path, paths);
-            if (coveringAncestor != null) {
-                // Its ancestor's duplicate already carries it; duplicating it too would copy it
-                // twice, once inside the ancestor's duplicate and once beside itself.
-                record(path, BatchItemStatus.SKIPPED, BatchFailureReason.COVERED_BY_PARENT, null);
-            } else if (isSiteRoot(path)) {
+            if (isSiteRoot(path)) {
                 record(path, BatchItemStatus.FAILED, BatchFailureReason.PROTECTED_FOLDER,
                         "a site root is not a folder that can be duplicated");
             } else {
@@ -398,28 +448,31 @@ public class FolderBulkDuplicateProcessor implements JobProcessor, Cancellable {
     /**
      * Duplicates one folder the up-front checks cleared, recording its outcome. A failure here is
      * this folder's alone: failing the run over it would discard every folder already duplicated.
+     *
+     * @return whether the folder was duplicated
      */
-    private void duplicateOne(final FolderDuplicator duplicator, final Folder source,
-            final String path, final User user) {
+    private boolean duplicateOne(final Folder source, final String path, final User user) {
         try {
-            duplicator.duplicate(source, user);
+            this.duplicator.duplicate(source, user);
             record(path, BatchItemStatus.SUCCESS, null, null);
+            return true;
         } catch (final Exception e) {
             Logger.warn(this, String.format("Unable to duplicate folder [%s]: %s",
                     path, e.getMessage()), e);
             record(path, BatchItemStatus.FAILED, BatchFailureReason.UNCLASSIFIED, e.getMessage());
+            return false;
         }
     }
 
     /**
-     * The first other submitted path that is a proper ancestor of this one, or {@code null}.
+     * The first of the given paths that is a proper ancestor of this one, or {@code null}.
      * Decided from the paths alone, so it does not depend on the order they were submitted in.
      * Compared lowercased, since folder resolution ignores case. Only a site-qualified folder
      * path can cover another. A site root is refused, and a path with no site in front of it is
      * never resolved, so neither is duplicated and neither has a duplicate to carry the folder.
      *
      * @param path     the submitted path being decided
-     * @param allPaths every path in the submission
+     * @param allPaths the paths that could cover it
      * @return the covering ancestor as it was submitted, or {@code null} when there is none
      */
     static String findCoveringAncestor(final String path, final List<String> allPaths) {
