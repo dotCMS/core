@@ -384,12 +384,13 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         id: DUPLICATE_ACTION_ID,
         nameKey: 'content-drive.action-center.duplicate-folder',
         icon: 'content_copy',
-        // READ is what copying a folder needs on the folder itself. A row whose rights are unknown
-        // is kept, so the server decides rather than the client guessing a refusal. Whether the
-        // author can add to the parent is a question about the browsed folder, not the row, and is
-        // answered before this list is shown at all.
+        // READ is what copying a folder needs on the folder itself, and only a folder known to
+        // carry it is counted, as the right-click menu offers it only there (FR-005c as amended).
+        // A selection with none still lists the action, at zero. Whether the author can add to
+        // the parent is a question about the browsed folder, not the row, and is answered before
+        // this list is shown at all.
         eligibleWhen: (item) =>
-            isFolder(item) && (item.permissions?.includes(PERMISSIONS_TYPE.READ) ?? true),
+            isFolder(item) && !!item.permissions?.includes(PERMISSIONS_TYPE.READ),
         ceilingOf: (context) => context.folderCeilings?.duplicate,
         supportsFolders: true,
         foldersOnly: true,

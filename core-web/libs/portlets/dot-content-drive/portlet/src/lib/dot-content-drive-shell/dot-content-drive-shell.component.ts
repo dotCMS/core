@@ -698,6 +698,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
      */
     readonly #currentFolderIsAffected = (affectedFolders?: string[]): boolean =>
         !affectedFolders?.length ||
+        // All site content lists what is inside folders, so a run anywhere on the site can
+        // change it.
+        this.#store.$allSiteContentSelected() ||
         affectedFolders
             .map(normalizeFolderRef)
             .includes(browsedFolderRef(this.#store.currentSite()?.hostname, this.#store.path()));
@@ -883,7 +886,18 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // collision branch a retry that worked collides on every file, so by the numbers it is a
         // total failure — and reporting it that way sends the author to delete and re-upload files
         // that were already correctly there, which is worse than offering no retry at all.
-        const isPartial = !duplicateSubmission && (failedCount > 0 || skippedCount > 0);
+        // A folder skipped because a selected parent already covered it is not a shortfall: the
+        // author selected a folder and its child and got the child once, inside the parent
+        // (FR-021a). Only the other skips count.
+        const coveredCount =
+            OUTCOME_KIND.FOLDER_DELETE === outcomeKind ||
+            OUTCOME_KIND.FOLDER_DUPLICATE === outcomeKind
+                ? (failures ?? []).filter(
+                      (item) => 'SKIPPED' === item.status && 'COVERED_BY_PARENT' === item.reason
+                  ).length
+                : 0;
+        const isPartial =
+            !duplicateSubmission && (failedCount > 0 || skippedCount - coveredCount > 0);
 
         // Silent on a clean success, unless the operation leaves no visible trace.
         //
@@ -1002,8 +1016,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // the split would separate lines the author reads as one list. Severity follows whether
         // anything actually failed, so a run whose only shortfall is skipped folders does not
         // arrive in red.
+        // Nothing to list for a run that fell short of nothing: its only entries are folders a
+        // selected parent covered.
         const failureGroups = isFolderOutcome
-            ? failures?.length
+            ? failures?.length && (isPartial || cancelled)
                 ? [
                       {
                           severity: (failedCount > 0 ? 'error' : 'warn') as 'error' | 'warn',

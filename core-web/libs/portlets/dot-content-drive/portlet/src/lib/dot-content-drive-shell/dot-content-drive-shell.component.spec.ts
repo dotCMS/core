@@ -1383,18 +1383,39 @@ describe('DotContentDriveShellComponent', () => {
                 );
             });
 
-            it('should warn, not fail, when folders were only skipped', () => {
+            it('should read a run as clean when its only skips were covered by a selected parent', () => {
+                // The author selected a folder and its child and got the child once, inside the
+                // parent's duplicate. Nothing was left out, so nothing may read as skipped.
                 settle(duplicated({ successCount: 1, skippedCount: 1, failures: [covered] }));
 
                 expect(messageService.add).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        severity: 'warn',
-                        summary: 'content-drive.duplicate.toast.incomplete',
-                        detail: expect.stringContaining(
-                            'content-drive.duplicate.skipped.covered-by-parent'
-                        )
+                        severity: 'success',
+                        summary: 'content-drive.action-center.toast.executed'
                     })
                 );
+            });
+
+            it('should reload the listing and the sidebar tree when a duplicate completes', () => {
+                (store.loadItems as unknown as Mock).mockClear();
+                (store.loadFolders as unknown as Mock).mockClear();
+
+                // No folders named: the listing reloads whatever folder is on screen.
+                settle(duplicated({ affectedFolders: undefined }));
+
+                expect(store.loadItems).toHaveBeenCalled();
+                expect(store.loadFolders).toHaveBeenCalled();
+            });
+
+            it('should reload the listing in all site content, wherever the duplicate landed', () => {
+                // All site content lists what is inside folders, so a duplicate anywhere on the
+                // site can add to it.
+                allSiteContentSelectedSignal.set(true);
+                (store.loadItems as unknown as Mock).mockClear();
+
+                settle(duplicated({ affectedFolders: ['//demo.dotcms.com/blogs'] }));
+
+                expect(store.loadItems).toHaveBeenCalled();
             });
 
             it('should report it in one toast, however many kinds of shortfall it had', () => {
@@ -5187,6 +5208,29 @@ describe('DotContentDriveShellComponent', () => {
                     severity: 'warn',
                     summary: 'content-drive.delete.toast.cancelled',
                     detail: expect.stringContaining('content-drive.delete.toast.cancelled-detail')
+                })
+            );
+        });
+
+        it('should read a delete as clean when its only skips went with a selected parent', () => {
+            actionExecutionResultSignal.set(
+                deleteOutcome({
+                    skippedCount: 1,
+                    failures: [
+                        {
+                            key: '//demo.dotcms.com/blogs/alpha/child/',
+                            status: 'SKIPPED',
+                            reason: 'COVERED_BY_PARENT'
+                        }
+                    ]
+                }) as never
+            );
+            spectator.detectChanges();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    summary: 'content-drive.action-center.toast.executed'
                 })
             );
         });

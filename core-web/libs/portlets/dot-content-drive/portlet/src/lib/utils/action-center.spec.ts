@@ -273,10 +273,22 @@ describe('action-center utils', () => {
                 expect(offered).toContain(DUPLICATE_ACTION_ID);
             });
 
-            it('should keep a folder whose rights are unknown, so the server decides', () => {
-                const duplicate = duplicateOf([folderRow('f1', '/blogs/alpha/')]);
+            it('should count only the folders known to allow a duplicate', () => {
+                // A folder whose rights are unknown is not counted: the run carries only what the
+                // author is known to be able to duplicate.
+                const duplicate = duplicateOf([
+                    folderRow('f1', '/blogs/alpha/', ['READ']),
+                    folderRow('f2', '/blogs/beta/')
+                ]);
 
                 expect(duplicate?.eligibleInodes).toEqual(['f1']);
+            });
+
+            it('should still be listed, at zero, when no selected folder is known to allow it', () => {
+                // Shown with nothing to run on, which the dialog renders as not selectable.
+                const duplicate = duplicateOf([folderRow('f1', '/blogs/alpha/')]);
+
+                expect(duplicate?.count).toBe(0);
             });
 
             it('should count only as many folders as one duplicate may carry', () => {
