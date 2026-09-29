@@ -1,4 +1,9 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
@@ -39,7 +44,7 @@ const MOCK_PREFILL: DotToolsCustomToolConfig = {
 describe('DotToolsToolDialogComponent', () => {
     describe('create mode', () => {
         let spectator: Spectator<DotToolsToolDialogComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
 
         const createComponent = createComponentFactory({
             component: DotToolsToolDialogComponent,
@@ -49,7 +54,7 @@ describe('DotToolsToolDialogComponent', () => {
                 { provide: DynamicDialogConfig, useValue: { data: {} } },
                 { provide: DotMessageService, useValue: new MockDotMessageService({}) },
                 mockProvider(DotContentTypeService, {
-                    getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
+                    getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
                 }),
                 mockProvider(DotHttpErrorManagerService)
             ]
@@ -94,14 +99,14 @@ describe('DotToolsToolDialogComponent', () => {
                 portletId: 'press-releases',
                 baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
                 contentTypes: ['Blog'],
-                dataViewMode: 'Card'
+                dataViewMode: 'card'
             });
             spectator.component['onSubmit']();
             expect(mockRef.close).toHaveBeenCalledWith(
                 expect.objectContaining({
                     portletName: 'Press Releases',
                     portletId: 'press-releases',
-                    dataViewMode: 'Card'
+                    dataViewMode: 'card'
                 })
             );
         });
@@ -109,7 +114,7 @@ describe('DotToolsToolDialogComponent', () => {
 
     describe('edit mode with prefill', () => {
         let spectator: Spectator<DotToolsToolDialogComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
 
         const createComponent = createComponentFactory({
             component: DotToolsToolDialogComponent,
@@ -122,7 +127,7 @@ describe('DotToolsToolDialogComponent', () => {
                 },
                 { provide: DotMessageService, useValue: new MockDotMessageService({}) },
                 mockProvider(DotContentTypeService, {
-                    getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
+                    getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
                 }),
                 mockProvider(DotHttpErrorManagerService)
             ]
@@ -139,7 +144,7 @@ describe('DotToolsToolDialogComponent', () => {
                 portletId: 'c_press-releases',
                 baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
                 contentTypes: ['Blog'],
-                dataViewMode: 'Card'
+                dataViewMode: 'card'
             });
             expect(spectator.component['isEdit']).toBe(true);
         });
@@ -153,7 +158,7 @@ describe('DotToolsToolDialogComponent', () => {
 
     describe('edit mode without prefill (catalog fallback)', () => {
         let spectator: Spectator<DotToolsToolDialogComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
 
         const createComponent = createComponentFactory({
             component: DotToolsToolDialogComponent,
@@ -166,7 +171,7 @@ describe('DotToolsToolDialogComponent', () => {
                 },
                 { provide: DotMessageService, useValue: new MockDotMessageService({}) },
                 mockProvider(DotContentTypeService, {
-                    getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
+                    getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
                 }),
                 mockProvider(DotHttpErrorManagerService)
             ]
