@@ -8,6 +8,7 @@ import {
 } from '@ngrx/signals';
 import { EMPTY, Observable, forkJoin, throwError } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 
 import { catchError, take, tap } from 'rxjs/operators';
@@ -46,6 +47,10 @@ const initialState: DotToolsState = {
 /** Server truth is the source of `tabOrder`; the read never guarantees order. */
 function sortByTabOrder(sections: DotToolsSection[]): DotToolsSection[] {
     return [...sections].sort((a, b) => a.tabOrder - b.tabOrder);
+}
+
+function isNotFound(error: unknown): boolean {
+    return error instanceof HttpErrorResponse && error.status === 404;
 }
 
 export const DotToolsStore = signalStore(
@@ -157,7 +162,16 @@ export const DotToolsStore = signalStore(
                 .pipe(
                     take(1),
                     catchError((error) => {
-                        httpErrorManager.handle(error);
+                        // The initial load has its own error UX (`showError`
+                        // renders a retry card in the sections panel), and a
+                        // 404 here is expected while the section-endpoints PR
+                        // #37729 hasn't shipped — we do not want the global
+                        // "This URL does not exist" modal covering it. Route
+                        // any non-404 to the global handler so real backend
+                        // outages still surface with a toast.
+                        if (!isNotFound(error)) {
+                            httpErrorManager.handle(error);
+                        }
                         patchState(store, { status: 'error' });
 
                         return EMPTY;
