@@ -101,15 +101,6 @@ export class DotFolderBulkDuplicateService {
     }
 
     /**
-     * Maps a refused submission onto a kind the client has copy for, the way bulk folder delete's
-     * service does.
-     *
-     * Switches on `errorCode`, not on status, because the two `400`s need different words. Where the
-     * body carries no code, a `403` still reads as not entitled, and nothing guesses between the
-     * `400`s: telling an author they selected nothing when they hit the ceiling sends them to the
-     * wrong fix.
-     */
-    /**
      * Reads the duplicates still in progress, so a reload can put their status back.
      *
      * Filtered to runs genuinely in progress: the listing answers with every non-terminal run,
@@ -140,6 +131,15 @@ export class DotFolderBulkDuplicateService {
             );
     }
 
+    /**
+     * Maps a refused submission onto a kind the client has copy for, the way bulk folder delete's
+     * service does.
+     *
+     * Switches on `errorCode`, not on status, because the two `400`s need different words. Where the
+     * body carries no code, a `403` still reads as not entitled, and nothing guesses between the
+     * `400`s: telling an author they selected nothing when they hit the ceiling sends them to the
+     * wrong fix.
+     */
     #toRefusal(response: HttpErrorResponse): DotFolderBulkDuplicateRefusal {
         const error = ((response.error ?? {}) as RefusalBody).errors?.[0];
         const message = error?.message;
