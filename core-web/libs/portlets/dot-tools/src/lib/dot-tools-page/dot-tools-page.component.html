@@ -9,7 +9,6 @@
             <p-button
                 [label]="'tools.new-section' | dm"
                 size="small"
-                [outlined]="true"
                 (onClick)="openNewSectionDialog()"
                 data-testid="tools-new-section-btn" />
         </header>
@@ -259,9 +258,6 @@
         data-testid="tools-available-panel">
         @if (store.selectedSection(); as section) {
             <header class="mb-4 flex items-center gap-3">
-                <span class="material-symbols-outlined text-2xl text-gray-700">
-                    {{ section.icon }}
-                </span>
                 <h2 class="m-0 text-xl font-semibold tracking-tight">{{ section.name }}</h2>
                 <span
                     class="material-symbols-outlined cursor-help text-lg! text-primary"
@@ -271,10 +267,40 @@
                     data-testid="tools-available-info">
                     info
                 </span>
+                <div class="ml-auto flex items-center gap-2">
+                    <p-button
+                        [label]="'tools.menu.edit' | dm"
+                        size="small"
+                        [outlined]="true"
+                        (onClick)="openEditSelectedSection(section)"
+                        data-testid="tools-section-edit-btn" />
+                    <p-button
+                        icon="pi pi-ellipsis-v"
+                        size="small"
+                        [outlined]="true"
+                        [rounded]="true"
+                        [ariaLabel]="'tools.section-menu.aria-label' | dm"
+                        (click)="setSectionMenuTarget(section); sectionMenu.toggle($event)"
+                        data-testid="tools-section-header-menu-btn" />
+                </div>
             </header>
             <p class="mb-3 text-xs text-gray-500">
                 {{ 'tools.available-tools.instruction' | dm }}
             </p>
+
+            <div class="mb-3">
+                <p-iconField iconPosition="left" class="w-full">
+                    <p-inputIcon styleClass="pi pi-search" />
+                    <input
+                        pInputText
+                        type="text"
+                        class="w-full"
+                        [placeholder]="'tools.search.placeholder' | dm"
+                        [ngModel]="store.catalogFilter()"
+                        (ngModelChange)="onCatalogFilterChange($event)"
+                        data-testid="tools-catalog-search" />
+                </p-iconField>
+            </div>
 
             <div
                 class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-gray-200 bg-white">
@@ -289,20 +315,6 @@
                         [outlined]="true"
                         (onClick)="openNewToolDialog()"
                         data-testid="tools-new-tool-btn" />
-                </div>
-
-                <div class="border-b border-gray-100 px-3 py-2">
-                    <p-iconField iconPosition="left" class="w-full">
-                        <p-inputIcon styleClass="pi pi-search" />
-                        <input
-                            pInputText
-                            type="text"
-                            class="w-full"
-                            [placeholder]="'tools.search.placeholder' | dm"
-                            [ngModel]="store.catalogFilter()"
-                            (ngModelChange)="onCatalogFilterChange($event)"
-                            data-testid="tools-catalog-search" />
-                    </p-iconField>
                 </div>
 
                 <ul class="flex-1 overflow-auto py-1" data-testid="tools-catalog-list">
