@@ -35,7 +35,7 @@ analytics or experiments.
 experiment has ever been activated for this instance (the free slot is available). The
 operator can run exactly one experiment with a maximum duration of 10 days; event collection
 works normally because the App is configured. Scheduling, canceling a scheduled experiment,
-and archiving are blocked. Once the experiment completes, the free slot is consumed and no
+stopping, and archiving are blocked. Once the experiment completes, the free slot is consumed and no
 further experiments can be started without upgrading.
 
 **Why this priority**: This is the primary evaluation path for new customers — they must be
@@ -131,7 +131,9 @@ Affected: `POST /api/v1/experiments/{id}/_start` (immediate and future-dated),
 *When the Analytics App is not configured (any flag state):*
 - All activation endpoints → `503 Service Unavailable`. Activation is blocked because there
   is no backend to track events.
-- CRUD, health, `_end`, and `isUserIncluded` remain accessible; results are not available.
+- CRUD, health, and `isUserIncluded` remain accessible; results are not available.
+- `_end` accessibility is governed solely by `FEATURE_FLAG_EXPERIMENTS` (see below) — App
+  configuration has no effect on it because `_end` does not interact with CAEM.
 
 *When `FEATURE_FLAG_EXPERIMENTS=false` and the free slot is already used:*
 - `_start` (immediate), future-dated `_start`, `_cancel`, `archive`, and `_end` → `403 FEATURE_DISABLED`.
@@ -205,7 +207,9 @@ configure the Analytics App regardless of flag state.
     ARCHIVED ones. Allowing archive would let a user run their free experiment, archive it
     once finished, and recover the free slot to run another, bypassing the one-experiment
     limit entirely.
-  - **`_end`** — MUST return `403 FEATURE_DISABLED` in limited mode. Rationale: stopping a
+  - **`_end`** — MUST return `403 FEATURE_DISABLED` when `FEATURE_FLAG_EXPERIMENTS=false`,
+    regardless of Analytics App configuration. This endpoint does not interact with CAEM, so
+    App state is irrelevant — only the flag governs it. Rationale: stopping a
     RUNNING experiment moves it back to DRAFT state, which is not counted by the free slot
     check (`{RUNNING, SCHEDULED, ENDED}`). A user could exploit this to recover the free
     slot mid-experiment and start a new one, bypassing the one-experiment limit. This is
@@ -231,7 +235,7 @@ configure the Analytics App regardless of flag state.
 - **FR-002**: When `FEATURE_FLAG_EXPERIMENTS=true` **and** the Analytics App is configured for
   the site, all experiment endpoints MUST continue to function as they do today with no
   behavioral change, including start and scheduling operations. If the Analytics App is not
-  configured, activation operations (`_start`, `_schedule`, `_abort`, `archive`) return `503`
+  configured, activation operations (`_start`, `_schedule`, `_cancel`, `archive`) return `503`
   per FR-001.
   - **Test**: Unit — verify no gate fires and no `403`/`503` is returned when both conditions
     are met. No Postman or integration tests required — this is a regression guard only.
@@ -477,8 +481,9 @@ configure the Analytics App regardless of flag state.
   changes without a restart; this live-toggle capability MUST be removed system-wide as part
   of this feature (FR-010). After this change, the value is read once at server startup and
   held for the lifetime of the instance — a restart is required for changes to take effect.
-  `FEATURE_FLAG_CONTENT_ANALYTICS` is removed; analytics availability is now determined by
-  whether the Analytics App is configured for the site.
+  `FEATURE_FLAG_CONTENT_ANALYTICS` is removed from the new gate logic; analytics availability
+  is now determined by whether the Analytics App is configured for the site (see Legacy
+  Considerations for full disposition).
 - **Analytics App**: The site-level App configuration that provides credentials (site auth,
   bearer token, URL) for connecting to the CAEM analytics backend. When the App is configured
   for a site, analytics is enabled for that site. When it is absent or incomplete, analytics
@@ -498,7 +503,7 @@ configure the Analytics App regardless of flag state.
 ### Measurable Outcomes
 
 - **SC-001**: When `FEATURE_FLAG_EXPERIMENTS=false` and the Analytics App is configured
-  (limited experiment mode): `_schedule`, `_cancel`, and `archive` return `403 FEATURE_DISABLED`;
+  (limited experiment mode): `_schedule`, `_cancel`, `archive`, and `_end` return `403 FEATURE_DISABLED`;
   `_start` succeeds once (free slot, max 10-day duration enforced with `400` if exceeded) and
   returns `403 FEATURE_DISABLED` thereafter; all other experiment operations remain accessible;
   event ingest forwards to CAEM as-is. The experiments health endpoint returns `tier: "limited"`
@@ -532,6 +537,10 @@ configure the Analytics App regardless of flag state.
   — the interceptor continues to use this flag to gate page-view event tracking as it does
   today. Migrating or removing `AnalyticsTrackWebInterceptor` is deferred to a future cleanup
   task. The new code introduced by this feature MUST NOT reference or depend on this flag.
+  **"Removed" scope**: "removed from the new gate logic" means the new code introduced by
+  this feature does not use this flag. The constant itself and all existing usages remain
+  untouched. The flag will be fully deleted from the codebase when `AnalyticsTrackWebInterceptor`
+  is removed as part of that future cleanup.
 - **Backward-compatibility expectations**: When `FEATURE_FLAG_EXPERIMENTS=true` and the
   Analytics App is configured (the fully-enabled state that existing customers have), behavior
   must be identical to today — no requests that currently succeed may be broken. The gate
