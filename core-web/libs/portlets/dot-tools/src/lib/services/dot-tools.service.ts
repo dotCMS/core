@@ -66,7 +66,9 @@ export class DotToolsService {
 
     reorderSections(orderedIds: string[]): Observable<DotToolsSection[]> {
         return this.#http
-            .put<ResponseEntity<DotToolsSection[]>>('/api/v1/layouts/_reorder', orderedIds)
+            .put<ResponseEntity<DotToolsSection[]>>('/api/v1/layouts/_reorder', {
+                layoutIds: orderedIds
+            })
             .pipe(map((res) => res.entity));
     }
 
@@ -74,7 +76,7 @@ export class DotToolsService {
         return this.#http
             .put<
                 ResponseEntity<DotToolsSection[]>
-            >(`/api/v1/layouts/${encodeURIComponent(sectionId)}/portlets`, portletIds)
+            >(`/api/v1/layouts/${encodeURIComponent(sectionId)}/portlets`, { portletIds })
             .pipe(map((res) => res.entity));
     }
 
