@@ -1,6 +1,5 @@
 package com.dotcms.publishing.output;
 
-import com.dotcms.storage.AmazonS3StoragePersistenceAPIImpl;
 import com.dotcms.storage.AssetStorageFeature;
 import com.dotcms.storage.ChainableStoragePersistenceAPIBuilder;
 import com.dotcms.storage.FileSystemStoragePersistenceAPIImpl;
@@ -59,7 +58,7 @@ public final class BundleArchiveStorage {
         if (storage == null) {
             storage = new ChainableStoragePersistenceAPIBuilder()
                     .add(StoragePersistenceProvider.INSTANCE.get().getStorage(StorageType.FILE_SYSTEM))
-                    .add(AmazonS3StoragePersistenceAPIImpl.withPlainPaths()).get();
+                    .add(StoragePersistenceProvider.remoteObjectStorage()).get();
         }
         if (!initialized) {
             final File root = new File(ConfigUtils.getBundlePath());
