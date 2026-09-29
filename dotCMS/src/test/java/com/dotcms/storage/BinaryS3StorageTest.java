@@ -402,9 +402,9 @@ class BinaryS3StorageTest {
     private static void pinWebdavCleanupClock(AmazonS3StoragePersistenceAPIImpl remote,
             java.util.concurrent.atomic.AtomicLong time) throws Exception {
         doAnswer(call -> {
-            final var actual = (AmazonS3StoragePersistenceAPIImpl.ObjectSnapshot) call.callRealMethod();
+            final var actual = (ObjectSnapshot) call.callRealMethod();
             if (actual != null && actual.path().startsWith("maintenance/") && time.get() != 0) {
-                return new AmazonS3StoragePersistenceAPIImpl.ObjectSnapshot(actual.path(), actual.value(), actual.version(), time.get());
+                return new ObjectSnapshot(actual.path(), actual.value(), actual.version(), time.get());
             }
             return actual;
         }).when(remote).readObjectSnapshot(anyString(), anyString(), any());

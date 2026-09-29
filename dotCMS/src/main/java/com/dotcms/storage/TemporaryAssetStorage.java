@@ -90,7 +90,7 @@ public final class TemporaryAssetStorage {
 
     private synchronized StoragePersistenceAPI remote() throws DotDataException {
         if (remote == null) {
-            remote = AmazonS3StoragePersistenceAPIImpl.withPlainPaths();
+            remote = StoragePersistenceProvider.remoteObjectStorage();
         }
         return remote;
     }
@@ -201,7 +201,7 @@ public final class TemporaryAssetStorage {
 
     private void removeMetadataAndRenditions(final String id) throws DotDataException {
         APILocator.getFileStorageAPI().removeMetaData(new FetchMetadataParams.Builder().cache(false)
-                .storageKey(new StorageKey.Builder().storage(StorageType.S3)
+                .storageKey(new StorageKey.Builder().storage(StoragePersistenceProvider.remoteStorageType())
                         .group(Config.getStringProperty(StoragePersistenceProvider.METADATA_GROUP_NAME, FileMetadataAPI.DOT_METADATA))
                         .path(metadataPath(id)).build()).build());
         APILocator.getBinaryAssetStorageAPI().deleteGeneratedFiles(id);
