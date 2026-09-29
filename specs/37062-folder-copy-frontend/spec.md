@@ -442,8 +442,9 @@ offered, says it will act on four, and acts on four.
   cannot serve both. The second is not an error at all and MUST NOT be presented as one: the author
   selected a parent and its child, and got what they asked for once.
   *Clarified (2026-09-29, developer decision).* A run whose only skips are folders an ancestor
-  covered reads as clean, and the report's counts name those folders as covered, not skipped.
-  Bulk delete reads the same way.
+  covered reads as clean and does not report them: they were handled inside the parent. When a run
+  does report a shortfall, its counts name those folders as covered, never as skipped or not
+  attempted. Bulk delete reads the same way.
 - **FR-022**: Where there are more entries than the report can show at once, it MUST name the first
   few and acknowledge the remainder as a count, and that remainder MUST be reachable rather than a
   dead end. How many are named before the overflow begins is a design choice for planning; that the
