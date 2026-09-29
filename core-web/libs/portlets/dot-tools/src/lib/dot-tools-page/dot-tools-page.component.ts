@@ -289,6 +289,10 @@ export class DotToolsPageComponent {
         return tool.isCustom;
     }
 
+    protected openEditSelectedSection(section: DotToolsSection): void {
+        this.openEditSectionDialog(section);
+    }
+
     private openEditSectionDialog(section: DotToolsSection): void {
         // Same "dialog owns the submit" pattern as openNewSectionDialog.
         this.#dialogService.open(DotToolsSectionDialogComponent, {
