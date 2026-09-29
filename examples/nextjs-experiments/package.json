@@ -9,11 +9,11 @@
         "lint": "eslint"
     },
     "dependencies": {
-        "@dotcms/client": "latest",
-        "@dotcms/experiments": "latest",
-        "@dotcms/react": "latest",
-        "@dotcms/types": "latest",
-        "@dotcms/uve": "latest",
+        "@dotcms/client": "file:../../core-web/dist/libs/sdk/client",
+        "@dotcms/events": "file:../../core-web/dist/libs/sdk/events",
+        "@dotcms/react": "file:../../core-web/dist/libs/sdk/react",
+        "@dotcms/types": "file:../../core-web/dist/libs/sdk/types",
+        "@dotcms/uve": "file:../../core-web/dist/libs/sdk/uve",
         "@tinymce/tinymce-react": "6.2.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",

@@ -43,6 +43,19 @@ export const PROBES: Probe[] = [
         forbidden: ['/react/', 'next/navigation', 'useContentAnalytics', 'DotContentAnalytics']
     },
     {
+        name: 'events-init',
+        source: `import { events } from '@dotcms/events';\nexport { events };\n`,
+        packages: ['events', 'uve', 'types'],
+        forbidden: ['/react/', 'next/navigation', 'tinymce']
+    },
+    {
+        // The React adapter brings the markup and the boot script builder, never the engine
+        name: 'events-react',
+        source: `import { DotCMSExperiment } from '@dotcms/events/react';\nexport { DotCMSExperiment };\n`,
+        packages: ['events'],
+        forbidden: ['@dotcms/events/index', '/analytics/', '@analytics/']
+    },
+    {
         name: 'uve-only',
         source: `import { getUVEState } from '@dotcms/uve';\nexport { getUVEState };\n`,
         packages: ['uve', 'types'],
