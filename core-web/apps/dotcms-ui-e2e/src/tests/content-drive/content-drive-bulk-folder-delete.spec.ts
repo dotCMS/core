@@ -202,15 +202,4 @@ test.describe('Content Drive bulk folder delete', () => {
                 await drive.expectToastContaining('You can delete up to 5 folders at a time');
             }
         ));
-
-    // Needs content locked by another user inside the folder, which no fixture here can create:
-    // the requests helpers have no second login to lock with. The server's per-folder failure is
-    // covered by the backend suite, and the marking clearing on a failed folder by the store's
-    // unit tests. Skipped with that reason rather than written to pass without the failure.
-    // eslint-disable-next-line playwright/no-skipped-test
-    test.skip('leaves a folder usable when its delete failed', async () => {
-        // Provoke a per-folder failure (locked content inside), then wait for the run to settle.
-        // Expected: the folder is named in the outcome with a reason, the marking clears, and the
-        // folder is usable again (contract CR-10).
-    });
 });
