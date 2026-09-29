@@ -114,8 +114,12 @@ JSON and storage keys remain readable. Reconstructed files keep the stored revis
 I/O. Old and rolled-back revisions are kept until whole-inode cleanup.
 
 Custom metadata is copied to replacements, and metadata files and cache entries identify the exact
-binary revision. Binary HTTP responses (`BinaryExporterServlet`) and FileAsset streams hold a cache
-lease while they resolve and consume the file.
+binary revision. Binary HTTP responses (`BinaryExporterServlet`) hold a cache lease while they
+resolve and consume the file. `FileAsset.getInputStream` and `Contentlet.getBinaryStream` hold it
+only until the stream is open, because a lease must be released on the thread that took it and a
+caller may read or close the stream elsewhere. On a local disk an open file survives eviction, so
+this is safe. Eviction on an NFS asset directory, where deleting an open file can break the read,
+has not been validated.
 
 ## Metadata from evicted originals
 
