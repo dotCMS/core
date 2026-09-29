@@ -168,7 +168,7 @@ public class BinaryFieldCleanupProcessor implements JobProcessor, Validator {
             // Local revision directories contain originals too. Their complete contents
             // are already in the physical inventory; only S3 can distinguish the groups.
             final var storage = parent.equals(legacyParent) ? metadataStorage()
-                    : StoragePersistenceProvider.INSTANCE.get().getStorage(com.dotcms.storage.StorageType.S3);
+                    : StoragePersistenceProvider.INSTANCE.get().getStorage(StoragePersistenceProvider.remoteStorageType());
             for (String path : storage.listObjectPaths(metadataGroup(), parent)) {
                 final String absolute = path.startsWith("/") ? path : "/" + path;
                 if (parent.equals(legacyParent) && absolute.substring(parent.length()).contains("/")) continue;

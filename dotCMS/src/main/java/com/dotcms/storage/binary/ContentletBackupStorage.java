@@ -1,7 +1,6 @@
 package com.dotcms.storage.binary;
 
 import com.dotcms.content.business.json.ContentletJsonHelper;
-import com.dotcms.storage.AmazonS3StoragePersistenceAPIImpl;
 import com.dotcms.storage.AssetStorageFeature;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.StorageKey;
@@ -43,7 +42,7 @@ public final class ContentletBackupStorage {
 
     private synchronized StoragePersistenceAPI storage() throws DotDataException {
         if (!AssetStorageFeature.isEnabled()) throw new DotDataException("S3 asset storage is disabled");
-        if (storage == null) storage = AmazonS3StoragePersistenceAPIImpl.withPlainPaths();
+        if (storage == null) storage = StoragePersistenceProvider.remoteObjectStorage();
         if (!initialized) {
             storage.createGroup(GROUP);
             initialized = true;
