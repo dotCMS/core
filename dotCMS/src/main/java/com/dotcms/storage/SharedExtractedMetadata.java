@@ -13,15 +13,15 @@ import java.util.function.Function;
 /** Only byte-derived extraction goes here; filenames and editorial metadata are merged afterwards. */
 final class SharedExtractedMetadata {
     static final String GROUP = "extracted-metadata";
-    private final AmazonS3StoragePersistenceAPIImpl storage;
+    private final StoragePersistenceAPI storage;
 
     private static class Holder {
         private static final SharedExtractedMetadata INSTANCE = new SharedExtractedMetadata(
-                AmazonS3StoragePersistenceAPIImpl.withPlainPaths());
+                StoragePersistenceProvider.remoteObjectStorage());
     }
 
     static SharedExtractedMetadata getInstance() { return Holder.INSTANCE; }
-    SharedExtractedMetadata(AmazonS3StoragePersistenceAPIImpl storage) { this.storage = storage; }
+    SharedExtractedMetadata(StoragePersistenceAPI storage) { this.storage = storage; }
 
     @SuppressWarnings("unchecked")
     Map<String, Serializable> get(File source, String extractorVersion, int schemaVersion, int textLimit,
