@@ -18,12 +18,13 @@ export const FOLDER_RUN_URL = {
  * Makes the configuration advertise the given folder ceilings.
  *
  * The real value is a server setting no test can change on demand, so the configuration response
- * is answered with the server's own body, changed only where the ceilings are. Must run before the
- * app loads, which is when it reads the configuration.
+ * is answered with the server's own body, changed only where the ceilings are. `null` advertises no
+ * ceiling at all, as an instance older than the field does. Must run before the app loads, which
+ * is when it reads the configuration.
  */
 export async function advertiseFolderCeilings(
     page: Page,
-    ceilings: { duplicate?: number; delete?: number }
+    ceilings: { duplicate?: number | null; delete?: number | null }
 ): Promise<void> {
     await page.route(
         (url) => url.pathname === '/api/v1/appconfiguration',
@@ -33,11 +34,13 @@ export async function advertiseFolderCeilings(
             const config = body?.entity?.config;
 
             if (config && ceilings.duplicate !== undefined) {
-                config.folderBulkDuplicate = { maxPaths: ceilings.duplicate };
+                config.folderBulkDuplicate =
+                    ceilings.duplicate === null ? undefined : { maxPaths: ceilings.duplicate };
             }
 
             if (config && ceilings.delete !== undefined) {
-                config.folderBulkDelete = { maxPaths: ceilings.delete };
+                config.folderBulkDelete =
+                    ceilings.delete === null ? undefined : { maxPaths: ceilings.delete };
             }
 
             await route.fulfill({ response, json: body });

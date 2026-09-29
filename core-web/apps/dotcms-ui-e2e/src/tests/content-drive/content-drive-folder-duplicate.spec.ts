@@ -241,8 +241,13 @@ test.describe('Content Drive folder duplicate', () => {
                     apiHelpers,
                     name: `cd-dup-refused-${testSuffix}`,
                     children: ['source'],
-                    beforeOpen: (duplicate) =>
-                        duplicate.refuseSubmissionsWith(refusal.status, refusal.errorCode)
+                    beforeOpen: async (duplicate) => {
+                        // No ceiling advertised: with one, an over-limit refusal names the number
+                        // instead, which the limit test below covers. This is the wording an
+                        // instance older than the field gets.
+                        await advertiseFolderCeilings(adminPage, { duplicate: null });
+                        await duplicate.refuseSubmissionsWith(refusal.status, refusal.errorCode);
+                    }
                 },
                 async (drive, duplicate) => {
                     await duplicate.fromContextMenu('source');
