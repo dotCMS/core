@@ -354,9 +354,14 @@ through a later replacement. Mixed-case temporary names are kept, while normal C
 case-insensitive handling.
 
 Cleanup uses S3 server timestamps, protects completed and pending payload references, and
-conditionally replaces expired path records with tombstones. Normal WebDAV uploads still go through
-content check-in, and their reads, copies and overwrites hold the cache lease through the stream.
-With the flag off, WebDAV and temporary uploads use the local filesystem as before.
+conditionally replaces expired path records with tombstones. Tombstones are never deleted, because
+some S3-compatible stores (MinIO among them) ignore the condition on a conditional delete, and an
+unconditional delete could remove a newer upload that reused the path. The group therefore keeps
+one small tombstone record per deleted WebDAV temporary path, and each cleanup run reads them
+again, until safe reclamation is added. Normal WebDAV uploads still go through content check-in,
+and their reads, copies and overwrites open the file under the cache lease through
+`Contentlet.getBinaryStream`. With the flag off, WebDAV and temporary uploads use the local
+filesystem as before.
 
 ## Local cache eviction
 
