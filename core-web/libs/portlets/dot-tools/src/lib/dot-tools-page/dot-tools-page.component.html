@@ -257,58 +257,46 @@
         class="flex min-h-0 flex-1 flex-col px-6 pt-5 pb-6"
         data-testid="tools-available-panel">
         @if (store.selectedSection(); as section) {
-            <header class="mb-4 flex items-center gap-3">
-                <h2 class="m-0 text-xl font-semibold tracking-tight">{{ section.name }}</h2>
-                <span
-                    class="material-symbols-outlined cursor-help text-lg! text-primary"
-                    [pTooltip]="'tools.available-tools.info.tooltip' | dm"
-                    tooltipPosition="right"
-                    [attr.aria-label]="'tools.available-tools.info.tooltip' | dm"
-                    data-testid="tools-available-info">
-                    info
-                </span>
-                <div class="ml-auto flex items-center gap-2">
-                    <p-button
-                        [label]="'tools.menu.edit' | dm"
-                        size="small"
-                        [outlined]="true"
-                        (onClick)="openEditSelectedSection(section)"
-                        data-testid="tools-section-edit-btn" />
-                    <p-button
-                        icon="pi pi-ellipsis-v"
-                        size="small"
-                        [outlined]="true"
-                        [rounded]="true"
-                        [ariaLabel]="'tools.section-menu.aria-label' | dm"
-                        (click)="setSectionMenuTarget(section); sectionMenu.toggle($event)"
-                        data-testid="tools-section-header-menu-btn" />
+            <header class="mb-4 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="m-0 text-xl font-semibold tracking-tight">{{ section.name }}</h2>
+                    <span
+                        class="material-symbols-outlined cursor-help text-lg! text-primary"
+                        [pTooltip]="'tools.available-tools.info.tooltip' | dm"
+                        tooltipPosition="right"
+                        [attr.aria-label]="'tools.available-tools.info.tooltip' | dm"
+                        data-testid="tools-available-info">
+                        info
+                    </span>
                 </div>
+                <p-button
+                    icon="pi pi-ellipsis-v"
+                    size="small"
+                    [outlined]="true"
+                    [rounded]="true"
+                    [ariaLabel]="'tools.section-menu.aria-label' | dm"
+                    (click)="setSectionMenuTarget(section); sectionMenu.toggle($event)"
+                    data-testid="tools-section-header-menu-btn" />
             </header>
             <p class="mb-3 text-xs text-gray-500">
                 {{ 'tools.available-tools.instruction' | dm }}
             </p>
 
-            <div class="mb-3">
-                <p-iconField iconPosition="left" class="w-full">
-                    <p-inputIcon styleClass="pi pi-search" />
-                    <input
-                        pInputText
-                        type="text"
-                        class="w-full"
-                        [placeholder]="'tools.search.placeholder' | dm"
-                        [ngModel]="store.catalogFilter()"
-                        (ngModelChange)="onCatalogFilterChange($event)"
-                        data-testid="tools-catalog-search" />
-                </p-iconField>
-            </div>
-
             <div
                 class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-gray-200 bg-white">
                 <div
-                    class="flex items-center justify-between border-b border-gray-200 bg-gray-50 px-4 py-3">
-                    <span class="text-xs font-bold tracking-wider text-gray-500 uppercase">
-                        {{ 'tools.available-tools' | dm }}
-                    </span>
+                    class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
+                    <p-iconField iconPosition="left" class="max-w-xs flex-1">
+                        <p-inputIcon styleClass="pi pi-search" />
+                        <input
+                            pInputText
+                            type="text"
+                            class="w-full"
+                            [placeholder]="'tools.search.placeholder' | dm"
+                            [ngModel]="store.catalogFilter()"
+                            (ngModelChange)="onCatalogFilterChange($event)"
+                            data-testid="tools-catalog-search" />
+                    </p-iconField>
                     <p-button
                         [label]="'tools.new-tool' | dm"
                         size="small"
