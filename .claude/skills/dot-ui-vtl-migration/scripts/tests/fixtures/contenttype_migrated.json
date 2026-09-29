@@ -7,13 +7,31 @@
         "id": "field-migrated-code",
         "variable": "code",
         "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
-        "values": "#dotParse(\"/dA/asset-migrated-001\")"
+        "values": "#dotParse(\"/dA/asset-migrated-001\")",
+        "fieldVariables": [
+          {
+            "clazz": "com.dotcms.contenttype.model.field.ImmutableFieldVariable",
+            "fieldId": "field-migrated-code",
+            "id": "var-migrated-code-rendermode",
+            "key": "newRenderMode",
+            "value": "component"
+          }
+        ]
       },
       {
         "id": "field-migrated-inlinedone",
         "variable": "inlineDone",
         "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
-        "values": "#if( $structures.isNewEditModeEnabled() )\n<p>new</p>\n#else\n<p>old, already migrated</p>\n#end"
+        "values": "#if( $structures.isNewEditModeEnabled() )\n<p>new</p>\n#else\n<p>old, already migrated</p>\n#end",
+        "fieldVariables": [
+          {
+            "clazz": "com.dotcms.contenttype.model.field.ImmutableFieldVariable",
+            "fieldId": "field-migrated-inlinedone",
+            "id": "var-migrated-inlinedone-rendermode",
+            "key": "newRenderMode",
+            "value": "component"
+          }
+        ]
       }
     ]
   }

@@ -24,5 +24,7 @@ def test_every_manifest_entry_file_resolves_inside_original_dir(malicious_paths_
     manifest = json.loads((workdir / "manifest.json").read_text())
     assert manifest["entries"], "the malicious fixture must still produce manifest entries"
     for entry in manifest["entries"]:
+        if "file" not in entry:  # renderMode entries write nothing locally
+            continue
         resolved = (original_dir / entry["file"]).resolve()
         assert resolved.is_relative_to(original_dir), f"{entry['file']} escaped {original_dir}"

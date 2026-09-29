@@ -24,12 +24,22 @@ def test_pull_classifies_every_custom_field_into_one_of_five_categories(full_ins
     assert "Banner.widget" in entries_by_key
     assert entries_by_key["Banner.widget"]["kind"] == "field"
 
-    # Categories (c) core file, (d) non-/dA #dotParse, and (e) clean/already-migrated
-    # inline VTL are report-only: never downloaded, never queued for migration.
-    for report_only_key in ("Page.coreWidget", "Page.otherPath", "Page.cleanInline", "Page.alreadyMigrated"):
+    # Categories (c) core file, (d) non-/dA #dotParse, and (e) clean inline VTL are
+    # report-only: never downloaded, never queued.
+    for report_only_key in ("Page.coreWidget", "Page.otherPath", "Page.cleanInline"):
         assert report_only_key not in entries_by_key, f"{report_only_key} must not produce a manifest entry"
 
-    assert len(manifest["entries"]) == 2, "exactly the shared asset entry + Banner.widget, nothing else"
+    migration_entries = [e["key"] for e in manifest["entries"] if e["kind"] != "renderMode"]
+    assert sorted(migration_entries) == ["Banner.widget", "asset-shared-001"], "no other code to migrate"
+
+    # Already-migrated inline code needs no migration, only the component render-mode flag;
+    # the shared asset's two owners get the flag once that asset is published.
+    render_mode = {e["key"]: e["requires"] for e in manifest["entries"] if e["kind"] == "renderMode"}
+    assert render_mode == {
+        "Blog.author": ["asset-shared-001"],
+        "Event.organizer": ["asset-shared-001"],
+        "Page.alreadyMigrated": [],
+    }
 
 
 def test_pull_writes_a_pending_status_for_every_new_entry(full_instance, workdir):

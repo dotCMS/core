@@ -49,7 +49,9 @@ uv run scripts/migrate_custom_fields.py push [--workdir PATH] [--dry-run] [--onl
   (FR-006, FR-008). Safe to run any number of times.
 - `--only KEY [KEY ...]`: restricts the run to entries whose `key` (dA id or `Type.field`) or
   `identifier` matches one of the given values; everything else in the manifest is left
-  untouched (FR-007).
+  untouched (FR-007). Naming a `/dA/` asset also includes the `renderMode` entries that require
+  it (the fields that load it), unless they already finished. This is how the skill pushes one
+  customer-picked batch at a time.
 - Per-entry safety gates, each independent of the others (FR-011):
   1. **Conflict check** (FR-009): re-fetch the live asset/field; if its inode (asset) or
      `values` (field) differs from what `pull` recorded, skip with reason `"changed on the
@@ -57,7 +59,15 @@ uv run scripts/migrate_custom_fields.py push [--workdir PATH] [--dry-run] [--onl
   2. **Inline-validity check** (FR-010): the migrated file must contain the modern-editor
      marker and must preserve the original bytes verbatim in the legacy branch; otherwise skip
      with a reason naming which check failed.
-  3. Otherwise: publish (asset) or update the field (field kind).
+  3. Otherwise: publish (asset) or update the field (field kind). A field update is a
+     `PUT /api/v3/contenttype/{typeId}/fields/{fieldId}` with the full field, its new `values`
+     and `newRenderMode=component`, keeping every other field variable.
+- `renderMode` entries only switch a field to `newRenderMode=component` (same v3 PUT, values
+  untouched). One that depends on a `/dA/` asset (`requires`) runs only once that asset is
+  published.
+- **Waiting**: an asset/field entry with no migrated file yet (not part of this batch), or a
+  `renderMode` entry whose asset isn't published, gets outcome `waiting: ...`, stays `pending`
+  for a later `push`, and is counted under `counts.waiting` (present only when non-zero).
 - Writes `manifest.json` back to disk after **every** entry's outcome, not only at the end of
   the batch (see research.md) — so an interrupted run's manifest still answers "what happened."
 - Final line on stdout is the CLI Result JSON.

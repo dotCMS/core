@@ -340,7 +340,6 @@ class PushServerState:
 
     def __init__(self) -> None:
         self.asset_inode = "inode-shared-001"  # matches the "asset-a" manifest entry
-        self.field_values = "<script>dojo.ready(function(){});</script>"  # matches "Blog.author"
         self.publish_status = 200
         self.publish_new_inode = "inode-shared-002"
         self.publish_response_body: bytes | None = None  # override: raw bytes instead of JSON
@@ -349,11 +348,52 @@ class PushServerState:
         self.field_update_calls = 0
         self.content_get_status = 200  # asset conflict-check GET status (simulate 5xx/transient)
         self.field_get_status = 200  # field conflict-check GET status (simulate 5xx/transient)
+        self.v3_puts: list[tuple[str, dict]] = []  # (fieldId, request body) for every v3 field PUT
+        # Custom fields as the server holds them, keyed by field id. Each carries an
+        # unrelated field variable (hideLabel) so tests can prove it is preserved.
+        self.fields: dict[str, dict] = {
+            "field-blog-author": {
+                "typeId": "ct-blog",
+                "variable": "author",
+                "values": "<script>dojo.ready(function(){});</script>",  # matches "Blog.author"
+                "fieldVariables": [hide_label_variable("field-blog-author")],
+            }
+        }
+
+    @property
+    def field_values(self) -> str:
+        return self.fields["field-blog-author"]["values"]
+
+    @field_values.setter
+    def field_values(self, value: str) -> None:
+        self.fields["field-blog-author"]["values"] = value
+
+
+def hide_label_variable(field_id: str) -> dict:
+    return {
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableFieldVariable",
+        "fieldId": field_id,
+        "id": f"var-hidelabel-{field_id}",
+        "key": "hideLabel",
+        "value": "true",
+    }
+
+
+def field_json(field_id: str, stored: dict) -> dict:
+    return {
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "contentTypeId": stored["typeId"],
+        "id": field_id,
+        "variable": stored["variable"],
+        "values": stored["values"],
+        "fieldVariables": copy.deepcopy(stored["fieldVariables"]),
+    }
 
 
 def build_push_server_handler(state: PushServerState):
     def handler(request: httpx.Request) -> httpx.Response:
         path = request.url.path
+        parts = path.strip("/").split("/")
 
         if path == "/api/v1/contenttype":  # preflight_auth()
             return json_response(load_json("contenttype_list_page1.json"))
@@ -363,19 +403,28 @@ def build_push_server_handler(state: PushServerState):
                 return json_response({"message": "server error"}, status=state.content_get_status)
             return json_response({"entity": {"inode": state.asset_inode, "identifier": "ident-shared-001"}})
 
-        if path == "/api/v1/contenttype/ct-blog/fields/id/field-blog-author":
-            if request.method == "GET":
-                if state.field_get_status != 200:
-                    return json_response({"message": "server error"}, status=state.field_get_status)
-                return json_response(
-                    {"entity": {"id": "field-blog-author", "variable": "author", "values": state.field_values}}
-                )
-            if request.method == "PUT":
-                state.field_update_calls += 1
-                if state.field_update_status == 200:
-                    # Mirrors a real server: the field now holds the migrated code.
-                    state.field_values = json.loads(request.content)["values"]
-                return json_response({"entity": {"id": "field-blog-author"}}, status=state.field_update_status)
+        # GET /api/v1/contenttype/{typeId}/fields/id/{fieldId}
+        if request.method == "GET" and parts[:3] == ["api", "v1", "contenttype"] and parts[4:6] == ["fields", "id"]:
+            stored = state.fields.get(parts[6])
+            if state.field_get_status != 200:
+                return json_response({"message": "server error"}, status=state.field_get_status)
+            if stored is None or stored["typeId"] != parts[3]:
+                return json_response({"message": "not found"}, status=404)
+            return json_response({"entity": field_json(parts[6], stored)})
+
+        # PUT /api/v3/contenttype/{typeId}/fields/{fieldId}  body: {"field": {...}}
+        if request.method == "PUT" and parts[:3] == ["api", "v3", "contenttype"] and parts[4] == "fields":
+            field_id = parts[5]
+            body = json.loads(request.content)
+            state.field_update_calls += 1
+            state.v3_puts.append((field_id, body))
+            if state.field_update_status == 200:
+                # Mirrors a real server: values and the whole variables list are replaced.
+                sent = body["field"]
+                variables = [{**v, "id": v.get("id") or f"var-new-{v['key']}"} for v in sent.get("fieldVariables", [])]
+                state.fields[field_id]["values"] = sent["values"]
+                state.fields[field_id]["fieldVariables"] = variables
+            return json_response({"entity": []}, status=state.field_update_status)
 
         if path == "/api/v1/workflow/actions/default/fire/PUBLISH":
             state.publish_calls += 1
@@ -402,6 +451,46 @@ def seeded_push_instance(mock_dotcms, workdir):
     return transport, manifest, state
 
 
+def render_mode_entry(key: str, type_id: str, field_id: str, requires: list[str]) -> dict:
+    return {
+        "kind": "renderMode",
+        "key": key,
+        "typeId": type_id,
+        "fieldId": field_id,
+        "requires": requires,
+        "label": f"{key} (enable component render mode)",
+        "usedBy": [key],
+        "status": "pending",
+        "statusReason": None,
+    }
+
+
+@pytest.fixture
+def seeded_render_mode_instance(mock_dotcms, workdir):
+    """The seeded push workdir plus two render-mode-only entries: "Blog.teaser" loads the
+    "asset-a" dA file (so it may only be flagged once that asset is published) and
+    "Page.done" whose code was already migrated (no dependency)."""
+    state = PushServerState()
+    state.fields["field-blog-teaser"] = {
+        "typeId": "ct-blog",
+        "variable": "teaser",
+        "values": '#dotParse("/dA/asset-a")',
+        "fieldVariables": [hide_label_variable("field-blog-teaser")],
+    }
+    state.fields["field-page-done"] = {
+        "typeId": "ct-page",
+        "variable": "done",
+        "values": "#if( $structures.isNewEditModeEnabled() )\nnew\n#else\nold\n#end",
+        "fieldVariables": [],
+    }
+    transport = mock_dotcms(build_push_server_handler(state))
+    manifest = seed_push_workdir(workdir)
+    manifest["entries"].append(render_mode_entry("Blog.teaser", "ct-blog", "field-blog-teaser", ["asset-a"]))
+    manifest["entries"].append(render_mode_entry("Page.done", "ct-page", "field-page-done", []))
+    mcf.write_manifest(workdir, manifest)
+    return transport, manifest, state
+
+
 # ─── one asset whose live inode a test can advance (publish) or reset (revert) ─────
 #
 # Drives a full pull -> push -> pull flow against a single dA asset, so tests can prove a
@@ -417,6 +506,16 @@ class ReversionableAssetState:
         self.migrated_inode = "inode-w1-v2"
         self.download_calls = 0
         self.publish_calls = 0
+        self.body_variables: list[dict] = []  # Widget.body's field variables on the server
+
+    def body_field(self) -> dict:
+        return {
+            "id": "field-widget-body",
+            "variable": "body",
+            "clazz": mcf.CUSTOM_FIELD_CLAZZ,
+            "values": '#dotParse("/dA/asset-w1")',
+            "fieldVariables": copy.deepcopy(self.body_variables),
+        }
 
 
 def build_reversionable_asset_handler(state: ReversionableAssetState):
@@ -430,22 +529,14 @@ def build_reversionable_asset_handler(state: ReversionableAssetState):
             return json_response({"entity": [{"id": "ct-widget", "variable": "Widget"}]})
 
         if path == "/api/v1/contenttype/id/ct-widget":
-            return json_response(
-                {
-                    "entity": {
-                        "id": "ct-widget",
-                        "variable": "Widget",
-                        "fields": [
-                            {
-                                "id": "field-widget-body",
-                                "variable": "body",
-                                "clazz": mcf.CUSTOM_FIELD_CLAZZ,
-                                "values": '#dotParse("/dA/asset-w1")',
-                            }
-                        ],
-                    }
-                }
-            )
+            return json_response({"entity": {"id": "ct-widget", "variable": "Widget", "fields": [state.body_field()]}})
+
+        if path == "/api/v1/contenttype/ct-widget/fields/id/field-widget-body":
+            return json_response({"entity": state.body_field()})
+
+        if path == "/api/v3/contenttype/ct-widget/fields/field-widget-body" and request.method == "PUT":
+            state.body_variables = json.loads(request.content)["field"]["fieldVariables"]
+            return json_response({"entity": []})
 
         if path == "/api/v1/content/asset-w1":
             return json_response(
@@ -550,3 +641,111 @@ def build_pinned_asset_handler():
 @pytest.fixture
 def pinned_asset_instance(mock_dotcms):
     return mock_dotcms(build_pinned_asset_handler())
+
+
+# ─── pull: which custom fields need the newRenderMode=component flag ──────────────
+#
+# Legacy.code          -> dA asset that still needs migrating: renderMode entry that
+#                         depends on that asset
+# Done.inlineDone      -> inline code already migrated, no flag: renderMode entry, no deps
+# Done.inlineFlagged   -> inline code already migrated, already flagged: nothing to do
+# Done.legacyInline    -> inline legacy code: a "field" entry (push flags it in the same PUT)
+# Shared.a / .b / .c   -> share one dA asset whose code is already migrated; .a has no
+#                         flag, .b is already "component", .c is explicitly "iframe"
+
+
+def render_mode_variable(field_id: str, value: str) -> dict:
+    return {
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableFieldVariable",
+        "fieldId": field_id,
+        "id": f"var-rendermode-{field_id}",
+        "key": "newRenderMode",
+        "value": value,
+    }
+
+
+def custom_field(field_id: str, variable: str, values: str, variables: list[dict]) -> dict:
+    return {
+        "id": field_id,
+        "variable": variable,
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": values,
+        "fieldVariables": variables,
+    }
+
+
+MIGRATED_VTL = "#if( $structures.isNewEditModeEnabled() )\n<p>new</p>\n#else\n<p>old</p>\n#end"
+LEGACY_VTL = "<script>dojo.ready(function(){ dijit.byId('x'); });</script>"
+
+RENDER_MODE_TYPES = {
+    "ct-legacy": {
+        "id": "ct-legacy",
+        "variable": "Legacy",
+        "fields": [custom_field("f-legacy-code", "code", '#dotParse("/dA/asset-legacy")', [hide_label_variable("f-legacy-code")])],
+    },
+    "ct-done": {
+        "id": "ct-done",
+        "variable": "Done",
+        "fields": [
+            custom_field("f-done-inline", "inlineDone", MIGRATED_VTL, []),
+            custom_field("f-done-flagged", "inlineFlagged", MIGRATED_VTL, [render_mode_variable("f-done-flagged", "component")]),
+            custom_field("f-done-legacy", "legacyInline", LEGACY_VTL, []),
+        ],
+    },
+    "ct-shared": {
+        "id": "ct-shared",
+        "variable": "Shared",
+        "fields": [
+            custom_field("f-shared-a", "a", '#dotParse("/dA/asset-done")', []),
+            custom_field("f-shared-b", "b", '#dotParse("/dA/asset-done")', [render_mode_variable("f-shared-b", "component")]),
+            custom_field("f-shared-c", "c", '#dotParse("/dA/asset-done")', [render_mode_variable("f-shared-c", "iframe")]),
+        ],
+    },
+}
+
+
+def asset_content(da_id: str, file_name: str) -> dict:
+    return {
+        "entity": {
+            "identifier": da_id,
+            "inode": f"inode-{da_id}",
+            "languageId": 1,
+            "contentType": "dotAsset",
+            "assetContentAsset": "hash",
+            "assetVersion": f"/dA/{da_id}/asset/{file_name}",
+            "fileName": file_name,
+            "live": True,
+        }
+    }
+
+
+def build_render_mode_pull_handler():
+    def handler(request: httpx.Request) -> httpx.Response:
+        path = request.url.path
+        params = dict(request.url.params)
+
+        if path == "/api/v1/contenttype":
+            if params.get("page") == "2":
+                return json_response({"entity": []})
+            return json_response({"entity": [{"id": t["id"], "variable": t["variable"]} for t in RENDER_MODE_TYPES.values()]})
+
+        if path.startswith("/api/v1/contenttype/id/"):
+            return json_response({"entity": copy.deepcopy(RENDER_MODE_TYPES[path.rsplit("/", 1)[-1]])})
+
+        if path == "/api/v1/content/asset-legacy":
+            return json_response(asset_content("asset-legacy", "legacy.vtl"))
+        if path == "/api/v1/content/asset-done":
+            return json_response(asset_content("asset-done", "done.vtl"))
+        if path == "/dA/asset-legacy/asset/legacy.vtl":
+            return text_response(LEGACY_VTL)
+        if path == "/dA/asset-done/asset/done.vtl":
+            return text_response(MIGRATED_VTL)
+
+        raise AssertionError(f"unexpected request in render_mode_pull fixture: {request.method} {request.url}")
+
+    return handler
+
+
+@pytest.fixture
+def render_mode_pull_instance(mock_dotcms):
+    return mock_dotcms(build_render_mode_pull_handler())

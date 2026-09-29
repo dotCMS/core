@@ -13,7 +13,9 @@ Migrates legacy (Dojo/Dijit) custom-field VTL to DotCustomFieldApi, two phases:
           fields/<Type>.<field>.vtl
                                 VTL written directly in the field's `values`
                                 that still uses legacy patterns
-        and writes <workdir>/manifest.json.
+        and writes <workdir>/manifest.json. It also queues every custom field
+        that must be switched to the "Recommended" (component) render mode —
+        the newRenderMode=component field variable — once its code is migrated.
 
   (run the dot-ui-vtl-migration skill on every file — inline, its default
    output since dotCMS/core#37757 — and write the single resulting file to
@@ -22,7 +24,9 @@ Migrates legacy (Dojo/Dijit) custom-field VTL to DotCustomFieldApi, two phases:
   push  Uploads what changed in migrated/: binaries through the workflow API
         (PUBLISH), inline VTL by updating the field. Skips anything that
         changed on the server since `pull`, and anything that is not a valid
-        inline migration (see inline_problem).
+        inline migration (see inline_problem). Every migrated field is left
+        with newRenderMode=component; a field that loads a /dA/ asset is only
+        switched once that asset is published.
 
 Usage:
     uv run scripts/migrate_custom_fields.py pull
@@ -43,6 +47,7 @@ Exit codes:
 """
 
 import argparse
+import copy
 import json
 import os
 import re
@@ -66,6 +71,12 @@ DA_RE = re.compile(r"^/dA/([A-Za-z0-9-]+)(?:/.*)?$")
 CORE_FILE_RE = re.compile(r"""(?:mergeTemplate|#parse)\s*\(\s*["']([^"']+)["']""")
 LEGACY_RE = re.compile(r"dojo\.|dijit|dojoType|DotCustomFieldApi\.(?:get|set|onChangeField)\s*\(")
 _PATH_SEPARATORS_RE = re.compile(r"[\\/]")
+
+# A custom field only renders natively in the new editor (the admin UI's "Recommended"
+# implementation) when this field variable is "component"; otherwise it's an iframe.
+RENDER_MODE_KEY = "newRenderMode"
+RENDER_MODE_COMPONENT = "component"
+FIELD_VARIABLE_CLAZZ = "com.dotcms.contenttype.model.field.ImmutableFieldVariable"
 
 client = httpx.Client(base_url=BASE_URL, headers={"Authorization": f"Bearer {DOTCMS_TOKEN}"}, timeout=60)
 
@@ -164,6 +175,41 @@ def preflight_auth() -> None:
             "(Users -> select user -> API Access Tokens) or POST /api/v1/authentication/api-token"
         )
     request("GET", "/api/v1/contenttype", params={"per_page": 1, "page": 1})
+
+
+# ─── custom field render mode ───────────────────────────────────────────────
+
+
+def has_component_render_mode(field: dict) -> bool:
+    return any(
+        v.get("key") == RENDER_MODE_KEY and v.get("value") == RENDER_MODE_COMPONENT
+        for v in field.get("fieldVariables") or []
+    )
+
+
+def with_component_render_mode(field: dict) -> dict:
+    """A copy of `field` whose `newRenderMode` variable is "component". Every other field
+    variable is kept as-is: the v3 field PUT replaces the variables list wholesale, so any
+    variable left out would be deleted. An existing `newRenderMode` keeps its id."""
+    updated = copy.deepcopy(field)
+    variables = updated.get("fieldVariables") or []
+    existing = next((v for v in variables if v.get("key") == RENDER_MODE_KEY), {})
+    flag = {
+        **existing,
+        "clazz": FIELD_VARIABLE_CLAZZ,
+        "key": RENDER_MODE_KEY,
+        "value": RENDER_MODE_COMPONENT,
+        "fieldId": field.get("id"),
+    }
+    updated["fieldVariables"] = [v for v in variables if v.get("key") != RENDER_MODE_KEY] + [flag]
+    return updated
+
+
+def update_field(type_id: str, field_id: str, field: dict) -> httpx.Response | None:
+    """Saves a full field the way the admin UI does. Unlike the v1 field PUT, the v3 one
+    also persists `fieldVariables`; it rebuilds the field from the body, so `field` must be
+    complete (as fetched), not a partial."""
+    return request("PUT", f"/api/v3/contenttype/{type_id}/fields/{field_id}", json={"field": field}, fatal=False)
 
 
 # ─── manifest (the pull/push handoff contract — see contracts/manifest-schema.md) ──
@@ -295,10 +341,19 @@ class Scan:
         self.inline_clean: list[str] = []
         self.inline_migrated: list[str] = []
         self.other_paths: list[str] = []
+        self.other_path_owners: set[str] = set()
+        # Type.field -> {"typeId", "fieldId", "component"}: every custom field seen, so pull
+        # can queue the ones that still need the component render-mode flag.
+        self.field_refs: dict[str, dict] = {}
 
     def add_field(self, content_type: dict, field: dict) -> None:
         owner = f"{content_type['variable']}.{field['variable']}"
         values = field.get("values") or ""
+        self.field_refs[owner] = {
+            "typeId": content_type["id"],
+            "fieldId": field["id"],
+            "component": has_component_render_mode(field),
+        }
 
         paths = DOTPARSE_RE.findall(values)
         for path in paths:
@@ -306,6 +361,7 @@ class Scan:
                 self.asset_refs.setdefault(match.group(1), []).append(owner)
             else:
                 self.other_paths.append(f"{owner} -> {path}")
+                self.other_path_owners.add(owner)
         if paths:
             return
 
@@ -363,6 +419,48 @@ def known_migrated_inodes(previous_manifest: dict) -> dict[str, str]:
         if entry.get("kind") == "asset" and entry.get("status") == "published":
             known[entry["key"]] = entry["inode"]
     return known
+
+
+def render_mode_entries(scan: Scan, queued_assets: set[str], migrated_assets: set[str]) -> list[dict]:
+    """One "renderMode" entry per custom field that still needs newRenderMode=component
+    and whose code is (or, once push publishes it, will be) migrated:
+      - owners of a /dA/ asset, depending on every asset of theirs that push still has to
+        publish (`requires`); skipped if any of their assets was unresolved or pinned;
+      - fields whose inline code already carries the edit-mode switch.
+    Inline legacy fields need no entry — push sets the flag in the same PUT as their code.
+    Fields that also #dotParse a non-/dA/ path are left alone: part of their code is out
+    of scope, so flagging them could switch unmigrated code to component mode."""
+    owner_assets: dict[str, set[str]] = {}
+    for da_id, owners in scan.asset_refs.items():
+        for owner in owners:
+            owner_assets.setdefault(owner, set()).add(da_id)
+
+    candidates: list[tuple[str, list[str]]] = []
+    for owner, assets in owner_assets.items():
+        if owner in scan.other_path_owners or not assets <= (queued_assets | migrated_assets):
+            continue
+        candidates.append((owner, sorted(assets & queued_assets)))
+    candidates.extend((owner, []) for owner in scan.inline_migrated)
+
+    entries = []
+    for owner, requires in candidates:
+        ref = scan.field_refs[owner]
+        if ref["component"]:
+            continue
+        entries.append(
+            {
+                "kind": "renderMode",
+                "key": owner,
+                "typeId": ref["typeId"],
+                "fieldId": ref["fieldId"],
+                "requires": requires,
+                "label": f"{owner} (enable component render mode)",
+                "usedBy": [owner],
+                "status": "pending",
+                "statusReason": None,
+            }
+        )
+    return entries
 
 
 def pull(workdir: Path) -> int:
@@ -460,16 +558,25 @@ def pull(workdir: Path) -> int:
             }
         )
 
+    queued_assets = {e["key"] for e in entries if e["kind"] == "asset"}
+    flags = render_mode_entries(scan, queued_assets, set(confirmed_migrated))
+    migration_entries = list(entries)
+    entries.extend(flags)  # after the assets they may depend on — push processes in order
+
     manifest = new_manifest()
     manifest["entries"] = entries
     manifest["knownMigrated"] = confirmed_migrated
     write_manifest(workdir, manifest)
 
-    diag(f"\n{'=' * 72}\nTo migrate: {len(entries)} files in {original_dir}\n")
-    for entry in entries:
+    diag(f"\n{'=' * 72}\nTo migrate: {len(migration_entries)} files in {original_dir}\n")
+    for entry in migration_entries:
         diag(f"  {entry['file']}")
         if entry["kind"] == "asset":
             diag(f"      {entry['label']}, used by: {', '.join(entry['usedBy'])}")
+    report(
+        "Switch to component render mode (Recommended) — push sets newRenderMode=component",
+        [f"{e['key']}" + (f" (after {', '.join(e['requires'])} is published)" if e["requires"] else "") for e in flags],
+    )
     report("Already migrated /dA/ files (skipped)", already_migrated)
     report("Already migrated inline fields (skipped)", scan.inline_migrated)
     report("Not live — push will publish pending working changes too", unpublished)
@@ -487,6 +594,7 @@ def pull(workdir: Path) -> int:
         "inlineClean": len(scan.inline_clean),
         "otherPaths": len(scan.other_paths),
         "pinnedVersions": len(pinned_versions),
+        "renderMode": len(flags),
         "failed": len(unresolved),
     }
     result = emit_result("pull", counts, entries=entries)
@@ -683,10 +791,59 @@ def push_field(entry: dict, original: str, code: str, dry_run: bool) -> str:
         return f"dry-run: would update field values ({len(code)} chars)"
 
     field["values"] = code
-    response = request("PUT", path, json=field, fatal=False)
-    if response is None:
+    # Code and the component render-mode flag go together in one PUT: the migrated code
+    # only renders natively in the new editor once newRenderMode is "component".
+    if update_field(entry["typeId"], entry["fieldId"], with_component_render_mode(field)) is None:
         return "failed: field update request failed"
     return "published"
+
+
+def push_render_mode(entry: dict, manifest: dict, dry_run: bool, run_outcomes: dict[str, str]) -> str:
+    """Sets newRenderMode=component on one field whose code is (or was just) migrated.
+    Returns "published", "dry-run: ...", "skipped: ...", "failed: ...", or "waiting: ..."
+    when a dA asset it depends on isn't published yet — the entry then stays pending, since
+    flagging a field that still loads legacy code would break it in the new editor."""
+    statuses = {e["key"]: e.get("status") for e in manifest["entries"]}
+    unmet = [
+        da_id
+        for da_id in entry.get("requires") or []
+        if statuses.get(da_id) != "published" and not (dry_run and run_outcomes.get(da_id, "").startswith("dry-run: "))
+    ]
+    if unmet:
+        return f"waiting: {', '.join(unmet)} not published yet"
+
+    check = request("GET", f"/api/v1/contenttype/{entry['typeId']}/fields/id/{entry['fieldId']}", fatal=False)
+    if check is None:
+        return "failed: could not read the field (request failed)"
+    field = (check.json() or {}).get("entity") if check.content else None
+    if not field:
+        return "failed: field not found on the server"
+    if has_component_render_mode(field):
+        return "skipped: already in component render mode"
+    if dry_run:
+        return "dry-run: would set newRenderMode=component"
+    if update_field(entry["typeId"], entry["fieldId"], with_component_render_mode(field)) is None:
+        return "failed: could not set newRenderMode=component"
+    return "published"
+
+
+def push_migrated_file(workdir: Path, entry: dict, dry_run: bool) -> str:
+    """Runs the safety gates on one asset/field entry's migrated file, then publishes it."""
+    migrated_file = workdir / "migrated" / entry["file"]
+    original_file = workdir / "original" / entry["file"]
+
+    if not migrated_file.exists():
+        # Not migrated yet (e.g. not in this batch): leave it pending for a later push
+        # instead of closing it out as skipped.
+        return "waiting: no migrated file yet"
+    if migrated_file.read_bytes() == original_file.read_bytes():
+        return "skipped: migrated file is identical to original"
+    problem = inline_problem(original_file.read_bytes(), migrated_file.read_bytes())
+    if problem:
+        return f"skipped: {problem}"
+    if entry["kind"] == "asset":
+        return push_asset(entry, migrated_file.read_bytes(), dry_run)
+    return push_field(entry, original_file.read_text(), migrated_file.read_text(), dry_run)
 
 
 TERMINAL_STATUSES = {"published", "skipped", "failed"}
@@ -706,11 +863,20 @@ def push(workdir: Path, dry_run: bool, only: list[str]) -> int:
     # An explicit --only is treated as "the customer wants this one retried" and bypasses
     # the terminal-status guard; without it, a terminal entry is never reprocessed (it
     # would otherwise be republished identically, or wrongly flip published -> skipped).
-    matched_entries = [
-        entry
-        for entry in manifest["entries"]
-        if entry_matches_only(entry, only) and (only or entry.get("status") not in TERMINAL_STATUSES)
-    ]
+    selected_assets = {e["key"] for e in manifest["entries"] if e["kind"] == "asset" and only and entry_matches_only(e, only)}
+
+    def is_selected(entry: dict) -> bool:
+        if entry_matches_only(entry, only):
+            return bool(only) or entry.get("status") not in TERMINAL_STATUSES
+        # Selecting an asset also switches the fields that load it to component render
+        # mode in the same run — unless that switch already finished.
+        return (
+            entry["kind"] == "renderMode"
+            and bool(set(entry.get("requires") or []) & selected_assets)
+            and entry.get("status") not in TERMINAL_STATUSES
+        )
+
+    matched_entries = [entry for entry in manifest["entries"] if is_selected(entry)]
     if only and not matched_entries:
         log(
             f"WARNING: --only {only} matched none of the {len(manifest['entries'])} "
@@ -720,22 +886,13 @@ def push(workdir: Path, dry_run: bool, only: list[str]) -> int:
 
     results: list[dict] = []
     counts = {"published": 0, "skipped": 0, "failed": 0, "dryRun": 0}
+    run_outcomes: dict[str, str] = {}
     for entry in matched_entries:
-        migrated_file = workdir / "migrated" / entry["file"]
-        original_file = workdir / "original" / entry["file"]
-
-        if not migrated_file.exists():
-            outcome = "skipped: no migrated file"
-        elif migrated_file.read_bytes() == original_file.read_bytes():
-            outcome = "skipped: migrated file is identical to original"
+        if entry["kind"] == "renderMode":
+            outcome = push_render_mode(entry, manifest, dry_run, run_outcomes)
         else:
-            problem = inline_problem(original_file.read_bytes(), migrated_file.read_bytes())
-            if problem:
-                outcome = f"skipped: {problem}"
-            elif entry["kind"] == "asset":
-                outcome = push_asset(entry, migrated_file.read_bytes(), dry_run)
-            else:
-                outcome = push_field(entry, original_file.read_text(), migrated_file.read_text(), dry_run)
+            outcome = push_migrated_file(workdir, entry, dry_run)
+        run_outcomes[entry["key"]] = outcome
 
         log(f"{entry['label']}: {outcome}")
         results.append({"key": entry["key"], "label": entry["label"], "outcome": outcome})
@@ -746,6 +903,9 @@ def push(workdir: Path, dry_run: bool, only: list[str]) -> int:
             counts["skipped"] += 1
         elif outcome.startswith("dry-run: "):
             counts["dryRun"] += 1
+        elif outcome.startswith("waiting: "):
+            counts["waiting"] = counts.get("waiting", 0) + 1
+            continue  # stays pending, so a later push picks it up once its asset is published
         else:
             counts["failed"] += 1
 

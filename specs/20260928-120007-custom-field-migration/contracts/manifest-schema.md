@@ -40,6 +40,17 @@ is the literal shape.
       "file": "fields/Blog.urlTitle.vtl",
       "status": "pending",
       "statusReason": null
+    },
+    {
+      "kind": "renderMode",
+      "key": "Blog.author",
+      "typeId": "type-id-123",
+      "fieldId": "field-id-789",
+      "requires": ["0ec62ffd3666f23fc5228ef84a481b09"],
+      "label": "Blog.author (enable component render mode)",
+      "usedBy": ["Blog.author"],
+      "status": "pending",
+      "statusReason": null
     }
   ]
 }
@@ -56,10 +67,16 @@ is the literal shape.
   human-readable explanation once `status` is `"skipped"` or `"failed"` (FR-012).
 - `usedBy` always has at least one entry — an item with no owning field would never have been
   discovered in the first place.
+- `renderMode` entries have no `file` and always come after the asset/field entries, so the
+  assets they `require` are processed first in the same `push`. They only ever change the
+  field's `newRenderMode` variable to `component`; every other variable, and `values`, is sent
+  back unchanged. An entry whose `requires` aren't all `published` stays `pending`.
 - `baseUrl` must equal the current `BASE_URL` for `push` to proceed — a mismatch is a
   configuration error (exit 2) raised before any entry is touched.
 - `push` never reprocesses an entry already in a terminal status (`published`, `skipped`,
-  `failed`) unless it is named explicitly with `--only`.
+  `failed`) unless it is named explicitly with `--only`. Naming a `/dA/` asset with `--only`
+  also processes the `renderMode` entries that require it, but only those not yet in a
+  terminal status. An entry with no migrated file yet stays `pending`, never `skipped`.
 - `knownMigrated` maps a dA id to the inode that was confirmed migrated. `pull` writes it,
   seeded from the previous manifest's `knownMigrated` plus its `published` asset entries, and
   skips the binary download for an asset only while the server still reports that exact inode.
