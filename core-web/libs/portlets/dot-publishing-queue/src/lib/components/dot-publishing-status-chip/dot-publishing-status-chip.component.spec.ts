@@ -95,9 +95,8 @@ describe('DotPublishingStatusChipComponent', () => {
     });
 
     it('renders BUNDLE_SENT_SUCCESSFULLY as "Sent" with warn severity (uploaded, not installed yet)', () => {
-        spectator = createComponent({
-            props: { status: PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY }
-        });
+        spectator = createComponent();
+        spectator.setInput('status', PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY);
         spectator.detectChanges();
         expect(spectator.query(byTestId('pq-status-chip'))).toHaveText('Sent');
         expect(spectator.query(byTestId('pq-status-chip'))).not.toHaveText('Success');
