@@ -22,7 +22,7 @@ public final class WebdavTemporaryStorage {
     public static final String GROUP = "webdav-temporary";
     private static final JsonReaderDelegate<Map> READER = new JsonReaderDelegate<>(Map.class);
     private final Path configuredRoot;
-    private AmazonS3StoragePersistenceAPIImpl remote;
+    private StoragePersistenceAPI remote;
     private boolean groupReady;
 
     private static class Holder {
@@ -31,7 +31,7 @@ public final class WebdavTemporaryStorage {
 
     public static WebdavTemporaryStorage getInstance() { return Holder.INSTANCE; }
 
-    public WebdavTemporaryStorage(AmazonS3StoragePersistenceAPIImpl remote, Path root) {
+    public WebdavTemporaryStorage(StoragePersistenceAPI remote, Path root) {
         this.remote = remote;
         this.configuredRoot = root;
     }
@@ -66,9 +66,9 @@ public final class WebdavTemporaryStorage {
         return file;
     }
 
-    private synchronized AmazonS3StoragePersistenceAPIImpl remote() throws DotDataException {
+    private synchronized StoragePersistenceAPI remote() throws DotDataException {
         if (!AssetStorageFeature.isEnabled()) throw new DotDataException("S3 asset storage is disabled");
-        if (remote == null) remote = AmazonS3StoragePersistenceAPIImpl.withPlainPaths();
+        if (remote == null) remote = StoragePersistenceProvider.remoteObjectStorage();
         if (!groupReady) {
             remote.createGroup(GROUP);
             groupReady = true;
@@ -99,7 +99,7 @@ public final class WebdavTemporaryStorage {
         return path;
     }
 
-    private record State(AmazonS3StoragePersistenceAPIImpl.ObjectSnapshot snapshot, Entry entry, String pending) { }
+    private record State(ObjectSnapshot snapshot, Entry entry, String pending) { }
 
     private State state(String key) throws DotDataException, IOException {
         file(key);

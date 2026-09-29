@@ -1071,7 +1071,7 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         }
         return new StorageKey.Builder().group(Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA))
                 .path(legacy ? tempResourcePath(id) : TemporaryAssetStorage.metadataPath(id))
-                .storage(legacy ? StorageType.FILE_SYSTEM : StorageType.S3).build();
+                .storage(legacy ? StorageType.FILE_SYSTEM : StoragePersistenceProvider.remoteStorageType()).build();
     }
 
     private Map<String, Serializable> temporaryMetadata(final String id) throws DotDataException {
