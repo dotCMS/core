@@ -543,8 +543,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     /** Value and version are from one response; modified is the S3 server timestamp. */
-    public record ObjectSnapshot(String path, Object value, String version, long modified) { }
-
+    @Override
     public ObjectSnapshot readObjectSnapshot(final String group, final String path,
             final ObjectReaderDelegate reader) throws DotDataException {
         if (!AssetStorageFeature.isEnabled()) throw new DotDataException("S3 asset storage is disabled");
@@ -557,6 +556,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
     }
 
+    @Override
     public List<ObjectSnapshot> listObjectSnapshots(final String group, final String prefix) throws DotDataException {
         if (!AssetStorageFeature.isEnabled() || pathEncryptionMode != PathEncryptionMode.NONE) {
             throw new DotDataException("Version listing requires enabled S3 plain paths");
@@ -573,6 +573,7 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     }
 
     /** Returns the new version, or null on a concurrent change; never retries a stale write. */
+    @Override
     public String writeObjectIfMatch(final String group, final String path, final Serializable value,
             final String version) throws DotDataException {
         if (!AssetStorageFeature.isEnabled()) throw new DotDataException("S3 asset storage is disabled");

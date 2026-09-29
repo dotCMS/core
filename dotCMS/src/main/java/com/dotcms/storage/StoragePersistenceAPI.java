@@ -237,6 +237,53 @@ public interface StoragePersistenceAPI {
     }
 
     /**
+     * Reads an object together with its version and the store's timestamp, from one response.
+     *
+     * @param groupName the group to read from
+     * @param path      the object's path
+     * @param reader    deserializes the stored value
+     * @return the snapshot, or {@code null} if the object does not exist
+     * @throws DotDataException if the read fails, or the store does not support versioned objects
+     */
+    default ObjectSnapshot readObjectSnapshot(final String groupName, final String path,
+            final ObjectReaderDelegate reader) throws DotDataException {
+        throw unsupportedVersionedObjects();
+    }
+
+    /**
+     * Lists the objects under a prefix with their versions and the store's timestamps, without values.
+     *
+     * @param groupName the group to list
+     * @param prefix    the path prefix
+     * @return one snapshot per object, each with a {@code null} value
+     * @throws DotDataException if the listing fails, or the store does not support versioned objects
+     */
+    default List<ObjectSnapshot> listObjectSnapshots(final String groupName, final String prefix)
+            throws DotDataException {
+        throw unsupportedVersionedObjects();
+    }
+
+    /**
+     * Writes an object only if it is still at the given version, or only if it is absent when the
+     * version is {@code null}. Concurrent writers use this to detect each other instead of overwriting.
+     *
+     * @param groupName the group to write to
+     * @param path      the object's path
+     * @param value     the value to store
+     * @param version   the expected current version, or {@code null} to require that the object is absent
+     * @return the new version, or {@code null} if the object changed concurrently
+     * @throws DotDataException if the write fails, or the store does not support versioned objects
+     */
+    default String writeObjectIfMatch(final String groupName, final String path, final Serializable value,
+            final String version) throws DotDataException {
+        throw unsupportedVersionedObjects();
+    }
+
+    private DotDataException unsupportedVersionedObjects() {
+        return new DotDataException(getClass().getSimpleName() + " does not support versioned objects");
+    }
+
+    /**
      * Takes the information from the object and writes it to the specified file using the Writer
      * Delegate to do so. This way, there's no in-memory loading.
      *
