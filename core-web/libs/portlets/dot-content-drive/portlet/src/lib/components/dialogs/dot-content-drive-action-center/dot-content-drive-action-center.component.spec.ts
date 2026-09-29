@@ -188,6 +188,10 @@ describe('DotContentDriveActionCenterComponent', () => {
     // run when there is exactly one, this one says whether anything is in flight at all. The
     // dialog gates on the count, so with several runs it stays gated rather than opening up.
     const mockActiveRunCount = signal(0);
+    // How many folders one duplicate or delete may carry, as the server advertises it. `null` is no
+    // ceiling advertised, which leaves the refusing to the server.
+    const mockFolderDuplicateMaxPaths = signal<number | null>(null);
+    const mockFolderDeleteMaxPaths = signal<number | null>(null);
     // How many of those runs lock the dialog. Follows the count above unless a test says
     // otherwise, since only a backgrounded run tells them apart.
     const mockBlockingRunCountOverride = signal<number | undefined>(undefined);
@@ -239,6 +243,8 @@ describe('DotContentDriveActionCenterComponent', () => {
                 items: mockItems,
                 actionExecution: mockActionExecution,
                 activeRunCount: mockActiveRunCount,
+                folderDuplicateMaxPaths: mockFolderDuplicateMaxPaths,
+                folderDeleteMaxPaths: mockFolderDeleteMaxPaths,
                 blockingRunCount: computed(
                     () => mockBlockingRunCountOverride() ?? mockActiveRunCount()
                 ),
@@ -335,6 +341,8 @@ describe('DotContentDriveActionCenterComponent', () => {
         mockActionExecution.set(undefined);
         mockActiveRunCount.set(0);
         mockBlockingRunCountOverride.set(undefined);
+        mockFolderDuplicateMaxPaths.set(null);
+        mockFolderDeleteMaxPaths.set(null);
         mockCurrentUserIsAdmin.set(false);
         mockHasPushPublishEnvironments.set(false);
         mockCanAddChildren.set(true);
@@ -2727,6 +2735,75 @@ describe('DotContentDriveActionCenterComponent', () => {
      * return the key, so these assert on keys rather than on English — the copy itself is reviewed at
      * the T055 gate, but which *claims* it does and does not make is a requirement and is pinned here.
      */
+    /**
+     * The ceiling the server advertises for one duplicate or delete (#37062). Checked before
+     * submitting so the author learns the limit where they choose the folders, not from a refusal
+     * afterwards. The server's own refusal still stands behind it.
+     */
+    describe('folder ceilings', () => {
+        // Rights for both actions: duplicate needs READ, delete EDIT and EDIT_PERMISSIONS.
+        const withAllRights = (row: DotContentDriveItem): DotContentDriveItem =>
+            ({
+                ...(row as object),
+                permissions: ['READ', 'EDIT', 'EDIT_PERMISSIONS', 'CAN_ADD_CHILDREN']
+            }) as unknown as DotContentDriveItem;
+        const ALPHA = withAllRights(folderRow('f-alpha', '/blogs/alpha/'));
+        const BETA = withAllRights(folderRow('f-beta', '/blogs/beta/'));
+
+        const executeButton = () =>
+            spectator.query<HTMLButtonElement>('[data-testid="action-preview-execute"] button');
+
+        beforeEach(() => {
+            mockItems.set([ALPHA, BETA]);
+            mockSelectedItems.set([ALPHA, BETA]);
+        });
+
+        const executeBadge = () =>
+            spectator.query('[data-testid="action-preview-execute"] .p-badge')?.textContent?.trim();
+
+        it.each([
+            ['DUPLICATE', mockFolderDuplicateMaxPaths, 'content-drive.duplicate.over-ceiling'],
+            ['DELETE_FOLDER', mockFolderDeleteMaxPaths, 'content-drive.delete.over-ceiling']
+        ])(
+            '%s should include only as many folders as one run may carry, and say so',
+            (actionId, ceiling, key) => {
+                ceiling.set(1);
+
+                openQuickActionPreview(actionId);
+
+                expect(
+                    spectator.query('[data-testid="action-preview-over-ceiling"]')?.textContent
+                ).toContain(key);
+                // Listed, not merely pre-checked: the preview holds what this run can carry, as
+                // the other actions' previews hold what they apply to.
+                expect(previewRows()).toHaveLength(1);
+                expect(executeBadge()).toBe('1');
+                expect(executeButton()?.disabled).toBe(false);
+            }
+        );
+
+        it('should submit only the folders it included', () => {
+            mockFolderDuplicateMaxPaths.set(1);
+
+            executeQuickAction('DUPLICATE');
+
+            expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                '//demo.dotcms.com/blogs/alpha/'
+            ]);
+        });
+
+        it.each([['DUPLICATE'], ['DELETE_FOLDER']])(
+            '%s should include every folder and say nothing when no ceiling is advertised',
+            (actionId) => {
+                openQuickActionPreview(actionId);
+
+                expect(spectator.query('[data-testid="action-preview-over-ceiling"]')).toBeNull();
+                expect(previewRows()).toHaveLength(2);
+                expect(executeBadge()).toBe('2');
+            }
+        );
+    });
+
     describe('Delete confirmation (#37063)', () => {
         const folderSelection = [
             { type: 'folder', identifier: 'id-a', inode: 'inode-a', name: 'old-a' },

@@ -336,6 +336,13 @@ export interface DotContentDriveActionExecutionResult {
      */
     partialDetailKey?: string;
     /**
+     * Whether the run was stopped before it finished (#37062).
+     *
+     * Said as cancelled whatever the counts, so a run stopped after every folder it reached had
+     * succeeded does not read as a clean success. The bell says it the same way.
+     */
+    cancelled?: boolean;
+    /**
      * Whether a clean success still needs saying.
      *
      * Success is silent by default: for most operations the listing visibly reflects it — the row

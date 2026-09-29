@@ -817,6 +817,20 @@ export const DotContentDriveStore = signalStore(
                 uploadCeilings: computed(() => globalStore.systemBulkUpload()),
 
                 /**
+                 * How many folders one duplicate may carry, or `null` when the server advertises no
+                 * ceiling (#37062). Read like {@link uploadCeilings}: null means the server does
+                 * the refusing.
+                 */
+                folderDuplicateMaxPaths: computed(
+                    () => globalStore.systemFolderBulkDuplicate()?.maxPaths ?? null
+                ),
+
+                /** How many folders one delete may carry, or `null`. Same reading as above. */
+                folderDeleteMaxPaths: computed(
+                    () => globalStore.systemFolderBulkDelete()?.maxPaths ?? null
+                ),
+
+                /**
                  * Whether the sidebar's first entry, all site content, is the selected one.
                  *
                  * Derived from the location rather than stored beside it: an absent location *is* what

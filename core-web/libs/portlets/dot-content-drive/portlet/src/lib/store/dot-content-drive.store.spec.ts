@@ -92,7 +92,9 @@ describe('DotContentDriveStore', () => {
                 siteDetails: vi.fn().mockReturnValue(SYSTEM_HOST),
                 // Nothing advertised by default, which is what an instance older than the field
                 // reports and what a configuration still in flight reads as.
-                systemBulkUpload: vi.fn().mockReturnValue(null)
+                systemBulkUpload: vi.fn().mockReturnValue(null),
+                systemFolderBulkDelete: vi.fn().mockReturnValue(null),
+                systemFolderBulkDuplicate: vi.fn().mockReturnValue(null)
             }),
             mockProvider(DotContentDriveService),
             // Fetched once on init to resolve the CMS Administrator role. Answers through a subject
@@ -187,6 +189,39 @@ describe('DotContentDriveStore', () => {
             // instance too old to carry the field. Both mean the server does the refusing.
             expect(store.uploadCeilings()).toBeNull();
         });
+    });
+
+    /**
+     * How many folders one duplicate or delete may carry, as the server advertises it (#37062), so
+     * the Action Center can stop an over-ceiling selection and name the limit.
+     */
+    describe('folder ceilings', () => {
+        it.each([
+            ['folderDuplicateMaxPaths', 'systemFolderBulkDuplicate'],
+            ['folderDeleteMaxPaths', 'systemFolderBulkDelete']
+        ] as const)('%s should read the maximum the server advertises', (signal, source) => {
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore[source] as unknown as Mock).mockReturnValue({ maxPaths: 25 });
+
+            expect(store[signal]()).toBe(25);
+        });
+
+        it.each([
+            ['folderDuplicateMaxPaths', 'systemFolderBulkDuplicate'],
+            ['folderDeleteMaxPaths', 'systemFolderBulkDelete']
+        ] as const)(
+            '%s should read as no ceiling when the server advertises none',
+            (signal, source) => {
+                // A configuration still loading, or an instance too old to carry the field: either
+                // way the server does the refusing.
+                const globalStore = spectator.inject(GlobalStore);
+
+                (globalStore[source] as unknown as Mock).mockReturnValue(null);
+
+                expect(store[signal]()).toBeNull();
+            }
+        );
     });
 
     describe('currentUserIsAdmin', () => {

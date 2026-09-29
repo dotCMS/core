@@ -112,6 +112,9 @@ const folderDeleteRefusalSignal: WritableSignal<DotFolderBulkDeleteRefusalKind |
     signal(undefined);
 /** Why a folder duplication never became a run, as the store holds it (#37062). */
 const folderDuplicateRefusalSignal: WritableSignal<string | undefined> = signal(undefined);
+// How many folders one duplicate or delete may carry; `null` is no ceiling advertised.
+const folderDuplicateMaxPathsSignal: WritableSignal<number | null> = signal(null);
+const folderDeleteMaxPathsSignal: WritableSignal<number | null> = signal(null);
 const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
 // The site-level answer the drop guard falls back to at the root. Module scope for the same reason
 // as the one above: two store mocks in this file read it from describes with no shared `beforeEach`.
@@ -246,6 +249,8 @@ describe('DotContentDriveShellComponent', () => {
         dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
         folderDeleteRefusalSignal.set(undefined);
         folderDuplicateRefusalSignal.set(undefined);
+        folderDuplicateMaxPathsSignal.set(null);
+        folderDeleteMaxPathsSignal.set(null);
         actionExecutionResultSignal = signal<DotContentDriveActionExecutionResult | undefined>(
             undefined
         );
@@ -262,6 +267,8 @@ describe('DotContentDriveShellComponent', () => {
                     folderDeleteRefusal: folderDeleteRefusalSignal,
                     clearFolderDeleteRefusal: vi.fn(),
                     folderDuplicateRefusal: folderDuplicateRefusalSignal,
+                    folderDuplicateMaxPaths: folderDuplicateMaxPathsSignal,
+                    folderDeleteMaxPaths: folderDeleteMaxPathsSignal,
                     clearFolderDuplicateRefusal: vi.fn(),
                     // No advertised ceiling by default, which is the case that leaves the refusing
                     // to the server. The gate's own tests set one.
@@ -299,7 +306,6 @@ describe('DotContentDriveShellComponent', () => {
                     setStatus: vi.fn(),
                     startExternalRun: vi.fn().mockReturnValue('run-1'),
                     trackUploadJob: vi.fn(),
-                    updateExternalRun: vi.fn(),
                     activeRunCount: signal(0),
                     toolbarRun: toolbarRunSignal,
                     toolbarRunCount: toolbarRunCountSignal,
@@ -714,6 +720,17 @@ describe('DotContentDriveShellComponent', () => {
                 expect(store.clearFolderDeleteRefusal).toHaveBeenCalled();
             });
 
+            it('should name the most folders one delete may carry, when the server advertises it', () => {
+                folderDeleteMaxPathsSignal.set(25);
+
+                refuse('OVER_MAX_PATHS');
+
+                expect(dotMessageService.get).toHaveBeenCalledWith(
+                    'content-drive.delete.refused.over-max-paths-limit',
+                    '25'
+                );
+            });
+
             it('should say nothing while nothing has been refused', () => {
                 spectator.detectChanges();
 
@@ -751,6 +768,17 @@ describe('DotContentDriveShellComponent', () => {
                 refuse('OVER_MAX_PATHS');
 
                 expect(store.clearFolderDuplicateRefusal).toHaveBeenCalled();
+            });
+
+            it('should name the most folders one duplicate may carry, when the server advertises it', () => {
+                folderDuplicateMaxPathsSignal.set(25);
+
+                refuse('OVER_MAX_PATHS');
+
+                expect(dotMessageService.get).toHaveBeenCalledWith(
+                    'content-drive.duplicate.refused.over-max-paths-limit',
+                    '25'
+                );
             });
         });
 
@@ -1322,6 +1350,22 @@ describe('DotContentDriveShellComponent', () => {
 
                 expect(messageService.add).toHaveBeenCalledWith(
                     expect.objectContaining({ severity: 'success' })
+                );
+            });
+
+            it('should say a stopped run was cancelled, even when every folder it reached succeeded', () => {
+                // Matches the bell, which says the duplicate was cancelled whatever the counts
+                // are. A clean-looking green toast would say the author got everything they asked.
+                settle(duplicated({ cancelled: true }));
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'warn',
+                        summary: 'content-drive.duplicate.toast.cancelled',
+                        detail: expect.stringContaining(
+                            'content-drive.duplicate.toast.cancelled-detail'
+                        )
+                    })
                 );
             });
 
@@ -3267,7 +3311,11 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(store.updateExternalRun).not.toHaveBeenCalled();
+            // Where a position would go: the run registered for the batch carries no count of
+            // what is done. (The store no longer has a way to update one at all.)
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.not.objectContaining({ processed: expect.anything() })
+            );
         });
 
         it('should remember the accepted batch, with where it landed', () => {
@@ -5271,6 +5319,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     folderDeleteRefusal: folderDeleteRefusalSignal,
                     clearFolderDeleteRefusal: vi.fn(),
                     folderDuplicateRefusal: folderDuplicateRefusalSignal,
+                    folderDuplicateMaxPaths: folderDuplicateMaxPathsSignal,
+                    folderDeleteMaxPaths: folderDeleteMaxPathsSignal,
                     clearFolderDuplicateRefusal: vi.fn(),
                     // No advertised ceiling by default, which is the case that leaves the refusing
                     // to the server. The gate's own tests set one.

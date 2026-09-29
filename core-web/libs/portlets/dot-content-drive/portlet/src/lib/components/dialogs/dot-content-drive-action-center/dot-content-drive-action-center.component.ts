@@ -504,6 +504,41 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $includedCount = computed(() => this.$includedItems().length);
 
     /**
+     * How many folders one run of the chosen action may carry, or `null` when there is no ceiling
+     * to respect: the server advertises none, or the action is not a folder one (#37062).
+     */
+    protected readonly $folderCeiling = computed<number | null>(() => {
+        const actionId = this.$pendingQuickAction()?.id;
+
+        if (actionId === DUPLICATE_ACTION_ID) {
+            return this.#store.folderDuplicateMaxPaths();
+        }
+
+        if (actionId === DELETE_FOLDER_ACTION_ID) {
+            return this.#store.folderDeleteMaxPaths();
+        }
+
+        return null;
+    });
+
+    /**
+     * Whether the selection holds more folders than one run may carry, so the preview lists only
+     * the first of them and says the rest will not be included.
+     */
+    protected readonly $cappedAtCeiling = computed(() => {
+        const ceiling = this.$folderCeiling();
+
+        return ceiling !== null && this.$eligibleCount() > ceiling;
+    });
+
+    /** The over-ceiling notice, in the chosen action's own words. */
+    protected readonly $ceilingMessageKey = computed(() =>
+        this.$pendingQuickAction()?.id === DELETE_FOLDER_ACTION_ID
+            ? 'content-drive.delete.over-ceiling'
+            : 'content-drive.duplicate.over-ceiling'
+    );
+
+    /**
      * Label for the preview's back control, which names where it actually goes.
      *
      * "Back to actions" would be a lie on a move, where back lands on the destination picker.
@@ -540,12 +575,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     });
 
     /**
-     * The items the selected action can run on — the preview's rows.
+     * Every item the selected action could run on, before any ceiling.
      *
      * Narrowed by content type so an action from one scheme never lists contentlets of a type that
      * scheme is not assigned to.
      */
-    protected readonly $previewItems = computed(() => {
+    readonly #eligibleItems = computed(() => {
         const quickAction = this.$pendingQuickAction();
 
         if (quickAction) {
@@ -590,8 +625,25 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         );
     }
 
+    /**
+     * The preview's rows: what the selected action runs on in this run.
+     *
+     * A folder action over the ceiling the server advertises lists only the first folders one run
+     * may carry, and the preview says so (#37062). Listed rather than pre-checked, as every other
+     * action's preview lists what it applies to: the author confirms a run, not a correction.
+     */
+    protected readonly $previewItems = computed(() => {
+        const eligible = this.#eligibleItems();
+        const ceiling = this.$folderCeiling();
+
+        return ceiling !== null ? eligible.slice(0, ceiling) : eligible;
+    });
+
     /** Number of rows the preview lists for the selected action. */
     protected readonly $previewCount = computed(() => this.$previewItems().length);
+
+    /** How many folders were selected for the action, including any past the ceiling. */
+    protected readonly $eligibleCount = computed(() => this.#eligibleItems().length);
 
     /**
      * Inodes among the preview's rows whose lock belongs to another user, for the table to mark.

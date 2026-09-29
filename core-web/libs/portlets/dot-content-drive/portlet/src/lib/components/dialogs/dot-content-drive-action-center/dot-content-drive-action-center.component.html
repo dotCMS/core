@@ -465,6 +465,25 @@
                         runs on the contents" would be false: a content type declaring an action for
                         the destroy system action will fire it (FR-010).
                     -->
+                    @if ($cappedAtCeiling()) {
+                        <!-- One run carries at most the ceiling the server advertises, so the preview
+                         lists only the first of the folders, and says here that the rest are not
+                         included rather than leaving the author to learn it from a refusal. -->
+                        <p-message
+                            class="m-4 shrink-0"
+                            severity="warn"
+                            data-testid="action-preview-over-ceiling">
+                            {{
+                                $ceilingMessageKey()
+                                    | dm
+                                        : [
+                                              ($folderCeiling() ?? 0).toString(),
+                                              $eligibleCount().toString()
+                                          ]
+                            }}
+                        </p-message>
+                    }
+
                     @if ($isDeleteAction()) {
                         <!-- `shrink-0` as on the sibling above: keeps the warning pinned over the
                          table rather than squeezed away once the rows fill the column. -->

@@ -356,6 +356,11 @@ offered, says it will act on four, and acts on four.
   `OVER_MAX_PATHS` refusal reaches the author as its own sentence, like the empty-selection and
   not-entitled refusals. The advertised value stays in the configuration type because the server
   sends it.
+  *Amended again (2026-09-28, developer decision, QA follow-up).* The client checks the ceiling
+  again, for delete as well as duplicate, from the configuration it already loads for upload's. A
+  selection over it lists only the first folders one run may carry in the Action Center's preview,
+  and says the rest are not included. The server's `OVER_MAX_PATHS` refusal stays the authority,
+  and when it arrives it now names the number.
 - **FR-007**: The bulk action MUST pass through the same commit step every other bulk action uses,
   where the author sees what will be acted on before pressing the button. It MUST NOT add a
   configuration step, because there is nothing to configure: no destination, no name, no options.

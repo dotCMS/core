@@ -752,6 +752,38 @@ describe('withActionExecution', () => {
             ]);
         });
 
+        it("should explain a shortfall in a folder's terms, not a workflow step's", () => {
+            // Skipped means covered by a selected parent or not reached after a cancel, never a
+            // workflow step, which is what the default sentence says (QA).
+            submitted();
+
+            store.reportDuplicateCompleted('Duplicate', completed());
+
+            expect(store.actionExecutionResult()?.partialDetailKey).toBe(
+                'content-drive.duplicate.toast.partial'
+            );
+        });
+
+        it('should say a stopped run was cancelled, even when every folder it reached succeeded', () => {
+            // Matches the bell, which says the duplicate was cancelled whatever the counts are.
+            submitted();
+
+            store.reportDuplicateCompleted(
+                'Duplicate',
+                completed({ state: 'CANCELED', total: 1, successCount: 1, failedCount: 0 })
+            );
+
+            expect(store.actionExecutionResult()?.cancelled).toBe(true);
+        });
+
+        it('should not call a finished run cancelled', () => {
+            submitted();
+
+            store.reportDuplicateCompleted('Duplicate', completed());
+
+            expect(store.actionExecutionResult()?.cancelled).toBeFalsy();
+        });
+
         it('should carry the records that did not succeed, keyed by the submitted folder path', () => {
             submitted();
 
@@ -1600,6 +1632,19 @@ describe('withActionExecution', () => {
 
             expect(result?.successCount).toBe(2);
             expect(result?.failedCount).toBe(1);
+        });
+
+        it("should explain a shortfall in a folder's terms, not a workflow step's", () => {
+            // A skipped folder was deleted with a selected parent or not reached after a cancel.
+            // The default sentence blames workflow steps, which a folder does not have (QA).
+            build();
+            submitAndTrack();
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+
+            expect(store.actionExecutionResult()?.partialDetailKey).toBe(
+                'content-drive.delete.toast.partial'
+            );
         });
 
         it('should carry the per-folder records, not just the counts', () => {

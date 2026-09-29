@@ -866,7 +866,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
             failures,
             duplicateSubmission,
             baseType,
-            outcomeKind
+            outcomeKind,
+            cancelled
         } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
@@ -908,28 +909,38 @@ export class DotContentDriveShellComponent implements OnDestroy {
         // the index can never contend, so the batch ran again and every file now exists twice;
         // saying "nothing was duplicated" there points the author away from a folder they need to
         // look at.
-        const detail = duplicateSubmission
+        // A stopped run says it was stopped, whatever its counts: a run cancelled after every folder
+        // it reached had succeeded would otherwise read as a clean success. As the bell says it.
+        const detail = cancelled
             ? this.#dotMessageService.get(
-                  'DOTASSET' === baseType
-                      ? 'content-drive.upload.toast.already-uploaded-again'
-                      : 'content-drive.upload.toast.already-uploaded',
-                  String(failedCount + successCount)
+                  'content-drive.duplicate.toast.cancelled-detail',
+                  actionName,
+                  String(successCount),
+                  String(failedCount),
+                  String(skippedCount)
               )
-            : isPartial
+            : duplicateSubmission
               ? this.#dotMessageService.get(
-                    // Actions whose failures and skips mean something other than permissions, locks and
-                    // workflow steps say so themselves — see `partialDetailKey`.
-                    partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
-                    actionName,
-                    String(successCount),
-                    String(failedCount),
-                    String(skippedCount)
+                    'DOTASSET' === baseType
+                        ? 'content-drive.upload.toast.already-uploaded-again'
+                        : 'content-drive.upload.toast.already-uploaded',
+                    String(failedCount + successCount)
                 )
-              : this.#dotMessageService.get(
-                    'content-drive.action-center.toast.executed-detail',
-                    actionName,
-                    String(successCount)
-                );
+              : isPartial
+                ? this.#dotMessageService.get(
+                      // Actions whose failures and skips mean something other than permissions, locks and
+                      // workflow steps say so themselves — see `partialDetailKey`.
+                      partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
+                      actionName,
+                      String(successCount),
+                      String(failedCount),
+                      String(skippedCount)
+                  )
+                : this.#dotMessageService.get(
+                      'content-drive.action-center.toast.executed-detail',
+                      actionName,
+                      String(successCount)
+                  );
 
         // Named files and their reasons, grouped one line per reason, appended to the counts.
         // The counts say how many; only this says which and why, and that is the part the author
@@ -1024,17 +1035,19 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 ? failureGroups.map((group, index) => ({
                       severity: group.severity,
                       summary: this.#dotMessageService.get(
-                          isFolderDelete
-                              ? 'error' === group.severity
-                                  ? 'content-drive.delete.toast.failed'
-                                  : 'content-drive.delete.toast.incomplete'
-                              : isFolderDuplicate
+                          cancelled
+                              ? 'content-drive.duplicate.toast.cancelled'
+                              : isFolderDelete
                                 ? 'error' === group.severity
-                                    ? 'content-drive.duplicate.toast.failed'
-                                    : 'content-drive.duplicate.toast.incomplete'
-                                : 'error' === group.severity
-                                  ? 'content-drive.upload.toast.failed'
-                                  : 'content-drive.upload.toast.incomplete'
+                                    ? 'content-drive.delete.toast.failed'
+                                    : 'content-drive.delete.toast.incomplete'
+                                : isFolderDuplicate
+                                  ? 'error' === group.severity
+                                      ? 'content-drive.duplicate.toast.failed'
+                                      : 'content-drive.duplicate.toast.incomplete'
+                                  : 'error' === group.severity
+                                    ? 'content-drive.upload.toast.failed'
+                                    : 'content-drive.upload.toast.incomplete'
                       ),
                       // The counts belong to the batch, not to a severity, so they are stated once
                       // and in the message the author reads first.
@@ -1053,21 +1066,25 @@ export class DotContentDriveShellComponent implements OnDestroy {
                           // on. A dotAsset batch ran again and the folder now holds two of
                           // everything, so someone has to delete the copies — and `info` is
                           // precisely the level that says they need not look.
-                          severity: duplicateSubmission
-                              ? 'DOTASSET' === baseType
+                          severity: cancelled
+                              ? 'warn'
+                              : duplicateSubmission
+                                ? 'DOTASSET' === baseType
+                                    ? 'warn'
+                                    : 'info'
+                                : isPartial
                                   ? 'warn'
-                                  : 'info'
-                              : isPartial
-                                ? 'warn'
-                                : 'success',
+                                  : 'success',
                           summary: this.#dotMessageService.get(
-                              isPartial || duplicateSubmission
-                                  ? 'content-drive.upload.toast.incomplete'
-                                  : 'content-drive.action-center.toast.executed'
+                              cancelled
+                                  ? 'content-drive.duplicate.toast.cancelled'
+                                  : isPartial || duplicateSubmission
+                                    ? 'content-drive.upload.toast.incomplete'
+                                    : 'content-drive.action-center.toast.executed'
                           ),
                           detail,
                           life:
-                              isPartial || duplicateSubmission
+                              cancelled || isPartial || duplicateSubmission
                                   ? WARNING_MESSAGE_LIFE
                                   : SUCCESS_MESSAGE_LIFE
                       }
@@ -1147,7 +1164,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
             this.#messageService.add({
                 severity: 'error',
                 summary: this.#dotMessageService.get('content-drive.delete.refused.title'),
-                detail: this.#dotMessageService.get(this.#folderDeleteRefusalKeys[kind]),
+                detail: this.#refusalDetail(
+                    kind,
+                    this.#folderDeleteRefusalKeys[kind],
+                    'content-drive.delete.refused.over-max-paths-limit',
+                    this.#store.folderDeleteMaxPaths()
+                ),
                 life: ERROR_MESSAGE_LIFE
             });
 
@@ -1172,6 +1194,24 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * {@link folderDeleteRefusalEffect}: a refusal is not an outcome, so there are no counts and
      * nothing to reload.
      */
+    /**
+     * The sentence for a refusal, naming the ceiling when it was one and the server advertises it.
+     *
+     * The Action Center already stops an over-ceiling selection, so this is reached only when the
+     * limit was not known to the client, or changed under it. Naming the number then still tells the
+     * author how far to narrow the selection, which "fewer" does not.
+     *
+     * @param kind the refusal
+     * @param key the refusal's own sentence
+     * @param limitKey the sentence naming the ceiling, for `OVER_MAX_PATHS`
+     * @param maxPaths the advertised ceiling, or `null` when none is
+     */
+    #refusalDetail(kind: string, key: string, limitKey: string, maxPaths: number | null): string {
+        return kind === 'OVER_MAX_PATHS' && maxPaths !== null
+            ? this.#dotMessageService.get(limitKey, String(maxPaths))
+            : this.#dotMessageService.get(key);
+    }
+
     readonly folderDuplicateRefusalEffect = effect(() => {
         const kind = this.#store.folderDuplicateRefusal();
 
@@ -1183,7 +1223,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
             this.#messageService.add({
                 severity: 'error',
                 summary: this.#dotMessageService.get('content-drive.duplicate.refused.title'),
-                detail: this.#dotMessageService.get(this.#folderDuplicateRefusalKeys[kind]),
+                detail: this.#refusalDetail(
+                    kind,
+                    this.#folderDuplicateRefusalKeys[kind],
+                    'content-drive.duplicate.refused.over-max-paths-limit',
+                    this.#store.folderDuplicateMaxPaths()
+                ),
                 life: ERROR_MESSAGE_LIFE
             });
 

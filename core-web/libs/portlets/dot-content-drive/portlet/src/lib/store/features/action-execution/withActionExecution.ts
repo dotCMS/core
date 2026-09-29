@@ -773,6 +773,11 @@ export function withActionExecution() {
                                         (item) => 'SUCCESS' !== item.status
                                     ),
                                     outcomeKind: OUTCOME_KIND.FOLDER_DUPLICATE,
+                                    // Same reason as delete's: skipped means covered by a selected
+                                    // parent or not reached after a cancel, never a workflow step.
+                                    partialDetailKey: 'content-drive.duplicate.toast.partial',
+                                    // Said as cancelled whatever the counts, as the bell says it.
+                                    cancelled: 'CANCELED' === event.state,
                                     // Absent for a run from before a reload, which means "reload
                                     // regardless" rather than "nothing changed".
                                     ...(affectedFolders ? { affectedFolders } : {}),
@@ -1290,6 +1295,10 @@ export function withActionExecution() {
                                         (item) => 'SUCCESS' !== item.status
                                     ),
                                     outcomeKind: OUTCOME_KIND.FOLDER_DELETE,
+                                    // A skipped folder went with a selected parent or was not
+                                    // reached after a cancel; the default sentence blames
+                                    // workflow steps, which a folder does not have.
+                                    partialDetailKey: 'content-drive.delete.toast.partial',
                                     // Arrived unprompted, possibly minutes after the author moved
                                     // on, so nothing on screen reflects it — the notification is
                                     // the only way they learn (FR-024).
