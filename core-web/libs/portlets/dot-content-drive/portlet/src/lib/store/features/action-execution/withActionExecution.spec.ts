@@ -534,6 +534,39 @@ describe('withActionExecution', () => {
                 expect(store.toolbarRunCount()).toBe(0);
             });
 
+            it('should end the report when the completion arrives before the server answers', () => {
+                // A small job can finish, and its completion be pushed, before the 202 that
+                // accepted it reaches the page. The completion finds nothing tracked yet, and the
+                // late answer must not start tracking a run that is already over.
+                build();
+                const answer = new Subject<{
+                    jobId: string;
+                    statusUrl: string;
+                    submitted: number;
+                }>();
+                duplicate.mockReturnValue(answer);
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                store.reportDuplicateCompleted('Duplicate', {
+                    jobId: 'job-1',
+                    state: 'SUCCESS',
+                    total: 1,
+                    successCount: 1,
+                    failedCount: 0,
+                    skippedCount: 0,
+                    results: [{ key: ALPHA, status: 'SUCCESS' }]
+                });
+                answer.next({
+                    jobId: 'job-1',
+                    statusUrl: '/api/v1/jobs/job-1/status',
+                    submitted: 1
+                });
+                answer.complete();
+
+                expect(store.toolbarRunCount()).toBe(0);
+                expect(store.duplicateJobs()).toEqual({});
+            });
+
             it('should end the report when the server refuses the run', () => {
                 // So a refusal is never on screen beside a report saying the run is going.
                 build();
@@ -1068,6 +1101,18 @@ describe('withActionExecution', () => {
                     backgrounded: true
                 })
             );
+        });
+
+        it('should drop a redelivered completion for a batch it already reported', () => {
+            // Redelivery is the only reason to see one twice. Held as unclaimed, it would wait
+            // for a restore that has nothing left to claim.
+            build();
+            store.trackUploadJob('upload-1');
+
+            store.reportUploadCompleted('Upload', completed());
+            store.reportUploadCompleted('Upload', completed());
+
+            expect(store.unclaimedUploadCompletions()).toEqual({});
         });
 
         it('should ignore a batch it never submitted', () => {

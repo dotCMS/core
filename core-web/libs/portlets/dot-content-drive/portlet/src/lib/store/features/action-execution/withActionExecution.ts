@@ -553,7 +553,8 @@ export function withActionExecution() {
                     // an inherited member. Server ids are UUIDs so it is unreachable today, and
                     // this is the shape the rest of the codebase already uses for a lookup keyed
                     // by a value that did not come from here.
-                    if (!event.jobId) {
+                    // Redelivery is the only reason to see one twice.
+                    if (!event.jobId || store.settledUploadJobs().includes(event.jobId)) {
                         return;
                     }
 
@@ -795,7 +796,14 @@ export function withActionExecution() {
                                 takeUntilDestroyed(destroyRef)
                             )
                             .subscribe((response) => {
-                                if (!response?.jobId) {
+                                // A small job can finish, and its completion be pushed, before
+                                // this answer reaches the page. That completion found nothing
+                                // tracked, so it could not end the report; ending it is left here,
+                                // and the run is not tracked again.
+                                if (
+                                    !response?.jobId ||
+                                    store.settledDuplicateJobs().includes(response.jobId)
+                                ) {
                                     endRun(runId);
 
                                     return;

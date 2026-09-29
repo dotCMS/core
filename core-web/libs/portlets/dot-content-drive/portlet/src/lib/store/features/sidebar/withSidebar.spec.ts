@@ -754,6 +754,22 @@ describe('withSidebar - a location the tree has not loaded', () => {
         expect(findNodeByPath(store.folders(), '/documents/')?.loading).toBe(true);
     });
 
+    it('should stop showing a level as loading when another folder is opened first', () => {
+        // Opening a second folder cancels the first reveal before its level answers. The node it
+        // was loading is expanded and on screen, so it must not go on spinning.
+        folderService.searchFolders.mockReturnValue(NEVER);
+        patchState(store as never, { path: '/documents/images/' } as never);
+        spectator.flushEffects();
+
+        folderService.searchFolders.mockImplementation(({ path }: { path?: string }) =>
+            searchResult(levels[path ?? ''] ?? [])
+        );
+        patchState(store as never, { path: '/elsewhere/' } as never);
+        spectator.flushEffects();
+
+        expect(findNodeByPath(store.folders(), '/documents/')?.loading).toBe(false);
+    });
+
     /** What the table selects when a folder is double-clicked: a node the tree does not own. */
     const standIn = (path: string): DotFolderTreeNodeItem => ({
         key: `table-${path}`,

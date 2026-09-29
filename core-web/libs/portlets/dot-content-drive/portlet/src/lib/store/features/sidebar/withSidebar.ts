@@ -11,7 +11,7 @@ import { Observable, of, pipe, switchMap, tap } from 'rxjs';
 
 import { effect, EffectRef, inject, untracked } from '@angular/core';
 
-import { catchError, map } from 'rxjs/operators';
+import { catchError, finalize, map } from 'rxjs/operators';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
@@ -187,15 +187,21 @@ export function withSidebar() {
                     switchMap(() =>
                         findNodeByPath(store.folders(), path) ? next() : of(undefined)
                     ),
-                    catchError(() => {
+                    catchError(() => of(undefined)),
+                    // However the level ends: answered, failed, or cancelled because another
+                    // folder was opened first, which neither of the above sees. A cancelled level
+                    // is expanded and on screen, so it must not go on spinning.
+                    finalize(() => {
+                        if (!parentNodeOf(store.folders(), parentPath)?.loading) {
+                            return;
+                        }
+
                         updateTree((folders) => {
                             const node = parentNodeOf(folders, parentPath);
                             if (node) {
                                 node.loading = false;
                             }
                         });
-
-                        return of(undefined);
                     })
                 );
             };
