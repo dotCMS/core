@@ -53,3 +53,4 @@ Release-25.07.10 LTS
 47. https://github.com/dotCMS/core/issues/37085 : Upgrade BouncyCastle to 1.85 across all three bundled locations (CVE-2026-59638) #37085
 48. https://github.com/dotCMS/core/issues/34435 : [DEFECT] Portlet cache throws an error when using the Redis cache provider #34435
 49. https://github.com/dotCMS/core/issues/37252 : Backport private-issues/issues/668 into 25.07 #37252
+50. https://github.com/dotCMS/core/issues/37603 : Binary field stuck on infinite loading spinner when creating new content (legacy Dojo/JSP editor) #37603
