@@ -705,7 +705,8 @@ describe('DotContentDriveShellComponent', () => {
                 ['EMPTY_SELECTION', 'content-drive.delete.refused.empty-selection'],
                 ['OVER_MAX_PATHS', 'content-drive.delete.refused.over-max-paths'],
                 ['NOT_ENTITLED', 'content-drive.delete.refused.not-entitled'],
-                ['OVERLAPPING_RUN', 'content-drive.delete.refused.overlapping-run']
+                ['OVERLAPPING_RUN', 'content-drive.delete.refused.overlapping-run'],
+                ['UNCLASSIFIED', 'content-drive.delete.refused.unclassified']
             ])('should say %s in its own words', (kind, key) => {
                 refuse(kind as DotFolderBulkDeleteRefusalKind);
 
@@ -751,7 +752,8 @@ describe('DotContentDriveShellComponent', () => {
             it.each([
                 ['EMPTY_SELECTION', 'content-drive.duplicate.refused.empty-selection'],
                 ['OVER_MAX_PATHS', 'content-drive.duplicate.refused.over-max-paths'],
-                ['NOT_ENTITLED', 'content-drive.duplicate.refused.not-entitled']
+                ['NOT_ENTITLED', 'content-drive.duplicate.refused.not-entitled'],
+                ['UNCLASSIFIED', 'content-drive.duplicate.refused.unclassified']
             ])('should say %s in its own words', (kind, key) => {
                 refuse(kind);
 
@@ -1366,6 +1368,30 @@ describe('DotContentDriveShellComponent', () => {
                             'content-drive.duplicate.toast.cancelled-detail'
                         )
                     })
+                );
+            });
+
+            it('should count only the folders a cancelled run never reached as not attempted', () => {
+                // A folder its selected parent covered was duplicated inside that parent before
+                // the stop, so it is not one the run left out (FR-021a).
+                settle(
+                    duplicated({
+                        cancelled: true,
+                        successCount: 1,
+                        skippedCount: 2,
+                        failures: [
+                            covered,
+                            { key: '//demo.dotcms.com/blogs/gamma/', status: 'SKIPPED' as const }
+                        ]
+                    })
+                );
+
+                expect(dotMessageService.get).toHaveBeenCalledWith(
+                    'content-drive.duplicate.toast.cancelled-detail',
+                    'Duplicate',
+                    '1',
+                    '0',
+                    '1'
                 );
             });
 

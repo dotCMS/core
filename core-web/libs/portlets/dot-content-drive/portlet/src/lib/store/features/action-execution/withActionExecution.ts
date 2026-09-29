@@ -139,8 +139,8 @@ interface WithActionExecutionState {
      * {@link actionExecutionResults}.
      *
      * `UNCLASSIFIED` lands here too, for a transport failure or a body with no code, so the author
-     * reads a sentence rather than the server's message (FR-024). A 401 or a 403 still goes through
-     * `DotHttpErrorManagerService`, which signs the author back in or reports a license wall.
+     * reads a sentence rather than the server's message (FR-024). A 401 still goes through
+     * `DotHttpErrorManagerService`, which signs the author back in.
      */
     folderDeleteRefusal: DotFolderBulkDeleteRefusalKind | undefined;
     /**
@@ -184,7 +184,7 @@ interface WithActionExecutionState {
      * A folder duplication the server refused, as the kind it refused it for.
      *
      * Same split as {@link folderDeleteRefusal}: the store holds the kind, the shell picks the words.
-     * `UNCLASSIFIED` lands here as well; only a 401 or a 403 goes to `DotHttpErrorManagerService`.
+     * `UNCLASSIFIED` lands here as well; only a 401 goes to `DotHttpErrorManagerService`.
      */
     folderDuplicateRefusal: DotFolderBulkDuplicateRefusalKind | undefined;
 }
@@ -784,11 +784,12 @@ export function withActionExecution() {
                                         return EMPTY;
                                     }
 
-                                    // A 401 signs the author back in and a 403 reports a license
-                                    // wall, which only the HTTP error manager does.
+                                    // A 401 signs the author back in, which only the HTTP error
+                                    // manager does. A 403 never reaches here: the service reads
+                                    // every one as not entitled.
                                     const response = refusal?.response;
 
-                                    if (401 === response?.status || 403 === response?.status) {
+                                    if (401 === response?.status) {
                                         httpErrorManagerService.handle(response);
 
                                         return EMPTY;
@@ -1312,11 +1313,12 @@ export function withActionExecution() {
                                         return EMPTY;
                                     }
 
-                                    // A 401 signs the author back in and a 403 reports a license
-                                    // wall, which only the HTTP error manager does.
+                                    // A 401 signs the author back in, which only the HTTP error
+                                    // manager does. A 403 never reaches here: the service reads
+                                    // every one as not entitled.
                                     const response = refusal?.response;
 
-                                    if (401 === response?.status || 403 === response?.status) {
+                                    if (401 === response?.status) {
                                         httpErrorManagerService.handle(response);
 
                                         return EMPTY;

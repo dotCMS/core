@@ -932,7 +932,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
                   actionName,
                   String(successCount),
                   String(failedCount),
-                  String(skippedCount)
+                  // Only the folders the stop left out: a covered one went with its parent.
+                  String(skippedCount - coveredCount)
               )
             : duplicateSubmission
               ? this.#dotMessageService.get(

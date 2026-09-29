@@ -639,10 +639,11 @@ describe('withActionExecution', () => {
                 expect(handle).not.toHaveBeenCalled();
             });
 
-            it.each([401, 403])('should still hand a %s to the HTTP error manager', (status) => {
-                // It signs the author back in, or reports a license wall, which a sentence cannot.
+            it('should still hand a 401 to the HTTP error manager', () => {
+                // It signs the author back in, which a sentence cannot. A 403 never arrives here:
+                // the service reads every one as not entitled.
                 build();
-                refuseWith('UNCLASSIFIED', status);
+                refuseWith('UNCLASSIFIED', 401);
 
                 store.executeDuplicate('Duplicate', [ALPHA]);
 
@@ -1580,10 +1581,11 @@ describe('withActionExecution', () => {
                 expect(handle).not.toHaveBeenCalled();
             });
 
-            it.each([401, 403])('should still hand a %s to the HTTP error manager', (status) => {
-                // It signs the author back in, or reports a license wall, which a sentence cannot.
+            it('should still hand a 401 to the HTTP error manager', () => {
+                // It signs the author back in, which a sentence cannot. A 403 never arrives here:
+                // the service reads every one as not entitled.
                 build();
-                refuseWith('UNCLASSIFIED', status);
+                refuseWith('UNCLASSIFIED', 401);
 
                 store.executeFolderBulkDelete([PATH_A], ['inode-a']);
 
