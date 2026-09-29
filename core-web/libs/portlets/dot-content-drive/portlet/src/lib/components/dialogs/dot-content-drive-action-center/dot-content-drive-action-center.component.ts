@@ -496,7 +496,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             hasPushPublishEnvironments: this.$hasPushPublishEnvironments(),
             // Where the duplicates can land, which in all site content is each folder's own
             // parent rather than one folder to gate against.
-            canAddChildren: this.#store.$canDuplicateHere()
+            canAddChildren: this.#store.$canDuplicateHere(),
+            // So a folder row counts what one run carries, the same number its preview lists.
+            folderCeilings: {
+                duplicate: this.#store.folderDuplicateMaxPaths(),
+                delete: this.#store.folderDeleteMaxPaths()
+            }
         })
     );
 

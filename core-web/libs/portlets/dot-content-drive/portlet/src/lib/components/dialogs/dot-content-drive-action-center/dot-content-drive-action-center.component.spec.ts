@@ -2782,6 +2782,22 @@ describe('DotContentDriveActionCenterComponent', () => {
             }
         );
 
+        it.each([
+            ['DUPLICATE', mockFolderDuplicateMaxPaths],
+            ['DELETE_FOLDER', mockFolderDeleteMaxPaths]
+        ])(
+            '%s should advertise on its row only as many folders as one run carries',
+            (actionId, ceiling) => {
+                ceiling.set(1);
+                spectator.detectChanges();
+
+                // The row's number is what the run will act on, as every other row's is.
+                expect(
+                    spectator.query(`[data-testid="quick-action-${actionId}"]`)?.textContent
+                ).toContain('(1)');
+            }
+        );
+
         it('should submit only the folders it included', () => {
             mockFolderDuplicateMaxPaths.set(1);
 

@@ -260,6 +260,23 @@ describe('action-center utils', () => {
 
                 expect(duplicate?.eligibleInodes).toEqual(['f1']);
             });
+
+            it('should count only as many folders as one duplicate may carry', () => {
+                // The row says how many the run will act on, and one run carries at most the
+                // ceiling. Every eligible folder is still kept, so the preview can say how many
+                // were left out.
+                const duplicate = getQuickActions(
+                    [
+                        folderRow('f1', '/blogs/alpha/', ['READ']),
+                        folderRow('f2', '/blogs/beta/', ['READ']),
+                        folderRow('f3', '/blogs/gamma/', ['READ'])
+                    ],
+                    { isAdmin: false, folderCeilings: { duplicate: 2 } }
+                ).find((action) => action.id === DUPLICATE_ACTION_ID);
+
+                expect(duplicate?.count).toBe(2);
+                expect(duplicate?.eligibleInodes).toEqual(['f1', 'f2', 'f3']);
+            });
         });
 
         it('should key the folder-capable actions on identifiers, since a folder has no inode', () => {
@@ -1192,6 +1209,25 @@ describe('Delete (bulk folder delete, #37063)', () => {
     it('should not be marked as coming soon', () => {
         // It is wired. A disabled row with a tooltip would be the honest state only if it were not.
         expect(deleteAction([actionableFolder('f1')])?.comingSoon).toBe(false);
+    });
+
+    it('should count only as many folders as one delete may carry', () => {
+        const action = getQuickActions(
+            [actionableFolder('f1'), actionableFolder('f2'), actionableFolder('f3')],
+            { isAdmin: false, folderCeilings: { delete: 2 } }
+        ).find((quickAction) => quickAction.id === DELETE_FOLDER_ACTION_ID);
+
+        expect(action?.count).toBe(2);
+        expect(action?.eligibleInodes).toEqual(['f1', 'f2', 'f3']);
+    });
+
+    it('should count every folder while no ceiling is advertised', () => {
+        const action = getQuickActions([actionableFolder('f1'), actionableFolder('f2')], {
+            isAdmin: false,
+            folderCeilings: { delete: null }
+        }).find((quickAction) => quickAction.id === DELETE_FOLDER_ACTION_ID);
+
+        expect(action?.count).toBe(2);
     });
 });
 

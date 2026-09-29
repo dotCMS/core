@@ -132,7 +132,8 @@ export interface DotActionCenterQuickAction {
     icon: string;
     /**
      * The ids the action will fire on. Built with {@link count} in one pass so the badge and the
-     * payload cannot diverge.
+     * payload cannot diverge. An action with a ceiling keeps every eligible id here and fires on
+     * the first of them, as many as {@link count} says.
      *
      * **Inodes for the contentlet-only actions**, which is what pins the version and therefore the
      * step a fire lands on, so one contentlet sitting on two steps contributes two entries.
@@ -141,7 +142,10 @@ export interface DotActionCenterQuickAction {
      * `executeAddToBundle` already documents on the store side.
      */
     eligibleInodes: string[];
-    /** Eligible contentlets. `0` = shown but not selectable. */
+    /**
+     * How many items one run will act on: the eligible ones, up to the action's ceiling where it
+     * has one. `0` = shown but not selectable.
+     */
     count: number;
     /**
      * Eligible items likely to fail — heads-up only; they are still fired.
@@ -198,6 +202,12 @@ export interface DotActionCenterContext {
      * flight, and the server refuses per folder regardless.
      */
     canAddChildren?: boolean;
+    /**
+     * How many folders one run of a folder action may carry, as the server advertises it (#37062).
+     *
+     * `null` or absent means no ceiling is advertised, and the row counts every eligible folder.
+     */
+    folderCeilings?: { duplicate?: number | null; delete?: number | null };
 }
 
 /**
@@ -239,6 +249,11 @@ interface DotActionCenterQuickActionDef {
      * {@link DotActionCenterContext.canAddChildren}.
      */
     requiresAddChildren?: boolean;
+    /**
+     * The most items one run of this action may carry, read from the context, or `null` for no
+     * limit. The row's count stops there, since that is how many the run acts on.
+     */
+    ceilingOf?: (context: DotActionCenterContext) => number | null | undefined;
     /**
      * Runs on folders as well as contentlets.
      *
@@ -361,6 +376,7 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         eligibleWhen: (item) => isFolder(item),
         // Counts and fires on every selected folder, deletable or not — see `availableWhen`.
         availableWhen: (items) => items.filter(isFolder).some(eligibleForDelete),
+        ceilingOf: (context) => context.folderCeilings?.delete,
         supportsFolders: true,
         foldersOnly: true
     },
@@ -386,6 +402,7 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         // answered before this list is shown at all.
         eligibleWhen: (item) =>
             isFolder(item) && (item.permissions?.includes(PERMISSIONS_TYPE.READ) ?? true),
+        ceilingOf: (context) => context.folderCeilings?.duplicate,
         supportsFolders: true,
         foldersOnly: true,
         requiresAddChildren: true
@@ -512,6 +529,7 @@ export const getQuickActions = (
             quickAction.supportsFolders ? item.identifier : item.inode
         );
         const { warnWhen } = quickAction;
+        const ceiling = quickAction.ceilingOf?.(context);
         const warningCount = warnWhen
             ? eligible.filter((item) => warnWhen(item, context)).length
             : 0;
@@ -521,7 +539,12 @@ export const getQuickActions = (
             name: quickAction.nameKey,
             icon: quickAction.icon,
             eligibleInodes,
-            count: eligibleInodes.length,
+            // The run carries at most the ceiling, so that is all the row may promise.
+            // `eligibleInodes` keeps every eligible item: the preview says how many were left out.
+            count:
+                ceiling === null || ceiling === undefined
+                    ? eligibleInodes.length
+                    : Math.min(eligibleInodes.length, ceiling),
             warningCount,
             warningHint: warningCount > 0 ? quickAction.warningHint : undefined,
             comingSoon: !!quickAction.comingSoon,
