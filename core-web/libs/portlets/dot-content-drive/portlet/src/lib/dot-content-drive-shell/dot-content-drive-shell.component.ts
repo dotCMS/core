@@ -233,7 +233,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
     protected readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
 
     readonly $items = this.#store.items;
-    readonly $status = this.#store.status;
 
     /**
      * The tree's VISUAL expanded state (drives width/animation). Combines the user's real
