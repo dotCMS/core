@@ -3,8 +3,15 @@ import { type Page } from '@playwright/test';
 import { Portlet } from '@utils/portlets';
 
 import { FolderDuplicate } from './helpers/content-drive-duplicate';
+import {
+    FOLDER_RUN_URL,
+    FolderRunPreview,
+    acceptSubmissionsWithoutRunning,
+    advertiseFolderCeilings,
+    refuseFolderRunsWith
+} from './helpers/content-drive-folder-runs';
 
-import { type ContentDriveApiHelpers, test } from '../../fixtures/content-drive.fixture';
+import { type ContentDriveApiHelpers, expect, test } from '../../fixtures/content-drive.fixture';
 
 /**
  * Journey: duplicating folders in Content Drive (#37062).
@@ -247,4 +254,79 @@ test.describe('Content Drive folder duplicate', () => {
                 }
             ));
     }
+
+    test('runs only as many folders as one duplicate may carry, and says the rest are excluded', ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        let submitted: string[][] = [];
+
+        return inSeededContainer(
+            {
+                adminPage,
+                apiHelpers,
+                name: `cd-dup-cap-${testSuffix}`,
+                children: ['alpha', 'beta'],
+                // The ceiling is a server setting, so the configuration advertises one of 1. The
+                // submission is answered as accepted without running: this is about what is sent.
+                beforeOpen: async () => {
+                    await advertiseFolderCeilings(adminPage, { duplicate: 1 });
+                    submitted = await acceptSubmissionsWithoutRunning(
+                        adminPage,
+                        FOLDER_RUN_URL.duplicate
+                    );
+                }
+            },
+            async () => {
+                const preview = new FolderRunPreview(adminPage);
+
+                await preview.open('DUPLICATE', ['alpha', 'beta']);
+
+                // The preview lists what this run carries, and says so, and the author can still
+                // run it after reviewing what is left out.
+                await preview.expectListedCount(1);
+                await preview.expectCeilingWarning('duplicates 1 of the 2 folders you selected');
+
+                await preview.execute();
+
+                await expect.poll(() => submitted.length).toBe(1);
+                expect(submitted[0]).toHaveLength(1);
+            }
+        );
+    });
+
+    test('names the limit when the server refuses a duplicate as too large', ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) =>
+        inSeededContainer(
+            {
+                adminPage,
+                apiHelpers,
+                name: `cd-dup-limit-${testSuffix}`,
+                children: ['alpha', 'beta'],
+                // Under the advertised ceiling, so the client lets it through, and the server
+                // refuses it anyway: its limit changed, or the client could not know it.
+                beforeOpen: async () => {
+                    await advertiseFolderCeilings(adminPage, { duplicate: 5 });
+                    await refuseFolderRunsWith(
+                        adminPage,
+                        FOLDER_RUN_URL.duplicate,
+                        400,
+                        'OVER_MAX_PATHS'
+                    );
+                }
+            },
+            async (drive) => {
+                const preview = new FolderRunPreview(adminPage);
+
+                await preview.open('DUPLICATE', ['alpha', 'beta']);
+                await preview.expectNoCeilingWarning();
+                await preview.execute();
+
+                await drive.expectToastContaining('You can duplicate up to 5 folders at a time');
+            }
+        ));
 });

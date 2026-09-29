@@ -1,86 +1,216 @@
 import { ContentDrivePage } from '@pages';
+import { type Page } from '@playwright/test';
 
-import { test } from '../../fixtures/content-drive.fixture';
+import {
+    FOLDER_RUN_URL,
+    FolderRunPreview,
+    acceptSubmissionsWithoutRunning,
+    advertiseFolderCeilings,
+    refuseFolderRunsWith
+} from './helpers/content-drive-folder-runs';
+
+import { type ContentDriveApiHelpers, expect, test } from '../../fixtures/content-drive.fixture';
 
 /**
- * Journey: Content Drive bulk folder delete (#37063)
+ * Journey: Content Drive bulk folder delete (#37063).
  *
- * **Skipped until the server half exists.** The endpoint, the queue and the folder-delete
- * announcements are specified and merged but not implemented — see
- * `specs/37063-bulk-folder-delete-backend/`. The frontend is built and unit-tested against that
- * contract, so this file is authored now, reviewed now, and enabled in the PR that stacks onto
- * branch `37063-content-drive-bulk-folder-delete-backend` once it carries an implementation.
+ * What a unit test cannot reach, and the point of the feature:
  *
- * Written rather than deferred because the two things it covers are the two a unit test cannot
- * reach, and both are the point of the feature:
- *
- * 1. **The run survives a reload.** jsdom has no page to reload; the in-flight set being
- *    re-established from the server is only provable in a real browser against a real queue.
- * 2. **Both surfaces settle together.** The listing and the sidebar tree load independently, and a
+ * 1. **Both surfaces settle together.** The listing and the sidebar tree load independently, and a
  *    tree still offering a folder the listing has dropped is exactly what a component spec, holding
  *    one of the two, cannot see.
+ * 2. **The run survives a reload.** jsdom has no page to reload; the in-flight set being
+ *    re-established from the server is only provable in a real browser against a real queue.
  *
- * Remove the `.skip` and delete this paragraph when the backend lands (tasks.md T084).
+ * The ceiling (#37062) is advertised by an intercepted configuration, and the submissions those
+ * tests make are answered without reaching the server, so nothing is deleted by them.
  */
 // A delete is asynchronous end to end: the request, then a queued job, then the completion signal
 // that refreshes both surfaces. A measured 20,000-file folder took about eight minutes, so the
 // fixtures here stay deliberately small and the budget still has to be generous.
 test.describe.configure({ timeout: 300000 });
 
-// The suite lints skipped tests as errors, and rightly — a skip with no expiry is how a test rots
-// quietly. This one has both a reason and a removal task (tasks.md T084), so it is exempted here
-// rather than by weakening the rule, and the disable comes out with the `.skip` in the same commit.
-// eslint-disable-next-line playwright/no-skipped-test
-test.describe.skip('Content Drive bulk folder delete', () => {
-    test('deletes every selected folder and reports the server’s counts @critical', async ({
+/**
+ * Seeds a container folder holding the given subfolders, opens it, and removes it however the
+ * test ends.
+ *
+ * Everything lives inside the container, so deleting it is the whole cleanup, including for a test
+ * whose delete did not finish. Per test rather than in an `afterEach`, because this file runs fully
+ * parallel.
+ */
+async function inSeededContainer(
+    {
+        adminPage,
+        apiHelpers,
+        name,
+        children,
+        beforeOpen
+    }: {
+        adminPage: Page;
+        apiHelpers: ContentDriveApiHelpers;
+        name: string;
+        children: string[];
+        /** Runs before the drive loads, which is when a route has to be in place. */
+        beforeOpen?: () => Promise<void>;
+    },
+    body: (drive: ContentDrivePage, preview: FolderRunPreview) => Promise<void>
+): Promise<void> {
+    const site = await apiHelpers.getDefaultSite();
+    const container = `/${name}`;
+
+    await apiHelpers.createFolders(site.hostname, [
+        container,
+        ...children.map((child) => `${container}/${child}`)
+    ]);
+
+    try {
+        const drive = new ContentDrivePage(adminPage);
+        await beforeOpen?.();
+        await drive.goTo();
+        await drive.openFolder(name);
+        await body(drive, new FolderRunPreview(adminPage));
+    } finally {
+        await apiHelpers.deleteFolders(site.hostname, [container]);
+    }
+}
+
+test.describe('Content Drive bulk folder delete', () => {
+    test('deletes every selected folder and reports the server’s counts @critical', ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) =>
+        inSeededContainer(
+            {
+                adminPage,
+                apiHelpers,
+                name: `cd-del-${testSuffix}`,
+                children: ['alpha', 'beta']
+            },
+            async (drive, preview) => {
+                await preview.open('DELETE_FOLDER', ['alpha', 'beta']);
+
+                // The confirmation names the count and says the contents go too.
+                await expect(adminPage.getByTestId('delete-warning')).toContainText(
+                    'Deleting 2 folder(s) also permanently deletes everything inside them'
+                );
+
+                await preview.execute();
+
+                await drive.expectOutcomeContaining('ran on 2 item');
+                await preview.expectGone('alpha');
+                await preview.expectGone('beta');
+            }
+        ));
+
+    test('keeps a folder marked as in-flight across a reload @critical', ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) =>
+        inSeededContainer(
+            {
+                adminPage,
+                apiHelpers,
+                name: `cd-del-reload-${testSuffix}`,
+                // Enough folders inside that the delete is still running when the page comes back.
+                children: [
+                    'big',
+                    ...Array.from({ length: 150 }, (_, index) => `big/child-${index}`)
+                ]
+            },
+            async (_drive, preview) => {
+                await preview.open('DELETE_FOLDER', ['big']);
+                await preview.execute();
+                await preview.expectMarkedInFlight('big');
+
+                // Re-established from the queue's active listing, not remembered by the page that
+                // started it.
+                await adminPage.reload();
+                await preview.expectMarkedInFlight('big');
+
+                await preview.expectGone('big');
+            }
+        ));
+
+    test('runs only as many folders as one delete may carry, and says the rest are excluded', ({
         adminPage,
         apiHelpers,
         testSuffix
     }) => {
-        const site = await apiHelpers.getDefaultSite();
-        const folders = [`/cd-del-a-${testSuffix}`, `/cd-del-b-${testSuffix}`];
-        await apiHelpers.createFolders(site.hostname, folders);
+        let submitted: string[][] = [];
 
-        const drive = new ContentDrivePage(adminPage);
-        await drive.goTo();
+        return inSeededContainer(
+            {
+                adminPage,
+                apiHelpers,
+                name: `cd-del-cap-${testSuffix}`,
+                children: ['alpha', 'beta'],
+                // The ceiling is a server setting, so the configuration advertises one of 1. The
+                // submission is answered as accepted without running: nothing is deleted.
+                beforeOpen: async () => {
+                    await advertiseFolderCeilings(adminPage, { delete: 1 });
+                    submitted = await acceptSubmissionsWithoutRunning(
+                        adminPage,
+                        FOLDER_RUN_URL.delete
+                    );
+                }
+            },
+            async (_drive, preview) => {
+                await preview.open('DELETE_FOLDER', ['alpha', 'beta']);
 
-        // Select both folders, delete, confirm.
-        // Expected: the confirmation names the count and says the contents go too; the rows are
-        // marked; the outcome reports 2 deleted; neither folder remains in the listing OR the tree.
+                // The preview lists what this run carries, says so, and still lets it run.
+                await preview.expectListedCount(1);
+                await preview.expectCeilingWarning('deletes 1 of the 2 folders you selected');
+
+                await preview.execute();
+
+                await expect.poll(() => submitted.length).toBe(1);
+                expect(submitted[0]).toHaveLength(1);
+            }
+        );
     });
 
-    test('keeps a folder marked as in-flight across a reload @critical', async ({
+    test('names the limit when the server refuses a delete as too large', ({
         adminPage,
         apiHelpers,
         testSuffix
-    }) => {
-        const site = await apiHelpers.getDefaultSite();
-        const folder = `/cd-del-big-${testSuffix}`;
-        await apiHelpers.createFolders(site.hostname, [folder]);
+    }) =>
+        inSeededContainer(
+            {
+                adminPage,
+                apiHelpers,
+                name: `cd-del-limit-${testSuffix}`,
+                children: ['alpha', 'beta'],
+                // Under the advertised ceiling, so the client lets it through, and the server
+                // refuses it anyway: its limit changed, or the client could not know it.
+                beforeOpen: async () => {
+                    await advertiseFolderCeilings(adminPage, { delete: 5 });
+                    await refuseFolderRunsWith(
+                        adminPage,
+                        FOLDER_RUN_URL.delete,
+                        400,
+                        'OVER_MAX_PATHS'
+                    );
+                }
+            },
+            async (drive, preview) => {
+                await preview.open('DELETE_FOLDER', ['alpha', 'beta']);
+                await preview.expectNoCeilingWarning();
+                await preview.execute();
 
-        const drive = new ContentDrivePage(adminPage);
-        await drive.goTo();
+                await drive.expectToastContaining('You can delete up to 5 folders at a time');
+            }
+        ));
 
-        // Start the delete on a folder large enough to still be running, then reload.
-        // Expected: the row is still marked and still inert, and the tree node with it — the state
-        // re-established from the queue rather than remembered by the page that started it.
-    });
-
-    test('leaves a folder usable when its delete failed @critical', async ({
-        adminPage,
-        apiHelpers,
-        testSuffix
-    }) => {
-        const site = await apiHelpers.getDefaultSite();
-        const folder = `/cd-del-locked-${testSuffix}`;
-        await apiHelpers.createFolders(site.hostname, [folder]);
-
-        const drive = new ContentDrivePage(adminPage);
-        await drive.goTo();
-
+    // Needs content locked by another user inside the folder, which no fixture here can create:
+    // the requests helpers have no second login to lock with. The server's per-folder failure is
+    // covered by the backend suite, and the marking clearing on a failed folder by the store's
+    // unit tests. Skipped with that reason rather than written to pass without the failure.
+    // eslint-disable-next-line playwright/no-skipped-test
+    test.skip('leaves a folder usable when its delete failed', async () => {
         // Provoke a per-folder failure (locked content inside), then wait for the run to settle.
         // Expected: the folder is named in the outcome with a reason, the marking clears, and the
-        // folder is usable again — the case the "active" listing's failed runs would otherwise
-        // leave marked forever (contract CR-10).
+        // folder is usable again (contract CR-10).
     });
 });
