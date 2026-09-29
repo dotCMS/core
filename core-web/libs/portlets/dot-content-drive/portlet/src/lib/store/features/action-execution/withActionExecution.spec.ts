@@ -595,7 +595,7 @@ describe('withActionExecution', () => {
 
             store.executeDuplicate('Duplicate', [ALPHA]);
 
-            expect(handle).toHaveBeenCalled();
+            expect(store.folderDuplicateRefusal()).toBe('UNCLASSIFIED');
             expect(store.duplicateJobs()).toEqual({});
         });
 
@@ -627,10 +627,22 @@ describe('withActionExecution', () => {
                 }
             );
 
-            it('should leave an unclassified refusal to the HTTP error manager', () => {
-                // A transport failure, or a body with no code: that path still redirects on a 401.
+            it("should say an unclassified refusal in its own words, not the server's", () => {
+                // The generic handler renders the server's message, which is written for a log
+                // (FR-024).
                 build();
                 refuseWith('UNCLASSIFIED', 500);
+
+                store.executeDuplicate('Duplicate', [ALPHA]);
+
+                expect(store.folderDuplicateRefusal()).toBe('UNCLASSIFIED');
+                expect(handle).not.toHaveBeenCalled();
+            });
+
+            it.each([401, 403])('should still hand a %s to the HTTP error manager', (status) => {
+                // It signs the author back in, or reports a license wall, which a sentence cannot.
+                build();
+                refuseWith('UNCLASSIFIED', status);
 
                 store.executeDuplicate('Duplicate', [ALPHA]);
 
@@ -1556,11 +1568,22 @@ describe('withActionExecution', () => {
                 }
             );
 
-            it('should leave an unclassified refusal to the HTTP error manager', () => {
-                // Not a refusal the endpoint reasoned about — a transport failure, or a body with no
-                // code. That path still redirects on a 401 and reports a license wall properly.
+            it("should say an unclassified refusal in its own words, not the server's", () => {
+                // Not a refusal the endpoint reasoned about: a transport failure, or a body with no
+                // code. The generic handler would render the server's message (FR-024).
                 build();
                 refuseWith('UNCLASSIFIED', 500);
+
+                store.executeFolderBulkDelete([PATH_A], ['inode-a']);
+
+                expect(store.folderDeleteRefusal()).toBe('UNCLASSIFIED');
+                expect(handle).not.toHaveBeenCalled();
+            });
+
+            it.each([401, 403])('should still hand a %s to the HTTP error manager', (status) => {
+                // It signs the author back in, or reports a license wall, which a sentence cannot.
+                build();
+                refuseWith('UNCLASSIFIED', status);
 
                 store.executeFolderBulkDelete([PATH_A], ['inode-a']);
 

@@ -138,9 +138,9 @@ interface WithActionExecutionState {
      * here because the store never touches the UI — the shell drains this exactly as it drains
      * {@link actionExecutionResults}.
      *
-     * `UNCLASSIFIED` never lands here. It covers a transport failure rather than a refusal the
-     * endpoint reasoned about, and those keep going through `DotHttpErrorManagerService`, which is
-     * what still redirects on a 401 and reports a license wall properly.
+     * `UNCLASSIFIED` lands here too, for a transport failure or a body with no code, so the author
+     * reads a sentence rather than the server's message (FR-024). A 401 or a 403 still goes through
+     * `DotHttpErrorManagerService`, which signs the author back in or reports a license wall.
      */
     folderDeleteRefusal: DotFolderBulkDeleteRefusalKind | undefined;
     /**
@@ -184,7 +184,7 @@ interface WithActionExecutionState {
      * A folder duplication the server refused, as the kind it refused it for.
      *
      * Same split as {@link folderDeleteRefusal}: the store holds the kind, the shell picks the words.
-     * `UNCLASSIFIED` never lands here; it goes through `DotHttpErrorManagerService`.
+     * `UNCLASSIFIED` lands here as well; only a 401 or a 403 goes to `DotHttpErrorManagerService`.
      */
     folderDuplicateRefusal: DotFolderBulkDuplicateRefusalKind | undefined;
 }
@@ -784,12 +784,24 @@ export function withActionExecution() {
                                         return EMPTY;
                                     }
 
-                                    // A transport failure, or a body with no code. This path still
-                                    // redirects on a 401 and reports a license wall properly.
-                                    httpErrorManagerService.handle(
-                                        refusal?.response ??
-                                            new HttpErrorResponse({ error: refusal })
+                                    // A 401 signs the author back in and a 403 reports a license
+                                    // wall, which only the HTTP error manager does.
+                                    const response = refusal?.response;
+
+                                    if (401 === response?.status || 403 === response?.status) {
+                                        httpErrorManagerService.handle(response);
+
+                                        return EMPTY;
+                                    }
+
+                                    // Anything else, a transport failure or a body with no code,
+                                    // gets our own sentence: that handler would show the server's
+                                    // message, which is written for a log (FR-024).
+                                    console.warn(
+                                        'Content drive folder duplicate refused',
+                                        refusal?.message
                                     );
+                                    patchState(store, { folderDuplicateRefusal: kind });
 
                                     return EMPTY;
                                 }),
@@ -1300,14 +1312,25 @@ export function withActionExecution() {
                                         return EMPTY;
                                     }
 
-                                    // Not a refusal the endpoint reasoned about — a transport
-                                    // failure, or an instance whose body carried no code. This path
-                                    // still redirects on a 401 and reports a license wall properly,
-                                    // which is why it is not replaced wholesale.
-                                    httpErrorManagerService.handle(
-                                        refusal?.response ??
-                                            new HttpErrorResponse({ error: refusal })
+                                    // A 401 signs the author back in and a 403 reports a license
+                                    // wall, which only the HTTP error manager does.
+                                    const response = refusal?.response;
+
+                                    if (401 === response?.status || 403 === response?.status) {
+                                        httpErrorManagerService.handle(response);
+
+                                        return EMPTY;
+                                    }
+
+                                    // Not a refusal the endpoint reasoned about: a transport
+                                    // failure, or an instance whose body carried no code. It gets
+                                    // our own sentence, since that handler would show the server's
+                                    // message, which is written for a log (FR-024).
+                                    console.warn(
+                                        'Content drive folder delete refused',
+                                        refusal?.message
                                     );
+                                    patchState(store, { folderDeleteRefusal: kind });
 
                                     return EMPTY;
                                 })

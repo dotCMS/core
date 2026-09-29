@@ -1151,9 +1151,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * The words for each refusal the delete endpoint reasoned about.
      *
      * Here rather than in the store for the same reason {@link #describeSubmissionRefusal} is: the
-     * store carries the kind, the component decides what an author reads. `UNCLASSIFIED` has an
-     * entry so the map is total, though the store routes that one through
-     * `DotHttpErrorManagerService` instead and it should not arrive.
+     * store carries the kind, the component decides what an author reads. `UNCLASSIFIED` is a
+     * transport failure or a body with no code, said in the product's words rather than the
+     * server's (FR-024).
      *
      * None of them names a number or a folder. The ceiling is in the server's prose, which is not
      * localised and so is not rendered, and the overlap body carries no structured field naming the
@@ -1202,7 +1202,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
     /**
      * The sentence for each way the server can refuse a folder duplication before any run exists
      * (#37062). Delete's kinds minus the overlap one, which duplication cannot produce.
-     * `UNCLASSIFIED` goes through `DotHttpErrorManagerService` instead and should not arrive.
+     * `UNCLASSIFIED` is a transport failure or a body with no code, said in the product's words.
      */
     readonly #folderDuplicateRefusalKeys: Record<DotFolderBulkDuplicateRefusalKind, string> = {
         EMPTY_SELECTION: 'content-drive.duplicate.refused.empty-selection',
