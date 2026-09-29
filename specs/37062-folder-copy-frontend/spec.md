@@ -333,6 +333,11 @@ offered, says it will act on four, and acts on four.
   remain available for it and the server's per-folder refusal MUST be what reports it. The client
   MUST NOT guess a refusal. Filtering under FR-005a acts on rights the client **has**, never on
   their absence, and the per-folder outcome remains the only authority (backend FR-012c).
+  *Amended after sign-off (2026-09-29, developer decision).* A folder whose rights are unknown is
+  not offered a duplicate. The right-click menu leaves the action out for it, and the Action
+  Center counts only the folders known to carry READ, listing the action at zero, and so not
+  selectable, when the selection holds none. The server's per-folder refusal stays the authority
+  for the folders that are counted.
 - **FR-006**: The client MUST read the maximum number of folders one submission may carry from the
   application configuration the server advertises, and MUST check a selection against it before
   submitting. A selection over the limit runs on the first that many folders: the action's row
@@ -361,8 +366,8 @@ offered, says it will act on four, and acts on four.
   *Amended again (2026-09-28, developer decision, QA follow-up).* The client checks the ceiling
   again, for delete as well as duplicate, from the configuration it already loads for upload's. A
   selection over it lists only the first folders one run may carry in the Action Center's preview,
-  and says the rest are not included. The server's `OVER_MAX_PATHS` refusal stays the authority,
-  and when it arrives it now names the number.
+  which its row counts as well; no notice is added (amended 2026-09-29, see FR-006). The server's
+  `OVER_MAX_PATHS` refusal stays the authority, and when it arrives it now names the number.
 - **FR-007**: The bulk action MUST pass through the same commit step every other bulk action uses,
   where the author sees what will be acted on before pressing the button. It MUST NOT add a
   configuration step, because there is nothing to configure: no destination, no name, no options.
@@ -370,6 +375,9 @@ offered, says it will act on four, and acts on four.
   removed or overwritten, and copy written for deletion MUST NOT be reused here.
 - **FR-009**: The commit step MUST state that each duplicate is created beside its original under an
   automatically chosen name, so an author is not surprised by a name they did not pick.
+  *Amended after sign-off (2026-09-29, developer decision).* The commit step does not say it. A
+  duplicate beside its original, named after it with `_copy`, is the model authors already have,
+  so the sentence would tell them what they expect.
 - **FR-010**: The single-folder action MUST run directly from the right-click menu without a
   confirmation step. Duplicating creates something the author can delete, and a confirmation on a
   non-destructive single action is friction without a purpose.
@@ -433,6 +441,9 @@ offered, says it will act on four, and acts on four.
   ancestor in the same submission already covers it. These are different facts and one message
   cannot serve both. The second is not an error at all and MUST NOT be presented as one: the author
   selected a parent and its child, and got what they asked for once.
+  *Clarified (2026-09-29, developer decision).* A run whose only skips are folders an ancestor
+  covered reads as clean, and the report's counts name those folders as covered, not skipped.
+  Bulk delete reads the same way.
 - **FR-022**: Where there are more entries than the report can show at once, it MUST name the first
   few and acknowledge the remainder as a count, and that remainder MUST be reachable rather than a
   dead end. How many are named before the overflow begins is a design choice for planning; that the
@@ -462,6 +473,9 @@ offered, says it will act on four, and acts on four.
   destination, is **wrong** for this design and MUST NOT be used.
 - **FR-027**: An outcome MUST be reported once, by whichever part of the interface is responsible
   for presenting it, not once per surface that knows about the run.
+  *Clarified (2026-09-29, developer decision).* Each open tab of the submitting author reports
+  the outcome and reloads, since the completion reaches every one of that author's sessions. That
+  keeps every open Content Drive in step; within one tab it is still reported once.
 - **FR-028**: An author who was absent when a run ended MUST be able to find its outcome afterwards.
   The client MUST NOT build a background-jobs screen to satisfy this; the durable record the server
   keeps is what carries it.
@@ -470,6 +484,9 @@ offered, says it will act on four, and acts on four.
 
 - **FR-029**: When a run ends, the listing MUST show the duplicates it created, without the author
   reloading.
+  *Clarified (2026-09-29, developer decision).* In All site content the listing reloads wherever
+  the duplicates landed: it lists what is inside folders, so a duplicate anywhere on the site can
+  add to it.
 - **FR-030**: When a run ends, the sidebar tree MUST show them too. The two surfaces load
   independently and refreshing one does not refresh the other.
 - **FR-031**: Folders that failed MUST leave both surfaces exactly as they were. No placeholder row
