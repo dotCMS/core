@@ -37,6 +37,7 @@ import {
     DotContentDriveSearchResponse,
     DotCurrentUser,
     DotFireDefaultActionResult,
+    DotFolderDeleteActiveRun,
     DotLanguage,
     DotSite,
     DotWorkflowPushPublishValue
@@ -1483,6 +1484,7 @@ describe('DotContentDriveStore - runs in progress on load', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
     let currentUser$: Observable<DotCurrentUser>;
+    let activeDeletes$: Observable<DotFolderDeleteActiveRun[]>;
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -1520,9 +1522,7 @@ describe('DotContentDriveStore - runs in progress on load', () => {
             // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
             // about what it is actually testing rather than about folders nobody is deleting.
             mockProvider(DotFolderBulkDeleteService, {
-                readActiveRuns: vi.fn(() =>
-                    of([{ id: 'delete-1', state: 'RUNNING', paths: ['//demo.com/gone/'] }])
-                )
+                readActiveRuns: vi.fn(() => activeDeletes$)
             }),
             mockProvider(DotFolderBulkDuplicateService, {
                 readActiveRuns: vi.fn(() =>
@@ -1568,6 +1568,7 @@ describe('DotContentDriveStore - runs in progress on load', () => {
 
     beforeEach(() => {
         currentUser$ = of({ userId: 'me', admin: false } as DotCurrentUser);
+        activeDeletes$ = of([{ id: 'delete-1', state: 'RUNNING', paths: ['//demo.com/gone/'] }]);
     });
 
     it("should restore the author's own duplicates and uploads, and no one else's", () => {
@@ -1585,6 +1586,17 @@ describe('DotContentDriveStore - runs in progress on load', () => {
         build();
 
         expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should still restore the other runs when one read throws', () => {
+        // Each read answers `[]` on failure, but one that throws anyway, from a mapping bug say,
+        // must cost only its own runs: the reads are joined, and a join fails as a whole.
+        activeDeletes$ = throwError(() => new Error('boom'));
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual([]);
+        expect(Object.keys(store.duplicateJobs())).toEqual(['mine']);
+        expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
     });
 
     it('should restore no status when it cannot tell who the author is', () => {

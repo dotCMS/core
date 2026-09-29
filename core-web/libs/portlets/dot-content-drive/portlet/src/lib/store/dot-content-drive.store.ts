@@ -24,9 +24,12 @@ import {
     DotUploadFileService
 } from '@dotcms/data-access';
 import {
+    DotBulkUploadActiveRun,
     DotCMSContentTypeField,
     DotContentDriveItem,
     DotContentDriveSearchRequest,
+    DotFolderDeleteActiveRun,
+    DotFolderDuplicateActiveRun,
     FeaturedFlags,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
@@ -892,18 +895,26 @@ export const DotContentDriveStore = signalStore(
                 // routed to whichever part of the store owns each (#37062, FR-015 as amended).
                 //
                 // Fire-and-forget on purpose: the listing renders unmarked and marks and statuses
-                // appear when this answers. Nothing here is awaited, every read answers `[]` on
-                // failure, and a failure leaves the portlet exactly as it is today (FR-022,
-                // FR-023).
+                // appear when this answers. Nothing here is awaited, and a failure leaves the
+                // portlet exactly as it is today (FR-022, FR-023).
+                //
+                // Every read already answers `[]` on failure. Each is still caught here, because
+                // a join fails as a whole: one read that throws anyway must cost only its own runs.
                 //
                 // Only the author's own duplicates and uploads come back. The listings are not
                 // scoped to the reader, and only the submitter is sent the completion that ends a
                 // run, so anyone else's restored status would never go away. Delete marks every
                 // author's runs, as it always has: the folders are in use either way.
                 forkJoin({
-                    deletes: folderBulkDeleteService.readActiveRuns(),
-                    duplicates: folderBulkDuplicateService.readActiveRuns(),
-                    uploads: uploadFileService.readActiveUploads(),
+                    deletes: folderBulkDeleteService
+                        .readActiveRuns()
+                        .pipe(catchError(() => of([] as DotFolderDeleteActiveRun[]))),
+                    duplicates: folderBulkDuplicateService
+                        .readActiveRuns()
+                        .pipe(catchError(() => of([] as DotFolderDuplicateActiveRun[]))),
+                    uploads: uploadFileService
+                        .readActiveUploads()
+                        .pipe(catchError(() => of([] as DotBulkUploadActiveRun[]))),
                     user: currentUserService.getCurrentUser().pipe(catchError(() => of(null)))
                 })
                     .pipe(take(1), takeUntilDestroyed(destroyRef))
