@@ -1,14 +1,22 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotToolsSectionDialogComponent } from './dot-tools-section-dialog.component';
 
+import { DotToolsStore } from '../dot-tools-page/store/dot-tools.store';
 import { DotToolsSection } from '../models/dot-tools.models';
 
 const MOCK_SECTION: DotToolsSection = {
@@ -16,13 +24,24 @@ const MOCK_SECTION: DotToolsSection = {
     name: 'Site',
     icon: 'language',
     tabOrder: 0,
-    portletIds: []
+    portletIds: [],
+    portletTitles: []
 };
 
 describe('DotToolsSectionDialogComponent', () => {
     describe('create mode', () => {
         let spectator: Spectator<DotToolsSectionDialogComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
+        const createSectionSpy = vi.fn().mockReturnValue(
+            of<DotToolsSection>({
+                id: 'reporting',
+                name: 'Reporting',
+                icon: 'analytics',
+                tabOrder: 0,
+                portletIds: [],
+                portletTitles: []
+            })
+        );
 
         const createComponent = createComponentFactory({
             component: DotToolsSectionDialogComponent,
@@ -30,12 +49,15 @@ describe('DotToolsSectionDialogComponent', () => {
             providers: [
                 { provide: DynamicDialogRef, useValue: mockRef },
                 { provide: DynamicDialogConfig, useValue: { data: {} } },
-                { provide: DotMessageService, useValue: new MockDotMessageService({}) }
+                { provide: DotMessageService, useValue: new MockDotMessageService({}) },
+                mockProvider(DotToolsStore, { createSection: createSectionSpy }),
+                mockProvider(DotHttpErrorManagerService)
             ]
         });
 
         beforeEach(() => {
             mockRef.close.mockClear();
+            createSectionSpy.mockClear();
             spectator = createComponent();
         });
 
@@ -54,15 +76,17 @@ describe('DotToolsSectionDialogComponent', () => {
             expect(spectator.query(byTestId('tools-section-name-error'))).not.toBeNull();
             expect(spectator.query(byTestId('tools-section-form-error'))).not.toBeNull();
             expect(mockRef.close).not.toHaveBeenCalled();
+            expect(createSectionSpy).not.toHaveBeenCalled();
         });
 
-        it('closes with the form value on valid submit', () => {
+        it('calls the store and closes on valid submit', () => {
             spectator.component['form'].patchValue({ name: 'Reporting', icon: 'analytics' });
             spectator.component['onSubmit']();
-            expect(mockRef.close).toHaveBeenCalledWith({
+            expect(createSectionSpy).toHaveBeenCalledWith({
                 name: 'Reporting',
                 icon: 'analytics'
             });
+            expect(mockRef.close).toHaveBeenCalledWith(true);
         });
 
         it('closes without a value on cancel', () => {
@@ -73,7 +97,8 @@ describe('DotToolsSectionDialogComponent', () => {
 
     describe('edit mode', () => {
         let spectator: Spectator<DotToolsSectionDialogComponent>;
-        const mockRef = { close: jest.fn() };
+        const mockRef = { close: vi.fn() };
+        const updateSectionSpy = vi.fn().mockReturnValue(of(MOCK_SECTION));
 
         const createComponent = createComponentFactory({
             component: DotToolsSectionDialogComponent,
@@ -84,12 +109,15 @@ describe('DotToolsSectionDialogComponent', () => {
                     provide: DynamicDialogConfig,
                     useValue: { data: { section: MOCK_SECTION } }
                 },
-                { provide: DotMessageService, useValue: new MockDotMessageService({}) }
+                { provide: DotMessageService, useValue: new MockDotMessageService({}) },
+                mockProvider(DotToolsStore, { updateSection: updateSectionSpy }),
+                mockProvider(DotHttpErrorManagerService)
             ]
         });
 
         beforeEach(() => {
             mockRef.close.mockClear();
+            updateSectionSpy.mockClear();
             spectator = createComponent();
         });
 

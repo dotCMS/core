@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
@@ -40,16 +41,16 @@ const MOCK_CATALOG: DotToolsCatalogEntry[] = [
 describe('DotToolsStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotToolsStore>>;
     let store: InstanceType<typeof DotToolsStore>;
-    let service: jest.Mocked<DotToolsService>;
-    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+    let service: Mocked<DotToolsService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
 
     const createService = createServiceFactory({
         service: DotToolsStore,
         providers: [
             mockProvider(DotToolsService, {
-                getSections: jest.fn().mockReturnValue(of(MOCK_SECTIONS)),
-                getCatalog: jest.fn().mockReturnValue(of(MOCK_CATALOG)),
-                createSection: jest.fn().mockReturnValue(
+                getSections: vi.fn().mockReturnValue(of(MOCK_SECTIONS)),
+                getCatalog: vi.fn().mockReturnValue(of(MOCK_CATALOG)),
+                createSection: vi.fn().mockReturnValue(
                     of<DotToolsSection>({
                         id: 'new-section',
                         name: 'New Section',
@@ -59,7 +60,7 @@ describe('DotToolsStore', () => {
                         portletTitles: []
                     })
                 ),
-                updateSection: jest.fn().mockReturnValue(
+                updateSection: vi.fn().mockReturnValue(
                     of<DotToolsSection>({
                         id: 'site',
                         name: 'Renamed Site',
@@ -71,24 +72,24 @@ describe('DotToolsStore', () => {
                 ),
                 // Delete, reorder, and setSectionTools now return the full
                 // section list per the spec on PR #37645.
-                deleteSection: jest.fn().mockReturnValue(of(MOCK_SECTIONS)),
-                reorderSections: jest.fn().mockReturnValue(of(MOCK_SECTIONS)),
-                setSectionTools: jest.fn().mockReturnValue(of(MOCK_SECTIONS)),
-                createCustomTool: jest.fn().mockReturnValue(
+                deleteSection: vi.fn().mockReturnValue(of(MOCK_SECTIONS)),
+                reorderSections: vi.fn().mockReturnValue(of(MOCK_SECTIONS)),
+                setSectionTools: vi.fn().mockReturnValue(of(MOCK_SECTIONS)),
+                createCustomTool: vi.fn().mockReturnValue(
                     of<DotToolsCatalogEntry>({
                         id: 'c_new-tool',
                         title: 'New Tool',
                         isCustom: true
                     })
                 ),
-                updateCustomTool: jest.fn().mockReturnValue(
+                updateCustomTool: vi.fn().mockReturnValue(
                     of<DotToolsCatalogEntry>({
                         id: 'c_press-releases',
                         title: 'Press Releases v2',
                         isCustom: true
                     })
                 ),
-                deleteCustomTool: jest.fn().mockReturnValue(of(undefined))
+                deleteCustomTool: vi.fn().mockReturnValue(of(undefined))
             }),
             mockProvider(DotHttpErrorManagerService)
         ]
@@ -97,10 +98,10 @@ describe('DotToolsStore', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        service = spectator.inject(DotToolsService) as jest.Mocked<DotToolsService>;
+        service = spectator.inject(DotToolsService) as Mocked<DotToolsService>;
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
-        ) as jest.Mocked<DotHttpErrorManagerService>;
+        ) as Mocked<DotHttpErrorManagerService>;
     });
 
     describe('initial load', () => {
@@ -142,15 +143,15 @@ describe('DotToolsStore', () => {
 
         it('showEmptySections toggles only after load with zero sections', () => {
             expect(store.showEmptySections()).toBe(false);
-            (service.getSections as jest.Mock).mockReturnValueOnce(of([]));
-            (service.getCatalog as jest.Mock).mockReturnValueOnce(of([]));
+            (service.getSections as Mock).mockReturnValueOnce(of([]));
+            (service.getCatalog as Mock).mockReturnValueOnce(of([]));
             store.loadAll();
             expect(store.showEmptySections()).toBe(true);
             expect(store.showLoading()).toBe(false);
         });
 
         it('showError flips on load failure', () => {
-            (service.getSections as jest.Mock).mockReturnValueOnce(
+            (service.getSections as Mock).mockReturnValueOnce(
                 throwError(() => new Error('boom'))
             );
             store.loadAll();
@@ -185,34 +186,60 @@ describe('DotToolsStore', () => {
     });
 
     describe('section mutations', () => {
-        it('createSection appends and selects the new section', () => {
-            store.createSection({ name: 'New Section', icon: 'widgets' });
+        // Server is authoritative on the shape of the resulting section list
+        // (all mutation endpoints return the full list). These tests verify
+        // the store's outward-facing contract: it calls the right service
+        // method with the right args and commits whatever the server returned.
+
+        it('createSection calls the service and appends the returned section', () => {
+            store.createSection({ name: 'New Section', icon: 'widgets' }).subscribe();
+            expect(service.createSection).toHaveBeenCalledWith({
+                name: 'New Section',
+                icon: 'widgets'
+            });
+            // Mock returns { id: 'new-section', ... } — store appends and selects it.
             expect(store.sections().at(-1)?.id).toBe('new-section');
             expect(store.selectedSectionId()).toBe('new-section');
         });
 
-        it('updateSection patches name and icon in place', () => {
-            store.updateSection('site', { name: 'Renamed Site', icon: 'public' });
+        it('updateSection calls the service and patches name/icon from the response', () => {
+            store.updateSection('site', { name: 'Renamed Site', icon: 'public' }).subscribe();
+            expect(service.updateSection).toHaveBeenCalledWith('site', {
+                name: 'Renamed Site',
+                icon: 'public'
+            });
             const site = store.sections().find((s) => s.id === 'site');
             expect(site?.name).toBe('Renamed Site');
             expect(site?.icon).toBe('public');
         });
 
-        it('deleteSection removes it and re-selects the next survivor', () => {
-            expect(store.selectedSectionId()).toBe('site');
+        it('deleteSection calls the service and commits the returned list', () => {
+            const remaining = MOCK_SECTIONS.filter((s) => s.id !== 'site');
+            (service.deleteSection as Mock).mockReturnValueOnce(of(remaining));
+
             store.deleteSection('site');
+
+            expect(service.deleteSection).toHaveBeenCalledWith('site');
             expect(store.sections().map((s) => s.id)).toEqual(['content', 'empty']);
             expect(store.selectedSectionId()).toBe('content');
         });
 
-        it('reorderSections rewrites tabOrder from the given id list', () => {
+        it('reorderSections calls the service with the id list and commits the response', () => {
+            const reordered = [
+                { ...MOCK_SECTIONS[1], tabOrder: 0 },
+                { ...MOCK_SECTIONS[2], tabOrder: 1 },
+                { ...MOCK_SECTIONS[0], tabOrder: 2 }
+            ];
+            (service.reorderSections as Mock).mockReturnValueOnce(of(reordered));
+
             store.reorderSections(['content', 'empty', 'site']);
+
+            expect(service.reorderSections).toHaveBeenCalledWith(['content', 'empty', 'site']);
             expect(store.sections().map((s) => s.id)).toEqual(['content', 'empty', 'site']);
-            expect(store.sections().map((s) => s.tabOrder)).toEqual([0, 1, 2]);
         });
 
         it('reverts to loaded on delete error and does not remove the section', () => {
-            (service.deleteSection as jest.Mock).mockReturnValueOnce(
+            (service.deleteSection as Mock).mockReturnValueOnce(
                 throwError(() => new Error('nope'))
             );
             store.deleteSection('site');
@@ -223,28 +250,32 @@ describe('DotToolsStore', () => {
     });
 
     describe('section-tool mutations', () => {
+        // All three actions ultimately call setSectionTools(sectionId, portletIds).
+        // The store commits whatever the server returned; we assert the wire
+        // call has the correct args.
+
         it('toggleToolInSelectedSection adds an unchecked tool', () => {
             store.toggleToolInSelectedSection('blogs'); // Site does not have blogs
-            const site = store.sections().find((s) => s.id === 'site');
-            expect(site?.portletIds).toContain('blogs');
+            expect(service.setSectionTools).toHaveBeenCalledWith('site', [
+                'pages',
+                'browser',
+                'blogs'
+            ]);
         });
 
         it('toggleToolInSelectedSection removes a checked tool', () => {
             store.toggleToolInSelectedSection('pages'); // Site has pages
-            const site = store.sections().find((s) => s.id === 'site');
-            expect(site?.portletIds).not.toContain('pages');
+            expect(service.setSectionTools).toHaveBeenCalledWith('site', ['browser']);
         });
 
         it('removeToolFromSelectedSection drops the tool from portletIds', () => {
             store.removeToolFromSelectedSection('pages');
-            const site = store.sections().find((s) => s.id === 'site');
-            expect(site?.portletIds).toEqual(['browser']);
+            expect(service.setSectionTools).toHaveBeenCalledWith('site', ['browser']);
         });
 
         it('reorderSelectedSectionTools writes the new order', () => {
             store.reorderSelectedSectionTools(['browser', 'pages']);
-            const site = store.sections().find((s) => s.id === 'site');
-            expect(site?.portletIds).toEqual(['browser', 'pages']);
+            expect(service.setSectionTools).toHaveBeenCalledWith('site', ['browser', 'pages']);
         });
     });
 
@@ -255,7 +286,7 @@ describe('DotToolsStore', () => {
                 portletName: 'New Tool',
                 baseTypes: [],
                 contentTypes: [],
-                dataViewMode: 'List'
+                dataViewMode: 'list'
             });
             const titles = store.catalog().map((entry) => entry.title);
             expect(titles).toContain('New Tool');
@@ -282,7 +313,7 @@ describe('DotToolsStore', () => {
                 portletName: 'Press Releases v2',
                 baseTypes: [],
                 contentTypes: [],
-                dataViewMode: 'List'
+                dataViewMode: 'list'
             });
             const entry = store.catalog().find((e) => e.id === 'c_press-releases');
             expect(entry?.title).toBe('Press Releases v2');
