@@ -144,10 +144,14 @@ export async function downloadAssets(
         const rel = basename(input.path);
         try {
             record(
-                await saveAsset(options.dotcms, target(rel), {
-                    path: '/api/v2/assets',
-                    query: { path: assetQueryPath(input) }
-                })
+                await saveAsset(
+                    options.dotcms,
+                    target(rel),
+                    { path: '/api/v2/assets', query: { path: assetQueryPath(input) } },
+                    undefined,
+                    // Only a guess needs dotCMS's word before a skip; `kind: 'asset'` is certain.
+                    kind === 'auto'
+                )
             );
         } catch (error) {
             if (error instanceof HttpError && error.status === 404) {
@@ -238,12 +242,18 @@ interface AssetSource {
  *
  * Everything that can refuse the write is decided BEFORE the request: the path, the root, and
  * the overwrite mode — so `skip` never transfers bytes it would throw away.
+ *
+ * `confirmBeforeSkip` is for a GUESSED asset (`kind: 'auto'`): skipped on sight, an existing
+ * local name would report success without dotCMS ever being asked whether an asset is there,
+ * and the folder reading would never be tried. So the read is made, its body discarded unread,
+ * and a 404 from it propagates for the caller's fallback.
  */
 async function saveAsset(
     dotcms: DotCMSRuntime,
     target: { rel: string; dest: string; overwrite: OverwriteMode; root?: string },
     source: AssetSource,
-    identifier?: string
+    identifier?: string,
+    confirmBeforeSkip = false
 ): Promise<WriteResult> {
     const outputPath = safeJoin(target.dest, target.rel);
     // `safeJoin` keeps the path inside `dest` as a string; this keeps the WRITE inside the root
@@ -251,6 +261,9 @@ async function saveAsset(
     await assertWritableInsideRoot(target.root, outputPath);
     if (await exists(outputPath)) {
         if (target.overwrite === 'skip') {
+            if (confirmBeforeSkip) {
+                await dotcms.request({ ...source, onBody: (body) => body.cancel() });
+            }
             return { kind: 'skipped', skip: { path: target.rel, reason: 'exists' } };
         }
         if (target.overwrite === 'error') {

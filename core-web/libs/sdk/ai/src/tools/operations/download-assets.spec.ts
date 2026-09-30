@@ -518,6 +518,60 @@ describe('downloadAssets', () => {
             expect(manifest.warnings).toEqual([]);
         });
 
+        it('auto: checks with dotCMS before skipping, so an existing local name cannot hide a folder', async () => {
+            // `dest/v1.2` exists locally. Skipped on sight, the guessed asset reading reported
+            // success without asking dotCMS — no request, no fallback, the folder never read.
+            await mkdir(join(dest, 'v1.2'));
+            const { runtime, calls } = kindRuntime({ folder: DOTTED });
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/themes/v1.2',
+                dest,
+                recursive: true,
+                overwrite: 'skip'
+            });
+
+            expect(callsTo(calls, '/api/v2/assets')).toBe(1);
+            expect(manifest.files.map((file) => file.path)).toEqual(['site.css']);
+            expect(manifest.skipped).toEqual([]);
+        });
+
+        it('auto: still skips an existing file once dotCMS confirms the asset, without overwriting it', async () => {
+            await writeFile(join(dest, 'robots.txt'), 'local copy');
+            const { runtime, calls } = kindRuntime({ pathAsset: 'remote copy' });
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/robots.txt',
+                dest,
+                recursive: true,
+                overwrite: 'skip'
+            });
+
+            expect(callsTo(calls, '/api/v2/assets')).toBe(1);
+            expect(manifest.skipped).toEqual([{ path: 'robots.txt', reason: 'exists' }]);
+            expect(await readFile(join(dest, 'robots.txt'), 'utf8')).toBe('local copy');
+        });
+
+        it('kind "asset": skips an existing file without any request — the caller said what it is', async () => {
+            await writeFile(join(dest, 'robots'), 'local copy');
+            const { runtime, calls } = kindRuntime({ pathAsset: 'remote copy' });
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/robots',
+                kind: 'asset',
+                dest,
+                recursive: true,
+                overwrite: 'skip'
+            });
+
+            expect(manifest.skipped).toEqual([{ path: 'robots', reason: 'exists' }]);
+            expect(calls).toEqual([]);
+            expect(await readFile(join(dest, 'robots'), 'utf8')).toBe('local copy');
+        });
+
         it('auto: still explains a miss when the path is neither', async () => {
             const { runtime } = kindRuntime({});
 
