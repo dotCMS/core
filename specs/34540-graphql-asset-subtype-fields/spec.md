@@ -303,7 +303,7 @@ and confirm they match the asset's own record.
   - A **new** asset-type property whose variable is generated from its name MUST be steered away
     from an incompatible collision (a text property called "Size" gets `size1`), the same way
     dotCMS already steers generated variables away from the general content properties. The
-    steering is logged at INFO, naming the variable, the content type and both types, so an
+    steering is logged as a warning, naming the variable, the content type and both types, so an
     administrator can tell why the field got a suffix.
   - A **new** asset-type property whose variable is **chosen explicitly** (API, CLI, push
     publishing) with an incompatible type MUST be refused with a 400 that names the property's
@@ -392,7 +392,7 @@ and confirm they match the asset's own record.
     property's type and the field's, and nothing is stored — creating a content type with such a
     field creates no content type;
   - **new, with a different type and a generated variable**: the field is saved with a suffixed
-    variable (`width1`) and exactly one INFO line names the variable, the content type and both
+    variable (`width1`) and exactly one WARN line names the variable, the content type and both
     types;
   - **already stored with a different type** (data from before the rule): selecting the property
     directly on an asset field succeeds for every asset type; assets of the clashing type answer

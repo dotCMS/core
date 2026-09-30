@@ -1444,7 +1444,7 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
      * Given: a new text field called "Width" added to an asset type, with no variable chosen.
      * When: it is saved and its variable is steered away from the asset property's name, whose
      * type is a whole number.
-     * Then: an INFO line names the reserved variable and the content type, so an administrator
+     * Then: a WARN line names the reserved variable and the content type, so an administrator
      * can find out why the field ended up as {@code width1} instead of {@code width}.
      */
     @Test
@@ -1463,10 +1463,10 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                     systemUser);
 
             final boolean logged = appender.events.stream().anyMatch(event ->
-                    Level.INFO.equals(event.level())
+                    Level.WARN.equals(event.level())
                             && event.message().contains("'width'")
                             && event.message().contains("'" + assetType.variable() + "'"));
-            assertTrue("steering away from an asset property name must be logged at INFO, naming "
+            assertTrue("steering away from an asset property name must be logged at WARN, naming "
                     + "the variable and the content type. Captured: " + appender.events, logged);
         } finally {
             providerLogger.removeAppender(appender);

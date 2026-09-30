@@ -519,7 +519,7 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
         final Optional<AssetPropertyCollision> collision = assetPropertyCollision(variable, field);
         if (collision.isPresent()) {
-            Logger.info(this, "Field variable '" + variable + "' cannot be used on asset Content "
+            Logger.warn(this, "Field variable '" + variable + "' cannot be used on asset Content "
                     + "Type '" + collision.get().contentType().variable() + "': every asset field "
                     + "offers a property of that name as " + collision.get().propertyType()
                     + " and this field is " + collision.get().fieldType()
