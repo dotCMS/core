@@ -1681,6 +1681,18 @@ describe('DotContentDriveStore - default language resolution', () => {
         expect(contentDriveService.search).toHaveBeenCalledTimes(1);
     });
 
+    it('should keep a filter changed before the default language resolves', () => {
+        // The init effect used to re-run when the default language landed, re-reading the page's
+        // original URL and wiping any filter a chip had already corrected in between.
+        spectator.flushEffects();
+        store.patchFilters({ contentType: ['Blog'] });
+
+        languages$.next(mockLocales);
+        spectator.flushEffects();
+
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
+    });
+
     it('should expose the environment languages for the Locale filter to render', () => {
         spectator.flushEffects();
         languages$.next(mockLocales);
