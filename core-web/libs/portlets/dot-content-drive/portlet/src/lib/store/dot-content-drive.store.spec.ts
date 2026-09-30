@@ -33,6 +33,7 @@ import {
 import {
     DotAjaxActionResponseView,
     DotBulkRefreshCompletedEvent,
+    DotBulkUploadCompletedEvent,
     DotContentDriveItem,
     DotContentDriveSearchResponse,
     DotCurrentUser,
@@ -1605,6 +1606,25 @@ describe('DotContentDriveStore - runs in progress on load', () => {
 
         expect(store.toolbarRunCount()).toBe(0);
         expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should hold no upload completion for a restore that cannot happen without an author', () => {
+        // With no author nothing is ever restored to claim a held completion, so holding one would
+        // keep it for the portlet's lifetime.
+        currentUser$ = throwError(() => new Error('boom'));
+        build();
+
+        store.reportUploadCompleted('Upload', {
+            jobId: 'other-tab',
+            state: 'SUCCESS',
+            total: 1,
+            processed: 1,
+            successCount: 1,
+            failedCount: 0,
+            skippedCount: 0
+        } as DotBulkUploadCompletedEvent);
+
+        expect(store.unclaimedUploadCompletions()).toEqual({});
     });
 });
 

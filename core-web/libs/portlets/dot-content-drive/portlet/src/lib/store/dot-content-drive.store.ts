@@ -921,16 +921,15 @@ export const DotContentDriveStore = signalStore(
                     .subscribe(({ deletes, duplicates, uploads, user }) => {
                         store.applyInFlightFolders(deletes);
 
+                        // With no author, no run can be told apart as theirs, so none is restored.
+                        // The upload restore still runs, with nothing: it is what stops holding
+                        // completions for a claim that would otherwise never come.
                         const userId = user?.userId;
+                        const isAuthors = (run: { userId?: string }) =>
+                            !!userId && run.userId === userId;
 
-                        if (!userId) {
-                            return;
-                        }
-
-                        store.restoreDuplicateRuns(
-                            duplicates.filter((run) => run.userId === userId)
-                        );
-                        store.restoreUploadRuns(uploads.filter((run) => run.userId === userId));
+                        store.restoreDuplicateRuns(duplicates.filter(isAuthors));
+                        store.restoreUploadRuns(uploads.filter(isAuthors));
                     });
 
                 /**
