@@ -1,5 +1,9 @@
 @if (error()) {
-  <app-error [status]="error()!.status" [heading]="error()!.heading" [body]="error()!.body" />
+  <app-error
+    [status]="error()!.status"
+    [heading]="error()!.heading"
+    [body]="error()!.body"
+    [detail]="error()!.message" />
 } @else if (pageAsset()) {
   <dotcms-layout-body [page]="pageAsset()!" [components]="components()" />
 } @else {
