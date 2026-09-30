@@ -9,14 +9,12 @@ import { getEventContext } from '../utils';
 import type { AnalyticsBaseParams, PipelineConfig } from '../models';
 
 /**
- * Identity Plugin for DotAnalytics
+ * Identity plugin of the events pipeline.
  * Handles user ID generation, session management, and activity tracking.
  * This plugin provides consistent identity context across all analytics events.
  *
- * Plugin execution order:
- * 1. Identity Plugin (this) - Injects context
- * 2. Enricher Plugin - Adds page/device/utm data
- * 3. Main Plugin - Sends to server
+ * It runs first: events.ts registers identity, experiments, impressions, clicks, enricher and
+ * sender, in that order, and each plugin reads what the ones before it wrote.
  *
  * @param {PipelineConfig} config - Configuration object containing server URL, site key, and debug settings
  * @returns {Object} Plugin object with methods for initialization and event processing

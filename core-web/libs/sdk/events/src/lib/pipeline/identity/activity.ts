@@ -13,36 +13,38 @@ declare global {
     }
 }
 
+/** Session activity is recorded at most once a second */
+const ACTIVITY_THROTTLE_MS = 1000;
+
 /**
- * Activity tracking manager for DotCMS Analytics.
+ * Activity tracking for the events pipeline.
  * Handles user activity monitoring, session management, and inactivity detection.
  * Singleton pattern since we only handle one site at a time.
  */
 class DotCMSActivityTracker {
-    private activityListeners: (() => void)[] = [];
-    private inactivityTimer: ReturnType<typeof setTimeout> | null = null;
-    private isThrottled = false;
-    private config: PipelineConfig | null = null;
-    private readonly ACTIVITY_THROTTLE_MS = 1000; // Throttle activity events to max 1 per second
+    #activityListeners: (() => void)[] = [];
+    #inactivityTimer: ReturnType<typeof setTimeout> | null = null;
+    #isThrottled = false;
+    #config: PipelineConfig | null = null;
 
     /**
      * Updates activity timestamp (throttled for performance)
      */
     private updateActivityTime(): void {
         // Reset inactivity timer
-        if (this.inactivityTimer) {
-            clearTimeout(this.inactivityTimer);
+        if (this.#inactivityTimer) {
+            clearTimeout(this.#inactivityTimer);
         }
 
-        this.inactivityTimer = setTimeout(
+        this.#inactivityTimer = setTimeout(
             () => {
                 // User became inactive - handle session timeout
-                if (this.config?.debug) {
+                if (this.#config?.debug) {
                     console.warn('[dotCMS events] User became inactive after timeout');
                 }
 
                 // Timer has fired, set to null to indicate no active timer
-                this.inactivityTimer = null;
+                this.#inactivityTimer = null;
             },
             DEFAULT_SESSION_TIMEOUT_MINUTES * 60 * 1000
         );
@@ -52,14 +54,14 @@ class DotCMSActivityTracker {
      * Updates session activity with throttling
      */
     public updateSessionActivity(): void {
-        if (this.isThrottled) return;
+        if (this.#isThrottled) return;
 
-        this.isThrottled = true;
+        this.#isThrottled = true;
         this.updateActivityTime();
 
         setTimeout(() => {
-            this.isThrottled = false;
-        }, this.ACTIVITY_THROTTLE_MS);
+            this.#isThrottled = false;
+        }, ACTIVITY_THROTTLE_MS);
     }
 
     /**
@@ -67,7 +69,7 @@ class DotCMSActivityTracker {
      */
     public initialize(config: PipelineConfig): void {
         this.cleanup();
-        this.config = config;
+        this.#config = config;
 
         // Early return if window is not available (SSR/build time)
         if (typeof window === 'undefined') {
@@ -79,7 +81,7 @@ class DotCMSActivityTracker {
         // Add activity event listeners
         ACTIVITY_EVENTS.forEach((eventType) => {
             window.addEventListener(eventType, throttledHandler, { passive: true });
-            this.activityListeners.push(() =>
+            this.#activityListeners.push(() =>
                 window.removeEventListener(eventType, throttledHandler)
             );
         });
@@ -95,7 +97,7 @@ class DotCMSActivityTracker {
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        this.activityListeners.push(() =>
+        this.#activityListeners.push(() =>
             document.removeEventListener('visibilitychange', handleVisibilityChange)
         );
 
@@ -111,15 +113,15 @@ class DotCMSActivityTracker {
      * Cleans up all activity tracking listeners
      */
     public cleanup(): void {
-        this.activityListeners.forEach((cleanup) => cleanup());
-        this.activityListeners = [];
+        this.#activityListeners.forEach((cleanup) => cleanup());
+        this.#activityListeners = [];
 
-        if (this.inactivityTimer) {
-            clearTimeout(this.inactivityTimer);
-            this.inactivityTimer = null;
+        if (this.#inactivityTimer) {
+            clearTimeout(this.#inactivityTimer);
+            this.#inactivityTimer = null;
         }
 
-        this.config = null;
+        this.#config = null;
     }
 }
 

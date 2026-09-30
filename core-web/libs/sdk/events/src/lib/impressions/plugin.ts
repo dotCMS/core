@@ -8,7 +8,7 @@ import type { PipelineConfig } from '../pipeline/models';
 import type { AnalyticsInstance } from 'analytics';
 
 /**
- * Impression Plugin for DotAnalytics
+ * Impressions plugin of the events pipeline.
  * Handles automatic tracking of content visibility and impressions.
  *
  * This plugin initializes the impression tracker which:
@@ -17,11 +17,9 @@ import type { AnalyticsInstance } from 'analytics';
  * - Fires 'content-impression' events via instance.track()
  * - Deduplicates impressions per session
  *
- * Plugin execution in Analytics.js pipeline:
- * 1. Identity Plugin - Injects context
- * 2. Enricher Plugin - Enriches event data
- * 3. Main Plugin - Sends to queue/server
- * 4. Impression Plugin - Runs independently, fires events via instance.track()
+ * Analytics.js runs the plugins in the order events.ts registers them: identity, experiments,
+ * impressions, clicks, enricher, sender. This one hooks into no event: its tracker fires
+ * events through instance.track(), which runs them through the other plugins like any event.
  *
  * Note: This plugin is only registered if config.impressions is enabled.
  * See getEnhancedTrackingPlugins() for conditional loading logic.

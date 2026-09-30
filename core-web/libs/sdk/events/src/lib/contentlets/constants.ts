@@ -11,18 +11,18 @@ export const CONTENTLET_OBSERVER_DEBOUNCE_MS = 250;
  * CSS class selector for contentlet elements
  *
  * @important This constant is intentionally duplicated in @dotcms/react SDK
- * (core-web/libs/sdk/react/src/lib/next/components/Contentlet/Contentlet.tsx).
- * Both constants MUST have the same value ('dotcms-contentlet') for analytics
- * tracking to work correctly with React-rendered contentlets.
+ * (core-web/libs/sdk/react/src/lib/next/components/Contentlet/Contentlet.tsx), whose renderers
+ * print the class, and dotCMS prints it on traditional pages too. Both constants MUST have the
+ * same value ('dotcms-contentlet') for content tracking to find React-rendered contentlets.
  *
- * This duplication is intentional to maintain SDK independence:
- * - @dotcms/analytics can be used standalone without React
- * - @dotcms/react can be used without analytics
+ * This duplication is intentional to keep the SDKs independent:
+ * - @dotcms/events works without React
+ * - @dotcms/react works without events
  * - When both are used together, they must share the same class name
  *
  * If you need to change this value, you MUST update it in both locations:
- * 1. This file (analytics SDK)
- * 2. Contentlet.tsx in React SDK
+ * 1. This file (@dotcms/events)
+ * 2. Contentlet.tsx in @dotcms/react
  *
  * @see core-web/libs/sdk/react/src/lib/next/components/Contentlet/Contentlet.tsx
  */

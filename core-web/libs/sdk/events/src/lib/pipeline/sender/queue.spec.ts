@@ -23,6 +23,11 @@ vi.mock('@analytics/queue-utils', () => ({
     default: vi.fn()
 }));
 
+// The queue learns about SPA navigations from @analytics/router-utils; the specs call its
+// callback to simulate one
+const onRouteChange = vi.hoisted(() => vi.fn());
+vi.mock('@analytics/router-utils', () => ({ default: onRouteChange }));
+
 // Mock queue methods
 const mockQueuePush = vi.fn();
 const mockQueueSize = vi.fn();
@@ -915,40 +920,32 @@ describe('createEventQueue', () => {
             expect(mockQueuePush).toHaveBeenCalledWith(mockEvent);
         });
 
-        it('should persist to storage on SPA navigation', () => {
+        it('should persist to storage, without flushing, when the page hides during an SPA navigation', () => {
             const documentSpy = vi.spyOn(document, 'addEventListener');
             const queue = createEventQueue(mockConfig);
             queue.initialize();
 
             queue.enqueue(mockEvent, mockContext);
-
-            // Mock queue has events
             mockQueueSize.mockReturnValue(1);
-
-            // Clear previous storage calls
             sessionStorageSetItem.mockClear();
             mockQueueFlush.mockClear();
 
-            // Mock document.visibilityState to hidden
+            // An SPA navigation starts
+            const routeChanged = onRouteChange.mock.calls.at(-1)?.[0] as (path: string) => void;
+            routeChanged('/next-page');
+
             Object.defineProperty(document, 'visibilityState', {
                 writable: true,
                 configurable: true,
                 value: 'hidden'
             });
-
-            // Get the visibilitychange listener
             const visibilityListener = documentSpy.mock.calls.find(
                 (call) => call[0] === 'visibilitychange'
             )?.[1] as EventListener;
-
-            // Trigger visibility change
-            // Note: Without SPA navigation flag set, this will trigger flush
-            // In a real SPA navigation, onRouteChange would set isSPANavigation=true
-            // which would skip flush and only persist
             visibilityListener(new Event('visibilitychange'));
 
-            // Should flush when NOT a SPA navigation
-            expect(mockQueueFlush).toHaveBeenCalled();
+            expect(sessionStorageSetItem).toHaveBeenCalled();
+            expect(mockQueueFlush).not.toHaveBeenCalled();
 
             documentSpy.mockRestore();
         });
@@ -964,11 +961,7 @@ describe('createEventQueue', () => {
 
             queue.cleanup();
 
-            // Should NOT clear storage (storage cleared only on successful send or initialize)
-            // The only removeItem calls should be from flushRemaining, not from cleanup itself
-            // Actually, cleanup calls flushRemaining which may set keepalive=true, so storage is preserved
-            const storageKey = Object.keys(mockSessionStorage)[0];
-            expect(mockSessionStorage[storageKey!]).toBeDefined();
+            expect(sessionStorageRemoveItem).not.toHaveBeenCalled();
         });
     });
 });

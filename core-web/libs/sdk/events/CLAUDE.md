@@ -310,6 +310,7 @@ Dependencies go one way. `pipeline/` imports nothing built on it; the content tr
 
 - `tsconfig.json` turns on every strict option on top of `strict`: `noPropertyAccessFromIndexSignature`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `noImplicitOverride`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, `noUnusedLocals`, `noUnusedParameters`, `forceConsistentCasingInFileNames`, and unreachable code and unused labels as errors. Specs are held to the same options.
 - The package compiles against the published declarations of `@dotcms/uve` and `@dotcms/types` (`paths` to their `dist`), as the Rollup build and every consumer do. Through the base aliases their sources would join the program and be checked with these options, which they were not written for. So `nx typecheck sdk-events` builds them first (`dependsOn: ["^build"]`).
+- Private fields use `#`, as `docs/frontend/TYPESCRIPT_STANDARDS.md` asks; private methods keep the `private` keyword, which the standard allows. The `#` fields cost bytes at this target (see Performance), and specs test behavior instead of reading them.
 - Type-only imports use `import type`, in a separate statement (`@typescript-eslint/consistent-type-imports`). A module that provides both values and types is imported twice, which `no-duplicate-imports` allows through `allowSeparateTypeImports`.
 - In library code, an index that may miss gets a real check, not `!`. Specs may use `!`.
 - Optional settings stay without `| undefined` in the public types: nested options are merged over the core's defaults, where an explicit `undefined` would replace a default.
@@ -344,11 +345,11 @@ Dependencies go one way. `pipeline/` imports nothing built on it; the content tr
 
 ## Performance
 
-- The `events-init` probe in `libs/sdk/bundle-budgets` bundles `import { dotEvents } from '@dotcms/events'` with its dependencies: 28,119 B gzip, against a 30,000 B ceiling. `events-react` bundles `DotCMSExperiment`: 1,496 B gzip against 2,200, and it fails if the engine or Analytics.js comes along. Raise a ceiling only with a measurement and a reason.
+- The `events-init` probe in `libs/sdk/bundle-budgets` bundles `import { dotEvents } from '@dotcms/events'` with its dependencies: 29,114 B gzip, against a 30,000 B ceiling. 977 B of that are the `#` private fields, which the `es2020` target compiles to WeakMap helpers: with `private` it was 28,137 B. `events-react` bundles `DotCMSExperiment`: 1,496 B gzip against 2,200, and it fails if the engine or Analytics.js comes along. Raise a ceiling only with a measurement and a reason.
 - `sideEffects: false`, and importing the package does nothing until `init`.
 - `isUserIncluded` is asked once per tab session, by the engine only. The pageview hold is bounded by the timeout, and the CSS rule shows the content after 3 s even when no script runs.
 - The boot script is about 1.1 KB gzip in the HTML of each page that runs an experiment (1,079 B minified with esbuild), minified by the app's build. From a server component it costs the client no JavaScript, but Next.js repeats the markup in the RSC payload of the HTML. From a client component, the builder (the `events-react` probe) is in that route's JavaScript.
-- `ca.min.js` is 74,654 B raw and 25,636 B gzip, experiments included; `@dotcms/analytics`'s is 22,782 B gzip. The contentlets mode is in `events-init` too (412 B gzip), since the engine holds both.
+- `ca.min.js` is 73,177 B raw and 25,546 B gzip, experiments included (its build keeps the `#` fields native); `@dotcms/analytics`'s is 22,782 B gzip. The contentlets mode is in `events-init` too (412 B gzip), since the engine holds both.
 - The impression and click plugins are only added when enabled, but their code is always in the bundle, because `getEnhancedTrackingPlugins` references both.
 
 ### Measured Cost

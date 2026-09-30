@@ -22,18 +22,12 @@ export const DEFAULT_IMPRESSION_DWELL_MS = 750;
 export const DEFAULT_IMPRESSION_MAX_NODES = 100;
 
 /**
- * Default throttle time in milliseconds for intersection callbacks
- */
-export const DEFAULT_IMPRESSION_THROTTLE_MS = 100;
-
-/**
  * Default impression tracking configuration
  */
 export const DEFAULT_IMPRESSION_CONFIG = {
     visibilityThreshold: DEFAULT_IMPRESSION_VISIBILITY_THRESHOLD,
     dwellMs: DEFAULT_IMPRESSION_DWELL_MS,
-    maxNodes: DEFAULT_IMPRESSION_MAX_NODES,
-    throttleMs: DEFAULT_IMPRESSION_THROTTLE_MS
+    maxNodes: DEFAULT_IMPRESSION_MAX_NODES
 } as const;
 
 /**

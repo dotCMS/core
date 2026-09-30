@@ -42,18 +42,18 @@ export interface ImpressionSubscription {
  * Emits events through subscriptions when impressions are detected.
  */
 export class DotCMSImpressionTracker {
-    private observer: IntersectionObserver | null = null;
-    private mutationObserver: MutationObserver | null = null;
-    private elementImpressionStates = new Map<string, ImpressionState>();
-    private sessionTrackedImpressions = new Set<string>();
-    private impressionConfig: Required<ImpressionConfig>;
-    private currentPagePath = '';
-    private subscribers = new Set<ImpressionCallback>();
-    private logger: ReturnType<typeof createPluginLogger>;
+    #observer: IntersectionObserver | null = null;
+    #mutationObserver: MutationObserver | null = null;
+    #elementImpressionStates = new Map<string, ImpressionState>();
+    #sessionTrackedImpressions = new Set<string>();
+    #impressionConfig: Required<ImpressionConfig>;
+    #currentPagePath = '';
+    #subscribers = new Set<ImpressionCallback>();
+    #logger: ReturnType<typeof createPluginLogger>;
 
     constructor(config: PipelineConfig) {
-        this.logger = createPluginLogger('Impression', config);
-        this.impressionConfig = this.resolveImpressionConfig(config.impressions);
+        this.#logger = createPluginLogger('Impression', config);
+        this.#impressionConfig = this.resolveImpressionConfig(config.impressions);
     }
 
     /**
@@ -62,22 +62,22 @@ export class DotCMSImpressionTracker {
      * @returns Subscription object with unsubscribe method
      */
     public onImpression(callback: ImpressionCallback): ImpressionSubscription {
-        this.subscribers.add(callback);
+        this.#subscribers.add(callback);
 
         return {
             unsubscribe: () => {
-                this.subscribers.delete(callback);
+                this.#subscribers.delete(callback);
             }
         };
     }
 
     /** Notifies all subscribers of an impression */
     private notifySubscribers(eventName: string, payload: DotCMSContentImpressionPayload): void {
-        this.subscribers.forEach((callback) => {
+        this.#subscribers.forEach((callback) => {
             try {
                 callback(eventName, payload);
             } catch (error) {
-                this.logger.error('Error in impression subscriber:', error);
+                this.#logger.error('Error in impression subscriber:', error);
             }
         });
     }
@@ -113,7 +113,7 @@ export class DotCMSImpressionTracker {
         // before searching for contentlet elements
         if (typeof window !== 'undefined') {
             setTimeout(() => {
-                this.logger.debug('Running initial scan after timeout...');
+                this.#logger.debug('Running initial scan after timeout...');
                 // Find and observe contentlet elements
                 this.findAndObserveContentletElements();
             }, INITIAL_SCAN_DELAY_MS);
@@ -123,7 +123,7 @@ export class DotCMSImpressionTracker {
         this.initializeDynamicContentDetector();
 
         // Scan again when hidden contentlets are shown without a DOM mutation
-        window.addEventListener(CONTENTLET_RESCAN_EVENT, this.handleRescan);
+        window.addEventListener(CONTENTLET_RESCAN_EVENT, this.#handleRescan);
 
         // Listen for visibility changes to pause/resume tracking
         this.initializePageVisibilityHandler();
@@ -131,7 +131,7 @@ export class DotCMSImpressionTracker {
         // Listen for page navigation to reset tracking
         this.initializePageNavigationHandler();
 
-        this.logger.info('Impression tracking initialized with config:', this.impressionConfig);
+        this.#logger.info('Impression tracking initialized with config:', this.#impressionConfig);
     }
 
     /** Sets up IntersectionObserver with configured visibility threshold */
@@ -139,27 +139,27 @@ export class DotCMSImpressionTracker {
         const options: IntersectionObserverInit = {
             root: null, // Use viewport as root
             rootMargin: '0px',
-            threshold: this.impressionConfig.visibilityThreshold
+            threshold: this.#impressionConfig.visibilityThreshold
         };
 
-        this.observer = new IntersectionObserver((entries) => {
+        this.#observer = new IntersectionObserver((entries) => {
             this.processIntersectionChanges(entries);
         }, options);
     }
 
     /** Finds contentlets in DOM, validates them, and starts observing (respects maxNodes limit) */
     private findAndObserveContentletElements(): void {
-        if (!this.observer) return;
+        if (!this.#observer) return;
 
         const contentlets = findContentlets();
 
         if (contentlets.length === 0) {
-            this.logger.warn('No contentlets found to track');
+            this.#logger.warn('No contentlets found to track');
             return;
         }
 
         // Limit to maxNodes for performance
-        const maxNodesToTrack = Math.min(contentlets.length, this.impressionConfig.maxNodes);
+        const maxNodesToTrack = Math.min(contentlets.length, this.#impressionConfig.maxNodes);
         let observedCount = 0;
 
         for (let i = 0; i < maxNodesToTrack; i++) {
@@ -175,18 +175,18 @@ export class DotCMSImpressionTracker {
                 // Skip elements that shouldn't be tracked
                 const skipReason = this.shouldSkipElement(element);
                 if (skipReason) {
-                    this.logger.debug(`Skipping element ${identifier} (${skipReason})`);
+                    this.#logger.debug(`Skipping element ${identifier} (${skipReason})`);
                     continue;
                 }
 
                 // Only observe and initialize if this is a new element
-                if (!this.elementImpressionStates.has(identifier)) {
+                if (!this.#elementImpressionStates.has(identifier)) {
                     if (!element.dataset['dotDomIndex']) {
                         element.dataset['dotDomIndex'] = String(i);
                     }
 
-                    this.observer.observe(element);
-                    this.elementImpressionStates.set(identifier, {
+                    this.#observer.observe(element);
+                    this.#elementImpressionStates.set(identifier, {
                         timer: null,
                         visibleSince: null,
                         tracked: this.hasBeenTrackedInSession(identifier),
@@ -198,10 +198,10 @@ export class DotCMSImpressionTracker {
             }
         }
 
-        this.logger.info(`Observing ${observedCount} contentlets`);
+        this.#logger.info(`Observing ${observedCount} contentlets`);
         if (contentlets.length > maxNodesToTrack) {
-            this.logger.warn(
-                `${contentlets.length - maxNodesToTrack} contentlets not tracked (maxNodes limit: ${this.impressionConfig.maxNodes})`
+            this.#logger.warn(
+                `${contentlets.length - maxNodesToTrack} contentlets not tracked (maxNodes limit: ${this.#impressionConfig.maxNodes})`
             );
         }
     }
@@ -215,7 +215,7 @@ export class DotCMSImpressionTracker {
             return;
         }
 
-        this.mutationObserver = createContentletObserver(
+        this.#mutationObserver = createContentletObserver(
             () => {
                 this.findAndObserveContentletElements();
             },
@@ -223,12 +223,12 @@ export class DotCMSImpressionTracker {
             { identifiers: true }
         );
 
-        this.logger.info('MutationObserver enabled for dynamic content detection');
+        this.#logger.info('MutationObserver enabled for dynamic content detection');
     }
 
     /** Scans again on CONTENTLET_RESCAN_EVENT, sent when hidden contentlets are shown */
-    private readonly handleRescan = (): void => {
-        this.logger.debug('Rescan requested');
+    readonly #handleRescan = (): void => {
+        this.#logger.debug('Rescan requested');
         this.findAndObserveContentletElements();
     };
 
@@ -237,7 +237,7 @@ export class DotCMSImpressionTracker {
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 // Page is hidden, cancel all timers
-                this.elementImpressionStates.forEach((state) => {
+                this.#elementImpressionStates.forEach((state) => {
                     if (state.timer !== null) {
                         window.clearTimeout(state.timer);
                         state.timer = null;
@@ -245,7 +245,7 @@ export class DotCMSImpressionTracker {
                     }
                 });
 
-                this.logger.warn('Page hidden, all impression timers cancelled');
+                this.#logger.warn('Page hidden, all impression timers cancelled');
             }
         });
     }
@@ -253,25 +253,25 @@ export class DotCMSImpressionTracker {
     /** Resets tracking on SPA navigation (listens to pushState, replaceState, popstate) */
     private initializePageNavigationHandler(): void {
         // Store initial path
-        this.currentPagePath = window.location.pathname;
+        this.#currentPagePath = window.location.pathname;
 
-        // Check for path changes periodically (for SPAs that don't trigger events)
+        // Runs on popstate, pushState and replaceState: there is no polling
         const checkPathChange = () => {
             const newPath = window.location.pathname;
 
-            if (newPath !== this.currentPagePath) {
-                this.logger.warn(
-                    `Navigation detected (${this.currentPagePath} → ${newPath}), resetting impression tracking`
+            if (newPath !== this.#currentPagePath) {
+                this.#logger.warn(
+                    `Navigation detected (${this.#currentPagePath} → ${newPath}), resetting impression tracking`
                 );
 
                 // Update current path
-                this.currentPagePath = newPath;
+                this.#currentPagePath = newPath;
 
                 // Reset tracked impressions for the new page
-                this.sessionTrackedImpressions.clear();
+                this.#sessionTrackedImpressions.clear();
 
                 // Cancel all active timers
-                this.elementImpressionStates.forEach((state) => {
+                this.#elementImpressionStates.forEach((state) => {
                     if (state.timer !== null) {
                         window.clearTimeout(state.timer);
                         state.timer = null;
@@ -280,7 +280,7 @@ export class DotCMSImpressionTracker {
                 });
 
                 // Clear element states
-                this.elementImpressionStates.clear();
+                this.#elementImpressionStates.clear();
             }
         };
 
@@ -327,7 +327,7 @@ export class DotCMSImpressionTracker {
 
     /** Starts dwell timer; fires impression if element still visible when timer expires */
     private startImpressionDwellTimer(identifier: string, element: HTMLElement): void {
-        const state = this.elementImpressionStates.get(identifier);
+        const state = this.#elementImpressionStates.get(identifier);
 
         if (!state) return;
 
@@ -354,23 +354,23 @@ export class DotCMSImpressionTracker {
             if (this.isElementStillVisible(element)) {
                 this.trackAndSendImpression(identifier, element);
             } else {
-                this.logger.warn(
+                this.#logger.warn(
                     `Dwell timer expired for ${identifier} but element no longer visible, skipping impression`
                 );
                 // Clear state since we're not tracking
                 state.timer = null;
                 state.visibleSince = null;
             }
-        }, this.impressionConfig.dwellMs);
+        }, this.#impressionConfig.dwellMs);
 
-        this.logger.debug(
-            `Started dwell timer for ${identifier} (${this.impressionConfig.dwellMs}ms)`
+        this.#logger.debug(
+            `Started dwell timer for ${identifier} (${this.#impressionConfig.dwellMs}ms)`
         );
     }
 
     /** Cancels active dwell timer (element left viewport before dwell time) */
     private cancelImpressionDwellTimer(identifier: string): void {
-        const state = this.elementImpressionStates.get(identifier);
+        const state = this.#elementImpressionStates.get(identifier);
 
         if (!state || state.timer === null) return;
 
@@ -378,12 +378,12 @@ export class DotCMSImpressionTracker {
         state.timer = null;
         state.visibleSince = null;
 
-        this.logger.debug(`Cancelled dwell timer for ${identifier}`);
+        this.#logger.debug(`Cancelled dwell timer for ${identifier}`);
     }
 
     /** Fires impression event with content & position data (page data added by enricher plugin) */
     private trackAndSendImpression(identifier: string, element: HTMLElement): void {
-        const state = this.elementImpressionStates.get(identifier);
+        const state = this.#elementImpressionStates.get(identifier);
 
         if (!state) return;
 
@@ -426,11 +426,11 @@ export class DotCMSImpressionTracker {
         state.tracked = true;
 
         // Stop observing this element (no longer needed)
-        if (this.observer) {
-            this.observer.unobserve(element);
+        if (this.#observer) {
+            this.#observer.unobserve(element);
         }
 
-        this.logger.info(
+        this.#logger.info(
             `Fired impression for ${identifier} (dwell: ${dwellTime}ms) - element unobserved`,
             contentletData
         );
@@ -481,49 +481,49 @@ export class DotCMSImpressionTracker {
         // Check if element meets visibility threshold using utility
         return isElementMeetingVisibilityThreshold(
             element,
-            this.impressionConfig.visibilityThreshold
+            this.#impressionConfig.visibilityThreshold
         );
     }
 
     /** Checks if impression already fired in current page session */
     private hasBeenTrackedInSession(identifier: string): boolean {
-        return this.sessionTrackedImpressions.has(identifier);
+        return this.#sessionTrackedImpressions.has(identifier);
     }
 
     /** Marks impression as tracked (prevents duplicates in same page session) */
     private markImpressionAsTracked(identifier: string): void {
-        this.sessionTrackedImpressions.add(identifier);
+        this.#sessionTrackedImpressions.add(identifier);
     }
 
     /** Cleanup: disconnects observers, clears timers and state */
     public cleanup(): void {
         // Disconnect intersection observer
-        if (this.observer) {
-            this.observer.disconnect();
-            this.observer = null;
+        if (this.#observer) {
+            this.#observer.disconnect();
+            this.#observer = null;
         }
 
         // Disconnect mutation observer
-        if (this.mutationObserver) {
-            this.mutationObserver.disconnect();
-            this.mutationObserver = null;
+        if (this.#mutationObserver) {
+            this.#mutationObserver.disconnect();
+            this.#mutationObserver = null;
         }
 
-        window.removeEventListener(CONTENTLET_RESCAN_EVENT, this.handleRescan);
+        window.removeEventListener(CONTENTLET_RESCAN_EVENT, this.#handleRescan);
 
         // Clear all active dwell timers
-        this.elementImpressionStates.forEach((state) => {
+        this.#elementImpressionStates.forEach((state) => {
             if (state.timer !== null) {
                 window.clearTimeout(state.timer);
             }
         });
 
         // Clear all state
-        this.elementImpressionStates.clear();
+        this.#elementImpressionStates.clear();
 
         // Clear all subscribers
-        this.subscribers.clear();
+        this.#subscribers.clear();
 
-        this.logger.info('Impression tracking cleaned up');
+        this.#logger.info('Impression tracking cleaned up');
     }
 }

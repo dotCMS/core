@@ -12,9 +12,9 @@ import type {
  * Plugin that enriches the analytics payload data with page, UTM, and custom data.
  * Uses Analytics.js lifecycle events to inject enriched data before the main plugin processes it.
  *
- * The identity plugin runs FIRST to inject context: { session_id, site_auth, user_id, device }
- * This enricher plugin runs SECOND to add page/utm/custom data.
- * The main plugin runs THIRD to structure events and send to server.
+ * The identity plugin, registered first, injects context: { session_id, site_auth, user_id, device }.
+ * This plugin, registered after the experiments, impressions and clicks plugins, adds page, UTM
+ * and custom data. The sender, registered last, structures the events and sends them.
  *
  * This plugin is ONLY responsible for data enrichment - NOT for event structuring or business logic.
  */

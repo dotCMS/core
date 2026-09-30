@@ -24,7 +24,7 @@ const mockConsoleInfo = vi.spyOn(console, 'info').mockImplementation(() => {
     // do nothing
 });
 
-describe('DotAnalytics HTTP Utils', () => {
+describe('Events HTTP utils', () => {
     let mockConfig: PipelineConfig;
     let mockPayload: DotCMSPageViewRequestBody;
 

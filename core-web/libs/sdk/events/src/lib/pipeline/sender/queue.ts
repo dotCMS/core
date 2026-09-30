@@ -193,10 +193,10 @@ export const createEventQueue = (config: PipelineConfig) => {
     };
 
     /**
-     * Send events immediately with keepalive mode
-     * Used for sending persisted events on page load
+     * Sends events right away, outside the batches. Used for the events an earlier page
+     * persisted, which go out when this page loads (that caller passes useKeepalive false).
      * @param events - Events to send
-     * @param useKeepalive - whether to use keepalive
+     * @param useKeepalive - Whether to send with keepalive
      * @returns Promise<boolean> - true if success
      */
     const sendImmediately = async (
@@ -423,7 +423,8 @@ export const createEventQueue = (config: PipelineConfig) => {
          * Flushes remaining events and cleans up listeners
          *
          * IMPORTANT: Does NOT clear sessionStorage
-         * - Storage is cleared only after sendBatch succeeds or in initialize()
+         * - Storage is updated when sendBatch dispatches a batch, whether or not its request
+         *   succeeds, and in initialize()
          * - This allows events to persist across traditional page navigations
          */
         cleanup: (): void => {

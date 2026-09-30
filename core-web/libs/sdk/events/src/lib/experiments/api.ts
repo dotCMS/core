@@ -1,16 +1,16 @@
 import { IS_USER_INCLUDED_PATH, IS_USER_INCLUDED_REQUEST_TIMEOUT_MS } from './constants';
 
-import type { DotIsUserIncludedEntity, IsUserIncludedResult } from './models';
+import type { DotCMSIsUserIncludedEntity, IsUserIncludedResult } from './models';
 
 const asStringArray = (value: unknown): string[] =>
     Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
 
-const toEntity = (raw: unknown): DotIsUserIncludedEntity => {
+const toEntity = (raw: unknown): DotCMSIsUserIncludedEntity => {
     const entity = (raw ?? {}) as Record<string, unknown>;
 
     return {
         experiments: Array.isArray(entity['experiments'])
-            ? (entity['experiments'] as DotIsUserIncludedEntity['experiments'])
+            ? (entity['experiments'] as DotCMSIsUserIncludedEntity['experiments'])
             : [],
         includedExperimentIds: asStringArray(entity['includedExperimentIds']),
         excludedExperimentIds: asStringArray(entity['excludedExperimentIds']),

@@ -39,7 +39,8 @@ let staticBrowserData: Pick<
 let utmCache: { search: string; params: DotCMSEventUtmData } | null = null;
 
 /**
- * Generates a cryptographically secure random ID.
+ * Generates a random ID from the current time and Math.random: unique enough for session and
+ * user ids, but not cryptographically secure.
  * @internal This function is for internal use only and should not be used outside of the SDK.
  * @param prefix - The prefix for the generated ID
  * @returns A unique ID string with the given prefix
@@ -206,7 +207,7 @@ export const getSessionId = (): string => {
  * Used by the identity plugin to inject context into analytics events.
  *
  * @param config - The analytics configuration object
- * @returns The analytics context with site_key, session_id, and user_id
+ * @returns The analytics context with site_auth, session_id, user_id and device
  */
 export const getEventContext = (config: PipelineConfig): EventContext => {
     const sessionId = getSessionId();

@@ -296,6 +296,31 @@ describe('createExperimentsEngine', () => {
         expect(navigate).not.toHaveBeenCalled();
     });
 
+    it('drops the first pageview when the visitor goes to another page and back during the wait', async () => {
+        markRows('experiment-back');
+        let answer: (response: unknown) => void = () => undefined;
+        fetchSpy.mockReturnValue(
+            new Promise((resolve) => {
+                answer = resolve;
+            })
+        );
+        const engine = createEngine();
+        const macrotask = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+        const first = engine.decide();
+        // A round trip to another page, then back, while isUserIncluded is pending
+        window.history.pushState(null, '', '/other');
+        await macrotask();
+        window.history.pushState(null, '', '/');
+        await macrotask();
+        // The return sends its own pageview, so the page is decided again
+        const second = engine.decide();
+        answer(answerWith('experiment-back', 'DEFAULT'));
+
+        await expect(first).resolves.toEqual({ redirected: false, left: true });
+        await expect(second).resolves.toEqual({ redirected: false });
+    });
+
     it('reports a failed experiments check to onError, with its status', async () => {
         markRows('experiment-h');
         fetchSpy.mockResolvedValue({ ok: false, status: 500, json: async () => ({}) });

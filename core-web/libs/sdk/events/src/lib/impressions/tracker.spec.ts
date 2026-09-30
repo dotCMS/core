@@ -73,8 +73,10 @@ describe('DotCMSImpressionTracker', () => {
     };
 
     beforeEach(() => {
-        // Reset mocks
+        // Reset mocks. clearAllMocks keeps return values, so a test that turns isBrowser off
+        // must not leave it off for the next one
         vi.clearAllMocks();
+        (isBrowser as Mock).mockReturnValue(true);
         vi.useFakeTimers();
 
         // Setup config
@@ -151,8 +153,6 @@ describe('DotCMSImpressionTracker', () => {
             tracker.initialize();
 
             expect(global.IntersectionObserver).not.toHaveBeenCalled();
-
-            (isBrowser as Mock).mockReturnValue(true);
         });
 
         it('should setup MutationObserver for dynamic content', () => {

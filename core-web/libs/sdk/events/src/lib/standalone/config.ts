@@ -102,8 +102,7 @@ const fromAdvancedConfig = (advanced: JsonRecord): Partial<DotCMSEventsConfig> =
         const picked: DotCMSEventsImpressionsConfig | undefined = numbers(impressions, [
             'visibilityThreshold',
             'dwellMs',
-            'maxNodes',
-            'throttleMs'
+            'maxNodes'
         ]);
 
         if (picked) {

@@ -30,8 +30,6 @@ export interface DotCMSEventsImpressionsConfig {
     dwellMs?: number;
     /** Most contentlets tracked on a page. Defaults to 100. */
     maxNodes?: number;
-    /** Throttle for intersection callbacks, in milliseconds. */
-    throttleMs?: number;
 }
 
 /**

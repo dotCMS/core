@@ -22,6 +22,7 @@ import {
     saveAssignments
 } from './store';
 
+import { onNavigation } from '../pipeline/navigation';
 import { getSessionId } from '../pipeline/utils';
 
 import type {
@@ -178,9 +179,18 @@ export const createExperimentsEngine = ({
     const warnedUrls = new Set<string>();
     // The variant's URL, when prepare replaced the page
     let preparedRedirect: string | undefined;
-    // One decision per page and rendered experiment, shared by decide and the mark observer
+    // One decision per page visit and rendered experiment, shared by decide and the mark observer
     const decisions = new Map<string, Promise<MarkOutcome>>();
     let stopObserving: (() => void) | undefined;
+    // Navigations inside the page so far. A visit is the page plus this count: a visitor who
+    // leaves and comes back during a wait starts a new visit, decided and counted on its own
+    let navigations = 0;
+
+    if (pages === 'markup') {
+        onNavigation(() => {
+            navigations += 1;
+        });
+    }
 
     const findAssignment = (experimentId: string): StoredExperiment | undefined =>
         assignments?.experiments.find((experiment) => experiment.id === experimentId);
@@ -332,15 +342,16 @@ export const createExperimentsEngine = ({
     ): Promise<MarkOutcome> => {
         // The same decision the boot script makes while the HTML is parsed
         let decision = decisionFor(mark, href);
+        const visit = navigations;
 
         if (decision.kind === 'unknown') {
             log(`holding the pageview for ${mark.experimentId}`);
 
             const outcome = await waitForAnswer();
 
-            // A click during the wait: the next page is decided on its own, and this one
-            // neither redirects to a variant of the next page's URL nor counts as shown
-            if (pageOf(window.location.href) !== pageOf(href)) {
+            // A click during the wait, even one that comes back: the next page is decided on
+            // its own, and this visit neither redirects to a variant of another URL nor counts
+            if (navigations !== visit || pageOf(window.location.href) !== pageOf(href)) {
                 log(`left ${pageOf(href)} while ${mark.experimentId} was decided`);
 
                 return 'left';
@@ -400,13 +411,13 @@ export const createExperimentsEngine = ({
      * @returns How the decision ended
      */
     const decideOnce = (mark: PageExperimentMark, href: string): Promise<MarkOutcome> => {
-        const key = `${pageOf(href)}\n${mark.experimentId}\n${mark.variant}`;
+        const key = `${navigations}\n${pageOf(href)}\n${mark.experimentId}\n${mark.variant}`;
         let outcome = decisions.get(key);
 
         if (!outcome) {
             outcome = decideMark(mark, href, () => revealRows(mark.experimentId, mark.variant));
             decisions.set(key, outcome);
-            // A page left mid-decision is decided again if the visitor comes back to it
+            // A visit left mid-decision is never asked for again: its key has an older count
             void outcome.then((result) => {
                 if (result === 'left') {
                     decisions.delete(key);
@@ -530,6 +541,7 @@ export const createExperimentsEngine = ({
             }
 
             const href = window.location.href;
+            const visit = navigations;
             let marks = readPageExperiments();
 
             if (pages === 'markup') {
@@ -539,7 +551,7 @@ export const createExperimentsEngine = ({
                 if (!marks.length && !disabled && experimentOnThisPage()) {
                     marks = await waitForMarks();
 
-                    if (pageOf(window.location.href) !== pageOf(href)) {
+                    if (navigations !== visit || pageOf(window.location.href) !== pageOf(href)) {
                         return { redirected: false, left: true };
                     }
 

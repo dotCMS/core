@@ -121,8 +121,9 @@ export function dotcmsExperimentBoot(
         (w as unknown as Record<string, unknown>)[config.bootKey] = state;
 
         // No more parsing, scripts or images on the page being replaced. It still runs until
-        // the variant's document arrives: its new requests wait, except keepalive ones (an
-        // analytics flush), and all of them go out again if it is still here after quietMs.
+        // the variant's document arrives: its new requests are held, except keepalive ones (an
+        // analytics flush). A held request never settles; after quietMs, fetch works again
+        // for new calls only.
         w.stop();
         w.location.replace(decision.url);
 

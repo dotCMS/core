@@ -1,30 +1,30 @@
 /** A variant, as `isUserIncluded` returns it. */
-export interface DotExperimentVariant {
+export interface DotCMSExperimentVariant {
     name: string;
     url: string;
 }
 
 /** An experiment the visitor was assigned to, as `isUserIncluded` returns it. */
-export interface DotAssignedExperiment {
+export interface DotCMSAssignedExperiment {
     id: string;
     name: string;
     runningId: string;
     pageUrl: string;
     lookBackWindow: { expireMillis: number; value: string };
     regexs: { isExperimentPage: string; isTargetPage: string | null };
-    variant: DotExperimentVariant;
+    variant: DotCMSExperimentVariant;
 }
 
 /** The `entity` of the `isUserIncluded` response. */
-export interface DotIsUserIncludedEntity {
-    experiments: DotAssignedExperiment[];
+export interface DotCMSIsUserIncludedEntity {
+    experiments: DotCMSAssignedExperiment[];
     includedExperimentIds: string[];
     excludedExperimentIds: string[];
     excludedExperimentIdsEnded: string[];
 }
 
 /** An assignment kept in localStorage, with the moment it stops being valid. */
-export type StoredExperiment = DotAssignedExperiment & { expiresAt: number };
+export type StoredExperiment = DotCMSAssignedExperiment & { expiresAt: number };
 
 /** What the engine keeps in localStorage between visits. */
 export interface StoredAssignments {
@@ -36,7 +36,7 @@ export interface StoredAssignments {
 
 /** The result of asking `isUserIncluded`. */
 export type IsUserIncludedResult =
-    | { status: 'ok'; entity: DotIsUserIncludedEntity }
+    | { status: 'ok'; entity: DotCMSIsUserIncludedEntity }
     | { status: 'disabled' }
     | { status: 'failed'; httpStatus?: number };
 

@@ -3,6 +3,7 @@ import { handleContentletClick } from './utils';
 
 import {
     createContentletObserver,
+    extractContentletIdentifier,
     findContentlets,
     INITIAL_SCAN_DELAY_MS
 } from '../contentlets/utils';
@@ -40,18 +41,19 @@ export interface ClickSubscription {
  * ```
  */
 export class DotCMSClickTracker {
-    private mutationObserver: MutationObserver | null = null;
-    private lastClickTime = { value: 0 };
-    private logger: ReturnType<typeof createPluginLogger>;
-    private subscribers = new Set<ClickCallback>();
+    #mutationObserver: MutationObserver | null = null;
+    // When each contentlet was last clicked: a click on one never throttles another
+    #lastClickAt = new WeakMap<HTMLElement, number>();
+    #logger: ReturnType<typeof createPluginLogger>;
+    #subscribers = new Set<ClickCallback>();
 
     // Track which elements already have listeners to avoid duplicates
-    private trackedElements = new WeakSet<HTMLElement>();
+    #trackedElements = new WeakSet<HTMLElement>();
     // Store handlers for cleanup
-    private elementHandlers = new WeakMap<HTMLElement, (event: MouseEvent) => void>();
+    #elementHandlers = new WeakMap<HTMLElement, (event: MouseEvent) => void>();
 
     constructor(config: PipelineConfig) {
-        this.logger = createPluginLogger('Click', config);
+        this.#logger = createPluginLogger('Click', config);
     }
 
     /**
@@ -60,11 +62,11 @@ export class DotCMSClickTracker {
      * @returns Subscription object with unsubscribe method
      */
     public onClick(callback: ClickCallback): ClickSubscription {
-        this.subscribers.add(callback);
+        this.#subscribers.add(callback);
 
         return {
             unsubscribe: () => {
-                this.subscribers.delete(callback);
+                this.#subscribers.delete(callback);
             }
         };
     }
@@ -75,7 +77,7 @@ export class DotCMSClickTracker {
      * @param payload - Click event payload with content and element data
      */
     private notifySubscribers(eventName: string, payload: DotCMSContentClickPayload): void {
-        this.subscribers.forEach((callback) => callback(eventName, payload));
+        this.#subscribers.forEach((callback) => callback(eventName, payload));
     }
 
     /**
@@ -91,17 +93,17 @@ export class DotCMSClickTracker {
      */
     public initialize(): void {
         if (!isBrowser()) {
-            this.logger.warn('No document, skipping');
+            this.#logger.warn('No document, skipping');
             return;
         }
 
-        this.logger.debug('Plugin initializing');
+        this.#logger.debug('Plugin initializing');
 
         // Wait for DOM to be ready before scanning
         if (typeof window !== 'undefined') {
             // Use setTimeout to let React/Next.js finish rendering
             setTimeout(() => {
-                this.logger.debug('Running initial scan after timeout...');
+                this.#logger.debug('Running initial scan after timeout...');
                 // Initial scan for existing contentlets
                 this.findAndAttachListeners();
             }, INITIAL_SCAN_DELAY_MS);
@@ -110,7 +112,7 @@ export class DotCMSClickTracker {
         // Setup observer for dynamic content
         this.initializeMutationObserver();
 
-        this.logger.info('Plugin initialized');
+        this.#logger.info('Plugin initialized');
     }
 
     /**
@@ -126,9 +128,9 @@ export class DotCMSClickTracker {
      * @param element - Contentlet container element to track
      */
     private attachClickListener(element: HTMLElement): void {
-        if (this.trackedElements.has(element)) {
-            const identifier = element.dataset['dotAnalyticsIdentifier'] || 'unknown';
-            this.logger.debug(`Element ${identifier} already has listener, skipping`);
+        if (this.#trackedElements.has(element)) {
+            const identifier = extractContentletIdentifier(element) ?? 'unknown';
+            this.#logger.debug(`Element ${identifier} already has listener, skipping`);
             return; // Already tracked
         }
 
@@ -139,68 +141,68 @@ export class DotCMSClickTracker {
         }
 
         const clickHandler = (event: MouseEvent) => {
-            this.logger.debug('Click handler triggered on contentlet');
+            this.#logger.debug('Click handler triggered on contentlet');
 
             // Pass the contentlet element directly - we already have it!
             handleContentletClick(
                 event,
                 element,
                 (eventName, payload) => {
-                    // Apply throttling
+                    // Apply throttling, per contentlet
                     const now = Date.now();
-                    if (now - this.lastClickTime.value < DEFAULT_CLICK_THROTTLE_MS) {
+                    if (now - (this.#lastClickAt.get(element) ?? 0) < DEFAULT_CLICK_THROTTLE_MS) {
                         return;
                     }
-                    this.lastClickTime.value = now;
+                    this.#lastClickAt.set(element, now);
 
                     // Notify subscribers
                     this.notifySubscribers(eventName, payload);
 
                     // Debug logging
-                    this.logger.info(
+                    this.#logger.info(
                         `Fired click event for ${payload.content.identifier}`,
                         payload
                     );
                 },
-                this.logger
+                this.#logger
             );
         };
 
         element.addEventListener('click', clickHandler);
-        this.trackedElements.add(element);
-        this.elementHandlers.set(element, clickHandler);
+        this.#trackedElements.add(element);
+        this.#elementHandlers.set(element, clickHandler);
 
-        const identifier = element.dataset['dotAnalyticsIdentifier'] || 'unknown';
-        this.logger.log(`Attached listener to contentlet ${identifier}`, element);
+        const identifier = extractContentletIdentifier(element) ?? 'unknown';
+        this.#logger.log(`Attached listener to contentlet ${identifier}`, element);
     }
 
     /**
      * Find and attach listeners to all contentlet elements in the DOM
      *
      * Scans the entire document for elements with the
-     * `.dotcms-analytics-contentlet` class and attaches click
+     * `.dotcms-contentlet` class and attaches click
      * listeners if not already tracked.
      *
      * Called during initialization and whenever DOM mutations are detected.
      */
     private findAndAttachListeners(): void {
-        this.logger.debug('findAndAttachListeners called');
+        this.#logger.debug('findAndAttachListeners called');
 
         const contentlets = findContentlets();
 
-        this.logger.debug(`Scanning... found ${contentlets.length} contentlets`);
+        this.#logger.debug(`Scanning... found ${contentlets.length} contentlets`);
 
         let attached = 0;
         contentlets.forEach((element) => {
-            const wasNew = !this.trackedElements.has(element);
+            const wasNew = !this.#trackedElements.has(element);
             this.attachClickListener(element);
-            if (wasNew && this.trackedElements.has(element)) {
+            if (wasNew && this.#trackedElements.has(element)) {
                 attached++;
             }
         });
 
         if (attached > 0) {
-            this.logger.info(`Attached ${attached} new click listeners`);
+            this.#logger.info(`Attached ${attached} new click listeners`);
         }
     }
 
@@ -213,11 +215,11 @@ export class DotCMSClickTracker {
             return;
         }
 
-        this.mutationObserver = createContentletObserver(() => {
+        this.#mutationObserver = createContentletObserver(() => {
             this.findAndAttachListeners();
         });
 
-        this.logger.info('MutationObserver enabled for click tracking');
+        this.#logger.info('MutationObserver enabled for click tracking');
     }
 
     /**
@@ -230,10 +232,10 @@ export class DotCMSClickTracker {
         const contentlets = findContentlets();
 
         contentlets.forEach((element) => {
-            const handler = this.elementHandlers.get(element);
+            const handler = this.#elementHandlers.get(element);
             if (handler) {
                 element.removeEventListener('click', handler);
-                this.elementHandlers.delete(element);
+                this.#elementHandlers.delete(element);
             }
         });
     }
@@ -251,11 +253,11 @@ export class DotCMSClickTracker {
     public cleanup(): void {
         this.removeAllListeners();
 
-        if (this.mutationObserver) {
-            this.mutationObserver.disconnect();
-            this.mutationObserver = null;
+        if (this.#mutationObserver) {
+            this.#mutationObserver.disconnect();
+            this.#mutationObserver = null;
         }
 
-        this.logger.info('Click tracking cleaned up');
+        this.#logger.info('Click tracking cleaned up');
     }
 }

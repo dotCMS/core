@@ -8,12 +8,12 @@ import type { PipelineConfig } from '../pipeline/models';
 import type { AnalyticsInstance } from 'analytics';
 
 /**
- * Click Plugin for DotAnalytics
+ * Clicks plugin of the events pipeline.
  * Handles automatic tracking of clicks on content elements.
  *
  * This plugin initializes the click tracker which:
  * - Uses MutationObserver to detect contentlet containers
- * - Attaches click listeners to each .dotcms-analytics-contentlet element
+ * - Attaches click listeners to each .dotcms-contentlet element
  * - Filters for clicks on <a> or <button> elements inside tracked contentlets
  * - Extracts contentlet data and element metadata
  * - Throttles clicks to prevent duplicates

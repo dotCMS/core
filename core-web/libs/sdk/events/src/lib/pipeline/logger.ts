@@ -27,14 +27,14 @@ const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
  * ```
  */
 export class DotLogger {
-    private readonly packageName: string;
-    private readonly context: string;
-    private readonly minLevel: LogLevel;
+    readonly #packageName: string;
+    readonly #context: string;
+    readonly #minLevel: LogLevel;
 
     constructor(packageName: string, context: string, minLevel: LogLevel = 'warn') {
-        this.packageName = packageName;
-        this.context = context;
-        this.minLevel = minLevel;
+        this.#packageName = packageName;
+        this.#context = context;
+        this.#minLevel = minLevel;
     }
 
     /**
@@ -42,14 +42,14 @@ export class DotLogger {
      * Format: [dotCMS packageName | Context] [LEVEL]
      */
     private getPrefix(level: string): string {
-        return `[dotCMS ${this.packageName} | ${this.context}] [${level.toUpperCase()}]`;
+        return `[dotCMS ${this.#packageName} | ${this.#context}] [${level.toUpperCase()}]`;
     }
 
     /**
      * Checks if a log level should be displayed based on the minimum threshold
      */
     private shouldLog(level: LogLevel): boolean {
-        return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[this.minLevel];
+        return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[this.#minLevel];
     }
 
     /**

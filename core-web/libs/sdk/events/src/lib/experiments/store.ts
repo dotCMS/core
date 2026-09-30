@@ -1,6 +1,6 @@
 import { ONE_DAY_MS, STORAGE_KEYS } from './constants';
 
-import type { DotIsUserIncludedEntity, StoredAssignments } from './models';
+import type { DotCMSIsUserIncludedEntity, StoredAssignments } from './models';
 import type { DotCMSEventContextExperiment } from '../pipeline/models';
 
 type StorageKind = 'local' | 'session';
@@ -62,7 +62,7 @@ export const loadAssignments = (): StoredAssignments | null => {
  * @returns The assignments now stored
  */
 export const saveAssignments = (
-    entity: DotIsUserIncludedEntity,
+    entity: DotCMSIsUserIncludedEntity,
     previous: StoredAssignments | null
 ): StoredAssignments => {
     const now = Date.now();

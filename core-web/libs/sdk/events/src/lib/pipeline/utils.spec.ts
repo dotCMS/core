@@ -454,6 +454,16 @@ describe('Analytics Utils', () => {
             });
             history.replaceState({}, '', window.location.pathname || '/');
 
+            // The device the test expects, set here so it does not depend on an earlier
+            // describe; the values match that describe's, which it defines once for the file
+            Object.defineProperty(window, 'innerWidth', { value: 1024 });
+            Object.defineProperty(window, 'innerHeight', { value: 768 });
+            Object.defineProperty(window.screen, 'width', { value: 1920 });
+            Object.defineProperty(window.screen, 'height', { value: 1080 });
+            Object.defineProperty(navigator, 'language', { value: 'es-ES' });
+            // Midday, so a session that started a second ago started the same day
+            vi.setSystemTime(new Date('2024-01-01T12:00:00Z'));
+
             mockLocalStorage.getItem.mockClear();
             mockSessionStorage.getItem.mockClear();
         });

@@ -217,6 +217,7 @@ export const readRenderedVariant = (href: string): string => {
  * Holds the page's new `fetch` calls, except `keepalive` ones (an analytics flush), for
  * `QUIET_MS`. A page being replaced runs until the variant's document arrives, and a hydrated
  * app goes on prefetching its links; held, they do not compete with the variant's server render.
+ * A held call never settles, and after `QUIET_MS` only new calls go out.
  */
 export const holdRequests = (): void => {
     const send = window.fetch;

@@ -26,10 +26,8 @@ export interface ImpressionConfig {
     visibilityThreshold?: number;
     /** Minimum time in milliseconds element must be visible - default: 750 */
     dwellMs?: number;
-    /** Maximum number of elements to track (performance limit) - default: 1000 */
+    /** Maximum number of elements to track (performance limit) - default: 100 */
     maxNodes?: number;
-    /** Throttle time in milliseconds for intersection callbacks - default: 100 */
-    throttleMs?: number;
 }
 
 /**
@@ -101,7 +99,7 @@ export interface PipelineConfig {
     /**
      * Content impression tracking configuration (default: undefined - disabled):
      * - `undefined` or `false`: Impression tracking disabled
-     * - `true`: Enable with default settings (threshold: 0.5, dwell: 750ms, maxNodes: 1000)
+     * - `true`: Enable with default settings (threshold: 0.5, dwell: 750ms, maxNodes: 100)
      * - `ImpressionConfig`: Enable with custom settings
      */
     impressions?: ImpressionConfig | boolean;

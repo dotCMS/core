@@ -476,7 +476,7 @@ describe('Click Utils', () => {
     function createContentletWithButton(identifier: string): HTMLElement {
         const contentlet = document.createElement('div');
         contentlet.className = CONTENTLET_CLASS;
-        contentlet.dataset['dotAnalyticsIdentifier'] = identifier;
+        contentlet.dataset['dotIdentifier'] = identifier;
 
         const button = document.createElement('button');
         button.textContent = 'Click me';

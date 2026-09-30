@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { vi } from 'vitest';
 
 import { DotCMSClickTracker } from './tracker';
@@ -51,11 +49,11 @@ describe('DotCMSClickTracker', () => {
     const createMockContentletElement = (identifier: string): HTMLElement => {
         const element = document.createElement('div');
         element.className = CONTENTLET_CLASS;
-        element.dataset['dotAnalyticsIdentifier'] = identifier;
-        element.dataset['dotAnalyticsInode'] = 'inode-123';
-        element.dataset['dotAnalyticsContenttype'] = 'Blog';
-        element.dataset['dotAnalyticsTitle'] = 'Test Content';
-        element.dataset['dotAnalyticsBasetype'] = 'CONTENT';
+        element.dataset['dotIdentifier'] = identifier;
+        element.dataset['dotInode'] = 'inode-123';
+        element.dataset['dotType'] = 'Blog';
+        element.dataset['dotTitle'] = 'Test Content';
+        element.dataset['dotBasetype'] = 'CONTENT';
 
         // Mock addEventListener to track calls
         element.addEventListener = vi.fn(element.addEventListener.bind(element));
@@ -63,6 +61,27 @@ describe('DotCMSClickTracker', () => {
 
         return element;
     };
+
+    /** The logger the last tracker created, from the mocked createPluginLogger */
+    const createdLogger = (): Record<'debug' | 'info' | 'warn' | 'error' | 'log', Mock> => {
+        const { results } = (coreUtils.createPluginLogger as Mock).mock;
+
+        return results[results.length - 1]!.value;
+    };
+
+    /** Makes the mocked observer keep its callback, so a test can run a scan as a DOM change would */
+    const captureObserverCallback = (): { scan: () => void } => {
+        const captured = { scan: () => undefined as void };
+        (trackingUtils.createContentletObserver as Mock).mockImplementation((callback) => {
+            captured.scan = callback;
+            return { observe: vi.fn(), disconnect: vi.fn() };
+        });
+
+        return captured;
+    };
+
+    const clickHandlerOf = (element: HTMLElement) =>
+        (element.addEventListener as Mock).mock.calls.find((call) => call[0] === 'click')?.[1];
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -94,15 +113,29 @@ describe('DotCMSClickTracker', () => {
     });
 
     describe('onClick()', () => {
-        it('should add callback to subscribers', () => {
+        it('should notify every subscribed callback of a click', () => {
+            const mockElement = createMockContentletElement('test-123');
+            (trackingUtils.findContentlets as Mock).mockReturnValue([mockElement]);
+            (clickUtils.handleContentletClick as Mock).mockImplementation(
+                (_event, _element, callback) => {
+                    callback('content.click', {
+                        content: { identifier: 'test-123' },
+                        element: { attributes: [] }
+                    });
+                }
+            );
+            const otherCallback = vi.fn();
+
             tracker = new DotCMSClickTracker(mockConfig);
-            const subscription = tracker.onClick(mockCallback);
+            tracker.onClick(mockCallback);
+            tracker.onClick(otherCallback);
+            tracker.initialize();
+            vi.advanceTimersByTime(100);
 
-            expect((tracker as any).subscribers.size).toBe(1);
-            expect((tracker as any).subscribers.has(mockCallback)).toBe(true);
+            clickHandlerOf(mockElement)(new MouseEvent('click'));
 
-            // Cleanup
-            subscription.unsubscribe();
+            expect(mockCallback).toHaveBeenCalledTimes(1);
+            expect(otherCallback).toHaveBeenCalledTimes(1);
         });
 
         it('should return subscription with unsubscribe method', () => {
@@ -112,18 +145,6 @@ describe('DotCMSClickTracker', () => {
             expect(subscription).toHaveProperty('unsubscribe');
             expect(typeof subscription.unsubscribe).toBe('function');
         });
-
-        it('should remove callback when unsubscribe is called', () => {
-            tracker = new DotCMSClickTracker(mockConfig);
-            const subscription = tracker.onClick(mockCallback);
-
-            expect((tracker as any).subscribers.has(mockCallback)).toBe(true);
-
-            subscription.unsubscribe();
-
-            expect((tracker as any).subscribers.has(mockCallback)).toBe(false);
-            expect((tracker as any).subscribers.size).toBe(0);
-        });
     });
 
     describe('initialize()', () => {
@@ -131,7 +152,7 @@ describe('DotCMSClickTracker', () => {
             (coreUtils.isBrowser as Mock).mockReturnValue(false);
 
             tracker = new DotCMSClickTracker(mockConfig);
-            const logger = (tracker as any).logger;
+            const logger = createdLogger();
 
             tracker.initialize();
 
@@ -163,7 +184,7 @@ describe('DotCMSClickTracker', () => {
 
         it('should log initialization', () => {
             tracker = new DotCMSClickTracker(mockConfig);
-            const logger = (tracker as any).logger;
+            const logger = createdLogger();
 
             tracker.initialize();
 
@@ -190,6 +211,7 @@ describe('DotCMSClickTracker', () => {
         });
 
         it('should NOT attach duplicate listener to same element', () => {
+            const observer = captureObserverCallback();
             const mockElement = createMockContentletElement('test-123');
             (trackingUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
@@ -200,15 +222,15 @@ describe('DotCMSClickTracker', () => {
             vi.advanceTimersByTime(100);
             expect(mockElement.addEventListener).toHaveBeenCalledTimes(1);
 
-            // Clear and trigger second scan
+            // Clear and trigger a second scan, as a DOM change does
             (mockElement.addEventListener as Mock).mockClear();
-            (tracker as any).findAndAttachListeners();
+            observer.scan();
 
             // Should NOT attach again
             expect(mockElement.addEventListener).not.toHaveBeenCalled();
         });
 
-        it('should track element in WeakSet after attaching', () => {
+        it('should remove on cleanup the same handler it attached', () => {
             const mockElement = createMockContentletElement('test-123');
             (trackingUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
@@ -217,27 +239,12 @@ describe('DotCMSClickTracker', () => {
 
             // Trigger initial scan
             vi.advanceTimersByTime(100);
+            tracker.cleanup();
 
-            const trackedElements = (tracker as any).trackedElements as WeakSet<HTMLElement>;
-            expect(trackedElements.has(mockElement)).toBe(true);
-        });
-
-        it('should store handler in WeakMap for cleanup', () => {
-            const mockElement = createMockContentletElement('test-123');
-            (trackingUtils.findContentlets as Mock).mockReturnValue([mockElement]);
-
-            tracker = new DotCMSClickTracker(mockConfig);
-            tracker.initialize();
-
-            // Trigger initial scan
-            vi.advanceTimersByTime(100);
-
-            const elementHandlers = (tracker as any).elementHandlers as WeakMap<
-                HTMLElement,
-                (event: MouseEvent) => void
-            >;
-            expect(elementHandlers.has(mockElement)).toBe(true);
-            expect(elementHandlers.get(mockElement)).toBeInstanceOf(Function);
+            expect(mockElement.removeEventListener).toHaveBeenCalledWith(
+                'click',
+                clickHandlerOf(mockElement)
+            );
         });
     });
 
@@ -350,6 +357,35 @@ describe('DotCMSClickTracker', () => {
             expect(mockCallback).toHaveBeenCalledTimes(2);
         });
 
+        it('throttles each contentlet on its own, so a click on another one right after counts', () => {
+            const first = createMockContentletElement('test-1');
+            const second = createMockContentletElement('test-2');
+            (trackingUtils.findContentlets as Mock).mockReturnValue([first, second]);
+            (clickUtils.handleContentletClick as Mock).mockImplementation(
+                (_event, element: HTMLElement, callback) => {
+                    callback('content.click', {
+                        content: { identifier: element.dataset['dotIdentifier'] },
+                        element: { attributes: [] }
+                    });
+                }
+            );
+
+            tracker = new DotCMSClickTracker(mockConfig);
+            tracker.onClick(mockCallback);
+            tracker.initialize();
+            vi.advanceTimersByTime(100);
+
+            const handlerOf = (element: HTMLElement) =>
+                (element.addEventListener as Mock).mock.calls.find(
+                    (call) => call[0] === 'click'
+                )?.[1];
+
+            handlerOf(first)(new MouseEvent('click'));
+            handlerOf(second)(new MouseEvent('click'));
+
+            expect(mockCallback).toHaveBeenCalledTimes(2);
+        });
+
         it('should NOT notify unsubscribed callbacks', () => {
             const mockElement = createMockContentletElement('test-123');
             (trackingUtils.findContentlets as Mock).mockReturnValue([mockElement]);
@@ -414,7 +450,7 @@ describe('DotCMSClickTracker', () => {
             (trackingUtils.findContentlets as Mock).mockReturnValue([mockElement]);
 
             tracker = new DotCMSClickTracker(mockConfig);
-            const logger = (tracker as any).logger;
+            const logger = createdLogger();
             tracker.initialize();
 
             // Trigger initial scan
@@ -429,7 +465,7 @@ describe('DotCMSClickTracker', () => {
             (trackingUtils.findContentlets as Mock).mockReturnValue([]);
 
             tracker = new DotCMSClickTracker(mockConfig);
-            const logger = (tracker as any).logger;
+            const logger = createdLogger();
             tracker.initialize();
 
             // Trigger initial scan
@@ -515,22 +551,26 @@ describe('DotCMSClickTracker', () => {
             expect(mockObserver.disconnect).toHaveBeenCalled();
         });
 
-        it('should clear internal state', () => {
-            const mockElement = createMockContentletElement('test-123');
-            (trackingUtils.findContentlets as Mock).mockReturnValue([mockElement]);
+        it('should disconnect the observer once, however many times it is cleaned up', () => {
+            const mockObserver = {
+                observe: vi.fn(),
+                disconnect: vi.fn()
+            };
+            (trackingUtils.createContentletObserver as Mock).mockReturnValue(mockObserver);
 
             tracker = new DotCMSClickTracker(mockConfig);
             tracker.initialize();
             vi.advanceTimersByTime(100);
 
             tracker.cleanup();
+            tracker.cleanup();
 
-            expect((tracker as any).mutationObserver).toBeNull();
+            expect(mockObserver.disconnect).toHaveBeenCalledTimes(1);
         });
 
         it('should log cleanup message', () => {
             tracker = new DotCMSClickTracker(mockConfig);
-            const logger = (tracker as any).logger;
+            const logger = createdLogger();
             tracker.initialize();
 
             tracker.cleanup();
