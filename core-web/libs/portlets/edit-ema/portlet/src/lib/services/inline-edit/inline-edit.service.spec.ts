@@ -189,9 +189,10 @@ describe('InlineEditService', () => {
         document.body.appendChild(iframe);
         spectator.service.injectInlineEdit(iframeElement);
 
-        const script = iframe.contentDocument.querySelector('script[data-inline="true"]');
+        const script = iframe.contentDocument?.querySelector('script[data-inline="true"]');
 
-        expect(script.getAttribute('src')).toBe('/ext/tinymce/tinymce.min.js');
+        expect(script).toBeTruthy();
+        expect(script?.getAttribute('src')).toBe('/ext/tinymce/tinymce.min.js');
     });
 
     it.each([

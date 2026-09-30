@@ -242,7 +242,7 @@ describe('DotCMSEditableText', () => {
         it('sets license_key by passing licenseKey as a top-level Editor prop (not inside init)', () => {
             const [props] = Editor.mock.calls[0];
             expect(props.licenseKey).toBe('gpl');
-            expect(props.init.licenseKey).toBeUndefined();
+            expect(props.init?.['licenseKey']).toBeUndefined();
         });
 
         describe('DotEditableText events', () => {
