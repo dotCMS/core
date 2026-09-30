@@ -449,7 +449,7 @@ describe('ContainerListComponent', () => {
             );
             expect(store['dotSiteBrowserService'].setSelectedFolder).toHaveBeenCalledTimes(1);
             expect(store['dotRouterService'].goToSiteBrowser).toHaveBeenCalledWith(
-                fileContainer.pathName
+                fileContainer?.pathName
             );
             expect(store['dotRouterService'].goToSiteBrowser).toHaveBeenCalledTimes(1);
         });

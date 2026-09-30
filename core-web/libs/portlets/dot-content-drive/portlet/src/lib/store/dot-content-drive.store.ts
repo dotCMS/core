@@ -663,7 +663,7 @@ export const DotContentDriveStore = signalStore(
                     // the language into the current filters itself, so only the site re-runs this.
                     untracked(() =>
                         store.initContentDrive({
-                            currentSite,
+                            currentSite: currentSite ?? SYSTEM_HOST,
                             path,
                             filters,
                             isTreeExpanded: queryTreeExpanded == 'true'

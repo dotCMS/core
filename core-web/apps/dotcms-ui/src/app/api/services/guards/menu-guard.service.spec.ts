@@ -198,7 +198,7 @@ describe('ValidMenuGuardService', () => {
                 .mockImplementation((id: string) => observableOf(portletIds.includes(id)));
 
         const runGuard = (url: string, portletId: string) => {
-            let result: boolean | UrlTree;
+            let result: boolean | UrlTree | undefined;
             vi.spyOn(dotRouterService, 'getPortletId').mockReturnValue(portletId);
             vi.spyOn(dotRouterService, 'isJSPPortletURL').mockReturnValue(true);
             mockRouterStateSnapshot.url = url;
@@ -209,7 +209,7 @@ describe('ValidMenuGuardService', () => {
             return result;
         };
 
-        const serialize = (result: boolean | UrlTree) =>
+        const serialize = (result: boolean | UrlTree | undefined) =>
             result instanceof UrlTree ? router.serializeUrl(result) : result;
 
         beforeEach(() => {
