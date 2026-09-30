@@ -243,41 +243,50 @@ configure the Analytics App regardless of flag state.
   `FEATURE_FLAG_EXPERIMENTS` state. It MUST return two pieces of information:
   1. The existing health state (unchanged): `OK`, `NOT_CONFIGURED`, or `CONFIGURATION_ERROR`.
   2. **New** — the experiment tier fields:
-     - `tier`: `"limited"` when `FEATURE_FLAG_EXPERIMENTS=false` OR the Analytics App is not
-       configured for the site; `"full"` only when both `FEATURE_FLAG_EXPERIMENTS=true` AND
-       the Analytics App is configured.
+     - `tier`: reflects the license level only — `"limited"` when `FEATURE_FLAG_EXPERIMENTS=false`;
+       `"full"` when `FEATURE_FLAG_EXPERIMENTS=true`. App configuration has no effect on this
+       field; it is a separate concern communicated through `warning` and `health`.
      - `freeExperimentUsed`: `true` if any experiment globally exists in `{RUNNING, SCHEDULED,
-       ENDED}` across all sites; `false` otherwise. Always present when `tier="limited"`,
-       regardless of the trigger (flag or App config); omitted or null only when `tier="full"`.
+       ENDED}` across all sites; `false` otherwise. Always present when `tier="limited"`;
+       omitted or null when `tier="full"`.
   Additionally, when the Analytics App is not configured, the response MUST include a
   `warning` field regardless of flag state or slot availability:
   - `warning`: `"ANALYTICS_DISABLED"` — present whenever the Analytics App is not
     configured for the site; omitted otherwise.
   Example responses:
 
+  *experiments=true, App configured:*
+  ```json
+  { "health": "OK", "tier": "full" }
+  ```
+  *experiments=true, App not configured:*
+  ```json
+  { "health": "NOT_CONFIGURED", "tier": "full", "warning": "ANALYTICS_DISABLED" }
+  ```
+  *experiments=false, App configured, slot available:*
+  ```json
+  { "health": "OK", "tier": "limited", "freeExperimentUsed": false }
+  ```
   *experiments=false, App configured, slot used:*
   ```json
   { "health": "OK", "tier": "limited", "freeExperimentUsed": true }
   ```
-  *experiments=true, App not configured (misconfigured — warning present):*
-  ```json
-  { "health": "OK", "tier": "limited", "freeExperimentUsed": false,
-    "warning": "ANALYTICS_DISABLED" }
-  ```
   *experiments=false, App not configured, slot available:*
   ```json
-  { "health": "OK", "tier": "limited", "freeExperimentUsed": false,
+  { "health": "NOT_CONFIGURED", "tier": "limited", "freeExperimentUsed": false,
     "warning": "ANALYTICS_DISABLED" }
   ```
   *experiments=false, App not configured, slot used:*
   ```json
-  { "health": "OK", "tier": "limited", "freeExperimentUsed": true,
+  { "health": "NOT_CONFIGURED", "tier": "limited", "freeExperimentUsed": true,
     "warning": "ANALYTICS_DISABLED" }
   ```
   > The warning is always included when the App is not configured, regardless of flag state
   > or slot availability — it describes a system condition the operator must act on.
   > **Note**: The Experiments portlet UI calls this endpoint on load to drive button state:
-  > - `tier="full"` → all buttons enabled normally.
+  > - `tier="full"` → all buttons enabled normally. If `warning="ANALYTICS_DISABLED"` is
+  >   also present, the warning banner is shown but buttons remain enabled — the operator has
+  >   paid for the full feature and should be directed to configure the App, not to upgrade.
   > - `tier="limited"` → **scheduling section**, **Stop Experiment**, and **archive** are
   >   always disabled with tooltip *"Upgrade your plan to unlock this feature. Contact
   >   dotCMS."* regardless of `freeExperimentUsed`.

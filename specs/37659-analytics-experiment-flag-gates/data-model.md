@@ -20,22 +20,22 @@ Carries the existing health state plus the new tier fields.
 | Field | Type | Present when | Description |
 |-------|------|-------------|-------------|
 | `health` | `ExperimentsAPI.Health` enum (`OK`, `NOT_CONFIGURED`, `CONFIGURATION_ERROR`) | Always | Existing health state — unchanged semantics |
-| `tier` | `String` (`"limited"` or `"full"`) | Always | `"full"` only when `FEATURE_FLAG_EXPERIMENTS=true` AND App configured; `"limited"` otherwise |
+| `tier` | `String` (`"limited"` or `"full"`) | Always | Reflects license level only — `"full"` when `FEATURE_FLAG_EXPERIMENTS=true`; `"limited"` when `false`. App configuration has no effect on this field. |
 | `freeExperimentUsed` | `Boolean` | When `tier="limited"`; `null` when `tier="full"` | `true` if any experiment globally is in `{RUNNING, SCHEDULED, ENDED}`; `false` otherwise |
 | `warning` | `String` | Present when App not configured; absent otherwise | Fixed value `"ANALYTICS_DISABLED"` when App is absent |
 
 **Validation rules**:
-- `tier` is `"full"` iff `FEATURE_FLAG_EXPERIMENTS=true` AND `getAppSecrets(host).isNotEmpty()`.
+- `tier` is `"full"` iff `FEATURE_FLAG_EXPERIMENTS=true`. App configuration is irrelevant to this field.
 - `freeExperimentUsed` is `null` when `tier="full"` (slot concept doesn't apply).
-- `warning` is `"ANALYTICS_DISABLED"` whenever `getAppSecrets(host).isEmpty()`, regardless of flag state.
+- `warning` is `"ANALYTICS_DISABLED"` whenever `!isAppConfigured(host)`, regardless of flag state.
 
 **State table** (four combinations):
 
 | flag | App | tier | freeExperimentUsed | warning |
 |---|---|---|---|---|
 | true | configured | `"full"` | null | absent |
+| true | not configured | `"full"` | null | `"ANALYTICS_DISABLED"` |
 | false | configured | `"limited"` | true/false | absent |
-| true | not configured | `"limited"` | true/false | `"ANALYTICS_DISABLED"` |
 | false | not configured | `"limited"` | true/false | `"ANALYTICS_DISABLED"` |
 
 ---
@@ -109,9 +109,12 @@ refreshed after startup — a restart is required for changes to take effect (FR
 { "entity": { "health": "OK" } }
 ```
 
-**After** (with tier fields):
+**After** (with tier fields — tier reflects flag only, warning reflects App config):
 ```json
-{ "entity": { "health": "OK", "tier": "full", "freeExperimentUsed": null } }
+{ "entity": { "health": "OK", "tier": "full" } }
+```
+```json
+{ "entity": { "health": "NOT_CONFIGURED", "tier": "full", "warning": "ANALYTICS_DISABLED" } }
 ```
 ```json
 { "entity": { "health": "OK", "tier": "limited", "freeExperimentUsed": false } }
