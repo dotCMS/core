@@ -1073,6 +1073,26 @@ describe('withActionExecution', () => {
                 expect(store.toolbarRunCount()).toBe(0);
             });
 
+            it('should drop what the restore left unclaimed, since nothing else can claim it', () => {
+                // Another tab's batch: held only for the restore, which runs once on load.
+                build();
+                store.reportUploadCompleted('Upload', uploadCompleted('other-tab'));
+
+                store.restoreUploadRuns([]);
+
+                expect(store.unclaimedUploadCompletions()).toEqual({});
+            });
+
+            it('should stop holding untracked completions once the restore has run', () => {
+                // Held after it, they would only accumulate for the portlet's lifetime.
+                build();
+                store.restoreUploadRuns([]);
+
+                store.reportUploadCompleted('Upload', uploadCompleted('other-tab'));
+
+                expect(store.unclaimedUploadCompletions()).toEqual({});
+            });
+
             it('should not report a batch this page is already tracking a second time', () => {
                 build();
                 store.trackUploadJob('up-1');

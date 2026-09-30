@@ -175,11 +175,16 @@ interface WithActionExecutionState {
      * Usually another tab's, and left alone. But a batch of this author's that finishes while the
      * active listing is still being read arrives here too, and the restore reports it from here
      * once the listing shows it is theirs, rather than losing its outcome and its refresh.
+     *
+     * Held only until that restore has run, which it does once, on load: nothing claims an entry
+     * after it, so the restore drops what it left and later completions are not held at all.
      */
     unclaimedUploadCompletions: Record<
         string,
         { actionName: string; event: DotBulkUploadCompletedEvent }
     >;
+    /** Whether the restore on load has run, after which no completion is held for it. */
+    uploadRunsRestored: boolean;
     /**
      * A folder duplication the server refused, as the kind it refused it for.
      *
@@ -220,6 +225,7 @@ export function withActionExecution() {
             settledDuplicateJobs: [],
             settledUploadJobs: [],
             unclaimedUploadCompletions: {},
+            uploadRunsRestored: false,
             folderDuplicateRefusal: undefined
         }),
         withComputed(({ runs, actionExecutionResults }) => ({
@@ -562,7 +568,12 @@ export function withActionExecution() {
                         // Not ours, as far as this page knows: another tab's batch, or one of
                         // this author's finishing before the restore has placed it. Silent by
                         // design — an error here would blame this author for someone else's —
-                        // and held, so the restore can still report it if it is theirs.
+                        // and held, so the restore can still report it if it is theirs. Not once
+                        // it has run: nothing would claim it then.
+                        if (store.uploadRunsRestored()) {
+                            return;
+                        }
+
                         patchState(store, {
                             unclaimedUploadCompletions: {
                                 ...store.unclaimedUploadCompletions(),
@@ -1602,6 +1613,13 @@ export function withActionExecution() {
                                     [run.id]: { affectedFolders: [], runId, baseType: run.baseType }
                                 }
                             });
+                        });
+
+                        // What is left belongs to other tabs or other authors, and nothing will
+                        // claim it now.
+                        patchState(store, {
+                            unclaimedUploadCompletions: {},
+                            uploadRunsRestored: true
                         });
                     },
 
