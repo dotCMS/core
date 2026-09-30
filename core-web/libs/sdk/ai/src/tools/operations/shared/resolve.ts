@@ -194,8 +194,14 @@ async function siteFromApi(
                 return resolved;
             }
         }
-    } catch {
-        // Fall through to the not-found message, which explains what was tried.
+    } catch (error) {
+        // Only a 404 is a miss, and falls through to the not-found message. Anything else — a
+        // 503, a rejected token, no response at all — says nothing about whether the site
+        // exists, and reported as "not found" it would be VALIDATION: the model told its input
+        // is wrong and not to retry, when retrying (or fixing credentials) is the answer.
+        if (!(error instanceof HttpError) || error.status !== 404) {
+            throw error;
+        }
     }
 
     return undefined;

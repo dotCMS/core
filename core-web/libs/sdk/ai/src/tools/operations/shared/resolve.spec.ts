@@ -2,7 +2,13 @@ import { vi } from 'vitest';
 
 import { RESOLVE_ENDPOINTS, resolveLanguageId, resolveSite } from './resolve';
 
-import { HttpError, type DotCMSRuntime, type RequestOptions } from '../../../runtime';
+import {
+    HttpError,
+    NetworkError,
+    ValidationError,
+    type DotCMSRuntime,
+    type RequestOptions
+} from '../../../runtime';
 import { unlistedCalls } from '../../toolkit/endpoints';
 
 // Every request the fake below sees. After each test, all of them must be in the shared
@@ -149,6 +155,45 @@ describe('resolveSite', () => {
         });
 
         await expect(resolveSite(runtime, DEMO_SITE.identifier)).rejects.toThrow(/500|boom/i);
+    });
+
+    describe('a hostname lookup that fails', () => {
+        // Reported as "not found" — a ValidationError — these told the model its input was
+        // wrong and not to retry, when the instance was only unavailable or the token rejected.
+        it.each([
+            ['a 503', () => new HttpError(503, 'Service Unavailable', 'restarting'), HttpError],
+            ['a 401', () => new HttpError(401, 'Unauthorized', 'bad token'), HttpError],
+            [
+                'no response at all',
+                () => new NetworkError('GET', '/api/v1/site', new Error('ECONNREFUSED')),
+                NetworkError
+            ]
+        ])('rethrows %s as the error it is', async (_label, make, type) => {
+            const { runtime } = fakeRuntime({
+                cachedSites: [],
+                onRequest: () => {
+                    throw make();
+                }
+            });
+
+            const error = await resolveSite(runtime, 'demo.dotcms.com').catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(type);
+            expect(error).not.toBeInstanceOf(ValidationError);
+        });
+
+        it('still reports a 404 from the lookup as "not found"', async () => {
+            const { runtime } = fakeRuntime({
+                cachedSites: [],
+                onRequest: () => {
+                    throw new HttpError(404, 'Not Found', '');
+                }
+            });
+
+            await expect(resolveSite(runtime, 'ghost.example.com')).rejects.toBeInstanceOf(
+                ValidationError
+            );
+        });
     });
 });
 
