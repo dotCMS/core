@@ -9,20 +9,56 @@ import {
     QUEUE_STORAGE_KEY_PREFIX,
     TAB_ID_STORAGE_KEY
 } from '../constants';
-import {
-    createPluginLogger,
-    generateSecureId,
-    getEventContext,
-    safeSessionStorage
-} from '../utils';
+import { createPluginLogger, generateSecureId, safeSessionStorage } from '../utils';
 
 import type {
     PipelineConfig,
     EventContext,
+    EventRequestBody,
     DotCMSEvent,
     PersistedQueue,
-    QueueConfig
+    QueueConfig,
+    QueuedEvent
 } from '../models';
+
+/**
+ * What sets two events' contexts apart: the site, the session, the visitor and the
+ * experiments. The device alone does not, since the viewport changes between events, as it
+ * does when a phone's address bar hides on scroll.
+ *
+ * @param context - An event's context
+ * @returns A key that is equal for contexts that can share a request
+ */
+const contextKey = ({ site_auth, session_id, user_id, experiments }: EventContext): string =>
+    JSON.stringify([site_auth, session_id, user_id, experiments ?? []]);
+
+/**
+ * Groups events into request bodies, in order: consecutive events whose contexts share a key
+ * go out together, with the latest of their contexts. Events of a page that runs an
+ * experiment and of one that does not never share a context.
+ *
+ * @param items - Events with the context each was created with
+ * @returns One request body per run of events
+ */
+const toRequestBodies = (items: QueuedEvent[]): EventRequestBody[] => {
+    const bodies: EventRequestBody[] = [];
+    let lastKey: string | undefined;
+
+    items.forEach(({ event, context }) => {
+        const key = contextKey(context);
+        const last = bodies[bodies.length - 1];
+
+        if (last && key === lastKey) {
+            last.events.push(event);
+            last.context = context;
+        } else {
+            bodies.push({ context, events: [event] });
+            lastKey = key;
+        }
+    });
+
+    return bodies;
+};
 
 /**
  * Creates a queue manager for batching analytics events.
@@ -31,7 +67,8 @@ import type {
 export const createEventQueue = (config: PipelineConfig) => {
     const logger = createPluginLogger('Queue', config);
     let eventQueue: Queue<DotCMSEvent> | null = null;
-    let currentContext: EventContext | null = null;
+    // The context each queued event was created with
+    let contextOf = new WeakMap<DotCMSEvent, EventContext>();
 
     /**
      * Whether to use keepalive mode for sending events
@@ -52,10 +89,10 @@ export const createEventQueue = (config: PipelineConfig) => {
     let tabId = '';
 
     /**
-     * Parallel array to track events for persistence
+     * Parallel array to track events, with their contexts, for persistence
      * smartQueue doesn't expose its internal array, so we maintain a copy
      */
-    let eventsForPersistence: DotCMSEvent[] = [];
+    let eventsForPersistence: QueuedEvent[] = [];
 
     // Merge user config with defaults (allows partial configuration)
     // After merge, queueConfig always has all required values
@@ -94,9 +131,16 @@ export const createEventQueue = (config: PipelineConfig) => {
             return null;
         }
 
-        // Validate minimal event structure
+        // Validate minimal event structure: each event with its context
         const validEvents = q.events.filter(
-            (event) => event && typeof event === 'object' && 'event_type' in event
+            (item) =>
+                item &&
+                typeof item === 'object' &&
+                item.event &&
+                typeof item.event === 'object' &&
+                'event_type' in item.event &&
+                item.context &&
+                typeof item.context === 'object'
         );
 
         return {
@@ -194,13 +238,14 @@ export const createEventQueue = (config: PipelineConfig) => {
 
     /**
      * Sends events right away, outside the batches. Used for the events an earlier page
-     * persisted, which go out when this page loads (that caller passes useKeepalive false).
-     * @param events - Events to send
+     * persisted, which go out when this page loads (that caller passes useKeepalive false),
+     * each with the context it was created with.
+     * @param events - Events to send, with their contexts
      * @param useKeepalive - Whether to send with keepalive
-     * @returns Promise<boolean> - true if success
+     * @returns Promise<boolean> - true if every request succeeded
      */
     const sendImmediately = async (
-        events: DotCMSEvent[],
+        events: QueuedEvent[],
         useKeepalive = true
     ): Promise<boolean> => {
         if (events.length === 0) {
@@ -209,10 +254,11 @@ export const createEventQueue = (config: PipelineConfig) => {
 
         logger.info(`Sending ${events.length} persisted event(s) immediately`);
 
-        // Get current context (generates new one if needed)
-        const context = getEventContext(config);
-        const payload = { context, events };
-        return sendEvents(payload, config, useKeepalive); // keepalive = useKeepalive
+        const sent = await Promise.all(
+            toRequestBodies(events).map((payload) => sendEvents(payload, config, useKeepalive))
+        );
+
+        return sent.every(Boolean);
     };
 
     /**
@@ -222,21 +268,25 @@ export const createEventQueue = (config: PipelineConfig) => {
      * @param _rest - Remaining events in queue (unused, required by smartQueue API)
      */
     const sendBatch = (events: DotCMSEvent[], _rest: DotCMSEvent[]): void => {
-        if (!currentContext) return;
+        const batch = events.flatMap((event): QueuedEvent[] => {
+            const context = contextOf.get(event);
+
+            return context ? [{ event, context }] : [];
+        });
+
+        if (batch.length === 0) return;
 
         logger.debug(`Sending batch of ${events.length} event(s)`, {
             events,
             keepalive
         });
 
-        const payload = { context: currentContext, events };
-
-        // Send events (fire-and-forget with keepalive)
-        sendEvents(payload, config, keepalive);
+        // Send events (fire-and-forget with keepalive): one request per context in the batch
+        toRequestBodies(batch).forEach((payload) => sendEvents(payload, config, keepalive));
 
         // Remove sent events from parallel tracking array
         eventsForPersistence = eventsForPersistence.filter(
-            (e) => !events.some((sent) => sent === e)
+            (queued) => !events.some((sent) => sent === queued.event)
         );
 
         // Always update storage after dispatching the send — even for keepalive flushes.
@@ -258,7 +308,7 @@ export const createEventQueue = (config: PipelineConfig) => {
      * Enables keepalive mode and triggers smartQueue to flush ALL events
      */
     const flushRemaining = (): void => {
-        if (!eventQueue || eventQueue.size() === 0 || !currentContext) return;
+        if (!eventQueue || eventQueue.size() === 0 || eventsForPersistence.length === 0) return;
 
         logger.info(`Flushing ${eventQueue.size()} events (page hidden/unload)`);
 
@@ -389,11 +439,13 @@ export const createEventQueue = (config: PipelineConfig) => {
          * - Sends pending events every flushInterval
          */
         enqueue: (event: DotCMSEvent, context: EventContext): void => {
-            currentContext = context;
             if (!eventQueue) return;
 
+            // Each event goes out with the context it was created with
+            contextOf.set(event, context);
+
             // Add to parallel tracking array for persistence
-            eventsForPersistence.push(event);
+            eventsForPersistence.push({ event, context });
 
             // Calculate predicted size before push to show correct order in logs
             const predictedSize = eventQueue.size() + 1;
@@ -439,7 +491,7 @@ export const createEventQueue = (config: PipelineConfig) => {
 
             // Clean up memory only (not sessionStorage)
             eventQueue = null;
-            currentContext = null;
+            contextOf = new WeakMap();
             keepalive = false;
             eventsForPersistence = [];
         }

@@ -1,6 +1,6 @@
 # @dotcms/events
 
-One SDK for dotCMS events: automatic pageviews, conversions, content clicks and content impressions, and experiments. Everything runs in a single Analytics.js instance. For experiments, the SDK asks dotCMS for the visitor's variant, redirects to it, and adds `context.experiments` to every event.
+One SDK for dotCMS events: automatic pageviews, conversions, content clicks and content impressions, and experiments. Everything runs in a single Analytics.js instance. For experiments, the SDK asks dotCMS for the visitor's variant, redirects to it, and adds `context.experiments` to the events of every page that runs an experiment the visitor is in.
 
 It replaces `@dotcms/analytics` and `@dotcms/experiments`.
 
@@ -151,4 +151,4 @@ No cookies. Everything carries the `dot_events_` prefix:
 | `dot_events_tab_id`                | sessionStorage | The tab's id                                                    |
 | `dot_events_queue_<tab id>`        | sessionStorage | Events not sent yet, kept across a page navigation              |
 | `dot_events_experiments_checked`   | sessionStorage | This tab already asked for the visitor's assignments            |
-| `dot_events_session_experiments`   | sessionStorage | The experiments the session's events carry                      |
+| `dot_events_session_experiments`   | sessionStorage | The experiments the session reached, which the events of experiment pages carry |

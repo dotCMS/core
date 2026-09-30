@@ -229,15 +229,34 @@ describe('createEventQueue', () => {
             expect(mockQueuePush).toHaveBeenCalledWith(mockEvent);
         });
 
-        it('should update current context', () => {
+        it('should send each event with the context it was queued with', () => {
             const queue = createEventQueue(mockConfig);
             queue.initialize();
+            const sendBatchCallback = (smartQueue as MockedFunction<typeof smartQueue>).mock
+                .calls[0]![0];
 
-            const newContext = { ...mockContext, session_id: 'new-session-id' };
-            queue.enqueue(mockEvent, newContext);
+            const firstEvent = { ...mockEvent };
+            const secondEvent = { ...mockEvent };
+            const firstContext = { ...mockContext, session_id: 'session-1' };
+            const secondContext = { ...mockContext, session_id: 'session-2' };
+            queue.enqueue(firstEvent, firstContext);
+            queue.enqueue(secondEvent, secondContext);
 
-            // Context should be used in the next sendBatch call
-            expect(mockQueuePush).toHaveBeenCalledWith(mockEvent);
+            sendBatchCallback([firstEvent, secondEvent], []);
+
+            expect(sendEvents).toHaveBeenCalledTimes(2);
+            expect(sendEvents).toHaveBeenNthCalledWith(
+                1,
+                { context: firstContext, events: [firstEvent] },
+                mockConfig,
+                false
+            );
+            expect(sendEvents).toHaveBeenNthCalledWith(
+                2,
+                { context: secondContext, events: [secondEvent] },
+                mockConfig,
+                false
+            );
         });
 
         it('should not push if queue is not initialized', () => {
@@ -348,14 +367,14 @@ describe('createEventQueue', () => {
             );
         });
 
-        it('should not send if context is not set', () => {
+        it('should not send events that were not queued, since it has no context for them', () => {
             const queue = createEventQueue(mockConfig);
             queue.initialize();
 
             const mockedSmartQueue = smartQueue as MockedFunction<typeof smartQueue>;
             const sendBatchCallback = mockedSmartQueue.mock.calls[0]![0];
 
-            // Don't enqueue anything (no context set)
+            // Don't enqueue anything
             sendBatchCallback([mockEvent], []);
 
             expect(sendEvents).not.toHaveBeenCalled();
@@ -455,13 +474,13 @@ describe('createEventQueue', () => {
             expect(mockQueueFlush).not.toHaveBeenCalled();
         });
 
-        it('should not flush if context is not set', () => {
+        it('should not flush when nothing was queued', () => {
             const queue = createEventQueue(mockConfig);
             queue.initialize();
 
             mockQueueSize.mockReturnValue(3);
 
-            // Don't enqueue anything (no context set)
+            // Don't enqueue anything
             const pagehideListener = addEventListenerSpy.mock.calls.find(
                 (call) => call[0] === 'pagehide'
             )?.[1] as EventListener;
@@ -627,17 +646,62 @@ describe('createEventQueue', () => {
     });
 
     describe('Edge Cases', () => {
-        it('should handle multiple enqueues with different contexts', () => {
+        it("should send a page's events apart from the next page's when only one runs an experiment", () => {
             const queue = createEventQueue(mockConfig);
             queue.initialize();
+            const sendBatchCallback = (smartQueue as MockedFunction<typeof smartQueue>).mock
+                .calls[0]![0];
 
-            const context1 = { ...mockContext, session_id: 'session-1' };
-            const context2 = { ...mockContext, session_id: 'session-2' };
+            const experimentPageview = { ...mockEvent };
+            const nextPageview = { ...mockEvent };
+            const inExperiment = {
+                ...mockContext,
+                experiments: [{ id: 'experiment-1', running_id: 'run-1', variant: 'variant-1' }]
+            };
+            queue.enqueue(experimentPageview, inExperiment);
+            queue.enqueue(nextPageview, mockContext);
 
-            queue.enqueue(mockEvent, context1);
-            queue.enqueue(mockEvent, context2);
+            sendBatchCallback([experimentPageview, nextPageview], []);
 
-            expect(mockQueuePush).toHaveBeenCalledTimes(2);
+            expect(sendEvents).toHaveBeenCalledTimes(2);
+            expect(sendEvents).toHaveBeenNthCalledWith(
+                1,
+                { context: inExperiment, events: [experimentPageview] },
+                mockConfig,
+                false
+            );
+            expect(sendEvents).toHaveBeenNthCalledWith(
+                2,
+                { context: mockContext, events: [nextPageview] },
+                mockConfig,
+                false
+            );
+        });
+
+        it('should send events whose contexts differ only in the device together, with the latest context', () => {
+            const queue = createEventQueue(mockConfig);
+            queue.initialize();
+            const sendBatchCallback = (smartQueue as MockedFunction<typeof smartQueue>).mock
+                .calls[0]![0];
+
+            const firstEvent = { ...mockEvent };
+            const secondEvent = { ...mockEvent };
+            // A phone's viewport grows when its address bar hides on scroll
+            const scrolled = {
+                ...mockContext,
+                device: { ...mockContext.device, viewport_height: '800' }
+            };
+            queue.enqueue(firstEvent, mockContext);
+            queue.enqueue(secondEvent, scrolled);
+
+            sendBatchCallback([firstEvent, secondEvent], []);
+
+            expect(sendEvents).toHaveBeenCalledTimes(1);
+            expect(sendEvents).toHaveBeenCalledWith(
+                { context: scrolled, events: [firstEvent, secondEvent] },
+                mockConfig,
+                false
+            );
         });
 
         it('should work with custom queue config', () => {
@@ -739,15 +803,22 @@ describe('createEventQueue', () => {
             const stored = JSON.parse(mockSessionStorage[storageKey!]!);
             expect(stored).toMatchObject({
                 tabId: 'test-tab-id-12345',
-                events: [mockEvent]
+                events: [{ event: mockEvent, context: mockContext }]
             });
         });
 
-        it('should load persisted events on initialize', async () => {
+        it('should load persisted events on initialize, and send each with its own context', async () => {
+            const inExperiment = {
+                ...mockContext,
+                experiments: [{ id: 'experiment-1', running_id: 'run-1', variant: 'variant-1' }]
+            };
             const persistedQueue = {
                 tabId: 'old-tab-id',
                 timestamp: Date.now(),
-                events: [mockEvent, mockEvent]
+                events: [
+                    { event: mockEvent, context: inExperiment },
+                    { event: mockEvent, context: mockContext }
+                ]
             };
 
             mockSessionStorage['dot_events_queue_test-tab-id-12345'] =
@@ -760,12 +831,19 @@ describe('createEventQueue', () => {
             await new Promise((resolve) => setTimeout(resolve, 0));
 
             // Should have called sendEvents immediately for persisted events
-            expect(sendEvents).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    events: persistedQueue.events
-                }),
+            // (without keepalive, so the page learns whether they arrived)
+            expect(sendEvents).toHaveBeenCalledTimes(2);
+            expect(sendEvents).toHaveBeenNthCalledWith(
+                1,
+                { context: inExperiment, events: [mockEvent] },
                 mockConfig,
-                false // keepalive for immediate send (matches WITHOUT keepalive comment in code)
+                false
+            );
+            expect(sendEvents).toHaveBeenNthCalledWith(
+                2,
+                { context: mockContext, events: [mockEvent] },
+                mockConfig,
+                false
             );
 
             // Should clear storage after loading
@@ -777,7 +855,7 @@ describe('createEventQueue', () => {
             const persistedQueue = {
                 tabId: 'old-tab-id',
                 timestamp: oldTimestamp,
-                events: [mockEvent]
+                events: [{ event: mockEvent, context: mockContext }]
             };
 
             mockSessionStorage['dot_events_queue_test-tab-id-12345'] =
@@ -861,7 +939,7 @@ describe('createEventQueue', () => {
             const invalidQueue = {
                 // Missing tabId
                 timestamp: Date.now(),
-                events: [mockEvent]
+                events: [{ event: mockEvent, context: mockContext }]
             };
 
             mockSessionStorage['dot_events_queue_test-tab-id-12345'] = JSON.stringify(invalidQueue);
@@ -877,11 +955,15 @@ describe('createEventQueue', () => {
         });
 
         it('should validate event structure in persisted queue', async () => {
-            const invalidEvent = { foo: 'bar' }; // Missing required fields
             const persistedQueue = {
                 tabId: 'old-tab-id',
                 timestamp: Date.now(),
-                events: [mockEvent, invalidEvent, mockEvent]
+                events: [
+                    { event: mockEvent, context: mockContext },
+                    { foo: 'bar' }, // Missing required fields
+                    { event: mockEvent }, // Missing its context
+                    { event: mockEvent, context: mockContext }
+                ]
             };
 
             mockSessionStorage['dot_events_queue_test-tab-id-12345'] =
@@ -893,11 +975,10 @@ describe('createEventQueue', () => {
             // Wait for microtasks
             await new Promise((resolve) => setTimeout(resolve, 0));
 
-            // Should send only valid events (2 out of 3)
+            // Should send only valid events (2 out of 4)
+            expect(sendEvents).toHaveBeenCalledTimes(1);
             expect(sendEvents).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    events: expect.arrayContaining([mockEvent])
-                }),
+                { context: mockContext, events: [mockEvent, mockEvent] },
                 mockConfig,
                 false
             );

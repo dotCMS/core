@@ -73,7 +73,10 @@ export interface ExperimentsEngine {
      * on it also decides the marks that arrive later, as content streams in.
      */
     decide(): Promise<PageDecision>;
-    /** The session's cumulative `context.experiments`. */
+    /**
+     * The session's cumulative `context.experiments`, while the page on screen runs an
+     * experiment the visitor is in; none on any other page.
+     */
     contextExperiments(sessionId: string): DotCMSEventContextExperiment[];
     /** Stops watching the page for marks that arrive later. */
     stop(): void;
@@ -185,6 +188,8 @@ export const createExperimentsEngine = ({
     // Navigations inside the page so far. A visit is the page plus this count: a visitor who
     // leaves and comes back during a wait starts a new visit, decided and counted on its own
     let navigations = 0;
+    // The visit whose page runs an experiment the visitor is in: only its events carry them
+    let visitInExperiment: number | undefined;
 
     if (pages === 'markup') {
         onNavigation(() => {
@@ -383,6 +388,7 @@ export const createExperimentsEngine = ({
                         running_id: assigned.runningId,
                         variant: assigned.variant.name
                     });
+                    visitInExperiment = visit;
                 }
 
                 log(`showing ${decision.variant} of ${mark.experimentId}`);
@@ -585,7 +591,8 @@ export const createExperimentsEngine = ({
             return { redirected: outcome === 'redirected' };
         },
 
-        contextExperiments: (sessionId) => getSessionExperiments(sessionId),
+        contextExperiments: (sessionId) =>
+            visitInExperiment === navigations ? getSessionExperiments(sessionId) : [],
 
         stop: () => {
             stopObserving?.();

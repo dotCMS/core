@@ -319,8 +319,8 @@ export interface EventContext {
     device: DotCMSEventDeviceData;
 
     /**
-     * Experiments whose page the visitor reached in this session, cumulative.
-     * Left out when the visitor has reached none.
+     * Experiments the visitor reached in this session, cumulative, on events from a page that
+     * runs an experiment the visitor is in. Left out on any other page.
      */
     experiments?: DotCMSEventContextExperiment[];
 }
@@ -619,8 +619,17 @@ export interface PersistedQueue {
     tabId: string;
     /** Timestamp when the queue was last persisted */
     timestamp: number;
-    /** Array of events waiting to be sent */
-    events: DotCMSEvent[];
+    /** Events waiting to be sent, each with its context */
+    events: QueuedEvent[];
+}
+
+/**
+ * An event waiting in the queue, with the context it was created with: a batch can hold
+ * events of several pages, and each goes out with its own.
+ */
+export interface QueuedEvent {
+    event: DotCMSEvent;
+    context: EventContext;
 }
 
 /**

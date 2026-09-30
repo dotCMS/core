@@ -7,8 +7,9 @@ interface PayloadWithContext {
 }
 
 /**
- * Analytics.js plugin that adds the session's `context.experiments` to every event. The
- * engine's `isUserIncluded` check starts in `init`, before Analytics.js loads.
+ * Analytics.js plugin that adds the session's `context.experiments` to every event sent from
+ * a page that runs an experiment the visitor is in. The engine's `isUserIncluded` check starts
+ * in `init`, before Analytics.js loads.
  *
  * It must come right after the identity plugin, which creates `context`.
  *

@@ -321,6 +321,61 @@ describe('createExperimentsEngine', () => {
         await expect(second).resolves.toEqual({ redirected: false });
     });
 
+    it('leaves the experiments out of the context on a page that runs none', async () => {
+        markRows('experiment-h');
+        storeAssignment('experiment-h', 'DEFAULT');
+        sessionStorage.setItem(STORAGE_KEYS.checkedThisTab, 'true');
+        const engine = createEngine();
+        const macrotask = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+        await engine.decide();
+        expect(engine.contextExperiments(getSessionId())).toEqual([
+            expect.objectContaining({ id: 'experiment-h' })
+        ]);
+
+        // An SPA navigation to a page without the experiment
+        document.body.innerHTML = '';
+        window.history.pushState(null, '', '/product');
+        await macrotask();
+        await engine.decide();
+
+        expect(engine.contextExperiments(getSessionId())).toEqual([]);
+    });
+
+    it("sends every experiment of the session from a page that runs one, the earlier pages' too", async () => {
+        localStorage.setItem(
+            STORAGE_KEYS.assignments,
+            JSON.stringify({
+                fetchedAt: Date.now(),
+                experiments: ['experiment-i', 'experiment-j'].map((id) => ({
+                    id,
+                    runningId: 'run-1',
+                    variant: { name: 'DEFAULT', url: '' },
+                    expiresAt: Date.now() + 60_000
+                })),
+                evaluatedIds: ['experiment-i', 'experiment-j']
+            })
+        );
+        sessionStorage.setItem(STORAGE_KEYS.checkedThisTab, 'true');
+        markRows('experiment-i');
+        const engine = createEngine();
+        const macrotask = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+        await engine.decide();
+
+        // An SPA navigation to the page of the other experiment
+        document.body.innerHTML = '';
+        window.history.pushState(null, '', '/pricing');
+        await macrotask();
+        markRows('experiment-j');
+        await engine.decide();
+
+        expect(engine.contextExperiments(getSessionId())).toEqual([
+            expect.objectContaining({ id: 'experiment-i' }),
+            expect.objectContaining({ id: 'experiment-j' })
+        ]);
+    });
+
     it('reports a failed experiments check to onError, with its status', async () => {
         markRows('experiment-h');
         fetchSpy.mockResolvedValue({ ok: false, status: 500, json: async () => ({}) });

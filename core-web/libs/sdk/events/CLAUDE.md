@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `@dotcms/events` is the dotCMS SDK for everything a page reports back to dotCMS: automatic pageviews, conversions, content clicks, content impressions, and experiments (A/B tests). It is greenfield: it sends only what dotCMS accepts today. It replaces `@dotcms/analytics` and `@dotcms/experiments`, which are deprecated.
 
-One object, `dotEvents`, configured by one `init` call, runs a single Analytics.js instance. Experiments run inside that instance: an engine asks dotCMS which variant the visitor gets and redirects to it, and a plugin adds `context.experiments` to every event. The event payload is the one `@dotcms/analytics` sends.
+One object, `dotEvents`, configured by one `init` call, runs a single Analytics.js instance. Experiments run inside that instance: an engine asks dotCMS which variant the visitor gets and redirects to it, and a plugin adds `context.experiments` to the events of the pages that run an experiment the visitor is in. The event payload is the one `@dotcms/analytics` sends.
 
 The core is framework-free: the same object serves Next.js and plain React, and traditional (VTL) pages get it as `ca.min.js`, an IIFE dotCMS injects (see Traditional Pages). What a page prints so an experiment runs comes from this package too: `experimentMarkup` (`@dotcms/events/markup`) for any framework, and `DotCMSExperiment` (`@dotcms/events/react`) for React. The other SDKs are not involved: `@dotcms/uve` and `@dotcms/react` have no experiment code.
 
@@ -115,7 +115,7 @@ libs/sdk/events/
 │       │   ├── engine.ts         # Assignment check, pageview hold, redirect or reveal
 │       │   ├── markup.ts         # experimentMarkup: attributes, hiding rule and boot script for a page
 │       │   ├── models.ts         # isUserIncluded response, stored assignments, ExperimentBootState
-│       │   ├── plugin.ts         # Analytics.js plugin: adds context.experiments
+│       │   ├── plugin.ts         # Analytics.js plugin: adds context.experiments on experiment pages
 │       │   └── store.ts          # localStorage and sessionStorage state
 │       ├── react/                # DotCMSExperiment, the React adapter (the only place React is imported)
 │       └── standalone/           # config.ts: the events config, read from the script tag dotCMS injects
@@ -141,14 +141,14 @@ Everything a renderer or the experiment needs happens before `init` returns; Ana
 `Analytics({ app: 'dotEvents', storage })` runs these plugins, in this order. The order matters: each plugin reads what the ones before it wrote.
 
 1. **dot-events-identity** (`pipeline/identity/plugin.ts`): creates `context` with `site_auth`, `session_id`, `user_id` and `device`, and tracks session activity.
-2. **dot-events-experiments** (`experiments/plugin.ts`): adds the session's `context.experiments` in `pageStart` and `trackStart`. Left out with `experiments: false`.
+2. **dot-events-experiments** (`experiments/plugin.ts`): adds the session's `context.experiments` in `pageStart` and `trackStart`, on a page that runs an experiment the visitor is in; a page that runs none sends none. Left out with `experiments: false`.
 3. **dot-events-impressions** and **dot-events-clicks** (`impressions/plugin.ts`, `clicks/plugin.ts`): only added with `impressions` or `clicks`.
 4. **dot-events-enricher** (`pipeline/enricher/plugin.ts`): adds page, UTM and custom data. Its hooks are keyed with the sender's name (`page:<name>`, `track:<name>`), so both plugins read it from `SENDER_PLUGIN_NAME`: renaming one alone would leave events without page data, and the sender would drop them.
 5. **dot-events-sender** (`pipeline/sender/plugin.ts`): builds the events and sends them through the queue to `/api/v1/analytics/content/event`.
 
 `storage` is `createMemoryStorage()`. Analytics.js keeps an anonymous id (`__anon_id`) that nothing here reads, and its default storage (`@analytics/storage-utils`) falls back to a cookie when localStorage is unavailable. In memory, nothing of Analytics.js's reaches localStorage, sessionStorage or a cookie; checked in Chrome with localStorage blocked. Its types leave `storage` out of the config, which the code works around with an intersection type.
 
-The queue sends batches of up to 15 events, every 5 s, and flushes everything with `keepalive` when the page is hidden (not on SPA navigation, where it persists the queue to sessionStorage instead). A batch carries one `context`: the one of the last event queued.
+The queue sends batches of up to 15 events, every 5 s, and flushes everything with `keepalive` when the page is hidden (not on SPA navigation, where it persists the queue to sessionStorage instead). Each event keeps the context it was created with: a batch goes out as one request per run of events that share the site, session, visitor and experiments, with the latest context of the run. The device alone does not split a batch, since the viewport changes on scroll on phones.
 
 ### Pageview Flow on an Experiment Page
 
@@ -168,7 +168,7 @@ The rest of the contract between the two (the attributes, the hiding rule, the t
 4. On DOMContentLoaded, `sendPageView` asks the engine to `decide()` before it calls `instance.page()`. The engine answers `redirected` at once when the boot script is replacing the page, so it neither redirects again nor sends that page's pageview.
 5. Otherwise `decide()` reads the marks the page renders (`readPageExperiments`), skipping those inside a subtree React keeps out of view: a route Activity keeps in the page with `display: none`, or Suspense content still in its hidden container while it streams in. When there are none but a stored `isExperimentPage` rule matches the URL, it waits for them, up to `experiments.timeout`, since content behind Suspense streams in after the page loads. With no marks the pageview goes out. Each marked experiment is decided once per page, in document order, and the first redirect wins. It runs `decideVariant` on the stored assignments; on a page the script already showed, it reaches the same decision from the same storage. On `unknown` it holds the pageview and waits for `isUserIncluded`, up to `experiments.timeout` (3000 ms by default): when the wait times out it reveals the content and sends the pageview, and when dotCMS answers it decides again. When the visitor goes to another page during the wait, it decides nothing and drops this page's pageview, which sent then would carry the other page's URL; the other page is decided on its own. Then:
    - `redirect`: it leaves the page with `leavePageFor` (`window.stop()`, `location.replace`, and the same 5 s hold of the page's new requests) and drops the pageview; the variant's page sends its own. On a first visit the page has hydrated by then, and Next would otherwise prefetch every visible link while the variant renders;
-   - `assigned`: it adds the experiment to the session's `context.experiments`;
+   - `assigned`: it adds the experiment to the session's `context.experiments`, which the events of this page carry, and those of any later page of the session that runs an experiment the visitor is in;
    - `ignored`: it warns that the route ignores `variantName`;
    - `excluded`: nothing more.
 
@@ -237,9 +237,9 @@ What the SDK stores, all with the `dot_events_` prefix, and no cookies:
 | `dot_events_experiments_off_until` | localStorage   | Set when `isUserIncluded` answers 403: experiments stay off on the site for a day                           |
 | `dot_events_session_id`            | sessionStorage | `context.session_id`, with its start and last activity: it ends after 30 minutes idle or at midnight        |
 | `dot_events_tab_id`                | sessionStorage | The tab's id, which names its queue                                                                         |
-| `dot_events_queue_<tab id>`        | sessionStorage | Events not sent yet, kept for the tab's next page                                                           |
+| `dot_events_queue_<tab id>`        | sessionStorage | Events not sent yet, each with its context, kept for the tab's next page                                     |
 | `dot_events_experiments_checked`   | sessionStorage | This tab already asked `isUserIncluded`                                                                     |
-| `dot_events_session_experiments`   | sessionStorage | The session's cumulative `context.experiments`, keyed by the analytics session id                           |
+| `dot_events_session_experiments`   | sessionStorage | The session's cumulative `context.experiments`, keyed by the analytics session id; sent only from pages that run an experiment the visitor is in |
 
 What it puts on the page:
 
@@ -338,18 +338,18 @@ Dependencies go one way. `pipeline/` imports nothing built on it; the content tr
 - Specs sit next to their sources as `*.spec.ts`. The core's specs came with the core. Of the events layer:
   - `events.spec.ts` replaces Analytics.js with a fake instance and covers `window.dotEvents`, the public methods, the conversion payload and the memory storage;
   - `standalone.spec.ts` and `standalone/config.spec.ts` cover the IIFE: the attributes dotCMS prints, their defaults and overrides, the advanced JSON, and a tag without a site auth;
-  - `experiments/` has specs for `decision.ts`, `boot.ts` (with a fake window), `engine.ts` (how it follows the boot script, `onError`, marks that stream in or sit in a hidden route, a visitor who leaves during the wait, and pages marked by dotCMS's contentlet wrappers), `markup.ts` and `dom.ts`;
+  - `experiments/` has specs for `decision.ts`, `boot.ts` (with a fake window), `engine.ts` (how it follows the boot script, `onError`, marks that stream in or sit in a hidden route, a visitor who leaves during the wait, which pages' events carry the experiments, and pages marked by dotCMS's contentlet wrappers), `markup.ts` and `dom.ts`;
   - `pipeline/navigation.spec.ts` covers SPA navigations through the Navigation API, and the fallback without it;
   - `react/DotCMSExperiment.spec.tsx` uses Testing Library without the jest-dom matchers, which this project does not set up.
 - Vitest does not type-check, so run `tsc -p libs/sdk/events/tsconfig.spec.json` as well: it must report no errors. When the core specs moved here they carried 8 errors from `@dotcms/analytics` (an import of `ANALYTICS_CONTENTLET_CLASS`, which no longer exists, gave their contentlets the class `undefined`, and several fixtures no longer matched the models); those are fixed.
 
 ## Performance
 
-- The `events-init` probe in `libs/sdk/bundle-budgets` bundles `import { dotEvents } from '@dotcms/events'` with its dependencies: 29,114 B gzip, against a 30,000 B ceiling. 977 B of that are the `#` private fields, which the `es2020` target compiles to WeakMap helpers: with `private` it was 28,137 B. `events-react` bundles `DotCMSExperiment`: 1,496 B gzip against 2,200, and it fails if the engine or Analytics.js comes along. Raise a ceiling only with a measurement and a reason.
+- The `events-init` probe in `libs/sdk/bundle-budgets` bundles `import { dotEvents } from '@dotcms/events'` with its dependencies: 29,317 B gzip, against a 30,000 B ceiling. The `#` private fields add 977 B of that, since the `es2020` target compiles them to WeakMap helpers (measured against `private`). `events-react` bundles `DotCMSExperiment`: 1,496 B gzip against 2,200, and it fails if the engine or Analytics.js comes along. Raise a ceiling only with a measurement and a reason.
 - `sideEffects: false`, and importing the package does nothing until `init`.
 - `isUserIncluded` is asked once per tab session, by the engine only. The pageview hold is bounded by the timeout, and the CSS rule shows the content after 3 s even when no script runs.
 - The boot script is about 1.1 KB gzip in the HTML of each page that runs an experiment (1,079 B minified with esbuild), minified by the app's build. From a server component it costs the client no JavaScript, but Next.js repeats the markup in the RSC payload of the HTML. From a client component, the builder (the `events-react` probe) is in that route's JavaScript.
-- `ca.min.js` is 73,177 B raw and 25,546 B gzip, experiments included (its build keeps the `#` fields native); `@dotcms/analytics`'s is 22,782 B gzip. The contentlets mode is in `events-init` too (412 B gzip), since the engine holds both.
+- `ca.min.js` is 73,671 B raw and 25,727 B gzip, experiments included (its build keeps the `#` fields native); `@dotcms/analytics`'s is 22,782 B gzip. The contentlets mode is in `events-init` too (412 B gzip), since the engine holds both.
 - The impression and click plugins are only added when enabled, but their code is always in the bundle, because `getEnhancedTrackingPlugins` references both.
 
 ### Measured Cost
@@ -377,7 +377,6 @@ Chrome traces of the `nextjs-experiments` example in production mode (`next buil
 ## Known Gaps (Prototype)
 
 - Links to an experiment page are not rewritten to the assigned variant, so navigating to it goes through the redirect.
-- One `context` per batch can attach `context.experiments` to events queued before the visitor reached the experiment.
 - dotCMS still ships `@dotcms/analytics`'s `ca.min.js` and its own experiments script: this package's script is built but not wired in until #37798 (see Traditional Pages).
 - A new visitor's first experiment page is decided by the engine, after the app's scripts load: that page hydrates and may request images before the redirect, and its content shows only once `isUserIncluded` answers. Only a decision that blocks parsing until dotCMS answers would avoid that, at the cost of delaying every visitor's first paint.
 - A new visitor's page whose marks stream in after its pageview is decided and shown right when they arrive, but that pageview carries no `context.experiments`. The pageview waits for the marks only when a stored rule says the page runs an experiment, which a new visitor has no rule for yet.
