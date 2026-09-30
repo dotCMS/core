@@ -151,9 +151,7 @@ describe('DotToolsStore', () => {
         });
 
         it('showError flips on load failure', () => {
-            (service.getSections as Mock).mockReturnValueOnce(
-                throwError(() => new Error('boom'))
-            );
+            (service.getSections as Mock).mockReturnValueOnce(throwError(() => new Error('boom')));
             store.loadAll();
             expect(store.showError()).toBe(true);
             expect(httpErrorManager.handle).toHaveBeenCalled();
