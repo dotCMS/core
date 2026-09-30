@@ -15,8 +15,18 @@
 @import './tailwind-palette.css';
 @import '../../../libs/dotcms-scss/tailwind/theme.css';
 
+/*
+ * `root` scopes daisyUI's components and theme, but not its page-level base rules, which still
+ * target the admin's real :root. Excluded here:
+ * - rootscrollgutter: while a modal is open it paints :root with a 40% black background, on top
+ *   of the modal's own overlay, so areas without their own background (top bar, banners) came out
+ *   darker than the editor panels.
+ * - rootcolor: sets the admin page's background and text color.
+ * - rootscrolllock: hides the admin page's overflow while a modal is open.
+ */
 @plugin 'daisyui' {
     root: 'dot-native-field';
+    exclude: rootcolor, rootscrollgutter, rootscrolllock;
 }
 @plugin 'daisyui/theme' {
     name: 'light';
