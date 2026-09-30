@@ -170,11 +170,20 @@ test.describe('Content Drive Folder Tree', () => {
         apiHelpers,
         testSuffix
     }) => {
-        // Named to sort after the site's own folders, so it sits below the fold of the tree.
+        // Named to sort after the site's own folders, and after enough folders of its own that it
+        // sits below the fold whatever the site holds: a fresh instance has too few to push it
+        // there, and the test then fails on its precondition rather than on the scroll.
         const site = await apiHelpers.getDefaultSite();
         const parentName = `zz-cd-scroll-${testSuffix}`;
         const middleName = `zz-cd-scroll-mid-${testSuffix}`;
-        await apiHelpers.createFolders(site.hostname, [`/${parentName}/${middleName}`]);
+        const fillerNames = Array.from(
+            { length: 40 },
+            (_, index) => `zz-cd-pad-${testSuffix}-${String(index).padStart(2, '0')}`
+        );
+        await apiHelpers.createFolders(site.hostname, [
+            ...fillerNames.map((name) => `/${name}`),
+            `/${parentName}/${middleName}`
+        ]);
 
         try {
             const drive = new ContentDrivePage(adminPage);
@@ -206,7 +215,10 @@ test.describe('Content Drive Folder Tree', () => {
                     .filter({ hasText: middleName })
             ).toBeInViewport({ timeout: 10000 });
         } finally {
-            await apiHelpers.deleteFolders(site.hostname, [`/${parentName}`]);
+            await apiHelpers.deleteFolders(site.hostname, [
+                `/${parentName}`,
+                ...fillerNames.map((name) => `/${name}`)
+            ]);
         }
     });
 
