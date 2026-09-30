@@ -2,11 +2,13 @@ package com.dotcms.graphql.business;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.field.CheckboxField;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
@@ -30,6 +32,9 @@ import com.dotcms.graphql.datafetcher.AssetBinaryPropertyDataFetcher;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.beans.Permission;
@@ -1154,7 +1159,7 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     public void test_incompatibleCollision_keepsSchemaValidAndCustomerFieldWins() throws Exception {
         final ContentType assetType = newDotAssetSubtype();
         try {
-            addTextProperty(assetType, "width");
+            addPreexistingProperty(assetType, "width", DataTypes.TEXT);
             final Contentlet asset = newAssetOf(assetType, "Collides", Map.of("width", "wide"));
 
             final ContentType holder = newHolderType();
@@ -1210,7 +1215,7 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
         appender.start();
         providerLogger.addAppender(appender);
         try {
-            addTextProperty(assetType, "width");
+            addPreexistingProperty(assetType, "width", DataTypes.TEXT);
 
             APILocator.getGraphqlAPI().invalidateSchema();
             APILocator.getGraphqlAPI().getSchema(systemUser);
@@ -1241,7 +1246,7 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     public void test_compatibleCollision_customerFieldWins() throws Exception {
         final ContentType assetType = newDotAssetSubtype();
         try {
-            addTextProperty(assetType, "sha256");
+            addPreexistingProperty(assetType, "sha256", DataTypes.TEXT);
             final Contentlet asset = newAssetOf(assetType, "Hashed", Map.of("sha256", "customerHash"));
 
             final ContentType holder = newHolderType();
@@ -1284,6 +1289,286 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                     "size", saved.variable());
         } finally {
             APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: new fields added to an asset type with no variable chosen, whose type matches the
+     * asset property of the same name: a text "Sha256" and a whole-number "Height".
+     * When: they are saved.
+     * Then: they keep {@code sha256} and {@code height}. A field of the asset property's own type
+     * cannot collide with it -- its type answers with its own value and every other asset type
+     * keeps the property -- so there is nothing to steer away from.
+     */
+    @Test
+    public void test_newFieldWithMatchingType_keepsAssetPropertyName() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        try {
+            final Field text = APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(TextField.class).name("Sha256")
+                            .contentTypeId(assetType.id()).dataType(DataTypes.TEXT).build(),
+                    systemUser);
+            final Field wholeNumber = APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(TextField.class).name("Height")
+                            .contentTypeId(assetType.id()).dataType(DataTypes.INTEGER).build(),
+                    systemUser);
+
+            assertEquals("sha256", text.variable());
+            assertEquals("height", wholeNumber.variable());
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: one asset type with a whole-number field of its own named {@code width}, chosen
+     * explicitly, and a second asset type without one.
+     * When: {@code width} is selected directly on an Image field pointing at either.
+     * Then: the request succeeds; the type that declares {@code width} answers with its own value
+     * and the other type keeps offering the property.
+     *
+     * <p>A whole-number field is an {@code Int} while the asset's {@code width} is a {@code Long},
+     * and before this was handled the mismatch removed {@code width} from the asset interface for
+     * every asset type on the instance, failing the whole request. Numeric {@code width},
+     * {@code height} and {@code size} fields are common on customer image types, so this broke
+     * installations on upgrade with no action on their side.
+     */
+    @Test
+    public void test_numericCollision_leavesThePropertyOnEveryAssetType() throws Exception {
+        final ContentType declaring = newDotAssetSubtype();
+        final ContentType other = newDotAssetSubtype();
+        try {
+            addPreexistingProperty(declaring, "width", DataTypes.INTEGER);
+            final Contentlet declaringAsset = newAssetOf(declaring, "Declares",
+                    Map.of("width", 42L));
+            final Contentlet otherAsset = newAssetOf(other, "DoesNotDeclare");
+
+            final ContentType holder = newHolderType();
+            final Contentlet onDeclaring = newHolderContent(holder, IMAGE_FIELD_VAR, declaringAsset);
+            final Contentlet onOther = newHolderContent(holder, IMAGE_FIELD_VAR, otherAsset);
+
+            final Map<String, Object> otherField = queryCompanion(holder, onOther,
+                    IMAGE_FIELD_VAR, "width");
+            assertTrue("a type that does not declare `width` must keep offering it",
+                    otherField.containsKey("width"));
+
+            final Map<String, Object> declaringField = queryCompanion(holder, onDeclaring,
+                    IMAGE_FIELD_VAR, String.format("width ... on %s { width }",
+                            declaring.variable()));
+            assertEquals("the declaring type must answer with its own `width`",
+                    42L, ((Number) declaringField.get("width")).longValue());
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(declaring);
+            APILocator.getContentTypeAPI(systemUser).delete(other);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: a new text field called "Width" added to an asset type, with no variable chosen.
+     * When: it is saved and its variable is steered away from the asset property's name, whose
+     * type is a whole number.
+     * Then: an INFO line names the reserved variable and the content type, so an administrator
+     * can find out why the field ended up as {@code width1} instead of {@code width}.
+     */
+    @Test
+    public void test_steeringAwayFromAssetPropertyName_isLogged() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        final org.apache.logging.log4j.core.Logger providerLogger =
+                (org.apache.logging.log4j.core.Logger) LogManager.getLogger(
+                        ContentAPIGraphQLTypesProvider.class);
+        final CapturingAppender appender = new CapturingAppender();
+        appender.start();
+        providerLogger.addAppender(appender);
+        try {
+            APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(TextField.class).name("Width")
+                            .contentTypeId(assetType.id()).dataType(DataTypes.TEXT).build(),
+                    systemUser);
+
+            final boolean logged = appender.events.stream().anyMatch(event ->
+                    Level.INFO.equals(event.level())
+                            && event.message().contains("'width'")
+                            && event.message().contains("'" + assetType.variable() + "'"));
+            assertTrue("steering away from an asset property name must be logged at INFO, naming "
+                    + "the variable and the content type. Captured: " + appender.events, logged);
+        } finally {
+            providerLogger.removeAppender(appender);
+            appender.stop();
+            APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: an asset type, and new fields whose variable is chosen explicitly with the name of a
+     * flat asset property but a different type: a text {@code width} and a text
+     * {@code isImage}.
+     * When: each is saved.
+     * Then: both are refused, naming the type the property has, and neither is stored. Accepting
+     * one would remove the property from every asset type on the instance, and renaming it
+     * silently would lose the data of whoever keeps sending that variable.
+     */
+    @Test
+    public void test_explicitAssetPropertyName_withMismatchedType_isRefused() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        try {
+            final Field width = FieldBuilder.builder(TextField.class).name("width")
+                    .variable("width").contentTypeId(assetType.id())
+                    .dataType(DataTypes.TEXT).build();
+            final Field isImage = FieldBuilder.builder(TextField.class).name("isImage")
+                    .variable("isImage").contentTypeId(assetType.id())
+                    .dataType(DataTypes.TEXT).build();
+
+            final DotDataValidationException refused = assertThrows(
+                    DotDataValidationException.class,
+                    () -> APILocator.getContentTypeFieldAPI().save(width, systemUser));
+            assertTrue("the error must name the type the property has: " + refused.getMessage(),
+                    refused.getMessage().contains("Long"));
+            assertThrows(DotDataValidationException.class,
+                    () -> APILocator.getContentTypeFieldAPI().save(isImage, systemUser));
+
+            final Set<String> stored = APILocator.getContentTypeFieldAPI()
+                    .byContentTypeId(assetType.id()).stream().map(Field::variable)
+                    .collect(Collectors.toSet());
+            assertFalse("a refused field must not be stored: " + stored,
+                    stored.contains("width") || stored.contains("isImage"));
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: an asset type, and new fields whose variable is chosen explicitly with the name of a
+     * flat asset property and a matching type: a whole-number {@code width} -- a whole number is
+     * published as the property's {@code Long} -- and a text {@code sha256}.
+     * When: each is saved.
+     * Then: both are accepted with their variable. This is the request in the QA report on
+     * #34540, and it no longer breaks anything, so it must not be refused either.
+     */
+    @Test
+    public void test_explicitAssetPropertyName_withMatchingType_isAccepted() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        try {
+            final Field width = APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(TextField.class).name("width").variable("width")
+                            .contentTypeId(assetType.id()).dataType(DataTypes.INTEGER).build(),
+                    systemUser);
+            final Field sha256 = APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(TextField.class).name("sha256").variable("sha256")
+                            .contentTypeId(assetType.id()).dataType(DataTypes.TEXT).build(),
+                    systemUser);
+
+            assertEquals("width", width.variable());
+            assertEquals("sha256", sha256.variable());
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: an asset type that already has a field named {@code width}, from before the names
+     * were reserved.
+     * When: that field is saved again by its variable, as push publishing or the CLI do.
+     * Then: it is updated, not refused. Only a new field can take the name; refusing the update
+     * would stop installations from maintaining fields they already have.
+     */
+    @Test
+    public void test_preexistingAssetPropertyField_canStillBeSaved() throws Exception {
+        final ContentType assetType = newDotAssetSubtype();
+        try {
+            addPreexistingProperty(assetType, "width", DataTypes.INTEGER);
+
+            final Field updated = APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(TextField.class).name("Renamed width")
+                            .variable("width").contentTypeId(assetType.id())
+                            .dataType(DataTypes.INTEGER).build(),
+                    systemUser);
+
+            assertEquals("width", updated.variable());
+            assertEquals("Renamed width", updated.name());
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: a new content type extending FILEASSET.
+     * When: it is saved.
+     * Then: it carries its system fields, three of which are named like flat asset properties
+     * ({@code fileName}, {@code fileAsset}, {@code metaData}). Those belong to the base type and
+     * must not be refused, or no file asset type could be created at all.
+     */
+    @Test
+    public void test_fileAssetTypeIsCreatedWithItsSystemFields() throws Exception {
+        final ContentType fileType = newFileAssetSubtype();
+        try {
+            final Set<String> variables = fileType.fields().stream().map(Field::variable)
+                    .collect(Collectors.toSet());
+            assertTrue("a file asset type must keep its system fields: " + variables,
+                    variables.containsAll(Set.of(
+                            FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR,
+                            FileAssetContentType.FILEASSET_FILEASSET_FIELD_VAR,
+                            FileAssetContentType.FILEASSET_METADATA_FIELD_VAR)));
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(fileType);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: a file asset type, and new fields saved with the explicit variables
+     * {@code description}, {@code showOnMenu} and {@code sortOrder}, each in the shape the system
+     * FileAsset type gives it (text, checkbox, whole number).
+     * When: each is saved.
+     * Then: all are accepted, while a text {@code sortOrder} is refused. The factory shapes are
+     * what the starter, copying a content type and push publishing save; they match the asset
+     * property, so they need no special case. The mismatched one would remove the property from
+     * every asset type.
+     */
+    @Test
+    public void test_fileAssetOwnFieldNames_acceptTheirFactoryShapeOnly() throws Exception {
+        final ContentType fileType = newFileAssetSubtype();
+        try {
+            final Field description = APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(TextField.class)
+                            .name(FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR)
+                            .variable(FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR)
+                            .contentTypeId(fileType.id()).dataType(DataTypes.TEXT).build(),
+                    systemUser);
+            final Field showOnMenu = APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(CheckboxField.class)
+                            .name(FileAssetContentType.FILEASSET_SHOW_ON_MENU_FIELD_VAR)
+                            .variable(FileAssetContentType.FILEASSET_SHOW_ON_MENU_FIELD_VAR)
+                            .values("|true").contentTypeId(fileType.id())
+                            .dataType(DataTypes.TEXT).build(),
+                    systemUser);
+            assertEquals(FileAssetContentType.FILEASSET_DESCRIPTION_FIELD_VAR,
+                    description.variable());
+            assertEquals(FileAssetContentType.FILEASSET_SHOW_ON_MENU_FIELD_VAR,
+                    showOnMenu.variable());
+
+            final Field textSortOrder = FieldBuilder.builder(TextField.class)
+                    .name(FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR)
+                    .variable(FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR)
+                    .contentTypeId(fileType.id()).dataType(DataTypes.TEXT).build();
+            assertThrows(DotDataValidationException.class,
+                    () -> APILocator.getContentTypeFieldAPI().save(textSortOrder, systemUser));
+
+            final Field sortOrder = APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(TextField.class)
+                            .name(FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR)
+                            .variable(FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR)
+                            .contentTypeId(fileType.id()).dataType(DataTypes.INTEGER).build(),
+                    systemUser);
+            assertEquals(FileAssetContentType.FILEASSET_SORT_ORDER_FIELD_VAR, sortOrder.variable());
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(fileType);
             APILocator.getGraphqlAPI().invalidateSchema();
         }
     }
@@ -1445,6 +1730,25 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
                 .name(variable).variable(variable)
                 .contentTypeId(type.id()).dataType(DataTypes.TEXT).indexed(true).build();
         APILocator.getContentTypeFieldAPI().save(field, systemUser);
+        APILocator.getGraphqlAPI().invalidateSchema();
+    }
+
+    /**
+     * Gives an asset type a property named like a flat asset property, as it exists on
+     * installations that created it before such names were reserved. Saving the name directly is
+     * now refused, so the field is saved under another variable and renamed in the database,
+     * which is exactly the state an upgraded installation is in.
+     */
+    private void addPreexistingProperty(final ContentType type, final String variable,
+            final DataTypes dataType) throws Exception {
+        final Field saved = APILocator.getContentTypeFieldAPI().save(
+                FieldBuilder.builder(TextField.class)
+                        .name(variable).variable("preexisting" + System.nanoTime())
+                        .contentTypeId(type.id()).dataType(dataType).indexed(true).build(),
+                systemUser);
+        new DotConnect().setSQL("UPDATE field SET velocity_var_name = ? WHERE inode = ?")
+                .addParam(variable).addParam(saved.id()).loadResult();
+        CacheLocator.getContentTypeCache2().clearCache();
         APILocator.getGraphqlAPI().invalidateSchema();
     }
 

@@ -288,16 +288,32 @@ and confirm they match the asset's own record.
   implementing it must agree on each shared property's type, so a customer `size` stored as text
   against the general `size` as a number would otherwise reject the **whole** schema and take every
   GraphQL query on the instance down with it. Therefore:
-  - A general property whose name any asset type on the instance defines with an incompatible type
-    is left off the asset field's shared description for that instance. Selecting it directly on
-    the asset field then fails validation with an error naming it — loud, never different data —
-    while the customer's own property keeps working through its type and the general value stays
-    reachable through the binary.
+  - A property of the **same type** as the general one is always allowed, and a whole-number
+    property counts as the same type as a numeric general one (`width`, `height`, `size`): it is
+    exposed as `Long`, the general property's type, so its type answers with the customer's value
+    and every other asset type keeps the property. *Why:* a whole-number field is an `Int`, so
+    under the first version of this rule every numeric `width`, `height` or `size` — common on
+    customer image types — counted as incompatible and removed the property from every asset type
+    on upgrade (QA report on #34540). The FileAsset type's own fields (`fileName`, `fileAsset`,
+    `metaData`, `showOnMenu`, `sortOrder`) are of the same type too, so the starter, copying a
+    content type and push publishing need no special case.
   - A **new** asset-type property whose variable is generated from its name MUST be steered away
     from an incompatible collision (a text property called "Size" gets `size1`), the same way
-    dotCMS already steers generated variables away from the general content properties. A variable
-    chosen explicitly is not changed; the build-time rule above covers it, together with data that
-    predates this feature.
+    dotCMS already steers generated variables away from the general content properties. The
+    steering is logged at INFO, naming the variable, the content type and both types, so an
+    administrator can tell why the field got a suffix.
+  - A **new** asset-type property whose variable is **chosen explicitly** (API, CLI, push
+    publishing) with an incompatible type MUST be refused with a 400 that names the property's
+    type and the field's. *Why:* QA on this feature showed that accepting it removed the property
+    from every asset type on the instance and failed every query that selected it; renaming it
+    to `size1` instead would silently lose the data of whoever keeps sending `size`. A refusal is
+    loud and tells the caller exactly what to change. Saving a property that already exists by its
+    variable is an update and keeps working.
+  - Data that predates this rule can still hold an incompatible property. For it, the general
+    property is left off the asset field's shared description for that instance. Selecting it
+    directly on the asset field then fails validation with an error naming it — loud, never
+    different data — while the customer's own property keeps working through its type and the
+    general value stays reachable through the binary.
   - Every incompatible collision MUST be logged as a warning at schema build, naming the content
     type and the property, so an administrator can find and rename it.
 - **FR-022**: Permission-restricted content MUST NOT leak through this feature:

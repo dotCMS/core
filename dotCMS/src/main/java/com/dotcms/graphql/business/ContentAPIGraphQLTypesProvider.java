@@ -54,6 +54,7 @@ import com.dotcms.util.JsonUtil;
 import com.dotcms.util.LowerKeyMap;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.portlets.htmlpageasset.business.render.ContainerRaw;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -64,6 +65,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedSchemaElement;
+import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -198,6 +200,11 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
             }
         });
 
+        fieldsByType.replaceAll((type, fieldDefinitions) ->
+                InterfaceType.isAssetBaseType(type.baseType())
+                        ? widenWholeNumbersToAssetFlatFields(fieldDefinitions)
+                        : fieldDefinitions);
+
         final Set<String> excludedForFile = incompatibleAssetFlatFields(fieldsByType,
                 BaseContentType.FILEASSET);
         final Set<String> excludedForDotAsset = incompatibleAssetFlatFields(fieldsByType,
@@ -272,6 +279,41 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                     });
         });
         return incompatible;
+    }
+
+    /**
+     * Publishes an asset type's own whole-number field as a {@code Long} when it takes the name
+     * of a flat asset property of that type, such as {@code width}, {@code height} or
+     * {@code size}.
+     *
+     * <p>A whole-number field is an {@code Int}, and graphql-java would treat it as a different
+     * type from the asset property, so the property would be left off the asset interfaces for
+     * every asset type on the instance. A {@code Long} holds every {@code Int}, so the customer's
+     * value is returned unchanged and the field stays compatible with the interface: the type that
+     * declares it answers with its own value and every other asset type keeps the property.
+     * Only the schema changes, from {@code Int} to {@code Long}, for that field on that type.
+     *
+     * @param fieldDefinitions the fields generated for one asset type
+     * @return the same fields, with the colliding whole-number ones retyped
+     */
+    private List<GraphQLFieldDefinition> widenWholeNumbersToAssetFlatFields(
+            final List<GraphQLFieldDefinition> fieldDefinitions) {
+
+        final Map<String, TypeFetcher> flatFields = CustomFieldType.getAssetFlatFields();
+        return fieldDefinitions.stream().map(definition -> {
+            final TypeFetcher flatField = flatFields.get(definition.getName());
+            if (null == flatField
+                    || !GraphQLTypeUtil.simplePrint(ExtendedScalars.GraphQLLong)
+                            .equals(GraphQLTypeUtil.simplePrint(flatField.getType()))
+                    || !GraphQLInt.getName().equals(GraphQLTypeUtil.simplePrint(
+                            GraphQLTypeUtil.unwrapNonNull(definition.getType())))) {
+                return definition;
+            }
+            final GraphQLOutputType widened = GraphQLTypeUtil.isNonNull(definition.getType())
+                    ? GraphQLNonNull.nonNull(ExtendedScalars.GraphQLLong)
+                    : ExtendedScalars.GraphQLLong;
+            return definition.transform(builder -> builder.type(widened));
+        }).collect(Collectors.toList());
     }
 
     /**
@@ -467,7 +509,13 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      * @return
      */
     public boolean isFieldVariableGraphQLCompatible(final String variable, final Field field) {
-        if (collidesWithAssetFlatField(variable, field)) {
+        final Optional<AssetPropertyCollision> collision = assetPropertyCollision(variable, field);
+        if (collision.isPresent()) {
+            Logger.info(this, "Field variable '" + variable + "' cannot be used on asset Content "
+                    + "Type '" + collision.get().contentType().variable() + "': every asset field "
+                    + "offers a property of that name as " + collision.get().propertyType()
+                    + " and this field is " + collision.get().fieldType()
+                    + "; the generated variable gets a numeric suffix instead.");
             return false;
         }
 
@@ -496,28 +544,90 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
     }
 
     /**
-     * Whether a new field on an asset content type would take the name of a flat asset property
+     * Refuses a new field whose variable, chosen explicitly, is the name of a flat asset property
+     * on an asset content type while its type differs from that property's.
+     *
+     * <p>A field of the property's own type is accepted: its type answers with its own value and
+     * every other asset type keeps the property. One of another type would remove the property
+     * from every asset type on the instance (see {@link #incompatibleAssetFlatFields}), so it is
+     * refused; renaming it instead, as a generated variable is (see
+     * {@link #isFieldVariableGraphQLCompatible}), would silently lose the data of whoever chose the
+     * variable -- a CLI, push publishing, a script. Only new fields reach this check: saving a
+     * field that already exists by its variable is an update and keeps working, and data that
+     * predates the check is protected at schema build instead. See #34540.
+     *
+     * @param variable the variable the new field is being saved with
+     * @param field    the new field
+     * @throws DotDataValidationException if the field's type differs from the asset property's
+     */
+    public void checkAssetPropertyNameIsCompatible(final String variable, final Field field)
+            throws DotDataValidationException {
+        final Optional<AssetPropertyCollision> collision = assetPropertyCollision(variable, field);
+        if (collision.isPresent()) {
+            throw new DotDataValidationException(String.format(
+                    "Field variable '%s' cannot be used on asset Content Type '%s': every asset "
+                            + "field offers a property of that name as %s, and this field is %s. "
+                            + "Use a field of that type or choose another variable.", variable,
+                    collision.get().contentType().variable(), collision.get().propertyType(),
+                    collision.get().fieldType()));
+        }
+    }
+
+    /**
+     * A new field on an asset content type whose variable is the name of a flat asset property
      * with a different GraphQL type.
      *
-     * <p>Such a field cannot break the schema -- the build leaves the asset property off the
-     * interfaces instead, see {@link #incompatibleAssetFlatFields} -- but it would stop the asset
-     * field offering that property directly for the whole instance. Steering the suggested
-     * variable away from the name prevents that for new fields; the build-time rule is what
-     * protects data that predates the check, and variables chosen explicitly. See #34540.
+     * @param contentType  the asset content type the field belongs to
+     * @param propertyType the GraphQL type of the asset property, e.g. {@code Long}
+     * @param fieldType    the GraphQL type the field would be published with, e.g. {@code String}
      */
-    private boolean collidesWithAssetFlatField(final String variable, final Field field) {
-        final TypeFetcher flatField = CustomFieldType.getAssetFlatFields().get(variable);
-        if (null == flatField || !UtilMethods.isSet(field.contentTypeId())) {
-            return false;
+    private record AssetPropertyCollision(ContentType contentType, String propertyType,
+            String fieldType) {
+    }
+
+    /**
+     * Finds out whether a field on an asset content type would collide with the flat asset
+     * property of the same name.
+     *
+     * <p>It collides only when their GraphQL types differ, counting a whole number as the
+     * {@code Long} it is published as (see {@link #widenWholeNumbersToAssetFlatFields}). A field
+     * of the property's own type cannot collide -- which is also why the FileAsset type's own
+     * fields ({@code fileName}, {@code fileAsset}, {@code metaData}, {@code showOnMenu},
+     * {@code sortOrder}), which the starter, copying a type and push publishing save with these
+     * exact variables, need no special case. {@code description} never collides: the schema
+     * build drops the type's own definition and answers it through
+     * {@code AssetDescriptionDataFetcher}.
+     *
+     * @param variable the candidate variable
+     * @param field    the field it would be given
+     * @return the collision, if the field belongs to an asset type and its type differs from the
+     * asset property's; empty otherwise
+     */
+    private Optional<AssetPropertyCollision> assetPropertyCollision(final String variable,
+            final Field field) {
+        final TypeFetcher property = CustomFieldType.getAssetFlatFields().get(variable);
+        if (null == property || FILEASSET_DESCRIPTION_FIELD_VAR.equals(variable)
+                || !UtilMethods.isSet(field.contentTypeId())) {
+            return Optional.empty();
         }
 
-        final boolean onAssetType = Try.of(() -> APILocator.getContentTypeAPI(
-                        APILocator.systemUser()).find(field.contentTypeId()))
-                .map(contentType -> InterfaceType.isAssetBaseType(contentType.baseType()))
-                .getOrElse(false);
+        final String propertyType = GraphQLTypeUtil.simplePrint(
+                GraphQLTypeUtil.unwrapNonNull(property.getType()));
+        final String declaredFieldType = GraphQLTypeUtil.simplePrint(
+                GraphQLTypeUtil.unwrapNonNull(getGraphqlTypeForFieldClass(field.type(), field)));
+        final String fieldType = GraphQLInt.getName().equals(declaredFieldType)
+                && GraphQLTypeUtil.simplePrint(ExtendedScalars.GraphQLLong).equals(propertyType)
+                ? propertyType : declaredFieldType;
+        if (propertyType.equals(fieldType)) {
+            return Optional.empty();
+        }
 
-        return onAssetType && !GraphQLTypeUtil.simplePrint(flatField.getType())
-                .equals(GraphQLTypeUtil.simplePrint(getGraphqlTypeForFieldClass(field.type(), field)));
+        return Try.of(() -> APILocator.getContentTypeAPI(
+                        APILocator.systemUser()).find(field.contentTypeId()))
+                .toJavaOptional()
+                .filter(contentType -> InterfaceType.isAssetBaseType(contentType.baseType()))
+                .map(contentType -> new AssetPropertyCollision(contentType, propertyType,
+                        declaredFieldType));
     }
 
     @VisibleForTesting
