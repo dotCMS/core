@@ -413,7 +413,13 @@ async function collectLocalFiles(
     let totalSeen = 0;
     let scanned = 0;
 
-    async function walk(dir: string) {
+    // An explicit queue, not recursion: each directory is read to the end and closed before
+    // the next one is opened, so the walk holds ONE directory handle however deep `src` goes.
+    // Recursing from inside the loop kept every ancestor open, and a deep tree hit EMFILE long
+    // before the scan limit. The queue itself is bounded by the scan limit, since every
+    // directory in it was counted as an entry.
+    const pending = [src];
+    for (let dir = pending.pop(); dir !== undefined; dir = pending.pop()) {
         // Streamed with `opendir`, a few entries at a time: `readdir` would load a directory's
         // whole listing before the scan limit could stop it, so one directory of millions of
         // entries would cost unbounded time and memory. `for await` closes the directory when
@@ -434,7 +440,7 @@ async function collectLocalFiles(
             }
 
             if (entry.isDirectory()) {
-                await walk(abs);
+                pending.push(abs);
                 continue;
             }
 
@@ -462,8 +468,6 @@ async function collectLocalFiles(
             }
         }
     }
-
-    await walk(src);
 
     return { files: files.sort((a, b) => a.rel.localeCompare(b.rel)), totalSeen };
 }
