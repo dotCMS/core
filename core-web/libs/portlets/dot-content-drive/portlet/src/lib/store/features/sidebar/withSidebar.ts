@@ -24,7 +24,13 @@ import {
     SYSTEM_HOST,
     SYSTEM_HOST_PATH
 } from '../../../shared/constants';
-import { DotContentDriveState, FolderTreeHierarchyLevel } from '../../../shared/models';
+import {
+    DotContentDriveFolderPage,
+    DotContentDriveRevealedLevel,
+    DotContentDriveRevealLevel,
+    DotContentDriveState,
+    FolderTreeHierarchyLevel
+} from '../../../shared/models';
 import {
     appendLoadMoreNodes,
     applyLoadMoreToHierarchy,
@@ -82,6 +88,130 @@ export function withSidebar() {
                     ? findNodeByPath(folders, parentPath)
                     : folders.find((folder) => !folder.data?.path);
 
+            /** Changes one level's parent node in the tree on screen, if it is still there. */
+            const updateParentNode = (
+                parentPath: string | undefined,
+                change: (node: DotFolderTreeNodeItem) => void
+            ): void =>
+                updateTree((folders) => {
+                    const node = parentNodeOf(folders, parentPath);
+                    if (node) {
+                        change(node);
+                    }
+                });
+
+            /** Whether a list of nodes holds the folder at `path`. */
+            const holdsFolder = (nodes: DotFolderTreeNodeItem[], path: string): boolean =>
+                nodes.some((node) => node.data?.path === path);
+
+            /**
+             * Fetches the first page of a level the tree never loaded. A loaded level answers
+             * `undefined`, so what it already holds is kept.
+             */
+            const fetchLevelPage = (
+                levelPath: string,
+                levelLoaded: boolean,
+                site: DotSite
+            ): Observable<DotContentDriveFolderPage | undefined> =>
+                levelLoaded
+                    ? of(undefined)
+                    : getFolderNodesByPath(levelPath, site, dotFolderService);
+
+            /**
+             * Pairs a level's page with the folder to pin when the page does not hold it: created
+             * since, or past the page the tree holds.
+             */
+            const withPinnedFolder = (
+                page: DotContentDriveFolderPage | undefined,
+                level: DotContentDriveRevealLevel
+            ): Observable<DotContentDriveRevealedLevel> => {
+                if (page && holdsFolder(page.folders, level.path)) {
+                    return of({ page, pinned: undefined });
+                }
+
+                return resolveHierarchyAncestor(
+                    level.levelPath,
+                    level.path,
+                    level.site,
+                    dotFolderService
+                ).pipe(map((pinned) => ({ page, pinned })));
+            };
+
+            /**
+             * The children a level shows: a fresh page with its load-more rows, or what the node
+             * already held, with the pinned folder on top when neither holds it.
+             */
+            const levelChildrenOf = (
+                node: DotFolderTreeNodeItem,
+                level: DotContentDriveRevealLevel,
+                { page, pinned }: DotContentDriveRevealedLevel
+            ): DotFolderTreeNodeItem[] => {
+                const children = page
+                    ? appendLoadMoreNodes(
+                          page.folders,
+                          page.totalEntries,
+                          level.levelPath,
+                          level.site.hostname,
+                          2
+                      )
+                    : (node.children ?? []);
+
+                if (!pinned || holdsFolder(children, level.path)) {
+                    return children;
+                }
+
+                return [createTreeNode(pinned), ...children];
+            };
+
+            /** Writes a level's children into its parent node, expanded and no longer spinning. */
+            const writeLevel = (
+                level: DotContentDriveRevealLevel,
+                revealed: DotContentDriveRevealedLevel
+            ): void =>
+                updateParentNode(level.parentPath, (node) => {
+                    node.children = levelChildrenOf(node, level, revealed);
+                    node.loading = false;
+                    node.expanded = true;
+                });
+
+            /** Stops a level's parent node spinning, when it still is. */
+            const clearLevelSpinner = (parentPath: string | undefined): void => {
+                if (!parentNodeOf(store.folders(), parentPath)?.loading) {
+                    return;
+                }
+
+                updateParentNode(parentPath, (node) => {
+                    node.loading = false;
+                });
+            };
+
+            /**
+             * Loads a level that does not hold the folder the path goes through, the way expanding
+             * its node loads it, then moves on to the level below.
+             */
+            const loadLevel = (
+                level: DotContentDriveRevealLevel,
+                levelLoaded: boolean,
+                next: () => Observable<void>
+            ): Observable<void> => {
+                updateParentNode(level.parentPath, (node) => {
+                    node.loading = true;
+                });
+
+                return fetchLevelPage(level.levelPath, levelLoaded, level.site).pipe(
+                    switchMap((page) => withPinnedFolder(page, level)),
+                    tap((revealed) => writeLevel(level, revealed)),
+                    switchMap(() =>
+                        findNodeByPath(store.folders(), level.path) ? next() : of(undefined)
+                    ),
+                    catchError(() => of(undefined)),
+                    // However the level ends: answered, failed, or cancelled because another
+                    // folder was opened first, which neither of the above sees. A cancelled level
+                    // is expanded and on screen, so it must not go on spinning.
+                    finalize(() => clearLevelSpinner(level.parentPath))
+                );
+            };
+
             /**
              * Makes sure one level of a path holds the folder the path goes through next, then
              * moves on to the level below it.
@@ -99,9 +229,7 @@ export function withSidebar() {
                     return of(undefined);
                 }
 
-                const path = chain[index];
                 const parentPath = index === 0 ? undefined : chain[index - 1];
-                const next = () => revealLevel(chain, index + 1, site);
                 const parent = parentNodeOf(store.folders(), parentPath);
 
                 // Nothing to hang the branch on: an ancestor could not be found either.
@@ -109,101 +237,37 @@ export function withSidebar() {
                     return of(undefined);
                 }
 
-                const children = (parent.children ?? []) as DotFolderTreeNodeItem[];
+                const level: DotContentDriveRevealLevel = {
+                    path: chain[index],
+                    parentPath,
+                    levelPath: parentPath ?? ROOT_PATH,
+                    site
+                };
+                const next = () => revealLevel(chain, index + 1, site);
+                const children = parent.children ?? [];
 
-                if (children.some((child) => child.data?.path === path)) {
-                    updateTree((folders) => {
-                        const node = parentNodeOf(folders, parentPath);
-                        if (node) {
-                            node.expanded = true;
-                        }
+                if (holdsFolder(children, level.path)) {
+                    updateParentNode(parentPath, (node) => {
+                        node.expanded = true;
                     });
 
                     return next();
                 }
 
-                const levelPath = parentPath ?? ROOT_PATH;
                 const levelLoaded = children.some(
                     (child) => child.data?.type !== LOAD_MORE_NODE_TYPE
                 );
 
-                updateTree((folders) => {
-                    const node = parentNodeOf(folders, parentPath);
-                    if (node) {
-                        node.loading = true;
-                    }
-                });
+                return loadLevel(level, levelLoaded, next);
+            };
 
-                // Typed up front: left to inference, the union of the two branches defeats the
-                // operator overloads below under strict mode.
-                const page$: Observable<
-                    { folders: DotFolderTreeNodeItem[]; totalEntries: number } | undefined
-                > = levelLoaded
-                    ? of(undefined)
-                    : getFolderNodesByPath(levelPath, site, dotFolderService);
+            /** Unselects a revealed folder that turned out not to exist. */
+            const unselectIfMissing = (path: string): void => {
+                const found = findNodeByPath(store.folders(), path);
 
-                return page$.pipe(
-                    switchMap((page) =>
-                        page?.folders.some(
-                            (folder: DotFolderTreeNodeItem) => folder.data?.path === path
-                        )
-                            ? of({ page, pinned: undefined })
-                            : resolveHierarchyAncestor(
-                                  levelPath,
-                                  path,
-                                  site,
-                                  dotFolderService
-                              ).pipe(map((pinned) => ({ page, pinned })))
-                    ),
-                    tap(({ page, pinned }) =>
-                        updateTree((folders) => {
-                            const node = parentNodeOf(folders, parentPath);
-                            if (!node) {
-                                return;
-                            }
-
-                            let levelChildren = page
-                                ? appendLoadMoreNodes(
-                                      page.folders,
-                                      page.totalEntries,
-                                      levelPath,
-                                      site.hostname,
-                                      2
-                                  )
-                                : ((node.children ?? []) as DotFolderTreeNodeItem[]);
-
-                            if (
-                                pinned &&
-                                !levelChildren.some((child) => child.data?.path === path)
-                            ) {
-                                levelChildren = [createTreeNode(pinned), ...levelChildren];
-                            }
-
-                            node.children = levelChildren;
-                            node.loading = false;
-                            node.expanded = true;
-                        })
-                    ),
-                    switchMap(() =>
-                        findNodeByPath(store.folders(), path) ? next() : of(undefined)
-                    ),
-                    catchError(() => of(undefined)),
-                    // However the level ends: answered, failed, or cancelled because another
-                    // folder was opened first, which neither of the above sees. A cancelled level
-                    // is expanded and on screen, so it must not go on spinning.
-                    finalize(() => {
-                        if (!parentNodeOf(store.folders(), parentPath)?.loading) {
-                            return;
-                        }
-
-                        updateTree((folders) => {
-                            const node = parentNodeOf(folders, parentPath);
-                            if (node) {
-                                node.loading = false;
-                            }
-                        });
-                    })
-                );
+                if (!found && store.selectedNode()?.data?.path === path) {
+                    patchState(store, { selectedNode: undefined });
+                }
             };
 
             return {
@@ -321,16 +385,10 @@ export function withSidebar() {
                                 return of(undefined);
                             }
 
+                            // Its selection was kept while the branch loaded. A folder that
+                            // turned out not to exist must not go on looking selected.
                             return revealLevel(generateAllParentPaths(path), 0, currentSite).pipe(
-                                tap(() => {
-                                    // Its selection was kept while the branch loaded. A folder
-                                    // that turned out not to exist must not go on looking selected.
-                                    const found = findNodeByPath(store.folders(), path);
-
-                                    if (!found && store.selectedNode()?.data?.path === path) {
-                                        patchState(store, { selectedNode: undefined });
-                                    }
-                                })
+                                tap(() => unselectIfMissing(path))
                             );
                         })
                     )

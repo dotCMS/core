@@ -1,13 +1,13 @@
 import {
     DotBatchItemResult,
     DotBulkUploadFailureReason,
-    DotFolderBulkDuplicateReason,
-    DotFolderDeleteFailureReason,
     DotCMSContentTypeField,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
     DotContentDriveItem,
     DotFolder,
+    DotFolderBulkDuplicateReason,
+    DotFolderDeleteFailureReason,
     DotLanguage,
     DotSite
 } from '@dotcms/dotcms-models';
@@ -550,3 +550,58 @@ export type FolderTreeHierarchyLevel = {
      */
     nextPage: number;
 };
+
+/** What the outcome path derives from a result before wording it. */
+export interface DotContentDriveOutcomeReading {
+    result: DotContentDriveActionExecutionResult;
+    /** A folder delete or duplication, as opposed to an upload or a workflow action. */
+    isFolderOutcome: boolean;
+    /** Skipped folders a selected parent already covered, which are not a shortfall. */
+    coveredCount: number;
+    /** Whether the run fell short of a clean success. */
+    isPartial: boolean;
+}
+
+/** Resolves a message key with arguments. Narrower than `DotMessageService` on purpose. */
+export type ResolveMessage = (key: string, ...args: string[]) => string;
+
+/**
+ * The words a folder operation's report is written in: one sentence per failure reason, and one
+ * for each of the two kinds of skip.
+ *
+ * The line builder below is shared, so bulk delete and bulk duplication (#37062) read the same way:
+ * the same grouping, the same name threshold, the same count-only overflow. What differs is only
+ * the copy, because an ancestor that *removed* a folder and one whose duplicate *carries* it are
+ * different facts.
+ */
+export interface DotFolderOutcomeVocabulary {
+    /** The message key explaining a failure reason, with its own unclassified fallback. */
+    keyForFailure: (reason: string | undefined) => string;
+    /** A folder an ancestor in the same submission already covered. Not a problem. */
+    skippedByParentKey: string;
+    /** A folder the run never reached, because it was cancelled first. */
+    skippedCancelledKey: string;
+}
+
+/** One page of a level's folders, as the folder search answers it. */
+export interface DotContentDriveFolderPage {
+    folders: DotFolderTreeNodeItem[];
+    totalEntries: number;
+}
+
+/** One level of a path being revealed, and where in the tree it hangs. */
+export interface DotContentDriveRevealLevel {
+    /** The folder this level has to hold. */
+    path: string;
+    /** The folder above it; undefined for the top level, which hangs from the site row. */
+    parentPath: string | undefined;
+    /** The path the level's folders are listed under. */
+    levelPath: string;
+    site: DotSite;
+}
+
+/** What a level's load answered: the page fetched, if any, and the folder to pin, if any. */
+export interface DotContentDriveRevealedLevel {
+    page: DotContentDriveFolderPage | undefined;
+    pinned: DotFolder | undefined;
+}

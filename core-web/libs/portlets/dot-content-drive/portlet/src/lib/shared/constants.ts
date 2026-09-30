@@ -315,3 +315,27 @@ export const NEW_CONTENT_MARKER = 'new';
  * leaving. Keying them apart is what lets the indicator hand off from one to the other.
  */
 export const UPLOAD_BATCH_OPERATION = 'CONTENT_DRIVE_UPLOAD_BATCH';
+
+/**
+ * How many folder names a line prints before it counts them instead.
+ *
+ * Past this the line leads with the number and names none. Naming the first eight of fifty reads as
+ * "eight folders failed", which is worse than saying nothing.
+ *
+ * **What is lost, stated honestly:** the names past this point are not in the notification. They are
+ * in the run's durable record, which the author reaches by following the count (FR-027a) — so this
+ * is a readability trade, not information the client threw away.
+ */
+export const MAX_FOLDER_NAMES = 8;
+
+/**
+ * The operation keys bulk folder delete and duplicate runs are registered under.
+ *
+ * Paired with the run's targets it forms the repeat guard — *this operation over these folders* —
+ * so a delete running for minutes never blocks an unrelated action, nor a delete of different
+ * folders (FR-018). Kept here rather than imported from the quick-action registry: the store's
+ * guard key is its own concern, and tying it to a UI constant would make a rename of one silently
+ * change the other.
+ */
+export const DELETE_FOLDER_OPERATION = 'DELETE_FOLDER';
+export const DUPLICATE_FOLDER_OPERATION = 'DUPLICATE_FOLDER';

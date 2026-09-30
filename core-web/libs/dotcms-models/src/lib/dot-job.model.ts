@@ -213,6 +213,13 @@ export const DOT_JOB_IN_PROGRESS_STATES: readonly DotJobState[] = [
     'CANCELLING'
 ];
 
+/** One run as a queue's active listing returns it, with the queue's own parameters. */
+export interface DotActiveJobEntry<P> {
+    id: string;
+    state: DotJobState;
+    parameters?: P;
+}
+
 /**
  * Whether a run is actually working, as opposed to merely not finished.
  *

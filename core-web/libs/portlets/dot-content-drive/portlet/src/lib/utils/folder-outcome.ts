@@ -1,5 +1,8 @@
 import { DotBatchItemResult } from '@dotcms/dotcms-models';
 
+import { MAX_FOLDER_NAMES } from '../shared/constants';
+import { DotFolderOutcomeVocabulary, ResolveMessage } from '../shared/models';
+
 /**
  * What every folder operation's report shares, whatever its words (#37062, #37063).
  *
@@ -7,39 +10,6 @@ import { DotBatchItemResult } from '@dotcms/dotcms-models';
  * count-only overflow, so the line builder lives here once. Each operation keeps only its own
  * vocabulary, in its own file.
  */
-
-/**
- * How many folder names a line prints before it counts them instead.
- *
- * Past this the line leads with the number and names none. Naming the first eight of fifty reads as
- * "eight folders failed", which is worse than saying nothing.
- *
- * **What is lost, stated honestly:** the names past this point are not in the notification. They are
- * in the run's durable record, which the author reaches by following the count (FR-027a) — so this
- * is a readability trade, not information the client threw away.
- */
-export const MAX_FOLDER_NAMES = 8;
-
-/** Resolves a message key with arguments. Narrower than `DotMessageService` on purpose. */
-export type ResolveMessage = (key: string, ...args: string[]) => string;
-
-/**
- * The words a folder operation's report is written in: one sentence per failure reason, and one
- * for each of the two kinds of skip.
- *
- * The line builder below is shared, so bulk delete and bulk duplication (#37062) read the same way:
- * the same grouping, the same name threshold, the same count-only overflow. What differs is only
- * the copy, because an ancestor that *removed* a folder and one whose duplicate *carries* it are
- * different facts.
- */
-export interface DotFolderOutcomeVocabulary {
-    /** The message key explaining a failure reason, with its own unclassified fallback. */
-    keyForFailure: (reason: string | undefined) => string;
-    /** A folder an ancestor in the same submission already covered. Not a problem. */
-    skippedByParentKey: string;
-    /** A folder the run never reached, because it was cancelled first. */
-    skippedCancelledKey: string;
-}
 
 /**
  * Describes a folder operation's shortfall as one line per reason, each naming the folders it

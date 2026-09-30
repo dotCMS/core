@@ -1,11 +1,9 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 import { describe, expect, it } from 'vitest';
 
-import {
-    ACTIVE_JOBS_PAGE_SIZE,
-    DotActiveJobEntry,
-    DotJobQueueService
-} from './dot-job-queue.service';
+import { DotActiveJobEntry } from '@dotcms/dotcms-models';
+
+import { DotJobQueueService } from './dot-job-queue.service';
 
 describe('DotJobQueueService', () => {
     let spectator: SpectatorHttp<DotJobQueueService>;
@@ -29,7 +27,7 @@ describe('DotJobQueueService', () => {
         read();
 
         const req = spectator.expectOne(
-            `/api/v1/jobs/someQueue/active?pageSize=${ACTIVE_JOBS_PAGE_SIZE}`,
+            '/api/v1/jobs/someQueue/active?pageSize=100',
             HttpMethod.GET
         );
 
@@ -41,20 +39,15 @@ describe('DotJobQueueService', () => {
         spectator = createHttp();
         const { runs } = read();
 
-        spectator
-            .expectOne(
-                `/api/v1/jobs/someQueue/active?pageSize=${ACTIVE_JOBS_PAGE_SIZE}`,
-                HttpMethod.GET
-            )
-            .flush({
-                entity: {
-                    jobs: [
-                        { id: 'a', state: 'RUNNING', parameters: { label: 'one' } },
-                        { id: 'b', state: 'FAILED', parameters: { label: 'two' } },
-                        { id: 'c', state: 'PENDING', parameters: { label: 'three' } }
-                    ]
-                }
-            });
+        spectator.expectOne('/api/v1/jobs/someQueue/active?pageSize=100', HttpMethod.GET).flush({
+            entity: {
+                jobs: [
+                    { id: 'a', state: 'RUNNING', parameters: { label: 'one' } },
+                    { id: 'b', state: 'FAILED', parameters: { label: 'two' } },
+                    { id: 'c', state: 'PENDING', parameters: { label: 'three' } }
+                ]
+            }
+        });
 
         expect(runs()).toEqual(['a:one', 'c:three']);
     });
@@ -64,10 +57,7 @@ describe('DotJobQueueService', () => {
         const { runs } = read();
 
         spectator
-            .expectOne(
-                `/api/v1/jobs/someQueue/active?pageSize=${ACTIVE_JOBS_PAGE_SIZE}`,
-                HttpMethod.GET
-            )
+            .expectOne('/api/v1/jobs/someQueue/active?pageSize=100', HttpMethod.GET)
             .flush(null, { status: 500, statusText: 'Server Error' });
 
         expect(runs()).toEqual([]);
@@ -77,12 +67,7 @@ describe('DotJobQueueService', () => {
         spectator = createHttp();
         const { runs } = read();
 
-        spectator
-            .expectOne(
-                `/api/v1/jobs/someQueue/active?pageSize=${ACTIVE_JOBS_PAGE_SIZE}`,
-                HttpMethod.GET
-            )
-            .flush({});
+        spectator.expectOne('/api/v1/jobs/someQueue/active?pageSize=100', HttpMethod.GET).flush({});
 
         expect(runs()).toEqual([]);
     });

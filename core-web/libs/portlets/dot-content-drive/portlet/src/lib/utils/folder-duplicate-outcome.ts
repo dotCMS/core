@@ -1,10 +1,8 @@
 import { DotBatchItemResult, DotFolderBulkDuplicateReason } from '@dotcms/dotcms-models';
 
-import {
-    describeFolderOutcome,
-    DotFolderOutcomeVocabulary,
-    ResolveMessage
-} from './folder-outcome';
+import { describeFolderOutcome } from './folder-outcome';
+
+import { DotFolderOutcomeVocabulary, ResolveMessage } from '../shared/models';
 
 /**
  * Reason → copy for bulk folder duplication (#37062).
@@ -38,10 +36,9 @@ const MESSAGE_KEY_BY_REASON: Record<DotFolderBulkDuplicateReason, string> = {
     UNCLASSIFIED: 'content-drive.duplicate.failure.unclassified'
 };
 
-// `hasOwnProperty`, not `in`: `in` walks the prototype chain, so a reason of `constructor` would
-// pass the guard and hand an inherited function to `DotMessageService.get()`.
+// Own keys only: `in` walks the prototype chain, so `constructor` would pass as a reason.
 const isKnownReason = (reason: string): reason is DotFolderBulkDuplicateReason =>
-    Object.prototype.hasOwnProperty.call(MESSAGE_KEY_BY_REASON, reason);
+    Object.hasOwn(MESSAGE_KEY_BY_REASON, reason);
 
 /**
  * Resolves a duplication failure reason to the message key that explains it.

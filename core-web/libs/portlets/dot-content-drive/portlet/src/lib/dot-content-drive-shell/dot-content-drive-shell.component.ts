@@ -17,7 +17,7 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService, SortEvent } from 'primeng/api';
+import { MessageService, SortEvent, ToastMessageOptions } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -97,15 +97,17 @@ import {
     ROOT_PATH
 } from '../shared/constants';
 import {
-    OUTCOME_KIND,
-    DotContentDriveContentTypeSelectorPayload,
     DotContentDriveActionExecutionResult,
+    DotContentDriveContentTypeSelectorPayload,
     DotContentDriveDialog,
+    DotContentDriveOutcomeKind,
+    DotContentDriveOutcomeReading,
     DotContentDriveSortOrder,
     DotContentDriveStatus,
     DotContentDriveUploadBaseType,
     DotContentDriveUploadSelection,
-    DotContentDriveUploadSelectorPayload
+    DotContentDriveUploadSelectorPayload,
+    OUTCOME_KIND
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { provideContentDriveFieldFilterHost } from '../store/content-drive-field-filter-host';
@@ -124,7 +126,8 @@ import {
     uploadIndicatorKey
 } from '../utils/functions';
 import { refuseOverCeiling } from '../utils/upload-ceilings';
-import { describeUploadFailures } from '../utils/upload-failures';
+import { describeUploadFailures, DotUploadFailureGroup } from '../utils/upload-failures';
+
 @Component({
     selector: 'dot-content-drive-shell',
     imports: [
@@ -841,20 +844,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * Reports a finished workflow action as a toast, refreshes the grid, and closes the dialog if it
      * is still open.
      *
-     * Lives in the shell rather than in the Action Center because the run outlives that dialog: the
-     * user may close it mid-flight and the result still has to be reported. The shell owns
-     * `<p-toast>` and is never destroyed while the portlet is open, so it is the only place that can
-     * present a result whose originating dialog may already be gone. It also keeps the store data-only.
-     *
-     * The reload lands here for the same reason, plus a mechanical one: `loadItems` belongs to the
-     * base store's `withMethods`, which `withActionExecution` cannot reach from inside the
-     * composition. `loadItems` clears the selection and sets `LOADING` itself, so this one call is the
-     * whole post-run refresh.
-     *
-     * `failedCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
-     * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
-     * unqualified success would be the one thing the user cannot recover from — the grid has already
-     * reloaded and the selection is gone.
+     * Lives in the shell because the run outlives the Action Center: the user may close it
+     * mid-flight and the result still has to be reported, and the shell owns `<p-toast>` for the
+     * portlet's whole life. The reload lands here too because `loadItems` belongs to the base store's
+     * `withMethods`, which `withActionExecution` cannot reach from inside the composition.
      *
      * A `signalMethod` fed only the result, like {@link #syncDialog}: the site, path and tree
      * selection it reads to word the toast are snapshots, so changing any of them does not re-enter
@@ -867,305 +860,365 @@ export class DotContentDriveShellComponent implements OnDestroy {
             return;
         }
 
-        const {
-            actionName,
-            successCount,
-            skippedCount,
-            failedCount,
-            partialDetailKey,
-            backgrounded,
-            confirmSuccess,
-            affectedFolders,
-            failures,
-            duplicateSubmission,
-            baseType,
-            outcomeKind,
-            cancelled
-        } = result;
+        const outcome = this.#readOutcome(result);
 
-        // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
-        // can skip items whose scheme does not own the action *and* be refused on items that are
-        // locked. The ladder this replaces reported whichever it checked first, so a mixed result
-        // showed the failure copy alone and blamed permissions or locks for the entire shortfall —
-        // sending the user off to unlock content that was never the problem.
-        //
-        // So anything short of a clean run reports all three numbers, each next to its own cause.
-        // Both counts are always passed, meaning a fails-only run renders "0 skipped"; naming the
-        // cause and its number is what keeps the message honest.
-        // A recognised resubmission is not a shortfall, whatever its counts say. Under the
-        // collision branch a retry that worked collides on every file, so by the numbers it is a
-        // total failure — and reporting it that way sends the author to delete and re-upload files
-        // that were already correctly there, which is worse than offering no retry at all.
-        // A folder skipped because a selected parent already covered it is not a shortfall: the
-        // author selected a folder and its child and got the child once, inside the parent
-        // (FR-021a). Only the other skips count.
-        const coveredCount =
-            OUTCOME_KIND.FOLDER_DELETE === outcomeKind ||
-            OUTCOME_KIND.FOLDER_DUPLICATE === outcomeKind
-                ? (failures ?? []).filter(
-                      (item) => 'SKIPPED' === item.status && 'COVERED_BY_PARENT' === item.reason
-                  ).length
-                : 0;
+        if (outcome.isFolderOutcome) {
+            // The listing and the tree load separately, and a tree still offering a folder the
+            // listing dropped is how an author navigates into nothing (FR-036). A duplication adds
+            // folders, so the tree needs them as much as a delete needs them gone (FR-030). An
+            // upload changes contents, not the hierarchy, so it skips this.
+            this.#store.loadFolders();
+        }
+
+        // Silent on a clean success, because the listing already shows it. A shortfall is not
+        // visible anywhere; `confirmSuccess` marks operations whose success shows nowhere (Add to
+        // Bundle, Push Publish); a backgrounded outcome arrived after the author moved on. Only the
+        // toast is suppressed: the reload and the dialog close below still happen.
+        if (outcome.isPartial || result.confirmSuccess || result.backgrounded) {
+            this.#announceOutcome(outcome);
+        }
+
+        this.#reloadAfterOutcome(result.backgrounded, result.affectedFolders);
+
+        if (!result.backgrounded) {
+            // A no-op when the user already closed the dialog. Never for a backgrounded result: it
+            // can land while the user is configuring a different action, and closing throws that away.
+            this.#store.closeDialog();
+        }
+
+        this.#store.clearActionExecutionResult();
+    });
+
+    /** Resolves a message key, in the shape the failure describers take. */
+    readonly #resolveMessage = (key: string, ...args: string[]): string =>
+        this.#dotMessageService.get(key, ...args);
+
+    /**
+     * The summary key for a failure group that was not cancelled, by outcome kind and severity.
+     * An outcome with no kind is an upload.
+     */
+    readonly #failureSummaryKeys: Record<
+        DotContentDriveOutcomeKind,
+        Record<DotUploadFailureGroup['severity'], string>
+    > = {
+        [OUTCOME_KIND.UPLOAD]: {
+            error: 'content-drive.upload.toast.failed',
+            warn: 'content-drive.upload.toast.incomplete'
+        },
+        [OUTCOME_KIND.FOLDER_DELETE]: {
+            error: 'content-drive.delete.toast.failed',
+            warn: 'content-drive.delete.toast.incomplete'
+        },
+        [OUTCOME_KIND.FOLDER_DUPLICATE]: {
+            error: 'content-drive.duplicate.toast.failed',
+            warn: 'content-drive.duplicate.toast.incomplete'
+        }
+    };
+
+    /**
+     * Derives the counts that decide how an outcome is worded.
+     *
+     * A folder skipped because a selected parent already covered it is not a shortfall: the author
+     * got the child once, inside the parent (FR-021a). A recognised resubmission is not one either,
+     * whatever its counts say: a retry that worked collides on every file, and calling that a failure
+     * sends the author to re-upload files that are already there.
+     */
+    #readOutcome(result: DotContentDriveActionExecutionResult): DotContentDriveOutcomeReading {
+        const isFolderOutcome =
+            OUTCOME_KIND.FOLDER_DELETE === result.outcomeKind ||
+            OUTCOME_KIND.FOLDER_DUPLICATE === result.outcomeKind;
+        const coveredCount = isFolderOutcome
+            ? (result.failures ?? []).filter(
+                  (item) => 'SKIPPED' === item.status && 'COVERED_BY_PARENT' === item.reason
+              ).length
+            : 0;
         const isPartial =
-            !duplicateSubmission && (failedCount > 0 || skippedCount - coveredCount > 0);
+            !result.duplicateSubmission &&
+            (result.failedCount > 0 || result.skippedCount - coveredCount > 0);
 
-        // Silent on a clean success, unless the operation leaves no visible trace.
-        //
-        // For most operations the listing already shows the outcome — the row published, moved,
-        // unlocked or disappeared — so a notification repeats what the author can see, which is the
-        // noise this feature set out to remove. A shortfall is different: the numbers and their
-        // causes are not visible anywhere, and it is the case the author has to act on.
-        //
-        // `confirmSuccess` is for the operations whose success genuinely shows nowhere, such as Add
-        // to Bundle and Push Publish.
-        //
-        // Only the *notification* is suppressed. The grid still reloads and the dialog still closes:
-        // those are how the author sees the outcome, so skipping them would replace a redundant
-        // message with no feedback at all.
-        // `backgrounded` too: that outcome arrived unprompted, minutes after the author moved on, so
-        // by definition nothing on screen reflects it — and with a dialog open the grid does not
-        // even reload. Staying silent there would mean a run finished and the author never learned.
-        const announce = isPartial || confirmSuccess || backgrounded;
+        return { result, isFolderOutcome, coveredCount, isPartial };
+    }
 
-        // A resubmission means opposite things by base type, so the copy cannot be one sentence
-        // (FR-040b). For a file asset the unique index refuses the second writer, so the batch
-        // collided and nothing was duplicated — the case this copy was written for. For a dotAsset
-        // the index can never contend, so the batch ran again and every file now exists twice;
-        // saying "nothing was duplicated" there points the author away from a folder they need to
-        // look at.
-        // A stopped run says it was stopped, whatever its counts: a run cancelled after every folder
-        // it reached had succeeded would otherwise read as a clean success. As the bell says it.
-        const detail = cancelled
-            ? this.#dotMessageService.get(
-                  OUTCOME_KIND.FOLDER_DELETE === outcomeKind
-                      ? 'content-drive.delete.toast.cancelled-detail'
-                      : 'content-drive.duplicate.toast.cancelled-detail',
-                  actionName,
-                  String(successCount),
-                  String(failedCount),
-                  // Only the folders the stop left out: a covered one went with its parent.
-                  String(skippedCount - coveredCount)
-              )
-            : duplicateSubmission
-              ? this.#dotMessageService.get(
-                    'DOTASSET' === baseType
-                        ? 'content-drive.upload.toast.already-uploaded-again'
-                        : 'content-drive.upload.toast.already-uploaded',
-                    String(failedCount + successCount)
-                )
-              : isPartial
-                ? this.#dotMessageService.get(
-                      // Actions whose failures and skips mean something other than permissions, locks and
-                      // workflow steps say so themselves — see `partialDetailKey`.
-                      partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
-                      actionName,
-                      String(successCount),
-                      String(failedCount),
-                      String(skippedCount)
-                  )
-                : this.#dotMessageService.get(
-                      'content-drive.action-center.toast.executed-detail',
-                      actionName,
-                      String(successCount)
-                  );
+    /**
+     * Shows the outcome's toasts: one per failure group, or a single counts-only one when there is
+     * no per-item detail. The counts ride only on the first, since they belong to the batch.
+     */
+    #announceOutcome(outcome: DotContentDriveOutcomeReading): void {
+        const detail = this.#outcomeDetail(outcome);
+        const groups = this.#failureGroups(outcome);
+        const messages = groups.length
+            ? this.#failureGroupMessages(outcome, groups, detail)
+            : [this.#countsOnlyMessage(outcome, detail)];
 
-        // Named files and their reasons, grouped one line per reason, appended to the counts.
-        // The counts say how many; only this says which and why, and that is the part the author
-        // can act on. Empty for a clean run, so a success never grows a list.
-        // Nothing to list for a recognised retry: its "failures" are the files already in place,
-        // and naming them would be telling the author to fix what is correctly there.
-        // What a folder itself refuses is not on the wire: a failure carries the file name and the
-        // reason, never the mask that refused it. So the sentence that names what the folder *does*
-        // accept is available only while the batch's target is the folder on screen, and the
-        // generic one stands for every other case.
-        //
-        // Strictly one affected folder, and strictly the selected one. A result for somewhere else
-        // — or a run spanning several folders — would otherwise explain this folder's rule to an
-        // author who was refused by another's, which is worse than saying nothing about the rule.
+        messages.forEach((message) => this.#messageService.add(message));
+    }
+
+    /**
+     * The counts sentence. Anything short of a clean run states success, failed and skipped each
+     * next to its own cause, because skips and failures can happen in the same run and naming only
+     * one blames it for the whole shortfall.
+     */
+    #outcomeDetail({ result, coveredCount, isPartial }: DotContentDriveOutcomeReading): string {
+        const { actionName, successCount, failedCount, skippedCount } = result;
+
+        // A stopped run says so whatever its counts, or one stopped after only successes would read
+        // as clean. Only the folders the stop left out count as skipped: a covered one went with
+        // its parent.
+        if (result.cancelled) {
+            return this.#dotMessageService.get(
+                this.#cancelledKeys(result.outcomeKind).detail,
+                actionName,
+                String(successCount),
+                String(failedCount),
+                String(skippedCount - coveredCount)
+            );
+        }
+
+        // A resubmission means opposite things by base type (FR-040b): a file batch collided and
+        // nothing was duplicated, a dotAsset batch ran again and every file now exists twice.
+        if (result.duplicateSubmission) {
+            return this.#dotMessageService.get(
+                'DOTASSET' === result.baseType
+                    ? 'content-drive.upload.toast.already-uploaded-again'
+                    : 'content-drive.upload.toast.already-uploaded',
+                String(failedCount + successCount)
+            );
+        }
+
+        if (isPartial) {
+            // Actions whose shortfalls mean something other than permissions, locks and workflow
+            // steps bring their own sentence (`partialDetailKey`).
+            return this.#dotMessageService.get(
+                result.partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
+                actionName,
+                String(successCount),
+                String(failedCount),
+                String(skippedCount)
+            );
+        }
+
+        return this.#dotMessageService.get(
+            'content-drive.action-center.toast.executed-detail',
+            actionName,
+            String(successCount)
+        );
+    }
+
+    /**
+     * The named items and their reasons, one line per reason. The counts say how many; only this
+     * says which and why. Empty for a recognised resubmission, whose "failures" are files already
+     * correctly in place.
+     */
+    #failureGroups(outcome: DotContentDriveOutcomeReading): DotUploadFailureGroup[] {
+        const { result } = outcome;
+
+        if (outcome.isFolderOutcome) {
+            return this.#folderFailureGroups(outcome);
+        }
+
+        if (result.duplicateSubmission) {
+            return [];
+        }
+
+        return describeUploadFailures(result.failures, this.#resolveMessage, {
+            folderFilter: this.#onScreenFolderFilter(result.affectedFolders)
+        });
+    }
+
+    /**
+     * A folder operation's lines as a single group: every line already reads as "this folder
+     * survived, here is why", so upload's warn/error split would divide one list. Red only when
+     * something failed, and nothing to list when the only entries are covered folders.
+     *
+     * Each vocabulary has its own describer because the reason sets barely overlap: a delete's
+     * `IN_USE` resolved through upload's mapping would fall back to the unclassified copy.
+     */
+    #folderFailureGroups({
+        result,
+        isPartial
+    }: DotContentDriveOutcomeReading): DotUploadFailureGroup[] {
+        const { failures, failedCount, cancelled, outcomeKind } = result;
+
+        if (!failures?.length || !(isPartial || cancelled)) {
+            return [];
+        }
+
+        const describeLines =
+            OUTCOME_KIND.FOLDER_DUPLICATE === outcomeKind
+                ? describeFolderDuplicateOutcome
+                : describeFolderDeleteOutcome;
+
+        return [
+            {
+                severity: failedCount > 0 ? 'error' : 'warn',
+                lines: describeLines(failures, this.#resolveMessage)
+            }
+        ];
+    }
+
+    /**
+     * The on-screen folder's file filter, when the batch targeted exactly that folder.
+     *
+     * A failure never carries the mask that refused it, so the sentence naming what a folder
+     * accepts is only honest for the folder on screen. For any other folder, or a run spanning
+     * several, it would explain the wrong folder's rule.
+     */
+    #onScreenFolderFilter(affectedFolders: string[] | undefined): string | undefined {
         const affectedRefs = (affectedFolders ?? []).map(normalizeFolderRef);
         const refusingFolderIsOnScreen =
             affectedRefs.length === 1 &&
             affectedRefs[0] ===
                 browsedFolderRef(this.#store.currentSite()?.hostname, this.#store.path());
 
-        // Narrowed the same way the upload itself narrows the selection: the tree's load-more row
-        // is a node without a folder behind it, so it carries no filter to name.
+        return refusingFolderIsOnScreen ? this.#selectedTreeFolder()?.filesMasks : undefined;
+    }
+
+    /**
+     * The folder selected in the tree, skipping the load-more row, which has no folder behind it.
+     */
+    #selectedTreeFolder(): DotFolderTreeNodeContentData | undefined {
         const selectedNodeData = this.#store.selectedNode()?.data;
-        const selectedFolder =
-            selectedNodeData && selectedNodeData.type !== LOAD_MORE_NODE_TYPE
-                ? (selectedNodeData as DotFolderTreeNodeContentData)
-                : undefined;
 
-        const isFolderDelete = OUTCOME_KIND.FOLDER_DELETE === outcomeKind;
-        const isFolderDuplicate = OUTCOME_KIND.FOLDER_DUPLICATE === outcomeKind;
-        // Delete and duplication read the same way (#37062): one line builder, one toast layout,
-        // each in its own words.
-        const isFolderOutcome = isFolderDelete || isFolderDuplicate;
-        const describeFolderLines = isFolderDuplicate
-            ? describeFolderDuplicateOutcome
-            : describeFolderDeleteOutcome;
+        return selectedNodeData && selectedNodeData.type !== LOAD_MORE_NODE_TYPE
+            ? (selectedNodeData as DotFolderTreeNodeContentData)
+            : undefined;
+    }
 
-        if (isFolderOutcome) {
-            // The listing and the sidebar tree load separately, so refreshing one is not refreshing
-            // the other — and a tree still offering a folder the listing has already dropped is how
-            // an author navigates into nothing (FR-036).
-            //
-            // Only for a folder operation: an upload changes a folder's *contents*, not the
-            // hierarchy, so reloading the tree for one is a request that can only return the same
-            // tree. A duplication adds folders, so the tree needs them as much as a delete needs
-            // them gone (FR-030).
-            this.#store.loadFolders();
+    /**
+     * One toast per failure group, so a wall the author cannot pass does not arrive in the same
+     * colour as a file that needs renaming. The counts go in the first one only.
+     */
+    #failureGroupMessages(
+        { result }: DotContentDriveOutcomeReading,
+        groups: DotUploadFailureGroup[],
+        detail: string
+    ): ToastMessageOptions[] {
+        return groups.map((group, index) => ({
+            severity: group.severity,
+            summary: this.#dotMessageService.get(
+                this.#failureGroupSummaryKey(result, group.severity)
+            ),
+            detail: [...(index === 0 ? [detail] : []), ...group.lines].join('<br>'),
+            life: WARNING_MESSAGE_LIFE
+        }));
+    }
+
+    /** The summary key for one failure group. */
+    #failureGroupSummaryKey(
+        result: DotContentDriveActionExecutionResult,
+        severity: DotUploadFailureGroup['severity']
+    ): string {
+        if (result.cancelled) {
+            return this.#cancelledKeys(result.outcomeKind).summary;
         }
 
-        // One describer per vocabulary, one rendering path for both. The reason sets barely overlap,
-        // so resolving a delete's `IN_USE` through upload's mapping would land on the unclassified
-        // fallback — a reason that HAS copy, rendered as though it had none.
-        //
-        // Delete's lines come back as a single group rather than upload's warn/error split. Upload
-        // splits because a name the folder refuses and a permission the author lacks are different
-        // kinds of news; for delete every line is already "this folder survived, here is why", so
-        // the split would separate lines the author reads as one list. Severity follows whether
-        // anything actually failed, so a run whose only shortfall is skipped folders does not
-        // arrive in red.
-        // Nothing to list for a run that fell short of nothing: its only entries are folders a
-        // selected parent covered.
-        const failureGroups = isFolderOutcome
-            ? failures?.length && (isPartial || cancelled)
-                ? [
-                      {
-                          severity: (failedCount > 0 ? 'error' : 'warn') as 'error' | 'warn',
-                          lines: describeFolderLines(failures, (key, ...args) =>
-                              this.#dotMessageService.get(key, ...args)
-                          )
-                      }
-                  ]
-                : []
-            : duplicateSubmission
-              ? []
-              : describeUploadFailures(
-                    failures,
-                    (key, ...args) => this.#dotMessageService.get(key, ...args),
-                    {
-                        folderFilter: refusingFolderIsOnScreen
-                            ? selectedFolder?.filesMasks
-                            : undefined
-                    }
-                );
+        return this.#failureSummaryKeys[result.outcomeKind ?? OUTCOME_KIND.UPLOAD][severity];
+    }
 
-        if (announce) {
-            // One message per severity (developer's call), and the counts ride with the first of
-            // them. Two reasons for the split: an author reading "2 failed" wants to know which of
-            // those they can go and fix, and a wall they cannot pass should not arrive wearing the
-            // same colour as a file that needs renaming.
-            //
-            // A run with no per-file detail still gets exactly one message, because the counts
-            // alone are an outcome — the groups are what varies, never whether anything is said.
-            const messages = failureGroups.length
-                ? failureGroups.map((group, index) => ({
-                      severity: group.severity,
-                      summary: this.#dotMessageService.get(
-                          cancelled
-                              ? isFolderDelete
-                                  ? 'content-drive.delete.toast.cancelled'
-                                  : 'content-drive.duplicate.toast.cancelled'
-                              : isFolderDelete
-                                ? 'error' === group.severity
-                                    ? 'content-drive.delete.toast.failed'
-                                    : 'content-drive.delete.toast.incomplete'
-                                : isFolderDuplicate
-                                  ? 'error' === group.severity
-                                      ? 'content-drive.duplicate.toast.failed'
-                                      : 'content-drive.duplicate.toast.incomplete'
-                                  : 'error' === group.severity
-                                    ? 'content-drive.upload.toast.failed'
-                                    : 'content-drive.upload.toast.incomplete'
-                      ),
-                      // The counts belong to the batch, not to a severity, so they are stated once
-                      // and in the message the author reads first.
-                      detail: [...(index === 0 ? [detail] : []), ...group.lines].join('<br>'),
-                      life: WARNING_MESSAGE_LIFE
-                  }))
-                : [
-                      {
-                          // A skip is a shortfall too — those items did not get the action — so it
-                          // warns rather than reporting green, which is what it used to do.
-                          //
-                          // A recognised resubmission takes its level from whether anything is
-                          // left for the author to do, which splits by base type exactly where the
-                          // wording does (FR-040b). A file batch was refused its second copy, so
-                          // the folder already holds what they wanted and there is nothing to act
-                          // on. A dotAsset batch ran again and the folder now holds two of
-                          // everything, so someone has to delete the copies — and `info` is
-                          // precisely the level that says they need not look.
-                          severity: cancelled
-                              ? 'warn'
-                              : duplicateSubmission
-                                ? 'DOTASSET' === baseType
-                                    ? 'warn'
-                                    : 'info'
-                                : isPartial
-                                  ? 'warn'
-                                  : 'success',
-                          summary: this.#dotMessageService.get(
-                              cancelled
-                                  ? isFolderDelete
-                                      ? 'content-drive.delete.toast.cancelled'
-                                      : 'content-drive.duplicate.toast.cancelled'
-                                  : isPartial || duplicateSubmission
-                                    ? 'content-drive.upload.toast.incomplete'
-                                    : 'content-drive.action-center.toast.executed'
-                          ),
-                          detail,
-                          life:
-                              cancelled || isPartial || duplicateSubmission
-                                  ? WARNING_MESSAGE_LIFE
-                                  : SUCCESS_MESSAGE_LIFE
-                      }
-                  ];
+    /**
+     * The single toast for an outcome with no per-item detail: the counts alone are still an outcome.
+     */
+    #countsOnlyMessage(
+        outcome: DotContentDriveOutcomeReading,
+        detail: string
+    ): ToastMessageOptions {
+        const { result, isPartial } = outcome;
+        const isShortfall = !!result.cancelled || isPartial || !!result.duplicateSubmission;
 
-            messages.forEach((message) => this.#messageService.add(message));
+        return {
+            severity: this.#countsOnlySeverity(outcome),
+            summary: this.#dotMessageService.get(this.#countsOnlySummaryKey(outcome)),
+            detail,
+            life: isShortfall ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
+        };
+    }
+
+    /**
+     * The level of a counts-only toast. A skip is a shortfall, so it warns. A resubmission warns
+     * only when something is left to do (FR-040b): a dotAsset batch left two of everything, while a
+     * file batch was refused its second copy, and `info` says there is nothing to look at.
+     */
+    #countsOnlySeverity({
+        result,
+        isPartial
+    }: DotContentDriveOutcomeReading): 'success' | 'info' | 'warn' {
+        if (result.cancelled) {
+            return 'warn';
         }
 
-        // A backgrounded outcome arrives unprompted, so it must not disturb whatever the user is
-        // doing when it lands. Every other result settles a request they are waiting on, so it
-        // reloads straight away — holding it would read as the action having done nothing.
-        if (!backgrounded || !this.$authorIsMidTask()) {
-            // Contentlets have moved step, so the grid is stale; `loadItems` also drops the
-            // selection the run consumed.
-            //
-            // Quiet: the run marked its rows, so a skeleton here would be a second load
-            // right after the first and would read as a jump.
-            if (this.#currentFolderIsAffected(affectedFolders)) {
-                this.#store.loadItems({ quiet: true });
-            }
-        } else {
-            // Held, not dropped (FR-043). Dropping it left the grid stale for as long as the
-            // author stayed in the portlet: the run settled, the rows changed, and nothing
-            // would ever fetch them again. `#flushHeldReload` runs it at the next boundary.
-            //
-            // Merged into what is already held, so a later outcome for another folder does not
-            // drop this one's reload. No folders named means reload regardless, and that wins.
-            const held = this.#reloadHeld();
-            const reloadRegardless =
-                !affectedFolders?.length || (!!held && !held.affectedFolders?.length);
-
-            this.#reloadHeld.set({
-                affectedFolders: reloadRegardless
-                    ? undefined
-                    : [...new Set([...(held?.affectedFolders ?? []), ...affectedFolders])]
-            });
+        if (result.duplicateSubmission) {
+            return 'DOTASSET' === result.baseType ? 'warn' : 'info';
         }
 
-        if (!backgrounded) {
-            // A no-op when the user already closed the dialog, which is the common path now that
-            // firing hands off to the toolbar. Never done for a backgrounded result: it can land
-            // minutes later, while the user is mid-way through configuring a different action,
-            // and closing the dialog throws that input away.
-            this.#store.closeDialog();
+        return isPartial ? 'warn' : 'success';
+    }
+
+    /** The summary key of a counts-only toast. */
+    #countsOnlySummaryKey({ result, isPartial }: DotContentDriveOutcomeReading): string {
+        if (result.cancelled) {
+            return this.#cancelledKeys(result.outcomeKind).summary;
         }
 
-        this.#store.clearActionExecutionResult();
-    });
+        return isPartial || result.duplicateSubmission
+            ? 'content-drive.upload.toast.incomplete'
+            : 'content-drive.action-center.toast.executed';
+    }
+
+    /** The summary and detail keys for a stopped run. Anything but a delete reads as a duplication. */
+    #cancelledKeys(outcomeKind: DotContentDriveOutcomeKind | undefined): {
+        summary: string;
+        detail: string;
+    } {
+        return OUTCOME_KIND.FOLDER_DELETE === outcomeKind
+            ? {
+                  summary: 'content-drive.delete.toast.cancelled',
+                  detail: 'content-drive.delete.toast.cancelled-detail'
+              }
+            : {
+                  summary: 'content-drive.duplicate.toast.cancelled',
+                  detail: 'content-drive.duplicate.toast.cancelled-detail'
+              };
+    }
+
+    /**
+     * Reloads the grid after an outcome, or holds the reload while the author is mid-task.
+     *
+     * A backgrounded outcome arrives unprompted, so it must not disturb what the author is doing.
+     * Every other result settles a request they are waiting on, so holding it would read as the
+     * action having done nothing.
+     */
+    #reloadAfterOutcome(backgrounded: boolean | undefined, affectedFolders?: string[]): void {
+        if (backgrounded && this.$authorIsMidTask()) {
+            this.#holdReload(affectedFolders);
+
+            return;
+        }
+
+        // Quiet: the run already marked its rows, so a skeleton here would read as a jump.
+        // `loadItems` also drops the selection the run consumed.
+        if (this.#currentFolderIsAffected(affectedFolders)) {
+            this.#store.loadItems({ quiet: true });
+        }
+    }
+
+    /**
+     * Holds a reload for {@link flushHeldReloadEffect} to run at the next boundary (FR-043).
+     * Dropping it would leave the grid stale for as long as the author stayed.
+     *
+     * Merged into what is already held, so a later outcome for another folder does not drop this
+     * one's reload. No folders named means reload regardless, and that wins.
+     */
+    #holdReload(affectedFolders?: string[]): void {
+        const held = this.#reloadHeld();
+        const reloadRegardless =
+            !affectedFolders?.length || (!!held && !held.affectedFolders?.length);
+
+        this.#reloadHeld.set({
+            affectedFolders: reloadRegardless
+                ? undefined
+                : [...new Set([...(held?.affectedFolders ?? []), ...affectedFolders])]
+        });
+    }
 
     /**
      * The words for each refusal the delete endpoint reasoned about.

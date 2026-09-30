@@ -12,7 +12,8 @@ import {
     SKIPPED_BY_PARENT_KEY,
     SKIPPED_CANCELLED_KEY
 } from './folder-duplicate-outcome';
-import { MAX_FOLDER_NAMES } from './folder-outcome';
+
+import { MAX_FOLDER_NAMES } from '../shared/constants';
 
 /**
  * Reason → copy for bulk folder duplication (#37062 US2).

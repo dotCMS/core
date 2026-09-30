@@ -5,7 +5,7 @@ import { inject, Injectable } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
 
-import { DotJobState, isJobInProgress } from '@dotcms/dotcms-models';
+import { DotActiveJobEntry, isJobInProgress } from '@dotcms/dotcms-models';
 
 /**
  * How many runs one read of a queue's active listing asks for.
@@ -13,14 +13,7 @@ import { DotJobState, isJobInProgress } from '@dotcms/dotcms-models';
  * The listing pages at 20 by default and is not scoped to the reader, so other authors' runs could
  * push this author's own past the first page. One large page keeps them in view.
  */
-export const ACTIVE_JOBS_PAGE_SIZE = 100;
-
-/** One run as a queue's active listing returns it, with the queue's own parameters. */
-export interface DotActiveJobEntry<P> {
-    id: string;
-    state: DotJobState;
-    parameters?: P;
-}
+const ACTIVE_JOBS_PAGE_SIZE = 100;
 
 /**
  * Operations on the server's job queues that do not depend on which feature's queue it is.
