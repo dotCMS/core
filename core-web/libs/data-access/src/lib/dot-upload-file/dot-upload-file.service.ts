@@ -175,23 +175,6 @@ export class DotUploadFileService {
     }
 
     /**
-     * Submits several files as **one batch**, to be created in the background.
-     *
-     * The plural sibling of {@link uploadFileByBaseType}, and deliberately a separate method rather
-     * than the same one taking an array: the two answer differently. The singular creates the
-     * contentlet and hands it back, so a caller can show the row it just made. This one is
-     * job-backed and answers `202` with a handle before any file exists, so the outcome arrives
-     * later, over the `BULK_UPLOAD_COMPLETED` event rather than from anything the caller polls.
-     *
-     * That is also why the singular is untouched. The Asset Picker calls it and cannot follow a
-     * job: it runs inside the legacy editor host, which has no `Router`.
-     *
-     * @param files Every file the author chose, in the order they chose them. That order is
-     *     preserved in the outcome, which is how a per-file result is matched back to a file.
-     * @param form Target and base type for the whole batch, plus the declared total size.
-     * @returns The accepted run's handle. Nothing has been created yet.
-     */
-    /**
      * Reads the batches still being processed, so a reload can put their status back (#37062).
      *
      * Filtered to batches genuinely in progress: the listing answers with every non-terminal run,
@@ -212,6 +195,23 @@ export class DotUploadFileService {
         }));
     }
 
+    /**
+     * Submits several files as **one batch**, to be created in the background.
+     *
+     * The plural sibling of {@link uploadFileByBaseType}, and deliberately a separate method rather
+     * than the same one taking an array: the two answer differently. The singular creates the
+     * contentlet and hands it back, so a caller can show the row it just made. This one is
+     * job-backed and answers `202` with a handle before any file exists, so the outcome arrives
+     * later, over the `BULK_UPLOAD_COMPLETED` event rather than from anything the caller polls.
+     *
+     * That is also why the singular is untouched. The Asset Picker calls it and cannot follow a
+     * job: it runs inside the legacy editor host, which has no `Router`.
+     *
+     * @param files Every file the author chose, in the order they chose them. That order is
+     *     preserved in the outcome, which is how a per-file result is matched back to a file.
+     * @param form Target and base type for the whole batch, plus the declared total size.
+     * @returns The accepted run's handle. Nothing has been created yet.
+     */
     uploadFilesByBaseType(files: File[], form: DotBulkUploadForm): Observable<DotBulkUploadEvent> {
         if (!files.length) {
             // Nothing to create, so nothing worth a request — and an empty batch is one of the

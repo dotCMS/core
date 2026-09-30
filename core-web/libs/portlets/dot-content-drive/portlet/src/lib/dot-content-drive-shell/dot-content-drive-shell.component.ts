@@ -853,9 +853,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
      * unqualified success would be the one thing the user cannot recover from — the grid has already
      * reloaded and the selection is gone.
-     */
-    /**
-     * Reports each action outcome the store publishes, and reloads what it changed.
      *
      * A `signalMethod` fed only the result, like {@link #syncDialog}: the site, path and tree
      * selection it reads to word the toast are snapshots, so changing any of them does not re-enter
@@ -1231,11 +1228,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
     };
 
     /**
-     * Says why a folder duplication never became a run, and consumes the refusal. Mirrors
-     * {@link #reportFolderDeleteRefusal}: a refusal is not an outcome, so there are no counts and
-     * nothing to reload.
-     */
-    /**
      * The sentence for a refusal, naming the ceiling when it was one and the server advertises it.
      *
      * The Action Center already sends at most the advertised ceiling, so this is reached only when
@@ -1247,12 +1239,22 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * @param limitKey the sentence naming the ceiling, for `OVER_MAX_PATHS`
      * @param maxPaths the advertised ceiling, or `null` when none is
      */
-    #refusalDetail(kind: string, key: string, limitKey: string, maxPaths: number | null): string {
+    #refusalDetail(
+        kind: DotFolderBulkDeleteRefusalKind | DotFolderBulkDuplicateRefusalKind,
+        key: string,
+        limitKey: string,
+        maxPaths: number | null
+    ): string {
         return kind === 'OVER_MAX_PATHS' && maxPaths !== null
             ? this.#dotMessageService.get(limitKey, String(maxPaths))
             : this.#dotMessageService.get(key);
     }
 
+    /**
+     * Says why a folder duplication never became a run, and consumes the refusal. Mirrors
+     * {@link #reportFolderDeleteRefusal}: a refusal is not an outcome, so there are no counts and
+     * nothing to reload.
+     */
     readonly #reportFolderDuplicateRefusal = signalMethod<
         DotFolderBulkDuplicateRefusalKind | undefined
     >((kind) => {

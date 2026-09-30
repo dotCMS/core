@@ -526,6 +526,12 @@ export function withActionExecution() {
                         });
                 };
 
+                /**
+                 * Remembers a batch this store submitted, so its completion can be told from
+                 * another tab's.
+                 *
+                 * @param affectedFolders where the batch landed, as `//hostname/path` refs
+                 */
                 const trackUploadJob = (
                     jobId: string,
                     affectedFolders: string[] = [],
@@ -721,23 +727,6 @@ export function withActionExecution() {
                             });
                     },
 
-                    /**
-                     * Reindexes the given contentlet inodes.
-                     *
-                     * Submit-and-forget: the endpoint answers 202 and nothing here waits or guards. A
-                     * second reindex is allowed to be fired — firing clears the selection, so it takes a
-                     * deliberate re-selection, and reindexing the same rows again is wasteful rather
-                     * than wrong.
-                     *
-                     * Reported through the same {@link onSettled} path as everything else, with its own
-                     * partial-outcome copy: a failure here is content that could not be read or indexed
-                     * and a skip is a cancelled run, neither of which is what the default copy blames.
-                     *
-                     * Only SUCCESS and CANCELED are reported as outcomes, and only when the counters
-                     * close over `total`. A job that died mid-run still carries counters describing how
-                     * far it got, and reporting those as a result would turn a failure into a green
-                     * toast - the exact misleading success this endpoint exists to remove.
-                     */
                     /**
                      * Submits folders to be duplicated in place, and remembers the job so its pushed
                      * outcome can be reported.
@@ -977,6 +966,23 @@ export function withActionExecution() {
                         });
                     },
 
+                    /**
+                     * Reindexes the given contentlet inodes.
+                     *
+                     * Submit-and-forget: the endpoint answers 202 and nothing here waits or guards. A
+                     * second reindex is allowed to be fired — firing clears the selection, so it takes a
+                     * deliberate re-selection, and reindexing the same rows again is wasteful rather
+                     * than wrong.
+                     *
+                     * Reported through the same {@link onSettled} path as everything else, with its own
+                     * partial-outcome copy: a failure here is content that could not be read or indexed
+                     * and a skip is a cancelled run, neither of which is what the default copy blames.
+                     *
+                     * Only SUCCESS and CANCELED are reported as outcomes, and only when the counters
+                     * close over `total`. A job that died mid-run still carries counters describing how
+                     * far it got, and reporting those as a result would turn a failure into a green
+                     * toast - the exact misleading success this endpoint exists to remove.
+                     */
                     executeRefresh: (actionName: string, inodes: string[]): void => {
                         if (!inodes.length) {
                             return;
@@ -1512,12 +1518,6 @@ export function withActionExecution() {
                         });
                     },
 
-                    /**
-                     * Remembers a batch this store submitted, so its completion can be told from
-                     * another tab's.
-                     *
-                     * @param affectedFolders where the batch landed, as `//hostname/path` refs
-                     */
                     /** Consumes a duplication refusal once the shell has said it. */
                     clearFolderDuplicateRefusal: (): void => {
                         patchState(store, { folderDuplicateRefusal: undefined });
