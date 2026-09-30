@@ -1,0 +1,14 @@
+{
+  "entity": {
+    "id": "ct-banner",
+    "variable": "Banner",
+    "fields": [
+      {
+        "id": "field-banner-widget",
+        "variable": "widget",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "<script type=\"text/javascript\">\n  dojo.ready(function() {\n    var f = dijit.byId('widgetField');\n    DotCustomFieldApi.onChangeField('widget', function(v) { console.log(v); });\n  });\n</script>\n<input dojoType=\"dijit.form.TextBox\" id=\"widgetField\" />"
+      }
+    ]
+  }
+}
