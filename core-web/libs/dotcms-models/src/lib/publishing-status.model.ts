@@ -49,14 +49,15 @@ export const READY_STATUSES: readonly PublishAuditStatus[] = [
  * Once here, cancellation is best-effort and may leave a partially-shipped
  * archive on one or more endpoints.
  *
- * `BUNDLE_SENT_SUCCESSFULLY` belongs here: every endpoint accepted the upload,
- * but the receivers have not installed the bundle yet.
+ * Defined by cancellability only. It deliberately differs from the Publishing
+ * Queue status filter's "In progress" option, which owns its own list, and it is
+ * unrelated to the backend's `PublishingJobsHelper.IN_PROGRESS_STATUSES` (the
+ * statuses a bundle cannot be deleted in).
  */
 export const IN_PROGRESS_STATUSES: readonly PublishAuditStatus[] = [
     PublishAuditStatus.WAITING_FOR_PUBLISHING,
     PublishAuditStatus.BUNDLING,
     PublishAuditStatus.SENDING_TO_ENDPOINTS,
-    PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
     PublishAuditStatus.PUBLISHING_BUNDLE,
     PublishAuditStatus.RECEIVED_BUNDLE
 ] as const;
