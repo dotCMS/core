@@ -38,26 +38,49 @@ route in the admin UI depends on the menu.
 
 ## Scope
 
+**What this work delivers**
+
+1. **Legacy-editor content opens in a Content Drive side panel.** Editing and creating content of
+   a type that uses the legacy editor opens that editor in a panel over the list, the same way
+   new-editor content already opens. Content Drive never sends it to the Content Search route
+   again, whatever the side-panel flag says.
+2. **Everything the legacy editor does works from the panel**: save, workflow actions (including
+   the workflow wizard and push publish), delete, jumping to the page editor, and comparing
+   versions from the History tab.
+3. **The list stays current**: it refreshes quietly on every save and every close, keeping
+   folder, filters and page. Unsaved changes ask for confirmation before the panel closes.
+4. **The URL always says which panel is open**, for both editors: `editContent` with
+   `editContentLang` while editing, `createContent=<type>` while creating (switching to the edit
+   params once the new content is saved). The params are removed when the panel closes. The same
+   URLs, when opened, reopen the panel in the editor the content type chose.
+5. **New-editor side-panel paths stay in Content Drive**: "switch to the old editor" reopens the
+   content in the legacy panel, and a load error closes the panel instead of leaving for Content
+   Search.
+6. **The full-page hand-off is removed**: the `CD_` params that brought the author back from the
+   full-page legacy editor, the code that reads them, and Part 1's loop check, which only existed
+   because of that hand-off.
+
+**How it fits with Part 1**
+
 Issue #37759 has two parts, delivered together in one PR. Part 1 is already implemented on the
 branch, and this work, Part 2, builds on it.
 
 - **Part 1 — route redirects** (already on the branch, first written in
-  [#37829](https://github.com/dotCMS/core/pull/37829)). When a user
-  has Content Drive but not Content Search or Site Browser, the old routes redirect to Content
-  Drive: `/c/content/<inode>` becomes `/content-drive?editContent=<identifier>&editContentLang=<id>`,
-  `/c/content/new/<type>` becomes `/content-drive?createContent=<type>`, and the listing and Site
-  Browser URLs become their Content Drive equivalents. It covers every link that starts
-  **outside** Content Drive. To avoid a loop, it does not redirect an edit link sent from Content
-  Drive itself; that user lands on their first portlet.
-- **Part 2 — this spec.** Content Drive opens legacy-editor content itself, in a side panel,
-  instead of handing it to the Content Search route. It also **reads** the two links Part 1
-  builds, and opens each one in the editor the content type chose.
+  [#37829](https://github.com/dotCMS/core/pull/37829)). When a user has Content Drive but not
+  Content Search or Site Browser, the old routes redirect to Content Drive: `/c/content/<inode>`
+  becomes `/content-drive?editContent=<identifier>&editContentLang=<id>`, `/c/content/new/<type>`
+  becomes `/content-drive?createContent=<type>`, and the listing and Site Browser URLs become their
+  Content Drive equivalents. It covers every link that starts **outside** Content Drive. To avoid a
+  loop, it does not redirect an edit link sent from Content Drive itself, and it restores the `CD_`
+  params of Content Drive's hand-off. Part 2 removes both (item 6 above).
+- **Part 2 — this spec.** Content Drive opens legacy-editor content itself, and **reads** the two
+  links Part 1 builds.
 
 **In scope**
 
 The second column is what a user without Content Search gets with Part 1 alone, which is the
-branch as it stands before this work. The code pointers in parentheses are for the reviewer; the plan decides the
-design.
+branch as it stands before this work. The code pointers in parentheses are for the reviewer; the
+plan decides the design.
 
 | Path | With Part 1 alone | Covered by |
 |---|---|---|
@@ -65,25 +88,21 @@ design.
 | Create content of a legacy-editor type from Content Drive | Goes to `c/content/new/<type>`, which Part 1 redirects back to the same Content Drive folder and filters, with nothing open (`DotContentDriveNavigationService.createContent`) | US2 |
 | A `?editContent=` link naming legacy-editor content, including the ones Part 1 builds from other screens (Query Tool, Publishing Queue, the Block Editor, form-entry emails) | Opens in the **new** editor, whatever the type chose (`openEditByIdentifier` never looks up the type) | US5 |
 | A `?createContent=<type>` link, which Part 1 builds from `c/content/new/<type>` (for example the starter onboarding cards) | Nothing reads it, so Content Drive opens with nothing selected | US2 |
+| The URL while a create panel is open (either editor) | `editContent=new`, without the type, so a refresh or a shared link can't reopen it (`dot-content-drive-shell.component.ts`, `NEW_CONTENT_MARKER`) | US2, US7 |
 | "Switch to the old editor" inside the new-editor side panel | Turns the new editor off for the type, then goes to `c/content/<inode>` and the user lands on their first portlet (`content.feature.ts`, `disableNewContentEditor`) | US6 |
 | The new-editor side panel failing to load its content | Leaves the drive for `c/content` (`content.feature.ts`, `initializeExistingContent` error branch) | US6 |
 | Compare versions from the legacy editor's History tab, inside the panel | Needs the admin app's compare dialog, which listens for the `compare-contentlet` event (`edit_contentlet_js_inc.jsp`, `emmitCompareEvent`) | US6 |
+| The `CD_` params from [#33726](https://github.com/dotCMS/core/pull/33726), added to every legacy hand-off so closing the full-page legacy editor returns to Content Drive (`mapQueryParamsToCDParams`, `mapParamsFromEditContentlet`, the `onClose` of `DotContentletWrapperComponent` and `DotCreateContentletComponent`), restored by Part 1's redirect, whose loop check exists only because of that hand-off | Still produced and read | FR-026, FR-027 |
 
 **Out of scope**
 
-- Everything Part 1 delivers: the redirect rules, and the callers that now pass a folder to the
-  Site Browser route (templates and containers stored as files). The one change this work makes
-  to Part 1 is FR-025, extending its loop check to create links.
+- Everything else Part 1 delivers: the redirect rules, and the callers that now pass a folder to
+  the Site Browser route (templates and containers stored as files).
+- Removing the side-panel flag itself. Query Tool, the relationship field of the new editor and
+  the page editor (UVE) read it too, so its removal is its own piece of work. This work only stops
+  Content Drive's legacy-editor path from depending on it.
 - Editing related content from a Block Editor field inside either panel. The bubble menu
   navigates the whole admin window away, for both editors.
-- Removing the `CD_` query params that bring the author back to Content Drive from the full-page
-  legacy editor (added in [#33726](https://github.com/dotCMS/core/pull/33726), and restored by
-  Part 1's redirect). Today Content Drive adds them to every legacy hand-off, whatever the flag
-  says. After this work it adds them only with the side-panel flag off, and they stay until the
-  flag itself is removed.
-- Side-panel flag off for a user without Content Search in their menu. Content Drive still hands
-  legacy content to the full-page editor, and the user lands on their first portlet, as today (see
-  Edge Cases).
 
 **Not planned**
 
@@ -104,10 +123,10 @@ lands back on the same folder, filters and page, with the list showing the resul
 their menu cannot edit legacy-editor content from Content Drive at all. It also removes the
 round trip away from the drive for every other user.
 
-**Independent Test**: With the side-panel flag on, remove Content Search from a test user's
-menu. Open a legacy-editor contentlet from Content Drive through each of the three entry points,
-change a field, save, close, and check that the list shows the change in the same folder, filters
-and page.
+**Independent Test**: Remove Content Search from a test user's menu. Open a legacy-editor
+contentlet from Content Drive through each of the three entry points, change a field, save, close,
+and check that the list shows the change in the same folder, filters and page. Repeat once with
+the side-panel flag off.
 
 **Acceptance Scenarios**:
 
@@ -119,9 +138,12 @@ and page.
 3. **Given** a user whose menu does not include Content Search, **When** they open a
    legacy-editor contentlet from Content Drive, **Then** the editor opens in the panel and they
    are not redirected to another portlet.
-4. **Given** the panel is open, **When** the author saves, **Then** the Content Drive list
+4. **Given** the side-panel flag is off, **When** the author opens a legacy-editor contentlet,
+   **Then** it still opens in the side panel. New-editor content keeps opening full screen with
+   the flag off, as today.
+5. **Given** the panel is open, **When** the author saves, **Then** the Content Drive list
    refreshes and keeps the current folder, filters and page, and the panel stays open.
-5. **Given** the panel is open, **When** the author closes it by any means (the editor's own
+6. **Given** the panel is open, **When** the author closes it by any means (the editor's own
    close, X, ESC, or a click outside the panel), **Then** the list refreshes without showing the
    loading placeholder and keeps the current folder, filters and page.
 
@@ -248,8 +270,8 @@ the Content Drive panel for that content. Then do the same from a copied Content
 3. **Given** a Content Drive URL naming a new-editor contentlet, **When** it is opened, **Then**
    the new editor opens in the side panel, as today.
 4. **Given** the side-panel flag is off, **When** a URL naming a legacy-editor contentlet is
-   opened, **Then** Content Drive hands it to the full-page legacy editor, not the full-page new
-   editor.
+   opened, **Then** the legacy editor still opens in the side panel. A URL naming new-editor
+   content opens the full-page new editor, as today.
 
 ---
 
@@ -280,6 +302,39 @@ legacy-editor item and compare two versions from its History tab.
 
 ---
 
+### User Story 7 - The URL follows the open panel (Priority: P2)
+
+Whichever editor is open, the Content Drive URL says what the panel shows, so a refresh, a copied
+link or browser Back behaves the same for edit and create, and for both editors. Closing the
+panel removes those params.
+
+**Why this priority**: Today only an open edit panel can be refreshed or shared. A create panel
+writes a bare `new` marker without the type, so a refresh closes it. With Part 1 building
+`createContent` links from other screens, Content Drive should write the same link for its own
+create panel.
+
+**Independent Test**: For each editor, open an edit panel and a create panel and check the URL.
+Refresh each one. Save a new piece of content, refresh again, then close the panel and check that
+the params are gone.
+
+**Acceptance Scenarios**:
+
+1. **Given** the author opens content to edit, in either editor, **When** the panel opens,
+   **Then** the URL carries `editContent=<identifier>` and `editContentLang=<language id>`.
+2. **Given** the author starts creating content of a type, in either editor, **When** the panel
+   opens, **Then** the URL carries `createContent=<content type variable>`, next to the `path` of
+   the folder Content Drive is showing.
+3. **Given** a create panel with nothing saved yet, **When** the author refreshes the page,
+   **Then** an empty create form for the same type opens in the same folder.
+4. **Given** a create panel, **When** the author saves the new content for the first time,
+   **Then** the URL switches to that content's `editContent` and `editContentLang` without adding
+   a browser history entry, and a refresh reopens the saved content rather than a second empty
+   create form.
+5. **Given** any panel open, **When** it closes for any reason, **Then** `editContent`,
+   `editContentLang` and `createContent` are removed from the URL.
+
+---
+
 ### Edge Cases
 
 - **Delete of content that is not a page**: the legacy editor reports it as a plain close, the
@@ -290,7 +345,9 @@ legacy-editor item and compare two versions from its History tab.
   never missed.
 - **Save rejected by validation** (a required field left empty, a unique field clashing): the
   legacy editor shows the errors inside the panel and reports no save. The panel stays open, the
-  changes stay unsaved, and the list is not refreshed.
+  changes stay unsaved, the list is not refreshed, and a create panel's URL keeps `createContent`.
+- **Refresh with unsaved changes**: the unsaved changes are lost, as they are today for an open
+  edit panel. The panel reopens from the URL.
 - **Content type lookup fails** (network error, type deleted): the standard error message is
   shown and nothing opens, as today.
 - **User can see but not edit the content**: the legacy editor shows its own permission message
@@ -299,15 +356,18 @@ legacy-editor item and compare two versions from its History tab.
   standard error message is shown and the panel does not open.
 - **`createContent` names a type that doesn't exist or the user can't create**: the standard
   error message is shown, nothing opens, and the author stays on Content Drive.
-- **Author switches language inside the legacy editor**: the list refreshes on close. A shared
-  link taken afterwards may still name the language the panel was opened with.
-- **Side-panel flag off, Content Search not in the menu**: this spec does not fix it. Content
-  Drive hands legacy content to the full-page editor, and Part 1's loop check sends the author to
-  their first portlet instead of back into Content Drive. Part 1's loop check covers edit links
-  only, so FR-025 extends it to create links; without that, a flag-off legacy create would bounce
-  between Content Drive and the create route.
-- **Side-panel flag not yet resolved** on a cold deep-link load: the drive falls back to the
-  full-page editor for that content type, as it already does for new-editor content.
+- **Author switches language inside the legacy editor**: the list refreshes on close. The URL may
+  still name the language the panel was opened with.
+- **Side-panel flag off**: legacy-editor content still opens in the panel, while new-editor content
+  opens full screen, as today. The two editors behave differently in that configuration. This is
+  accepted: the flag is on by default, and a full-page legacy editor could only bring the author
+  back to Content Drive through the `CD_` params this work removes.
+- **Side-panel flag not yet resolved** on a cold deep-link load: legacy-editor content does not
+  depend on the flag and opens in the panel. New-editor content falls back to the full-page
+  editor, as it does today.
+- **Old links with `CD_` params, or with `editContent=new`**: Part 1's redirect drops the `CD_`
+  params like any other param Content Drive doesn't know, and Content Drive keeps ignoring
+  `editContent=new`, as it does today.
 - **Related content from a Block Editor field inside a panel**: the Block Editor's bubble menu
   navigates the whole admin window to the related content's editor, for both panels, and the
   open panel is lost. Part 1's redirect lands the author back in Content Drive with that content
@@ -323,23 +383,22 @@ legacy-editor item and compare two versions from its History tab.
 
 **Routing decision**
 
-- **FR-001**: With the side-panel flag on, editing a contentlet whose type has not opted into the
-  new editor MUST open the legacy editor in a Content Drive side panel, from every edit entry
-  point (double-click, row context menu, toolbar), and MUST NOT navigate to the Content Search
+- **FR-001**: Editing a contentlet whose type has not opted into the new editor MUST open the
+  legacy editor in a Content Drive side panel, from every edit entry point (double-click, row
+  context menu, toolbar), and MUST NOT navigate to the Content Search route.
+- **FR-002**: Creating content of a type that has not opted into the new editor MUST open the
+  legacy create form in a Content Drive side panel, and MUST NOT navigate to the Content Search
   route.
-- **FR-002**: With the side-panel flag on, creating content of a type that has not opted into
-  the new editor MUST open the legacy create form in a Content Drive side panel, and MUST NOT
-  navigate to the Content Search route.
 - **FR-003**: The legacy create form opened from Content Drive MUST pre-select, as the new
   content's location, the folder Content Drive is showing: the folder the author is browsing, or,
   for a `createContent` link, the folder the link names (FR-024).
 - **FR-004**: FR-001 and FR-002 MUST work for a user whose menu does not include Content Search.
-- **FR-005**: Content types that opted into the new editor MUST keep their current side-panel
-  behavior, unchanged, except for FR-026 and FR-027.
-- **FR-006**: With the side-panel flag off, editing and creating legacy-editor content MUST keep
-  routing to the full-page legacy editor, as today, with the `CD_` query params that bring the
-  author back to Content Drive on close. Those params, and the code that reads them, stay while
-  the flag exists.
+- **FR-005**: Content types that opted into the new editor MUST keep their current behavior,
+  including the side-panel flag deciding between the panel and the full-page editor, except for
+  FR-020, FR-025, FR-028 and FR-029.
+- **FR-006**: The legacy-editor panel MUST NOT depend on the side-panel flag: FR-001, FR-002,
+  FR-021 and FR-024 apply whether the flag is on, off or not yet resolved. The flag keeps deciding
+  only how new-editor content opens.
 - **FR-007**: Which editor opens MUST keep following each content type's own editor setting. The
   panel MUST NOT switch a legacy-editor type to the new editor.
 
@@ -380,13 +439,15 @@ legacy-editor item and compare two versions from its History tab.
 
 **Links and URL state**
 
-- **FR-020**: The Content Drive URL MUST reflect the open legacy-editor panel the same way it
-  does for the new-editor panel, so refresh, Back and shared links behave the same for both.
+- **FR-020**: While a panel is open, for either editor, the Content Drive URL MUST name what it
+  shows: `editContent=<identifier>` with `editContentLang=<language id>` for an edit, and
+  `createContent=<content type variable>` for a create, replacing today's `editContent=new`
+  marker. Closing the panel for any reason MUST remove all three params. Refresh, Back and shared
+  links MUST behave the same for both editors.
 - **FR-021**: Opening a Content Drive URL that names legacy-editor content (`editContent` with
-  `editContentLang`) MUST open the legacy editor in the panel when the flag is on, and the
-  full-page legacy editor when the flag is off. This applies however the URL was reached,
-  including Part 1's redirect from `c/content/<inode>`. Content Drive MUST look up the content
-  type's editor setting before opening; it MUST NOT default to the new editor.
+  `editContentLang`) MUST open the legacy editor in the panel. This applies however the URL was
+  reached, including Part 1's redirect from `c/content/<inode>`. Content Drive MUST look up the
+  content type's editor setting before opening; it MUST NOT default to the new editor.
 - **FR-022**: Opening a Content Drive URL that names new-editor content MUST behave as today.
 - **FR-023**: The Content Drive links that open a panel (`editContent` with `editContentLang`,
   and `createContent`) are supported entry points. Part 1 redirects to them, other screens may
@@ -394,31 +455,42 @@ legacy-editor item and compare two versions from its History tab.
 - **FR-024**: Opening a Content Drive URL with `createContent=<content type variable>` MUST open
   the create form for that type, following FR-002 (legacy-editor type) or today's new-editor
   create (other types). Content Drive opens on the folder the URL names (`path`), or on the site
-  root when it names none, and that folder is the new content's location (FR-003). Content Drive
-  reads the param once, on load, and removes it from the URL once the create form opens, so a
-  refresh does not open a second create form.
-- **FR-025**: Part 1's loop check (a legacy link sent from Content Drive itself is not redirected
-  back into Content Drive) MUST cover create links as well as edit links, so that a flag-off
-  legacy create from Content Drive, for a user without Content Search, lands on their first
-  portlet instead of looping.
+  root when it names none, and that folder is the new content's location (FR-003). The param stays
+  in the URL while the create panel is open (FR-020), so a refresh opens an empty create form for
+  the same type in the same folder.
+- **FR-025**: When content created in a panel is saved for the first time, for either editor,
+  the URL MUST switch from `createContent` to that content's `editContent` and `editContentLang`,
+  without adding a browser history entry, so a refresh reopens the saved content instead of a
+  second create form.
+
+**Removing the full-page hand-off**
+
+- **FR-026**: Content Drive MUST NOT produce the `CD_` params. The code that produces them and
+  the code that reads them MUST be removed: the producer in Content Drive's navigation, the
+  Content Drive branch in the `onClose` of the full-page legacy edit and create screens (which then
+  keep their behavior for users who reach them from Content Search), Part 1's `CD_` restoration in
+  the route guard, and the shared helpers when nothing else uses them.
+- **FR-027**: Part 1's loop check (an edit link sent from Content Drive itself is not redirected
+  back into Content Drive) MUST be removed. Once Content Drive stops linking to the Content Search
+  route there is no loop to prevent, so edit and create links are redirected the same way,
+  wherever they come from.
 
 **Staying inside Content Drive**
 
-- **FR-026**: With the side-panel flag on, "switch to the old editor" inside the new-editor side
-  panel MUST reopen the same content, in the same language, in the legacy panel, without leaving
-  Content Drive. It still turns the new editor off for that content type, as it does today. The
-  full-page new editor keeps its current behavior.
-- **FR-027**: With the side-panel flag on, a load failure in the new-editor side panel MUST show
-  the standard error message and close the panel, keeping the current folder, filters and page.
-  It MUST NOT navigate to the Content Search route. The full-page new editor keeps its current
-  behavior.
+- **FR-028**: "Switch to the old editor" inside the new-editor side panel MUST reopen the same
+  content, in the same language, in the legacy panel, without leaving Content Drive. It still
+  turns the new editor off for that content type, as it does today. The full-page new editor keeps
+  its current behavior.
+- **FR-029**: A load failure in the new-editor side panel MUST show the standard error message
+  and close the panel, keeping the current folder, filters and page. It MUST NOT navigate to the
+  Content Search route. The full-page new editor keeps its current behavior.
 
 **Tests**
 
-- **FR-028**: Automated tests MUST cover the routing decision (new vs legacy editor, flag on vs
+- **FR-030**: Automated tests MUST cover the routing decision (new vs legacy editor, flag on vs
   off, edit vs create vs `editContent` link vs `createContent` link), the handling of each legacy
-  editor event, the list refresh after save and after every kind of close, and FR-024 through
-  FR-027.
+  editor event, the list refresh after save and after every kind of close, the URL params for each
+  panel state (FR-020, FR-024, FR-025), and FR-026 through FR-029.
 
 ### Key Entities
 
@@ -427,6 +499,8 @@ legacy-editor item and compare two versions from its History tab.
 - **Editor kind**: which editor the open request uses, new or legacy, based on the content
   type's editor setting. Everything that follows the open panel (URL, Back, refresh on close)
   works the same for both kinds.
+- **Panel URL params**: `editContent` and `editContentLang` for an edit, `createContent` for a
+  create. They describe the open panel and are the same links Part 1 builds from other screens.
 - **Legacy editor event**: a notification the embedded legacy editor sends to the admin UI
   (close, save, page deleted, data changed, open page editor, loaded, compare versions, workflow
   wizard, push publish).
@@ -436,35 +510,45 @@ legacy-editor item and compare two versions from its History tab.
 ### Measurable Outcomes
 
 - **SC-001**: A user without Content Search in their menu can edit and create content of every
-  legacy-editor content type from Content Drive, and can switch a type back to the old editor
-  from the side panel. Zero of these attempts redirect them to another portlet.
+  legacy-editor content type from Content Drive, with the side-panel flag on or off, and can
+  switch a type back to the old editor from the side panel. Zero of these attempts redirect them
+  to another portlet.
 - **SC-002**: After saving or closing the legacy-editor panel, the author is on the same folder,
   filters and page they started from in 100% of cases, with no manual navigation.
 - **SC-003**: Changes made in the panel (edits, new content, status changes, deletions) show in
   the list by the time the panel has closed, without a manual refresh.
 - **SC-004**: Closing the panel never shows the list's loading placeholder.
-- **SC-005**: Zero unsaved edits are discarded without the author confirming it.
-- **SC-006**: Content types that use the new editor, and installations with the side-panel flag
-  off, see no change in behavior. Their existing automated tests pass unchanged, apart from the
-  tests that are moved to the flag-off group because they assumed flag-on routing to Content
-  Search.
+- **SC-005**: Zero unsaved edits are discarded without the author confirming it, except on a page
+  refresh, which loses them as it does today.
+- **SC-006**: New-editor content sees no change in behavior apart from the create panel's URL
+  (FR-020, FR-025) and the two paths in FR-028 and FR-029. Its existing automated tests pass,
+  apart from the ones that assert the `editContent=new` marker. The navigation tests that expect
+  legacy-editor content to route to Content Search are replaced, since that routing is removed.
 - **SC-007**: Opening legacy-editor content from any screen outside Content Drive (Query Tool,
   Publishing Queue, Block Editor, form-entry emails) opens the legacy editor in 100% of cases.
   Zero of them open the new editor.
+- **SC-008**: Refreshing the page with any panel open reopens the same panel: the same content in
+  the same language for an edit, and a create form for the same type in the same folder, or the
+  saved content once a create has been saved.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
-- **Existing behavior touched**: The Content Drive portlet's edit and create routing, and its
-  side-panel host. It embeds the **legacy content editor** (the JSP-based edit-contentlet screen
-  that Content Search and the page editor already embed), which is part of the older product
-  surface. The legacy editor itself is **not** changed. It is only hosted in a new place, using
-  the events it already sends.
-- **Backward-compatibility expectations**: New-editor content, installations with the side-panel
-  flag off, page content, and the Content Search portlet itself all keep working unchanged. There
-  are no REST, database or index changes, so the feature is safe to roll back. One deliberate
-  correction: with the flag off, a Content Drive link to legacy-editor content now opens the
-  full-page **legacy** editor. Today it opens the full-page new editor, which does not match that
-  content type's editor setting (FR-021).
+- **Existing behavior touched**: The Content Drive portlet's edit and create routing, its
+  side-panel host and its URL state. It embeds the **legacy content editor** (the JSP-based
+  edit-contentlet screen that Content Search and the page editor already embed), which is part of
+  the older product surface. The legacy editor itself is **not** changed. It is only hosted in a
+  new place, using the events it already sends. The full-page legacy edit and create screens lose
+  the `CD_` branch of their close handler, and keep their behavior for Content Search.
+- **Backward-compatibility expectations**: New-editor content, page content, and the Content
+  Search portlet itself keep working as today. There are no REST, database or index changes, so
+  the feature is safe to roll back. Deliberate changes:
+  - With the side-panel flag off, legacy-editor content opens in the panel instead of the
+    full-page legacy editor, and a Content Drive link to it opens the legacy panel instead of the
+    full-page new editor, which did not match that content type's editor setting (FR-006, FR-021).
+  - The create panel's URL changes from `editContent=new` to `createContent=<type>`, for both
+    editors (FR-020).
+  - Content Drive no longer sends anyone to the full-page legacy editor, so the `CD_` round trip
+    added in #33726 is removed (FR-026).
 - **Known related decisions**:
   - The side panel for the new editor, and its flag (on by default), already exist. This feature
     extends that pattern rather than adding a second way to edit.
@@ -479,14 +563,17 @@ legacy-editor item and compare two versions from its History tab.
   - The plan formally consults `dotCMS/platform-adrs`.
   - Part 1 on its own opens legacy-editor content that arrives from other screens in the new
     editor (User Story 5). The fix is deliberately kept here rather than in Part 1 (decided
-    2026-09-30). Both parts now ship in the same PR (decided 2026-09-30, closing #37829), so no
+    2026-09-30). Both parts ship in the same PR (decided 2026-09-30, closing #37829), so no
     release carries Part 1 without this fix.
-  - The `CD_` round trip from the full-page legacy editor back to Content Drive is kept while the
-    side-panel flag exists (decided 2026-09-30). The alternative, opening legacy content in the
-    panel whatever the flag says and removing `CD_` now, was rejected because it takes away the
-    flag as a kill switch. Once the flag is removed, the `CD_` params, the two legacy close
-    handlers that read them, and Part 1's `CD_` restoration and loop check can be removed
-    together.
+  - The `CD_` params and Part 1's loop check are removed in this work, and the legacy panel no
+    longer depends on the side-panel flag (decided 2026-09-30, on review). This replaces an earlier
+    decision to keep the `CD_` round trip while the flag exists. The cost is that the flag no
+    longer works as a kill switch for the legacy panel, and that with the flag off the two editors
+    open differently. Removing the flag altogether was left out because Query Tool, the
+    relationship field and UVE read it too.
+  - The create panel's URL uses `createContent=<type>`, the param Part 1 already builds, rather
+    than `editContent=new` plus a type param, so an incoming link and an open panel share one
+    format (decided 2026-09-30, on review).
 
 ## Assumptions
 
@@ -501,6 +588,14 @@ legacy-editor item and compare two versions from its History tab.
   notification when the action removed the content). It only holds if the panel hands the
   wizard's input back to the editor (FR-009); the refresh on every close (FR-014) is the safety
   net if it doesn't.
+- Push publish reaches the panel only through workflow actions: the legacy editor's action panel
+  lists workflow actions, and one with push publish inputs opens the workflow wizard or the push
+  publish dialog (FR-009, FR-010). The legacy editor has no **Add to bundle** action of its own. In
+  Content Search it lived in the list, and Content Drive already offers it, together with push
+  publish, from its own action center.
+- Both editors report the saved content when a save succeeds (the new-editor panel with the saved
+  contentlet, the legacy editor with the save notification's data), which is what FR-025 needs to
+  switch the URL to the edit params.
 - The refresh after a save (FR-013) also uses the quiet refresh, like the refresh on close. The
   new-editor panel's own refresh after a save is out of scope and stays as it is.
 - The unsaved-changes prompt reuses the new-editor side panel's existing wording. No new
@@ -508,10 +603,6 @@ legacy-editor item and compare two versions from its History tab.
 - The quiet refresh of the list is the only feedback Content Drive gives after a save or a close.
   It shows no toast or other notice of its own. Messages the legacy editor or the workflow and
   push publish dialogs already show keep appearing as they do today.
-- The side-panel flag stays on by default, so users without Content Search in their menu get the
-  fix without any configuration.
-- Part 1 keeps the link formats this spec reads: `editContent` with `editContentLang`
-  for edits, and `createContent` with an optional `path` for creates. When the create link comes
-  from Content Drive's own flag-off hand-off, Part 1 restores the `CD_` params, so `path` names
-  the folder the author was browsing. If review renames `createContent`, FR-024 follows the new
-  name.
+- Part 1 builds the link formats this spec reads and writes: `editContent` with `editContentLang`
+  for edits, and `createContent` with an optional `path` for creates. Both parts are on the same
+  branch, so a rename changes both together.
