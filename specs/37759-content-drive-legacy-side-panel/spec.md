@@ -59,6 +59,9 @@ route in the admin UI depends on the menu.
 6. **The full-page hand-off is removed**: the `CD_` params that brought the author back from the
    full-page legacy editor, the code that reads them, and Part 1's loop check, which only existed
    because of that hand-off.
+7. **The URL also follows the open folder dialog**: New Folder, Folder Settings and Edit
+   Permissions write a param while they are open, so a refresh or a shared link reopens them, and
+   remove it when they close.
 
 **How it fits with Part 1**
 
@@ -89,6 +92,7 @@ plan decides the design.
 | A `?editContent=` link naming legacy-editor content, including the ones Part 1 builds from other screens (Query Tool, Publishing Queue, the Block Editor, form-entry emails) | Opens in the **new** editor, whatever the type chose (`openEditByIdentifier` never looks up the type) | US5 |
 | A `?createContent=<type>` link, which Part 1 builds from `c/content/new/<type>` (for example the starter onboarding cards) | Nothing reads it, so Content Drive opens with nothing selected | US2 |
 | The URL while a create panel is open (either editor) | `editContent=new`, without the type, so a refresh or a shared link can't reopen it (`dot-content-drive-shell.component.ts`, `NEW_CONTENT_MARKER`) | US2, US7 |
+| The URL while a folder dialog is open: New Folder, Folder Settings (both through the store's dialog state) and Edit Permissions (a JSP dialog the row context menu opens directly, `dot-folder-list-context-menu.component.ts`) | No param, so a refresh closes the dialog and it can't be shared | US8 |
 | "Switch to the old editor" inside the new-editor side panel | Turns the new editor off for the type, then goes to `c/content/<inode>` and the user lands on their first portlet (`content.feature.ts`, `disableNewContentEditor`) | US6 |
 | The new-editor side panel failing to load its content | Leaves the drive for `c/content` (`content.feature.ts`, `initializeExistingContent` error branch) | US6 |
 | Compare versions from the legacy editor's History tab, inside the panel | Needs the admin app's compare dialog, which listens for the `compare-contentlet` event (`edit_contentlet_js_inc.jsp`, `emmitCompareEvent`) | US6 |
@@ -335,6 +339,39 @@ the params are gone.
 
 ---
 
+### User Story 8 - The URL follows the open folder dialog (Priority: P3)
+
+The folder dialogs behave like the panels: while one is open, the Content Drive URL says which
+one and for which folder, so a refresh or a copied link reopens it, and closing it removes the
+param. This covers **New Folder** (from the create action), and **Folder Settings** and **Edit
+Permissions** (from a folder's context menu).
+
+**Why this priority**: It is not needed to replace Content Search or Site Browser. It was asked
+for on review so that folders follow the same URL rules as content, and it reuses the URL
+handling this work builds for the panels.
+
+**Independent Test**: Open each folder dialog and check the URL. Refresh with each one open and
+check that the same dialog reopens for the same folder. Close each one by every means, including
+browser Back, and check that the param is gone.
+
+**Acceptance Scenarios**:
+
+1. **Given** the author opens **New Folder** while browsing a folder, **When** the dialog opens,
+   **Then** the URL carries `createFolder=true` next to the `path` of that folder, and a refresh
+   reopens the dialog to create a folder in the same place.
+2. **Given** the author opens **Folder Settings** for a folder, **When** the dialog opens,
+   **Then** the URL carries `editFolder=<folder identifier>`, and a refresh reopens the settings of
+   that folder.
+3. **Given** the author opens **Edit Permissions** for a folder, **When** the dialog opens,
+   **Then** the URL carries `folderPermissions=<folder identifier>`, and a refresh reopens the
+   permissions of that folder.
+4. **Given** any folder dialog open, **When** it closes for any reason (save, cancel, X, ESC,
+   browser Back), **Then** its param is removed from the URL.
+5. **Given** a URL naming a folder the author cannot find or cannot edit, **When** it is opened,
+   **Then** the standard error message is shown, no dialog opens, and the param is removed.
+
+---
+
 ### Edge Cases
 
 - **Delete of content that is not a page**: the legacy editor reports it as a plain close, the
@@ -368,6 +405,11 @@ the params are gone.
 - **Old links with `CD_` params, or with `editContent=new`**: Part 1's redirect drops the `CD_`
   params like any other param Content Drive doesn't know, and Content Drive keeps ignoring
   `editContent=new`, as it does today.
+- **Folder dialog for a folder that is gone or out of reach** (deleted, moved to another site, no
+  permission, a bad identifier): the standard error message is shown, no dialog opens, and the
+  param is removed.
+- **A URL naming both a panel and a folder dialog**: only the panel opens, and the folder-dialog
+  param is removed. The two never stay open together.
 - **Related content from a Block Editor field inside a panel**: the Block Editor's bubble menu
   navigates the whole admin window to the related content's editor, for both panels, and the
   open panel is lost. Part 1's redirect lands the author back in Content Drive with that content
@@ -485,12 +527,31 @@ the params are gone.
   and close the panel, keeping the current folder, filters and page. It MUST NOT navigate to the
   Content Search route. The full-page new editor keeps its current behavior.
 
+**Folder dialogs in the URL**
+
+- **FR-030**: While a folder dialog is open, the Content Drive URL MUST name it: `createFolder=true`
+  for New Folder (its parent is the folder in `path`, or the site root), `editFolder=<folder
+  identifier>` for Folder Settings, and `folderPermissions=<folder identifier>` for Edit
+  Permissions. Closing the dialog for any reason (save, cancel, X, ESC, browser Back) MUST remove
+  the param.
+- **FR-031**: Opening a Content Drive URL with one of these params MUST open the matching dialog,
+  for the folder the param names, resolving that folder on load when the dialog needs more than
+  its identifier. The param is read on load, like the panel params.
+- **FR-032**: Browser Back while a folder dialog is open MUST close it the same way its own close
+  does, and opening one MUST add a single history entry, like opening a panel.
+- **FR-033**: A folder dialog opened from the URL MUST follow the same permission rules as the
+  context menu that opens it: Folder Settings needs edit permission on the folder, and Edit
+  Permissions needs permission to edit its permissions. When the folder can't be resolved or the
+  author lacks the permission, the standard error message is shown, no dialog opens and the param
+  is removed.
+
 **Tests**
 
-- **FR-030**: Automated tests MUST cover the routing decision (new vs legacy editor, flag on vs
+- **FR-034**: Automated tests MUST cover the routing decision (new vs legacy editor, flag on vs
   off, edit vs create vs `editContent` link vs `createContent` link), the handling of each legacy
   editor event, the list refresh after save and after every kind of close, the URL params for each
-  panel state (FR-020, FR-024, FR-025), and FR-026 through FR-029.
+  panel state (FR-020, FR-024, FR-025), FR-026 through FR-029, and the folder-dialog params
+  (FR-030 through FR-033).
 
 ### Key Entities
 
@@ -501,6 +562,8 @@ the params are gone.
   works the same for both kinds.
 - **Panel URL params**: `editContent` and `editContentLang` for an edit, `createContent` for a
   create. They describe the open panel and are the same links Part 1 builds from other screens.
+- **Folder-dialog URL params**: `createFolder`, `editFolder` and `folderPermissions`. They describe
+  the open folder dialog, and at most one of them, or of the panel params, is in the URL at a time.
 - **Legacy editor event**: a notification the embedded legacy editor sends to the admin UI
   (close, save, page deleted, data changed, open page editor, loaded, compare versions, workflow
   wizard, push publish).
@@ -530,6 +593,8 @@ the params are gone.
 - **SC-008**: Refreshing the page with any panel open reopens the same panel: the same content in
   the same language for an edit, and a create form for the same type in the same folder, or the
   saved content once a create has been saved.
+- **SC-009**: Refreshing the page with a folder dialog open reopens the same dialog for the same
+  folder, and closing it leaves no folder-dialog param in the URL.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -547,6 +612,7 @@ the params are gone.
     full-page new editor, which did not match that content type's editor setting (FR-006, FR-021).
   - The create panel's URL changes from `editContent=new` to `createContent=<type>`, for both
     editors (FR-020).
+  - The folder dialogs write a URL param while they are open (FR-030).
   - Content Drive no longer sends anyone to the full-page legacy editor, so the `CD_` round trip
     added in #33726 is removed (FR-026).
 - **Known related decisions**:
@@ -574,6 +640,9 @@ the params are gone.
   - The create panel's URL uses `createContent=<type>`, the param Part 1 already builds, rather
     than `editContent=new` plus a type param, so an incoming link and an open panel share one
     format (decided 2026-09-30, on review).
+  - The folder dialogs follow the same URL rules as the panels (decided 2026-09-30, on review, as
+    a nice to have). It is the lowest-priority story (US8) because it does not block replacing
+    Content Search or Site Browser.
 
 ## Assumptions
 
@@ -596,6 +665,8 @@ the params are gone.
 - Both editors report the saved content when a save succeeds (the new-editor panel with the saved
   contentlet, the legacy editor with the save notification's data), which is what FR-025 needs to
   switch the URL to the edit params.
+- A folder can be resolved by its identifier when a folder-dialog URL is opened: the folder REST
+  API already looks folders up by id. The Edit Permissions dialog only needs the identifier.
 - The refresh after a save (FR-013) also uses the quiet refresh, like the refresh on close. The
   new-editor panel's own refresh after a save is out of scope and stays as it is.
 - The unsaved-changes prompt reuses the new-editor side panel's existing wording. No new
