@@ -159,8 +159,14 @@ describe('DotContentDriveSearchInputComponent', () => {
         it('should record a newly chosen scope', () => {
             withScope(undefined);
             spectator.detectChanges();
+            spectator.click(byTestId('search-scope-trigger'));
+            spectator.detectChanges();
 
-            spectator.component['onScopeChange']('ALL_FIELDS');
+            spectator.triggerEventHandler(
+                '[data-testid="search-scope-panel"]',
+                'ngModelChange',
+                'ALL_FIELDS'
+            );
 
             expect(store.setSearchScope).toHaveBeenCalledWith('ALL_FIELDS');
         });
@@ -256,14 +262,20 @@ describe('DotContentDriveSearchInputComponent', () => {
             // A native event: Spectator's `dispatchMouseEvent` calls `initMouseEvent`, which this
             // DOM does not implement. Looked up on the document because the panel renders in an
             // overlay outside the component.
+            // Asserted on both sides: without an option to hover, or a tooltip it raised, the
+            // tests below would find no tooltip for a reason that proves nothing.
+            expect(option()).toBeTruthy();
             option()?.dispatchEvent(new MouseEvent('mouseenter'));
             vi.runAllTimers();
             spectator.detectChanges();
+            expect(tooltipOnPage()).toBeTruthy();
         };
 
         const option = () =>
             document.querySelector<HTMLElement>('[data-testid="search-scope-option-ALL_FIELDS"]');
 
+        // By PrimeNG's class: the tooltip is an overlay PrimeNG appends to the page itself, so it
+        // cannot carry a test id of ours.
         const tooltipOnPage = () => document.querySelector('.p-tooltip');
 
         beforeEach(() => vi.useFakeTimers());

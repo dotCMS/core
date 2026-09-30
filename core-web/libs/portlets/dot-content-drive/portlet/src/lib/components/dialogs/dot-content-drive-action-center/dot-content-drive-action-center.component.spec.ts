@@ -11,6 +11,7 @@ import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { computed, signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
 
@@ -1763,7 +1764,9 @@ describe('DotContentDriveActionCenterComponent', () => {
             mockBlockingRunCountOverride.set(0);
             spectator.detectChanges();
 
-            spectator.component['onContinueFromConfigure']();
+            spectator.click(
+                spectator.query('[data-testid="action-configure-continue"] button') as HTMLElement
+            );
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
@@ -2755,8 +2758,11 @@ describe('DotContentDriveActionCenterComponent', () => {
             mockSelectedItems.set([ALPHA, BETA]);
         });
 
+        // Read from the button's own input rather than PrimeNG's rendered badge markup, which is
+        // the library's to change.
         const executeBadge = () =>
-            spectator.query('[data-testid="action-preview-execute"] .p-badge')?.textContent?.trim();
+            spectator.debugElement.query(By.css('[data-testid="action-preview-execute"]'))
+                ?.componentInstance?.badge;
 
         it.each([
             ['DUPLICATE', mockFolderDuplicateMaxPaths, 'content-drive.duplicate.over-ceiling'],

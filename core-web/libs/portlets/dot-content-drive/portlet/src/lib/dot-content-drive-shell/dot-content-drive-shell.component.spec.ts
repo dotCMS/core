@@ -1490,9 +1490,14 @@ describe('DotContentDriveShellComponent', () => {
                     })
                 );
 
-                expect(dotMessageService.get).not.toHaveBeenCalledWith(
-                    expect.stringMatching(/^content-drive\.(upload|delete)\./),
-                    expect.anything()
+                // Every key asked for, whatever its arguments: a matcher with a fixed argument count
+                // would miss the one-argument lookups summaries use.
+                const keysAskedFor = (dotMessageService.get as unknown as Mock).mock.calls.map(
+                    ([key]) => key
+                );
+
+                expect(keysAskedFor).not.toContainEqual(
+                    expect.stringMatching(/^content-drive\.(upload|delete)\./)
                 );
             });
         });

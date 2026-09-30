@@ -1298,6 +1298,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     await rightClick(readable);
                     duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
+                    // The command ran: a missing item would make the assertion below pass on its own.
+                    expect(store.executeDuplicate).toHaveBeenCalled();
                     expect(alertConfirmService.confirm).not.toHaveBeenCalled();
                 });
 
@@ -1308,6 +1310,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     await rightClick(readable);
                     duplicateItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
+                    // The command ran: a missing item would make the assertion below pass on its own.
+                    expect(store.executeDuplicate).toHaveBeenCalled();
                     expect(messageService.add).not.toHaveBeenCalled();
                 });
 
