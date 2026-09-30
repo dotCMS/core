@@ -291,8 +291,18 @@ async function writeBodyToFile(
                 const { done, value } = await reader.read();
                 if (done) break;
                 // Awaiting each write is the backpressure: the next chunk is not read until
-                // this one is on disk, so memory holds one chunk, not the file.
-                await file.write(value);
+                // this one is on disk, so memory holds one chunk, not the file. A write may
+                // store fewer bytes than it was given (`bytesWritten`), so it loops until the
+                // whole chunk is written — counting the chunk would report a truncated file
+                // as complete.
+                for (let offset = 0; offset < value.byteLength; ) {
+                    const { bytesWritten } = await file.write(
+                        value,
+                        offset,
+                        value.byteLength - offset
+                    );
+                    offset += bytesWritten;
+                }
                 bytes += value.byteLength;
             }
         } finally {
