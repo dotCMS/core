@@ -37,16 +37,24 @@ export async function deleteFolders(
 /**
  * Creates folders under a given site and flushes the server-side
  * FolderCache so the tree browsing API returns fresh data.
+ *
+ * @param request the API context to send with
+ * @param siteName the site the folders go on
+ * @param paths the folders to create
+ * @param options `waitForIndex: false` skips waiting for the search index, which is slow for many
+ *   folders on CI and not needed by anything that reads folders from the database, like the tree
  */
 export async function createFolders(
     request: APIRequestContext,
     siteName: string,
-    paths: string[]
+    paths: string[],
+    { waitForIndex = true }: { waitForIndex?: boolean } = {}
 ): Promise<void> {
-    const response = await request.post(
-        `/api/v1/folder/createfolders/${siteName}?indexPolicy=WAIT_FOR`,
-        { data: paths, headers: authHeaders() }
-    );
+    const indexPolicy = waitForIndex ? '?indexPolicy=WAIT_FOR' : '';
+    const response = await request.post(`/api/v1/folder/createfolders/${siteName}${indexPolicy}`, {
+        data: paths,
+        headers: authHeaders()
+    });
     expect(response.status()).toBe(200);
 
     await request.delete('/api/v1/caches/region/FolderCache', {

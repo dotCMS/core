@@ -180,10 +180,15 @@ test.describe('Content Drive Folder Tree', () => {
             { length: 40 },
             (_, index) => `zz-cd-pad-${testSuffix}-${String(index).padStart(2, '0')}`
         );
-        await apiHelpers.createFolders(site.hostname, [
-            ...fillerNames.map((name) => `/${name}`),
-            `/${parentName}/${middleName}`
-        ]);
+        // The fillers only fill the tree, which reads the database, so they skip the index wait
+        // that made seeding forty of them outlast the test on CI. The listing reads the index, so
+        // the test's own folders keep it.
+        await apiHelpers.createFolders(
+            site.hostname,
+            fillerNames.map((name) => `/${name}`),
+            { waitForIndex: false }
+        );
+        await apiHelpers.createFolders(site.hostname, [`/${parentName}/${middleName}`]);
 
         try {
             const drive = new ContentDrivePage(adminPage);
