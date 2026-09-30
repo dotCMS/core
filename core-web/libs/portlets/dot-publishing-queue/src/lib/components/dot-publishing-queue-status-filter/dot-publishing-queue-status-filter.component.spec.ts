@@ -1,44 +1,65 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { PublishAuditStatus } from '@dotcms/dotcms-models';
+import { ENDPOINT_ONLY_STATUSES, PublishAuditStatus } from '@dotcms/dotcms-models';
+import { DotChipFilterComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueStatusFilterComponent } from './dot-publishing-queue-status-filter.component';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
-// Mirrors the actual labels in Language.properties — the filter dedupes by
-// translated label, so the test must give it the same overlaps.
-const STATUS_LABELS: Record<PublishAuditStatus, string> = {
-    [PublishAuditStatus.SCHEDULED]: 'Scheduled',
-    [PublishAuditStatus.BUNDLE_REQUESTED]: 'Pending',
-    [PublishAuditStatus.WAITING_FOR_PUBLISHING]: 'Waiting',
-    [PublishAuditStatus.BUNDLING]: 'Bundling',
-    [PublishAuditStatus.SENDING_TO_ENDPOINTS]: 'Sending',
-    [PublishAuditStatus.PUBLISHING_BUNDLE]: 'Publishing',
-    [PublishAuditStatus.RECEIVED_BUNDLE]: 'Received',
-    [PublishAuditStatus.SUCCESS]: 'Success',
-    [PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY]: 'Success',
-    [PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY]: 'Saved',
-    [PublishAuditStatus.SUCCESS_WITH_WARNINGS]: 'Success (warn)',
-    [PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS]: 'Failed (all)',
-    [PublishAuditStatus.FAILED_TO_SEND_TO_SOME_GROUPS]: 'Failed (some)',
-    [PublishAuditStatus.FAILED_TO_BUNDLE]: 'Build error',
-    [PublishAuditStatus.FAILED_TO_SENT]: 'Send error',
-    [PublishAuditStatus.FAILED_TO_PUBLISH]: 'Publish error',
-    [PublishAuditStatus.FAILED_INTEGRITY_CHECK]: 'Integrity',
-    [PublishAuditStatus.INVALID_TOKEN]: 'Auth error',
-    [PublishAuditStatus.LICENSE_REQUIRED]: 'No license'
+const GROUP_LABELS: Record<string, string> = {
+    'publishing-queue.filter.status.scheduled': 'Scheduled',
+    'publishing-queue.filter.status.pending': 'Pending',
+    'publishing-queue.filter.status.in-progress': 'In progress',
+    'publishing-queue.filter.status.success': 'Success',
+    'publishing-queue.filter.status.success-with-warnings': 'Success with warnings',
+    'publishing-queue.filter.status.failed': 'Failed',
+    'publishing-queue.filter.status.partially-failed': 'Partially failed'
 };
+
+/** What each option must send to the API, written out so the test pins the mapping itself. */
+const EXPECTED_CODES: Array<[string, PublishAuditStatus[]]> = [
+    ['scheduled', [PublishAuditStatus.SCHEDULED]],
+    ['pending', [PublishAuditStatus.BUNDLE_REQUESTED]],
+    [
+        'in-progress',
+        [
+            PublishAuditStatus.BUNDLING,
+            PublishAuditStatus.SENDING_TO_ENDPOINTS,
+            PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY,
+            PublishAuditStatus.WAITING_FOR_PUBLISHING,
+            PublishAuditStatus.PUBLISHING_BUNDLE,
+            PublishAuditStatus.RECEIVED_BUNDLE
+        ]
+    ],
+    ['success', [PublishAuditStatus.SUCCESS, PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY]],
+    ['success-with-warnings', [PublishAuditStatus.SUCCESS_WITH_WARNINGS]],
+    [
+        'failed',
+        [
+            PublishAuditStatus.FAILED_TO_BUNDLE,
+            PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS,
+            PublishAuditStatus.FAILED_TO_PUBLISH
+        ]
+    ],
+    ['partially-failed', [PublishAuditStatus.FAILED_TO_SEND_TO_SOME_GROUPS]]
+];
 
 describe('DotPublishingQueueStatusFilterComponent', () => {
     let spectator: Spectator<DotPublishingQueueStatusFilterComponent>;
 
     const statusFilter = signal<PublishAuditStatus[]>([]);
+    const groups = DotPublishingQueueStatusFilterComponent.STATUS_FILTER_GROUPS;
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueStatusFilterComponent,
@@ -54,17 +75,34 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
                 useValue: new MockDotMessageService({
                     'publishing-queue.filter.status': 'Status',
                     search: 'Search',
-                    ...Object.fromEntries(
-                        Object.entries(STATUS_LABELS).map(([code, label]) => [
-                            `publishing-queue.status.${code}`,
-                            label
-                        ])
-                    )
+                    ...GROUP_LABELS
                 })
             }
         ],
         schemas: [CUSTOM_ELEMENTS_SCHEMA]
     });
+
+    function codesOf(value: string): PublishAuditStatus[] {
+        return [...(groups.find((g) => g.value === value)?.codes ?? [])];
+    }
+
+    function openPanel(): void {
+        spectator.triggerEventHandler(DotChipFilterComponent, 'clicked', new Event('click'));
+        spectator.detectChanges();
+    }
+
+    /** Waits for `ngModel` to write the new selection back into the listbox, as the browser does between clicks. */
+    async function clickOption(value: string): Promise<void> {
+        spectator.click(byTestId(`pq-status-filter-item-${value}`));
+        spectator.detectChanges();
+        await spectator.fixture.whenStable();
+    }
+
+    function renderedOptionLabels(): string[] {
+        return spectator
+            .queryAll('[data-testid^="pq-status-filter-item-"]')
+            .map((el) => el.textContent?.trim() ?? '');
+    }
 
     beforeEach(() => {
         statusFilter.set([]);
@@ -72,114 +110,113 @@ describe('DotPublishingQueueStatusFilterComponent', () => {
     });
 
     describe('source-of-truth invariant', () => {
-        it('STATUS_ORDER covers every value of PublishAuditStatus (catches future enum drift)', () => {
-            const ordered = new Set<string>(DotPublishingQueueStatusFilterComponent.STATUS_ORDER);
-            for (const value of Object.values(PublishAuditStatus)) {
-                expect(ordered.has(value)).toBe(true);
+        it('places every bundle-level status in exactly one group (catches future enum drift)', () => {
+            const endpointOnly = new Set<PublishAuditStatus>(ENDPOINT_ONLY_STATUSES);
+            const bundleLevel = Object.values(PublishAuditStatus).filter(
+                (status) => !endpointOnly.has(status)
+            );
+
+            for (const status of bundleLevel) {
+                const owners = groups.filter((g) => g.codes.includes(status));
+                expect(owners.length, `${status} must belong to exactly one group`).toBe(1);
             }
         });
 
-        it('exposes SCHEDULED as a filterable status', () => {
-            // The bug this fix closed: SCHEDULED is in the enum but used to be
-            // missing from the filter, so users couldn't filter for it.
-            expect(DotPublishingQueueStatusFilterComponent.STATUS_ORDER).toContain(
-                PublishAuditStatus.SCHEDULED
-            );
+        it('keeps endpoint-only statuses out of every group', () => {
+            const grouped = groups.flatMap((g) => [...g.codes]);
+
+            for (const status of ENDPOINT_ONLY_STATUSES) {
+                expect(grouped).not.toContain(status);
+            }
         });
     });
 
-    describe('option list (dedupe by label)', () => {
-        it('renders one option per unique translated label', () => {
-            const options = (spectator.component as unknown as { $options: { label: string }[] })
-                .$options;
-            const labels = options.map((o) => o.label);
-            // SUCCESS + BUNDLE_SENT_SUCCESSFULLY both render as "Success" → one option
-            expect(labels.filter((l) => l === 'Success').length).toBe(1);
-            // No duplicates across the full list
-            expect(new Set(labels).size).toBe(labels.length);
-        });
+    describe('options', () => {
+        it('renders the 7 groups in lifecycle order with translated labels', () => {
+            openPanel();
 
-        it('the "Success" option groups SUCCESS and BUNDLE_SENT_SUCCESSFULLY', () => {
-            const options = (
-                spectator.component as unknown as {
-                    $options: { label: string; codes: PublishAuditStatus[] }[];
-                }
-            ).$options;
-            const success = options.find((o) => o.label === 'Success');
-            expect(success).toBeDefined();
-            expect([...(success?.codes ?? [])].sort()).toEqual(
-                [PublishAuditStatus.SUCCESS, PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY].sort()
-            );
-        });
-
-        it('Scheduled appears first in the rendered order', () => {
-            const options = (spectator.component as unknown as { $options: { label: string }[] })
-                .$options;
-            expect(options[0].label).toBe('Scheduled');
+            expect(renderedOptionLabels()).toEqual([
+                'Scheduled',
+                'Pending',
+                'In progress',
+                'Success',
+                'Success with warnings',
+                'Failed',
+                'Partially failed'
+            ]);
         });
     });
 
-    describe('selection wiring', () => {
-        function getOptions() {
-            return (
-                spectator.component as unknown as {
-                    $options: { value: string; label: string; codes: PublishAuditStatus[] }[];
-                }
-            ).$options;
-        }
+    describe('selection', () => {
+        it.each(EXPECTED_CODES)(
+            'sends exactly its statuses when "%s" is picked',
+            async (value, codes) => {
+                openPanel();
 
-        function getSelected(): string[] {
-            return (spectator.component as unknown as { $selected: () => string[] }).$selected();
-        }
+                await clickOption(value);
 
-        function setSelected(labels: string[]): void {
-            (
-                spectator.component as unknown as { $selected: { set: (v: string[]) => void } }
-            ).$selected.set(labels);
-        }
+                expect([...statusFilter()].sort()).toEqual([...codes].sort());
+            }
+        );
 
-        function callOnChange(): void {
-            (spectator.component as unknown as { onChange: () => void }).onChange();
-        }
+        it('sends the union of statuses when several options are picked', async () => {
+            openPanel();
 
-        it('picking "Success" flattens to SUCCESS + BUNDLE_SENT_SUCCESSFULLY in the store', () => {
-            setSelected(['Success']);
-            callOnChange();
-            const stored = [...statusFilter()].sort();
-            expect(stored).toEqual(
-                [PublishAuditStatus.SUCCESS, PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY].sort()
+            await clickOption('failed');
+            await clickOption('partially-failed');
+
+            expect([...statusFilter()].sort()).toEqual(
+                [
+                    PublishAuditStatus.FAILED_TO_BUNDLE,
+                    PublishAuditStatus.FAILED_TO_SEND_TO_ALL_GROUPS,
+                    PublishAuditStatus.FAILED_TO_PUBLISH,
+                    PublishAuditStatus.FAILED_TO_SEND_TO_SOME_GROUPS
+                ].sort()
             );
         });
 
-        it('shows "Success" selected only when both grouped codes are present in the store filter', () => {
-            // Only one of the two grouped codes → option is NOT considered selected.
-            statusFilter.set([PublishAuditStatus.SUCCESS]);
-            spectator.detectChanges();
-            expect(getSelected()).not.toContain('Success');
+        it("drops an option's statuses when it is picked again", async () => {
+            openPanel();
+            await clickOption('scheduled');
+            await clickOption('failed');
 
-            // Both codes → option IS considered selected.
-            statusFilter.set([
-                PublishAuditStatus.SUCCESS,
-                PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY
-            ]);
-            spectator.detectChanges();
-            expect(getSelected()).toContain('Success');
+            await clickOption('scheduled');
+
+            expect([...statusFilter()].sort()).toEqual(codesOf('failed').sort());
         });
 
-        it('clearing all empties the store filter', () => {
-            statusFilter.set([
-                PublishAuditStatus.SUCCESS,
-                PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY
-            ]);
-            spectator.detectChanges();
-            (spectator.component as unknown as { onRemoveAll: () => void }).onRemoveAll();
+        it('empties the store filter when the chip is cleared', async () => {
+            openPanel();
+            await clickOption('scheduled');
+            await clickOption('failed');
+
+            spectator.click(byTestId('chip-remove'));
+
             expect(statusFilter()).toEqual([]);
         });
+    });
 
-        it('exposes a Scheduled option that maps to the SCHEDULED code', () => {
-            const scheduled = getOptions().find((o) => o.label === 'Scheduled');
-            expect(scheduled).toBeDefined();
-            expect(scheduled?.codes).toEqual([PublishAuditStatus.SCHEDULED]);
+    describe('chip', () => {
+        it('shows the translated labels of the selected groups', () => {
+            statusFilter.set([...codesOf('scheduled'), ...codesOf('partially-failed')]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-values'))).toHaveText(
+                'Scheduled, Partially failed'
+            );
+        });
+
+        it('shows a group only when all of its statuses are in the store filter', () => {
+            statusFilter.set([PublishAuditStatus.SUCCESS]);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('chip-values'))).not.toExist();
+
+            statusFilter.set([
+                PublishAuditStatus.SUCCESS,
+                PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY
+            ]);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('chip-values'))).toHaveText('Success');
         });
     });
 });
