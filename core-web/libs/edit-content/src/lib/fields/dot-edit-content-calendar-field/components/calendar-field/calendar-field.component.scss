@@ -1,11 +1,3 @@
-// The visually hidden `.sr-only` name/timezone spans are `position: absolute`. Without a
-// positioned host they resolve against the document, escape the form's scroll container and
-// stretch the page with an empty vertical scroll when the field sits below the fold.
-:host {
-    display: block;
-    position: relative;
-}
-
 // Move the focus ring from the internal <input> to the <p-datepicker> wrapper so
 // the ring encloses both the input and the calendar icon button as one unit.
 
