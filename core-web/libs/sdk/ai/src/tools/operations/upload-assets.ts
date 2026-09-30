@@ -58,6 +58,13 @@ export interface UploadAssetsOptions {
      * `upload_assets` tool always sets it.
      */
     maxFiles?: number;
+    /**
+     * Most entries — files and directories — the walk of `src` visits, whether or not
+     * `include` selects them. More is refused before anything is sent. `maxFiles` alone does
+     * not bound the walk: a vast `src` with a narrow `include` matches few files and is walked
+     * to the end. Unbounded when omitted; the `upload_assets` tool always sets it.
+     */
+    maxScannedEntries?: number;
 }
 
 /** What `uploadAssets` returns — never the file bytes, only what landed and what did not. */
@@ -114,11 +121,10 @@ export async function uploadAssets(options: UploadAssetsOptions): Promise<Upload
         );
     }
 
-    const { files: localFiles, totalSeen } = await collectLocalFiles(
-        src,
-        options.include,
-        options.maxFiles
-    );
+    const { files: localFiles, totalSeen } = await collectLocalFiles(src, options.include, {
+        maxFiles: options.maxFiles,
+        maxScannedEntries: options.maxScannedEntries
+    });
     const files: AssetManifestFile[] = [];
     const failures: AssetManifestFailure[] = [];
     const skipped: AssetManifestSkipped[] = [];
@@ -398,16 +404,30 @@ async function collectNotLive(
  */
 async function collectLocalFiles(
     src: string,
-    include?: string,
-    maxFiles?: number
+    include: string | undefined,
+    limits: { maxFiles?: number; maxScannedEntries?: number }
 ): Promise<{ files: LocalFile[]; totalSeen: number }> {
     const matches = includeMatcher(include);
     const files: LocalFile[] = [];
+    const { maxFiles, maxScannedEntries } = limits;
     let totalSeen = 0;
+    let scanned = 0;
 
     async function walk(dir: string) {
         for (const entry of await readdir(dir, { withFileTypes: true })) {
             const abs = join(dir, entry.name);
+
+            // Every entry counts, directory or file, matched or not: the walk's cost is what
+            // it visits, and a narrow `include` does not make a vast tree any cheaper to walk.
+            scanned++;
+            if (maxScannedEntries !== undefined && scanned > maxScannedEntries) {
+                throw new ValidationError(
+                    `Stopped after it scanned ${maxScannedEntries} entries under "${src}" ` +
+                        `without reaching the end, over the upload's scan limit. Nothing was ` +
+                        `uploaded. Narrow \`src\` to a smaller directory — \`include\` filters ` +
+                        `what is uploaded, but not what is walked.`
+                );
+            }
 
             if (entry.isDirectory()) {
                 await walk(abs);

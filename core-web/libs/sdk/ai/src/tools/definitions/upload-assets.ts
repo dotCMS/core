@@ -89,7 +89,8 @@ tool, then reference them from a container/template via \`#dotParse\`.`,
             publish: args.publish,
             verify: args.verify,
             maxFileBytes: ctx.options.maxFileBytes ?? DEFAULT_MAX_FILE_BYTES,
-            maxFiles: ctx.options.maxFiles ?? DEFAULT_MAX_FILES
+            maxFiles: ctx.options.maxFiles ?? DEFAULT_MAX_FILES,
+            maxScannedEntries: ctx.options.maxScannedEntries ?? DEFAULT_MAX_SCANNED_ENTRIES
         });
     }
 });
@@ -100,15 +101,18 @@ const DEFAULT_MAX_FILE_BYTES = 100 * 1024 * 1024;
 /** The `upload_assets` tool's file-count limit when the host sets none. */
 const DEFAULT_MAX_FILES = 1_000;
 
+/** The `upload_assets` tool's walk limit when the host sets none: 20× the file limit. */
+const DEFAULT_MAX_SCANNED_ENTRIES = 20_000;
+
 /**
  * The `upload_assets` tool: uploads a local directory into dotCMS as file assets — the bytes
  * never pass through the model. Needs Node or Bun. Resolves to an {@link UploadAssetsManifest}.
  * `options.root` bounds which local directories the model may read from.
  *
- * The model chooses `src`, so the tool is bounded by default: `options.maxFileBytes` (100 MB)
- * and `options.maxFiles` (1,000). Each file is held in memory once while it is sent (`fetch`
- * buffers request bodies), so the file limit is also the upload's memory bound. Pass
- * `Infinity` to lift either.
+ * The model chooses `src`, so the tool is bounded by default: `options.maxFileBytes` (100 MB),
+ * `options.maxFiles` (1,000) and `options.maxScannedEntries` (20,000 entries walked). Each file
+ * is held in memory once while it is sent (`fetch` buffers request bodies), so the file limit
+ * is also the upload's memory bound. Pass `Infinity` to lift any of them.
  */
 export function uploadAssetsTool(
     connection: DotCMSConnection,

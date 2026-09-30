@@ -387,6 +387,29 @@ describe('uploadAssets', () => {
             expect(calls).toEqual([]);
         });
 
+        it('stops walking at maxScannedEntries, even when `include` matches few files', async () => {
+            // `maxFiles` counts only what `include` selects, so a vast `src` with a narrow
+            // `include` used to be walked to the end. The walk itself needs its own bound.
+            await mkdir(join(src, 'deep'));
+            await writeFile(join(src, 'deep', 'a.txt'), 'x');
+            await writeFile(join(src, 'deep', 'b.txt'), 'x');
+            const { runtime, calls } = fakeRuntime();
+
+            const error = await uploadAssets({
+                dotcms: runtime,
+                src,
+                dest: SITE,
+                include: '*.css',
+                publish: true,
+                verify: false,
+                maxScannedEntries: 3
+            }).catch((e: unknown) => e);
+
+            expect(error).toBeInstanceOf(ValidationError);
+            expect((error as Error).message).toMatch(/scanned 3 entries/);
+            expect(calls).toEqual([]);
+        });
+
         it('counts only the files `include` selects', async () => {
             const { runtime } = fakeRuntime();
 

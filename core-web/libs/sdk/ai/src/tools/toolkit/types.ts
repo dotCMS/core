@@ -66,6 +66,12 @@ export interface UploadToolOptions extends AssetToolOptions {
      * failure before anything is sent. `Infinity` lifts it.
      */
     maxFiles?: number;
+    /**
+     * Most entries — files and directories — one call's walk of `src` visits, matched by
+     * `include` or not. Default 20,000. More is a VALIDATION failure before anything is sent,
+     * so a vast `src` with a narrow `include` is not walked to the end. `Infinity` lifts it.
+     */
+    maxScannedEntries?: number;
 }
 
 /**

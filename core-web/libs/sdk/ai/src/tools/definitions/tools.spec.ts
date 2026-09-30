@@ -428,6 +428,23 @@ describe('tool factories', () => {
                 expect(fetchMock).not.toHaveBeenCalled();
             });
 
+            it('takes a host’s own scan limit', async () => {
+                await writeFile(join(dir, 'a.css'), 'x');
+                await writeFile(join(dir, 'b.txt'), 'x');
+                await writeFile(join(dir, 'c.txt'), 'x');
+
+                const failure = expectFailure(
+                    await uploadAssetsTool(DOTCMS, { root: dir, maxScannedEntries: 2 }).execute({
+                        src: dir,
+                        dest: '//demo.dotcms.com/app',
+                        include: '*.css'
+                    })
+                );
+
+                expect(failure.code).toBe('VALIDATION');
+                expect(fetchMock).not.toHaveBeenCalled();
+            });
+
             it('takes a host’s own limits', async () => {
                 await writeFile(join(dir, 'a.css'), 'x');
                 await writeFile(join(dir, 'b.css'), 'x');
