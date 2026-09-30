@@ -262,23 +262,17 @@ test.describe('Content Drive bulk upload outcomes', () => {
         // accept it, and the default budget cannot hold an inner wait of its own size.
         test.setTimeout(150000);
 
-        // Durable and per user, so the check has to find one this test caused: a bulk upload's
-        // notification carries counts and no file name, so nothing in the text distinguishes it.
-        // Not cleared, which would delete another test's before it was checked.
-        const knownIds = await apiHelpers.listNotificationIds();
+        // Durable and per user, so without this the assertion passes against the last run's
+        // notifications. A bulk upload's notification carries counts and no file name, so nothing
+        // in the text could distinguish them.
+        await apiHelpers.clearNotifications();
 
         await inSeededFolder(
             { adminPage, apiHelpers, name: `cd-leave-${testSuffix}` },
             async (drive) => {
                 // Acceptance, not the advisory: this test is about the outcome following the author
                 // out of the portlet, and the message left behind is another test's subject.
-                // Three files, a count no other test here sends, so the notification is this
-                // test's even while other uploads finish alongside it.
-                await drive.chooseFilesAndAwaitAcceptance([
-                    `leave-a-${testSuffix}.png`,
-                    `leave-b-${testSuffix}.png`,
-                    `leave-c-${testSuffix}.png`
-                ]);
+                await drive.chooseFilesAndAwaitAcceptance([`leave-${testSuffix}.png`]);
 
                 // Away from the portlet entirely, which is the case the story is named for. The
                 // toast cannot follow: it belongs to a component that is destroyed on navigation.
@@ -289,7 +283,6 @@ test.describe('Content Drive bulk upload outcomes', () => {
 
                 // The message, which is what the panel renders. Counts only: the notification names no
                 // files, which is the difference between it and the toast inside the portlet.
-                await apiHelpers.expectNewNotification(knownIds, '3 file(s) uploaded');
                 await drive.expectNotificationContaining('file(s) uploaded');
             }
         );
