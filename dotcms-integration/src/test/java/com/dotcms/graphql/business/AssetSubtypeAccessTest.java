@@ -1138,59 +1138,129 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
     }
 
     /**
-     * Given: a customer asset type with a text field named {@code width}, which the asset
-     * interfaces otherwise declare as the binary's numeric width.
-     * When: the schema is built and queried.
-     * Then: the schema is still valid, the customer's field answers on its own type, the binary's
-     * width stays reachable through the binary, and selecting {@code width} directly on the asset
-     * field fails with an error naming it — never different data.
+     * Given: a DOTASSET type whose own {@code width} is text -- stored before such fields were
+     * refused -- and a second DOTASSET type without one.
+     * When: assets of both are reached through an Image field.
+     * Then: the request succeeds for both. The clashing type alone is left out of the asset
+     * interfaces: through the Image field its asset resolves as {@code DotAssetPropertyClash},
+     * with the file's properties, and narrowing to the clashing type is rejected. Its own
+     * collection still answers the customer's {@code width}, and the other type is untouched.
      *
-     * <p>{@code width} and {@code sha256} rather than {@code size} or {@code name}: for DOTASSET
-     * content, DotAssetViewStrategy overwrites {@code name}, {@code size}, {@code path},
-     * {@code type} and {@code extension} with the binary's values on every read, collections
-     * included -- long-standing behavior this feature does not change, and that would mask what is
-     * being tested here.
+     * <p>{@code width} rather than {@code size} or {@code name}: for DOTASSET content,
+     * DotAssetViewStrategy overwrites {@code name}, {@code size}, {@code path}, {@code type} and
+     * {@code extension} with the binary's values on every read, which would mask the test.
      *
-     * <p>Before the fix, an interface and its implementation disagreeing on a field's type made
-     * graphql-java reject the WHOLE schema: one customer field took every GraphQL query on the
-     * instance down.
+     * <p>Before, the clash left {@code width} off the asset interfaces for every asset type on the
+     * instance, so any request selecting it directly on an asset field failed as a whole.
      */
     @Test
-    public void test_incompatibleCollision_keepsSchemaValidAndCustomerFieldWins() throws Exception {
-        final ContentType assetType = newDotAssetSubtype();
+    public void test_incompatibleCollision_isolatesOnlyTheClashingType() throws Exception {
+        final ContentType clashing = newDotAssetSubtype();
+        final ContentType other = newDotAssetSubtype();
         try {
-            addPreexistingProperty(assetType, "width", DataTypes.TEXT);
-            final Contentlet asset = newAssetOf(assetType, "Collides", Map.of("width", "wide"));
+            addPreexistingProperty(clashing, "width", DataTypes.TEXT);
+            final Contentlet clashingAsset = newAssetOf(clashing, "Collides",
+                    Map.of("width", "wide"));
+            final Contentlet otherAsset = newAssetOf(other, "DoesNotCollide");
 
             final ContentType holder = newHolderType();
-            final Contentlet content = newHolderContent(holder, IMAGE_FIELD_VAR, asset);
+            final Contentlet onClashing = newHolderContent(holder, IMAGE_FIELD_VAR, clashingAsset);
+            final Contentlet onOther = newHolderContent(holder, IMAGE_FIELD_VAR, otherAsset);
 
-            final String query = String.format(
-                    "{ %sCollection(query: \"+identifier:%s\") { %s { "
-                            + "fileName ... on %s { width } fileAsset { width } } } }",
-                    holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR,
-                    assetType.variable());
-            final Map<String, Object> field = (Map<String, Object>) firstRow(
-                    GraphqlQueryRunner.executeAndExpectSuccess(query, systemUser), holder)
-                    .get(IMAGE_FIELD_VAR);
+            final Map<String, Object> clashingField = queryCompanion(holder, onClashing,
+                    IMAGE_FIELD_VAR, "__typename fileName width fileAsset { width }");
+            assertEquals("the clashing type must resolve as the property-clash type",
+                    InterfaceType.DOTASSET_PROPERTY_CLASH_TYPE_NAME,
+                    clashingField.get("__typename"));
+            assertNotEquals("through the Image field `width` is the file's, not the customer's",
+                    "wide", clashingField.get("width"));
+            assertNotNull("the file's properties must still answer", clashingField.get("fileName"));
 
-            assertEquals("the customer's own `width` must answer on its own type",
-                    "wide", field.get("width"));
-            final Map<String, Object> binary = (Map<String, Object>) field.get("fileAsset");
-            assertNotEquals("the binary's width must stay reachable through the binary",
-                    "wide", binary.get("width"));
+            final Map<String, Object> otherField = queryCompanion(holder, onOther,
+                    IMAGE_FIELD_VAR, "__typename width");
+            assertEquals("a type without the clash keeps resolving as itself",
+                    other.variable(), otherField.get("__typename"));
+            assertTrue(otherField.containsKey("width"));
 
-            final String direct = String.format(
-                    "{ %sCollection(query: \"+identifier:%s\") { %s { width } } }",
-                    holder.variable(), content.getIdentifier(), IMAGE_FIELD_VAR);
-            final String errors = GraphqlQueryRunner.executeAndExpectFailure(direct, systemUser)
-                    .toString();
-            assertTrue("the validation error must name the property: " + errors,
-                    errors.contains("width"));
+            final String ownCollection = String.format(
+                    "{ %sCollection(query: \"+identifier:%s\") { width } }",
+                    clashing.variable(), clashingAsset.getIdentifier());
+            final List<Map<String, Object>> rows = (List<Map<String, Object>>)
+                    GraphqlQueryRunner.executeAndExpectSuccess(ownCollection, systemUser)
+                            .get(clashing.variable() + "Collection");
+            assertEquals("the clashing type's own collection keeps the customer's value",
+                    "wide", rows.get(0).get("width"));
+
+            final String narrowing = String.format(
+                    "{ %sCollection(query: \"+identifier:%s\") { %s { ... on %s { width } } } }",
+                    holder.variable(), onClashing.getIdentifier(), IMAGE_FIELD_VAR,
+                    clashing.variable());
+            GraphqlQueryRunner.executeAndExpectFailure(narrowing, systemUser);
         } finally {
-            // A type carrying the collision changes what every asset field offers, so it must not
-            // outlive this test.
-            APILocator.getContentTypeAPI(systemUser).delete(assetType);
+            APILocator.getContentTypeAPI(systemUser).delete(clashing);
+            APILocator.getContentTypeAPI(systemUser).delete(other);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: a DOTASSET type whose own {@code sortOrder} is text, stored before such fields were
+     * refused -- {@code sortOrder} is one of the six properties the flat asset view has always
+     * offered.
+     * When: {@code image { fileName sortOrder }}, a query that worked before this feature, is run
+     * against an asset of another type.
+     * Then: it keeps working. Before, the clashing field alone left {@code sortOrder} off the
+     * asset interfaces and failed that query for every asset type on the instance.
+     *
+     * <p>The clashing type holds no content: Contentlet reads {@code sortOrder} as a number, so no
+     * content of such a type can be saved. The field on the type is all it takes.
+     */
+    @Test
+    public void test_incompatibleCollision_keepsLongStandingQueriesWorking() throws Exception {
+        final ContentType clashing = newDotAssetSubtype();
+        final ContentType other = newDotAssetSubtype();
+        try {
+            addPreexistingProperty(clashing, "sortOrder", DataTypes.TEXT);
+            final Contentlet otherAsset = newAssetOf(other, "DoesNotCollide");
+
+            final ContentType holder = newHolderType();
+            final Contentlet onOther = newHolderContent(holder, IMAGE_FIELD_VAR, otherAsset);
+
+            final Map<String, Object> otherField = queryCompanion(holder, onOther,
+                    IMAGE_FIELD_VAR, "fileName sortOrder");
+            assertTrue("a long-standing query must keep working on other types",
+                    otherField.containsKey("sortOrder"));
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(clashing);
+            APILocator.getContentTypeAPI(systemUser).delete(other);
+            APILocator.getGraphqlAPI().invalidateSchema();
+        }
+    }
+
+    /**
+     * Given: a FILEASSET type whose own {@code width} is text, stored before such fields were
+     * refused.
+     * When: one of its assets is reached through a File field.
+     * Then: it resolves as {@code FileAssetPropertyClash} and the request succeeds.
+     */
+    @Test
+    public void test_incompatibleCollision_onFileAssetType_resolvesAsFileAssetPropertyClash()
+            throws Exception {
+        final ContentType clashing = newFileAssetSubtype();
+        try {
+            addPreexistingProperty(clashing, "width", DataTypes.TEXT);
+            final Contentlet asset = newFileAssetOf(clashing, "Collides");
+
+            final ContentType holder = newHolderType();
+            final Contentlet content = newHolderContent(holder, FILE_FIELD_VAR, asset);
+
+            final Map<String, Object> field = queryCompanion(holder, content, FILE_FIELD_VAR,
+                    "__typename fileName width");
+            assertEquals(InterfaceType.FILEASSET_PROPERTY_CLASH_TYPE_NAME,
+                    field.get("__typename"));
+            assertNotNull(field.get("fileName"));
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).delete(clashing);
             APILocator.getGraphqlAPI().invalidateSchema();
         }
     }
@@ -1199,11 +1269,12 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
      * Given: a customer asset type whose own {@code width} is text, against the binary's numeric
      * {@code width}.
      * When: the schema is built.
-     * Then: a warning is logged naming the content type and the property.
+     * Then: a warning is logged naming the content type, the property and the type its assets
+     * resolve as through asset fields.
      *
-     * <p>FR-021. The collision silently changes what every asset field offers on the instance —
-     * {@code width} disappears from the asset interface — and renaming the customer's field is an
-     * administrator's decision, so the log line is the only way that administrator finds out.
+     * <p>FR-021. The collision changes how that type's assets look through asset fields, and
+     * renaming the customer's field is an administrator's decision, so the log line is the only
+     * way that administrator finds out.
      */
     @Test
     public void test_incompatibleCollision_isLoggedAtSchemaBuild() throws Exception {
@@ -1223,9 +1294,12 @@ public class AssetSubtypeAccessTest extends IntegrationTestBase {
             final boolean logged = appender.events.stream().anyMatch(event ->
                     Level.WARN.equals(event.level())
                             && event.message().contains("'width'")
-                            && event.message().contains("'" + assetType.variable() + "'"));
-            assertTrue("the collision must be logged as a warning naming the property and the "
-                    + "content type. Captured: " + appender.events, logged);
+                            && event.message().contains("'" + assetType.variable() + "'")
+                            && event.message().contains(
+                                    InterfaceType.DOTASSET_PROPERTY_CLASH_TYPE_NAME));
+            assertTrue("the collision must be logged as a warning naming the property, the "
+                    + "content type and the type its assets resolve as. Captured: "
+                    + appender.events, logged);
         } finally {
             providerLogger.removeAppender(appender);
             appender.stop();

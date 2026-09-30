@@ -99,7 +99,10 @@ each.
    at a file-style asset, **When** a client requests type information for both in one query,
    **Then** each reports the name of the specific content type it is, and the two differ.
 2. **Given** an asset of a customer-defined type, **When** a client requests type information,
-   **Then** the reported name is the customer's own type, not a generic asset label.
+   **Then** the reported name is the customer's own type, not a generic asset label. The one
+   exception is a type whose own field clashes with a general asset property from before that was
+   refused (FR-021): through asset fields its assets report `DotAssetPropertyClash` or
+   `FileAssetPropertyClash`, a name that says why.
 
 ---
 
@@ -309,13 +312,21 @@ and confirm they match the asset's own record.
     to `size1` instead would silently lose the data of whoever keeps sending `size`. A refusal is
     loud and tells the caller exactly what to change. Saving a property that already exists by its
     variable is an update and keeps working.
-  - Data that predates this rule can still hold an incompatible property. For it, the general
-    property is left off the asset field's shared description for that instance. Selecting it
-    directly on the asset field then fails validation with an error naming it — loud, never
-    different data — while the customer's own property keeps working through its type and the
-    general value stays reachable through the binary.
+  - Data that predates this rule can still hold an incompatible property. The content type that
+    holds it — **that type alone** — is left out of the asset field's shared description; the
+    general property stays on it for every other asset type. Through Image and File fields, that
+    type's assets resolve as a stand-in type (`DotAssetPropertyClash` / `FileAssetPropertyClash`)
+    that answers the general properties the way the asset field always has; the content type
+    itself stays in the schema, whole, for its own queries. *Why:* the first version left the
+    general property off the shared description for the whole instance, so one type's field failed
+    every query that selected it — including long-standing ones such as `image { sortOrder }`,
+    which worked before this feature. The stand-in keeps every such query working and confines the
+    cost to the clashing type: through asset fields its assets report the stand-in's
+    `__typename` and cannot be narrowed to their own type — both capabilities this feature
+    introduced.
   - Every incompatible collision MUST be logged as a warning at schema build, naming the content
-    type and the property, so an administrator can find and rename it.
+    type, the property, both types and the stand-in its assets resolve as, so an administrator can
+    find and rename it.
 - **FR-022**: Permission-restricted content MUST NOT leak through this feature:
   - Property values, and the concrete type reported by `__typename`, are only ever returned for an
     asset the caller can read (FR-008); an unreadable asset answers `null` (FR-019).
@@ -383,12 +394,12 @@ and confirm they match the asset's own record.
   - **new, with a different type and a generated variable**: the field is saved with a suffixed
     variable (`width1`) and exactly one INFO line names the variable, the content type and both
     types;
-  - **already stored with a different type** (data from before the rule): the schema stays valid
-    and every query that does not select that property directly on an asset field succeeds;
-    selecting it directly fails validation with an error naming it **on every asset type of the
-    instance** — a known limitation, resolved only by renaming the field — while
-    `... on ThatType { property }` answers the customer's value, the binary answers the file's,
-    and a WARN at schema build names the content type and the field;
+  - **already stored with a different type** (data from before the rule): selecting the property
+    directly on an asset field succeeds for every asset type; assets of the clashing type answer
+    with `__typename` `DotAssetPropertyClash` (DOTASSET) or `FileAssetPropertyClash` (FILEASSET),
+    their own collection still answers the customer's value, narrowing to the clashing type through
+    an asset field fails validation, and a WARN at schema build names the content type, the field,
+    both types and the stand-in;
 
   and no response to a user without read permission on an asset contains that asset's property
   values or concrete type name (FR-022).

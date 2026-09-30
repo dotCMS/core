@@ -205,80 +205,80 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
                         ? widenWholeNumbersToAssetFlatFields(fieldDefinitions)
                         : fieldDefinitions);
 
-        final Set<String> excludedForFile = incompatibleAssetFlatFields(fieldsByType,
-                BaseContentType.FILEASSET);
-        final Set<String> excludedForDotAsset = incompatibleAssetFlatFields(fieldsByType,
-                BaseContentType.DOTASSET);
-        final AssetInterfaces assetInterfaces = InterfaceType.assetInterfacesExcluding(
-                excludedForFile, excludedForDotAsset);
+        final Set<String> clashingTypes = typesClashingWithAssetFlatFields(fieldsByType);
+        final AssetInterfaces assetInterfaces = InterfaceType.getAssetInterfaces();
 
-        // The asset-carrying interfaces come from this build, not from InterfaceType's defaults:
-        // two different interface objects under one name would be rejected by the schema.
-        final Set<GraphQLInterfaceType> baseTypeInterfaces = InterfaceType.valuesAsSet();
-        baseTypeInterfaces.forEach(type -> {
-            if (InterfaceType.FILE_INTERFACE_NAME.equals(type.getName())) {
-                contentAPITypes.add(assetInterfaces.fileBaseType());
-            } else if (InterfaceType.DOTASSET_INTERFACE_NAME.equals(type.getName())) {
-                contentAPITypes.add(assetInterfaces.dotAssetBaseType());
-            } else {
-                contentAPITypes.add(type);
-            }
-        });
+        contentAPITypes.addAll(InterfaceType.valuesAsSet());
         // Not part of InterfaceType.values(): that enum is keyed by base type, and this interface
         // deliberately spans two of them. It still has to be registered or introspection cannot
         // see it and no fragment can narrow through it. See #34540.
         contentAPITypes.add(assetInterfaces.assetContent());
+        // Always registered, so the schema's shape does not depend on the data: a clash appearing
+        // or going away changes which content types resolve as these, never which types exist.
+        contentAPITypes.add(InterfaceType.getPropertyClashType(BaseContentType.DOTASSET));
+        contentAPITypes.add(InterfaceType.getPropertyClashType(BaseContentType.FILEASSET));
 
         fieldsByType.forEach((type, fieldDefinitions) -> {
-            final Set<String> excluded = BaseContentType.FILEASSET == type.baseType()
-                    ? excludedForFile : excludedForDotAsset;
-            addAssetFlatFields(type, fieldDefinitions, excluded);
-            contentAPITypes.add(createType(type, fieldDefinitions, assetInterfaces));
+            addAssetFlatFields(type, fieldDefinitions);
+            contentAPITypes.add(createType(type, fieldDefinitions, assetInterfaces,
+                    clashingTypes.contains(type.variable())));
         });
 
         return contentAPITypes;
     }
 
     /**
-     * Finds the flat asset properties that some content type of the given base type already
-     * defines as a field of its own, with a GraphQL type the asset interfaces could not share.
+     * Finds the asset content types whose own fields clash with a flat asset property: same name,
+     * a GraphQL type the asset interfaces cannot share.
      *
-     * <p>The customer's field always wins its name (see {@link #addAssetFlatFields}). When the two
-     * types agree that is all there is to it; when they do not, no interface may declare the name,
-     * because graphql-java would reject the whole schema. Logged as a warning because it changes
-     * what an asset field offers directly for the whole instance, and the remedy -- renaming the
-     * customer's field -- is an administrator's decision.
+     * <p>graphql-java requires an interface and every type implementing it to agree on each shared
+     * field, so such a type cannot implement the asset interfaces. It is left out of them alone --
+     * see {@link #createType} -- and its assets resolve as the property-clash type through Image
+     * and File fields (see {@link InterfaceType#getPropertyClashType}); the property itself stays
+     * on the interfaces for every other asset type. Before, the property was left off the
+     * interfaces for the whole instance, failing every query that selected it -- including
+     * long-standing ones such as {@code image { sortOrder }}.
+     *
+     * <p>New fields like these are refused or renamed on save (see
+     * {@link #checkAssetPropertyNameIsCompatible}), so only data that predates that check gets
+     * here. Logged as a warning because it changes how the type's assets look through asset
+     * fields, and the remedy -- renaming the customer's field -- is an administrator's decision.
+     *
+     * @return the variables of the clashing content types
      */
-    private Set<String> incompatibleAssetFlatFields(
-            final Map<ContentType, List<GraphQLFieldDefinition>> fieldsByType,
-            final BaseContentType baseType) {
+    private Set<String> typesClashingWithAssetFlatFields(
+            final Map<ContentType, List<GraphQLFieldDefinition>> fieldsByType) {
 
         final Map<String, GraphQLFieldDefinition> flatDefinitions = TypeUtil
                 .getGraphQLFieldDefinitionsFromMap(CustomFieldType.getAssetFlatFields()).stream()
                 .collect(Collectors.toMap(GraphQLFieldDefinition::getName, Function.identity()));
 
-        final Set<String> incompatible = new HashSet<>();
+        final Set<String> clashing = new HashSet<>();
         fieldsByType.forEach((type, fieldDefinitions) -> {
-            if (baseType != type.baseType()) {
+            if (!InterfaceType.isAssetBaseType(type.baseType())) {
                 return;
             }
-            fieldDefinitions.stream()
+            final List<GraphQLFieldDefinition> clashes = fieldDefinitions.stream()
                     .filter(definition -> flatDefinitions.containsKey(definition.getName()))
                     .filter(definition -> !isCompatible(definition,
                             flatDefinitions.get(definition.getName())))
-                    .forEach(definition -> {
-                        Logger.warn(this, "Field '" + definition.getName() + "' of Content Type '"
-                                + type.variable() + "' is a "
-                                + GraphQLTypeUtil.simplePrint(definition.getType())
-                                + ", which conflicts with the asset property of the same name ("
-                                + GraphQLTypeUtil.simplePrint(
-                                        flatDefinitions.get(definition.getName()).getType())
-                                + "). The asset property is left off the asset interfaces; it is"
-                                + " still reachable through the binary field.");
-                        incompatible.add(definition.getName());
-                    });
+                    .collect(Collectors.toList());
+            if (clashes.isEmpty()) {
+                return;
+            }
+            clashing.add(type.variable());
+            final String standIn = InterfaceType.getPropertyClashType(type.baseType()).getName();
+            clashes.forEach(definition -> Logger.warn(this, "Content Type '" + type.variable()
+                    + "' is left out of the asset interfaces: its field '" + definition.getName()
+                    + "' is a " + GraphQLTypeUtil.simplePrint(definition.getType())
+                    + ", but every asset field offers '" + definition.getName() + "' as "
+                    + GraphQLTypeUtil.simplePrint(
+                            flatDefinitions.get(definition.getName()).getType())
+                    + ". Assets of this type are still reachable through its own queries; through"
+                    + " Image and File fields they resolve as '" + standIn + "', without the"
+                    + " type's own fields. Rename the field to restore it."));
         });
-        return incompatible;
+        return clashing;
     }
 
     /**
@@ -287,8 +287,8 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      * {@code size}.
      *
      * <p>A whole-number field is an {@code Int}, and graphql-java would treat it as a different
-     * type from the asset property, so the property would be left off the asset interfaces for
-     * every asset type on the instance. A {@code Long} holds every {@code Int}, so the customer's
+     * type from the asset property, so the type would be left out of the asset interfaces (see
+     * {@link #typesClashingWithAssetFlatFields}). A {@code Long} holds every {@code Int}, so the customer's
      * value is returned unchanged and the field stays compatible with the interface: the type that
      * declares it answers with its own value and every other asset type keeps the property.
      * Only the schema changes, from {@code Int} to {@code Long}, for that field on that type.
@@ -338,17 +338,26 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         });
     }
 
+    /**
+     * Builds the object type for a content type.
+     *
+     * @param clashesWithAssetFlatFields whether the type is an asset type whose own fields clash
+     *                                   with a flat asset property, in which case it is left out of
+     *                                   the asset interfaces (see
+     *                                   {@link #typesClashingWithAssetFlatFields})
+     */
     private GraphQLObjectType createType(final ContentType contentType,
             final List<GraphQLFieldDefinition> fieldDefinitions,
-            final AssetInterfaces assetInterfaces) {
+            final AssetInterfaces assetInterfaces, final boolean clashesWithAssetFlatFields) {
 
         final GraphQLObjectType.Builder builder = GraphQLObjectType.newObject()
                 .name(contentType.variable());
 
-        final GraphQLInterfaceType baseTypeInterface =
-                InterfaceType.isAssetBaseType(contentType.baseType())
-                        ? assetInterfaces.forBaseType(contentType.baseType())
-                        : InterfaceType.getInterfaceForBaseType(contentType.baseType());
+        final boolean assetType = InterfaceType.isAssetBaseType(contentType.baseType());
+        final GraphQLInterfaceType baseTypeInterface = assetType
+                ? (clashesWithAssetFlatFields ? null
+                        : assetInterfaces.forBaseType(contentType.baseType()))
+                : InterfaceType.getInterfaceForBaseType(contentType.baseType());
         if (baseTypeInterface != null) {
             builder.withInterface(baseTypeInterface);
         }
@@ -356,8 +365,9 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         // Anything derived from an asset base type can sit behind an Image or File field, so it
         // must be reachable through that field's interface. Declaring it here is what puts the
         // type in the interface's possible-type set -- which is why a content type the customer
-        // creates later is reachable with no registration step of its own.
-        if (InterfaceType.isAssetBaseType(contentType.baseType())) {
+        // creates later is reachable with no registration step of its own. A clashing type cannot
+        // declare it; ContentResolver answers with the property-clash type for it instead.
+        if (assetType && !clashesWithAssetFlatFields) {
             builder.withInterface(assetInterfaces.assetContent());
         }
 
@@ -435,12 +445,11 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      * whole schema build and take every other content type down with it, and its value predates
      * this feature, so answering with anything else would be a silent change.
      *
-     * @param excluded flat properties this build's asset interfaces leave off because some type of
-     *                 the same base collides with them; they are not synthesized either, so the
-     *                 property is offered the same way on every type of that base
+     * @param contentType      the content type the fields belong to
+     * @param fieldDefinitions the fields generated for it, completed in place
      */
     private void addAssetFlatFields(final ContentType contentType,
-            final List<GraphQLFieldDefinition> fieldDefinitions, final Set<String> excluded) {
+            final List<GraphQLFieldDefinition> fieldDefinitions) {
 
         if (!InterfaceType.isAssetBaseType(contentType.baseType())) {
             return;
@@ -456,7 +465,6 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
         final Map<String, TypeFetcher> missing = CustomFieldType.getAssetFlatFields().entrySet()
                 .stream()
                 .filter(entry -> !alreadyDefined.contains(entry.getKey()))
-                .filter(entry -> !excluded.contains(entry.getKey()))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         if (missing.isEmpty()) {
@@ -548,9 +556,9 @@ public enum ContentAPIGraphQLTypesProvider implements GraphQLTypesProvider {
      * on an asset content type while its type differs from that property's.
      *
      * <p>A field of the property's own type is accepted: its type answers with its own value and
-     * every other asset type keeps the property. One of another type would remove the property
-     * from every asset type on the instance (see {@link #incompatibleAssetFlatFields}), so it is
-     * refused; renaming it instead, as a generated variable is (see
+     * every other asset type keeps the property. One of another type would leave its content type
+     * out of the asset interfaces, its assets reachable through Image and File fields only as the
+     * property-clash type (see {@link #typesClashingWithAssetFlatFields}), so it is refused; renaming it instead, as a generated variable is (see
      * {@link #isFieldVariableGraphQLCompatible}), would silently lose the data of whoever chose the
      * variable -- a CLI, push publishing, a script. Only new fields reach this check: saving a
      * field that already exists by its variable is an update and keeps working, and data that
