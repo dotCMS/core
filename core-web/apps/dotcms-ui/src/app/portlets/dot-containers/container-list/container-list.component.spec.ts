@@ -448,6 +448,9 @@ describe('ContainerListComponent', () => {
                 fileContainer.pathName
             );
             expect(store['dotSiteBrowserService'].setSelectedFolder).toHaveBeenCalledTimes(1);
+            expect(store['dotRouterService'].goToSiteBrowser).toHaveBeenCalledWith(
+                fileContainer.pathName
+            );
             expect(store['dotRouterService'].goToSiteBrowser).toHaveBeenCalledTimes(1);
         });
 

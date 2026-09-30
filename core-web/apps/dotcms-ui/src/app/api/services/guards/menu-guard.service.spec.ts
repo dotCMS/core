@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import {
     ActivatedRouteSnapshot,
@@ -18,9 +18,11 @@ import {
     DotContentletService,
     DotHttpErrorManagerService,
     DotRouterService,
-    DotSessionStorageService
+    DotSessionStorageService,
+    DotSiteService
 } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotPagination, DotSite } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { MenuGuardService } from './menu-guard.service';
 
@@ -67,6 +69,24 @@ describe('ValidMenuGuardService', () => {
                 },
                 mockProvider(DotSessionStorageService),
                 mockProvider(DotContentletService),
+                mockProvider(GlobalStore, {
+                    siteDetails: signal({
+                        identifier: 'demo-id',
+                        hostname: 'demo.dotcms.com'
+                    } as DotSite),
+                    switchCurrentSite: vi.fn()
+                }),
+                mockProvider(DotSiteService, {
+                    getSites: vi.fn().mockReturnValue(
+                        observableOf({
+                            sites: [
+                                { identifier: 'other-prefix-id', hostname: 'other.com.ar' },
+                                { identifier: 'other-id', hostname: 'other.com' }
+                            ] as DotSite[],
+                            pagination: {}
+                        })
+                    )
+                }),
                 mockProvider(DotHttpErrorManagerService, {
                     handle: vi.fn().mockReturnValue(observableOf({ redirected: false }))
                 })
@@ -211,6 +231,14 @@ describe('ValidMenuGuardService', () => {
             );
         });
 
+        it('should clear the variant when redirecting to Content Drive', () => {
+            givenMenu(['content-drive']);
+
+            runGuard('/c/content', 'content');
+
+            expect(TestBed.inject(DotSessionStorageService).removeVariantId).toHaveBeenCalled();
+        });
+
         it('should drop Content Search params Content Drive has no equivalent for', () => {
             givenMenu(['content-drive']);
 
@@ -222,6 +250,66 @@ describe('ValidMenuGuardService', () => {
 
             expect(serialize(runGuard('/c/site-browser', 'site-browser'))).toBe('/content-drive');
             expect(dotNavigationService.goToFirstPortlet).not.toHaveBeenCalled();
+        });
+
+        describe('Site Browser folder links', () => {
+            it('should open the folder in Content Drive without the host when it is the current site', () => {
+                givenMenu(['content-drive']);
+
+                const result = runGuard(
+                    '/c/site-browser?path=%2F%2Fdemo.dotcms.com%2Fapplication%2Fcontainers%2Fdefault%2F',
+                    'site-browser'
+                ) as UrlTree;
+
+                expect(result.queryParams).toEqual({ path: '/application/containers/default/' });
+                expect(TestBed.inject(GlobalStore).switchCurrentSite).not.toHaveBeenCalled();
+            });
+
+            it('should open a folder path that has no host on the current site', () => {
+                givenMenu(['content-drive']);
+
+                const result = runGuard(
+                    '/c/site-browser?path=%2Fapplication%2Fthemes%2Ftravel%2F',
+                    'site-browser'
+                ) as UrlTree;
+
+                expect(result.queryParams).toEqual({ path: '/application/themes/travel/' });
+                expect(TestBed.inject(DotSiteService).getSites).not.toHaveBeenCalled();
+            });
+
+            it('should switch to the folder host first when it is another site', () => {
+                givenMenu(['content-drive']);
+
+                const result = runGuard(
+                    '/c/site-browser?path=%2F%2Fother.com%2Fapplication%2Ftemplates%2Fmain%2F',
+                    'site-browser'
+                ) as UrlTree;
+
+                expect(TestBed.inject(DotSiteService).getSites).toHaveBeenCalledWith({
+                    filter: 'other.com'
+                });
+                expect(TestBed.inject(GlobalStore).switchCurrentSite).toHaveBeenCalledWith(
+                    'other-id'
+                );
+                expect(result.queryParams).toEqual({ path: '/application/templates/main/' });
+            });
+
+            it('should open Content Drive at the root when the folder host cannot be found', () => {
+                vi.spyOn(TestBed.inject(DotSiteService), 'getSites').mockReturnValue(
+                    observableOf({ sites: [] as DotSite[], pagination: {} as DotPagination })
+                );
+                givenMenu(['content-drive']);
+
+                expect(
+                    serialize(
+                        runGuard(
+                            '/c/site-browser?path=%2F%2Fgone.com%2Fapplication%2F',
+                            'site-browser'
+                        )
+                    )
+                ).toBe('/content-drive');
+                expect(TestBed.inject(GlobalStore).switchCurrentSite).not.toHaveBeenCalled();
+            });
         });
 
         it('should keep Content Search when it is still in the menu', () => {
@@ -298,6 +386,19 @@ describe('ValidMenuGuardService', () => {
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(error);
             });
 
+            it('should stop without a second navigation when the error handler already navigated', () => {
+                vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 401 }))
+                );
+                vi.spyOn(TestBed.inject(DotHttpErrorManagerService), 'handle').mockReturnValue(
+                    observableOf({ redirected: true, status: 401 })
+                );
+                givenMenu(['content-drive']);
+
+                expect(runGuard('/c/content/inode-123', 'content')).toBe(false);
+                expect(dotNavigationService.goToFirstPortlet).not.toHaveBeenCalled();
+            });
+
             it('should not look the content up when Content Search is still in the menu', () => {
                 givenMenu(['content', 'content-drive']);
 
@@ -347,21 +448,27 @@ describe('ValidMenuGuardService', () => {
                 vi.spyOn(router, 'url', 'get').mockReturnValue('/content-drive?path=%2Fimages');
             });
 
-            it.each([
-                ['an edit link', '/c/content/inode-123?CD_path=%2Fimages'],
-                ['a create link', '/c/content/new/Blog?CD_path=%2Fimages']
-            ])(
-                'should not send %s back to Content Drive, which would loop',
-                (_label: string, url: string) => {
-                    const dotContentletService = TestBed.inject(DotContentletService);
-                    vi.spyOn(dotContentletService, 'getContentletByInode');
-                    givenMenu(['content-drive']);
+            it('should not send an edit link back to Content Drive, which would loop', () => {
+                const dotContentletService = TestBed.inject(DotContentletService);
+                vi.spyOn(dotContentletService, 'getContentletByInode');
+                givenMenu(['content-drive']);
 
-                    expect(runGuard(url, 'content')).toBe(false);
-                    expect(dotContentletService.getContentletByInode).not.toHaveBeenCalled();
-                    expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
-                }
-            );
+                expect(runGuard('/c/content/inode-123?CD_path=%2Fimages', 'content')).toBe(false);
+                expect(dotContentletService.getContentletByInode).not.toHaveBeenCalled();
+                expect(dotNavigationService.goToFirstPortlet).toHaveBeenCalled();
+            });
+
+            it('should still redirect a create link, which Content Drive does not act on yet', () => {
+                givenMenu(['content-drive']);
+
+                const result = runGuard(
+                    '/c/content/new/Blog?CD_path=%2Fimages',
+                    'content'
+                ) as UrlTree;
+
+                expect(result.queryParams).toEqual({ path: '/images', createContent: 'Blog' });
+                expect(dotNavigationService.goToFirstPortlet).not.toHaveBeenCalled();
+            });
 
             it('should still redirect a Content Search listing link', () => {
                 givenMenu(['content-drive']);
