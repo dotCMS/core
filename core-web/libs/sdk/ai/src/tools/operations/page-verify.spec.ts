@@ -327,14 +327,33 @@ describe('verifyPage', () => {
         ).rejects.toThrow(/not found.*hostname.*identifier/i);
     });
 
-    it('passes languageId and mode through to the render call', async () => {
+    it('passes languageId through, and renders WORKING as PREVIEW_MODE', async () => {
+        // dotCMS has a PageMode.WORKING, but its velocity renderer registers no handler for it:
+        // `mode=WORKING` fails with a 500 (a NullPointerException) on every page. PREVIEW_MODE
+        // has the same flags — working versions, anonymous permissions respected — and renders.
         const { runtime, calls } = fakeRuntime();
 
-        await verifyPage({ dotcms: runtime, path: '/x', languageId: 2, mode: 'WORKING' });
+        const manifest = await verifyPage({
+            dotcms: runtime,
+            path: '/x',
+            languageId: 2,
+            mode: 'WORKING'
+        });
 
         const render = calls.find((c) => c.path.startsWith('/api/v1/page/render'));
         expect((render?.query as Record<string, unknown>)?.['language_id']).toBe(2);
-        expect((render?.query as Record<string, unknown>)?.['mode']).toBe('WORKING');
+        expect((render?.query as Record<string, unknown>)?.['mode']).toBe('PREVIEW_MODE');
+        // The caller's name for the mode is what the manifest reports.
+        expect(manifest.mode).toBe('WORKING');
+    });
+
+    it('renders LIVE as LIVE', async () => {
+        const { runtime, calls } = fakeRuntime();
+
+        await verifyPage({ dotcms: runtime, path: '/x' });
+
+        const render = calls.find((c) => c.path.startsWith('/api/v1/page/render'));
+        expect((render?.query as Record<string, unknown>)?.['mode']).toBe('LIVE');
     });
 
     it('surfaces a 404 render as a manifest verdict, not a throw', async () => {

@@ -20,6 +20,16 @@ export type VerifyMode = 'LIVE' | 'WORKING';
 
 /** The default render mode when the caller does not name one. */
 export const DEFAULT_MODE: VerifyMode = 'LIVE';
+
+/**
+ * The `mode` the render endpoint is sent for each {@link VerifyMode}.
+ *
+ * dotCMS defines a `PageMode.WORKING`, but its velocity renderer (`VelocityModeHandler`)
+ * registers no handler for it, so `mode=WORKING` fails with a 500 — a NullPointerException —
+ * on every page. `PREVIEW_MODE` has the same flags (working versions, anonymous permissions
+ * respected) and renders. The caller still says `WORKING`, and the manifest reports it.
+ */
+const RENDER_MODE: Record<VerifyMode, string> = { LIVE: 'LIVE', WORKING: 'PREVIEW_MODE' };
 /** The default language id when the caller does not name one. */
 export const DEFAULT_LANGUAGE_ID = 1;
 
@@ -158,7 +168,7 @@ export async function verifyPage(options: VerifyPageOptions): Promise<VerifyPage
 
     const query: Record<string, string | number> = {
         language_id: languageId,
-        mode
+        mode: RENDER_MODE[mode]
     };
     if (resolvedSite) {
         query['host_id'] = resolvedSite.identifier;
