@@ -98,6 +98,7 @@ import {
 import {
     OUTCOME_KIND,
     DotContentDriveContentTypeSelectorPayload,
+    DotContentDriveActionExecutionResult,
     DotContentDriveDialog,
     DotContentDriveSortOrder,
     DotContentDriveStatus,
@@ -455,6 +456,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#registerShortcuts();
 
         this.#syncDialog(this.#store.dialog);
+        // Each of these reacts to its one signal only; whatever else it reads is a snapshot.
+        this.#reportActionExecutionResult(this.#store.actionExecutionResult);
+        this.#reportFolderDeleteRefusal(this.#store.folderDeleteRefusal);
+        this.#reportFolderDuplicateRefusal(this.#store.folderDuplicateRefusal);
 
         // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
         // once from the snapshot (the portlet is not re-created on in-session query-param changes).
@@ -849,9 +854,16 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * unqualified success would be the one thing the user cannot recover from — the grid has already
      * reloaded and the selection is gone.
      */
-    readonly actionExecutionResultEffect = effect(() => {
-        const result = this.#store.actionExecutionResult();
-
+    /**
+     * Reports each action outcome the store publishes, and reloads what it changed.
+     *
+     * A `signalMethod` fed only the result, like {@link #syncDialog}: the site, path and tree
+     * selection it reads to word the toast are snapshots, so changing any of them does not re-enter
+     * the outcome path.
+     */
+    readonly #reportActionExecutionResult = signalMethod<
+        DotContentDriveActionExecutionResult | undefined
+    >((result) => {
         if (!result) {
             return;
         }
@@ -1115,36 +1127,34 @@ export class DotContentDriveShellComponent implements OnDestroy {
             messages.forEach((message) => this.#messageService.add(message));
         }
 
-        untracked(() => {
-            // A backgrounded outcome arrives unprompted, so it must not disturb whatever the user is
-            // doing when it lands. Every other result settles a request they are waiting on, so it
-            // reloads straight away — holding it would read as the action having done nothing.
-            if (!backgrounded || !this.$authorIsMidTask()) {
-                // Contentlets have moved step, so the grid is stale; `loadItems` also drops the
-                // selection the run consumed.
-                //
-                // Quiet: the run marked its rows, so a skeleton here would be a second load
-                // right after the first and would read as a jump.
-                if (this.#currentFolderIsAffected(affectedFolders)) {
-                    this.#store.loadItems({ quiet: true });
-                }
-            } else {
-                // Held, not dropped (FR-043). Dropping it left the grid stale for as long as the
-                // author stayed in the portlet: the run settled, the rows changed, and nothing
-                // would ever fetch them again. `#flushHeldReload` runs it at the next boundary.
-                this.#reloadHeld.set({ affectedFolders });
+        // A backgrounded outcome arrives unprompted, so it must not disturb whatever the user is
+        // doing when it lands. Every other result settles a request they are waiting on, so it
+        // reloads straight away — holding it would read as the action having done nothing.
+        if (!backgrounded || !this.$authorIsMidTask()) {
+            // Contentlets have moved step, so the grid is stale; `loadItems` also drops the
+            // selection the run consumed.
+            //
+            // Quiet: the run marked its rows, so a skeleton here would be a second load
+            // right after the first and would read as a jump.
+            if (this.#currentFolderIsAffected(affectedFolders)) {
+                this.#store.loadItems({ quiet: true });
             }
+        } else {
+            // Held, not dropped (FR-043). Dropping it left the grid stale for as long as the
+            // author stayed in the portlet: the run settled, the rows changed, and nothing
+            // would ever fetch them again. `#flushHeldReload` runs it at the next boundary.
+            this.#reloadHeld.set({ affectedFolders });
+        }
 
-            if (!backgrounded) {
-                // A no-op when the user already closed the dialog, which is the common path now that
-                // firing hands off to the toolbar. Never done for a backgrounded result: it can land
-                // minutes later, while the user is mid-way through configuring a different action,
-                // and closing the dialog throws that input away.
-                this.#store.closeDialog();
-            }
+        if (!backgrounded) {
+            // A no-op when the user already closed the dialog, which is the common path now that
+            // firing hands off to the toolbar. Never done for a backgrounded result: it can land
+            // minutes later, while the user is mid-way through configuring a different action,
+            // and closing the dialog throws that input away.
+            this.#store.closeDialog();
+        }
 
-            this.#store.clearActionExecutionResult();
-        });
+        this.#store.clearActionExecutionResult();
     });
 
     /**
@@ -1175,10 +1185,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * ran, so there are no counts to report, nothing to reload, and no dialog state to settle — the
      * only thing owed to the author is the sentence (FR-041).
      */
-    readonly folderDeleteRefusalEffect = effect(() => {
-        const kind = this.#store.folderDeleteRefusal();
-
-        untracked(() => {
+    readonly #reportFolderDeleteRefusal = signalMethod<DotFolderBulkDeleteRefusalKind | undefined>(
+        (kind) => {
             if (!kind) {
                 return;
             }
@@ -1196,8 +1204,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
             });
 
             this.#store.clearFolderDeleteRefusal();
-        });
-    });
+        }
+    );
 
     /**
      * The sentence for each way the server can refuse a folder duplication before any run exists
@@ -1213,7 +1221,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /**
      * Says why a folder duplication never became a run, and consumes the refusal. Mirrors
-     * {@link folderDeleteRefusalEffect}: a refusal is not an outcome, so there are no counts and
+     * {@link #reportFolderDeleteRefusal}: a refusal is not an outcome, so there are no counts and
      * nothing to reload.
      */
     /**
@@ -1234,28 +1242,26 @@ export class DotContentDriveShellComponent implements OnDestroy {
             : this.#dotMessageService.get(key);
     }
 
-    readonly folderDuplicateRefusalEffect = effect(() => {
-        const kind = this.#store.folderDuplicateRefusal();
+    readonly #reportFolderDuplicateRefusal = signalMethod<
+        DotFolderBulkDuplicateRefusalKind | undefined
+    >((kind) => {
+        if (!kind) {
+            return;
+        }
 
-        untracked(() => {
-            if (!kind) {
-                return;
-            }
-
-            this.#messageService.add({
-                severity: 'error',
-                summary: this.#dotMessageService.get('content-drive.duplicate.refused.title'),
-                detail: this.#refusalDetail(
-                    kind,
-                    this.#folderDuplicateRefusalKeys[kind],
-                    'content-drive.duplicate.refused.over-max-paths-limit',
-                    this.#store.folderDuplicateMaxPaths()
-                ),
-                life: ERROR_MESSAGE_LIFE
-            });
-
-            this.#store.clearFolderDuplicateRefusal();
+        this.#messageService.add({
+            severity: 'error',
+            summary: this.#dotMessageService.get('content-drive.duplicate.refused.title'),
+            detail: this.#refusalDetail(
+                kind,
+                this.#folderDuplicateRefusalKeys[kind],
+                'content-drive.duplicate.refused.over-max-paths-limit',
+                this.#store.folderDuplicateMaxPaths()
+            ),
+            life: ERROR_MESSAGE_LIFE
         });
+
+        this.#store.clearFolderDuplicateRefusal();
     });
 
     /**
