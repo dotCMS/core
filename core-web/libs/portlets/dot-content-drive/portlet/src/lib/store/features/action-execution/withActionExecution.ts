@@ -824,9 +824,17 @@ export function withActionExecution() {
                                 // this answer reaches the page. That completion found nothing
                                 // tracked, so it could not end the report; ending it is left here,
                                 // and the run is not tracked again.
+                                //
+                                // Nor when the restore on load already placed it: it read the queue
+                                // after the server created the job, so its report stands and this
+                                // one ends. Replacing that entry would leave one report unending.
                                 if (
                                     !response?.jobId ||
-                                    store.settledDuplicateJobs().includes(response.jobId)
+                                    store.settledDuplicateJobs().includes(response.jobId) ||
+                                    Object.prototype.hasOwnProperty.call(
+                                        store.duplicateJobs(),
+                                        response.jobId
+                                    )
                                 ) {
                                     endRun(runId);
 

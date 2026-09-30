@@ -1600,6 +1600,15 @@ describe('DotContentDriveStore - runs in progress on load', () => {
         expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
     });
 
+    it("should mark a delete's folders without waiting for the other reads", () => {
+        // A folder the delete leaves while a slower read is still out is announced then; marked
+        // only after every read answered, it would be marked again and stay busy until reload.
+        currentUser$ = NEVER;
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
     it('should restore no status when it cannot tell who the author is', () => {
         currentUser$ = throwError(() => new Error('boom'));
         build();

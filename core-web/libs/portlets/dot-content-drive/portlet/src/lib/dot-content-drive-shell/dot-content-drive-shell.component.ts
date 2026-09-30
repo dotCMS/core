@@ -1143,7 +1143,18 @@ export class DotContentDriveShellComponent implements OnDestroy {
             // Held, not dropped (FR-043). Dropping it left the grid stale for as long as the
             // author stayed in the portlet: the run settled, the rows changed, and nothing
             // would ever fetch them again. `#flushHeldReload` runs it at the next boundary.
-            this.#reloadHeld.set({ affectedFolders });
+            //
+            // Merged into what is already held, so a later outcome for another folder does not
+            // drop this one's reload. No folders named means reload regardless, and that wins.
+            const held = this.#reloadHeld();
+            const reloadRegardless =
+                !affectedFolders?.length || (!!held && !held.affectedFolders?.length);
+
+            this.#reloadHeld.set({
+                affectedFolders: reloadRegardless
+                    ? undefined
+                    : [...new Set([...(held?.affectedFolders ?? []), ...affectedFolders])]
+            });
         }
 
         if (!backgrounded) {

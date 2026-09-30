@@ -891,8 +891,8 @@ export const DotContentDriveStore = signalStore(
                 store.loadSitePermissions(store.currentSite);
                 // Once, not per site: System Host belongs to none of them.
                 store.loadSystemHostPermissions();
-                // Runs still going from before this page loaded, from every queue in one read, then
-                // routed to whichever part of the store owns each (#37062, FR-015 as amended).
+                // Runs still going from before this page loaded, read from each queue and routed to
+                // whichever part of the store owns them (#37062, FR-015 as amended).
                 //
                 // Fire-and-forget on purpose: the listing renders unmarked and marks and statuses
                 // appear when this answers. Nothing here is awaited, and a failure leaves the
@@ -905,10 +905,20 @@ export const DotContentDriveStore = signalStore(
                 // scoped to the reader, and only the submitter is sent the completion that ends a
                 // run, so anyone else's restored status would never go away. Delete marks every
                 // author's runs, as it always has: the folders are in use either way.
+                //
+                // Delete is applied from its own read, not the join. A folder the delete leaves
+                // while a slower read is still out is announced then, and marking it only after
+                // every read answered would mark it again, busy until reload.
+                folderBulkDeleteService
+                    .readActiveRuns()
+                    .pipe(
+                        catchError(() => of([] as DotFolderDeleteActiveRun[])),
+                        take(1),
+                        takeUntilDestroyed(destroyRef)
+                    )
+                    .subscribe((deletes) => store.applyInFlightFolders(deletes));
+
                 forkJoin({
-                    deletes: folderBulkDeleteService
-                        .readActiveRuns()
-                        .pipe(catchError(() => of([] as DotFolderDeleteActiveRun[]))),
                     duplicates: folderBulkDuplicateService
                         .readActiveRuns()
                         .pipe(catchError(() => of([] as DotFolderDuplicateActiveRun[]))),
@@ -918,9 +928,7 @@ export const DotContentDriveStore = signalStore(
                     user: currentUserService.getCurrentUser().pipe(catchError(() => of(null)))
                 })
                     .pipe(take(1), takeUntilDestroyed(destroyRef))
-                    .subscribe(({ deletes, duplicates, uploads, user }) => {
-                        store.applyInFlightFolders(deletes);
-
+                    .subscribe(({ duplicates, uploads, user }) => {
                         // With no author, no run can be told apart as theirs, so none is restored.
                         // The upload restore still runs, with nothing: it is what stops holding
                         // completions for a claim that would otherwise never come.

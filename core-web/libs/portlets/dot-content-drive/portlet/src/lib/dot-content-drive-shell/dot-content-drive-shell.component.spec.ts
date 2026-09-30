@@ -924,6 +924,21 @@ describe('DotContentDriveShellComponent', () => {
                 expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
             });
 
+            it('should keep a held reload when a later outcome for another folder arrives', () => {
+                // Both are held while the author is mid-task. The later one replacing the earlier
+                // would leave this folder's reload behind, and its changes would never show.
+                selectedItemsSignal.set([MOCK_ITEMS[0]]);
+                spectator.detectChanges();
+
+                settle({ ...backgrounded, affectedFolders: ['//demo.com/test/path'] });
+                settle({ ...backgrounded, affectedFolders: ['//demo.com/somewhere/else'] });
+
+                selectedItemsSignal.set([]);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
             it('should run a held reload once, not on every later change', () => {
                 // The flush has to consume what it held. Otherwise every subsequent dialog open and
                 // close refetches the grid for a run that settled long ago.

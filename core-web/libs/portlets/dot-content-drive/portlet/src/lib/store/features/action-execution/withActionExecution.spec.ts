@@ -479,6 +479,40 @@ describe('withActionExecution', () => {
                 );
             });
 
+            it('should end both reports when the restore on load placed the run before the server answered', () => {
+                // The restore can read the queue after the server created the job and before the
+                // submission's answer arrives. The answer must not replace the restored run's
+                // entry, or the completion ends only one report and the other stays on screen.
+                build();
+                const answer = new Subject<{
+                    jobId: string;
+                    statusUrl: string;
+                    submitted: number;
+                }>();
+                duplicate.mockReturnValue(answer);
+
+                store.executeDuplicate('Duplicate', [ALPHA]);
+                store.restoreDuplicateRuns([{ id: 'job-1', userId: 'me', assetPaths: [ALPHA] }]);
+                answer.next({
+                    jobId: 'job-1',
+                    statusUrl: '/api/v1/jobs/job-1/status',
+                    submitted: 1
+                });
+                answer.complete();
+
+                store.reportDuplicateCompleted('Duplicate', {
+                    jobId: 'job-1',
+                    state: 'SUCCESS',
+                    total: 1,
+                    successCount: 1,
+                    failedCount: 0,
+                    skippedCount: 0,
+                    results: [{ key: ALPHA, status: 'SUCCESS' }]
+                });
+
+                expect(store.toolbarRunCount()).toBe(0);
+            });
+
             it("should take the server's count once it accepts the run", () => {
                 // The server collapses repeated and nested paths, so it can accept fewer folders
                 // than were sent, and the report has to agree with the outcome that follows.
