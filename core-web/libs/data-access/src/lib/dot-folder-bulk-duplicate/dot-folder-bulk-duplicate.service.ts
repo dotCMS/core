@@ -7,10 +7,10 @@ import { catchError, map } from 'rxjs/operators';
 
 import {
     DotFolderBulkDuplicateSubmitResponse,
-    DotFolderDuplicateActiveRun,
-    DotJobState,
-    isJobInProgress
+    DotFolderDuplicateActiveRun
 } from '@dotcms/dotcms-models';
+
+import { readActiveJobs } from '../dot-job-queue/read-active-jobs';
 
 /**
  * Why a duplication was refused before any run was created.
@@ -41,21 +41,13 @@ interface RefusalBody {
 
 const BULK_DUPLICATE_URL = '/api/v1/assets/folders/_bulkduplicate';
 
-/** The runs of this queue still in progress, for any user. */
-const ACTIVE_URL = '/api/v1/jobs/folderBulkDuplicate/active';
+/** The queue this feature's runs live in. */
+const QUEUE_NAME = 'folderBulkDuplicate';
 
-/**
- * One large page of the active listing. The endpoint pages at 20 by default and is not scoped to the
- * reader, so on a busy instance other authors' runs could otherwise push this author's own past the
- * first page and they would never be restored.
- */
-const ACTIVE_PAGE_SIZE = 100;
-
-/** One entry of the active listing, as far as this client reads it. */
-interface ActiveRunEntry {
-    id: string;
-    state: DotJobState;
-    parameters?: { userId?: string; assetPaths?: string[] };
+/** The parameters of one active run, as far as this client reads them. */
+interface ActiveRunParameters {
+    userId?: string;
+    assetPaths?: string[];
 }
 
 /**
@@ -110,25 +102,15 @@ export class DotFolderBulkDuplicateService {
      * @returns the runs in progress, for every user; the caller keeps its own
      */
     readActiveRuns(): Observable<DotFolderDuplicateActiveRun[]> {
-        return this.#http
-            .get<{ entity?: { jobs?: ActiveRunEntry[] } }>(ACTIVE_URL, {
-                params: { pageSize: ACTIVE_PAGE_SIZE }
+        return readActiveJobs<ActiveRunParameters, DotFolderDuplicateActiveRun>(
+            this.#http,
+            QUEUE_NAME,
+            (job) => ({
+                id: job.id,
+                userId: job.parameters?.userId,
+                assetPaths: job.parameters?.assetPaths ?? []
             })
-            .pipe(
-                map((response) => response?.entity?.jobs ?? []),
-                map((jobs) =>
-                    jobs
-                        .filter((job) => isJobInProgress(job?.state))
-                        .map(
-                            (job): DotFolderDuplicateActiveRun => ({
-                                id: job.id,
-                                userId: job.parameters?.userId,
-                                assetPaths: job.parameters?.assetPaths ?? []
-                            })
-                        )
-                ),
-                catchError(() => of([] as DotFolderDuplicateActiveRun[]))
-            );
+        );
     }
 
     /**

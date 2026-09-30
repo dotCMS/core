@@ -11,17 +11,17 @@ import {
     DotBulkUploadForm,
     DotBulkUploadSubmitResponse,
     DotCMSContentlet,
-    DotCMSTempFile,
-    DotJobState,
-    isJobInProgress
+    DotCMSTempFile
 } from '@dotcms/dotcms-models';
 import { getFileMetadata, getFileVersion } from '@dotcms/utils';
 
+import { readActiveJobs } from '../dot-job-queue/read-active-jobs';
 import { DotUploadService } from '../dot-upload/dot-upload.service';
 import {
     DotActionRequestOptions,
     DotWorkflowActionsFireService
 } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
+
 
 export enum FileStatus {
     DOWNLOAD = 'DOWNLOADING',
@@ -47,8 +47,6 @@ export class DotUploadFileService {
     readonly #BASE_URL = '/api/v1/workflow/actions/default';
     /** The batch endpoint. Job-backed, so it answers a handle rather than a contentlet. */
     readonly #BULK_UPLOAD_URL = '/api/v1/assets/_bulkupload';
-    /** The batches of the upload queue still in progress, for any user. */
-    readonly #ACTIVE_UPLOADS_URL = '/api/v1/jobs/assetBulkUpload/active';
     readonly #http = inject(HttpClient);
     readonly #uploadService = inject(DotUploadService);
     readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
@@ -204,40 +202,15 @@ export class DotUploadFileService {
      * @returns the batches in progress, for every user; the caller keeps its own
      */
     readActiveUploads(): Observable<DotBulkUploadActiveRun[]> {
-        return this.#http
-            .get<{
-                entity?: {
-                    jobs?: {
-                        id: string;
-                        state: DotJobState;
-                        parameters?: {
-                            userId?: string;
-                            baseType?: string;
-                            stagedFiles?: unknown[];
-                        };
-                    }[];
-                };
-            }>(this.#ACTIVE_UPLOADS_URL, {
-                // One large page: the listing pages at 20 by default and is not scoped to the
-                // reader, so other authors' batches could push this author's own past the first.
-                params: { pageSize: 100 }
-            })
-            .pipe(
-                map((response) => response?.entity?.jobs ?? []),
-                map((jobs) =>
-                    jobs
-                        .filter((job) => isJobInProgress(job?.state))
-                        .map(
-                            (job): DotBulkUploadActiveRun => ({
-                                id: job.id,
-                                userId: job.parameters?.userId,
-                                fileCount: job.parameters?.stagedFiles?.length ?? 0,
-                                baseType: job.parameters?.baseType
-                            })
-                        )
-                ),
-                catchError(() => of([] as DotBulkUploadActiveRun[]))
-            );
+        return readActiveJobs<
+            { userId?: string; baseType?: string; stagedFiles?: unknown[] },
+            DotBulkUploadActiveRun
+        >(this.#http, 'assetBulkUpload', (job) => ({
+            id: job.id,
+            userId: job.parameters?.userId,
+            fileCount: job.parameters?.stagedFiles?.length ?? 0,
+            baseType: job.parameters?.baseType
+        }));
     }
 
     uploadFilesByBaseType(files: File[], form: DotBulkUploadForm): Observable<DotBulkUploadEvent> {
