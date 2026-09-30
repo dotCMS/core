@@ -83,25 +83,25 @@ describe('DotSystemConfigService', () => {
                 req.flush(mockResponse);
             }));
 
-        it('should carry the ceilings the server advertises for bulk work', () =>
-            new Promise<void>((done) => {
-                // Read from the same configuration load upload's ceiling already comes from, so
-                // the folder actions can check a selection before submitting it (#37062).
-                const ceilings = {
-                    bulkUpload: { maxFiles: 100, maxTotalBytes: 1024 },
-                    folderBulkDelete: { maxPaths: 50 },
-                    folderBulkDuplicate: { maxPaths: 25 }
-                };
+        it('should carry the ceilings the server advertises for bulk work', () => {
+            // Read from the same configuration load upload's ceiling already comes from, so the
+            // folder actions can check a selection before submitting it (#37062).
+            const ceilings = {
+                bulkUpload: { maxFiles: 100, maxTotalBytes: 1024 },
+                folderBulkDelete: { maxPaths: 50 },
+                folderBulkDuplicate: { maxPaths: 25 }
+            };
+            let config: DotSystemConfig | undefined;
 
-                spectator.service.getSystemConfig().subscribe((config) => {
-                    expect(config).toEqual(expect.objectContaining(ceilings));
-                    done();
-                });
+            spectator.service.getSystemConfig().subscribe((value) => (config = value));
+            // `flush` emits synchronously, so the value is already here and nothing waits on a
+            // timeout; an emission that never comes fails the assertion instead of passing.
+            spectator
+                .expectOne('/api/v1/appconfiguration', HttpMethod.GET)
+                .flush({ entity: { config: ceilings } });
 
-                spectator
-                    .expectOne('/api/v1/appconfiguration', HttpMethod.GET)
-                    .flush({ entity: { config: ceilings } });
-            }));
+            expect(config).toEqual(expect.objectContaining(ceilings));
+        });
 
         it('should handle errors when fetching system configuration', () => {
             spectator.service.getSystemConfig().subscribe(
