@@ -9,31 +9,52 @@ function authHeaders() {
     };
 }
 
-/**
- * Dismisses every notification this user currently has.
- *
- * Test setup, not teardown. The notification bell is durable and per user, so a run inherits every
- * notification the last one left: an assertion that "a notification arrived" passes against a panel
- * full of yesterday's, and there is nothing in a bulk upload's notification text — counts only, no
- * file names — that could tell them apart. Clearing first is what makes the assertion mean
- * something.
- */
-export async function clearNotifications(request: APIRequestContext): Promise<void> {
+/** A notification as the listing returns it, as far as the tests read it. */
+interface ListedNotification {
+    id: string;
+    message?: string;
+}
+
+async function listNotifications(request: APIRequestContext): Promise<ListedNotification[]> {
     const listed = await request.get('/api/v1/notification/getNotifications/offset/0/limit/100', {
         headers: authHeaders()
     });
     expect(listed.ok()).toBeTruthy();
 
-    const ids: string[] = ((await listed.json())?.entity?.notifications ?? []).map(
-        (notification: { id: string }) => notification.id
-    );
+    return (await listed.json())?.entity?.notifications ?? [];
+}
 
-    if (!ids.length) {
-        return;
-    }
+/**
+ * The ids of the notifications that exist now, so a test can later tell its own from older ones.
+ *
+ * Taken instead of clearing them: tests run in parallel as the same user, and clearing deletes
+ * another test's notification before it has been checked.
+ */
+export async function listNotificationIds(request: APIRequestContext): Promise<string[]> {
+    return (await listNotifications(request)).map((notification) => notification.id);
+}
 
-    await request.put('/api/v1/notification/delete', {
-        data: { items: ids },
-        headers: authHeaders()
-    });
+/**
+ * Waits for a notification with the given text that did not exist when `knownIds` was taken.
+ *
+ * @param request the API context
+ * @param knownIds the ids {@link listNotificationIds} returned before the test acted
+ * @param text text the new notification's message contains
+ */
+export async function expectNewNotification(
+    request: APIRequestContext,
+    knownIds: string[],
+    text: string
+): Promise<void> {
+    await expect
+        .poll(
+            async () =>
+                (await listNotifications(request)).some(
+                    (notification) =>
+                        !knownIds.includes(notification.id) &&
+                        !!notification.message?.includes(text)
+                ),
+            { timeout: 60000 }
+        )
+        .toBe(true);
 }

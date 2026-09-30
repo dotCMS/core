@@ -35,7 +35,11 @@ import { type ContentDriveApiHelpers, expect, test } from '../../fixtures/conten
  *   completion pushed to the submitter; the `COPY_FOLDER` event the copy also raises is not one it
  *   listens to.
  */
-test.describe.configure({ timeout: 300000 });
+// In order, one at a time, unlike the rest of the suite. Every test here acts as the same admin, and
+// a duplicate's completion reaches every page that user has open, so run side by side one test's
+// toast, status or notification could be another's. `default`, not `serial`: a failure does not
+// skip the tests after it.
+test.describe.configure({ mode: 'default', timeout: 300000 });
 
 /**
  * Seeds a container folder holding the given subfolders, opens it, and removes it however the
@@ -60,7 +64,11 @@ async function inSeededContainer(
         /** Runs before the drive loads, which is when a route has to be in place. */
         beforeOpen?: (duplicate: FolderDuplicate) => Promise<void>;
     },
-    body: (drive: ContentDrivePage, duplicate: FolderDuplicate) => Promise<void>
+    body: (
+        drive: ContentDrivePage,
+        duplicate: FolderDuplicate,
+        expectNewNotification: (text: string) => Promise<void>
+    ) => Promise<void>
 ): Promise<void> {
     const site = await apiHelpers.getDefaultSite();
     const container = `/${name}`;
@@ -71,14 +79,16 @@ async function inSeededContainer(
     ]);
 
     try {
-        await apiHelpers.clearNotifications();
+        // The notifications already there, so a check finds this test's own; clearing them would
+        // delete another file's before it was checked.
+        const knownIds = await apiHelpers.listNotificationIds();
 
         const drive = new ContentDrivePage(adminPage);
         const duplicate = new FolderDuplicate(adminPage);
         await beforeOpen?.(duplicate);
         await drive.goTo();
         await drive.openFolder(name);
-        await body(drive, duplicate);
+        await body(drive, duplicate, (text) => apiHelpers.expectNewNotification(knownIds, text));
     } finally {
         await apiHelpers.deleteFolders(site.hostname, [container]);
     }
@@ -92,7 +102,7 @@ test.describe('Content Drive folder duplicate', () => {
     }) =>
         inSeededContainer(
             { adminPage, apiHelpers, name: `cd-dup-${testSuffix}`, children: ['source'] },
-            async (drive, duplicate) => {
+            async (drive, duplicate, expectNewNotification) => {
                 await duplicate.fromContextMenu('source');
 
                 // Reported while it runs, and cleared once it has finished.
@@ -100,6 +110,7 @@ test.describe('Content Drive folder duplicate', () => {
                 await duplicate.expectDuplicateShown('source_copy');
                 await drive.expectStatusToastGone();
                 await drive.expectOutcomeContaining('ran on 1 item');
+                await expectNewNotification('1 folder(s) duplicated.');
                 await drive.expectNotificationContaining('1 folder(s) duplicated.');
             }
         ));
@@ -116,12 +127,13 @@ test.describe('Content Drive folder duplicate', () => {
                 name: `cd-dup-many-${testSuffix}`,
                 children: ['alpha', 'beta']
             },
-            async (drive, duplicate) => {
+            async (drive, duplicate, expectNewNotification) => {
                 await duplicate.fromActionCenter(['alpha', 'beta']);
 
                 await duplicate.expectDuplicateShown('alpha_copy');
                 await duplicate.expectDuplicateShown('beta_copy');
                 await drive.expectOutcomeContaining('ran on 2 item');
+                await expectNewNotification('2 folder(s) duplicated.');
                 await drive.expectNotificationContaining('2 folder(s) duplicated.');
             }
         ));
@@ -177,12 +189,13 @@ test.describe('Content Drive folder duplicate', () => {
     }) =>
         inSeededContainer(
             { adminPage, apiHelpers, name: `cd-dup-away-${testSuffix}`, children: ['source'] },
-            async (drive, duplicate) => {
+            async (drive, duplicate, expectNewNotification) => {
                 // Left straight away, before the run can finish: the toast belongs to a page the
                 // author is no longer on, so the bell is what tells them.
                 await duplicate.fromContextMenu('source');
                 await adminPage.goto(Portlet.Content);
 
+                await expectNewNotification('1 folder(s) duplicated.');
                 await drive.expectNotificationContaining('1 folder(s) duplicated.');
 
                 // Back with a real page load, as an author returning later would, which also

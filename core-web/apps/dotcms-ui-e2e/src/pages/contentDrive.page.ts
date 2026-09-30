@@ -439,6 +439,19 @@ export class ContentDrivePage {
     }
 
     /**
+     * The status toast has stopped reporting one run, told apart by its wording, while another
+     * run's status may still be on screen.
+     *
+     * @param text wording only this run's status carries, such as its count
+     * @param timeout how long the run may take to end
+     */
+    async expectStatusToastGoneContaining(text: string, timeout = OUTCOME_TIMEOUT) {
+        await expect(this.statusToastSummary.filter({ hasText: text })).toHaveCount(0, {
+            timeout
+        });
+    }
+
+    /**
      * Whether the status toast is what a click would land on at its own centre.
      *
      * Asked of the browser's hit-testing rather than by clicking a control underneath. The first

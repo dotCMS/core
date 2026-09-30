@@ -4,7 +4,7 @@ import { type BaseApiHelpers, test as base } from './base.fixture';
 
 import { createFilteredFolder, deleteFolders } from '../requests/folders';
 import { waitForFolderJobsToSettle } from '../requests/jobs';
-import { clearNotifications } from '../requests/notifications';
+import { expectNewNotification, listNotificationIds } from '../requests/notifications';
 
 /** The shared helpers plus the teardown Content Drive needs for the folders it seeds. */
 export interface ContentDriveApiHelpers extends BaseApiHelpers {
@@ -16,8 +16,10 @@ export interface ContentDriveApiHelpers extends BaseApiHelpers {
      * uploads, and the suite runs two workers against a single instance.
      */
     waitForFolderJobsToSettle: (siteName: string, folderPath: string) => Promise<void>;
-    /** Dismisses every notification, so "one arrived" is a claim about this run. */
-    clearNotifications: () => Promise<void>;
+    /** The notifications that exist now, so a test can tell its own from older ones. */
+    listNotificationIds: () => Promise<string[]>;
+    /** Waits for a notification with this text that is not among `knownIds`. */
+    expectNewNotification: (knownIds: string[], text: string) => Promise<void>;
     /** Seeds a folder that only admits the given file-name globs, for the folder-filter refusal. */
     createFilteredFolder: (siteName: string, path: string, fileMasks: string[]) => Promise<void>;
 }
@@ -50,7 +52,9 @@ export const test = base.extend<{ apiHelpers: ContentDriveApiHelpers }>({
                 deleteFolders(request, siteName, paths),
             createFilteredFolder: (siteName: string, path: string, fileMasks: string[]) =>
                 createFilteredFolder(request, siteName, path, fileMasks),
-            clearNotifications: () => clearNotifications(request),
+            listNotificationIds: () => listNotificationIds(request),
+            expectNewNotification: (knownIds: string[], text: string) =>
+                expectNewNotification(request, knownIds, text),
             waitForFolderJobsToSettle: (siteName: string, folderPath: string) =>
                 waitForFolderJobsToSettle(request, siteName, folderPath)
         });
