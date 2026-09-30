@@ -68,10 +68,15 @@ export function defineTool<TInput extends z.ZodObject, TResult, TOptions extends
  * Turn a definition, a connection and a consumer's options into the tool a framework
  * registers.
  *
- * Cheap and side-effect free: nothing is resolved, validated or fetched here. The connection is
- * resolved inside `execute`, on every call — so a host started without credentials still boots
- * and lists its tools, and each call reports the `CONFIGURATION` problem instead of the host
+ * Cheap and side-effect free: nothing is resolved or fetched here. The connection is resolved
+ * inside `execute`, on every call — so a host started without credentials still boots and
+ * lists its tools, and each call reports the `CONFIGURATION` problem instead of the host
  * crashing at startup.
+ *
+ * The one thing checked here is the consumer's own static `allow` list (`executeTool`), which
+ * becomes the tool's policy now: an entry that is not a path throws a `ValidationError`, so a
+ * malformed security boundary fails at startup instead of opening the API (see
+ * `toRequestPolicy`).
  */
 export function createTool<TInput extends z.ZodObject, TResult, TOptions extends AnyToolOptions>(
     definition: ToolDefinition<TInput, TResult, TOptions>,
