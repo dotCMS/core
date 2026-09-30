@@ -15,7 +15,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { getFileMetadata, getFileVersion } from '@dotcms/utils';
 
-import { readActiveJobs } from '../dot-job-queue/read-active-jobs';
+import { DotJobQueueService } from '../dot-job-queue/dot-job-queue.service';
 import { DotUploadService } from '../dot-upload/dot-upload.service';
 import {
     DotActionRequestOptions,
@@ -47,6 +47,7 @@ export class DotUploadFileService {
     /** The batch endpoint. Job-backed, so it answers a handle rather than a contentlet. */
     readonly #BULK_UPLOAD_URL = '/api/v1/assets/_bulkupload';
     readonly #http = inject(HttpClient);
+    readonly #jobQueueService = inject(DotJobQueueService);
     readonly #uploadService = inject(DotUploadService);
     readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
 
@@ -184,10 +185,10 @@ export class DotUploadFileService {
      * @returns the batches in progress, for every user; the caller keeps its own
      */
     readActiveUploads(): Observable<DotBulkUploadActiveRun[]> {
-        return readActiveJobs<
+        return this.#jobQueueService.readActiveJobs<
             { userId?: string; baseType?: string; stagedFiles?: unknown[] },
             DotBulkUploadActiveRun
-        >(this.#http, 'assetBulkUpload', (job) => ({
+        >('assetBulkUpload', (job) => ({
             id: job.id,
             userId: job.parameters?.userId,
             fileCount: job.parameters?.stagedFiles?.length ?? 0,

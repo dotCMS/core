@@ -7,7 +7,7 @@ import { catchError, map } from 'rxjs/operators';
 
 import { DotFolderBulkDeleteSubmitResponse, DotFolderDeleteActiveRun } from '@dotcms/dotcms-models';
 
-import { readActiveJobs } from '../dot-job-queue/read-active-jobs';
+import { DotJobQueueService } from '../dot-job-queue/dot-job-queue.service';
 
 /**
  * Why a submission was refused before any run was created.
@@ -78,6 +78,7 @@ const QUEUE_NAME = 'folderBulkDelete';
 @Injectable({ providedIn: 'root' })
 export class DotFolderBulkDeleteService {
     readonly #http = inject(HttpClient);
+    readonly #jobQueueService = inject(DotJobQueueService);
 
     /**
      * Submit a selection of folder paths for deletion.
@@ -112,8 +113,7 @@ export class DotFolderBulkDeleteService {
         // non-terminal state, failed and abandoned ones included, and without the filter folders
         // whose delete already failed would stay marked (contract CR-10). A failed read marks
         // nothing rather than erroring: marking degrades, the portlet does not (FR-022, SC-010).
-        return readActiveJobs<ActiveRunParameters, DotFolderDeleteActiveRun>(
-            this.#http,
+        return this.#jobQueueService.readActiveJobs<ActiveRunParameters, DotFolderDeleteActiveRun>(
             QUEUE_NAME,
             (job) => ({
                 id: job.id,

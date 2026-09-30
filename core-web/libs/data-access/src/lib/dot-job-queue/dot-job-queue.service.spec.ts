@@ -1,22 +1,25 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 import { describe, expect, it } from 'vitest';
 
-import { HttpClient } from '@angular/common/http';
+import {
+    ACTIVE_JOBS_PAGE_SIZE,
+    DotActiveJobEntry,
+    DotJobQueueService
+} from './dot-job-queue.service';
 
-import { ACTIVE_JOBS_PAGE_SIZE, DotActiveJobEntry, readActiveJobs } from './read-active-jobs';
-
-describe('readActiveJobs', () => {
-    let spectator: SpectatorHttp<HttpClient>;
-    const createHttp = createHttpFactory(HttpClient);
+describe('DotJobQueueService', () => {
+    let spectator: SpectatorHttp<DotJobQueueService>;
+    const createHttp = createHttpFactory(DotJobQueueService);
 
     const read = () => {
         let runs: string[] | undefined;
 
-        readActiveJobs<{ label?: string }, string>(
-            spectator.service,
-            'someQueue',
-            (job: DotActiveJobEntry<{ label?: string }>) => `${job.id}:${job.parameters?.label}`
-        ).subscribe((value) => (runs = value));
+        spectator.service
+            .readActiveJobs<
+                { label?: string },
+                string
+            >('someQueue', (job: DotActiveJobEntry<{ label?: string }>) => `${job.id}:${job.parameters?.label}`)
+            .subscribe((value) => (runs = value));
 
         return { runs: () => runs };
     };

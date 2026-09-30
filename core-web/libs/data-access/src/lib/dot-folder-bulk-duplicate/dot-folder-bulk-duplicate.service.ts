@@ -10,7 +10,7 @@ import {
     DotFolderDuplicateActiveRun
 } from '@dotcms/dotcms-models';
 
-import { readActiveJobs } from '../dot-job-queue/read-active-jobs';
+import { DotJobQueueService } from '../dot-job-queue/dot-job-queue.service';
 
 /**
  * Why a duplication was refused before any run was created.
@@ -64,6 +64,7 @@ interface ActiveRunParameters {
 })
 export class DotFolderBulkDuplicateService {
     readonly #http = inject(HttpClient);
+    readonly #jobQueueService = inject(DotJobQueueService);
 
     /**
      * Asks for every given folder to be duplicated.
@@ -102,15 +103,14 @@ export class DotFolderBulkDuplicateService {
      * @returns the runs in progress, for every user; the caller keeps its own
      */
     readActiveRuns(): Observable<DotFolderDuplicateActiveRun[]> {
-        return readActiveJobs<ActiveRunParameters, DotFolderDuplicateActiveRun>(
-            this.#http,
-            QUEUE_NAME,
-            (job) => ({
-                id: job.id,
-                userId: job.parameters?.userId,
-                assetPaths: job.parameters?.assetPaths ?? []
-            })
-        );
+        return this.#jobQueueService.readActiveJobs<
+            ActiveRunParameters,
+            DotFolderDuplicateActiveRun
+        >(QUEUE_NAME, (job) => ({
+            id: job.id,
+            userId: job.parameters?.userId,
+            assetPaths: job.parameters?.assetPaths ?? []
+        }));
     }
 
     /**
