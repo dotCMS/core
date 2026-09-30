@@ -194,15 +194,14 @@ describe('DotCMSEditableText', () => {
 
             expect(Editor).toHaveBeenCalledWith(
                 {
-                    tinymceScriptSrc: 'http://localhost:8080/ext/tinymcev7/tinymce.min.js',
+                    tinymceScriptSrc: 'http://localhost:8080/ext/tinymce/tinymce.min.js',
                     inline: true,
+                    licenseKey: 'gpl',
                     init: {
                         inline: true,
-                        licenseKey: 'gpl',
                         menubar: false,
                         plugins: '',
-                        powerpaste_html_import: 'clean',
-                        powerpaste_word_import: 'clean',
+                        promotion: false,
                         suffix: '.min',
                         toolbar: '',
                         valid_styles: {
@@ -216,6 +215,34 @@ describe('DotCMSEditableText', () => {
                 },
                 {}
             );
+        });
+
+        /**
+         * `scriptSrc` is this SDK's own generated URL, which must point at the new
+         * version-neutral vendored path — `/ext/tinymcev7` stays served (elsewhere) only for
+         * already-published SDK versions whose compiled JS cannot be changed retroactively. See
+         * `specs/upgrade-tinymce-legacy-version/contracts/backward-compat-alias.md`.
+         */
+        it('points the generated script src at the new vendored path, not the deprecated alias', () => {
+            const [props] = Editor.mock.calls[0];
+            expect(props.tinymceScriptSrc).toBe('http://localhost:8080/ext/tinymce/tinymce.min.js');
+            expect(props.tinymceScriptSrc).not.toContain('/ext/tinymcev7');
+        });
+
+        /**
+         * Real bug, unrelated to the version bump, found while verifying AC-006 by reading the
+         * installed `@tinymce/tinymce-react@6.3.0` source: `Editor` only reads a license key from
+         * a **top-level `licenseKey` prop**, and its internal merge is
+         * `props.licenseKey ? { license_key: props.licenseKey } : {}` — it never looks at
+         * `props.init.licenseKey`. Putting `licenseKey: 'gpl'` inside `init` (the pre-existing
+         * code) is therefore silently inert: `license_key` never reaches the real
+         * `tinymce.init()` call, so this consumer runs unlicensed today. Fix is to pass
+         * `licenseKey="gpl"` directly on `<Editor>` in `TinyMCEEditor.tsx`.
+         */
+        it('sets license_key by passing licenseKey as a top-level Editor prop (not inside init)', () => {
+            const [props] = Editor.mock.calls[0];
+            expect(props.licenseKey).toBe('gpl');
+            expect(props.init.licenseKey).toBeUndefined();
         });
 
         describe('DotEditableText events', () => {
