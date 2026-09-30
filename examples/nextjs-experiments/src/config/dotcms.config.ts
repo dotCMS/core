@@ -25,7 +25,7 @@ export const aiSearchIndexName = "example-travel-lux";
 
 
 /**
- * Configuration for `events.init()` from `@dotcms/events`, called once in
+ * Configuration for `dotEvents.init()` from `@dotcms/events`, called once in
  * `src/instrumentation-client.ts`. Experiments are on by default: the SDK asks dotCMS
  * for the visitor's variant and redirects to it. Impressions and clicks are opt-in; this
  * example turns both on.

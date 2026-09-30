@@ -10,7 +10,7 @@ Status: prototype. Nothing here is released yet.
 
 | Import                  | What it has                                                               | Who imports it                                      | Framework          |
 | ----------------------- | ------------------------------------------------------------------------- | --------------------------------------------------- | ------------------ |
-| `@dotcms/events`        | `events`, and the types of its methods, options and errors                | Every app: the `init` call and any module that sends events | None           |
+| `@dotcms/events`        | `dotEvents`, and the types of its methods, options and errors                | Every app: the `init` call and any module that sends events | None           |
 | `@dotcms/events/markup` | `experimentMarkup`: what a page prints so its experiment runs             | Server code of a framework without an adapter       | None               |
 | `@dotcms/events/react`  | `DotCMSExperiment`, which prints that markup around its children          | React and Next.js pages that run experiments        | React 18 or later  |
 
@@ -23,9 +23,9 @@ The SDK supports Next.js 16 and later.
 Call `init` once, in `src/instrumentation-client.ts`:
 
 ```ts
-import { events } from '@dotcms/events';
+import { dotEvents } from '@dotcms/events';
 
-events.init({
+dotEvents.init({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST!,
     siteAuth: process.env.NEXT_PUBLIC_DOTCMS_SITE_AUTH!,
     impressions: true,
@@ -38,9 +38,9 @@ Every other module imports the same object, already configured:
 ```tsx
 'use client';
 
-import { events } from '@dotcms/events';
+import { dotEvents } from '@dotcms/events';
 
-const onSubmit = () => events.conversion('contact-form');
+const onSubmit = () => dotEvents.conversion('contact-form');
 ```
 
 - `conversion` takes a name only: dotCMS records a conversion's name and the page it happened on.
@@ -88,7 +88,10 @@ import { DotCMSExperiment } from '@dotcms/events/react';
 On a page that runs an experiment, the content stays hidden until the visitor's variant is decided. A visitor who already has an assignment gets it from a small inline script while the HTML loads, before the app's scripts: it shows the content, or sends the visitor to the assigned variant before the page has hydrated or requested its images. A new visitor's variant is decided by the SDK once it loads. On any other page, `DotCMSExperiment` renders its children alone.
 
 - The content can be the page's layout or content a view renders itself: whatever the experiment's variants change.
-- Rendered in a server component, it adds no JavaScript to the client. In a client component, it adds about 1.4 KB gzip.
+- Rendered in a server component, it adds no JavaScript to the client. In a client component, it adds about 1.5 KB gzip.
+- Content that streams in, behind Suspense or `loading.tsx`, is decided when it arrives. With `cacheComponents`, reading `searchParams` has to sit inside `<Suspense>`, so the page streams, and a returning visitor's redirect waits until the server renders that part.
+- On a page with a nonce-based Content-Security-Policy, as in Next.js's CSP guide, pass the nonce: `<DotCMSExperiment page={pageAsset} nonce={nonce}>`. The style and the script both get it, and the SDK shows the content through the CSSOM, which the policy does not block.
+- A navigation that changes only the query, such as the next page of a list, counts as a new page in browsers with the Navigation API.
 
 Without React, print what `experimentMarkup` returns, in the HTML the server sends:
 
@@ -96,8 +99,8 @@ Without React, print what `experimentMarkup` returns, in the HTML the server sen
 import { experimentMarkup } from '@dotcms/events/markup';
 
 const markup = experimentMarkup(pageAsset); // null when no experiment runs
-// <style>{markup.style}</style>
-// <script>{markup.script}</script>
+// <style nonce="…">{markup.style}</style>        the nonce only with a nonce-based CSP
+// <script nonce="…">{markup.script}</script>
 // <div {...markup.attributes}>…the content the experiment varies…</div>
 ```
 

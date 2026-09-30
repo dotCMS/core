@@ -415,9 +415,14 @@ export function Page({ pageContent }: PageProps) {
 
 ## Experiments (headless)
 
-This example integrates the dotCMS **Experiments** feature on top of the content/UVE patterns above, using `@dotcms/experiments` for A/B testing in the Next.js App Router. It requires the experiments infrastructure and configured Experiments app described in [dotCMS Requirements](#dotcms-requirements).
+This example integrates the dotCMS **Experiments** feature on top of the content/UVE patterns above, using `@dotcms/events`: `dotEvents.init` in `src/instrumentation-client.ts`, and `DotCMSExperiment` around what an experiment varies. It requires the experiments infrastructure and configured Experiments app described in [dotCMS Requirements](#dotcms-requirements).
 
-For additional references and the safe `withExperiments` pattern, see:
+The routes render in two ways, so an experiment on either shows how each behaves:
 
-- [Experiments SDK README](../../core-web/libs/sdk/experiments/README.md)
+- **The catch-all route (`[[...slug]]`) renders in one piece.** The server answers once dotCMS has, so the experiment's markup arrives with the first HTML, and a returning visitor is sent to their variant while the HTML is parsed, before the page paints.
+- **The blog (`/blog`) streams.** Its `loading.tsx` makes the page answer at once with a fallback, and the blog, with its experiment's markup, arrives when dotCMS answers. A returning visitor is sent to their variant when that part arrives, after the fallback has painted, and the SDK decides the marks as they stream in. A page that reads `searchParams` with `cacheComponents` on streams this way.
+
+For additional references, see:
+
+- [Events SDK README](../../core-web/libs/sdk/events/README.md)
 - [Experiments Docker Compose stack](../../docker/docker-compose-examples/experiments/README.md) — one-command setup for dotCMS + analytics infrastructure

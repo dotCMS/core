@@ -4,7 +4,8 @@ import { decideVariant } from './decision';
 import {
     hideContentlets,
     leavePageFor,
-    readPageExperiment,
+    observeMarks,
+    readPageExperiments,
     readRenderedVariant,
     revealContentlets,
     revealRows
@@ -36,7 +37,15 @@ import type { DotCMSEventContextExperiment } from '../pipeline/models';
 export interface PageDecision {
     /** True when the engine navigated to the assigned variant; the pageview is dropped. */
     redirected: boolean;
+    /**
+     * True when the visitor went to another page while this one was decided; its pageview is
+     * dropped, and the other page is decided and counted on its own.
+     */
+    left?: true;
 }
+
+/** What deciding one experiment the page renders ended in. */
+type MarkOutcome = 'shown' | 'redirected' | 'left';
 
 /**
  * How the pages mark what their experiment varies. `markup`: the element `experimentMarkup`
@@ -46,7 +55,7 @@ export interface PageDecision {
  */
 export type ExperimentPages = 'markup' | 'contentlets';
 
-/** The experiments engine behind `events`. */
+/** The experiments engine behind `dotEvents`. */
 export interface ExperimentsEngine {
     /**
      * On `contentlets` pages, decides from storage while the page's head is parsed: it replaces
@@ -58,10 +67,15 @@ export interface ExperimentsEngine {
     prepare(): boolean;
     /** Starts the assignment check, when one is due. */
     start(): void;
-    /** Decides the current page: reveal its rows, or redirect to the assigned variant. */
+    /**
+     * Decides the current page: reveal its rows, or redirect to the assigned variant. From then
+     * on it also decides the marks that arrive later, as content streams in.
+     */
     decide(): Promise<PageDecision>;
     /** The session's cumulative `context.experiments`. */
     contextExperiments(sessionId: string): DotCMSEventContextExperiment[];
+    /** Stops watching the page for marks that arrive later. */
+    stop(): void;
 }
 
 interface EngineOptions {
@@ -117,6 +131,18 @@ const routeIgnoresVariantMessage = (mark: PageExperimentMark, variant: string): 
     'The route does not pass variantName to its page request, so the page is shown as it is and the visit is not counted in the experiment.';
 
 /**
+ * The page a URL shows: its path and query, which the route renders. The hash changes nothing.
+ *
+ * @param href - The URL
+ * @returns The path and the query
+ */
+const pageOf = (href: string): string => {
+    const url = new URL(href);
+
+    return url.pathname + url.search;
+};
+
+/**
  * The URL the page's boot script is replacing the page with, if it is.
  *
  * @returns The variant's URL, or undefined when the script did not redirect
@@ -152,6 +178,9 @@ export const createExperimentsEngine = ({
     const warnedUrls = new Set<string>();
     // The variant's URL, when prepare replaced the page
     let preparedRedirect: string | undefined;
+    // One decision per page and rendered experiment, shared by decide and the mark observer
+    const decisions = new Map<string, Promise<MarkOutcome>>();
+    let stopObserving: (() => void) | undefined;
 
     const findAssignment = (experimentId: string): StoredExperiment | undefined =>
         assignments?.experiments.find((experiment) => experiment.id === experimentId);
@@ -245,11 +274,11 @@ export const createExperimentsEngine = ({
                 matchesRule(experiment.regexs?.isExperimentPage, window.location.href)
         );
 
-    const decisionFor = (mark: PageExperimentMark) =>
+    const decisionFor = (mark: PageExperimentMark, href = window.location.href) =>
         decideVariant({
             experimentId: mark.experimentId,
             rendered: mark.variant,
-            href: window.location.href,
+            href,
             stored: assignments,
             disabled,
             now: Date.now(),
@@ -286,6 +315,170 @@ export const createExperimentsEngine = ({
         return experiment
             ? { experimentId: experiment.id, variant: readRenderedVariant(window.location.href) }
             : null;
+    };
+
+    /**
+     * Decides one experiment the page renders: shows it, or leaves for the assigned variant.
+     *
+     * @param mark - The experiment and the variant the server rendered
+     * @param href - The page's URL when its decision started
+     * @param reveal - Shows what the page hid while it waited
+     * @returns How it ended; `left` when the visitor went to another page during the wait
+     */
+    const decideMark = async (
+        mark: PageExperimentMark,
+        href: string,
+        reveal: () => void
+    ): Promise<MarkOutcome> => {
+        // The same decision the boot script makes while the HTML is parsed
+        let decision = decisionFor(mark, href);
+
+        if (decision.kind === 'unknown') {
+            log(`holding the pageview for ${mark.experimentId}`);
+
+            const outcome = await waitForAnswer();
+
+            // A click during the wait: the next page is decided on its own, and this one
+            // neither redirects to a variant of the next page's URL nor counts as shown
+            if (pageOf(window.location.href) !== pageOf(href)) {
+                log(`left ${pageOf(href)} while ${mark.experimentId} was decided`);
+
+                return 'left';
+            }
+
+            if (outcome === 'timeout') {
+                log('the assignment timed out; showing the page without the experiment');
+                reveal();
+
+                return 'shown';
+            }
+
+            decision = decisionFor(mark, href);
+        }
+
+        switch (decision.kind) {
+            case 'redirect':
+                log(`rendered ${mark.variant}, assigned ${decision.variant}: ${decision.url}`);
+                navigate(decision.url);
+
+                return 'redirected';
+
+            case 'assigned': {
+                const assigned = findAssignment(mark.experimentId);
+
+                if (assigned) {
+                    joinSessionExperiment(getSessionId(), {
+                        id: assigned.id,
+                        running_id: assigned.runningId,
+                        variant: assigned.variant.name
+                    });
+                }
+
+                log(`showing ${decision.variant} of ${mark.experimentId}`);
+                break;
+            }
+
+            case 'ignored':
+                warn(routeIgnoresVariantMessage(mark, decision.variant));
+                break;
+
+            default:
+                log(`not in ${mark.experimentId}; showing the page`);
+        }
+
+        reveal();
+
+        return 'shown';
+    };
+
+    /**
+     * Decides a marked experiment once per page, whoever asks first: decide, for the pageview,
+     * or the observer, for marks that arrive later.
+     *
+     * @param mark - The experiment and the variant the server rendered
+     * @param href - The page's URL
+     * @returns How the decision ended
+     */
+    const decideOnce = (mark: PageExperimentMark, href: string): Promise<MarkOutcome> => {
+        const key = `${pageOf(href)}\n${mark.experimentId}\n${mark.variant}`;
+        let outcome = decisions.get(key);
+
+        if (!outcome) {
+            outcome = decideMark(mark, href, () => revealRows(mark.experimentId, mark.variant));
+            decisions.set(key, outcome);
+            // A page left mid-decision is decided again if the visitor comes back to it
+            void outcome.then((result) => {
+                if (result === 'left') {
+                    decisions.delete(key);
+                }
+            });
+        }
+
+        return outcome;
+    };
+
+    /**
+     * Decides every experiment the page renders, in document order; the first redirect wins.
+     *
+     * @param marks - The page's marks
+     * @param href - The page's URL
+     * @returns The page's decision
+     */
+    const decideMarks = async (
+        marks: PageExperimentMark[],
+        href: string
+    ): Promise<PageDecision> => {
+        for (const mark of marks) {
+            const outcome = await decideOnce(mark, href);
+
+            if (outcome === 'redirected') {
+                return { redirected: true };
+            }
+
+            if (outcome === 'left') {
+                return { redirected: false, left: true };
+            }
+        }
+
+        return { redirected: false };
+    };
+
+    /**
+     * Waits for the marks of a page whose experiment runs on its URL, by the stored rule, while
+     * the page has none yet: content behind Suspense streams in after the page loads, and after
+     * a route change.
+     *
+     * @returns The marks, or none after the timeout
+     */
+    const waitForMarks = (): Promise<PageExperimentMark[]> =>
+        new Promise((resolve) => {
+            let stop = (): void => undefined;
+            const timer = setTimeout(() => {
+                stop();
+                resolve([]);
+            }, timeoutMs);
+
+            stop = observeMarks(() => {
+                const marks = readPageExperiments();
+
+                if (marks.length) {
+                    clearTimeout(timer);
+                    stop();
+                    resolve(marks);
+                }
+            });
+        });
+
+    /**
+     * From the first decision on, decides the marks that arrive later, as soon as they are in
+     * the page: streamed content, or a route rendered after its pageview.
+     */
+    const watchLateMarks = (): void => {
+        stopObserving ??= observeMarks(() => {
+            const href = window.location.href;
+
+            readPageExperiments().forEach((mark) => void decideOnce(mark, href));
+        });
     };
 
     return {
@@ -336,72 +529,55 @@ export const createExperimentsEngine = ({
                 return { redirected: true };
             }
 
-            const marked = readPageExperiment();
-            const mark = marked ?? (pages === 'contentlets' ? await contentletsMark() : null);
-            // What the page hid while it waited: the markup's rows, or dotCMS's contentlets
-            const reveal = marked ? () => revealRows(marked.experimentId) : revealContentlets;
+            const href = window.location.href;
+            let marks = readPageExperiments();
 
-            if (!mark) {
-                if (pages === 'markup' && !disabled) {
-                    warnIfUnmarked();
+            if (pages === 'markup') {
+                watchLateMarks();
+
+                // The page runs an experiment by its URL rule, but its marks are not in yet
+                if (!marks.length && !disabled && experimentOnThisPage()) {
+                    marks = await waitForMarks();
+
+                    if (pageOf(window.location.href) !== pageOf(href)) {
+                        return { redirected: false, left: true };
+                    }
+
+                    if (!marks.length) {
+                        warnIfUnmarked();
+                    }
                 }
 
-                reveal();
+                return decideMarks(marks, href);
+            }
+
+            // A traditional page that prints the experiment markup is decided by it
+            if (marks.length) {
+                return decideMarks(marks, href);
+            }
+
+            const mark = await contentletsMark();
+
+            if (!mark) {
+                revealContentlets();
 
                 return { redirected: false };
             }
 
-            // The same decision the boot script makes while the HTML is parsed
-            let decision = decisionFor(mark);
+            const outcome = await decideMark(mark, href, revealContentlets);
 
-            if (decision.kind === 'unknown') {
-                log(`holding the pageview for ${mark.experimentId}`);
-
-                if ((await waitForAnswer()) === 'timeout') {
-                    log('the assignment timed out; showing the page without the experiment');
-                    reveal();
-
-                    return { redirected: false };
-                }
-
-                decision = decisionFor(mark);
+            if (outcome === 'left') {
+                return { redirected: false, left: true };
             }
 
-            switch (decision.kind) {
-                case 'redirect':
-                    log(`rendered ${mark.variant}, assigned ${decision.variant}: ${decision.url}`);
-                    navigate(decision.url);
-
-                    return { redirected: true };
-
-                case 'assigned': {
-                    const assigned = findAssignment(mark.experimentId);
-
-                    if (assigned) {
-                        joinSessionExperiment(getSessionId(), {
-                            id: assigned.id,
-                            running_id: assigned.runningId,
-                            variant: assigned.variant.name
-                        });
-                    }
-
-                    log(`showing ${decision.variant} of ${mark.experimentId}`);
-                    break;
-                }
-
-                case 'ignored':
-                    warn(routeIgnoresVariantMessage(mark, decision.variant));
-                    break;
-
-                default:
-                    log(`not in ${mark.experimentId}; showing the page`);
-            }
-
-            reveal();
-
-            return { redirected: false };
+            return { redirected: outcome === 'redirected' };
         },
 
-        contextExperiments: (sessionId) => getSessionExperiments(sessionId)
+        contextExperiments: (sessionId) => getSessionExperiments(sessionId),
+
+        stop: () => {
+            stopObserving?.();
+            stopObserving = undefined;
+        }
     };
 };

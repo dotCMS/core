@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 `@dotcms/events` is the dotCMS SDK for everything a page reports back to dotCMS: automatic pageviews, conversions, content clicks, content impressions, and experiments (A/B tests). It is greenfield: it sends only what dotCMS accepts today. It replaces `@dotcms/analytics` and `@dotcms/experiments`, which are deprecated.
 
-One object, `events`, configured by one `init` call, runs a single Analytics.js instance. Experiments run inside that instance: an engine asks dotCMS which variant the visitor gets and redirects to it, and a plugin adds `context.experiments` to every event. The event payload is the one `@dotcms/analytics` sends.
+One object, `dotEvents`, configured by one `init` call, runs a single Analytics.js instance. Experiments run inside that instance: an engine asks dotCMS which variant the visitor gets and redirects to it, and a plugin adds `context.experiments` to every event. The event payload is the one `@dotcms/analytics` sends.
 
 The core is framework-free: the same object serves Next.js and plain React, and traditional (VTL) pages get it as `ca.min.js`, an IIFE dotCMS injects (see Traditional Pages). What a page prints so an experiment runs comes from this package too: `experimentMarkup` (`@dotcms/events/markup`) for any framework, and `DotCMSExperiment` (`@dotcms/events/react`) for React. The other SDKs are not involved: `@dotcms/uve` and `@dotcms/react` have no experiment code.
 
@@ -39,9 +39,9 @@ pnpm nx run sdk-events:build:standalone
 
 ```ts
 // src/instrumentation-client.ts: runs after the HTML loads, before hydration
-import { events } from '@dotcms/events';
+import { dotEvents } from '@dotcms/events';
 
-events.init({
+dotEvents.init({
     dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST!,
     siteAuth: process.env.NEXT_PUBLIC_DOTCMS_SITE_AUTH!,
     impressions: true,
@@ -51,10 +51,10 @@ events.init({
 
 ```ts
 // Any other module gets the same object, already configured
-import { events } from '@dotcms/events';
+import { dotEvents } from '@dotcms/events';
 
-events.conversion('signup');
-events.pageView({ campaign: 'spring' }); // only needed with autoPageView: false
+dotEvents.conversion('signup');
+dotEvents.pageView({ campaign: 'spring' }); // only needed with autoPageView: false
 ```
 
 ```tsx
@@ -84,12 +84,12 @@ The full option table is in README.md.
 ```
 libs/sdk/events/
 ├── src/
-│   ├── index.ts                  # Public entry: `events` and the types its methods, options and errors use
+│   ├── index.ts                  # Public entry: `dotEvents` and the types its methods, options and errors use
 │   ├── markup.ts                 # Public entry ./markup: `experimentMarkup` and its types
 │   ├── react.ts                  # Public entry ./react: `DotCMSExperiment` and its props
 │   ├── standalone.ts             # The IIFE entry, not an export: ca.min.js for traditional pages
 │   └── lib/
-│       ├── events.ts             # The `events` object: init, conversion, pageView, automatic pageviews
+│       ├── events.ts             # The `dotEvents` object: init, conversion, pageView, automatic pageviews
 │       ├── models.ts             # Public types (DotCMSEvents*)
 │       ├── pipeline/             # What every event goes through, in Analytics.js plugins
 │       │   ├── identity/         # plugin.ts: context (site, session, user, device); activity.ts: session activity
@@ -98,6 +98,7 @@ libs/sdk/events/
 │       │   ├── constants.ts      # Event types, endpoint, storage keys, SENDER_PLUGIN_NAME
 │       │   ├── models.ts         # The pipeline's config and payloads, and the shapes dotCMS receives
 │       │   ├── logger.ts
+│       │   ├── navigation.ts     # SPA navigations: the Navigation API, or router-utils where there is none
 │       │   └── utils.ts          # Context, session, user id, page data
 │       ├── contentlets/          # What the content trackers share
 │       │   ├── constants.ts      # Contentlet class and attribute, observer debounce, the rescan event
@@ -110,7 +111,7 @@ libs/sdk/events/
 │       │   ├── boot.ts           # The boot script: applies the decision while the HTML is parsed
 │       │   ├── constants.ts      # The experiment contract: attributes, hiding rule, timeouts, storage keys
 │       │   ├── decision.ts       # decideVariant: the decision the boot script and the engine share
-│       │   ├── dom.ts            # Reads the marks, reveals the marked content, leaves the page for a variant
+│       │   ├── dom.ts            # Reads and watches the marks, reveals the marked content, leaves the page for a variant
 │       │   ├── engine.ts         # Assignment check, pageview hold, redirect or reveal
 │       │   ├── markup.ts         # experimentMarkup: attributes, hiding rule and boot script for a page
 │       │   ├── models.ts         # isUserIncluded response, stored assignments, ExperimentBootState
@@ -162,25 +163,27 @@ A returning visitor's variant is decided by the boot script the page prints, whi
 The rest of the contract between the two (the attributes, the hiding rule, the timeouts, the storage keys and `ExperimentBootState`) lives in `experiments/constants.ts` and `experiments/models.ts`.
 
 1. On a page that runs an experiment, `DotCMSExperiment`, or a page that prints `experimentMarkup`, wraps what the experiment varies in an element marked `data-dot-experiment="<experiment id>"` and `data-dot-variant="<variant the server rendered>"`. It prints before that element the rule that hides it (`HIDING_RULE`, which shows it on its own after `DECISION_TIMEOUT_MS`, 3 s) and the boot script (`buildExperimentBootScript`). On any other page it prints nothing.
-2. The boot script (`dotcmsExperimentBoot`) runs before the app's scripts and never calls dotCMS. Inside UVE it shows the content. Otherwise it runs `decideVariant` on what is stored: on `unknown` it does nothing, so the content stays hidden and the engine decides once it loads; on `redirect` it calls `window.stop()` and `location.replace` to the variant's URL; on anything else it shows the content.
+2. The boot script (`dotcmsExperimentBoot`) runs before the app's scripts and never calls dotCMS. Inside UVE it shows the content. Otherwise it runs `decideVariant` on what is stored: on `unknown` it does nothing, so the content stays hidden and the engine decides once it loads; on `redirect` it calls `window.stop()` and `location.replace` to the variant's URL; on anything else it shows the content, with the same kind of rule as step 6.
 3. When it replaces the page, it leaves `ExperimentBootState` (`redirectedTo`, the variant's URL) on `window.__dotEventsExperimentBoot`. The page being left may still run its app until the variant's document arrives, so for 5 s it holds every new `fetch` of that page except `keepalive` ones.
 4. On DOMContentLoaded, `sendPageView` asks the engine to `decide()` before it calls `instance.page()`. The engine answers `redirected` at once when the boot script is replacing the page, so it neither redirects again nor sends that page's pageview.
-5. Otherwise `decide()` reads the marks. With no marks the pageview goes out at once. With marks, it runs `decideVariant` on its stored assignments; on a page the script already showed, it reaches the same decision from the same storage. On `unknown` it holds the pageview and waits for `isUserIncluded`, up to `experiments.timeout` (3000 ms by default): when the wait times out it reveals the content and sends the pageview, and when dotCMS answers it decides again. Then:
+5. Otherwise `decide()` reads the marks the page renders (`readPageExperiments`), skipping those inside a subtree React keeps out of view: a route Activity keeps in the page with `display: none`, or Suspense content still in its hidden container while it streams in. When there are none but a stored `isExperimentPage` rule matches the URL, it waits for them, up to `experiments.timeout`, since content behind Suspense streams in after the page loads. With no marks the pageview goes out. Each marked experiment is decided once per page, in document order, and the first redirect wins. It runs `decideVariant` on the stored assignments; on a page the script already showed, it reaches the same decision from the same storage. On `unknown` it holds the pageview and waits for `isUserIncluded`, up to `experiments.timeout` (3000 ms by default): when the wait times out it reveals the content and sends the pageview, and when dotCMS answers it decides again. When the visitor goes to another page during the wait, it decides nothing and drops this page's pageview, which sent then would carry the other page's URL; the other page is decided on its own. Then:
    - `redirect`: it leaves the page with `leavePageFor` (`window.stop()`, `location.replace`, and the same 5 s hold of the page's new requests) and drops the pageview; the variant's page sends its own. On a first visit the page has hydrated by then, and Next would otherwise prefetch every visible link while the variant renders;
    - `assigned`: it adds the experiment to the session's `context.experiments`;
    - `ignored`: it warns that the route ignores `variantName`;
    - `excluded`: nothing more.
 
    In every case but `redirect`, it reveals the content and sends the pageview.
-6. The content is revealed by appending `:root [data-dot-experiment="<id>"]{visibility:visible !important;animation:none !important}` to `<style id="dotcms-experiment-reveal">`, so neither side modifies DOM nodes that React owns. A style rule changes nothing the trackers observe, so `revealRows` then sends `CONTENTLET_RESCAN_EVENT` (`dotcms:events:rescan`) and the impression tracker scans again for the contentlets it skipped while they were hidden.
+6. The content is revealed by adding `:root [data-dot-experiment="<id>"][data-dot-variant="<rendered variant>"]{visibility:visible !important;animation:none !important}` to an adopted style sheet, or, where the browser has no adopted sheets, to `<style id="dotcms-experiment-reveal">`. Keyed by the rendered variant, it never shows another render of the same experiment, such as a route Activity keeps in the page. A nonce-based Content-Security-Policy blocks a style element a script creates, but not a change through the CSSOM. Neither side modifies DOM nodes that React owns. A style rule changes nothing the trackers observe, so `revealRows` then sends `CONTENTLET_RESCAN_EVENT` (`dotcms:events:rescan`) and the impression tracker scans again for the contentlets it skipped while they were hidden.
+7. From its first decision on, the engine watches the page for marks (`observeMarks`, a MutationObserver on inserted marks and on rewrites of their two attributes) and decides each new one as soon as it is in the page, before its first frame: Suspense content that streams in, or a route rendered after its pageview. Those pageviews have gone out already (see Known Gaps).
 
-History changes (SPA navigation) run step 5 through `onRouteChange` from `@analytics/router-utils`, two animation frames later so the new route's content is in the DOM, and deduplicated by path plus query string. React never runs an inline script it renders on the client, so the boot script only acts on the page the server sent; the hiding rule, a plain `<style>`, still keeps the new route's experiment content hidden until the engine decides.
+SPA navigations run step 5 through `onNavigation` (`pipeline/navigation.ts`), two animation frames later so the new route's content is in the DOM, and deduplicated by path plus query string. It listens to the browser's Navigation API (`currententrychange`), which reports every change of the path or the query, back and forward included; where the browser has none, to `@analytics/router-utils`, which reports path changes only. React never runs an inline script it renders on the client, so the boot script only acts on the page the server sent; the hiding rule, a plain `<style>`, still keeps the new route's experiment content hidden until the engine decides.
 
 ### What an Experiment Page Needs
 
 - It wraps the content the experiment varies in `DotCMSExperiment`, or prints `experimentMarkup`, in the HTML the server sends. A dotCMS variant changes the content in the page's containers, so a view that does not render that content has nothing to vary.
 - Its route passes the URL's `variantName` to the page request. Otherwise the variant's URL renders the original, and the visit is not counted.
-- It renders on every request. In Next.js, reading `searchParams` does that; a page prerendered at build time cannot serve `variantName`, and does not see an experiment that started after the build.
+- It renders on every request. In Next.js, reading `searchParams` does that; a page prerendered at build time cannot serve `variantName`, and does not see an experiment that started after the build. With `cacheComponents` (Next.js 16), reading `searchParams` has to sit inside `<Suspense>`, so the page streams: the boot script arrives with the streamed content, a returning visitor's redirect waits for the server to render that part, and the engine decides the marks when they arrive.
+- On a page with a nonce-based Content-Security-Policy, it passes the nonce to `DotCMSExperiment`, which prints it on the style and the script, with `suppressHydrationWarning` because browsers hide a nonce from the DOM once they apply it.
 
 ### Traditional Pages (ca.min.js)
 
@@ -198,16 +201,16 @@ dotCMS injects the SDK into traditional pages as an IIFE: `src/standalone.ts`, b
 
 With `debug: true`, the engine warns through `console.warn` (`warn` in `EngineOptions`, silent otherwise) when:
 
-- an experiment the visitor is in runs on the current URL, by the `regexs.isExperimentPage` rule `isUserIncluded` returns, but nothing on the page carries experiment marks: the page is not rendered as above, and the experiment never shows there. Once per URL;
+- an experiment the visitor is in runs on the current URL, by the `regexs.isExperimentPage` rule `isUserIncluded` returns, but nothing on the page carries experiment marks, even after waiting for them up to the timeout: the page is not rendered as above, and the experiment never shows there. Once per URL;
 - the URL already asks for the assigned variant but the server rendered another one: the route does not pass `variantName`.
 
-The URL rules are used for these warnings only. Which experiment a page runs, and which variant the server rendered, always come from the marks.
+The URL rules are used for these warnings, and to wait for the marks of a page they match, only. Which experiment a page runs, and which variant the server rendered, always come from the marks.
 
 ### Errors
 
 Nothing is retried, and no failure throws into the page. `onError` in the config receives a `DotCMSEventsError` with one of these codes:
 
-- `REJECTED`: dotCMS answered an events request with an error, or with a 202 whose `entity.failed` is above 0. It carries the first error's message, the HTTP `status`, `detail` (dotCMS's error list) and the number of `events` the request carried. Raised by `reportResponse` in `pipeline/sender/http.ts`, on the `keepalive` path too.
+- `REJECTED`: dotCMS answered an events request with an error, or with a 202 whose `entity.failed` is above 0. It carries the first error's message, the HTTP `status`, `detail` (dotCMS's error list) and the number of `dotEvents` the request carried. Raised by `reportResponse` in `pipeline/sender/http.ts`, on the `keepalive` path too.
 - `NETWORK`: an events request got no answer.
 - `EXPERIMENTS`: `isUserIncluded` failed, raised by the engine's `check`. A 403 (`status: 403`) means experiments are off for the site, and the engine stops asking for a day; other failures keep the stored assignments and carry the HTTP status when there is one.
 
@@ -242,7 +245,7 @@ What it puts on the page:
 
 | Name                        | Kind         | What it is                                                                                              |
 | --------------------------- | ------------ | ------------------------------------------------------------------------------------------------------- |
-| `dotEvents`                 | window       | The `events` object, for traditional pages and plain scripts                                             |
+| `dotEvents`                 | window       | The `dotEvents` object, for traditional pages and plain scripts                                             |
 | `__dotAnalyticsActive__`    | window       | The SDK is active: the React, Vue and Angular renderers then print the contentlet attributes            |
 | `__dotEventsExperimentBoot` | window       | The boot script's `ExperimentBootState`, set when it replaces the page                                   |
 | `dotcms:analytics:ready`    | window event | Sent once the SDK is active, so those renderers render again                                             |
@@ -296,7 +299,7 @@ Dependencies go one way. `pipeline/` imports nothing built on it; the content tr
 
 ## Public API Rules
 
-- Expose only what a consumer uses. The `exports` field has three entries: `.` (`events`, and the types its methods, options and errors use), `./markup` (`experimentMarkup` and its types) and `./react` (`DotCMSExperiment`, `DotCMSExperimentProps`). There is no `./internal`, and there must not be one. Adding an export is an API decision, not a refactor.
+- Expose only what a consumer uses. The `exports` field has three entries: `.` (`dotEvents`, and the types its methods, options and errors use), `./markup` (`experimentMarkup` and its types) and `./react` (`DotCMSExperiment`, `DotCMSExperimentProps`). There is no `./internal`, and there must not be one. Adding an export is an API decision, not a refactor.
 - An entry exports every type its public signatures use, as types (API Extractor calls a missing one a forgotten export). A type that a signature uses is already part of the contract, since changing it breaks consumers; exporting it only lets them name it.
 - The root entry does not re-export `experimentMarkup`. Every page loads the engine, and a bundler that keeps a re-exported module (Turbopack did, measured) would ship the boot script builder with it.
 - Public types are declared in `src/lib/models.ts` with the `DotCMSEvents` prefix; the React adapter's props stay with the component. Never export or re-export the core's types: they are internal and change freely.
@@ -334,17 +337,18 @@ Dependencies go one way. `pipeline/` imports nothing built on it; the content tr
 - Specs sit next to their sources as `*.spec.ts`. The core's specs came with the core. Of the events layer:
   - `events.spec.ts` replaces Analytics.js with a fake instance and covers `window.dotEvents`, the public methods, the conversion payload and the memory storage;
   - `standalone.spec.ts` and `standalone/config.spec.ts` cover the IIFE: the attributes dotCMS prints, their defaults and overrides, the advanced JSON, and a tag without a site auth;
-  - `experiments/` has specs for `decision.ts`, `boot.ts` (with a fake window), `engine.ts` (how it follows the boot script, `onError`, and pages marked by dotCMS's contentlet wrappers), `markup.ts` and `dom.ts`;
+  - `experiments/` has specs for `decision.ts`, `boot.ts` (with a fake window), `engine.ts` (how it follows the boot script, `onError`, marks that stream in or sit in a hidden route, a visitor who leaves during the wait, and pages marked by dotCMS's contentlet wrappers), `markup.ts` and `dom.ts`;
+  - `pipeline/navigation.spec.ts` covers SPA navigations through the Navigation API, and the fallback without it;
   - `react/DotCMSExperiment.spec.tsx` uses Testing Library without the jest-dom matchers, which this project does not set up.
 - Vitest does not type-check, so run `tsc -p libs/sdk/events/tsconfig.spec.json` as well: it must report no errors. When the core specs moved here they carried 8 errors from `@dotcms/analytics` (an import of `ANALYTICS_CONTENTLET_CLASS`, which no longer exists, gave their contentlets the class `undefined`, and several fixtures no longer matched the models); those are fixed.
 
 ## Performance
 
-- The `events-init` probe in `libs/sdk/bundle-budgets` bundles `import { events } from '@dotcms/events'` with its dependencies: 27,433 B gzip, against a 30,000 B ceiling. `events-react` bundles `DotCMSExperiment`: 1,354 B gzip against 2,200, and it fails if the engine or Analytics.js comes along. Raise a ceiling only with a measurement and a reason.
+- The `events-init` probe in `libs/sdk/bundle-budgets` bundles `import { dotEvents } from '@dotcms/events'` with its dependencies: 28,119 B gzip, against a 30,000 B ceiling. `events-react` bundles `DotCMSExperiment`: 1,496 B gzip against 2,200, and it fails if the engine or Analytics.js comes along. Raise a ceiling only with a measurement and a reason.
 - `sideEffects: false`, and importing the package does nothing until `init`.
 - `isUserIncluded` is asked once per tab session, by the engine only. The pageview hold is bounded by the timeout, and the CSS rule shows the content after 3 s even when no script runs.
-- The boot script is about 1 KB gzip in the HTML of each page that runs an experiment (961 B in the example), minified by the app's build. From a server component it costs the client no JavaScript, but Next.js repeats the markup in the RSC payload of the HTML. From a client component, the builder (the `events-react` probe) is in that route's JavaScript.
-- `ca.min.js` is 72,575 B raw and 24,923 B gzip, experiments included; `@dotcms/analytics`'s is 22,782 B gzip. The contentlets mode is in `events-init` too (412 B gzip), since the engine holds both.
+- The boot script is about 1.1 KB gzip in the HTML of each page that runs an experiment (1,079 B minified with esbuild), minified by the app's build. From a server component it costs the client no JavaScript, but Next.js repeats the markup in the RSC payload of the HTML. From a client component, the builder (the `events-react` probe) is in that route's JavaScript.
+- `ca.min.js` is 74,654 B raw and 25,636 B gzip, experiments included; `@dotcms/analytics`'s is 22,782 B gzip. The contentlets mode is in `events-init` too (412 B gzip), since the engine holds both.
 - The impression and click plugins are only added when enabled, but their code is always in the bundle, because `getEnhancedTrackingPlugins` references both.
 
 ### Measured Cost
@@ -375,6 +379,9 @@ Chrome traces of the `nextjs-experiments` example in production mode (`next buil
 - One `context` per batch can attach `context.experiments` to events queued before the visitor reached the experiment.
 - dotCMS still ships `@dotcms/analytics`'s `ca.min.js` and its own experiments script: this package's script is built but not wired in until #37798 (see Traditional Pages).
 - A new visitor's first experiment page is decided by the engine, after the app's scripts load: that page hydrates and may request images before the redirect, and its content shows only once `isUserIncluded` answers. Only a decision that blocks parsing until dotCMS answers would avoid that, at the cost of delaying every visitor's first paint.
+- A new visitor's page whose marks stream in after its pageview is decided and shown right when they arrive, but that pageview carries no `context.experiments`. The pageview waits for the marks only when a stored rule says the page runs an experiment, which a new visitor has no rule for yet.
+- In browsers without the Navigation API, a navigation that changes only the query is neither decided nor counted: `@analytics/router-utils` reports path changes only.
+- In Next.js 16 development, an SPA navigation to a page with `DotCMSExperiment` logs React's "Encountered a script tag" error: the component renders its inline script on the client, where React never runs it. Production logs nothing. Only a script printed once, in the root layout's head, instead of on each page, would avoid it.
 - The boot script and `leavePageFor` hold the `fetch` calls of the page being left by replacing `window.fetch` on it for 5 s. That page is going away, but the override is global while it lasts: keep it only if that trade is accepted.
 - Only React has an adapter. Angular and Vue apps can print `experimentMarkup` themselves until they get one; traditional (VTL) pages run them from `ca.min.js`, on dotCMS's contentlet wrappers.
 - With localStorage blocked, the core prints `[dotCMS events] Could not save dot_events_user_id to localStorage` on every page load, debug or not. Events still go out, without a lasting user id.

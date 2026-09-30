@@ -2,7 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DotCMSEvents } from './models';
 
-// Analytics.js is replaced by an instance that records what `events` hands it
+// Analytics.js is replaced by an instance that records what `dotEvents` hands it
 const fakeInstance = vi.hoisted(() => ({ track: vi.fn(), page: vi.fn() }));
 const Analytics = vi.hoisted(() => vi.fn(() => fakeInstance));
 
@@ -18,14 +18,14 @@ interface AnalyticsJsConfig {
     };
 }
 
-describe('events', () => {
-    let events: DotCMSEvents;
+describe('dotEvents', () => {
+    let dotEvents: DotCMSEvents;
 
     beforeAll(async () => {
-        ({ events } = await import('./events'));
+        ({ dotEvents } = await import('./events'));
 
         // Experiments and automatic pageviews off: the specs below send nothing on their own
-        events.init({
+        dotEvents.init({
             dotcmsUrl: 'https://cms.test',
             siteAuth: 'site-auth',
             experiments: false,
@@ -41,15 +41,15 @@ describe('events', () => {
     });
 
     it('is reachable as window.dotEvents, for traditional pages and plain scripts', () => {
-        expect((window as unknown as Record<string, unknown>)['dotEvents']).toBe(events);
+        expect((window as unknown as Record<string, unknown>)['dotEvents']).toBe(dotEvents);
     });
 
     it('offers init, conversion and pageView: the events dotCMS accepts', () => {
-        expect(Object.keys(events).sort()).toEqual(['conversion', 'init', 'pageView']);
+        expect(Object.keys(dotEvents).sort()).toEqual(['conversion', 'init', 'pageView']);
     });
 
     it('sends a conversion with its name only, the one field dotCMS accepts', () => {
-        events.conversion('signup');
+        dotEvents.conversion('signup');
 
         expect(fakeInstance.track).toHaveBeenCalledWith('conversion', { name: 'signup' });
     });

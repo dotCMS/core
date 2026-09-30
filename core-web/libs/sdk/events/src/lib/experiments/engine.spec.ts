@@ -5,6 +5,8 @@ import { createExperimentsEngine } from './engine';
 
 import { getSessionId } from '../pipeline/utils';
 
+import type { ExperimentsEngine } from './engine';
+
 const VARIANT = 'dotexperiment-experiment-variant-1';
 
 const markRows = (experimentId: string, variant = 'DEFAULT') => {
@@ -56,20 +58,49 @@ const answerWith = (experimentId: string, variant: string) => ({
         })
 });
 
+/** A stored assignment whose isExperimentPage rule matches /blog. */
+const storeBlogAssignment = (variant: string) =>
+    localStorage.setItem(
+        STORAGE_KEYS.assignments,
+        JSON.stringify({
+            fetchedAt: Date.now(),
+            experiments: [
+                {
+                    id: 'experiment-blog',
+                    name: 'Blog Experiment',
+                    runningId: 'run-1',
+                    pageUrl: '/blog/index',
+                    regexs: {
+                        isExperimentPage: '^https?:\\/\\/[^/]+\\/blog(\\/index|\\/)?(\\/?\\?.*)?$',
+                        isTargetPage: null
+                    },
+                    variant: { name: variant, url: '/blog/index?variantName=' + variant },
+                    expiresAt: Date.now() + 60_000
+                }
+            ],
+            evaluatedIds: ['experiment-blog']
+        })
+    );
+
 describe('createExperimentsEngine', () => {
     const fetchSpy = vi.fn();
     const navigate = vi.fn();
     const warn = vi.fn();
     const globalScope = window as unknown as Record<string, unknown>;
+    const engines: ExperimentsEngine[] = [];
 
-    const createEngine = () =>
-        createExperimentsEngine({
+    const createEngine = () => {
+        const engine = createExperimentsEngine({
             dotcmsUrl: 'https://dotcms.test',
             timeoutMs: 1000,
             log: () => undefined,
             warn,
             navigate
         });
+        engines.push(engine);
+
+        return engine;
+    };
 
     beforeEach(() => {
         // jsdom has no CSS namespace; every browser the package targets does.
@@ -85,6 +116,8 @@ describe('createExperimentsEngine', () => {
     });
 
     afterEach(() => {
+        // Each engine watches the page for marks; the next test's page is not theirs
+        engines.splice(0).forEach((engine) => engine.stop());
         vi.unstubAllGlobals();
         delete globalScope[BOOT_STATE_KEY];
         window.history.replaceState(null, '', '/');
@@ -172,28 +205,7 @@ describe('createExperimentsEngine', () => {
 
     it('warns when an experiment the visitor is in runs on a page that carries no marks', async () => {
         window.history.replaceState(null, '', '/blog');
-        localStorage.setItem(
-            STORAGE_KEYS.assignments,
-            JSON.stringify({
-                fetchedAt: Date.now(),
-                experiments: [
-                    {
-                        id: 'experiment-blog',
-                        name: 'Blog Experiment',
-                        runningId: 'run-1',
-                        pageUrl: '/blog/index',
-                        regexs: {
-                            isExperimentPage:
-                                '^https?:\\/\\/[^/]+\\/blog(\\/index|\\/)?(\\/?\\?.*)?$',
-                            isTargetPage: null
-                        },
-                        variant: { name: VARIANT, url: '/blog/index?variantName=' + VARIANT },
-                        expiresAt: Date.now() + 60_000
-                    }
-                ],
-                evaluatedIds: ['experiment-blog']
-            })
-        );
+        storeBlogAssignment(VARIANT);
         sessionStorage.setItem(STORAGE_KEYS.checkedThisTab, 'true');
         const engine = createEngine();
 
@@ -206,6 +218,82 @@ describe('createExperimentsEngine', () => {
         window.history.replaceState(null, '', '/destinations');
         await engine.decide();
         expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('waits for the marks of a page its experiment runs on, which stream in after the page loads', async () => {
+        window.history.replaceState(null, '', '/blog');
+        storeBlogAssignment(VARIANT);
+        sessionStorage.setItem(STORAGE_KEYS.checkedThisTab, 'true');
+        const engine = createEngine();
+
+        const decided = engine.decide();
+        setTimeout(() => markRows('experiment-blog'), 50);
+
+        // The pageview waits, so it is dropped with the redirect instead of counting the original
+        await expect(decided).resolves.toEqual({ redirected: true });
+        expect(navigate).toHaveBeenCalledWith(expect.stringContaining(`variantName=${VARIANT}`));
+        expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('decides marks that arrive after the page was decided', async () => {
+        fetchSpy.mockResolvedValue(answerWith('experiment-late', VARIANT));
+        const engine = createEngine();
+
+        // A new visitor: nothing stored says the page runs an experiment, and nothing is marked yet
+        await expect(engine.decide()).resolves.toEqual({ redirected: false });
+
+        // Content behind Suspense arrives
+        markRows('experiment-late');
+
+        await vi.waitFor(() =>
+            expect(navigate).toHaveBeenCalledWith(expect.stringContaining(`variantName=${VARIANT}`))
+        );
+    });
+
+    it('ignores the marks of a route React keeps hidden', async () => {
+        // Activity keeps the previous route in the page with display:none
+        const hiddenRoute = document.createElement('div');
+        hiddenRoute.style.display = 'none';
+        hiddenRoute.innerHTML =
+            '<div data-dot-experiment="experiment-old" data-dot-variant="DEFAULT"></div>';
+        document.body.appendChild(hiddenRoute);
+        storeAssignment('experiment-old', VARIANT);
+        sessionStorage.setItem(STORAGE_KEYS.checkedThisTab, 'true');
+        const engine = createEngine();
+
+        await expect(engine.decide()).resolves.toEqual({ redirected: false });
+        expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('shows only the variant it decided', async () => {
+        markRows('experiment-pair', VARIANT);
+        storeAssignment('experiment-pair', VARIANT);
+        sessionStorage.setItem(STORAGE_KEYS.checkedThisTab, 'true');
+        const engine = createEngine();
+
+        await expect(engine.decide()).resolves.toEqual({ redirected: false });
+        expect(document.getElementById(REVEAL_STYLE_ID)?.textContent).toContain(
+            `[data-dot-experiment="experiment-pair"][data-dot-variant="${VARIANT}"]`
+        );
+    });
+
+    it('neither redirects nor sends the pageview when the visitor leaves the page while it is decided', async () => {
+        markRows('experiment-left');
+        let answer: (response: unknown) => void = () => undefined;
+        fetchSpy.mockReturnValue(
+            new Promise((resolve) => {
+                answer = resolve;
+            })
+        );
+        const engine = createEngine();
+
+        const decided = engine.decide();
+        // A click on the header during the wait
+        window.history.pushState(null, '', '/about');
+        answer(answerWith('experiment-left', VARIANT));
+
+        await expect(decided).resolves.toEqual({ redirected: false, left: true });
+        expect(navigate).not.toHaveBeenCalled();
     });
 
     it('reports a failed experiments check to onError, with its status', async () => {

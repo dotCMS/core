@@ -53,4 +53,14 @@ describe('DotCMSExperiment', () => {
 
         expect(container.querySelector('script')?.getAttribute('nonce')).toBe('abc123');
     });
+
+    it('gives the hiding rule the nonce too, so a nonce-based CSP applies it', () => {
+        const { container } = render(
+            <DotCMSExperiment page={EXPERIMENT_PAGE} nonce="abc123">
+                <p>Blog list</p>
+            </DotCMSExperiment>
+        );
+
+        expect(container.querySelector('style')?.getAttribute('nonce')).toBe('abc123');
+    });
 });

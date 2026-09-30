@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { events } from "@dotcms/events";
+import { dotEvents } from "@dotcms/events";
 
 interface ContactFormData {
     firstName: string;
@@ -42,7 +42,7 @@ export default function ContactUs({ description }: ContactUsProps) {
             setIsSuccess(true);
             resetForm();
             // A conversion: a business goal reached, recorded by name
-            events.conversion("contact-form");
+            dotEvents.conversion("contact-form");
         }, 3000);
     };
 

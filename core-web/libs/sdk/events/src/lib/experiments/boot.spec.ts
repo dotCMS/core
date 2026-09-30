@@ -94,10 +94,35 @@ describe('dotcmsExperimentBoot', () => {
 
         run(w, 'DEFAULT');
 
+        // Keyed by the variant too: a route kept in the page must not show another render
         expect(revealRule()).toContain(
-            `[data-dot-experiment="${EXPERIMENT}"]{visibility:visible !important`
+            `[data-dot-experiment="${EXPERIMENT}"][data-dot-variant="DEFAULT"]{visibility:visible !important`
         );
         expect(w.location.replace).not.toHaveBeenCalled();
+    });
+
+    it('shows the content through an adopted style sheet where the browser has them, which no CSP blocks', () => {
+        let adopted: CSSStyleSheet[] = [];
+        Object.defineProperty(document, 'adoptedStyleSheets', {
+            configurable: true,
+            get: () => adopted,
+            set: (sheets: CSSStyleSheet[]) => {
+                adopted = sheets;
+            }
+        });
+        const w = createWindow();
+        Object.assign(w, { CSSStyleSheet: window.CSSStyleSheet });
+        assign(w, 'DEFAULT');
+
+        try {
+            run(w, 'DEFAULT');
+
+            expect(adopted).toHaveLength(1);
+            expect(adopted[0]?.cssRules[0]?.cssText).toContain(EXPERIMENT);
+            expect(revealRule()).toBe('');
+        } finally {
+            delete (document as unknown as Record<string, unknown>)['adoptedStyleSheets'];
+        }
     });
 
     it('stops the page and replaces it with the assigned variant when it differs', () => {

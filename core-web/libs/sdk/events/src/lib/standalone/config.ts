@@ -131,7 +131,7 @@ const fromAdvancedConfig = (advanced: JsonRecord): Partial<DotCMSEventsConfig> =
 };
 
 /**
- * Builds the `events.init` config from the script tag dotCMS injects into traditional pages,
+ * Builds the `dotEvents.init` config from the script tag dotCMS injects into traditional pages,
  * in the attribute names its template prints. An attribute with a value overrides
  * `data-analytics-config`. Experiments run, as in any app: this script replaces dotCMS's own
  * experiments script on these pages.

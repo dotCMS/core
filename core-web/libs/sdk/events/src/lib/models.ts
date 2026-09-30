@@ -56,7 +56,7 @@ export interface DotCMSEventsExperimentsConfig {
 }
 
 /**
- * Configuration for `events.init()`.
+ * Configuration for `dotEvents.init()`.
  */
 export interface DotCMSEventsConfig {
     /** The dotCMS origin, the same value `createDotCMSClient` takes. */

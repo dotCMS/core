@@ -12,51 +12,108 @@ import { CONTENTLET_CLASS, CONTENTLET_RESCAN_EVENT } from '../contentlets/consta
 
 import type { PageExperimentMark } from './models';
 
+const MARK_SELECTOR = `[${EXPERIMENT_ATTRIBUTE}]`;
+
 const revealedRules = new Set<string>();
 
-/**
- * Reads the experiment the current page carries in its row marks.
- *
- * @returns The experiment and the variant the server rendered, or null
- */
-export const readPageExperiment = (): PageExperimentMark | null => {
-    const row = document.querySelector<HTMLElement>(`[${EXPERIMENT_ATTRIBUTE}]`);
-    const experimentId = row?.getAttribute(EXPERIMENT_ATTRIBUTE);
+// Where the browser has adopted style sheets, reveals go to one: a change through the CSSOM,
+// which no Content-Security-Policy blocks, unlike a style element the script creates.
+let revealSheet: CSSStyleSheet | undefined;
 
-    if (!row || !experimentId) {
-        return null;
+/**
+ * Tells whether an element is on screen as far as React is concerned: not inside a route that
+ * Activity keeps in the page with `display: none`, nor inside the hidden container where a
+ * Suspense boundary's content waits while it streams in.
+ *
+ * @param element - The element
+ * @returns False when an ancestor keeps it out of view
+ */
+const isRendered = (element: HTMLElement): boolean => {
+    for (let node: HTMLElement | null = element; node; node = node.parentElement) {
+        if (node.hidden || node.style.display === 'none') {
+            return false;
+        }
     }
 
-    return {
-        experimentId,
-        variant: row.getAttribute(VARIANT_ATTRIBUTE) || DEFAULT_VARIANT
-    };
+    return true;
 };
 
 /**
- * Shows rows the renderer hid. With an id, only that experiment's rows; without one, all
- * of them (engine off, inside UVE).
+ * Reads the experiments the current page renders, from their marks: each experiment and
+ * rendered variant once, in document order.
  *
- * The rule is added to a style element in the head. It beats the renderer's hiding rule
- * through `:root` and `!important`, whatever the order of the two in the document.
- *
- * @param experimentId - The experiment whose rows to show
+ * @returns The experiments and the variants the server rendered
  */
-export const revealRows = (experimentId?: string): void => {
-    if (typeof document === 'undefined') {
-        return;
+export const readPageExperiments = (): PageExperimentMark[] => {
+    const marks = new Map<string, PageExperimentMark>();
+
+    document.querySelectorAll<HTMLElement>(MARK_SELECTOR).forEach((element) => {
+        const experimentId = element.getAttribute(EXPERIMENT_ATTRIBUTE);
+
+        if (!experimentId || !isRendered(element)) {
+            return;
+        }
+
+        const variant = element.getAttribute(VARIANT_ATTRIBUTE) || DEFAULT_VARIANT;
+        marks.set(`${experimentId}\n${variant}`, { experimentId, variant });
+    });
+
+    return Array.from(marks.values());
+};
+
+/**
+ * Calls back when marks are inserted or rewritten, so the engine decides content that arrives
+ * after its first decision: Suspense content that streams in, or a route that changes only its
+ * query and keeps its elements.
+ *
+ * @param changed - Called once per batch of DOM changes that touches a mark
+ * @returns Stops observing
+ */
+export const observeMarks = (changed: () => void): (() => void) => {
+    const touchesMark = (record: MutationRecord): boolean =>
+        record.type === 'attributes' ||
+        Array.from(record.addedNodes).some(
+            (node) =>
+                node instanceof Element &&
+                (node.matches(MARK_SELECTOR) || !!node.querySelector(MARK_SELECTOR))
+        );
+    const observer = new MutationObserver((records) => {
+        if (records.some(touchesMark)) {
+            changed();
+        }
+    });
+
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributeFilter: [EXPERIMENT_ATTRIBUTE, VARIANT_ATTRIBUTE]
+    });
+
+    return () => observer.disconnect();
+};
+
+/**
+ * Adds a reveal rule: to the adopted style sheet where the browser has them, or else to a
+ * style element in the head.
+ *
+ * @param rule - The rule
+ */
+const addRevealRule = (rule: string): void => {
+    if ('adoptedStyleSheets' in document) {
+        try {
+            revealSheet ??= new CSSStyleSheet();
+
+            if (!document.adoptedStyleSheets.includes(revealSheet)) {
+                document.adoptedStyleSheets = [...document.adoptedStyleSheets, revealSheet];
+            }
+
+            revealSheet.insertRule(rule, revealSheet.cssRules.length);
+
+            return;
+        } catch {
+            // A style element instead
+        }
     }
-
-    const selector = experimentId
-        ? `[${EXPERIMENT_ATTRIBUTE}="${CSS.escape(experimentId)}"]`
-        : `[${EXPERIMENT_ATTRIBUTE}]`;
-    const rule = `:root ${selector}{visibility:visible !important;animation:none !important}`;
-
-    if (revealedRules.has(rule)) {
-        return;
-    }
-
-    revealedRules.add(rule);
 
     let style = document.getElementById(REVEAL_STYLE_ID);
 
@@ -67,6 +124,36 @@ export const revealRows = (experimentId?: string): void => {
     }
 
     style.appendChild(document.createTextNode(rule));
+};
+
+/**
+ * Shows rows the renderer hid. With an id and a variant, only that experiment's rows rendered
+ * with that variant, so a route kept in the page with another render stays hidden; without an
+ * id, all of them (engine off, inside UVE).
+ *
+ * The rule beats the renderer's hiding rule through `:root` and `!important`, whatever the
+ * order of the two in the document.
+ *
+ * @param experimentId - The experiment whose rows to show
+ * @param variant - The variant they were rendered with
+ */
+export const revealRows = (experimentId?: string, variant?: string): void => {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    const selector = experimentId
+        ? `[${EXPERIMENT_ATTRIBUTE}="${CSS.escape(experimentId)}"]` +
+          (variant ? `[${VARIANT_ATTRIBUTE}="${CSS.escape(variant)}"]` : '')
+        : MARK_SELECTOR;
+    const rule = `:root ${selector}{visibility:visible !important;animation:none !important}`;
+
+    if (revealedRules.has(rule)) {
+        return;
+    }
+
+    revealedRules.add(rule);
+    addRevealRule(rule);
 
     // The rows show through a style rule, which no tracker's DOM observer notices, and the
     // impression tracker skipped them while they were hidden.

@@ -1,5 +1,3 @@
-import onRouteChange from '@analytics/router-utils';
-
 import { getUVEState } from '@dotcms/uve';
 
 import { clicksPlugin } from './clicks/plugin';
@@ -17,6 +15,7 @@ import {
 } from './pipeline/constants';
 import { enricherPlugin } from './pipeline/enricher/plugin';
 import { identityPlugin } from './pipeline/identity/plugin';
+import { onNavigation } from './pipeline/navigation';
 import { senderPlugin } from './pipeline/sender/plugin';
 
 import type { ExperimentPages, ExperimentsEngine } from './experiments/engine';
@@ -132,10 +131,17 @@ const sendPageView = async (data: DotCMSEventsJsonObject): Promise<void> => {
     }
 
     if (engine) {
-        const { redirected } = await engine.decide();
+        const { redirected, left } = await engine.decide();
 
         if (redirected) {
             log('pageview dropped: redirecting to the assigned variant');
+
+            return;
+        }
+
+        // Sent now, it would carry the URL of the page the visitor went to
+        if (left) {
+            log('pageview dropped: the visitor left the page while it was decided');
 
             return;
         }
@@ -164,8 +170,8 @@ const startAutomaticPageViews = (): void => {
         first();
     }
 
-    // Wait two frames after a History change, so the new route's rows are in the DOM.
-    onRouteChange(() => {
+    // Wait two frames after a navigation, so the new route's rows are in the DOM.
+    onNavigation(() => {
         void nextFrame()
             .then(nextFrame)
             .then(() => trackAutomaticPageView());
@@ -173,8 +179,8 @@ const startAutomaticPageViews = (): void => {
 };
 
 /**
- * Starts the SDK: what `events.init` does, with how the pages mark their experiment. Apps call
- * `events.init`, for pages that print the experiment markup; the script dotCMS injects into
+ * Starts the SDK: what `dotEvents.init` does, with how the pages mark their experiment. Apps call
+ * `dotEvents.init`, for pages that print the experiment markup; the script dotCMS injects into
  * traditional pages calls this with `contentlets`, since those pages carry dotCMS's contentlet
  * wrappers instead. Not exported by the package.
  *
@@ -250,7 +256,7 @@ export const initEvents = (config: DotCMSEventsConfig, pages: ExperimentPages): 
     const globalScope = window as unknown as Record<string, unknown>;
 
     if (!globalScope[EVENTS_WINDOW_KEY]) {
-        globalScope[EVENTS_WINDOW_KEY] = events;
+        globalScope[EVENTS_WINDOW_KEY] = dotEvents;
     }
 
     // Analytics.js reads the time zone when its module is evaluated: loading it here keeps
@@ -297,7 +303,7 @@ export const initEvents = (config: DotCMSEventsConfig, pages: ExperimentPages): 
  * The events SDK. There is one object per page: every import gets the same instance,
  * configured by the one `init` call.
  */
-export const events: DotCMSEvents = {
+export const dotEvents: DotCMSEvents = {
     init(config) {
         initEvents(config, 'markup');
     },
@@ -314,7 +320,7 @@ export const events: DotCMSEvents = {
         }
 
         if (!instance) {
-            defer(() => events.conversion(name));
+            defer(() => dotEvents.conversion(name));
 
             return;
         }
@@ -328,7 +334,7 @@ export const events: DotCMSEvents = {
         }
 
         if (!instance) {
-            defer(() => events.pageView(data));
+            defer(() => dotEvents.pageView(data));
 
             return;
         }

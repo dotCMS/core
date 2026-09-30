@@ -1,4 +1,4 @@
-/** The window property that traditional pages and plain scripts reach `events` through. */
+/** The window property that traditional pages and plain scripts reach `dotEvents` through. */
 export const EVENTS_WINDOW_KEY = 'dotEvents';
 
 /**

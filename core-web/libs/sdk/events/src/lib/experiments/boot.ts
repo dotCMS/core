@@ -5,6 +5,7 @@ import {
     QUIET_MS,
     REVEAL_STYLE_ID,
     STORAGE_KEYS,
+    VARIANT_ATTRIBUTE,
     VARIANT_QUERY_PARAM
 } from './constants';
 import { decideVariant } from './decision';
@@ -47,15 +48,35 @@ export function dotcmsExperimentBoot(
     w: Window = window
 ): void {
     const reveal = (): void => {
-        let style = w.document.getElementById(config.styleId);
+        const doc = w.document;
+        const Sheet = (w as unknown as typeof globalThis).CSSStyleSheet;
 
-        if (!style) {
-            style = w.document.createElement('style');
-            style.id = config.styleId;
-            w.document.head.appendChild(style);
+        // An adopted style sheet where the browser has them: no Content-Security-Policy blocks
+        // a change through the CSSOM, while it blocks a style element without the page's nonce
+        if ('adoptedStyleSheets' in doc && typeof Sheet === 'function') {
+            try {
+                const sheet = new Sheet();
+                const sheets = Array.prototype.slice.call(doc.adoptedStyleSheets);
+
+                sheet.replaceSync(config.revealRule);
+                sheets.push(sheet);
+                doc.adoptedStyleSheets = sheets;
+
+                return;
+            } catch {
+                // A style element instead
+            }
         }
 
-        style.appendChild(w.document.createTextNode(config.revealRule));
+        let style = doc.getElementById(config.styleId);
+
+        if (!style) {
+            style = doc.createElement('style');
+            style.id = config.styleId;
+            doc.head.appendChild(style);
+        }
+
+        style.appendChild(doc.createTextNode(config.revealRule));
     };
 
     try {
@@ -127,6 +148,9 @@ export interface ExperimentBootOptions {
     variant: string;
 }
 
+/** Escapes a value for a CSS attribute selector in double quotes. */
+const escapeAttribute = (value: string): string => value.replace(/["\\]/g, '\\$&');
+
 /**
  * Builds the configuration the boot script runs with.
  *
@@ -143,7 +167,8 @@ export const createExperimentBootConfig = ({
     disabledUntilKey: STORAGE_KEYS.disabledUntil,
     bootKey: BOOT_STATE_KEY,
     styleId: REVEAL_STYLE_ID,
-    revealRule: `:root [${EXPERIMENT_ATTRIBUTE}="${experimentId.replace(/["\\]/g, '\\$&')}"]{visibility:visible !important;animation:none !important}`,
+    // Keyed by the rendered variant too: a route kept in the page with another render stays hidden
+    revealRule: `:root [${EXPERIMENT_ATTRIBUTE}="${escapeAttribute(experimentId)}"][${VARIANT_ATTRIBUTE}="${escapeAttribute(variant)}"]{visibility:visible !important;animation:none !important}`,
     param: VARIANT_QUERY_PARAM,
     defaultVariant: DEFAULT_VARIANT,
     quietMs: QUIET_MS

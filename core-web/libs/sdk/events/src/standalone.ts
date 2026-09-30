@@ -1,7 +1,7 @@
 /**
  * The script dotCMS injects into traditional pages, built as an IIFE by `build:standalone`
  * (`ca.min.js`, which dotCMS serves at `/ext/analytics/ca.min.js`). It is not a package export:
- * it reads its config from its own script tag, starts `events`, and plain scripts on the page
+ * it reads its config from its own script tag, starts `dotEvents`, and plain scripts on the page
  * reach the SDK as `window.dotEvents`. It runs the page's experiments too, from the contentlet
  * wrappers dotCMS prints, in place of dotCMS's own experiments script.
  */

@@ -9,7 +9,7 @@ export interface DotCMSExperimentProps {
      * the experiment running on it and the variant the server rendered.
      */
     page: DotCMSEventsExperimentPage | null | undefined;
-    /** Nonce for the inline script, on pages with a Content-Security-Policy. */
+    /** Nonce for the inline style and script, on pages with a nonce-based Content-Security-Policy. */
     nonce?: string;
     /** Class for the element that wraps the content. */
     className?: string;
@@ -21,7 +21,7 @@ export interface DotCMSExperimentProps {
  * Runs the page's experiment on its content. On a page that runs an experiment, it wraps the
  * content in an element marked with the experiment and the variant the server rendered, keeps
  * it hidden, and prints the script that decides the visitor's variant while the HTML loads.
- * `events` then shows the content, or the page is replaced with the assigned variant. On any
+ * `dotEvents` then shows the content, or the page is replaced with the assigned variant. On any
  * other page it renders the content alone.
  *
  * It has no hooks, so it also renders in a server component, which keeps the script builder
@@ -51,11 +51,14 @@ export const DotCMSExperiment = ({
         return <>{children}</>;
     }
 
+    // Browsers hide a nonce from the DOM once they apply it, which hydration reads as a mismatch
+    const nonceProps = nonce ? { nonce, suppressHydrationWarning: true } : {};
+
     return (
         <>
-            <style>{markup.style}</style>
+            <style {...nonceProps}>{markup.style}</style>
             {/* Runs while the HTML is parsed; React never runs it again on the client */}
-            <script nonce={nonce} dangerouslySetInnerHTML={{ __html: markup.script }} />
+            <script {...nonceProps} dangerouslySetInnerHTML={{ __html: markup.script }} />
             <div className={className} {...markup.attributes}>
                 {children}
             </div>

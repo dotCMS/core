@@ -162,7 +162,7 @@ export default [
         }
     },
     {
-        // The adapter brings the markup, never the engine: that loads with events.init
+        // The adapter brings the markup, never the engine: that loads with dotEvents.init
         files: ['src/lib/react/**/*.ts', 'src/lib/react/**/*.tsx'],
         ignores: SPECS,
         rules: {

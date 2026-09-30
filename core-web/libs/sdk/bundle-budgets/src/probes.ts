@@ -44,7 +44,7 @@ export const PROBES: Probe[] = [
     },
     {
         name: 'events-init',
-        source: `import { events } from '@dotcms/events';\nexport { events };\n`,
+        source: `import { dotEvents } from '@dotcms/events';\nexport { dotEvents };\n`,
         packages: ['events', 'uve', 'types'],
         forbidden: ['/react/', 'next/navigation', 'tinymce']
     },
