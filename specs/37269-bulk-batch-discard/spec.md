@@ -90,16 +90,24 @@ Two independent facts combine.
    Jackson 2.17's default read limit (`StreamReadConstraints`, 20,000,000 characters per string)
    throws in the middle of that loop, so no request exists to send. The OpenSearch path parses
    each document when it is added to the group (`ContentletIndexOperationsOS.parseJsonToMap`,
-   same default limit); a failure there surfaces per document and
-   `ContentletIndexAPIImpl.appendToBulkProcessorEntry` marks only that entry failed. This is why
-   OpenSearch received the collateral documents in the measured run.
+   same default limit) inside `addIndexOpToProcessor`, before the operation is queued and long
+   before `flush()` sends anything. The throw propagates out of `enqueueMappedDocuments` to the
+   `catch` in `ContentletIndexAPIImpl.appendBulkRequestToProcessor` (reached via
+   `appendToBulkProcessorEntry`), which marks only that entry failed. This is why OpenSearch
+   received the collateral documents in the measured run: on the OpenSearch path a serialization
+   error is already isolated per document.
 2. **A whole-request exception is always treated as "the whole group failed".**
    `BulkProcessorListener.afterBulk(long, Throwable)` marks every record of the iteration's group
    failed with one message. That is correct for transport or access failures (engine down,
    timeout, credentials rejected — nothing was indexed), and wrong for an error caused by one
-   document's content. OpenSearch reaches the same handler from `flush()`'s `catch (Exception e)`
-   for any client-side error, and in Phase 3 the primary listener is not a shadow, so the
-   OpenSearch path inherits the behaviour.
+   document's content. On the OpenSearch path the same handler is reached from `flush()`'s
+   `catch (Exception e)`, which covers errors raised by the `client.bulk()` send itself (not the
+   add-time parse above) — transport errors, but also any per-document problem the client only
+   detects while writing the request. In Phase 3 the primary listener is not a shadow, so the
+   OpenSearch path inherits whole-group marking for those. The plan must confirm which
+   per-document errors can still reach `flush()` on the OpenSearch path; the per-document fix
+   for the Elasticsearch path belongs at its add site (`ContentletIndexOperationsES.addIndexOpToProcessor`),
+   mirroring OpenSearch.
 
 The unit of damage is the group fetched from the queue in that iteration
 (`REINDEX_RECORDS_TO_FETCH`), not only the engine request; records already confirmed indexed by
@@ -110,8 +118,9 @@ Open questions (to confirm in planning, not blocking the spec):
 
 - Did the 10 oversized documents also fail on the OpenSearch side in the measured run? The
   parser limit there is the same, so they are expected to have failed individually.
-- In Phase 1, an OpenSearch parse failure raised from `appendToBulkProcessorEntry` appears to
-  mark the entry failed even though Elasticsearch (the primary) indexed it — a shadow failure
+- In Phase 1, an OpenSearch add-time parse failure propagates out of `enqueueMappedDocuments` to
+  the `catch` in `appendBulkRequestToProcessor`, which appears to mark the entry failed even
+  though the Elasticsearch operation (the primary) may already be queued (target order to confirm) — a shadow failure
   counted as a primary failure, contrary to the fire-and-forget rule. Confirm and, if true,
   include the correction in this fix since it lives on the same code path.
 
