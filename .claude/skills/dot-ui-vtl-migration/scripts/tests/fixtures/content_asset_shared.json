@@ -1,0 +1,13 @@
+{
+  "entity": {
+    "identifier": "asset-shared-001",
+    "inode": "inode-shared-001",
+    "languageId": 1,
+    "contentType": "dotAsset",
+    "assetContentAsset": "somehash",
+    "assetVersion": "/dA/asset-shared-001/asset/userID.vtl",
+    "fileName": "userID.vtl",
+    "title": "userID.vtl",
+    "live": true
+  }
+}
