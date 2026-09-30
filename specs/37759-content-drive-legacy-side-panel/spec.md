@@ -10,10 +10,10 @@
 
 **Related GitHub Issue**: [#37759](https://github.com/dotCMS/core/issues/37759), Part 2
 
-**Stacked on**: [#37829](https://github.com/dotCMS/core/pull/37829), Part 1 of the same issue (route
-redirects, branch `issue-37827-content-drive-route-redirect`; the branch keeps the number of
-#37827, the issue that was closed as a duplicate and merged into #37759 as Part 1). The stack is
-`main` → #37829 → this spec → the Part 2 implementation.
+**Delivered in**: [#37832](https://github.com/dotCMS/core/pull/37832), the one PR for all of #37759.
+It already carries Part 1 (route redirects), brought over from
+[#37829](https://github.com/dotCMS/core/pull/37829), which was closed so the issue ships in a single
+PR. This spec covers Part 2; its implementation is added to the same PR once the spec is approved.
 
 **Input**: User description: "#37759 — Content Drive: open legacy-editor content in the side panel instead of routing to Content Search. Reuse the legacy editor's existing in-frame event contract, refresh the Content Drive list quietly on save and on every close, keep new-editor content and the side-panel-flag-off behavior unchanged."
 
@@ -38,10 +38,11 @@ route in the admin UI depends on the menu.
 
 ## Scope
 
-Issue #37759 is delivered in two parts, as stacked PRs. Part 1 merges first, and this work, Part 2,
-builds on it.
+Issue #37759 has two parts, delivered together in one PR. Part 1 is already implemented on the
+branch, and this work, Part 2, builds on it.
 
-- **Part 1 — route redirects** ([#37829](https://github.com/dotCMS/core/pull/37829)). When a user
+- **Part 1 — route redirects** (already on the branch, first written in
+  [#37829](https://github.com/dotCMS/core/pull/37829)). When a user
   has Content Drive but not Content Search or Site Browser, the old routes redirect to Content
   Drive: `/c/content/<inode>` becomes `/content-drive?editContent=<identifier>&editContentLang=<id>`,
   `/c/content/new/<type>` becomes `/content-drive?createContent=<type>`, and the listing and Site
@@ -54,11 +55,11 @@ builds on it.
 
 **In scope**
 
-The second column is what a user without Content Search gets once Part 1 is merged and before
-this work lands. The code pointers in parentheses are for the reviewer; the plan decides the
+The second column is what a user without Content Search gets with Part 1 alone, which is the
+branch as it stands before this work. The code pointers in parentheses are for the reviewer; the plan decides the
 design.
 
-| Path | Today, with Part 1 merged | Covered by |
+| Path | With Part 1 alone | Covered by |
 |---|---|---|
 | Edit legacy-editor content from Content Drive (double-click, context menu, toolbar) | Goes to `c/content/<inode>`. Part 1's loop check leaves it alone, so the user lands on their first portlet (`DotContentDriveNavigationService#editContentlet`) | US1 |
 | Create content of a legacy-editor type from Content Drive | Goes to `c/content/new/<type>`, which Part 1 redirects back to the same Content Drive folder and filters, with nothing open (`DotContentDriveNavigationService.createContent`) | US2 |
@@ -476,9 +477,10 @@ legacy-editor item and compare two versions from its History tab.
     portlet library and already embeds the legacy editor in its own dialog. It listens to the
     same events, including the workflow wizard, without depending on the admin application.
   - The plan formally consults `dotCMS/platform-adrs`.
-  - Part 1 (#37829) merges first. On its own, it opens legacy-editor content that arrives from
-    other screens in the new editor (User Story 5). The fix is deliberately kept here rather than
-    in Part 1 (decided 2026-09-30), so both PRs should ship in the same release.
+  - Part 1 on its own opens legacy-editor content that arrives from other screens in the new
+    editor (User Story 5). The fix is deliberately kept here rather than in Part 1 (decided
+    2026-09-30). Both parts now ship in the same PR (decided 2026-09-30, closing #37829), so no
+    release carries Part 1 without this fix.
   - The `CD_` round trip from the full-page legacy editor back to Content Drive is kept while the
     side-panel flag exists (decided 2026-09-30). The alternative, opening legacy content in the
     panel whatever the flag says and removing `CD_` now, was rejected because it takes away the
@@ -508,7 +510,7 @@ legacy-editor item and compare two versions from its History tab.
   push publish dialogs already show keep appearing as they do today.
 - The side-panel flag stays on by default, so users without Content Search in their menu get the
   fix without any configuration.
-- Part 1 (#37829) keeps the link formats this spec reads: `editContent` with `editContentLang`
+- Part 1 keeps the link formats this spec reads: `editContent` with `editContentLang`
   for edits, and `createContent` with an optional `path` for creates. When the create link comes
   from Content Drive's own flag-off hand-off, Part 1 restores the `CD_` params, so `path` names
   the folder the author was browsing. If review renames `createContent`, FR-024 follows the new
