@@ -18,6 +18,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
@@ -146,7 +147,8 @@ import { describeUploadFailures } from '../utils/upload-failures';
         DotEditContentSidePanelComponent,
         ProgressSpinnerModule,
         DotContentDriveActionCenterComponent,
-        DotContentDriveScopeBarComponent
+        DotContentDriveScopeBarComponent,
+        ButtonModule
     ],
     providers: [
         DotContentDriveStore,

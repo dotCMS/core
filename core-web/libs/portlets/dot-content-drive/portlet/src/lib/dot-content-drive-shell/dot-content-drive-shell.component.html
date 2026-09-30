@@ -88,13 +88,13 @@
             class="block">
             <div class="flex w-full items-center justify-between gap-4">
                 <span>{{ 'content-drive.search.error.message' | dm }}</span>
-                <button
-                    type="button"
-                    class="shrink-0 cursor-pointer font-semibold underline"
+                <p-button
+                    [label]="'content-drive.search.error.retry' | dm"
+                    [link]="true"
+                    size="small"
+                    styleClass="shrink-0"
                     data-testid="search-error-retry"
-                    (click)="onRetrySearch()">
-                    {{ 'content-drive.search.error.retry' | dm }}
-                </button>
+                    (onClick)="onRetrySearch()" />
             </div>
         </p-message>
     }

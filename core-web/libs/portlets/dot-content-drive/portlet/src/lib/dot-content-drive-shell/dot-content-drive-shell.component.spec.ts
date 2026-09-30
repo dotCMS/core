@@ -2034,7 +2034,11 @@ describe('DotContentDriveShellComponent', () => {
         it('should re-run the search when the user retries', () => {
             failSearch();
 
-            spectator.click(byTestId('search-error-retry'));
+            spectator.click(
+                spectator
+                    .query(byTestId('search-error-retry'))
+                    ?.querySelector('button') as HTMLElement
+            );
 
             expect(store.loadItems).toHaveBeenCalled();
         });
