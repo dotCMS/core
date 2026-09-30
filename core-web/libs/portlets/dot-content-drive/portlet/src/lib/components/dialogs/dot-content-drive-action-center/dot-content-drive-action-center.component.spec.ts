@@ -8,7 +8,7 @@ import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
 import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { computed, signal } from '@angular/core';
 
@@ -1531,7 +1531,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             it('should be inert while an action is in flight', () => {
                 // Driven from store state, not a local flag: a run started before this dialog
                 // instance existed must still lock the view.
-                mockActionExecution.set({ actionName: 'Send for Review', total: 2 });
+                mockActionExecution.set({ total: 2 });
                 mockActiveRunCount.set(1);
                 spectator.detectChanges();
 
@@ -1772,7 +1772,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         it('should keep the configuration step inert while an action is in flight', () => {
             goToConfigure();
             chooseDestination();
-            mockActionExecution.set({ actionName: 'Move', total: 2 });
+            mockActionExecution.set({ total: 2 });
             mockActiveRunCount.set(1);
             spectator.detectChanges();
 
