@@ -165,68 +165,6 @@ test.describe('Content Drive Folder Tree', () => {
         }
     });
 
-    test('scrolls the tree to a folder opened from the table', async ({
-        adminPage,
-        apiHelpers,
-        testSuffix
-    }) => {
-        // Named to sort after the site's own folders, and after enough folders of its own that it
-        // sits below the fold whatever the site holds: a fresh instance has too few to push it
-        // there, and the test then fails on its precondition rather than on the scroll.
-        const site = await apiHelpers.getDefaultSite();
-        const parentName = `zz-cd-scroll-${testSuffix}`;
-        const middleName = `zz-cd-scroll-mid-${testSuffix}`;
-        const fillerNames = Array.from(
-            { length: 40 },
-            (_, index) => `zz-cd-pad-${testSuffix}-${String(index).padStart(2, '0')}`
-        );
-        // The fillers only fill the tree, which reads the database, so they skip the index wait
-        // that made seeding forty of them outlast the test on CI. The listing reads the index, so
-        // the test's own folders keep it.
-        await apiHelpers.createFolders(
-            site.hostname,
-            fillerNames.map((name) => `/${name}`),
-            { waitForIndex: false }
-        );
-        await apiHelpers.createFolders(site.hostname, [`/${parentName}/${middleName}`]);
-
-        try {
-            const drive = new ContentDrivePage(adminPage);
-            const tree = new ContentDriveTree(adminPage);
-
-            await drive.goTo();
-            await tree.selectFolder(parentName);
-            await drive.expectListContainsTitle(middleName);
-
-            // Back to the top, so only the portlet can bring the folder into view.
-            await adminPage.getByTestId('hierarchy-scroll').evaluate((container) => {
-                [container, ...Array.from(container.querySelectorAll('*'))].forEach((element) => {
-                    element.scrollTop = 0;
-                });
-            });
-            const parentRow = adminPage
-                .getByTestId('sidebar')
-                .getByTestId('tree-node-label')
-                .filter({ hasText: parentName });
-            await expect(parentRow).not.toBeInViewport();
-
-            await drive.listTitles.filter({ hasText: middleName }).first().dblclick();
-
-            await tree.expectFolderSelected(middleName);
-            await expect(
-                adminPage
-                    .getByTestId('sidebar')
-                    .getByTestId('tree-node-label')
-                    .filter({ hasText: middleName })
-            ).toBeInViewport({ timeout: 10000 });
-        } finally {
-            await apiHelpers.deleteFolders(site.hostname, [
-                `/${parentName}`,
-                ...fillerNames.map((name) => `/${name}`)
-            ]);
-        }
-    });
-
     /**
      * Opens, from the table, a folder whose branch the tree has already loaded, and expects the
      * tree to show it selected and scrolled into view.

@@ -12,11 +12,7 @@ import { getCurrentSite, getDefaultSite, type Site } from '../requests/sites';
  * restating their shape inline.
  */
 export interface BaseApiHelpers {
-    createFolders: (
-        siteName: string,
-        paths: string[],
-        options?: { waitForIndex?: boolean }
-    ) => Promise<void>;
+    createFolders: (siteName: string, paths: string[]) => Promise<void>;
     getDefaultSite: () => Promise<Site>;
     getCurrentSite: () => Promise<Site>;
 }
@@ -36,8 +32,7 @@ export const test = base.extend<{
 
     apiHelpers: async ({ request }, use) => {
         await use({
-            createFolders: (siteName, paths, options) =>
-                createFolders(request, siteName, paths, options),
+            createFolders: (siteName, paths) => createFolders(request, siteName, paths),
             getDefaultSite: () => getDefaultSite(request),
             getCurrentSite: () => getCurrentSite(request)
         });
