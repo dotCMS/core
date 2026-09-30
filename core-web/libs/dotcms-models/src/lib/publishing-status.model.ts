@@ -48,6 +48,11 @@ export const READY_STATUSES: readonly PublishAuditStatus[] = [
  * In-motion statuses — bundles being packed, sent, or applied at the receiver.
  * Once here, cancellation is best-effort and may leave a partially-shipped
  * archive on one or more endpoints.
+ *
+ * Defined by cancellability only. It deliberately differs from the Publishing
+ * Queue status filter's "In progress" option, which owns its own list, and it is
+ * unrelated to the backend's `PublishingJobsHelper.IN_PROGRESS_STATUSES` (the
+ * statuses a bundle cannot be deleted in).
  */
 export const IN_PROGRESS_STATUSES: readonly PublishAuditStatus[] = [
     PublishAuditStatus.WAITING_FOR_PUBLISHING,
@@ -55,4 +60,21 @@ export const IN_PROGRESS_STATUSES: readonly PublishAuditStatus[] = [
     PublishAuditStatus.SENDING_TO_ENDPOINTS,
     PublishAuditStatus.PUBLISHING_BUNDLE,
     PublishAuditStatus.RECEIVED_BUNDLE
+] as const;
+
+/**
+ * Statuses that are never stored as a bundle's own status, so filtering the
+ * bundle list by them always returns nothing.
+ *
+ * `LICENSE_REQUIRED`, `INVALID_TOKEN` and `FAILED_TO_SENT` are only recorded on
+ * a single endpoint's entry in the bundle's audit history (the bundle itself
+ * ends up as `FAILED_TO_SEND_TO_ALL_GROUPS` / `FAILED_TO_SEND_TO_SOME_GROUPS`).
+ * `FAILED_INTEGRITY_CHECK` is not written by the backend at all. They stay in
+ * `PublishAuditStatus` because the bundle detail view renders them per endpoint.
+ */
+export const ENDPOINT_ONLY_STATUSES: readonly PublishAuditStatus[] = [
+    PublishAuditStatus.LICENSE_REQUIRED,
+    PublishAuditStatus.INVALID_TOKEN,
+    PublishAuditStatus.FAILED_TO_SENT,
+    PublishAuditStatus.FAILED_INTEGRITY_CHECK
 ] as const;
