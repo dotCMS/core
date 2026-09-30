@@ -79,13 +79,11 @@ export interface DotFolderBulkDeleteCeilings {
  * The bulk folder duplication ceiling the server enforces, as it advertises it on
  * `/api/v1/appconfiguration` (#37062).
  *
- * Read from the same constant the endpoint enforces with, so Content Drive can stop an over-ceiling
- * selection before submitting it and name the limit. The server remains the enforcement point.
+ * The same shape as delete's: the most folders one submission may carry. Read from the constant
+ * the endpoint enforces with, so Content Drive can cap a selection at it and name the limit. The
+ * server remains the enforcement point.
  */
-export interface DotFolderBulkDuplicateCeilings {
-    /** Distinct folders in one submission. */
-    maxPaths: number;
-}
+export type DotFolderBulkDuplicateCeilings = DotFolderBulkDeleteCeilings;
 
 export interface DotSystemConfig {
     logos: DotLogos;

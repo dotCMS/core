@@ -1,4 +1,5 @@
 import { patchState, signalStore, withState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Observable, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -21,7 +22,8 @@ import {
     DotBulkRefreshCompletedEvent,
     DotBulkUploadCompletedEvent,
     DotFolderBulkDeleteSubmitResponse,
-    DotFolderBulkDuplicateCompletedEvent
+    DotFolderBulkDuplicateCompletedEvent,
+    DotJobState
 } from '@dotcms/dotcms-models';
 
 import { withActionExecution } from './withActionExecution';
@@ -803,7 +805,7 @@ describe('withActionExecution', () => {
             // duplicates landed is kept too, so the shell can decide whether to reload what is on
             // screen now.
             submitted();
-            patchState(store as never, { path: '/somewhere/else/' } as never);
+            patchState(unprotected(store), { path: '/somewhere/else/' });
 
             duplicateSocketEvents.next(completed());
 
@@ -948,12 +950,12 @@ describe('withActionExecution', () => {
             expect(handle).not.toHaveBeenCalled();
         });
 
-        it.each([['FAILED_PERMANENTLY'], ['ABANDONED_PERMANENTLY']])(
+        it.each<[DotJobState]>([['FAILED_PERMANENTLY'], ['ABANDONED_PERMANENTLY']])(
             'should report a %s run as an error and record no result',
             (state) => {
                 submitted();
 
-                store.reportDuplicateCompleted('Duplicate', completed({ state } as never));
+                store.reportDuplicateCompleted('Duplicate', completed({ state }));
 
                 expect(store.actionExecutionResult()).toBeUndefined();
                 expect(handle).toHaveBeenCalled();

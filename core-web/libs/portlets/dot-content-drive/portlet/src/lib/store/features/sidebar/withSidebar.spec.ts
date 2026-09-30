@@ -1,4 +1,5 @@
 import { patchState, signalStore, withState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/vitest';
 import { NEVER, of, Subject } from 'rxjs';
 import { Mocked, describe, expect, it, vi } from 'vitest';
@@ -710,7 +711,7 @@ describe('withSidebar - a location the tree has not loaded', () => {
 
     it('should load the branch down to it and select it', () => {
         // Only the root level is loaded: `documents` has never been expanded.
-        patchState(store as never, { path: '/documents/images/' } as never);
+        patchState(unprotected(store), { path: '/documents/images/' });
         spectator.flushEffects();
 
         expect(store.selectedNode()?.data?.path).toBe('/documents/images/');
@@ -737,7 +738,7 @@ describe('withSidebar - a location the tree has not loaded', () => {
         ];
         store.updateFolders(folders);
 
-        patchState(store as never, { path: '/documents/images/deep/' } as never);
+        patchState(unprotected(store), { path: '/documents/images/deep/' });
         spectator.flushEffects();
 
         expect(findNodeByPath(store.folders(), '/documents/drafts/')).toBeDefined();
@@ -748,7 +749,7 @@ describe('withSidebar - a location the tree has not loaded', () => {
         // the work is instead of the tree going quiet.
         folderService.searchFolders.mockReturnValue(NEVER);
 
-        patchState(store as never, { path: '/documents/images/' } as never);
+        patchState(unprotected(store), { path: '/documents/images/' });
         spectator.flushEffects();
 
         expect(findNodeByPath(store.folders(), '/documents/')?.loading).toBe(true);
@@ -758,13 +759,13 @@ describe('withSidebar - a location the tree has not loaded', () => {
         // Opening a second folder cancels the first reveal before its level answers. The node it
         // was loading is expanded and on screen, so it must not go on spinning.
         folderService.searchFolders.mockReturnValue(NEVER);
-        patchState(store as never, { path: '/documents/images/' } as never);
+        patchState(unprotected(store), { path: '/documents/images/' });
         spectator.flushEffects();
 
         folderService.searchFolders.mockImplementation(({ path }: { path?: string }) =>
             searchResult(levels[path ?? ''] ?? [])
         );
-        patchState(store as never, { path: '/elsewhere/' } as never);
+        patchState(unprotected(store), { path: '/elsewhere/' });
         spectator.flushEffects();
 
         expect(findNodeByPath(store.folders(), '/documents/')?.loading).toBe(false);
@@ -790,7 +791,7 @@ describe('withSidebar - a location the tree has not loaded', () => {
         // neither; the tree shows the stand-in selected by its key anyway.
         const opened = standIn('/documents/');
         store.setSelectedNode(opened);
-        patchState(store as never, { path: '/documents/' } as never);
+        patchState(unprotected(store), { path: '/documents/' });
         spectator.flushEffects();
 
         expect(store.selectedNode()).toBe(opened);
@@ -800,7 +801,7 @@ describe('withSidebar - a location the tree has not loaded', () => {
         // Kept while its branch loads, but a folder that turned out not to exist must not stay
         // looking selected.
         store.setSelectedNode(standIn('/gone/'));
-        patchState(store as never, { path: '/gone/' } as never);
+        patchState(unprotected(store), { path: '/gone/' });
         spectator.flushEffects();
 
         expect(store.selectedNode()).toBeUndefined();
@@ -808,7 +809,7 @@ describe('withSidebar - a location the tree has not loaded', () => {
 
     it('should not keep reloading for a folder that does not exist', () => {
         // The reload finds nothing either, and the tree changing must not start another one.
-        patchState(store as never, { path: '/gone/' } as never);
+        patchState(unprotected(store), { path: '/gone/' });
         spectator.flushEffects();
         const callsAfterFirstAttempt = folderService.searchFolders.mock.calls.length;
 

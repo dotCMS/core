@@ -31,6 +31,7 @@ import {
     DotFolderDeleteActiveRun,
     DotFolderDuplicateActiveRun,
     FeaturedFlags,
+    LOAD_MORE_NODE_TYPE,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import { GlobalStore, withFlags } from '@dotcms/store';
@@ -797,8 +798,10 @@ export const DotContentDriveStore = signalStore(
                     return siteCanAddChildren() !== false;
                 }
 
-                const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
-                    ?.permissions;
+                // A load-more row carries no rights; only a folder or site node does.
+                const data = selectedNode()?.data;
+                const permissions =
+                    data && data.type !== LOAD_MORE_NODE_TYPE ? data.permissions : undefined;
 
                 if (!permissions?.length) {
                     return siteCanAddChildren() !== false;
