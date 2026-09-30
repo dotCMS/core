@@ -1,5 +1,5 @@
 import * as fs from 'node:fs';
-import { access, readdir, stat } from 'node:fs/promises';
+import { access, opendir, stat } from 'node:fs/promises';
 import { basename, extname, isAbsolute, join, posix, relative, resolve, sep } from 'node:path';
 
 import {
@@ -414,7 +414,11 @@ async function collectLocalFiles(
     let scanned = 0;
 
     async function walk(dir: string) {
-        for (const entry of await readdir(dir, { withFileTypes: true })) {
+        // Streamed with `opendir`, a few entries at a time: `readdir` would load a directory's
+        // whole listing before the scan limit could stop it, so one directory of millions of
+        // entries would cost unbounded time and memory. `for await` closes the directory when
+        // the loop ends, breaks or throws — the limit's throw included.
+        for await (const entry of await opendir(dir)) {
             const abs = join(dir, entry.name);
 
             // Every entry counts, directory or file, matched or not: the walk's cost is what
