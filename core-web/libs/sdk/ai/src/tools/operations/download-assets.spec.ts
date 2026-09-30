@@ -554,6 +554,44 @@ describe('downloadAssets', () => {
             expect(await readFile(join(dest, 'robots.txt'), 'utf8')).toBe('local copy');
         });
 
+        it('auto with overwrite "error": checks with dotCMS first, so an existing local name cannot hide a folder', async () => {
+            // The same trap as `skip`: refused on local state alone, the guessed asset reading
+            // failed with "already exists" before dotCMS was asked whether an asset is there.
+            await mkdir(join(dest, 'v1.2'));
+            const { runtime, calls } = kindRuntime({ folder: DOTTED });
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/themes/v1.2',
+                dest,
+                recursive: true,
+                overwrite: 'error'
+            });
+
+            expect(callsTo(calls, '/api/v2/assets')).toBe(1);
+            expect(manifest.files.map((file) => file.path)).toEqual(['site.css']);
+            expect(manifest.failures).toEqual([]);
+        });
+
+        it('auto with overwrite "error": a confirmed asset over an existing file is a collision', async () => {
+            await writeFile(join(dest, 'robots.txt'), 'local copy');
+            const { runtime, calls } = kindRuntime({ pathAsset: 'remote copy' });
+
+            const manifest = await downloadAssets({
+                dotcms: runtime,
+                path: '//demo.dotcms.com/robots.txt',
+                dest,
+                recursive: true,
+                overwrite: 'error'
+            });
+
+            expect(callsTo(calls, '/api/v2/assets')).toBe(1);
+            expect(manifest.failures).toEqual([
+                { path: 'robots.txt', error: expect.stringContaining('already exists') }
+            ]);
+            expect(await readFile(join(dest, 'robots.txt'), 'utf8')).toBe('local copy');
+        });
+
         it('kind "asset": skips an existing file without any request — the caller said what it is', async () => {
             await writeFile(join(dest, 'robots'), 'local copy');
             const { runtime, calls } = kindRuntime({ pathAsset: 'remote copy' });
