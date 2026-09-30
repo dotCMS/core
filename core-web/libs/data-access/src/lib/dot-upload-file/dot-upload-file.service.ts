@@ -22,7 +22,6 @@ import {
     DotWorkflowActionsFireService
 } from '../dot-workflow-actions-fire/dot-workflow-actions-fire.service';
 
-
 export enum FileStatus {
     DOWNLOAD = 'DOWNLOADING',
     IMPORT = 'IMPORTING',
