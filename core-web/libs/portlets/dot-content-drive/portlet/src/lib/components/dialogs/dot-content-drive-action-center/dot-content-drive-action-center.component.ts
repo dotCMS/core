@@ -43,11 +43,11 @@ import {
 import { DotContentDriveActionMoveTargetComponent } from './components/dot-content-drive-action-move-target/dot-content-drive-action-move-target.component';
 import { DotContentDriveActionPreviewComponent } from './components/dot-content-drive-action-preview/dot-content-drive-action-preview.component';
 
-import { ACTION_CENTER_FOLDER_NOTICE_PT } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     ADD_TO_BUNDLE_ACTION_ID,
     DotActionCenterQuickAction,
+    DUPLICATE_ACTION_ID,
     PUSH_PUBLISH_ACTION_ID,
     DELETE_FOLDER_ACTION_ID,
     REFRESH_ACTION_ID,
@@ -60,7 +60,8 @@ import {
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
     requiredInputKinds,
-    toDistinctIdentifiers
+    toDistinctIdentifiers,
+    toFolderAssetPaths
 } from '../../../utils/action-center';
 import { isFolder } from '../../../utils/functions';
 
@@ -250,8 +251,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      */
     protected readonly $hasPushPublishEnvironments = this.#store.hasPushPublishEnvironments;
 
-    /** @see ACTION_CENTER_FOLDER_NOTICE_PT */
-    protected readonly folderNoticePt = ACTION_CENTER_FOLDER_NOTICE_PT;
     /** The single workflow action currently selected, across every scheme. */
     protected readonly $selectedActionId = signal<string | null>(null);
     /**
@@ -267,7 +266,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * local signal would reset to `false` on the new instance and let the same action be fired twice
      * over the same rows.
      */
-    protected readonly $executing = computed(() => this.#store.activeRunCount() > 0);
+    protected readonly $executing = computed(() => this.#store.blockingRunCount() > 0);
     /**
      * Which screen is showing.
      *
@@ -469,17 +468,6 @@ export class DotContentDriveActionCenterComponent implements OnInit {
 
     /** Contentlets in the selection — folders are ignored by every bulk endpoint. */
     protected readonly $contentlets = computed(() => excludeFolders(this.$selectedItems()));
-    protected readonly $contentletCount = computed(() => this.$contentlets().length);
-    /**
-     * Folders in the selection, surfaced as a hint so the per-action counts are not confusing.
-     *
-     * They are no longer excluded outright: Add to Bundle and Push Publish take a folder identifier,
-     * and the rest of the actions drop themselves from the list instead. The notice says which,
-     * rather than claiming folders are ignored.
-     */
-    protected readonly $selectedFolderCount = computed(
-        () => this.$selectedItems().length - this.$contentletCount()
-    );
     protected readonly $quickActions = computed<DotActionCenterQuickAction[]>(() =>
         // Fed the whole selection: folder exclusion is per action now, and `getQuickActions` owns
         // that decision from the registry. Pre-filtering here would hide folders from the two
@@ -491,12 +479,38 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         // it answered. Read as a signal so a late resolution still recomputes the rows.
         getQuickActions(this.$selectedItems(), {
             isAdmin: this.#store.currentUserIsAdmin(),
-            hasPushPublishEnvironments: this.$hasPushPublishEnvironments()
+            hasPushPublishEnvironments: this.$hasPushPublishEnvironments(),
+            // Where the duplicates can land, which in all site content is each folder's own
+            // parent rather than one folder to gate against.
+            canAddChildren: this.#store.$canDuplicateHere(),
+            // So a folder row counts what one run carries, the same number its preview lists.
+            folderCeilings: {
+                duplicate: this.#store.folderDuplicateMaxPaths(),
+                delete: this.#store.folderDeleteMaxPaths()
+            }
         })
     );
 
     /** Number of contentlets still checked in the preview. */
     protected readonly $includedCount = computed(() => this.$includedItems().length);
+
+    /**
+     * How many folders one run of the chosen action may carry, or `null` when there is no ceiling
+     * to respect: the server advertises none, or the action is not a folder one (#37062).
+     */
+    protected readonly $folderCeiling = computed<number | null>(() => {
+        const actionId = this.$pendingQuickAction()?.id;
+
+        if (actionId === DUPLICATE_ACTION_ID) {
+            return this.#store.folderDuplicateMaxPaths();
+        }
+
+        if (actionId === DELETE_FOLDER_ACTION_ID) {
+            return this.#store.folderDeleteMaxPaths();
+        }
+
+        return null;
+    });
 
     /**
      * Label for the preview's back control, which names where it actually goes.
@@ -535,12 +549,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     });
 
     /**
-     * The items the selected action can run on — the preview's rows.
+     * Every item the selected action could run on, before any ceiling.
      *
      * Narrowed by content type so an action from one scheme never lists contentlets of a type that
      * scheme is not assigned to.
      */
-    protected readonly $previewItems = computed(() => {
+    readonly #eligibleItems = computed(() => {
         const quickAction = this.$pendingQuickAction();
 
         if (quickAction) {
@@ -584,6 +598,20 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                 (order.get(b.inode) ?? Number.MAX_SAFE_INTEGER)
         );
     }
+
+    /**
+     * The preview's rows: what the selected action runs on in this run.
+     *
+     * A folder action over the ceiling the server advertises lists only the first folders one run
+     * may carry, the same number its row counts (#37062). Listed rather than pre-checked, as every other
+     * action's preview lists what it applies to: the author confirms a run, not a correction.
+     */
+    protected readonly $previewItems = computed(() => {
+        const eligible = this.#eligibleItems();
+        const ceiling = this.$folderCeiling();
+
+        return ceiling !== null ? eligible.slice(0, ceiling) : eligible;
+    });
 
     /** Number of rows the preview lists for the selected action. */
     protected readonly $previewCount = computed(() => this.$previewItems().length);
@@ -719,6 +747,13 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * Actions section.
      */
     private executeQuickAction(quickAction: DotActionCenterQuickAction): void {
+        // Duplicate sends folder paths rather than inodes, so it branches before anything reads one.
+        if (quickAction.id === DUPLICATE_ACTION_ID) {
+            this.fireDuplicate(quickAction);
+
+            return;
+        }
+
         const inodes = this.$includedItems().map((item) => item.inode);
 
         if (!inodes.length) {
@@ -803,6 +838,40 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             this.#dotMessageService.get(quickAction.name),
             inodes
         );
+        this.handOffToToolbar();
+    }
+
+    /**
+     * Duplicates the checked folders in place.
+     *
+     * No confirmation: nothing is overwritten or removed, and each duplicate lands beside its original.
+     * The status indicator reports the run until it finishes or the server refuses it, so nothing is
+     * announced here: a start announced before the server answers contradicts a refusal.
+     */
+    private fireDuplicate(quickAction: DotActionCenterQuickAction): void {
+        const hostname = this.#store.currentSite()?.hostname;
+
+        if (!hostname) {
+            // Without a site every path would come out as `///path/`. Matches how delete refuses.
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get(
+                    'content-drive.dialog.duplicate-folder.no-site'
+                )
+            });
+
+            return;
+        }
+
+        const assetPaths = toFolderAssetPaths(this.$includedItems(), hostname);
+
+        if (!assetPaths.length) {
+            return;
+        }
+
+        const actionName = this.#dotMessageService.get(quickAction.name);
+        this.#store.executeDuplicate(actionName, assetPaths);
+
         this.handOffToToolbar();
     }
 
