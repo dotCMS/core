@@ -4,11 +4,11 @@ import { DotBatchItemResult, DotFolderDeleteFailureReason } from '@dotcms/dotcms
 
 import {
     describeFolderDeleteOutcome,
-    MAX_FOLDER_NAMES,
     messageKeyForFolderDeleteReason,
     SKIPPED_BY_PARENT_KEY,
     SKIPPED_CANCELLED_KEY
 } from './folder-delete-outcome';
+import { MAX_FOLDER_NAMES } from './folder-outcome';
 
 /**
  * Reason → copy for bulk folder delete (#37063 US4).

@@ -4,7 +4,7 @@ import {
     describeFolderOutcome,
     DotFolderOutcomeVocabulary,
     ResolveMessage
-} from './folder-delete-outcome';
+} from './folder-outcome';
 
 /**
  * Reason → copy for bulk folder duplication (#37062).
