@@ -373,10 +373,25 @@ and confirm they match the asset's own record.
     data, which the client developer reading the warning cannot fix.
 - **SC-010**: Each edge case has a measured outcome: an archived, deleted or unreadable target
   answers `null` without failing the query (FR-019); a deleted property fails validation with an
-  error naming it (FR-020); an asset type carrying a property that collides with a general asset
-  property — with the same type or a different one — leaves the schema valid and every other query
-  working (FR-021); and no response to a user without read permission on an asset contains
-  that asset's property values or concrete type name (FR-022).
+  error naming it (FR-020); a customer property named like a general asset property (FR-021):
+  - with the **same type** (a whole-number `width`, `height` or `size` counts as the same type):
+    selecting it directly on the asset field succeeds, answering the customer's value on that
+    type and the file's value on every other asset type;
+  - **new, with a different type and an explicit variable**: the save answers 400 naming the
+    property's type and the field's, and nothing is stored — creating a content type with such a
+    field creates no content type;
+  - **new, with a different type and a generated variable**: the field is saved with a suffixed
+    variable (`width1`) and exactly one INFO line names the variable, the content type and both
+    types;
+  - **already stored with a different type** (data from before the rule): the schema stays valid
+    and every query that does not select that property directly on an asset field succeeds;
+    selecting it directly fails validation with an error naming it **on every asset type of the
+    instance** — a known limitation, resolved only by renaming the field — while
+    `... on ThatType { property }` answers the customer's value, the binary answers the file's,
+    and a WARN at schema build names the content type and the field;
+
+  and no response to a user without read permission on an asset contains that asset's property
+  values or concrete type name (FR-022).
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
