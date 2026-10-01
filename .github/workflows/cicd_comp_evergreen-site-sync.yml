@@ -1,0 +1,36 @@
+name: Evergreen Site Sync
+
+on:
+  workflow_call:
+    inputs:
+      trigger:
+        description: 'Human label for Slack notices'
+        required: true
+        type: string
+      apply:
+        type: boolean
+        default: false
+      drift_check:
+        type: boolean
+        default: false
+      as_if_action:
+        type: string
+        default: ''
+      as_if_version:
+        type: string
+        default: ''
+      as_if_track:
+        type: string
+        default: ''
+      slack_channel_id:
+        type: string
+        default: 'CE1TBQU00'  # #dot-releases
+    secrets:
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_TOKEN:
+        required: true
+      DOTCMS_DEVSITE_RELEASENOTES_TOKEN:
+        required: true
+      SLACK_BOT_TOKEN:
+        required: true
