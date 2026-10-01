@@ -50,6 +50,8 @@ on:
 jobs:
   admin:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: write  # github.token needs it for `gh release edit` (taint title)
     # Share the registry-mutation lock with the promote workflows so an admin
     # taint/hold can never overlap a promote run on the same tags. Job level (not
     # workflow level) so the site-sync job below never holds the lock.
@@ -92,6 +94,39 @@ jobs:
             --version "$VERSION" \
             --track "$TRACK" \
             $EXTRA
+      - name: Retitle GitHub Release
+        id: title
+        if: (inputs.action == 'taint' || inputs.action == 'untaint') && inputs.repo == 'dotcms/dotcms'
+        continue-on-error: true
+        working-directory: .github/actions/core-cicd/evergreen-tracks
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+          ACTION: ${{ inputs.action }}
+          MODE: ${{ inputs.mode }}
+        run: |
+          OLD=$(gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json name --jq .name)
+          if [ -z "$OLD" ]; then echo "::error::empty title for v$VERSION"; exit 1; fi
+          NEW=$(uv run evergreen-tracks release-title --action "$ACTION" --title "$OLD")
+          if [ "$OLD" = "$NEW" ]; then
+            echo "title unchanged: '$OLD'"
+          elif [ "$MODE" != "apply" ]; then
+            echo "DRY-RUN would retitle v$VERSION: '$OLD' -> '$NEW'"
+          else
+            gh release edit "v$VERSION" --repo "$GITHUB_REPOSITORY" --title "$NEW"
+          fi
+      - name: Notify title failure
+        if: steps.title.outcome == 'failure'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: 'CE1TBQU00'  # #dot-releases
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :warning: *Evergreen ${{ inputs.action }} of ${{ inputs.version }}: GitHub Release title NOT updated.*
+            The registry ${{ inputs.action }} DID apply; only the GitHub Release title failed to change.
+            Fix it by hand or re-run this workflow.
+            <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
 
   # Reconcile the corpsites EvergreenState record. Outside the registry lock (job-level
   # above) so it never blocks the next mutation. A dry-run previews via --as-if-*.
