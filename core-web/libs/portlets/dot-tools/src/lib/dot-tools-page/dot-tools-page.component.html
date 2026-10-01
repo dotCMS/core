@@ -1,9 +1,9 @@
 <div class="flex min-h-0 flex-1">
     <aside
-        class="flex min-h-0 w-80 flex-col border-r border-gray-200 bg-gray-50"
+        class="flex min-h-0 w-80 flex-col border-r border-gray-200 bg-white"
         data-testid="tools-sections-panel">
         <header class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-            <span class="text-xs font-bold tracking-wider text-gray-500 uppercase">
+            <span class="text-sm font-bold tracking-wider text-gray-500 uppercase">
                 {{ 'tools.sections' | dm }}
             </span>
             <p-button
@@ -92,12 +92,15 @@
                             role="button"
                             tabindex="0"
                             (click)="onSelectSection(section.id)"
+                            (contextmenu)="
+                                setSectionMenuTarget(section); showContextMenu($event, sectionMenu)
+                            "
                             (keydown.enter)="onSelectSection(section.id)"
                             (keydown.space)="$event.preventDefault(); onSelectSection(section.id)"
                             [class.bg-indigo-50]="store.selectedSectionId() === section.id"
                             [class.text-indigo-900]="store.selectedSectionId() === section.id"
                             [class.font-semibold]="store.selectedSectionId() === section.id"
-                            class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-800 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                            class="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-gray-800 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                             [attr.data-testid]="'tools-section-row-' + section.id">
                             <span
                                 cdkDragHandle
@@ -117,9 +120,8 @@
                                 [rounded]="true"
                                 [ariaLabel]="'tools.section-menu.aria-label' | dm"
                                 (click)="
-                                    $event.stopPropagation();
                                     setSectionMenuTarget(section);
-                                    sectionMenu.toggle($event)
+                                    showContextMenu($event, sectionMenu)
                                 "
                                 [attr.data-testid]="'tools-section-menu-btn-' + section.id"
                                 styleClass="opacity-0 group-hover:opacity-100" />
@@ -129,7 +131,7 @@
                         <div
                             *cdkDragPlaceholder
                             data-row
-                            class="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-gray-800 opacity-40">
+                            class="flex items-center gap-2 rounded-md px-3 py-2 text-gray-800 opacity-40">
                             <span
                                 class="material-symbols-outlined text-base! leading-none! text-gray-400">
                                 drag_indicator
@@ -143,7 +145,7 @@
                         <!-- Translucent copy following the cursor. -->
                         <div
                             *cdkDragPreview
-                            class="flex w-72 items-center gap-2 rounded-md bg-white px-3 py-2 text-sm text-gray-800 opacity-70 shadow-lg">
+                            class="flex w-72 items-center gap-2 rounded-md bg-white px-3 py-2 text-gray-800 opacity-70 shadow-lg">
                             <span
                                 class="material-symbols-outlined text-base! leading-none! text-gray-400">
                                 drag_indicator
@@ -177,7 +179,8 @@
                                         data-row
                                         (cdkDragMoved)="onToolDragMoved($event, toolListEl)"
                                         (cdkDragEnded)="onToolDragEnded(toolIndex)"
-                                        class="group/tool flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-500 hover:bg-gray-100">
+                                        (contextmenu)="onToolRowContextMenu($event, tool, toolMenu)"
+                                        class="group/tool flex items-center gap-2 rounded-md px-3 py-2 text-slate-500 hover:bg-gray-100">
                                         <span
                                             cdkDragHandle
                                             [attr.aria-label]="
@@ -206,7 +209,7 @@
                                         <div
                                             *cdkDragPlaceholder
                                             data-row
-                                            class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-500 opacity-40">
+                                            class="flex items-center gap-2 rounded-md px-3 py-2 text-slate-500 opacity-40">
                                             <span
                                                 class="material-symbols-outlined text-base! leading-none! text-gray-400">
                                                 drag_indicator
@@ -218,7 +221,7 @@
 
                                         <div
                                             *cdkDragPreview
-                                            class="flex w-64 items-center gap-2 rounded-md bg-white px-2 py-1.5 text-sm text-slate-500 opacity-70 shadow-lg">
+                                            class="flex w-64 items-center gap-2 rounded-md bg-white px-3 py-2 text-slate-500 opacity-70 shadow-lg">
                                             <span
                                                 class="material-symbols-outlined text-base! leading-none! text-gray-400">
                                                 drag_indicator
@@ -253,21 +256,26 @@
         }
     </aside>
 
-    <section
-        class="flex min-h-0 flex-1 flex-col px-6 pt-5 pb-6"
-        data-testid="tools-available-panel">
+    <section class="flex min-h-0 flex-1 flex-col pt-5 pb-6" data-testid="tools-available-panel">
         @if (store.selectedSection(); as section) {
-            <header class="mb-4 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <h2 class="m-0 text-xl font-semibold tracking-tight">{{ section.name }}</h2>
-                    <span
-                        class="material-symbols-outlined cursor-help text-lg! text-primary"
-                        [pTooltip]="'tools.available-tools.info.tooltip' | dm"
-                        tooltipPosition="right"
-                        [attr.aria-label]="'tools.available-tools.info.tooltip' | dm"
-                        data-testid="tools-available-info">
-                        info
-                    </span>
+            <header class="mb-4 flex items-center justify-between gap-3 px-6">
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center gap-3">
+                        <h2 class="m-0 text-xl font-semibold tracking-tight">
+                            {{ section.name }}
+                        </h2>
+                        <span
+                            class="material-symbols-outlined cursor-help text-lg!"
+                            [pTooltip]="'tools.available-tools.info.tooltip' | dm"
+                            tooltipPosition="right"
+                            [attr.aria-label]="'tools.available-tools.info.tooltip' | dm"
+                            data-testid="tools-available-info">
+                            info
+                        </span>
+                    </div>
+                    <p class="m-0 text-gray-500">
+                        {{ 'tools.available-tools.instruction' | dm }}
+                    </p>
                 </div>
                 <p-button
                     icon="pi pi-ellipsis-v"
@@ -275,17 +283,13 @@
                     [outlined]="true"
                     [rounded]="true"
                     [ariaLabel]="'tools.section-menu.aria-label' | dm"
-                    (click)="setSectionMenuTarget(section); sectionMenu.toggle($event)"
+                    (click)="setSectionMenuTarget(section); showContextMenu($event, sectionMenu)"
                     data-testid="tools-section-header-menu-btn" />
             </header>
-            <p class="mb-3 text-xs text-gray-500">
-                {{ 'tools.available-tools.instruction' | dm }}
-            </p>
 
-            <div
-                class="flex min-h-0 flex-1 flex-col overflow-hidden rounded-md border border-gray-200 bg-white">
+            <div class="flex min-h-0 flex-1 flex-col">
                 <div
-                    class="flex items-center justify-between gap-3 border-b border-gray-200 bg-gray-50 px-4 py-3">
+                    class="flex items-center justify-between gap-3 border-y border-gray-200 bg-gray-50 px-4 py-3">
                     <p-iconField iconPosition="left" class="max-w-xs flex-1">
                         <p-inputIcon styleClass="pi pi-search" />
                         <input
@@ -305,13 +309,16 @@
                         data-testid="tools-new-tool-btn" />
                 </div>
 
-                <ul class="flex-1 overflow-auto py-1" data-testid="tools-catalog-list">
+                <ul
+                    class="flex-1 divide-y divide-gray-200 overflow-auto"
+                    data-testid="tools-catalog-list">
                     @for (entry of store.paginatedCatalog(); track entry.id) {
                         <li
                             role="button"
                             tabindex="0"
-                            class="group/row flex cursor-pointer items-center gap-3 px-4 py-1.5 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
+                            class="group/row flex cursor-pointer items-center gap-3 px-4 py-2 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                             (click)="onToggleTool(entry.id)"
+                            (contextmenu)="onToolRowContextMenu($event, entry, toolMenu)"
                             (keydown.enter)="onToggleTool(entry.id)"
                             (keydown.space)="$event.preventDefault(); onToggleTool(entry.id)"
                             [attr.data-testid]="'tools-catalog-row-' + entry.id">
@@ -320,7 +327,7 @@
                                 [ngModel]="store.selectedSectionToolIds().has(entry.id)"
                                 (click)="$event.stopPropagation(); onToggleTool(entry.id)"
                                 [attr.data-testid]="'tools-catalog-check-' + entry.id" />
-                            <span class="flex-1 text-sm text-gray-800">{{ entry.title }}</span>
+                            <span class="flex-1 text-gray-800">{{ entry.title }}</span>
                             @if (isToolCustom(entry)) {
                                 <p-button
                                     icon="pi pi-ellipsis-v"
@@ -330,12 +337,20 @@
                                     [rounded]="true"
                                     [ariaLabel]="'tools.tool-menu.aria-label' | dm"
                                     (click)="
-                                        $event.stopPropagation();
-                                        setToolMenuTarget(entry);
-                                        toolMenu.toggle($event)
+                                        setToolMenuTarget(entry); showContextMenu($event, toolMenu)
                                     "
                                     [attr.data-testid]="'tools-catalog-menu-btn-' + entry.id"
                                     styleClass="opacity-0 group-hover/row:opacity-100" />
+                            } @else {
+                                <!--
+                                    First-party tools have no Edit / Delete to
+                                    show, so we skip the button but keep its
+                                    footprint — otherwise the row shrinks and
+                                    the custom/first-party rows stack unevenly.
+                                -->
+                                <span
+                                    aria-hidden="true"
+                                    class="inline-block size-8 flex-none"></span>
                             }
                         </li>
                     }
@@ -379,7 +394,16 @@
     </section>
 </div>
 
-<p-menu #sectionMenu [popup]="true" [model]="sectionMenuItems()" appendTo="body" />
-<p-menu #toolMenu [popup]="true" [model]="toolMenuItems()" appendTo="body" />
+<!--
+    p-contextMenu is used (over p-menu with popup=true) so the overlay
+    opens at the pointer position for both triggers — the right-click on
+    a row *and* the explicit `⋮` button click. p-menu anchors to the
+    trigger element, which made the button-triggered open fine but put
+    the right-click menu wherever the row sat, not where the pointer was.
+-->
+<p-contextMenu #sectionMenu [model]="sectionMenuItems()" appendTo="body" />
+<p-contextMenu #toolMenu [model]="toolMenuItems()" appendTo="body" />
 
 <p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
+
+<dot-status-toast position="bottom-center" />

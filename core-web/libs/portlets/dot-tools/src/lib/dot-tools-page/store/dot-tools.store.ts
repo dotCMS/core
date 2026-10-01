@@ -33,6 +33,14 @@ interface DotToolsState {
     catalogFilter: string;
     catalogLimit: number;
     status: DotToolsStatus;
+    /**
+     * Monotonic counter bumped on every successful section-tool mutation
+     * (toggle, remove, drag-reorder). Lets the page component acknowledge
+     * the save with a status toast without the store owning any UI
+     * concern. `0` is the "nothing has happened yet" sentinel so the
+     * component's effect skips the initial read.
+     */
+    toolsSavedAt: number;
 }
 
 const initialState: DotToolsState = {
@@ -41,7 +49,8 @@ const initialState: DotToolsState = {
     selectedSectionId: null,
     catalogFilter: '',
     catalogLimit: CATALOG_INITIAL_LIMIT,
-    status: 'init'
+    status: 'init',
+    toolsSavedAt: 0
 };
 
 /** Server truth is the source of `tabOrder`; the read never guarantees order. */
@@ -261,7 +270,10 @@ export const DotToolsStore = signalStore(
 
             runMutation(
                 toolsService.setSectionTools(sectionId, portletIds),
-                (sections) => commitSectionList(sections),
+                (sections) => {
+                    commitSectionList(sections);
+                    patchState(store, { toolsSavedAt: store.toolsSavedAt() + 1 });
+                },
                 () => patchState(store, { sections: snapshot })
             );
         }
