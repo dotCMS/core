@@ -63,6 +63,13 @@ If the body and title carry no reference at all, the check falls back to the bra
 appends `This PR fixes: #N` to the body — writing the closing keyword for you. Spell out
 `Refs #N` when you do not want that, or end the PR title with `(#N)`.
 
+After merge, `.github/workflows/issue_comp_link-pr-to-issue.yml` also appends
+`This PR fixes: #N`, with `N` taken from the branch name. A branch named after an issue in
+another repository (`issue-123-…` for `org/repo#123`) needs the body to close it in the
+cross-repo form, `Fixes org/repo#123` or the full issue URL. The line then keeps the
+repository (`This PR fixes: org/repo#123`) instead of pointing at this repository's
+unrelated `#123`.
+
 ### Commit and PR Title Strategy
 
 #### Individual Commit Messages
