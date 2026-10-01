@@ -4,8 +4,10 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -20,7 +22,9 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotToolsToolDialogComponent } from './dot-tools-tool-dialog.component';
 
+import { DotToolsStore } from '../dot-tools-page/store/dot-tools.store';
 import { DotToolsCatalogEntry, DotToolsCustomToolConfig } from '../models/dot-tools.models';
+import { DotToolsService } from '../services/dot-tools.service';
 
 const MOCK_CONTENT_TYPES = [
     { variable: 'Blog', name: 'Blog' } as DotCMSContentType,
@@ -41,10 +45,17 @@ const MOCK_PREFILL: DotToolsCustomToolConfig = {
     dataViewMode: 'card'
 };
 
+const SAMPLE_CREATED_ENTRY: DotToolsCatalogEntry = {
+    id: 'c_press-releases',
+    title: 'Press Releases',
+    isCustom: true
+};
+
 describe('DotToolsToolDialogComponent', () => {
     describe('create mode', () => {
         let spectator: Spectator<DotToolsToolDialogComponent>;
         const mockRef = { close: vi.fn() };
+        const createCustomToolSpy = vi.fn().mockReturnValue(of(SAMPLE_CREATED_ENTRY));
 
         const createComponent = createComponentFactory({
             component: DotToolsToolDialogComponent,
@@ -56,12 +67,15 @@ describe('DotToolsToolDialogComponent', () => {
                 mockProvider(DotContentTypeService, {
                     getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
                 }),
-                mockProvider(DotHttpErrorManagerService)
+                mockProvider(DotHttpErrorManagerService),
+                mockProvider(DotToolsStore, { createCustomTool: createCustomToolSpy })
             ]
         });
 
         beforeEach(() => {
             mockRef.close.mockClear();
+            createCustomToolSpy.mockClear();
+            createCustomToolSpy.mockReturnValue(of(SAMPLE_CREATED_ENTRY));
             spectator = createComponent();
         });
 
@@ -91,9 +105,10 @@ describe('DotToolsToolDialogComponent', () => {
             spectator.detectChanges();
             expect(spectator.query(byTestId('tools-tool-form-error'))).not.toBeNull();
             expect(mockRef.close).not.toHaveBeenCalled();
+            expect(createCustomToolSpy).not.toHaveBeenCalled();
         });
 
-        it('closes with the form value on valid submit', () => {
+        it('calls the store and closes on valid submit', () => {
             spectator.component['form'].patchValue({
                 portletName: 'Press Releases',
                 portletId: 'press-releases',
@@ -102,19 +117,66 @@ describe('DotToolsToolDialogComponent', () => {
                 dataViewMode: 'card'
             });
             spectator.component['onSubmit']();
-            expect(mockRef.close).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    portletName: 'Press Releases',
-                    portletId: 'press-releases',
-                    dataViewMode: 'card'
-                })
+            expect(createCustomToolSpy).toHaveBeenCalledWith({
+                portletName: 'Press Releases',
+                portletId: 'press-releases',
+                baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
+                contentTypes: ['Blog'],
+                dataViewMode: 'card'
+            });
+            expect(mockRef.close).toHaveBeenCalledWith(true);
+        });
+
+        it('renders inline server error on 400 and keeps the dialog open', () => {
+            createCustomToolSpy.mockReturnValueOnce(
+                throwError(
+                    () =>
+                        new HttpErrorResponse({
+                            status: 400,
+                            statusText: 'Bad Request',
+                            error: { message: 'Portlet id already exists' }
+                        })
+                )
             );
+            spectator.component['form'].patchValue({
+                portletName: 'Press Releases',
+                portletId: 'press-releases',
+                baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
+                contentTypes: ['Blog'],
+                dataViewMode: 'card'
+            });
+            spectator.component['onSubmit']();
+            spectator.detectChanges();
+
+            expect(mockRef.close).not.toHaveBeenCalled();
+            expect(spectator.query(byTestId('tools-tool-submit-error'))?.textContent).toContain(
+                'Portlet id already exists'
+            );
+        });
+
+        it('routes 5xx through the global handler and closes', () => {
+            const handler = spectator.inject(DotHttpErrorManagerService);
+            createCustomToolSpy.mockReturnValueOnce(
+                throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Server Error' }))
+            );
+            spectator.component['form'].patchValue({
+                portletName: 'Press Releases',
+                portletId: 'press-releases',
+                baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
+                contentTypes: ['Blog'],
+                dataViewMode: 'card'
+            });
+            spectator.component['onSubmit']();
+
+            expect(handler.handle).toHaveBeenCalled();
+            expect(mockRef.close).toHaveBeenCalledWith();
         });
     });
 
     describe('edit mode with prefill', () => {
         let spectator: Spectator<DotToolsToolDialogComponent>;
         const mockRef = { close: vi.fn() };
+        const updateCustomToolSpy = vi.fn().mockReturnValue(of(SAMPLE_CREATED_ENTRY));
 
         const createComponent = createComponentFactory({
             component: DotToolsToolDialogComponent,
@@ -129,12 +191,14 @@ describe('DotToolsToolDialogComponent', () => {
                 mockProvider(DotContentTypeService, {
                     getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
                 }),
-                mockProvider(DotHttpErrorManagerService)
+                mockProvider(DotHttpErrorManagerService),
+                mockProvider(DotToolsStore, { updateCustomTool: updateCustomToolSpy })
             ]
         });
 
         beforeEach(() => {
             mockRef.close.mockClear();
+            updateCustomToolSpy.mockClear();
             spectator = createComponent();
         });
 
@@ -154,11 +218,27 @@ describe('DotToolsToolDialogComponent', () => {
             spectator.component['onNameChange']('Renamed');
             expect(spectator.component['form'].controls.portletId.value).toBe('c_press-releases');
         });
+
+        it('calls updateCustomTool and closes on valid submit', () => {
+            spectator.component['onSubmit']();
+            expect(updateCustomToolSpy).toHaveBeenCalledWith({
+                portletName: 'Press Releases',
+                portletId: 'c_press-releases',
+                baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
+                contentTypes: ['Blog'],
+                dataViewMode: 'card'
+            });
+            expect(mockRef.close).toHaveBeenCalledWith(true);
+        });
     });
 
     describe('edit mode without prefill (catalog fallback)', () => {
         let spectator: Spectator<DotToolsToolDialogComponent>;
         const mockRef = { close: vi.fn() };
+        // The dialog's ngOnInit calls getCustomTool() when no prefill is
+        // injected. Mock it so the real HTTP call never fires and the
+        // promised prefill patch is exercised by the test.
+        const getCustomToolSpy = vi.fn().mockReturnValue(of(MOCK_PREFILL));
 
         const createComponent = createComponentFactory({
             component: DotToolsToolDialogComponent,
@@ -173,18 +253,46 @@ describe('DotToolsToolDialogComponent', () => {
                 mockProvider(DotContentTypeService, {
                     getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
                 }),
-                mockProvider(DotHttpErrorManagerService)
+                mockProvider(DotHttpErrorManagerService),
+                mockProvider(DotToolsService, { getCustomTool: getCustomToolSpy }),
+                mockProvider(DotToolsStore, {
+                    updateCustomTool: vi.fn().mockReturnValue(of(SAMPLE_CREATED_ENTRY))
+                })
             ]
         });
 
         beforeEach(() => {
             mockRef.close.mockClear();
+            getCustomToolSpy.mockClear();
+            getCustomToolSpy.mockReturnValue(of(MOCK_PREFILL));
             spectator = createComponent();
         });
 
-        it('uses tool.title and tool.id when prefill is absent', () => {
+        it('uses tool.title and tool.id while the prefill fetch is in flight', () => {
+            expect(getCustomToolSpy).toHaveBeenCalledWith('c_press-releases');
+            // The of(...) above resolves synchronously, so by the time this
+            // assertion runs the prefill has already patched the form.
+            // The catalog-fallback value lives for a tick in production; here
+            // we assert the final patched state matches the prefill.
             expect(spectator.component['form'].getRawValue().portletName).toBe('Press Releases');
             expect(spectator.component['form'].getRawValue().portletId).toBe('c_press-releases');
+        });
+
+        it('clears $prefillLoading once the fetch resolves', () => {
+            expect(spectator.component['$prefillLoading']()).toBe(false);
+        });
+
+        it('routes prefill-fetch errors through the global handler', () => {
+            getCustomToolSpy.mockReturnValueOnce(
+                throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Server Error' }))
+            );
+            // Recreate so the ngOnInit fetch sees the overridden mock.
+            spectator = createComponent();
+            const handler = spectator.inject(DotHttpErrorManagerService) as unknown as {
+                handle: Mock;
+            };
+            expect(handler.handle).toHaveBeenCalled();
+            expect(spectator.component['$prefillLoading']()).toBe(false);
         });
     });
 });

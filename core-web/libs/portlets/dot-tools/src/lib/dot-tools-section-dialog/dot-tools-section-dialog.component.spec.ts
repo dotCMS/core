@@ -4,9 +4,10 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -91,6 +92,39 @@ describe('DotToolsSectionDialogComponent', () => {
 
         it('closes without a value on cancel', () => {
             spectator.component['onCancel']();
+            expect(mockRef.close).toHaveBeenCalledWith();
+        });
+
+        it('renders inline server error on 400 and keeps the dialog open', () => {
+            createSectionSpy.mockReturnValueOnce(
+                throwError(
+                    () =>
+                        new HttpErrorResponse({
+                            status: 400,
+                            statusText: 'Bad Request',
+                            error: { message: 'Section name already exists' }
+                        })
+                )
+            );
+            spectator.component['form'].patchValue({ name: 'Dup', icon: 'widgets' });
+            spectator.component['onSubmit']();
+            spectator.detectChanges();
+
+            expect(mockRef.close).not.toHaveBeenCalled();
+            expect(spectator.query(byTestId('tools-section-submit-error'))?.textContent).toContain(
+                'Section name already exists'
+            );
+        });
+
+        it('routes 5xx through the global handler and closes', () => {
+            const handler = spectator.inject(DotHttpErrorManagerService);
+            createSectionSpy.mockReturnValueOnce(
+                throwError(() => new HttpErrorResponse({ status: 500, statusText: 'Server Error' }))
+            );
+            spectator.component['form'].patchValue({ name: 'OK', icon: 'widgets' });
+            spectator.component['onSubmit']();
+
+            expect(handler.handle).toHaveBeenCalled();
             expect(mockRef.close).toHaveBeenCalledWith();
         });
     });

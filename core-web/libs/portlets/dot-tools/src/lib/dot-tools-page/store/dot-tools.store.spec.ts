@@ -2,6 +2,8 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { of, throwError } from 'rxjs';
 import { Mock, Mocked, vi } from 'vitest';
 
+import { HttpErrorResponse } from '@angular/common/http';
+
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
 import { DotToolsStore } from './dot-tools.store';
@@ -156,6 +158,15 @@ describe('DotToolsStore', () => {
             expect(store.showError()).toBe(true);
             expect(httpErrorManager.handle).toHaveBeenCalled();
         });
+
+        it('loadAll skips the global handler on a 404 so the retry card is not covered', () => {
+            (service.getSections as Mock).mockReturnValueOnce(
+                throwError(() => new HttpErrorResponse({ status: 404 }))
+            );
+            store.loadAll();
+            expect(store.showError()).toBe(true);
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+        });
     });
 
     describe('selection + pagination', () => {
@@ -245,6 +256,46 @@ describe('DotToolsStore', () => {
             expect(store.status()).toBe('loaded');
             expect(httpErrorManager.handle).toHaveBeenCalled();
         });
+
+        it('createSection rethrows and resets status on error (no global handler)', () => {
+            (service.createSection as Mock).mockReturnValueOnce(
+                throwError(() => new HttpErrorResponse({ status: 400 }))
+            );
+            let caught: unknown = null;
+            store
+                .createSection({ name: 'Dup', icon: 'widgets' })
+                .subscribe({ error: (err) => (caught = err) });
+            expect(caught).toBeInstanceOf(HttpErrorResponse);
+            expect(store.status()).toBe('loaded');
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+        });
+
+        it('updateSection rethrows and resets status on error (no global handler)', () => {
+            (service.updateSection as Mock).mockReturnValueOnce(
+                throwError(() => new HttpErrorResponse({ status: 400 }))
+            );
+            let caught: unknown = null;
+            store
+                .updateSection('site', { name: 'Dup', icon: 'public' })
+                .subscribe({ error: (err) => (caught = err) });
+            expect(caught).toBeInstanceOf(HttpErrorResponse);
+            expect(store.status()).toBe('loaded');
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+        });
+
+        it('reorderSections rolls the optimistic patch back when the write fails', () => {
+            const beforeIds = store.sections().map((s) => s.id);
+            (service.reorderSections as Mock).mockReturnValueOnce(
+                throwError(() => new Error('server down'))
+            );
+
+            store.reorderSections(['content', 'empty', 'site']);
+
+            // The optimistic patch is reverted, order matches pre-call state.
+            expect(store.sections().map((s) => s.id)).toEqual(beforeIds);
+            expect(store.status()).toBe('loaded');
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+        });
     });
 
     describe('section-tool mutations', () => {
@@ -279,17 +330,40 @@ describe('DotToolsStore', () => {
 
     describe('custom tool mutations', () => {
         it('createCustomTool appends to the catalog and keeps it sorted', () => {
-            store.createCustomTool({
-                portletId: 'c_new-tool',
-                portletName: 'New Tool',
-                baseTypes: [],
-                contentTypes: [],
-                dataViewMode: 'list'
-            });
+            store
+                .createCustomTool({
+                    portletId: 'c_new-tool',
+                    portletName: 'New Tool',
+                    baseTypes: [],
+                    contentTypes: [],
+                    dataViewMode: 'list'
+                })
+                .subscribe();
             const titles = store.catalog().map((entry) => entry.title);
             expect(titles).toContain('New Tool');
             // Alphabetical: 'Blogs' < 'Browser' < 'Events' < 'New Tool' < 'Pages' < 'Press Releases'
             expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b)));
+        });
+
+        it('createCustomTool rethrows and resets status on error', () => {
+            (service.createCustomTool as Mock).mockReturnValueOnce(
+                throwError(() => new HttpErrorResponse({ status: 400 }))
+            );
+            let caught: unknown = null;
+            store
+                .createCustomTool({
+                    portletId: 'c_err',
+                    portletName: 'Err',
+                    baseTypes: [],
+                    contentTypes: [],
+                    dataViewMode: 'list'
+                })
+                .subscribe({ error: (err) => (caught = err) });
+            expect(caught).toBeInstanceOf(HttpErrorResponse);
+            expect(store.status()).toBe('loaded');
+            // Error path intentionally does not route through the handler —
+            // the dialog owns inline error UX. See the dialog spec.
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
         });
 
         it('deleteCustomTool cascades: removes from catalog AND from every section that referenced it', () => {
@@ -306,13 +380,15 @@ describe('DotToolsStore', () => {
         });
 
         it('updateCustomTool patches title and re-sorts the catalog', () => {
-            store.updateCustomTool({
-                portletId: 'c_press-releases',
-                portletName: 'Press Releases v2',
-                baseTypes: [],
-                contentTypes: [],
-                dataViewMode: 'list'
-            });
+            store
+                .updateCustomTool({
+                    portletId: 'c_press-releases',
+                    portletName: 'Press Releases v2',
+                    baseTypes: [],
+                    contentTypes: [],
+                    dataViewMode: 'list'
+                })
+                .subscribe();
             const entry = store.catalog().find((e) => e.id === 'c_press-releases');
             expect(entry?.title).toBe('Press Releases v2');
         });
