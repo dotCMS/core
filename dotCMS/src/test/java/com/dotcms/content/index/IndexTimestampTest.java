@@ -81,6 +81,19 @@ public class IndexTimestampTest {
     }
 
     /**
+     * Any instant formats as its UTC digits, whatever the JVM default zone — so a cutoff such as
+     * "24 hours ago" compares correctly against suffixes read back as UTC.
+     */
+    @Test
+    public void of_formatsTheInstantInUtc() {
+        final Instant instant = Instant.parse("2026-08-20T13:20:11Z");
+        for (final String zone : ZONES) {
+            TimeZone.setDefault(TimeZone.getTimeZone(zone));
+            assertEquals("default zone " + zone, "20260820132011", IndexTimestamp.of(instant));
+        }
+    }
+
+    /**
      * A name without a valid suffix is a fault the caller can see, not a silent zero.
      */
     @Test

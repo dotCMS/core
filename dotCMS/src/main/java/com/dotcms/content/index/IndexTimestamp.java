@@ -31,7 +31,18 @@ public final class IndexTimestamp {
      * @return the current UTC time as a {@code yyyyMMddHHmmss} suffix
      */
     public static String now() {
-        return FORMATTER.format(Instant.now());
+        return of(Instant.now());
+    }
+
+    /**
+     * Formats an arbitrary instant the way index-name suffixes are written, for example to build
+     * a cutoff that is compared against the suffixes of existing indices.
+     *
+     * @param instant the instant to format
+     * @return the instant as a UTC {@code yyyyMMddHHmmss} suffix
+     */
+    public static String of(final Instant instant) {
+        return FORMATTER.format(instant);
     }
 
     /**
