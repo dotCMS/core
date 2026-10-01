@@ -10,7 +10,7 @@ All are read per request, so a change takes effect on the next request with no r
 | Key | Type | Default | Valid range | On invalid value |
 |---|---|---|---|---|
 | `BROWSER_DB_CHUNK_ADAPTIVE` | boolean | `true` | — | — |
-| `BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE` | int | `7000` | `> 0` | default, debug log |
+| `BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE` | int | `2000` | `> 0` | default, debug log |
 | `BROWSER_DB_CHUNK_ADAPTIVE_MAX_GROWTH` | int | `4` | `>= 1` | default, debug log |
 | `BROWSER_DB_CHUNK_ADAPTIVE_SAFETY_FACTOR` | float | `1.5` | `> 0`, finite | default, debug log |
 

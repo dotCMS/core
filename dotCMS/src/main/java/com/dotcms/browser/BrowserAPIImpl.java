@@ -1055,10 +1055,12 @@ public class BrowserAPIImpl implements BrowserAPI {
     static final String BROWSER_DB_CHUNK_ADAPTIVE_KEY = "BROWSER_DB_CHUNK_ADAPTIVE";
     static final boolean BROWSER_DB_CHUNK_ADAPTIVE_DEFAULT = true;
 
-    // Largest chunk adaptive sizing may request. Same default as BROWSER_SINGLE_PASS_CHUNK_SIZE.
-    // Values <= 0 fall back to the default.
+    // Largest chunk adaptive sizing may request. Every row of a chunk is loaded as a Contentlet
+    // before the permission filter, so this bounds each request's working set. The benchmark in
+    // the #37665 review showed 7,000 saturating a 2 GB heap with 10 concurrent permission-limited
+    // listings, while 2,000 kept most of the latency gain. Values <= 0 fall back to the default.
     static final String BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_KEY = "BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE";
-    static final int BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT = 7_000;
+    static final int BROWSER_DB_CHUNK_ADAPTIVE_MAX_SIZE_DEFAULT = 2_000;
 
     // Largest multiple of the previous chunk that the next one may grow to. It bounds the ratio
     // estimate when visible items are clustered rather than spread evenly: 1 visible item early

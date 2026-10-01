@@ -659,13 +659,13 @@ public class BrowserAPIImplTest {
     /** Doubling keeps compounding from whatever was last requested, not from the floor. */
     @Test
     public void nextChunkSize_nothingVisible_fromLargerPrevious() {
-        assertEquals(6_400, nextChunkSize(3_200, 6_000, 0, 40));
+        assertEquals(1_600, nextChunkSize(800, 1_200, 0, 40));
     }
 
-    /** Doubling 6,400 would give 12,800; the ceiling stops it at 7,000. */
+    /** Doubling 1,600 would give 3,200; the ceiling stops it at 2,000. */
     @Test
     public void nextChunkSize_nothingVisible_cappedByCeiling() {
-        assertEquals(7_000, nextChunkSize(6_400, 12_400, 0, 40));
+        assertEquals(2_000, nextChunkSize(1_600, 2_800, 0, 40));
     }
 
     /**
@@ -736,10 +736,10 @@ public class BrowserAPIImplTest {
                 DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, 1, DEFAULT_SAFETY_FACTOR));
     }
 
-    /** A ceiling of 0 is a misconfiguration and falls back to the 7,000 default. */
+    /** A ceiling of 0 is a misconfiguration and falls back to the 2,000 default. */
     @Test
     public void nextChunkSize_nonPositiveCeiling_usesDefault() {
-        assertEquals(7_000, BrowserAPIImpl.nextChunkSize(6_400, DEFAULT_FLOOR, 12_400, 0, 40,
+        assertEquals(2_000, BrowserAPIImpl.nextChunkSize(1_600, DEFAULT_FLOOR, 2_800, 0, 40,
                 DEFAULT_SCAN_LIMIT, 0, 0, DEFAULT_MAX_GROWTH, DEFAULT_SAFETY_FACTOR));
     }
 
@@ -761,11 +761,11 @@ public class BrowserAPIImplTest {
 
     /**
      * An absurd safety factor must not overflow into a negative chunk size. The per-step cap
-     * allows 8,000 here, so the ceiling of 7,000 is what binds.
+     * allows 2,400 here, so the ceiling of 2,000 is what binds.
      */
     @Test
     public void nextChunkSize_hugeInputs_doesNotOverflow() {
-        assertEquals(7_000, BrowserAPIImpl.nextChunkSize(2_000, DEFAULT_FLOOR, 50_000, 1, 50_000,
+        assertEquals(2_000, BrowserAPIImpl.nextChunkSize(600, DEFAULT_FLOOR, 50_000, 1, 50_000,
                 DEFAULT_SCAN_LIMIT, 0, DEFAULT_CEILING, DEFAULT_MAX_GROWTH, Float.MAX_VALUE));
     }
 }
