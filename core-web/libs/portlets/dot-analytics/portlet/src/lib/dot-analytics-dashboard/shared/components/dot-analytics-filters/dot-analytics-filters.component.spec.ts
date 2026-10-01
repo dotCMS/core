@@ -3,6 +3,7 @@ import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/v
 import { addDays, format, startOfDay } from 'date-fns';
 import { vi } from 'vitest';
 
+import { DatePicker } from 'primeng/datepicker';
 import { Select } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -140,40 +141,58 @@ describe('DotAnalyticsFiltersComponent', () => {
         });
     });
 
-    describe('$disabledDates', () => {
-        it('should return empty array when no range start is set', () => {
-            expect(spectator.component.$disabledDates()).toEqual([]);
+    describe('Custom calendar date limits', () => {
+        beforeEach(() => {
+            spectator.setInput('timeRange', TIME_RANGE_OPTIONS.custom);
+            spectator.detectChanges();
         });
 
-        it('should return 10 disabled dates (5 forward + 5 backward) after first date is selected', () => {
+        it('keeps nearby dates selectable for short custom ranges', () => {
             const startDate = new Date('2024-01-01T00:00:00');
-            spectator.component.onDateSelect(startDate);
+            spectator.triggerEventHandler(DatePicker, 'onSelect', startDate);
+            spectator.detectChanges();
 
-            const disabled = spectator.component.$disabledDates();
-            expect(disabled).toHaveLength(10);
-            // Forward: start+1 to start+5
-            expect(disabled[0]).toEqual(startOfDay(addDays(startDate, 1)));
-            expect(disabled[4]).toEqual(startOfDay(addDays(startDate, 5)));
-            // Backward: start-1 to start-5
-            expect(disabled[5]).toEqual(startOfDay(addDays(startDate, -1)));
-            expect(disabled[9]).toEqual(startOfDay(addDays(startDate, -5)));
+            const calendar = spectator.query(DatePicker);
+            const nextDay = addDays(startDate, 1);
+            expect(calendar.disabledDates ?? []).toEqual([]);
+            expect(
+                calendar.isDateDisabled(
+                    nextDay.getDate(),
+                    nextDay.getMonth(),
+                    nextDay.getFullYear()
+                )
+            ).toBe(false);
         });
 
-        it('should clear disabled dates after second date is selected', () => {
-            const startDate = new Date('2024-01-01T00:00:00');
-            const endDate = new Date('2024-01-15T00:00:00');
-            spectator.component.onDateSelect(startDate);
-            spectator.component.onDateSelect(endDate);
+        it('allows today but not future dates', () => {
+            const calendar = spectator.query(DatePicker);
+            const today = startOfDay(new Date());
+            const tomorrow = addDays(today, 1);
 
-            expect(spectator.component.$disabledDates()).toEqual([]);
+            expect(calendar.maxDate).toEqual(today);
+            expect(
+                calendar.isSelectable(today.getDate(), today.getMonth(), today.getFullYear(), false)
+            ).toBe(true);
+            expect(
+                calendar.isSelectable(
+                    tomorrow.getDate(),
+                    tomorrow.getMonth(),
+                    tomorrow.getFullYear(),
+                    false
+                )
+            ).toBe(false);
         });
 
-        it('should clear disabled dates when clearDateRange is called', () => {
-            const startDate = new Date('2024-01-01T00:00:00');
-            spectator.component.onDateSelect(startDate);
-            spectator.component.clearDateRange();
+        it('emits a today-only range when today is selected twice', () => {
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
+            const today = startOfDay(new Date());
+            const day = format(today, 'yyyy-MM-dd');
 
-            expect(spectator.component.$disabledDates()).toEqual([]);
+            spectator.triggerEventHandler(DatePicker, 'onSelect', today);
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
+            spectator.triggerEventHandler(DatePicker, 'onSelect', today);
+
+            expect(changeFiltersSpy).toHaveBeenCalledExactlyOnceWith([day, day]);
         });
     });
 
@@ -222,7 +241,7 @@ describe('DotAnalyticsFiltersComponent', () => {
             expect(changeFiltersSpy).toHaveBeenCalledWith(['2024-01-01', '2024-01-07']);
         });
 
-        it('should not emit when range is shorter than 7 days', () => {
+        it('should emit when range is shorter than 7 days', () => {
             const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
             const startDate = new Date('2024-01-01T00:00:00');
             const endDate = new Date('2024-01-06T00:00:00');
@@ -231,7 +250,19 @@ describe('DotAnalyticsFiltersComponent', () => {
             spectator.component.$customDateRange.set([startDate, endDate]);
             spectator.component.onDateSelect(endDate);
 
+            expect(changeFiltersSpy).toHaveBeenCalledWith(['2024-01-01', '2024-01-06']);
+        });
+
+        it('restarts selection rather than emitting an inverted range', () => {
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
+            const startDate = new Date('2024-01-15T00:00:00');
+            const earlierDate = new Date('2024-01-14T00:00:00');
+
+            spectator.component.onDateSelect(startDate);
+            spectator.component.onDateSelect(earlierDate);
+
             expect(changeFiltersSpy).not.toHaveBeenCalled();
+            expect(spectator.component.$rangeStart()).toEqual(earlierDate);
         });
     });
 
