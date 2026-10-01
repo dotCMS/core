@@ -47,15 +47,15 @@ on:
         type: boolean
         default: false
 
-# Share the registry-mutation lock with the promote workflows so an admin
-# taint/hold can never overlap a promote run on the same tags.
-concurrency:
-  group: evergreen-tracks-registry
-  cancel-in-progress: false
-
 jobs:
   admin:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    # Share the registry-mutation lock with the promote workflows so an admin
+    # taint/hold can never overlap a promote run on the same tags. Job level (not
+    # workflow level) so the site-sync job below never holds the lock.
+    concurrency:
+      group: evergreen-tracks-registry
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@v5
@@ -92,3 +92,24 @@ jobs:
             --version "$VERSION" \
             --track "$TRACK" \
             $EXTRA
+
+  # Reconcile the corpsites EvergreenState record. Outside the registry lock (job-level
+  # above) so it never blocks the next mutation. A dry-run previews via --as-if-*.
+  site-sync:
+    needs: [ admin ]
+    if: >-
+      always()
+      && inputs.repo == 'dotcms/dotcms'
+      && (needs.admin.result == 'success' || needs.admin.result == 'failure')
+    uses: ./.github/workflows/cicd_comp_evergreen-site-sync.yml
+    with:
+      trigger: evergreen-tracks-admin ${{ inputs.action }} ${{ inputs.track }} ${{ inputs.version }}
+      apply: ${{ inputs.mode == 'apply' }}
+      as_if_action: ${{ inputs.mode != 'apply' && inputs.action || '' }}
+      as_if_version: ${{ inputs.mode != 'apply' && inputs.version || '' }}
+      as_if_track: ${{ inputs.mode != 'apply' && inputs.track || '' }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
