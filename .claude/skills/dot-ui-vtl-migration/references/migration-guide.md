@@ -48,7 +48,7 @@ DotCustomFieldApi.ready(() => {
 | Method | Description |
 |--------|-------------|
 | `getValue()` | Returns the current value of the field |
-| `setValue(value)` | Sets the field's value |
+| `setValue(value, options?)` | Sets the field's value and marks it touched and dirty. Pass `{ markDirty: false }` for a value the template derives (a computed index, a default, a suggestion) so opening content does not flag it as edited. `onChange` callbacks fire once per change. |
 | `onChange(callback)` | Subscribes to value changes |
 | `getValidationState()` | Returns a snapshot of the field's validation state — `{ valid, invalid, touched, dirty, errors }` |
 | `onValidationChange(callback)` | Subscribes to validation state changes (status, errors, touched, dirty) |
@@ -455,17 +455,17 @@ For `dojoType="dijit.Dialog"` elements, use the native HTML `<dialog>` element w
       },
     });
 
-    // Browse a folder tree, or pick a menu link for a redirect
+    // Pick a page, or a menu link for a redirect
     DotCustomFieldApi.openBrowserModal({
       title: "Select a destination",
-      kinds: ["page", "folder", "link"],
+      kinds: ["page", "link"],
       status: "live",
       sort: { field: "modDate", direction: "desc" },
       onClose: (selection) => {
         if (!selection) return; // the editor cancelled
 
         // `kind` says what was picked, and `url` is always populated:
-        // a file's path, a page's URL, a folder's path, a link's target.
+        // a file's path, a page's URL, a link's target.
         console.log(selection.kind, selection.url);
       },
     });
@@ -478,7 +478,7 @@ For `dojoType="dijit.Dialog"` elements, use the native HTML `<dialog>` element w
 | Option | What it does |
 |---|---|
 | `title` | Dialog title. |
-| `kinds` | What may be listed and returned: `"file"`, `"dotasset"`, `"page"`, `"folder"`, `"link"`. Defaults to `["file", "dotasset"]`. |
+| `kinds` | What may be listed and returned: `"file"`, `"dotasset"`, `"page"`, `"link"`. Defaults to `["file", "dotasset"]`. `"folder"` is no longer accepted (#37366): folders appear only in the picker's sidebar tree, and the kind is ignored with a console warning. |
 | `status` | `"live"` — published only; it also narrows the dialog's **Status** filter to *Locked*, since neither Archived nor Unpublished has a published version. `"working"` — the default, working versions included. `"archived"` — **archived only**: it pre-selects Archived in the Status filter, which the editor can clear from inside the dialog, and leaves the version state alone. |
 | `path` | Folder to start in, as `//site/folder/`. Omit to start where the editor last picked something. |
 | `mimeTypes` | Narrows file assets, e.g. `["image/*"]`. Cannot be combined with `"link"` — menu links carry no MIME type, so the server omits them. |
@@ -487,7 +487,7 @@ For `dojoType="dijit.Dialog"` elements, use the native HTML `<dialog>` element w
 
 **What you get back:** an object with `kind`, `identifier`, `inode`, `title` and — always
 non-empty — `url`. That last one is what a field normally stores. Asset and page selections also
-carry `mimeType` / `baseType` / `contentType`; folders and menu links do not, because they have
+carry `mimeType` / `baseType` / `contentType`; menu links do not, because they have
 none. Branch on `kind` when you need those.
 
 **Returns** a controller with `close()`, for dismissing the dialog yourself. Opening is
@@ -611,6 +611,10 @@ Use `getValidationState()` for a one-shot read, and `onValidationChange()` to su
 ### Native Components and Platform Styles
 
 Custom fields run inside the admin Angular app, which uses **DaisyUI 5** and **Tailwind CSS**. Prefer **DaisyUI component classes** for semantic styling so the field matches the platform and respects the theme.
+
+> **Only a known set of Tailwind classes exists for custom fields.** Their HTML is only known at runtime, so Tailwind cannot scan it. `core-web/apps/dotcms-ui/src/daisyui-theme.css` generates every daisyUI class plus fixed scales of utilities: spacing (`m*`, `p*`, `gap*` on 0–16), sizing (`w`, `h`, `size`, `max-w-xs`…`7xl`), borders, layout, type and a few effects. A class outside those lists — and any arbitrary value such as `mt-[-10px]` — **silently produces no CSS**. Use the nearest step of a scale (`-mt-2.5`), or add the class to that file.
+>
+> To hide the field's own label, set the `hideLabel=true` field variable instead of CSS that targets the legacy editor (`#myField_tag { display: none }`), which matches nothing in the new editor. A `<style>` block is copied into the page `<head>` unscoped, so its selectors reach the whole editor.
 
 **Use DaisyUI for UI components** (see [Styling with DaisyUI](#styling-with-daisyui)):
 - Buttons: `btn`, `btn-primary`, `btn-ghost`, `btn-sm`, etc.
@@ -1169,12 +1173,8 @@ DotCustomFieldApi.ready(() => {
 
 **New (text-count.vtl):** Prefer DaisyUI/Tailwind for styling when replacing or adding styles. Example using semantic classes for the wrapper:
 ```html
-<style>
-  #legacy-custom-field-body .${fieldId}_countWrapper { margin: 0; }
-  #${fieldId}Count_tag { display: none; }
-</style>
-
-<div class="${fieldId}_countWrapper flex justify-between flex-wrap text-base-content/70 text-sm mt-[-1.1rem]">
+<!-- Hide this field's own label with the hideLabel=true field variable, not CSS. -->
+<div class="${fieldId}_countWrapper flex justify-between flex-wrap text-base-content/70 text-sm -mt-4">
   <div id="${fieldId}-counter-text">
     <span id="charactersRemaining-${fieldId}">$maxChar</span> characters
   </div>

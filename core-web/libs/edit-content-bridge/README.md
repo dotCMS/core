@@ -1,92 +1,61 @@
 # Edit Content Bridge
 
-A bridge library that enables form interoperability between Angular and Dojo environments within the Edit Contentlet interface.
+The JavaScript API custom fields use to talk to the content form, exposed to templates as `window.DotCustomFieldApi`.
 
-## What it does
+The same API is backed by two implementations, picked by where the field renders:
 
-This bridge provides a unified API to synchronize form fields between:
+| Where the field renders | Implementation | What backs a field |
+| --- | --- | --- |
+| New Edit Content, `newRenderMode=component` | `AngularFormBridge` | The Angular `FormGroup` control |
+| New Edit Content, iframe (default) | `AngularFormBridge`, handed to the iframe | The Angular `FormGroup` control |
+| Legacy edit contentlet (Dojo) | `DojoFormBridge` (IIFE build) | The page's `<input>` / `<textarea>` |
 
--   The new Angular-based Edit Contentlet UI
--   The legacy Dojo implementation
+Inside the iframe, `$structures.isNewEditModeEnabled()` is `false`, so a template written with the `#if( $structures.isNewEditModeEnabled() ) … #else … #end` pattern runs its legacy branch there. The migrated branch runs only in component mode.
 
-It handles:
+## Usage
 
--   Bidirectional data sync between frameworks
--   Field value getting/setting
--   Change detection and propagation
--   Automatic cleanup
-
-## Basic Usage
-
-# DotFormBridge for Custom Fields
-
-The DotFormBridge (exposed as `DotCustomFieldApi`) enables interaction with form fields in the Edit Contentlet interface.
-
-## ⚠️ Critical: Initialize Inside Ready Handler
-
-All custom field logic MUST be inside `DotCustomFieldApi.ready()`:
+Put every call inside `ready()`, and get each field once:
 
 ```javascript
 DotCustomFieldApi.ready(() => {
-    // All your custom field logic goes here
-    // This ensures the bridge is ready to use
+    const title = DotCustomFieldApi.getField('title');
+    const slug = DotCustomFieldApi.getField('urlTitle');
+
+    slug.setValue(slugify(title.getValue() || ''));
+
+    title.onChange((value) => slug.setValue(slugify(value || '')));
 });
 ```
 
-## Available Methods
+### `DotCustomFieldApi`
 
-Inside the ready handler, you can use these methods:
+| Method | Notes |
+| --- | --- |
+| `ready(callback)` | Calls back once the bridge is usable. Synchronous in the new editor; in the legacy editor it waits for `load`, or calls back right away if the page already loaded. |
+| `getField(variable)` | Returns the field object below. |
+| `openBrowserModal(options)` | Opens the asset picker (files, dotAssets, pages, menu links) and reports the pick through `onClose`. New editor only. |
+| `get` / `set` / `onChangeField` | Older shortcuts for `getField(id).getValue()` / `.setValue()` / `.onChange()`. Prefer the field object. |
 
-### 1. Get Field Value
+### Field object
 
-```javascript
-// Get value from any field
-const value = DotCustomFieldApi.get('variableField');
+| Method | Notes |
+| --- | --- |
+| `getValue()` | The control's value. Most fields hold a string; checkbox, multi-select, tag and category fields hold `string[]`, the Block Editor an object, dates a timestamp. |
+| `setValue(value, { markDirty? })` | Sets the value without converting it, so pass the shape the field holds. Marks the field touched and dirty unless `markDirty: false`, which is for values the template derives rather than ones the user entered. |
+| `onChange(callback)` | Fires once per change, including changes made with `setValue`. It does not fire for the initial value, so read that with `getValue()`. Returns an unsubscribe function. |
+| `getValidationState()` / `onValidationChange(callback)` | `{ valid, invalid, touched, dirty, errors }`. `onValidationChange` emits the current state right away. A no-op in the legacy editor. |
+| `show()` / `hide()` / `enable()` / `disable()` | Visibility and interactivity of the field. |
+
+## How component mode mounts a template
+
+`NativeFieldComponent` appends the rendered markup, copies `<style>` blocks into `document.head` (unscoped, removed on destroy) and then inserts the scripts in document order. An external `<script src>` is awaited before the scripts after it run, unless it is marked `async` or is a module, so an inline script can use a library loaded just above it.
+
+All component-mode fields share one `window` and `document`: element ids and top-level declarations of classic scripts are global. Keep code inside the `ready()` callback, and derive ids from `$field.variable()` when a template can appear more than once on a form.
+
+Only daisyUI classes and the Tailwind utilities listed in `apps/dotcms-ui/src/daisyui-theme.css` exist for custom fields; anything else silently produces no CSS.
+
+## Running the tests
+
+```bash
+pnpm nx test edit-content-bridge
 ```
-
-### 2. Set Field Value
-
-```javascript
-// Update any field value
-DotCustomFieldApi.set('variableField', 'newValue');
-```
-
-### 3. Watch Field Changes
-
-```javascript
-// React to changes in any field
-DotCustomFieldApi.onChangeField('variableField', (value) => {
-    console.log('Field changed to:', value);
-});
-```
-
-## Example: Complete Custom Field
-
-Here's a practical example combining all methods:
-
-```javascript
-DotCustomFieldApi.ready(() => {
-    // 1. Initialize with saved value
-    const savedValue = DotCustomFieldApi.get('myField');
-    document.getElementById('displayValue').textContent = savedValue;
-
-    // 2. Watch another field for changes
-    DotCustomFieldApi.onChangeField('sourceField', (value) => {
-        // Process the change
-        const processed = processValue(value);
-
-        // 3. Update our field
-        DotCustomFieldApi.set('myField', processed);
-
-        // Update display
-        document.getElementById('displayValue').textContent = processed;
-    });
-});
-```
-
-## Important Notes
-
--   ✅ All logic MUST be inside `DotCustomFieldApi.ready()`
--   🔑 Field IDs must match content type field variables
--   🔄 Changes are automatically synced across the form
--   ⚡ The API only works in Edit Contentlet context
