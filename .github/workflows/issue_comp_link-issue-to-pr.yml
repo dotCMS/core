@@ -66,11 +66,13 @@ jobs:
             "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number")
 
           # Issues linked in the Development section (sidebar). itemTypes filters before
-          # first: counts, so this sees 100 link events, not the first 100 timeline items
-          # (the REST timeline's 30-per-page default once hid #37193's link). A sidebar link
-          # can name another repository's issue, so keep the repository (#37845). Replaying
-          # the events oldest first leaves the links still in place, keyed by repo#number so
-          # unlinking one repository's #N cannot cancel another's; the longest-standing wins.
+          # first: counts, so this reads the oldest 100 link and unlink events, not the first
+          # 100 timeline items (the REST timeline's 30-per-page default once hid #37193's
+          # link). It does not paginate, so link events past the 100th go unseen. A sidebar
+          # link can name another repository's issue, so keep the repository (#37845).
+          # Replaying the events oldest first leaves the links still in place, keyed by
+          # repo#number so unlinking one repository's #N cannot cancel another's; the
+          # longest-standing wins.
           owner="${GITHUB_REPOSITORY%/*}"
           repo="${GITHUB_REPOSITORY#*/}"
           gh_err=$(mktemp)
