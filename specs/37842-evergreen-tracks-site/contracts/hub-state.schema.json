@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/dotCMS/core/specs/37842-evergreen-tracks-site/contracts/hub-state.schema.json",
+  "title": "Evergreen Hub state",
+  "description": "Written by `evergreen-tracks state --out`, read by `changelog-publisher sync-site --state-file`. Mirrors dotcms/dotcms on Docker Hub. All keys required: a partial Hub read never produces this file (FR-008).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["latest", "standard", "trailing", "tainted"],
+  "$defs": {
+    "ga": { "type": "string", "pattern": "^[0-9]{2}\\.[0-9]{2}\\.[0-9]{2}-[0-9]{1,2}$" }
+  },
+  "properties": {
+    "latest":   { "$ref": "#/$defs/ga" },
+    "standard": { "$ref": "#/$defs/ga" },
+    "trailing": { "$ref": "#/$defs/ga" },
+    "tainted":  { "type": "array", "items": { "$ref": "#/$defs/ga" }, "uniqueItems": true }
+  },
+  "examples": [
+    {"latest": "26.09.28-02", "standard": "26.09.17-02", "trailing": "26.09.03-01", "tainted": ["26.08.28-01", "26.08.31-01"]}
+  ]
+}
