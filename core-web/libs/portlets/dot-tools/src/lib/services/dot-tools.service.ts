@@ -3,11 +3,12 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 
 import {
     DotToolsCatalogEntry,
     DotToolsCustomToolConfig,
+    DotToolsDataViewMode,
     DotToolsSection,
     DotToolsSectionForm,
     DotToolsToolForm
@@ -22,16 +23,8 @@ interface ResponseEntity<T> {
 }
 
 /**
- * Tools portlet HTTP.
- *
- * Catalog + custom-tool endpoints (all methods except the six section ones)
- * are pinned by PR #37678 — merged, or about to be. Section endpoints are
- * pinned by the spec on PR #37645; the implementation PR will follow.
- *
- * Everything here is a plain HTTP call — no mocked bodies. The endpoints not
- * yet on the running build will fail with 404 or the endpoint's own error,
- * which is what we want: fail states surface early instead of hiding behind
- * fixtures that pretend the write succeeded.
+ * Tools portlet HTTP. Catalog + custom-tool endpoints come from PR #37678,
+ * section endpoints from PR #37729 — both merged.
  */
 @Injectable({ providedIn: 'root' })
 export class DotToolsService {
@@ -98,14 +91,18 @@ export class DotToolsService {
 
     createCustomTool(form: DotToolsToolForm): Observable<DotToolsCatalogEntry> {
         return this.#http
-            .post<ResponseEntity<DotToolsCustomToolConfig>>('/api/v1/portlet/custom', form)
-            .pipe(map((res) => this.#customToolToCatalogEntry(res.entity)));
+            .post<
+                ResponseEntity<{ portlet: string }>
+            >('/api/v1/portlet/custom', this.#toCustomPortletForm(form))
+            .pipe(switchMap((res) => this.#catalogEntryFor(res.entity.portlet)));
     }
 
     updateCustomTool(form: DotToolsToolForm): Observable<DotToolsCatalogEntry> {
         return this.#http
-            .put<ResponseEntity<DotToolsCustomToolConfig>>('/api/v1/portlet/custom', form)
-            .pipe(map((res) => this.#customToolToCatalogEntry(res.entity)));
+            .put<
+                ResponseEntity<{ portlet: string }>
+            >('/api/v1/portlet/custom', this.#toCustomPortletForm(form))
+            .pipe(switchMap((res) => this.#catalogEntryFor(res.entity.portlet)));
     }
 
     deleteCustomTool(portletId: string): Observable<void> {
@@ -113,12 +110,39 @@ export class DotToolsService {
     }
 
     /**
-     * Create and update return the full custom-tool config; the store only
-     * needs a catalog entry to slot into `catalog[]`. Custom tools created
-     * or edited through this portlet are always custom, so `isCustom: true`
-     * is a hard-coded truth rather than something we need to re-fetch.
+     * `CustomPortletForm` on the backend declares `baseTypes` / `contentTypes`
+     * as comma-separated `String`s (see
+     * dotCMS/.../v1/portlet/CustomPortletForm.java). Sending the form's arrays
+     * verbatim makes Jackson reject the body.
      */
-    #customToolToCatalogEntry(config: DotToolsCustomToolConfig): DotToolsCatalogEntry {
-        return { id: config.portletId, title: config.portletName, isCustom: true };
+    #toCustomPortletForm(form: DotToolsToolForm): {
+        portletId: string;
+        portletName: string;
+        baseTypes: string;
+        contentTypes: string;
+        dataViewMode: DotToolsDataViewMode;
+    } {
+        return {
+            portletId: form.portletId,
+            portletName: form.portletName,
+            baseTypes: form.baseTypes.join(','),
+            contentTypes: form.contentTypes.join(','),
+            dataViewMode: form.dataViewMode
+        };
+    }
+
+    /**
+     * `POST` / `PUT /v1/portlet/custom` return only `{ entity: { portlet: id } }`
+     * (`PortletResource.java:230` / `:387`), not the full config. We fetch the
+     * config so the catalog entry carries the resolved title and id.
+     */
+    #catalogEntryFor(portletId: string): Observable<DotToolsCatalogEntry> {
+        return this.getCustomTool(portletId).pipe(
+            map((config) => ({
+                id: config.portletId,
+                title: config.portletName,
+                isCustom: true
+            }))
+        );
     }
 }
