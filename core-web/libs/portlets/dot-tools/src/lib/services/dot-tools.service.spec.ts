@@ -54,9 +54,7 @@ describe('DotToolsService', () => {
         });
 
         it('PUT /v1/layouts/{id} with form body (id is encoded)', () => {
-            spectator.service
-                .updateSection('a b', { name: 'Renamed', icon: 'public' })
-                .subscribe();
+            spectator.service.updateSection('a b', { name: 'Renamed', icon: 'public' }).subscribe();
             const req = spectator.expectOne('/api/v1/layouts/a%20b', HttpMethod.PUT);
             expect(req.request.body).toEqual({ name: 'Renamed', icon: 'public' });
             req.flush({ entity: MOCK_SECTION });
