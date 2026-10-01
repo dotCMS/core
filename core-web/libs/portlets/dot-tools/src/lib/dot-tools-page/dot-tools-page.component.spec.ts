@@ -5,7 +5,7 @@ import { Mock, vi } from 'vitest';
 import { CdkDragMove } from '@angular/cdk/drag-drop';
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -70,6 +70,7 @@ function createStoreStub() {
         showLoading: signal(false),
         showError: signal(false),
         showEmptySections: signal(false),
+        toolsSavedAt: signal(0),
         selectSection: vi.fn(),
         toggleToolInSelectedSection: vi.fn(),
         removeToolFromSelectedSection: vi.fn(),
@@ -127,14 +128,20 @@ describe('DotToolsPageComponent', () => {
                 useFactory: () => (store = createStoreStub())
             },
             mockProvider(DialogService, { open: vi.fn() }),
-            // PrimeNG's ConfirmDialog subscribes to requireConfirmation$ on
-            // construction, so the mock must expose it as an Observable.
+            mockProvider(MessageService, {
+                add: vi.fn(),
+                clear: vi.fn(),
+                messageObserver: new Subject(),
+                clearObserver: new Subject()
+            }),
+            // PrimeNG's ConfirmDialog subscribes to requireConfirmation$ and
+            // accept on construction, so the mock exposes them as Subjects.
+            // Only the keys ConfirmationService actually declares are listed —
+            // mockProvider's generic rejects anything else.
             mockProvider(ConfirmationService, {
                 confirm: vi.fn(),
                 requireConfirmation$: new Subject(),
-                accept: new Subject(),
-                reject: new Subject(),
-                onClose: new Subject()
+                accept: new Subject()
             })
         ],
         providers: [
@@ -169,8 +176,11 @@ describe('DotToolsPageComponent', () => {
         spectator = createComponent({ detectChanges: false });
         confirm = spectator.inject(ConfirmationService, true);
         // mockProvider creates the spy once per factory, so it carries call
-        // history between specs — reset it so each test reads its own call.
+        // history between specs — reset the ones with per-test assertions.
         (confirm.confirm as Mock).mockClear();
+        const toast = spectator.inject(MessageService, true);
+        (toast.add as Mock).mockClear();
+        (toast.clear as Mock).mockClear();
     });
 
     describe('drag drop-index math', () => {
@@ -244,12 +254,21 @@ describe('DotToolsPageComponent', () => {
         });
     });
 
+    // Helper: menus now carry a disabled header + separator around Edit /
+    // Delete, so looking up by label stays stable if the item order changes.
+    function findByLabel(items: MenuItem[], label: string): MenuItem {
+        const item = items.find((i) => i.label === label);
+        if (!item) {
+            throw new Error(`menu item '${label}' not found`);
+        }
+
+        return item;
+    }
+
     describe('delete confirmations', () => {
         it('uses the plural "N tool assignments" copy when a section has tools', () => {
             spectator.component['setSectionMenuTarget'](CONTENT);
-            const items = spectator.component['sectionMenuItems']();
-            // The menu items are built on demand; the delete command invokes the confirm.
-            items[1].command?.({} as never);
+            findByLabel(spectator.component['sectionMenuItems'](), 'Delete').command?.({} as never);
 
             const call = (confirm.confirm as Mock).mock.calls[0][0];
             expect(call.header).toContain('Content');
@@ -262,7 +281,7 @@ describe('DotToolsPageComponent', () => {
 
         it('uses the singular copy on a section with one tool', () => {
             spectator.component['setSectionMenuTarget']({ ...CONTENT, portletIds: ['blogs'] });
-            spectator.component['sectionMenuItems']()[1].command?.({} as never);
+            findByLabel(spectator.component['sectionMenuItems'](), 'Delete').command?.({} as never);
             const call = (confirm.confirm as Mock).mock.calls[0][0];
             expect(call.message).not.toContain('3');
             expect(call.message).not.toContain('0');
@@ -270,7 +289,7 @@ describe('DotToolsPageComponent', () => {
 
         it('uses the no-assignment copy on an empty section', () => {
             spectator.component['setSectionMenuTarget'](EMPTY);
-            spectator.component['sectionMenuItems']()[1].command?.({} as never);
+            findByLabel(spectator.component['sectionMenuItems'](), 'Delete').command?.({} as never);
             const call = (confirm.confirm as Mock).mock.calls[0][0];
             // Falls through to the plain delete-section body (no tool count).
             expect(call.message).toBeDefined();
@@ -278,7 +297,7 @@ describe('DotToolsPageComponent', () => {
 
         it('uses the plural "N sections" copy when the custom tool lives in multiple sections', () => {
             spectator.component['setToolMenuTarget'](CUSTOM_TOOL);
-            spectator.component['toolMenuItems']()[1].command?.({} as never);
+            findByLabel(spectator.component['toolMenuItems'](), 'Delete').command?.({} as never);
             const call = (confirm.confirm as Mock).mock.calls[0][0];
             expect(call.header).toContain('Press Releases');
             // toolSectionCount stub returns 2 for c_press-releases.
@@ -289,22 +308,88 @@ describe('DotToolsPageComponent', () => {
     });
 
     describe('row menus', () => {
-        it('section menu exposes Edit + Delete and opens the dialog on Edit', () => {
+        it('section menu exposes header + Edit + separator + Delete and opens the dialog on Edit', () => {
             const dialog = spectator.inject(DialogService, true);
             spectator.component['setSectionMenuTarget'](SITE);
             const items = spectator.component['sectionMenuItems']();
-            expect(items).toHaveLength(2);
-            items[0].command?.({} as never); // Edit
+            // Header (disabled), Edit, separator, Delete.
+            expect(items).toHaveLength(4);
+            expect(items[0].disabled).toBe(true);
+            expect(items[2].separator).toBe(true);
+            findByLabel(items, 'Edit').command?.({} as never);
             expect(dialog.open).toHaveBeenCalled();
         });
 
-        it('tool menu exposes Edit + Delete and opens the dialog on Edit', () => {
+        it('tool menu exposes header + Edit + separator + Delete and opens the dialog on Edit', () => {
             const dialog = spectator.inject(DialogService, true);
             spectator.component['setToolMenuTarget'](CUSTOM_TOOL);
             const items = spectator.component['toolMenuItems']();
-            expect(items).toHaveLength(2);
-            items[0].command?.({} as never); // Edit
+            expect(items).toHaveLength(4);
+            expect(items[0].disabled).toBe(true);
+            expect(items[2].separator).toBe(true);
+            findByLabel(items, 'Edit').command?.({} as never);
             expect(dialog.open).toHaveBeenCalled();
+        });
+    });
+
+    describe('section-saved toast', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('does not toast on the first (zero) read of toolsSavedAt', () => {
+            // beforeEach already created the component; the effect has run
+            // once against the sentinel 0 and should have skipped.
+            const toast = spectator.inject(MessageService, true);
+            expect(toast.add).not.toHaveBeenCalled();
+        });
+
+        it('adds once on the first bump and does not re-add on later bumps while visible', () => {
+            const toast = spectator.inject(MessageService, true);
+
+            store.toolsSavedAt.set(1);
+            spectator.detectChanges();
+            store.toolsSavedAt.set(2);
+            spectator.detectChanges();
+            store.toolsSavedAt.set(3);
+            spectator.detectChanges();
+
+            // Only one add — the second and third saves restart the hide
+            // timer, so the on-screen toast stays put without a flicker.
+            expect(toast.add).toHaveBeenCalledTimes(1);
+            const first = (toast.add as Mock).mock.calls[0][0];
+            expect(first.key).toBe('dot-status');
+            expect(first.severity).toBe('success');
+            // Sticky: we own the lifetime via our own hide timer.
+            expect(first.sticky).toBe(true);
+            // No clear while the hide timer has not fired yet.
+            expect(toast.clear).not.toHaveBeenCalled();
+        });
+
+        it('clears the toast after the base life elapses without further saves', () => {
+            const toast = spectator.inject(MessageService, true);
+
+            store.toolsSavedAt.set(1);
+            spectator.detectChanges();
+            vi.advanceTimersByTime(2500);
+            expect(toast.clear).toHaveBeenCalledWith('dot-status');
+        });
+
+        it('restarts the hide timer on each new save so the toast lives for base life after the LAST one', () => {
+            const toast = spectator.inject(MessageService, true);
+
+            store.toolsSavedAt.set(1);
+            spectator.detectChanges();
+            vi.advanceTimersByTime(1500); // 1s left until first hide fires
+            store.toolsSavedAt.set(2); // restarts the timer with 2500ms
+            spectator.detectChanges();
+            vi.advanceTimersByTime(1500); // 1.5s since restart — not yet
+            expect(toast.clear).not.toHaveBeenCalled();
+            vi.advanceTimersByTime(1000); // reach 2500 since the last save
+            expect(toast.clear).toHaveBeenCalledWith('dot-status');
         });
     });
 });

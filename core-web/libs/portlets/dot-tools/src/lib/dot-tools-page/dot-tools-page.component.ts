@@ -7,23 +7,32 @@ import {
     CdkDropList,
     moveItemInArray
 } from '@angular/cdk/drag-drop';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    computed,
+    effect,
+    inject,
+    signal,
+    untracked
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ContextMenuModule } from 'primeng/contextmenu';
 import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotStatusToastComponent, STATUS_TOAST_KEY } from '@dotcms/ui';
 
 import { DotToolsStore } from './store/dot-tools.store';
 
@@ -31,6 +40,11 @@ import { CATALOG_LOAD_MORE_STEP } from '../constants/dot-tools.constants';
 import { DotToolsSectionDialogComponent } from '../dot-tools-section-dialog/dot-tools-section-dialog.component';
 import { DotToolsToolDialogComponent } from '../dot-tools-tool-dialog/dot-tools-tool-dialog.component';
 import { DotToolsCatalogEntry, DotToolsSection } from '../models/dot-tools.models';
+
+/** Shape p-contextMenu exposes for programmatic show. */
+interface ContextMenuLike {
+    show(event: Event): void;
+}
 
 @Component({
     selector: 'dot-tools-page',
@@ -48,12 +62,13 @@ import { DotToolsCatalogEntry, DotToolsSection } from '../models/dot-tools.model
         IconFieldModule,
         InputIconModule,
         InputTextModule,
-        MenuModule,
+        ContextMenuModule,
         ProgressSpinnerModule,
         TooltipModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotStatusToastComponent
     ],
-    providers: [DotToolsStore, DialogService, ConfirmationService],
+    providers: [DotToolsStore, DialogService, ConfirmationService, MessageService],
     templateUrl: './dot-tools-page.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-1 min-h-0 block' }
@@ -64,6 +79,70 @@ export class DotToolsPageComponent {
     readonly #dialogService = inject(DialogService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #messageService = inject(DotMessageService);
+    readonly #toastService = inject(MessageService);
+    readonly #destroyRef = inject(DestroyRef);
+
+    /**
+     * Whether the status toast is currently on screen. A new save landing
+     * while this is `true` must NOT clear and re-add — the user would see
+     * a flicker — so we only call `add()` on the first save, then arm /
+     * re-arm our own hide timer on each save after that.
+     */
+    #savedToastVisible = false;
+    #savedToastHideTimer: ReturnType<typeof setTimeout> | null = null;
+
+    constructor() {
+        // Every bump of `toolsSavedAt` is a confirmed section-tool mutation.
+        // The initial read is `0`, which the effect ignores so the page does
+        // not toast on open.
+        effect(() => {
+            const savedAt = this.store.toolsSavedAt();
+            if (savedAt === 0) {
+                return;
+            }
+            untracked(() => this.#showSavedToast());
+        });
+
+        this.#destroyRef.onDestroy(() => {
+            if (this.#savedToastHideTimer !== null) {
+                clearTimeout(this.#savedToastHideTimer);
+            }
+            this.#toastService.clear(STATUS_TOAST_KEY);
+        });
+    }
+
+    /**
+     * Shows the "Section saved" toast and keeps it on screen for the base
+     * life after the LAST save. Only the first save adds a toast; later
+     * saves while that toast is still visible restart the hide timer, so
+     * a burst of quick toggles looks like one steady acknowledgement that
+     * extends itself rather than a toast that flickers off and on.
+     *
+     * `sticky: true` on the message disables PrimeNG's own auto-dismiss
+     * so we own the full lifetime via `#savedToastHideTimer`.
+     */
+    #showSavedToast(): void {
+        const BASE_LIFE = 2500;
+
+        if (!this.#savedToastVisible) {
+            this.#savedToastVisible = true;
+            this.#toastService.add({
+                key: STATUS_TOAST_KEY,
+                severity: 'success',
+                summary: this.#messageService.get('tools.toast.section-saved'),
+                sticky: true
+            });
+        }
+
+        if (this.#savedToastHideTimer !== null) {
+            clearTimeout(this.#savedToastHideTimer);
+        }
+        this.#savedToastHideTimer = setTimeout(() => {
+            this.#toastService.clear(STATUS_TOAST_KEY);
+            this.#savedToastVisible = false;
+            this.#savedToastHideTimer = null;
+        }, BASE_LIFE);
+    }
 
     // Exposed so the "Load N more" button label stays in sync with the store's
     // pagination step without hardcoding "40" in a translation string.
@@ -82,14 +161,21 @@ export class DotToolsPageComponent {
         }
 
         return [
+            // Non-interactive context header so the user sees at a glance
+            // whether the menu belongs to a section or a tool. `disabled`
+            // keeps PrimeNG from treating it as a click target.
             {
-                label: this.#messageService.get('tools.menu.edit'),
-                icon: 'pi pi-pencil',
-                command: () => this.openEditSectionDialog(section)
+                label: this.#messageService.get('tools.menu.section-header'),
+                disabled: true,
+                styleClass: 'text-xs font-bold text-gray-900 uppercase tracking-wider'
             },
             {
+                label: this.#messageService.get('tools.menu.edit'),
+                command: () => this.openEditSectionDialog(section)
+            },
+            { separator: true },
+            {
                 label: this.#messageService.get('tools.menu.delete'),
-                icon: 'pi pi-trash',
                 styleClass: 'text-red-600',
                 command: () => this.confirmDeleteSection(section)
             }
@@ -104,13 +190,17 @@ export class DotToolsPageComponent {
 
         return [
             {
-                label: this.#messageService.get('tools.menu.edit'),
-                icon: 'pi pi-pencil',
-                command: () => this.openEditToolDialog(tool)
+                label: this.#messageService.get('tools.menu.tool-header'),
+                disabled: true,
+                styleClass: 'text-xs font-bold text-gray-900 uppercase tracking-wider'
             },
             {
+                label: this.#messageService.get('tools.menu.edit'),
+                command: () => this.openEditToolDialog(tool)
+            },
+            { separator: true },
+            {
                 label: this.#messageService.get('tools.menu.delete'),
-                icon: 'pi pi-trash',
                 styleClass: 'text-red-600',
                 command: () => this.confirmDeleteTool(tool)
             }
@@ -277,6 +367,57 @@ export class DotToolsPageComponent {
 
     protected isToolCustom(tool: DotToolsCatalogEntry): boolean {
         return tool.isCustom;
+    }
+
+    /**
+     * Right-click opens the Edit / Delete menu only when the tool is
+     * custom — first-party tools have no menu, so the browser's native
+     * context menu is left alone there.
+     */
+    protected onToolRowContextMenu(
+        event: MouseEvent,
+        tool: DotToolsCatalogEntry,
+        menu: ContextMenuLike
+    ): void {
+        if (!tool.isCustom) {
+            return;
+        }
+        this.setToolMenuTarget(tool);
+        this.showContextMenu(event, menu);
+    }
+
+    /**
+     * p-contextMenu positions at `event.pageX / pageY` and does not always
+     * fit itself inside the viewport when the cursor is near the right
+     * or bottom edge, so we clamp both coordinates to leave room for the
+     * overlay. Dimensions are an estimate — p-contextMenu reads the
+     * synthetic `pageX` / `pageY` after `.show()` and that's all it
+     * needs; preventDefault/stopPropagation are stubbed because the
+     * component expects to be able to call them.
+     */
+    protected showContextMenu(event: MouseEvent, menu: ContextMenuLike): void {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const estimatedWidth = 220;
+        const estimatedHeight = 100;
+        const margin = 8;
+        const pageX = Math.max(
+            margin,
+            Math.min(event.pageX, window.innerWidth - estimatedWidth - margin)
+        );
+        const pageY = Math.max(
+            margin,
+            Math.min(event.pageY, window.innerHeight - estimatedHeight - margin)
+        );
+
+        const noop = (): void => undefined;
+        menu.show({
+            pageX,
+            pageY,
+            preventDefault: noop,
+            stopPropagation: noop
+        } as unknown as Event);
     }
 
     private openEditSectionDialog(section: DotToolsSection): void {
