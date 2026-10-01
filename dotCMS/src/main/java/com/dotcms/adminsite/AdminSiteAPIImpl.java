@@ -195,18 +195,30 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
         return false;
     }
 
+    /**
+     * Matches a host against the canonical admin URL and trusted domains, ignoring
+     * ports and IPv6 brackets. IPv6 literals match exactly; DNS names also allow
+     * dot-boundary subdomains. Malformed bracketed hosts are rejected.
+     *
+     * @param site the host to check, optionally including a port
+     * @return true when the host is an explicitly trusted admin host
+     */
     @Override
     public boolean isAdminSite(final String site) {
         if (!UtilMethods.isSet(site)) {
             return false;
         }
         final String host = stripPort(site.toLowerCase());
+        if (!UtilMethods.isSet(host)) {
+            return false;
+        }
 
         // The host of the configured ADMIN_SITE_URL is always considered an admin domain.
         // Use java.net.URI here because java.net.URL's constructors are deprecated in Java 20+.
         final String adminUrlHost = Try.of(() -> URI.create(getAdminSiteUrl()).getHost())
                 .filter(UtilMethods::isSet)
                 .map(String::toLowerCase)
+                .map(AdminSiteAPIImpl::stripPort)
                 .getOrNull();
         if (UtilMethods.isSet(adminUrlHost) && matchesDomain(host, adminUrlHost)) {
             return true;
@@ -221,15 +233,48 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
     }
 
     /**
-     * Matches a host against an admin domain on exact match or dot-boundary subdomain match,
-     * e.g. "admin.dotcms.com" and "dotcms.com" match "dotcms.com", but "mydotcms.com" does not.
+     * Matches DNS names exactly or on a dot-boundary subdomain. IPv6 literals,
+     * whether configured with or without brackets, are compared exactly.
+     *
+     * @param host the normalized request host
+     * @param domain the trusted domain or IPv6 literal
+     * @return true when the host matches the trusted domain
      */
     private static boolean matchesDomain(final String host, final String domain) {
-        return host.equals(domain) || host.endsWith("." + domain);
+        final String normalizedDomain = domain.startsWith("[") ? stripPort(domain) : domain;
+        if (!UtilMethods.isSet(normalizedDomain)) {
+            return false;
+        }
+        return host.equals(normalizedDomain)
+                || (!normalizedDomain.contains(":") && host.endsWith("." + normalizedDomain));
     }
 
+    /**
+     * Removes a host's port and IPv6 brackets without splitting an IPv6 address.
+     * An unbracketed value with multiple colons is treated as a bare IPv6 host,
+     * not as an address with a port. Bracketed values must contain a valid IPv6
+     * literal and may have only a numeric port suffix.
+     *
+     * @param site the host, optionally including brackets and a port
+     * @return the host without brackets or port, or an empty string for malformed bracketed input
+     */
     private static String stripPort(final String site) {
-        return site.contains(":") ? site.substring(0, site.indexOf(":")) : site;
+        if (site.startsWith("[")) {
+            final int end = site.indexOf(']');
+            if (end < 0) {
+                return "";
+            }
+            final String suffix = site.substring(end + 1);
+            if (!suffix.isEmpty() && !suffix.matches(":[0-9]+")) {
+                return "";
+            }
+            return Try.of(() -> URI.create("http://" + site).getHost())
+                    .filter(UtilMethods::isSet)
+                    .map(host -> host.substring(1, host.length() - 1))
+                    .getOrElse("");
+        }
+        final int colon = site.indexOf(':');
+        return colon >= 0 && colon == site.lastIndexOf(':') ? site.substring(0, colon) : site;
     }
 
 
