@@ -19,7 +19,7 @@ import { SelectModule } from 'primeng/select';
 import { catchError, finalize, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DOT_TOOLS_SECTION_ICONS } from '../constants/dot-tools.constants';
 import { DotToolsStore } from '../dot-tools-page/store/dot-tools.store';
@@ -46,7 +46,14 @@ interface IconOption {
 @Component({
     selector: 'dot-tools-section-dialog',
     standalone: true,
-    imports: [ReactiveFormsModule, InputTextModule, SelectModule, ButtonModule, DotMessagePipe],
+    imports: [
+        ReactiveFormsModule,
+        InputTextModule,
+        SelectModule,
+        ButtonModule,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ],
     templateUrl: './dot-tools-section-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })

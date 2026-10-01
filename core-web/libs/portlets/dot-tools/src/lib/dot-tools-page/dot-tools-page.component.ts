@@ -22,8 +22,6 @@ import { MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { take } from 'rxjs/operators';
-
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -32,11 +30,7 @@ import { DotToolsStore } from './store/dot-tools.store';
 import { CATALOG_LOAD_MORE_STEP } from '../constants/dot-tools.constants';
 import { DotToolsSectionDialogComponent } from '../dot-tools-section-dialog/dot-tools-section-dialog.component';
 import { DotToolsToolDialogComponent } from '../dot-tools-tool-dialog/dot-tools-tool-dialog.component';
-import {
-    DotToolsCatalogEntry,
-    DotToolsSection,
-    DotToolsToolForm
-} from '../models/dot-tools.models';
+import { DotToolsCatalogEntry, DotToolsSection } from '../models/dot-tools.models';
 
 @Component({
     selector: 'dot-tools-page',
@@ -261,19 +255,15 @@ export class DotToolsPageComponent {
     }
 
     protected openNewToolDialog(): void {
-        const ref = this.#dialogService.open(DotToolsToolDialogComponent, {
+        // Tool dialog owns its submit for the same reason the section
+        // dialog does (duplicate id → 400 renders inline).
+        this.#dialogService.open(DotToolsToolDialogComponent, {
             header: this.#messageService.get('tools.new-tool'),
             width: '700px',
             closable: true,
             closeOnEscape: true,
             draggable: false,
             position: 'center'
-        });
-
-        ref?.onClose.pipe(take(1)).subscribe((form: DotToolsToolForm | undefined) => {
-            if (form) {
-                this.store.createCustomTool(form);
-            }
         });
     }
 
@@ -304,9 +294,9 @@ export class DotToolsPageComponent {
 
     private openEditToolDialog(tool: DotToolsCatalogEntry): void {
         // The tool dialog fetches its own prefill from
-        // GET /v1/portlet/custom/{id} (PR #37678). We just pass the catalog
-        // entry so it can seed the form while the prefill is in flight.
-        const ref = this.#dialogService.open(DotToolsToolDialogComponent, {
+        // GET /v1/portlet/custom/{id} and owns the update submit so a
+        // rejected write (e.g. duplicate id) can render inline.
+        this.#dialogService.open(DotToolsToolDialogComponent, {
             header: this.#messageService.get('tools.edit-tool'),
             width: '700px',
             data: { tool },
@@ -314,12 +304,6 @@ export class DotToolsPageComponent {
             closeOnEscape: true,
             draggable: false,
             position: 'center'
-        });
-
-        ref?.onClose.pipe(take(1)).subscribe((form: DotToolsToolForm | undefined) => {
-            if (form) {
-                this.store.updateCustomTool(form);
-            }
         });
     }
 

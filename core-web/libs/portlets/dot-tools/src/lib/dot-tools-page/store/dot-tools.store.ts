@@ -162,13 +162,13 @@ export const DotToolsStore = signalStore(
                 .pipe(
                     take(1),
                     catchError((error) => {
-                        // The initial load has its own error UX (`showError`
-                        // renders a retry card in the sections panel), and a
-                        // 404 here is expected while the section-endpoints PR
-                        // #37729 hasn't shipped — we do not want the global
-                        // "This URL does not exist" modal covering it. Route
-                        // any non-404 to the global handler so real backend
-                        // outages still surface with a toast.
+                        // The initial load has its own error UX
+                        // (`showError` renders a retry card in the sections
+                        // panel). A 404 reaching this handler would also
+                        // surface as the global "This URL does not exist"
+                        // modal and cover that card, so 404s stay out of
+                        // the global handler here. Everything else routes
+                        // through it so real backend problems still toast.
                         if (!isNotFound(error)) {
                             httpErrorManager.handle(error);
                         }
@@ -189,15 +189,20 @@ export const DotToolsStore = signalStore(
         }
 
         // Fire-and-forget mutations route errors through the global handler.
-        // Used for the operations that can only fail with generic server
-        // errors — the write path where a specific error needs inline
-        // handling (section create/update) returns an Observable instead.
-        function runMutation<T>(source$: Observable<T>, onSuccess: (result: T) => void) {
+        // The write path where a specific error needs inline handling
+        // (section create/update) returns an Observable instead; onError
+        // lets callers roll back optimistic patches before status flips.
+        function runMutation<T>(
+            source$: Observable<T>,
+            onSuccess: (result: T) => void,
+            onError?: (error: unknown) => void
+        ) {
             patchState(store, { status: 'loading' });
             source$
                 .pipe(
                     take(1),
                     catchError((error) => {
+                        onError?.(error);
                         httpErrorManager.handle(error);
                         patchState(store, { status: 'loaded' });
 
@@ -221,10 +226,48 @@ export const DotToolsStore = signalStore(
             });
         }
 
+        // Optimistic single-section patch for the three tool-mutation
+        // paths (toggle, remove, drag-reorder). Patching before the
+        // request means a second quick click reads the pending list
+        // instead of the server-confirmed one — without this, two fast
+        // checkbox clicks race: the second request computes a
+        // portletIds without the first tool and the full-replace drops
+        // it. Snapshot the whole sections array so a failure restores
+        // every section (ordering is immaterial, the previous array
+        // itself is the rollback value).
         function replaceSectionTools(sectionId: string, portletIds: string[]) {
-            runMutation(toolsService.setSectionTools(sectionId, portletIds), (sections) => {
-                commitSectionList(sections);
+            const snapshot = store.sections();
+            patchState(store, {
+                sections: snapshot.map((section) => {
+                    if (section.id !== sectionId) {
+                        return section;
+                    }
+                    const titleFor = (id: string): string => {
+                        const prevIndex = section.portletIds.indexOf(id);
+                        if (prevIndex !== -1) {
+                            return section.portletTitles[prevIndex] ?? id;
+                        }
+
+                        return catalogTitleFor(id);
+                    };
+
+                    return {
+                        ...section,
+                        portletIds,
+                        portletTitles: portletIds.map(titleFor)
+                    };
+                })
             });
+
+            runMutation(
+                toolsService.setSectionTools(sectionId, portletIds),
+                (sections) => commitSectionList(sections),
+                () => patchState(store, { sections: snapshot })
+            );
+        }
+
+        function catalogTitleFor(id: string): string {
+            return store.catalog().find((entry) => entry.id === id)?.title ?? id;
         }
 
         return {
@@ -307,11 +350,13 @@ export const DotToolsStore = signalStore(
             },
 
             reorderSections(orderedIds: string[]) {
-                // Optimistic patch — the server returns the full list on success
-                // and commitSectionList replaces state, so any client drift is
-                // corrected then.
+                // Optimistic patch: the server returns the full list on
+                // success and commitSectionList replaces state. On failure
+                // we restore the pre-reorder sections — otherwise the UI
+                // keeps an order that was never saved until next reload.
+                const snapshot = store.sections();
                 const bySection = new Map(
-                    store.sections().map((section) => [section.id, section] as const)
+                    snapshot.map((section) => [section.id, section] as const)
                 );
                 const optimistic = orderedIds
                     .map((id, index) => {
@@ -323,9 +368,11 @@ export const DotToolsStore = signalStore(
 
                 patchState(store, { sections: optimistic });
 
-                runMutation(toolsService.reorderSections(orderedIds), (sections) => {
-                    commitSectionList(sections);
-                });
+                runMutation(
+                    toolsService.reorderSections(orderedIds),
+                    (sections) => commitSectionList(sections),
+                    () => patchState(store, { sections: snapshot })
+                );
             },
 
             reorderSelectedSectionTools(portletIds: string[]) {
@@ -359,23 +406,48 @@ export const DotToolsStore = signalStore(
                 );
             },
 
-            createCustomTool(form: DotToolsToolForm) {
-                runMutation(toolsService.createCustomTool(form), (created) => {
-                    const catalog = [...store.catalog(), created].sort((a, b) =>
-                        a.title.localeCompare(b.title)
-                    );
-                    patchState(store, { catalog, status: 'loaded' });
-                });
+            /**
+             * Returns an Observable so the tool dialog can render the
+             * server's rejection (e.g. duplicate portletId) inline
+             * instead of behind the global toast. Mirrors createSection.
+             */
+            createCustomTool(form: DotToolsToolForm): Observable<DotToolsCatalogEntry> {
+                patchState(store, { status: 'loading' });
+
+                return toolsService.createCustomTool(form).pipe(
+                    take(1),
+                    tap((created) => {
+                        const catalog = [...store.catalog(), created].sort((a, b) =>
+                            a.title.localeCompare(b.title)
+                        );
+                        patchState(store, { catalog, status: 'loaded' });
+                    }),
+                    catchError((error) => {
+                        patchState(store, { status: 'loaded' });
+
+                        return throwError(() => error);
+                    })
+                );
             },
 
-            updateCustomTool(form: DotToolsToolForm) {
-                runMutation(toolsService.updateCustomTool(form), (updated) => {
-                    const catalog = store
-                        .catalog()
-                        .map((entry) => (entry.id === updated.id ? updated : entry))
-                        .sort((a, b) => a.title.localeCompare(b.title));
-                    patchState(store, { catalog, status: 'loaded' });
-                });
+            updateCustomTool(form: DotToolsToolForm): Observable<DotToolsCatalogEntry> {
+                patchState(store, { status: 'loading' });
+
+                return toolsService.updateCustomTool(form).pipe(
+                    take(1),
+                    tap((updated) => {
+                        const catalog = store
+                            .catalog()
+                            .map((entry) => (entry.id === updated.id ? updated : entry))
+                            .sort((a, b) => a.title.localeCompare(b.title));
+                        patchState(store, { catalog, status: 'loaded' });
+                    }),
+                    catchError((error) => {
+                        patchState(store, { status: 'loaded' });
+
+                        return throwError(() => error);
+                    })
+                );
             },
 
             deleteCustomTool(id: string) {

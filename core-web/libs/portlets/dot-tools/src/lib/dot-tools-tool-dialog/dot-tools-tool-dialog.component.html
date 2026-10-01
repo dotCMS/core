@@ -2,10 +2,7 @@
     <p class="text-color-secondary mb-4">{{ 'tools.tool-dialog.description' | dm }}</p>
 
     <div class="field">
-        <label for="tools-tool-name">
-            {{ 'tools.form.name' | dm }}
-            <span class="text-red-600">*</span>
-        </label>
+        <label dotFieldRequired for="tools-tool-name">{{ 'tools.form.name' | dm }}</label>
         <input
             pInputText
             id="tools-tool-name"
@@ -98,17 +95,27 @@
                 <span class="material-symbols-outlined text-base! leading-none!">warning</span>
                 <span>{{ 'tools.form.error.summary' | dm }}</span>
             </span>
+        } @else if ($submitError(); as message) {
+            <span
+                class="mr-auto inline-flex items-center gap-2 text-red-600"
+                data-testid="tools-tool-submit-error">
+                <span class="material-symbols-outlined text-base! leading-none!">warning</span>
+                <span>{{ message }}</span>
+            </span>
         } @else {
             <span class="mr-auto"></span>
         }
         <p-button
             [label]="'tools.form.cancel' | dm"
             [text]="true"
+            [disabled]="$submitting()"
             (onClick)="onCancel()"
             data-testid="tools-tool-cancel-btn" />
         <p-button
             [label]="(isEdit ? 'tools.form.save' : 'tools.form.create') | dm"
             type="submit"
+            [loading]="$submitting()"
+            [disabled]="$prefillLoading()"
             data-testid="tools-tool-save-btn" />
     </div>
 </form>

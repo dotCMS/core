@@ -1,5 +1,6 @@
 import { EMPTY } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -20,9 +21,10 @@ import { catchError, finalize, take } from 'rxjs/operators';
 
 import { DotContentTypeService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DOT_TOOLS_BASE_TYPES, DOT_TOOLS_DATA_VIEW_MODES } from '../constants/dot-tools.constants';
+import { DotToolsStore } from '../dot-tools-page/store/dot-tools.store';
 import {
     DotToolsCatalogEntry,
     DotToolsCustomToolConfig,
@@ -50,6 +52,7 @@ interface ContentTypeOption {
         MultiSelectModule,
         SelectButtonModule,
         ButtonModule,
+        DotFieldRequiredDirective,
         DotMessagePipe
     ],
     templateUrl: './dot-tools-tool-dialog.component.html',
@@ -62,6 +65,7 @@ export class DotToolsToolDialogComponent implements OnInit {
     readonly #fb = inject(FormBuilder);
     readonly #contentTypeService = inject(DotContentTypeService);
     readonly #toolsService = inject(DotToolsService);
+    readonly #store = inject(DotToolsStore);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
     protected readonly form = this.#fb.nonNullable.group({
@@ -78,6 +82,14 @@ export class DotToolsToolDialogComponent implements OnInit {
     protected readonly $contentTypesLoading = signal(true);
     protected readonly $prefillLoading = signal(false);
     protected readonly $submitted = signal(false);
+    protected readonly $submitting = signal(false);
+
+    /**
+     * Message the server sent back on a rejected write — typically a
+     * duplicate `portletId` from `PortletResource`. Non-null keeps the
+     * dialog open and renders inline above the footer buttons.
+     */
+    protected readonly $submitError = signal<string | null>(null);
 
     protected readonly $nameShowsError = computed(() => {
         const control = this.form.controls.portletName;
@@ -137,6 +149,7 @@ export class DotToolsToolDialogComponent implements OnInit {
 
     protected onSubmit(): void {
         this.$submitted.set(true);
+        this.$submitError.set(null);
 
         if (this.form.invalid) {
             this.form.markAllAsTouched();
@@ -144,11 +157,70 @@ export class DotToolsToolDialogComponent implements OnInit {
             return;
         }
 
-        this.ref.close(this.form.getRawValue());
+        const value = this.form.getRawValue();
+        const request$ = this.isEdit
+            ? this.#store.updateCustomTool(value)
+            : this.#store.createCustomTool(value);
+
+        this.$submitting.set(true);
+
+        request$
+            .pipe(
+                take(1),
+                catchError((error: unknown) => {
+                    if (this.#isValidationError(error)) {
+                        // Server rejected the write (duplicate id, bad base
+                        // type, etc.) — show inline so the user can correct
+                        // without losing the input.
+                        this.$submitError.set(this.#extractMessage(error));
+                    } else {
+                        this.#httpErrorManager.handle(error as HttpErrorResponse);
+                        this.ref.close();
+                    }
+
+                    return EMPTY;
+                }),
+                finalize(() => this.$submitting.set(false))
+            )
+            .subscribe(() => this.ref.close(true));
     }
 
     protected onCancel(): void {
         this.ref.close();
+    }
+
+    #isValidationError(error: unknown): boolean {
+        return error instanceof HttpErrorResponse && error.status === 400;
+    }
+
+    /** Same best-effort shape handling as the section dialog. */
+    #extractMessage(error: unknown): string {
+        if (error instanceof HttpErrorResponse) {
+            const body = error.error as
+                | string
+                | { message?: string; errors?: Array<{ message?: string }> }
+                | null;
+
+            if (typeof body === 'string' && body.length > 0) {
+                return body;
+            }
+
+            if (body && typeof body === 'object') {
+                if (typeof body.message === 'string' && body.message.length > 0) {
+                    return body.message;
+                }
+                const first = body.errors?.[0]?.message;
+                if (typeof first === 'string' && first.length > 0) {
+                    return first;
+                }
+            }
+
+            if (typeof error.statusText === 'string' && error.statusText.length > 0) {
+                return error.statusText;
+            }
+        }
+
+        return 'The tool could not be saved. Please try again.';
     }
 
     #loadContentTypes(): void {
