@@ -58,8 +58,11 @@ Identical to delete, on the generic job API.
 indefinitely: the job framework does not purge finished jobs. The durable notification (§6) stays
 until the author dismisses it.
 
-**Differs from delete**: a client has **no reason to read the active-runs listing**. Nothing is
-marked while a duplication runs, so there is no in-flight state to restore after a reload.
+**Differs from delete**: nothing is marked while a duplication runs, so no folder's appearance
+depends on the active-runs listing. The Content Drive client still reads it on load
+(`GET /api/v1/jobs/folderBulkDuplicate/active`), to put back the background status of the author's
+own runs that a reload lost; the completion that follows ends it (frontend FR-015 as amended,
+2026-09-28).
 
 ---
 

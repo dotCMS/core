@@ -100,14 +100,13 @@ if(!hasPermissions) {
 	String content_css = "content_css : \"" + Config.getStringProperty("WYSIWYG_CSS", "/html/css/tiny_mce.css") + "\",";
 %>
 
-<script type="text/javascript" src="/html/js/tinymce/js/tinymce/tinymce.min.js"></script>
+<script type="text/javascript" src="/ext/tinymce/tinymce.min.js"></script>
 
 
 <script type="text/javascript">
 
 	tinymce.init({
 	    selector: "textarea",
-	    toolbar: "mybutton",
 	    toolbar: false,
 	    menubar: false,
 	    statusbar:false,
@@ -116,15 +115,11 @@ if(!hasPermissions) {
 	    autoresize_min_height: 50,
 	    autoresize_bottom_margin: 50,
 	    preview_styles:false,
-	    setup: function(editor) {
-	        editor.addMenuItem('myitem', {
-	            text: 'My menu item',
-	            context: 'tools',
-	            onclick: function() {
-	                editor.insertContent('Some content');
-	            }
-	        });
-	    }
+	    // dotCMS ships TinyMCE under the GPL license, never commercial.
+	    license_key: "gpl",
+	    // TinyMCE 6+ shows a premium-features promotion element by default; 4.9.6 had no such
+	    // thing, so this keeps the toolbar matching the pre-upgrade look.
+	    promotion: false
 	});
 	
 

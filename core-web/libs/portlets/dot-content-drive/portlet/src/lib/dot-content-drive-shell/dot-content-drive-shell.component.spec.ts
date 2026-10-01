@@ -110,6 +110,11 @@ const editPanelRequestSignal: WritableSignal<EditContentDialogData | null> = sig
  * because the deep-link describe mounts its own shell without the main block's beforeEach. */
 const folderDeleteRefusalSignal: WritableSignal<DotFolderBulkDeleteRefusalKind | undefined> =
     signal(undefined);
+/** Why a folder duplication never became a run, as the store holds it (#37062). */
+const folderDuplicateRefusalSignal: WritableSignal<string | undefined> = signal(undefined);
+// How many folders one duplicate or delete may carry; `null` is no ceiling advertised.
+const folderDuplicateMaxPathsSignal: WritableSignal<number | null> = signal(null);
+const folderDeleteMaxPathsSignal: WritableSignal<number | null> = signal(null);
 const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
 // The site-level answer the drop guard falls back to at the root. Module scope for the same reason
 // as the one above: two store mocks in this file read it from describes with no shared `beforeEach`.
@@ -243,6 +248,9 @@ describe('DotContentDriveShellComponent', () => {
         pageLeaveRequestSubject = new Subject<void>();
         dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
         folderDeleteRefusalSignal.set(undefined);
+        folderDuplicateRefusalSignal.set(undefined);
+        folderDuplicateMaxPathsSignal.set(null);
+        folderDeleteMaxPathsSignal.set(null);
         actionExecutionResultSignal = signal<DotContentDriveActionExecutionResult | undefined>(
             undefined
         );
@@ -258,12 +266,18 @@ describe('DotContentDriveShellComponent', () => {
                     initContentDrive: vi.fn(),
                     folderDeleteRefusal: folderDeleteRefusalSignal,
                     clearFolderDeleteRefusal: vi.fn(),
+                    folderDuplicateRefusal: folderDuplicateRefusalSignal,
+                    folderDuplicateMaxPaths: folderDuplicateMaxPathsSignal,
+                    folderDeleteMaxPaths: folderDeleteMaxPathsSignal,
+                    clearFolderDuplicateRefusal: vi.fn(),
                     // No advertised ceiling by default, which is the case that leaves the refusing
                     // to the server. The gate's own tests set one.
                     uploadCeilings: vi.fn().mockReturnValue(null),
                     // Read by the toolbar (rendered for real here) and the drop zone: both gate
                     // their creation affordances on it.
                     $canAddChildren: canAddChildrenSignal,
+                    // Read by the folder menu the shell renders, to gate Duplicate.
+                    $canDuplicateHere: canAddChildrenSignal,
                     siteCanAddChildren: siteCanAddChildrenSignal,
                     // The sidebar this shell renders reads it to decide whether to offer the
                     // System Host entry at all.
@@ -292,10 +306,13 @@ describe('DotContentDriveShellComponent', () => {
                     setStatus: vi.fn(),
                     startExternalRun: vi.fn().mockReturnValue('run-1'),
                     trackUploadJob: vi.fn(),
-                    updateExternalRun: vi.fn(),
                     activeRunCount: signal(0),
                     toolbarRun: toolbarRunSignal,
                     toolbarRunCount: toolbarRunCountSignal,
+                    // The Action Center and the toolbar lock only on runs that are not
+                    // backgrounded, and both render inside the shell.
+                    blockingRunCount: signal(0),
+                    toolbarBlockingRunCount: toolbarRunCountSignal,
                     busyRows: signal<string[]>([]),
                     allBusyRows: signal<string[]>([]),
                     endExternalRun: vi.fn(),
@@ -688,7 +705,8 @@ describe('DotContentDriveShellComponent', () => {
                 ['EMPTY_SELECTION', 'content-drive.delete.refused.empty-selection'],
                 ['OVER_MAX_PATHS', 'content-drive.delete.refused.over-max-paths'],
                 ['NOT_ENTITLED', 'content-drive.delete.refused.not-entitled'],
-                ['OVERLAPPING_RUN', 'content-drive.delete.refused.overlapping-run']
+                ['OVERLAPPING_RUN', 'content-drive.delete.refused.overlapping-run'],
+                ['UNCLASSIFIED', 'content-drive.delete.refused.unclassified']
             ])('should say %s in its own words', (kind, key) => {
                 refuse(kind as DotFolderBulkDeleteRefusalKind);
 
@@ -703,10 +721,66 @@ describe('DotContentDriveShellComponent', () => {
                 expect(store.clearFolderDeleteRefusal).toHaveBeenCalled();
             });
 
+            it('should name the most folders one delete may carry, when the server advertises it', () => {
+                folderDeleteMaxPathsSignal.set(25);
+
+                refuse('OVER_MAX_PATHS');
+
+                expect(dotMessageService.get).toHaveBeenCalledWith(
+                    'content-drive.delete.refused.over-max-paths-limit',
+                    '25'
+                );
+            });
+
             it('should say nothing while nothing has been refused', () => {
                 spectator.detectChanges();
 
                 expect(messageService.add).not.toHaveBeenCalled();
+            });
+        });
+
+        /**
+         * A duplication refused before any run existed says why in its own words, the way a
+         * delete's refusal does (developer decision, 2026-09-28).
+         */
+        describe('folder duplicate refusals', () => {
+            const refuse = (kind: string) => {
+                folderDuplicateRefusalSignal.set(kind);
+                spectator.detectChanges();
+            };
+
+            it.each([
+                ['EMPTY_SELECTION', 'content-drive.duplicate.refused.empty-selection'],
+                ['OVER_MAX_PATHS', 'content-drive.duplicate.refused.over-max-paths'],
+                ['NOT_ENTITLED', 'content-drive.duplicate.refused.not-entitled'],
+                ['UNCLASSIFIED', 'content-drive.duplicate.refused.unclassified']
+            ])('should say %s in its own words', (kind, key) => {
+                refuse(kind);
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        summary: 'content-drive.duplicate.refused.title',
+                        detail: key
+                    })
+                );
+            });
+
+            it('should consume the refusal so it is said once', () => {
+                refuse('OVER_MAX_PATHS');
+
+                expect(store.clearFolderDuplicateRefusal).toHaveBeenCalled();
+            });
+
+            it('should name the most folders one duplicate may carry, when the server advertises it', () => {
+                folderDuplicateMaxPathsSignal.set(25);
+
+                refuse('OVER_MAX_PATHS');
+
+                expect(dotMessageService.get).toHaveBeenCalledWith(
+                    'content-drive.duplicate.refused.over-max-paths-limit',
+                    '25'
+                );
             });
         });
 
@@ -845,6 +919,21 @@ describe('DotContentDriveShellComponent', () => {
                 expect(store.loadItems).not.toHaveBeenCalled();
 
                 editPanelRequestSignal.set(null);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should keep a held reload when a later outcome for another folder arrives', () => {
+                // Both are held while the author is mid-task. The later one replacing the earlier
+                // would leave this folder's reload behind, and its changes would never show.
+                selectedItemsSignal.set([MOCK_ITEMS[0]]);
+                spectator.detectChanges();
+
+                settle({ ...backgrounded, affectedFolders: ['//demo.com/test/path'] });
+                settle({ ...backgrounded, affectedFolders: ['//demo.com/somewhere/else'] });
+
+                selectedItemsSignal.set([]);
                 spectator.detectChanges();
 
                 expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
@@ -1237,6 +1326,180 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(messageService.add).not.toHaveBeenCalled();
+        });
+
+        /**
+         * A duplication's outcome reads the way a bulk folder delete's does (developer decision,
+         * 2026-09-28): the same toast levels and the same layout, in duplication's own words.
+         */
+        describe('folder duplication outcome', () => {
+            const DIAGNOSTIC = 'java.lang.IllegalStateException: for the log only';
+
+            const duplicated = (
+                overrides: Partial<DotContentDriveActionExecutionResult> = {}
+            ): DotContentDriveActionExecutionResult => ({
+                actionName: 'Duplicate',
+                outcomeKind: 'folderDuplicate',
+                successCount: 3,
+                failedCount: 0,
+                skippedCount: 0,
+                affectedFolders: ['//demo.dotcms.com/blogs'],
+                backgrounded: true,
+                failures: [],
+                ...overrides
+            });
+
+            const refused = {
+                key: '//demo.dotcms.com/blogs/beta/',
+                status: 'FAILED' as const,
+                reason: 'PERMISSION_DENIED' as const,
+                message: DIAGNOSTIC
+            };
+
+            const covered = {
+                key: '//demo.dotcms.com/blogs/alpha/child/',
+                status: 'SKIPPED' as const,
+                reason: 'COVERED_BY_PARENT' as const
+            };
+
+            it('should announce a clean run, since it finished in the background', () => {
+                settle(duplicated());
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'success' })
+                );
+            });
+
+            it('should say a stopped run was cancelled, even when every folder it reached succeeded', () => {
+                // Matches the bell, which says the duplicate was cancelled whatever the counts
+                // are. A clean-looking green toast would say the author got everything they asked.
+                settle(duplicated({ cancelled: true }));
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'warn',
+                        summary: 'content-drive.duplicate.toast.cancelled',
+                        detail: expect.stringContaining(
+                            'content-drive.duplicate.toast.cancelled-detail'
+                        )
+                    })
+                );
+            });
+
+            it('should count only the folders a cancelled run never reached as not attempted', () => {
+                // A folder its selected parent covered was duplicated inside that parent before
+                // the stop, so it is not one the run left out (FR-021a).
+                settle(
+                    duplicated({
+                        cancelled: true,
+                        successCount: 1,
+                        skippedCount: 2,
+                        failures: [
+                            covered,
+                            { key: '//demo.dotcms.com/blogs/gamma/', status: 'SKIPPED' as const }
+                        ]
+                    })
+                );
+
+                expect(dotMessageService.get).toHaveBeenCalledWith(
+                    'content-drive.duplicate.toast.cancelled-detail',
+                    'Duplicate',
+                    '1',
+                    '0',
+                    '1'
+                );
+            });
+
+            it('should report a run with a refused folder as an error, naming the folder', () => {
+                settle(duplicated({ successCount: 2, failedCount: 1, failures: [refused] }));
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        summary: 'content-drive.duplicate.toast.failed',
+                        detail: expect.stringContaining(
+                            'content-drive.duplicate.failure.permission-denied'
+                        )
+                    })
+                );
+            });
+
+            it('should read a run as clean when its only skips were covered by a selected parent', () => {
+                // The author selected a folder and its child and got the child once, inside the
+                // parent's duplicate. Nothing was left out, so nothing may read as skipped.
+                settle(duplicated({ successCount: 1, skippedCount: 1, failures: [covered] }));
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'success',
+                        summary: 'content-drive.action-center.toast.executed'
+                    })
+                );
+            });
+
+            it('should reload the listing and the sidebar tree when a duplicate completes', () => {
+                (store.loadItems as unknown as Mock).mockClear();
+                (store.loadFolders as unknown as Mock).mockClear();
+
+                // No folders named: the listing reloads whatever folder is on screen.
+                settle(duplicated({ affectedFolders: undefined }));
+
+                expect(store.loadItems).toHaveBeenCalled();
+                expect(store.loadFolders).toHaveBeenCalled();
+            });
+
+            it('should reload the listing in all site content, wherever the duplicate landed', () => {
+                // All site content lists what is inside folders, so a duplicate anywhere on the
+                // site can add to it.
+                allSiteContentSelectedSignal.set(true);
+                (store.loadItems as unknown as Mock).mockClear();
+
+                settle(duplicated({ affectedFolders: ['//demo.dotcms.com/blogs'] }));
+
+                expect(store.loadItems).toHaveBeenCalled();
+            });
+
+            it('should report it in one toast, however many kinds of shortfall it had', () => {
+                settle(
+                    duplicated({
+                        successCount: 1,
+                        failedCount: 1,
+                        skippedCount: 1,
+                        failures: [refused, covered]
+                    })
+                );
+
+                expect(messageService.add).toHaveBeenCalledTimes(1);
+            });
+
+            it("should never show the server's diagnostic text", () => {
+                settle(duplicated({ successCount: 2, failedCount: 1, failures: [refused] }));
+
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ detail: expect.stringContaining(DIAGNOSTIC) })
+                );
+            });
+
+            it("should not explain a folder with upload's or delete's copy", () => {
+                settle(
+                    duplicated({
+                        successCount: 1,
+                        failedCount: 1,
+                        skippedCount: 1,
+                        failures: [refused, covered]
+                    })
+                );
+
+                // Every key asked for, whatever its arguments: a matcher with a fixed argument count
+                // would miss the one-argument lookups summaries use.
+                const keysAskedFor = (dotMessageService.get as unknown as Mock).mock.calls.map(
+                    ([key]) => key
+                );
+
+                expect(keysAskedFor).not.toContainEqual(
+                    expect.stringMatching(/^content-drive\.(upload|delete)\./)
+                );
+            });
         });
     });
 
@@ -1771,9 +2034,11 @@ describe('DotContentDriveShellComponent', () => {
         it('should re-run the search when the user retries', () => {
             failSearch();
 
-            // The testid lands on the <p-button> host; the clickable element is the <button> it
-            // renders inside.
-            spectator.click('[data-testid="search-error-retry"] button');
+            spectator.click(
+                spectator
+                    .query(byTestId('search-error-retry'))
+                    ?.querySelector('button') as HTMLElement
+            );
 
             expect(store.loadItems).toHaveBeenCalled();
         });
@@ -3117,7 +3382,11 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(store.updateExternalRun).not.toHaveBeenCalled();
+            // Where a position would go: the run registered for the batch carries no count of
+            // what is done. (The store no longer has a way to update one at all.)
+            expect(store.startExternalRun).toHaveBeenCalledWith(
+                expect.not.objectContaining({ processed: expect.anything() })
+            );
         });
 
         it('should remember the accepted batch, with where it landed', () => {
@@ -4979,6 +5248,43 @@ describe('DotContentDriveShellComponent', () => {
             ...overrides
         });
 
+        it('should say a stopped delete was cancelled, even when every folder it reached went', () => {
+            // As the bell says it: a cancelled run must not read as a clean one.
+            actionExecutionResultSignal.set(deleteOutcome({ cancelled: true }) as never);
+            spectator.detectChanges();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'warn',
+                    summary: 'content-drive.delete.toast.cancelled',
+                    detail: expect.stringContaining('content-drive.delete.toast.cancelled-detail')
+                })
+            );
+        });
+
+        it('should read a delete as clean when its only skips went with a selected parent', () => {
+            actionExecutionResultSignal.set(
+                deleteOutcome({
+                    skippedCount: 1,
+                    failures: [
+                        {
+                            key: '//demo.dotcms.com/blogs/alpha/child/',
+                            status: 'SKIPPED',
+                            reason: 'COVERED_BY_PARENT'
+                        }
+                    ]
+                }) as never
+            );
+            spectator.detectChanges();
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    summary: 'content-drive.action-center.toast.executed'
+                })
+            );
+        });
+
         it('should refresh the listing when a delete completes', () => {
             (store.loadItems as unknown as Mock).mockClear();
 
@@ -5120,6 +5426,10 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     initContentDrive: vi.fn(),
                     folderDeleteRefusal: folderDeleteRefusalSignal,
                     clearFolderDeleteRefusal: vi.fn(),
+                    folderDuplicateRefusal: folderDuplicateRefusalSignal,
+                    folderDuplicateMaxPaths: folderDuplicateMaxPathsSignal,
+                    folderDeleteMaxPaths: folderDeleteMaxPathsSignal,
+                    clearFolderDuplicateRefusal: vi.fn(),
                     // No advertised ceiling by default, which is the case that leaves the refusing
                     // to the server. The gate's own tests set one.
                     uploadCeilings: vi.fn().mockReturnValue(null),
