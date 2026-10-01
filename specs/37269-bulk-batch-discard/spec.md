@@ -82,7 +82,7 @@ other content. Setting `CONTENTLET_JSON_MAX_STRING_LENGTH_MB` has no effect.
 
 ## Root-Cause Hypothesis
 
-Two independent facts combine.
+Three facts combine.
 
 1. **Where the document is parsed differs by engine.** The Elasticsearch path stores each
    document as a raw string and the client (`elasticsearch-rest-high-level-client` 7.10.2,
@@ -105,9 +105,30 @@ Two independent facts combine.
    add-time parse above) — transport errors, but also any per-document problem the client only
    detects while writing the request. In Phase 3 the primary listener is not a shadow, so the
    OpenSearch path inherits whole-group marking for those. The plan must confirm which
-   per-document errors can still reach `flush()` on the OpenSearch path; the per-document fix
-   for the Elasticsearch path belongs at its add site (`ContentletIndexOperationsES.addIndexOpToProcessor`),
-   mirroring OpenSearch.
+   per-document errors can still reach `flush()` on the OpenSearch path.
+3. **One journal row covers several documents, and any success deletes it.** A reindex entry is
+   per identifier, but `mapEntry` → `loadVersionInodes` turns it into one document per language
+   and per distinct working/live version (`identifier_lang_variant`). On the way back,
+   `BulkProcessorListener.afterBulk(long, List)` cuts each result id down to the identifier and
+   `handleSuccess` deletes the row (`deleteReindexEntry`), while `markAsFailed` only `UPDATE`s it.
+   So if one document of an identifier is rejected at add time but a sibling document of the same
+   identifier was queued and indexed, the sibling's success deletes the failure record: the
+   rejected document never reaches the index and nothing records it. `loadVersionInodes` uses a
+   `HashMap`, so whether the sibling is queued first depends on iteration order. This already
+   applies to the OpenSearch path today (it rejects at add time), and it rules out fixing the
+   Elasticsearch path at its add site (`ContentletIndexOperationsES.addIndexOpToProcessor`).
+   Raised in review by a teammate.
+
+Where the check belongs follows from (3): **before any document of the entry is queued**, in the
+mapping step (`mapEntry` / `mapContentletForProcessor`), on the final document `Map` produced by
+`toMap()`. That map is computed once and shared by every engine ("compute mapping once; reuse
+across all providers"), so one check protects the Elasticsearch and OpenSearch paths alike.
+Checking string lengths on the map is cheap (no extra parse). It has to run on the final map
+because `catchall` concatenates every field value into one string (`ESMappingAPIImpl`), so it is
+the largest string in the document and can cross the limit while the authored body is only about
+half of it — which is why a ≈9.5 MB body already fails. The limit is read from Jackson's
+effective default (`StreamReadConstraints.defaults().getMaxStringLength()`, 20,000,000 in 2.17),
+not hard-coded, so it tracks the value the client's parser will actually enforce.
 
 The unit of damage is the group fetched from the queue in that iteration
 (`REINDEX_RECORDS_TO_FETCH`), not only the engine request; records already confirmed indexed by
@@ -131,6 +152,13 @@ Open questions (to confirm in planning, not blocking the spec):
 - A document that cannot be serialized for the engine fails **individually**; every other
   document in the same group is indexed. This holds for the Elasticsearch path (primary in
   Phases 0–1) and the OpenSearch path (primary in Phase 3).
+- The unit that fails is the **document**, not the identifier. When one language or version of
+  an identifier is rejected, that document is withheld and the identifier's other documents
+  (other languages, the other of working/live) are indexed. The identifier's journal row keeps
+  the failure: a sibling document's success in the same batch must not delete it. The result
+  must not depend on the order in which an identifier's versions are loaded.
+- The rejection happens before anything of the entry is queued, on the final document map, so it
+  covers both engines from one place.
 - The failure is attributed to the offending contentlet: identifier, inode, the field involved
   where it can be determined, and the value's real size — not the parser's buffer size — instead
   of every record in the group carrying the same message.
@@ -151,6 +179,9 @@ Open questions (to confirm in planning, not blocking the spec):
   guard).
 - Changing the index document shape (e.g. how often the body is emitted into the document).
 - Reindex batch sizing defaults.
+- A configuration switch to fail the whole identifier instead of the single document. Considered
+  and rejected: the only motive is cross-language consistency, it doubles the test matrix, and it
+  can be added later from the same single decision point if a customer needs it.
 
 ## Regression Risk *(mandatory)*
 
@@ -158,9 +189,11 @@ Open questions (to confirm in planning, not blocking the spec):
   publishes, workflow actions, and full reindex — in all four migration phases. A mistake in
   the content-vs-transport classification could either keep discarding healthy content
   (classification too narrow) or mark a genuinely unreachable engine's batch as successful /
-  individually failed (too broad), exhausting retries during an outage. Per-document
-  validation on the Elasticsearch path adds a parse per document; its cost on a full reindex
-  must be measured.
+  individually failed (too broad), exhausting retries during an outage. The size check is a
+  walk over the document map's string values (no extra parse), so its cost is expected to be
+  negligible. Keeping the journal row when a sibling succeeds means a retry re-sends the
+  identifier's healthy documents too; index writes are idempotent per document id, so this is
+  safe.
 - **Backward compatibility**: No change to index mappings, REST contracts or the
   `dist_reindex_journal` schema. The text stored as a failure reason becomes per-document; any
   tooling that grouped failures by identical message will see distinct messages.
@@ -181,15 +214,20 @@ Open questions (to confirm in planning, not blocking the spec):
 - **AC-004**: In a dual-write phase (Phase 1), the healthy contentlets reach both engines, and a
   failure on the shadow engine alone does not leave a failure record for a contentlet the
   primary indexed.
-- **AC-005**: When the engine is unreachable or rejects the request as a whole (connection
+- **AC-005**: An identifier with a healthy live version and an oversized working version, and an
+  identifier with two languages of which one is oversized: after the iteration each identifier
+  has exactly one failure record in `dist_reindex_journal`, its healthy documents are present in
+  the primary engine's indices, and the oversized document is absent. The outcome is the same
+  regardless of the order in which the versions are loaded (exercise both orders).
+- **AC-006**: When the engine is unreachable or rejects the request as a whole (connection
   refused / timeout / authentication), every record of the group is still marked failed and
   retried as today.
 - **Verification method**: A new integration test in `dotcms-integration` (named `*Test`,
   registered in a `MainSuite*` class) that builds the reproduction — one >20,000,000-character
   field plus N healthy contentlets fetched in the same iteration — and asserts AC-001/AC-002,
-  parameterized or repeated for Phase 0, Phase 1 and Phase 3. It must fail (Red) on current
-  code before the fix. AC-005 is covered by a unit test of the classification with a transport
-  exception. The weekly OpenSearch Phase Sweep exercises the phase variants in CI.
+  plus the sibling scenarios of AC-005, parameterized or repeated for Phase 0, Phase 1 and
+  Phase 3. It must fail (Red) on current code before the fix. AC-006 is covered by a unit test of
+  the classification with a transport exception. The weekly OpenSearch Phase Sweep exercises the phase variants in CI.
 
 ## Assumptions
 
