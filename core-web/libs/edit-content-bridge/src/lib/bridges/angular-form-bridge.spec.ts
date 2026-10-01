@@ -1383,6 +1383,24 @@ describe('AngularFormBridge with a real FormGroup', () => {
             expect((globalThis as any).DotCustomFieldApi).toBe(bridge);
         });
 
+        it('should point window.DotCustomFieldApi back at the parent bridge when the nested one was already destroyed', () => {
+            (globalThis as any).DotCustomFieldApi = bridge;
+
+            AngularFormBridge.pushInstance();
+            const nested = AngularFormBridge.getInstance(
+                new FormGroup({ title: new FormControl('') }),
+                zone,
+                dialogService
+            );
+            (globalThis as any).DotCustomFieldApi = nested;
+
+            // The dialog's last custom field goes away before the dialog closes.
+            nested.destroy();
+            AngularFormBridge.popInstance();
+
+            expect((globalThis as any).DotCustomFieldApi).toBe(bridge);
+        });
+
         it('should leave window.DotCustomFieldApi alone when it is not the popped bridge', () => {
             const other = { name: 'set by someone else' };
             (globalThis as any).DotCustomFieldApi = other;

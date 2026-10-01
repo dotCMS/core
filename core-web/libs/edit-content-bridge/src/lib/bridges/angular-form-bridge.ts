@@ -50,6 +50,11 @@ export class AngularFormBridge implements FormBridge {
     #dialogService: DialogService;
     #dialogRef: DynamicDialogRef | null = null;
     #visibilityWarningEmitted: Record<'show' | 'hide', boolean> = { show: false, hide: false };
+    /**
+     * Set once the bridge is torn down, so {@link popInstance} can tell a dead bridge on the
+     * global from a live one.
+     */
+    #destroyed = false;
 
     /**
      * Optional callback invoked when a field's visibility changes via show()/hide().
@@ -210,10 +215,13 @@ export class AngularFormBridge implements FormBridge {
 
         // The nested context's custom fields pointed the global at its own bridge, which is now
         // destroyed. Templates behind the dialog that look `DotCustomFieldApi` up lazily (in an
-        // event handler) would otherwise reach the dead instance. Only undo our own assignment:
-        // anything else on the global belongs to someone else.
+        // event handler) would otherwise reach the dead instance. That bridge is usually already
+        // gone by now — the dialog's last custom field destroys it before the dialog closes — so
+        // `popped` can be null; a destroyed bridge on the global is ours to replace too. Anything
+        // that is not one of our bridges belongs to someone else and is left alone.
         const host = globalThis as { DotCustomFieldApi?: unknown };
-        if (popped && host.DotCustomFieldApi === popped) {
+        const current = host.DotCustomFieldApi;
+        if (current instanceof AngularFormBridge && (current === popped || current.#destroyed)) {
             host.DotCustomFieldApi = AngularFormBridge.instance ?? undefined;
         }
     }
@@ -380,6 +388,7 @@ export class AngularFormBridge implements FormBridge {
 
         this.#dialogRef?.close();
         this.#dialogRef = null;
+        this.#destroyed = true;
     }
 
     /**
