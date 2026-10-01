@@ -36,28 +36,28 @@ export const MOCK_ROUTE = {
  */
 export const MOCK_SITES: DotSite[] = [
     {
-        identifier: 'site-001',
-        hostname: 'demo.com',
         aliases: 'demo.com,www.demo.com',
-        archived: false
+        archived: false,
+        hostname: 'demo.com',
+        identifier: 'site-001'
     },
     {
-        identifier: 'site-002',
-        hostname: 'marketing.example.com',
         aliases: 'marketing.example.com',
-        archived: false
+        archived: false,
+        hostname: 'marketing.example.com',
+        identifier: 'site-002'
     },
     {
-        identifier: 'site-003',
+        aliases: '',
+        archived: true,
         hostname: 'archive.example.com',
-        aliases: '',
-        archived: true
+        identifier: 'site-003'
     },
     {
-        identifier: 'SYSTEM_HOST',
-        hostname: 'SYSTEM_HOST',
         aliases: '',
-        archived: false
+        archived: false,
+        hostname: 'SYSTEM_HOST',
+        identifier: 'SYSTEM_HOST'
     }
 ];
 

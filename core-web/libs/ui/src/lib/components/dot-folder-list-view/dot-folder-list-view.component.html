@@ -357,9 +357,15 @@
                         }
                     </td>
                 }
+                <!-- Clipped like the content type: a long name (a SAML user created without name
+                     attributes is named after a UUID) would otherwise wrap and grow the row past
+                     its neighbours. The title keeps the full name readable on hover. -->
                 @if ($visibleColumnSet().has('modUser')) {
-                    <td data-testId="item-mod-user-name">
-                        {{ (isFolder ? item.owner : item.modUserName) ?? 'Unknown' }}
+                    @let editedBy =
+                        (isFolder ? item.owner : item.modUserName) ??
+                        ('content-drive.list-view.edited-by.unknown' | dm);
+                    <td class="truncate" [title]="editedBy" data-testId="item-mod-user-name">
+                        {{ editedBy }}
                     </td>
                 }
                 @if ($visibleColumnSet().has('modDate')) {

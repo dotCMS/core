@@ -112,7 +112,8 @@ describe('DotFolderListViewComponent', () => {
                     Archived: 'Archived',
                     Revision: 'Revision',
                     Draft: 'Draft',
-                    New: 'New'
+                    New: 'New',
+                    'content-drive.list-view.edited-by.unknown': 'Unknown user'
                 })
             },
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
@@ -334,6 +335,19 @@ describe('DotFolderListViewComponent', () => {
      * Which rows an operation is currently running on. Narrower than `loading`, which says the whole
      * listing is being fetched.
      */
+    describe('edited by', () => {
+        it("should name an unknown editor in the product's words, in the cell and on hover", () => {
+            // Not the English literal: the fallback is user-facing text like any other.
+            spectator.setInput('items', [{ ...mockItems[0], modUserName: undefined }]);
+            spectator.detectChanges();
+
+            const cell = spectator.query(byTestId('item-mod-user-name'));
+
+            expect(cell?.textContent?.trim()).toBe('Unknown user');
+            expect(cell?.getAttribute('title')).toBe('Unknown user');
+        });
+    });
+
     describe('busyRows', () => {
         const busyItem = { ...mockItems[0], inode: 'busy-inode' };
 
@@ -1495,6 +1509,13 @@ describe('DotFolderListViewComponent', () => {
             const modUserName = 'modUserName' in firstItem ? firstItem.modUserName : 'Unknown';
 
             expect(modUserNameColumn.textContent.trim()).toBe(modUserName);
+        });
+
+        it('should offer the full editor name on hover, since a long one is clipped to the column', () => {
+            const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'));
+            const modUserName = 'modUserName' in firstItem ? firstItem.modUserName : 'Unknown';
+
+            expect(modUserNameColumn?.getAttribute('title')).toBe(modUserName);
         });
 
         it('should have a mod date column', () => {

@@ -61,7 +61,7 @@
     </p-inputgroup-addon>
 </p-inputgroup>
 
-<p-popover #panel [pt]="POPOVER_PT">
+<p-popover #panel [pt]="POPOVER_PT" (onHide)="onScopePanelHide()">
     <p-listbox
         [options]="scopeOptions"
         [ngModel]="$searchScope()"

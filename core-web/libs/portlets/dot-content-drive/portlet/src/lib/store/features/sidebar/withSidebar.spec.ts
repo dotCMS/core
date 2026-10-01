@@ -1,4 +1,5 @@
-import { signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/vitest';
 import { NEVER, of, Subject } from 'rxjs';
 import { Mocked, describe, expect, it, vi } from 'vitest';
@@ -12,7 +13,7 @@ import { withSidebar } from './withSidebar';
 
 import { ROOT_PATH, SYSTEM_HOST, SYSTEM_HOST_PATH } from '../../../shared/constants';
 import { DotContentDriveState } from '../../../shared/models';
-import { createSiteNode } from '../../../utils/tree-folder.utils';
+import { createSiteNode, findNodeByPath } from '../../../utils/tree-folder.utils';
 import { DOT_CONTENT_DRIVE_INITIAL_STATE } from '../../dot-content-drive.store';
 
 const mockSite = createFakeSite();
@@ -629,5 +630,190 @@ describe('withSidebar - the site root as a location', () => {
         spectator.flushEffects();
 
         expect(store.selectedNode()?.data?.id).toBe(mockSite.identifier);
+    });
+});
+
+/**
+ * A folder opened from the table, or reached with Back, whose node the tree has not loaded yet.
+ *
+ * The listing follows the location, but the tree only holds what it has fetched. The selection
+ * sync used to find no node for such a location and clear the selection, so the sidebar showed
+ * nothing and never loaded the branch. Opening a nested folder from All site content hit it every
+ * time: its ancestors had never been expanded.
+ */
+describe('withSidebar - a location the tree has not loaded', () => {
+    let spectator: SpectatorService<InstanceType<typeof sidebarStoreMock>>;
+    let store: InstanceType<typeof sidebarStoreMock>;
+    let folderService: Mocked<DotFolderService>;
+
+    /** Children by parent path, as the search endpoint answers one level at a time. */
+    const levels: Record<string, FolderSearchView[]> = {
+        '/': [
+            createFakeFolderSearchView({
+                id: 'documents',
+                name: 'documents',
+                path: '/',
+                addChildrenAllowed: true
+            })
+        ],
+        '/documents/': [
+            createFakeFolderSearchView({
+                id: 'images',
+                name: 'images',
+                path: '/documents/',
+                addChildrenAllowed: true
+            })
+        ],
+        '/documents/images/': [
+            createFakeFolderSearchView({
+                id: 'deep',
+                name: 'deep',
+                path: '/documents/images/',
+                addChildrenAllowed: true
+            })
+        ]
+    };
+
+    const rootPathStoreMock = signalStore(
+        withState<DotContentDriveState>({ ...initialState, path: ROOT_PATH }),
+        withSidebar()
+    );
+
+    const createService = createServiceFactory({
+        service: rootPathStoreMock,
+        providers: [
+            mockProvider(DotFolderService, {
+                searchFolders: vi.fn(({ path }: { path?: string }) =>
+                    searchResult(levels[path ?? ''] ?? [])
+                )
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        store = spectator.service;
+        folderService = spectator.inject(DotFolderService);
+        spectator.flushEffects();
+    });
+
+    // Re-armed after each test rather than before: `mockProvider` builds this `vi.fn` once for the
+    // whole file, and the next test's store loads its tree as it is created, before a `beforeEach`
+    // could step in. A test that makes it hang would otherwise leave that tree never loading.
+    afterEach(() => {
+        folderService.searchFolders.mockImplementation(({ path }: { path?: string }) =>
+            searchResult(levels[path ?? ''] ?? [])
+        );
+    });
+
+    it('should load the branch down to it and select it', () => {
+        // Only the root level is loaded: `documents` has never been expanded.
+        patchState(unprotected(store), { path: '/documents/images/' });
+        spectator.flushEffects();
+
+        expect(store.selectedNode()?.data?.path).toBe('/documents/images/');
+    });
+
+    it('should keep the branches that were already open', () => {
+        // Rebuilding the whole tree to show one branch collapsed every other one the author had
+        // open, and swapped the tree out while it did, which read as the sidebar blinking.
+        const folders = structuredClone(store.folders());
+        const documents = findNodeByPath(folders, '/documents/') as DotFolderTreeNodeItem;
+        documents.expanded = true;
+        documents.children = [
+            {
+                key: 'drafts',
+                label: '/documents/drafts/',
+                data: {
+                    id: 'drafts',
+                    hostname: mockSite.hostname,
+                    path: '/documents/drafts/',
+                    type: 'folder'
+                },
+                leaf: true
+            }
+        ];
+        store.updateFolders(folders);
+
+        patchState(unprotected(store), { path: '/documents/images/deep/' });
+        spectator.flushEffects();
+
+        expect(findNodeByPath(store.folders(), '/documents/drafts/')).toBeDefined();
+    });
+
+    it('should show the level it is loading as loading, on that node', () => {
+        // The branch loads one level at a time, like expanding a node, so a slow level says where
+        // the work is instead of the tree going quiet.
+        folderService.searchFolders.mockReturnValue(NEVER);
+
+        patchState(unprotected(store), { path: '/documents/images/' });
+        spectator.flushEffects();
+
+        expect(findNodeByPath(store.folders(), '/documents/')?.loading).toBe(true);
+    });
+
+    it('should stop showing a level as loading when another folder is opened first', () => {
+        // Opening a second folder cancels the first reveal before its level answers. The node it
+        // was loading is expanded and on screen, so it must not go on spinning.
+        folderService.searchFolders.mockReturnValue(NEVER);
+        patchState(unprotected(store), { path: '/documents/images/' });
+        spectator.flushEffects();
+
+        folderService.searchFolders.mockImplementation(({ path }: { path?: string }) =>
+            searchResult(levels[path ?? ''] ?? [])
+        );
+        patchState(unprotected(store), { path: '/elsewhere/' });
+        spectator.flushEffects();
+
+        expect(findNodeByPath(store.folders(), '/documents/')?.loading).toBe(false);
+    });
+
+    /** What the table selects when a folder is double-clicked: a node the tree does not own. */
+    const standIn = (path: string): DotFolderTreeNodeItem => ({
+        key: `table-${path}`,
+        label: path,
+        data: {
+            id: `table-${path}`,
+            hostname: mockSite.hostname,
+            path,
+            type: 'folder',
+            fromTable: true
+        },
+        leaf: false
+    });
+
+    it('should leave the selection a folder opened from the table made in place', () => {
+        // The sidebar reacts to that selection to expand and scroll to the folder. Swapping it for
+        // the tree's own node as soon as it arrived hid it from the sidebar, which then did
+        // neither; the tree shows the stand-in selected by its key anyway.
+        const opened = standIn('/documents/');
+        store.setSelectedNode(opened);
+        patchState(unprotected(store), { path: '/documents/' });
+        spectator.flushEffects();
+
+        expect(store.selectedNode()).toBe(opened);
+    });
+
+    it('should clear the selection when the folder opened from the table cannot be found', () => {
+        // Kept while its branch loads, but a folder that turned out not to exist must not stay
+        // looking selected.
+        store.setSelectedNode(standIn('/gone/'));
+        patchState(unprotected(store), { path: '/gone/' });
+        spectator.flushEffects();
+
+        expect(store.selectedNode()).toBeUndefined();
+    });
+
+    it('should not keep reloading for a folder that does not exist', () => {
+        // The reload finds nothing either, and the tree changing must not start another one.
+        patchState(unprotected(store), { path: '/gone/' });
+        spectator.flushEffects();
+        const callsAfterFirstAttempt = folderService.searchFolders.mock.calls.length;
+
+        spectator.flushEffects();
+        spectator.flushEffects();
+
+        expect(folderService.searchFolders).toHaveBeenCalledTimes(callsAfterFirstAttempt);
+        expect(store.selectedNode()).toBeUndefined();
     });
 });

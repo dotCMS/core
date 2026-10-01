@@ -10,7 +10,8 @@ import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
 
@@ -54,6 +55,16 @@ const contentlet = (
 
 const folder = (inode: string): DotContentDriveItem =>
     ({ type: 'folder', inode, identifier: inode }) as unknown as DotContentDriveItem;
+
+/** A folder as drive search lists it: identifier, path and the viewer's rights as role names. */
+const folderRow = (identifier: string, path: string): DotContentDriveItem =>
+    ({
+        type: 'folder',
+        inode: identifier,
+        identifier,
+        path,
+        permissions: ['READ', 'EDIT', 'CAN_ADD_CHILDREN']
+    }) as unknown as DotContentDriveItem;
 
 const BULK_ACTIONS_RESPONSE = {
     schemes: [
@@ -178,6 +189,13 @@ describe('DotContentDriveActionCenterComponent', () => {
     // run when there is exactly one, this one says whether anything is in flight at all. The
     // dialog gates on the count, so with several runs it stays gated rather than opening up.
     const mockActiveRunCount = signal(0);
+    // How many folders one duplicate or delete may carry, as the server advertises it. `null` is no
+    // ceiling advertised, which leaves the refusing to the server.
+    const mockFolderDuplicateMaxPaths = signal<number | null>(null);
+    const mockFolderDeleteMaxPaths = signal<number | null>(null);
+    // How many of those runs lock the dialog. Follows the count above unless a test says
+    // otherwise, since only a backgrounded run tells them apart.
+    const mockBlockingRunCountOverride = signal<number | undefined>(undefined);
     // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
     // is both the non-admin case and the still-loading one — see `isLockedByAnotherUser`.
     const mockCurrentUserIsAdmin = signal<boolean>(false);
@@ -185,6 +203,8 @@ describe('DotContentDriveActionCenterComponent', () => {
     // gates on it too. `undefined` is "not looked up yet" and reads as disabled; the mapping from a
     // lookup (empty list, or a failure) onto this flag is asserted in `withPushPublishEnvironments`.
     const mockHasPushPublishEnvironments = signal<boolean | undefined>(undefined);
+    /** Whether the author may add folders where they are browsing; gates Duplicate (#37062). */
+    const mockCanAddChildren = signal(true);
     // Where Content Drive is browsing. Only the hostname and path matter to this dialog.
     const mockCurrentSite = signal<{ hostname: string } | undefined>({
         hostname: 'demo.dotcms.com'
@@ -224,8 +244,18 @@ describe('DotContentDriveActionCenterComponent', () => {
                 items: mockItems,
                 actionExecution: mockActionExecution,
                 activeRunCount: mockActiveRunCount,
+                folderDuplicateMaxPaths: mockFolderDuplicateMaxPaths,
+                folderDeleteMaxPaths: mockFolderDeleteMaxPaths,
+                blockingRunCount: computed(
+                    () => mockBlockingRunCountOverride() ?? mockActiveRunCount()
+                ),
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
                 hasPushPublishEnvironments: mockHasPushPublishEnvironments,
+                // Duplicate gates on where its copies can land, which the store answers as
+                // `$canDuplicateHere`. The browsed folder's own answer is pinned to allowed so a
+                // component reading it instead is caught.
+                $canAddChildren: signal(true),
+                $canDuplicateHere: mockCanAddChildren,
                 // The folder being browsed, which seeds the move destination picker.
                 currentSite: mockCurrentSite,
                 path: mockPath,
@@ -240,7 +270,8 @@ describe('DotContentDriveActionCenterComponent', () => {
                 executeAddToBundle: vi.fn(),
                 executePushPublish: vi.fn(),
                 executeRefresh: vi.fn(),
-                executeFolderBulkDelete: vi.fn()
+                executeFolderBulkDelete: vi.fn(),
+                executeDuplicate: vi.fn()
             }),
             // The trigger toast for a backgrounded reindex goes through PrimeNG's MessageService,
             // which in the app resolves to the shell's instance so the toast outlives this dialog.
@@ -310,8 +341,12 @@ describe('DotContentDriveActionCenterComponent', () => {
         ]);
         mockActionExecution.set(undefined);
         mockActiveRunCount.set(0);
+        mockBlockingRunCountOverride.set(undefined);
+        mockFolderDuplicateMaxPaths.set(null);
+        mockFolderDeleteMaxPaths.set(null);
         mockCurrentUserIsAdmin.set(false);
         mockHasPushPublishEnvironments.set(false);
+        mockCanAddChildren.set(true);
         pushPublishEnvironments = [];
         mockCurrentSite.set({ hostname: 'demo.dotcms.com' });
         mockPath.set('/blogs');
@@ -537,18 +572,15 @@ describe('DotContentDriveActionCenterComponent', () => {
     });
 
     describe('folders in the selection', () => {
-        it('should say which actions the folders are limited to', () => {
+        it('should not claim the folders are limited to bundling and publishing', () => {
+            // Delete and Duplicate act on folders too, so that notice would be wrong.
             mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
 
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testid="folders-limited-message"]')).toBeTruthy();
-        });
-
-        it('should not show the notice when the selection has no folders', () => {
-            spectator.detectChanges();
-
-            expect(spectator.query('[data-testid="folders-limited-message"]')).toBeFalsy();
+            expect(spectator.query('[data-testid="action-center"]')?.textContent).not.toContain(
+                'content-drive.action-center.folders-limited'
+            );
         });
 
         it('should send folders and contentlets in one Add to Bundle call', () => {
@@ -688,6 +720,100 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
             expect(store.executeQuickAction).not.toHaveBeenCalled();
+        });
+
+        describe('Duplicate', () => {
+            const ALPHA = folderRow('f-alpha', '/blogs/alpha/');
+            const BETA = folderRow('f-beta', '/blogs/beta/');
+
+            beforeEach(() => {
+                mockItems.set([ALPHA, BETA]);
+                mockSelectedItems.set([ALPHA, BETA]);
+            });
+
+            it('should not offer Duplicate when the author cannot add folders where they are browsing', () => {
+                mockCanAddChildren.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query('[data-testid="quick-action-DUPLICATE"]')).toBeNull();
+            });
+
+            it('should leave out a folder the author cannot read, and submit only the others', () => {
+                const unreadable = {
+                    ...(BETA as object),
+                    permissions: ['EDIT']
+                } as unknown as DotContentDriveItem;
+                mockItems.set([ALPHA, unreadable]);
+                mockSelectedItems.set([ALPHA, unreadable]);
+
+                executeQuickAction('DUPLICATE');
+
+                expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                    '//demo.dotcms.com/blogs/alpha/'
+                ]);
+            });
+
+            it('should go straight to the preview, with nothing to configure and no destination', () => {
+                openQuickActionPreview('DUPLICATE');
+
+                expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+                // The configure panel stays in the page, hidden, so what proves there was nothing to
+                // configure is that it offers no Continue and holds neither destination picker.
+                expect(spectator.query('[data-testid="action-configure-continue"]')).toBeNull();
+                expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeNull();
+                expect(
+                    spectator.query('[data-testid="action-configure-bundle-target"]')
+                ).toBeNull();
+            });
+
+            it("should execute through its own store method with the folders' site-qualified paths", () => {
+                executeQuickAction('DUPLICATE');
+
+                expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                    '//demo.dotcms.com/blogs/alpha/',
+                    '//demo.dotcms.com/blogs/beta/'
+                ]);
+                expect(store.executeQuickAction).not.toHaveBeenCalled();
+            });
+
+            it('should send only the folders left checked in the preview', () => {
+                openQuickActionPreview('DUPLICATE');
+                toggleRow(0);
+                spectator.click('[data-testid="action-preview-execute"]');
+                spectator.detectChanges();
+
+                expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                    '//demo.dotcms.com/blogs/beta/'
+                ]);
+            });
+
+            it('should refuse with an error instead of submitting when no site is resolved', () => {
+                // Without a site the paths would come out as `///blogs/alpha/`. Delete refuses the
+                // same case, and so must this.
+                const messageService = spectator.inject(MessageService);
+                mockCurrentSite.set(undefined);
+
+                executeQuickAction('DUPLICATE');
+
+                expect(store.executeDuplicate).not.toHaveBeenCalled();
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        summary: 'content-drive.dialog.duplicate-folder.no-site'
+                    })
+                );
+            });
+
+            it('should not announce a start the server can still refuse', () => {
+                // The status indicator reports the run from submission until it ends, and a
+                // refusal ends it. A toast raised here stayed on screen beside "The duplicate did
+                // not start" whenever the server refused the run.
+                const messageService = spectator.inject(MessageService);
+
+                executeQuickAction('DUPLICATE');
+
+                expect(messageService.add).not.toHaveBeenCalled();
+            });
         });
 
         it('should execute Refresh through its own store method, not the workflow fire', () => {
@@ -1406,7 +1532,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             it('should be inert while an action is in flight', () => {
                 // Driven from store state, not a local flag: a run started before this dialog
                 // instance existed must still lock the view.
-                mockActionExecution.set({ actionName: 'Send for Review', total: 2 });
+                mockActionExecution.set({ total: 2 });
                 mockActiveRunCount.set(1);
                 spectator.detectChanges();
 
@@ -1630,10 +1756,26 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.clearDialogDrillDown).toHaveBeenCalled();
         });
 
+        it('should stay usable while only a background run is in flight', () => {
+            // A folder duplicate is reported on the indicator but locks nothing.
+            goToConfigure();
+            chooseDestination();
+            mockActiveRunCount.set(1);
+            mockBlockingRunCountOverride.set(0);
+            spectator.detectChanges();
+
+            spectator.click(
+                spectator.query('[data-testid="action-configure-continue"] button') as HTMLElement
+            );
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+        });
+
         it('should keep the configuration step inert while an action is in flight', () => {
             goToConfigure();
             chooseDestination();
-            mockActionExecution.set({ actionName: 'Move', total: 2 });
+            mockActionExecution.set({ total: 2 });
             mockActiveRunCount.set(1);
             spectator.detectChanges();
 
@@ -2593,6 +2735,92 @@ describe('DotContentDriveActionCenterComponent', () => {
      * return the key, so these assert on keys rather than on English — the copy itself is reviewed at
      * the T055 gate, but which *claims* it does and does not make is a requirement and is pinned here.
      */
+    /**
+     * The ceiling the server advertises for one duplicate or delete (#37062). Checked before
+     * submitting so the author learns the limit where they choose the folders, not from a refusal
+     * afterwards. The server's own refusal still stands behind it.
+     */
+    describe('folder ceilings', () => {
+        // Rights for both actions: duplicate needs READ, delete EDIT and EDIT_PERMISSIONS.
+        const withAllRights = (row: DotContentDriveItem): DotContentDriveItem =>
+            ({
+                ...(row as object),
+                permissions: ['READ', 'EDIT', 'EDIT_PERMISSIONS', 'CAN_ADD_CHILDREN']
+            }) as unknown as DotContentDriveItem;
+        const ALPHA = withAllRights(folderRow('f-alpha', '/blogs/alpha/'));
+        const BETA = withAllRights(folderRow('f-beta', '/blogs/beta/'));
+
+        const executeButton = () =>
+            spectator.query<HTMLButtonElement>('[data-testid="action-preview-execute"] button');
+
+        beforeEach(() => {
+            mockItems.set([ALPHA, BETA]);
+            mockSelectedItems.set([ALPHA, BETA]);
+        });
+
+        // Read from the button's own input rather than PrimeNG's rendered badge markup, which is
+        // the library's to change.
+        const executeBadge = () =>
+            spectator.debugElement.query(By.css('[data-testid="action-preview-execute"]'))
+                ?.componentInstance?.badge;
+
+        it.each([
+            ['DUPLICATE', mockFolderDuplicateMaxPaths, 'content-drive.duplicate.over-ceiling'],
+            ['DELETE_FOLDER', mockFolderDeleteMaxPaths, 'content-drive.delete.over-ceiling']
+        ])(
+            '%s should include only as many folders as one run may carry',
+            (actionId, ceiling, key) => {
+                ceiling.set(1);
+
+                openQuickActionPreview(actionId);
+
+                // The row and the preview already say how many run. No notice on top of that.
+                expect(spectator.element.textContent).not.toContain(key);
+                // Listed, not merely pre-checked: the preview holds what this run can carry, as
+                // the other actions' previews hold what they apply to.
+                expect(previewRows()).toHaveLength(1);
+                expect(executeBadge()).toBe('1');
+                expect(executeButton()?.disabled).toBe(false);
+            }
+        );
+
+        it.each([
+            ['DUPLICATE', mockFolderDuplicateMaxPaths],
+            ['DELETE_FOLDER', mockFolderDeleteMaxPaths]
+        ])(
+            '%s should advertise on its row only as many folders as one run carries',
+            (actionId, ceiling) => {
+                ceiling.set(1);
+                spectator.detectChanges();
+
+                // The row's number is what the run will act on, as every other row's is.
+                expect(
+                    spectator.query(`[data-testid="quick-action-${actionId}"]`)?.textContent
+                ).toContain('(1)');
+            }
+        );
+
+        it('should submit only the folders it included', () => {
+            mockFolderDuplicateMaxPaths.set(1);
+
+            executeQuickAction('DUPLICATE');
+
+            expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                '//demo.dotcms.com/blogs/alpha/'
+            ]);
+        });
+
+        it.each([['DUPLICATE'], ['DELETE_FOLDER']])(
+            '%s should include every folder when no ceiling is advertised',
+            (actionId) => {
+                openQuickActionPreview(actionId);
+
+                expect(previewRows()).toHaveLength(2);
+                expect(executeBadge()).toBe('2');
+            }
+        );
+    });
+
     describe('Delete confirmation (#37063)', () => {
         const folderSelection = [
             { type: 'folder', identifier: 'id-a', inode: 'inode-a', name: 'old-a' },

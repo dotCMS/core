@@ -3,7 +3,7 @@ name: dot-ui-vtl-migration
 owner: "@dotcms/falcon"
 status: active
 description: >
-  Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. By default it returns a single inline file ready to paste into the Custom Field: the migrated code inside #if( $structures.isNewEditModeEnabled() ) and the original legacy code, untouched, inside #else, with no #parse and no extra files. On request it produces three files instead (_old.vtl, _new.vtl and a #parse router), and it converts existing migrations between the two shapes. Use this skill whenever a user asks to migrate, update, or convert a VTL file, custom field template, or dotCMS field that uses any of: DotCustomFieldApi.get(), DotCustomFieldApi.set(), DotCustomFieldApi.onChangeField(), dojo.ready(), dojo.byId(), dijit.byId(), dijit.form.*, dojoType attributes, or any Dojo/Dijit pattern. Also trigger when the user pastes a VTL snippet and asks "what needs to change" or "can you update this", asks for an inline, single-file or one-file migration ("un solo archivo"), wants to paste the result into the content type editor, or wants to collapse a _new/_old/router migration into one file or split an inline one. If in doubt, use this skill.
+  Migrates VTL (Velocity Template Language) custom field templates from the legacy DotCMS Dojo/Dijit API to the modern DotCustomFieldApi. By default it returns a single inline file ready to paste into the Custom Field: the migrated code inside #if( $structures.isNewEditModeEnabled() ) and the original legacy code, untouched, inside #else, with no #parse and no extra files. On request it produces three files instead (_old.vtl, _new.vtl and a #parse router), and it converts existing migrations between the two shapes. Use this skill whenever a user asks to migrate, update, or convert a VTL file, custom field template, or dotCMS field that uses any of: DotCustomFieldApi.get(), DotCustomFieldApi.set(), DotCustomFieldApi.onChangeField(), dojo.ready(), dojo.byId(), dijit.byId(), dijit.form.*, dojoType attributes, or any Dojo/Dijit pattern. Also trigger when the user pastes a VTL snippet and asks "what needs to change" or "can you update this", asks for an inline, single-file or one-file migration ("un solo archivo"), wants to paste the result into the content type editor, or wants to collapse a _new/_old/router migration into one file or split an inline one. Also trigger when the user asks to migrate ALL custom fields, every legacy field, or "the whole instance" — this skill bundles a `scripts/migrate_custom_fields.py` tool that finds, downloads, and safely republishes every legacy custom field across a live dotCMS instance in one guided session (see "Migrate a whole instance" below). If in doubt, use this skill.
 ---
 
 # VTL Migration: Legacy API → DotCustomFieldApi
@@ -11,6 +11,51 @@ description: >
 You are migrating DotCMS VTL custom field templates from Dojo/Dijit-era APIs to the modern `DotCustomFieldApi`. The goal is **identical functionality with modern, clean code** and **semantic styling with DaisyUI**.
 
 For the full migration rules, all code examples, the DaisyUI styling section, and the step-by-step checklist, read `references/migration-guide.md`.
+
+## Available scripts
+
+- **`scripts/migrate_custom_fields.py`** — finds every legacy custom field on a live dotCMS instance, downloads what needs migrating, and (after you've migrated each file with this skill) safely republishes the results. Self-contained (PEP 723 inline dependencies); run it with [uv](https://docs.astral.sh/uv/) directly from the skill root — no separate install step:
+  ```bash
+  uv run scripts/migrate_custom_fields.py --help
+  ```
+
+## Migrate a whole instance
+
+Use this workflow when the user asks to migrate **all** custom fields, every legacy field, or "the whole instance" — not a single pasted VTL file.
+
+**Prerequisites**: [`uv`](https://docs.astral.sh/uv/) installed; network access to the target dotCMS instance; a dotCMS API access token (Users → select user → API Access Tokens in the admin UI, or `POST /api/v1/authentication/api-token`) for a user with edit permissions on content types and publish permissions on the content the referenced assets/fields belong to.
+
+Work **in batches the customer picks** — never migrate and publish the whole instance in one go unless they ask for it.
+
+1. **Configure and discover.** Set `BASE_URL`, `DOTCMS_TOKEN` (env vars — the script never prompts), then run:
+   ```bash
+   BASE_URL=https://my-env.dotcms.dev DOTCMS_TOKEN=... \
+     uv run scripts/migrate_custom_fields.py pull
+   ```
+   This scans every content type, classifies every custom field, downloads what needs migrating into `<workdir>/original/`, and writes `<workdir>/manifest.json`. Fields that are already migrated, load a core-shipped file, reference code by an unhandled path, or pin a specific `/dA/` version (an inode instead of the identifier) are reported only — nothing is downloaded or queued for them. Re-running `pull` after a `push` doesn't re-download what was already published.
+2. **Show what's pending and let the customer pick a batch.** Build the list from the `entries` in `pull`'s final stdout JSON line (or `manifest.json`), and keep it short — one numbered table, nothing migrated yet:
+
+   | # | VTL | Kind | Used by |
+   |---|---|---|---|
+   | 1 | `text-count.vtl` | `/dA/` file | 5 fields: `Destination.pageTitleCount`, … |
+   | 2 | `Banner.widget` | inline field | `Banner.widget` |
+
+   Entries with `kind: "renderMode"` and empty `requires` need no code change — only the switch to Recommended — so list them as one extra row ("Switch to Recommended only: `Activity.urlTitle`, `Product.urlTitle`, …"). Don't list `renderMode` entries whose `requires` is non-empty: they go along with their `/dA/` file. Sum up the report-only buckets in one line of counts (e.g. "25 load core files, 3 use unhandled paths — say *details* to see them"). Then ask which rows to do now: `all`, row numbers (`1,3`), or `none`. Wait for the answer.
+3. **Migrate only the selected files** under `<workdir>/original/` using this skill in its default **inline** mode (see Output Modes below), writing each result to `<workdir>/migrated/` under the same relative path.
+4. **Show the customer a summary** of what changed per selected file and get their explicit confirmation before publishing anything.
+5. **Preview, then publish only that batch**, passing the selected rows' `key`s (the dA id for a `/dA/` file, `Type.field` for an inline field or a render-mode switch):
+   ```bash
+   uv run scripts/migrate_custom_fields.py push --dry-run --only <key...>
+   uv run scripts/migrate_custom_fields.py push --only <key...>
+   ```
+   Selecting a `/dA/` file also switches every field that loads it to Recommended in the same run — no need to list those fields. `push` independently verifies, per item, that nothing changed on the server since `pull` and that the migrated file is a genuine inline migration (the original code still reachable, verbatim, behind the edit-mode switch) before publishing it — one bad item is skipped and reported, never blocking the rest of the batch.
+6. **Report the batch and offer the next one.** Say what was published, skipped (and why), failed or is still waiting, then show the rows that are left (the entries still `pending` in `manifest.json`) and ask whether to continue. Unselected rows stay pending — nothing is lost by stopping. In a later session, start again from step 1: `pull` lists only what's still left.
+
+A migrated field only renders natively in the new editor when it's set to the **Recommended** implementation — the `newRenderMode=component` field variable. `push` sets it on every field whose code it migrates (a field that loads a `/dA/` asset, once that asset is published), and `pull` also queues fields whose code is already migrated but still render in an iframe. Every other field variable is kept. Tell the customer which fields were switched.
+
+Re-running `push` never re-publishes an entry that already finished (`published`, `skipped` or `failed`); name it with `--only` to retry it. An entry with no migrated file yet, or a render-mode switch whose asset isn't published, is reported as `waiting` and stays pending for a later batch. `push` refuses to run if the workdir was pulled from a different `BASE_URL`.
+
+Exit codes (also in `--help`): `0` success, `1` some items failed (in `pull`, an unresolvable `/dA/` reference; in `push`, a failed publish/update), `2` invalid arguments/configuration, `3` authentication failure — `DOTCMS_TOKEN` missing or rejected (nothing is written).
 
 ## The Core API Swap (Quick Reference)
 
