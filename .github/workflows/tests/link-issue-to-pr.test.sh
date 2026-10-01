@@ -76,25 +76,28 @@ pass=0
 fail=0
 
 # Asserts the outputs the body-parsing step writes for a given PR body.
-# $3 is the expected `key=value` set, space separated, sorted by key.
+# $3 is the expected `key=value` set, space separated, sorted by key, listing
+# cross_repo_owner_repo only when it is set. $4 is the Development-section
+# timeline (see timeline_stub), $5 the PR title.
 body_case() {
   local desc="$1" body="$2" expect="$3"
-  export FIXTURE_CONNECTED="${4:-}"
+  export FIXTURE_TIMELINE="${4:-}"
   export FIXTURE_TITLE="${5:-}"
   local out; out="$(mktemp)"
   (
     export FIXTURE_BODY="$body" PR_TITLE="$FIXTURE_TITLE" GITHUB_OUTPUT="$out"
-    # Stub the two API calls the step makes: PR details over curl, the paginated
-    # timeline over gh. FIXTURE_CONNECTED is the issue number a Development-section
-    # link would yield — empty for every case that exercises body parsing.
+    # Stub the two API calls the step makes: PR details over curl, the
+    # Development-section timeline over gh. FIXTURE_TIMELINE is empty for every
+    # case that exercises body parsing.
     curl() { jq -n --arg b "$FIXTURE_BODY" '{body:$b}'; }
-    gh() { [[ -n "${FIXTURE_CONNECTED:-}" ]] && echo "$FIXTURE_CONNECTED"; return 0; }
+    gh() { timeline_stub "$@"; }
+    set +u +o pipefail -e  # a run step without `shell:` executes as `bash -e`
     # shellcheck disable=SC1090
     source "$WORKDIR/step_body.sh"
   ) >/dev/null 2>&1
 
   local got
-  got="$(grep -E '^(has_linked_issues|linked_issue_number|is_cross_repo|link_method|is_closing_link)=' "$out" \
+  got="$(grep -E '^(has_linked_issues|linked_issue_number|is_cross_repo|link_method|is_closing_link)=|^cross_repo_owner_repo=.' "$out" \
          | sort | tr '\n' ' ' | sed 's/ $//')"
   rm -f "$out"
 
@@ -156,6 +159,24 @@ graphql_stub() {
   jq -n --arg refs "${FIXTURE_CLOSING:-}" '{data: {repository: {pullRequest: {closingIssuesReferences: {nodes: [
       $refs | splits(" +") | select(length > 0) | capture("^(?<repo>.+)#(?<num>[0-9]+)$")
       | {number: (.num | tonumber), repository: {nameWithOwner: .repo}}
+    ]}}}}}' | jq -r "$filter"
+}
+
+# Answers the Development-section lookup the same way: the step's own FILTER over a
+# timelineItems payload built from FIXTURE_TIMELINE, oldest event first, where
+# "+owner/repo#N" links that issue in the sidebar and "-owner/repo#N" unlinks it.
+# FIXTURE_TIMELINE=error fails the call like FIXTURE_CLOSING=error does.
+timeline_stub() {
+  local filter="" prev="" arg
+  for arg in "$@"; do [[ "$prev" == "--jq" ]] && filter="$arg"; prev="$arg"; done
+  if [[ "${FIXTURE_TIMELINE:-}" == "error" ]]; then
+    echo '{"errors":[{"type":"FORBIDDEN"}]}'
+    return 1
+  fi
+  jq -n --arg events "${FIXTURE_TIMELINE:-}" '{data: {repository: {pullRequest: {timelineItems: {nodes: [
+      $events | splits(" +") | select(length > 0) | capture("^(?<op>[+-])(?<repo>.+)#(?<num>[0-9]+)$")
+      | {__typename: (if .op == "+" then "ConnectedEvent" else "DisconnectedEvent" end),
+         subject: {number: (.num | tonumber), repository: {nameWithOwner: .repo}}}
     ]}}}}}' | jq -r "$filter"
 }
 
@@ -265,9 +286,9 @@ body_case "Closes #456" "Closes #456" \
 body_case "resolved: #789" "resolved: #789" \
   "has_linked_issues=true is_cross_repo=false link_method=pr_body linked_issue_number=789"
 body_case "cross-repo 'Fixes org/repo#42'" "Fixes dotCMS/private-issues#42" \
-  "has_linked_issues=true is_cross_repo=true link_method=cross_repo_body linked_issue_number=42"
+  "cross_repo_owner_repo=dotCMS/private-issues has_linked_issues=true is_cross_repo=true link_method=cross_repo_body linked_issue_number=42"
 body_case "cross-repo full URL" "Closes https://github.com/dotCMS/private-issues/issues/99" \
-  "has_linked_issues=true is_cross_repo=true link_method=cross_repo_url linked_issue_number=99"
+  "cross_repo_owner_repo=dotCMS/private-issues has_linked_issues=true is_cross_repo=true link_method=cross_repo_url linked_issue_number=99"
 body_case "owner/repo form pointing at this repo" "Closes dotCMS/core#77" \
   "has_linked_issues=true is_cross_repo=false link_method=pr_body linked_issue_number=77"
 
@@ -311,16 +332,51 @@ Fixes #2" \
   "has_linked_issues=true is_cross_repo=false link_method=pr_body linked_issue_number=2"
 
 echo "== Development section: a sidebar link outranks the body and closes on merge =="
-# Regression guard for the unpaginated timeline lookup: the "connected" event on
-# PR #37193 was the 33rd of 37, past the endpoint's 30-per-page default, so the
-# workflow read a sidebar-linked PR as unlinked and reported is_closing_link=false
-# for an issue GitHub was about to close. gh api --paginate is what fixes it.
+# Regression guard: the lookup read .source.issue.number, which GitHub never sets on
+# these events (the linked issue is their subject), so no sidebar link was ever seen
+# here. The stub runs the step's own --jq filter over a timelineItems payload, so the
+# field names are exercised rather than assumed.
 body_case "sidebar link beats a non-closing body reference" "Refs #36850" \
   "has_linked_issues=true is_cross_repo=false link_method=development_section linked_issue_number=36850" \
-  "36850"
+  "+dotCMS/core#36850"
 body_case "sidebar link with an unrelated body" "No references at all here." \
   "has_linked_issues=true is_cross_repo=false link_method=development_section linked_issue_number=42" \
-  "42"
+  "+dotCMS/core#42"
+body_case "sidebar link beats a closing body keyword" "Fixes #123" \
+  "has_linked_issues=true is_cross_repo=false link_method=development_section linked_issue_number=456" \
+  "+dotCMS/core#456"
+body_case "sidebar link to this repo in other letter case" "No references at all here." \
+  "has_linked_issues=true is_cross_repo=false link_method=development_section linked_issue_number=77" \
+  "+dotcms/CORE#77"
+
+echo "== Development section: a sidebar link to another repository keeps it =="
+# PR #37179 links dotCMS/private-issues#671 in the sidebar; dotCMS/core#671 is an
+# unrelated 2012 pull request (#37845).
+body_case "cross-repo sidebar link" "Closes dotCMS/private-issues#672" \
+  "cross_repo_owner_repo=dotCMS/private-issues has_linked_issues=true is_cross_repo=true link_method=development_section linked_issue_number=671" \
+  "+dotCMS/private-issues#671"
+body_case "unlinking this repo's #N leaves another repo's #N linked" "No references at all here." \
+  "cross_repo_owner_repo=dotCMS/private-issues has_linked_issues=true is_cross_repo=true link_method=development_section linked_issue_number=671" \
+  "+dotCMS/private-issues#671 -dotCMS/core#671"
+
+echo "== Development section: only links still in place count =="
+body_case "link removed later falls through to the body" "Fixes #123" \
+  "has_linked_issues=true is_cross_repo=false link_method=pr_body linked_issue_number=123" \
+  "+dotCMS/core#456 -dotCMS/core#456"
+body_case "link removed later, nothing in the body" "No references at all here." \
+  "has_linked_issues=false is_cross_repo=false" \
+  "+dotCMS/core#37063 -dotCMS/core#37063"
+body_case "link removed and then restored" "Fixes #123" \
+  "has_linked_issues=true is_cross_repo=false link_method=development_section linked_issue_number=456" \
+  "+dotCMS/core#456 -dotCMS/core#456 +dotCMS/core#456"
+body_case "longest-standing link wins" "No references at all here." \
+  "has_linked_issues=true is_cross_repo=false link_method=development_section linked_issue_number=200" \
+  "+dotCMS/core#100 +dotCMS/core#200 -dotCMS/core#100 +dotCMS/core#100"
+
+echo "== Development section: a failed lookup falls back to the body =="
+body_case "failed lookup, closing keyword in the body" "Fixes #123" \
+  "has_linked_issues=true is_cross_repo=false link_method=pr_body linked_issue_number=123" \
+  "error"
 
 echo "== PR body: bare mentions are still not a link =="
 body_case "prose mention only" "Parent issue: #36850 and follow-up #37194" \

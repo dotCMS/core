@@ -46,6 +46,7 @@ the merge otherwise. Use one of these:
 
 | Form | Effect on merge |
 |---|---|
+| Issue linked in the PR's Development section (sidebar) | Issue is **closed** |
 | `Fixes #123`, `Closes #123`, `Resolves #123` | Issue is **closed** |
 | `Fixes org/repo#123`, or the full issue URL | Cross-repo issue is closed |
 | `Refs #123`, `Part of #123`, `Related to #123`, `Contributes to #123` | Issue **stays open** |
@@ -58,6 +59,11 @@ Use a non-closing form when the PR advances an issue that a *later* PR actually 
 Spec-Kit PR 1 carries the spec for an issue that PR 2 does the work for, so a closing keyword
 there would retire the issue while the implementation is still unwritten. A closing keyword
 anywhere in the body always outranks a non-closing reference.
+
+A Development-section link outranks every form in the body and title, including a closing
+keyword for a different issue, and one to another repository's issue is handled as cross-repo.
+A link removed from the sidebar no longer counts. Changing these links does not re-run the
+check, so push a commit or edit the description afterwards.
 
 If the body and title carry no reference at all, the check falls back to the branch name and
 appends `This PR fixes: #N` to the body — writing the closing keyword for you. Spell out
