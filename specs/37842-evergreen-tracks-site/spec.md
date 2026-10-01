@@ -108,7 +108,7 @@ A release dotCMS has tainted is visibly flagged `Not recommended` wherever the s
 
 **Why this priority**: Prevents new adoption of known-bad releases. P2 because it reuses the P1 data path and UI.
 
-**Independent Test**: Taint a test version via the admin workflow with `mode=apply`; within 1 hour verify all three pages flag it; untaint and verify the flag disappears within 1 hour.
+**Independent Test**: Taint a GA version older than the current `trailing` release via the admin workflow with `mode=apply` (the forward-only planner can never move a track onto it, but the flag is public, so untaint right after); within 1 hour verify all three pages flag it; untaint and verify the flag disappears within 1 hour.
 
 **Acceptance Scenarios**:
 
@@ -125,7 +125,7 @@ Support, customers and engineers who check github.com/dotcms/core/releases see t
 
 **Why this priority**: Closes the GitHub half of #37316. Independent of the site path.
 
-**Independent Test**: Run admin `taint` on a version in dry-run and verify the planned title change is printed with no mutation; run with `mode=apply` and verify the title; re-run and verify the marker is not doubled; `untaint` and verify the original title is restored.
+**Independent Test**: Run admin `taint` on a version older than the current `trailing` release (see US3) in dry-run and verify the planned title change is printed with no mutation; run with `mode=apply` and verify the title; re-run and verify the marker is not doubled; `untaint` and verify the original title is restored.
 
 **Acceptance Scenarios**:
 
@@ -148,7 +148,7 @@ When the site can't be updated (devsite backend down, token expired, Hub read fa
 
 1. **Given** the site backend is unreachable, **When** the sync step runs after a Hub move, **Then** it retries up to 3 attempts with backoff (about 10 min total), then fails non-blocking with a `#dot-releases` notice naming the job and reason, and the Hub move stays in place.
 2. **Given** the record still differs from Hub after the daily scheduled run's sync, **Then** a drift notice posts to `#dot-releases` naming which fields differ.
-3. **Given** a track tag resolves to a version with no release entry on the site, **When** the sync runs, **Then** it fails loudly to `#dot-releases` and leaves the existing record unchanged (the old chip stays rather than disappearing).
+3. **Given** a track tag resolves to a version with no release entry on the site, **When** the sync runs, **Then** it fails loudly to `#dot-releases` and keeps that track's previous value in the record (the old chip stays rather than disappearing), while the other tracks and the `tainted` list are still reconciled.
 4. **Given** the Hub read fails or is incomplete, **When** the sync runs, **Then** it writes nothing and fails non-blocking; the next daily run heals it.
 
 ### Edge Cases
@@ -158,7 +158,7 @@ When the site can't be updated (devsite backend down, token expired, Hub read fa
 | Two tracks on one release (quiet fortnight) | One All Releases row with both chips. Two Current Releases rows with the same version, each showing its own track. |
 | Track points at a tainted release | Both chips show (e.g. `[Standard] [Not recommended]`) on every page that lists it. Sync does not "fix" it — the site mirrors Hub; ops repoints with a `hold`. |
 | Track held (`_hold`) | No visible difference. The chip follows wherever the tag points, held or not. |
-| Track tag points at a version with no release row on the site | Sync fails loudly to `#dot-releases`; the existing record is kept, so the old chip stays rather than disappearing. |
+| Track tag points at a version with no release row on the site | Sync fails loudly to `#dot-releases`; that track keeps its previous value, so the old chip stays rather than disappearing. The rest of the record (other tracks, `tainted`) is still reconciled, so a missing row never delays a taint. |
 | Release pipeline: `latest` moved but the new version's changelog entry failed to publish | Same as above: sync fails loudly, Latest chip stays on the previous release; the next daily run converges once the entry exists. |
 | Hub API down or a partial Hub read during sync | Step fails non-blocking and writes nothing (a partial read must never shrink the `tainted` list or blank a track). The next daily run heals it. |
 | Site backend down / token rejected | 3 attempts with backoff, then non-blocking failure + `#dot-releases` notice. Hub move unaffected. Worst-case lag: until the next daily run after the backend is reachable (about 24 h). |
@@ -183,8 +183,8 @@ When the site can't be updated (devsite backend down, token expired, Hub read fa
 - **FR-004**: Sync MUST be reconcile, not delta: every run rewrites the record to match the full Hub state read in that run, so any missed run heals on the next one.
 - **FR-005**: Sync MUST compare the current record with Hub state and write + publish only when they differ (one write per real change). The `tainted` comparison MUST be order-insensitive.
 - **FR-006**: Sync MUST NOT create, modify or publish any release (Dotcmsbuilds) entry; it reads release entries only to verify a track's version has a row.
-- **FR-007**: If any track resolves to a version with no live release entry on the site, the sync MUST fail loudly (FR-016) and MUST leave the existing record unchanged.
-- **FR-008**: If the Hub read fails or is incomplete, the sync MUST NOT write; a partial read must never remove tainted versions or blank a track.
+- **FR-007**: If a track resolves to a version with no release entry the release pages list (live, `released`, `download`), the sync MUST fail loudly (FR-016) and MUST keep that track's previous value in the record; the other tracks and the `tainted` list MUST still be reconciled, so a missing row never blocks a taint or untaint from reaching the site.
+- **FR-008**: If the Hub read fails or is incomplete (including a track tag whose digest matches no GA version), the sync MUST NOT write; a partial read must never remove tainted versions or blank a track.
 - **FR-009**: Sync MUST support dry-run (the default when not applying) that prints the record it would write and the field-level difference from the current record, with no write.
 - **FR-010**: Sync MUST authenticate with the existing service-account token and backend URL already used for changelog publishing (`DOTCMS_DEVSITE_RELEASENOTES_TOKEN`, `DOTCMS_DEVSITE_URL`); no new site credential. The token MUST never be logged.
 
@@ -192,7 +192,7 @@ When the site can't be updated (devsite backend down, token expired, Hub read fa
 
 - **FR-011**: Sync MUST run at the end of every job that mutates the registry, after its Hub mutation: (a) `evergreen-tracks-promote` after `apply` — on every run, including days nothing moved (daily drift heal, no separate cron); (b) `evergreen-tracks-admin` after an `apply` of taint / untaint / hold / release-hold; (c) the release pipeline after its latest-promote.
 - **FR-012**: **Hub first, site second, always.** Sync MUST run only after the Hub mutation has completed; a site write failure MUST NOT roll back, block or fail the Hub move or the release.
-- **FR-013**: In the release pipeline, the sync MUST run after both the latest-promote and the changelog-site publish for that release have finished (whatever their outcome), so the new version's release entry exists when it can.
+- **FR-013**: In the release pipeline, the sync MUST run after both the latest-promote (`promote-latest`) and the changelog-site publish (`changelog-site-publish`) jobs for that release have finished (succeeded, failed or skipped), so the new version's release entry exists when it can. Today these jobs are independent (`changelog-site-publish` waits on `release-notes`, not on `promote-latest`), so the sync is a new step that waits on both. It is skipped when `promote-latest` did not run (e.g. LTS releases or `skip_latest`).
 - **FR-014**: Sync MUST be serialized with registry mutations (the same mutual exclusion the tag-moving jobs share) so a sync never overwrites the record with state older than a move that finished before it.
 - **FR-015**: Sync and the GitHub Release title change MUST run only when the mutated repo is the production repo `dotcms/dotcms`; dry-runs of admin MUST preview the site effect of the planned action without writing (see FR-009, FR-022).
 
@@ -216,7 +216,7 @@ When the site can't be updated (devsite backend down, token expired, Hub read fa
 - **FR-025**: The devsite MUST read track and taint state only from the `EvergreenState` record (one extra single-record query alongside the existing release query) and match versions to release rows by `minor`.
 - **FR-026**: The devsite MUST have exactly one source for the Latest chip — `EvergreenState`. The existing derivation (first release with `lts === "3"`) MUST be deleted from both the releases hook and the releases table; no fallback derivation remains.
 - **FR-027**: `Latest LTS` and `LTS` chips MUST keep their current derivation from `lts` + `eolDate`.
-- **FR-028**: Track and taint state on the site MUST reflect a record change within 1 hour (the devsite's existing 1 h release-data cache bounds this).
+- **FR-028**: Track and taint state on the site MUST reflect a record change within 1 hour (the devsite's existing 1 h release-data cache bounds this: `RELEASES_CACHE_TTL_SECONDS = 3600` in `services/docs/getReleases/getReleases.ts`). The new `EvergreenState` query MUST NOT be cached longer than that.
 - **FR-029**: If the record cannot be read, pages MUST still render (rows, Docker tags, downloads, LTS chips) with track/taint chips absent and a short "track data unavailable" note in the Evergreen section — never a guessed Latest.
 
 #### F. Current Releases page (closes #37843)
@@ -234,7 +234,7 @@ When the site can't be updated (devsite backend down, token expired, Hub read fa
 - **FR-037**: Chip order inside a cell MUST be: Latest → Standard → Trailing → Latest LTS / LTS → Not recommended.
 - **FR-038**: Rows carrying a track chip MUST get the same row highlight Latest gets today.
 - **FR-039**: A tainted row MUST be muted (grey text) with `Not recommended` in a warning color; it stays in place, stays linkable, and keeps its Docker tag and compose downloads (images are never deleted; removing downloads is phase 2).
-- **FR-040**: Track chips MUST carry a one-sentence tooltip: Latest — "Every new GA release."; Standard — "GA after a short stabilization window."; Trailing — "GA after an extended stabilization window."; Latest LTS — "Newest supported LTS.". `Not recommended` MUST carry exactly "dotCMS has flagged this release; use a newer version." No per-release reason text anywhere.
+- **FR-040**: Chips MUST carry these tooltips (native title text, per the chip spec mockup): Latest — "Every new GA release."; Standard — "GA after a short stabilization window."; Trailing — "GA after an extended stabilization window."; Latest LTS — "Newest supported LTS."; `LTS` has no tooltip. `Not recommended` MUST carry exactly "dotCMS has flagged this release; use a newer version." No per-release reason text anywhere.
 - **FR-041**: Track chips are distinguished by fill weight within one hue (solid → outline as the track gets more conservative), not by hue alone, per the chip spec mockup.
 - **FR-042**: The All / Current / LTS filter tabs MUST be unchanged.
 
@@ -276,7 +276,7 @@ When the site can't be updated (devsite backend down, token expired, Hub read fa
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
 - **Existing behavior touched**: CI/CD tooling only in dotCMS/core — the `changelog-publisher` tool (`.github/actions/core-cicd/changelog-publisher`, gains a command), the `evergreen-tracks` admin path (gains a GitHub Release title step) and three workflows (`cicd_evergreen-tracks-promote.yml`, `cicd_evergreen-tracks-admin.yml`, `cicd_6-release.yml`). No product Java code, no `com.dotmarketing.*`, no database schema, no ES mapping, no REST API. The docsite (dotCMS/new-new-devsite) release pages, hook and table change; the Changelogs page gains a chip.
-- **Backward-compatibility expectations**: `changelog-publisher publish` and its exit/stdout contract are unchanged. Registry taint / untaint / hold / promote behavior and their Slack notices are unchanged. Release entries and their human-edit protection (prior spec `specs/36605-changelog-site-publish` FR-011) are untouched because the sync never writes them. LTS rows, LTS chips and the All / Current / LTS filters render as today. Rolling back the devsite PR restores today's Latest derivation; rolling back core leaves a stale-but-valid record (the next deploy's daily run heals it). Nothing here is rollback-unsafe in core.
+- **Backward-compatibility expectations**: `changelog-publisher publish` and its exit/stdout contract are unchanged. Registry taint / untaint / hold / promote behavior and their Slack notices are unchanged. Release entries and their human-edit protection (prior spec `specs/36605-changelog-site-publish` FR-011) are untouched because the sync never writes them. LTS rows, LTS chips and the All / Current / LTS filters render as today. Rolling back the devsite PR restores today's Latest derivation. Rolling back core stops all sync, so the record goes stale and nothing heals it; roll back the devsite PR first (or with it) so the pages don't show stale chips. Nothing here is rollback-unsafe in core.
 - **Known related decisions**: Spike #37844 (separate `EvergreenState` record, 1 h acceptance window to match the devsite cache). `specs/36605-changelog-site-publish` (service-account write path, non-blocking + `#dot-releases` pattern, FR-011 human-edit protection). evergreen-tracks README/RUNBOOK (tag cadence, taint/hold semantics, shared registry-mutation lock, forward-only planner). The plan phase will consult `dotCMS/platform-adrs` for release-pipeline and external-integration ADRs.
 
 ## Assumptions
@@ -292,7 +292,7 @@ When the site can't be updated (devsite backend down, token expired, Hub read fa
 - **Missing record on the devsite**: render without track/taint chips and show a short unavailable note rather than erroring or deriving Latest (PRD forbids a fallback derivation but is silent on the failure display).
 - **Slack is silent on success**: the sync posts only on failure or drift; the promote workflow already announces moves.
 - **Drift check scope**: the post-daily-run drift check compares the record with Hub; it does not verify the devsite's rendered pages (cache makes that a 1 h-lagged view by design).
-- **Serialization**: the sync runs under the same registry-mutation mutual exclusion as the job that triggered it; if the release pipeline's placement makes that impractical, the plan must show the daily reconcile still bounds any stale write to one cycle.
+- **Serialization**: the sync runs under the same registry-mutation mutual exclusion (`concurrency: evergreen-tracks-registry`) as the job that triggered it; if the release pipeline's placement makes that impractical, the plan must show the daily reconcile still bounds any stale write to one cycle. Holding that lock through the ~10 min retry budget can delay a queued `promote-latest` by the same amount (the workflows hold the lock only for the mutation so `latest` moves the moment a GA ships), so the plan must keep lock-held time within SC-005's bound or run the retries outside the lock.
 - **Retry budget**: "3 attempts with backoff, about 10 min total" covers the site write path; the Hub read reuses the existing registry client's behavior and, on failure, does not write (FR-008).
 - **Wording**: ship "Not recommended"; revisit on customer feedback (PRD open question 3).
 - **Taint on LTS** remains out of scope (GA-only).
