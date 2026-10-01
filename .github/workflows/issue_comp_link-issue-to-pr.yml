@@ -65,19 +65,48 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number")
 
-          # Check for issues linked via GitHub's Development section (timeline events).
-          # Paginated: the endpoint returns 30 events per page and on #37193 the
-          # "connected" event was the 33rd of 37, so the link went unseen.
-          connected_issue=$(gh api --paginate \
-            "repos/${{ github.repository }}/issues/$pr_number/timeline" \
-            --jq '.[] | select(.event == "connected") | .source.issue.number' 2>/dev/null | head -1)
+          # Issues linked in the Development section (sidebar). itemTypes filters before
+          # first: counts, so this reads the oldest 100 link and unlink events, not the first
+          # 100 timeline items (the REST timeline's 30-per-page default once hid #37193's
+          # link). It does not paginate, so link events past the 100th go unseen. A sidebar
+          # link can name another repository's issue, so keep the repository (#37845).
+          # Replaying the events oldest first leaves the links still in place, keyed by
+          # repo#number so unlinking one repository's #N cannot cancel another's; the
+          # longest-standing wins.
+          owner="${GITHUB_REPOSITORY%/*}"
+          repo="${GITHUB_REPOSITORY#*/}"
+          gh_err=$(mktemp)
+          connected_ref=$(gh api graphql \
+            -F owner="$owner" \
+            -F name="$repo" \
+            -F num="$pr_number" \
+            -f query='query($owner:String!,$name:String!,$num:Int!){repository(owner:$owner,name:$name){pullRequest(number:$num){timelineItems(first:100,itemTypes:[CONNECTED_EVENT,DISCONNECTED_EVENT]){nodes{__typename ... on ConnectedEvent{subject{... on Issue{number repository{nameWithOwner}}}} ... on DisconnectedEvent{subject{... on Issue{number repository{nameWithOwner}}}}}}}}}' \
+            --jq 'reduce (.data.repository.pullRequest.timelineItems.nodes[]?
+                    | select(.subject.number and .subject.repository.nameWithOwner)
+                    | [.__typename, "\(.subject.repository.nameWithOwner)#\(.subject.number)"]) as [$type, $ref]
+                  ([]; map(select(. != $ref)) + (if $type == "ConnectedEvent" then [$ref] else [] end))
+                  | first // empty' 2>"$gh_err") || {
+            echo "::warning::Development-section lookup failed; checking the PR body instead:"
+            cat "$gh_err"
+            connected_ref=""
+          }
+          rm -f "$gh_err"
+          connected_issue="${connected_ref##*#}"
+          connected_repo="${connected_ref%#*}"
 
-          if [[ -n "$connected_issue" && "$connected_issue" != "null" ]]; then
-            echo "Found manually linked issue via Development section: $connected_issue"
+          if [[ -n "$connected_issue" ]]; then
+            echo "Found issue linked via Development section: $connected_ref"
             echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
             echo "linked_issue_number=$connected_issue" >> "$GITHUB_OUTPUT"
-            echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
-            echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+            # Another repository's issue N is not this repository's #N, which is an
+            # unrelated item. Route it like a cross-repo body reference (#37845).
+            if [[ "${connected_repo,,}" == "${GITHUB_REPOSITORY,,}" ]]; then
+              echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+              echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+            else
+              echo "is_cross_repo=true" >> "$GITHUB_OUTPUT"
+              echo "cross_repo_owner_repo=$connected_repo" >> "$GITHUB_OUTPUT"
+            fi
             echo "link_method=development_section" >> "$GITHUB_OUTPUT"
           else
             pr_body=$(echo "$pr_details" | jq -r '.body // ""')
