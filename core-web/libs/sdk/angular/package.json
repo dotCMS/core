@@ -11,7 +11,7 @@
     "@dotcms/types": "0.0.0"
   },
   "dependencies": {
-    "@tinymce/tinymce-angular": "9.0.0"
+    "@tinymce/tinymce-angular": "9.1.1"
   },
   "devDependencies": {
     "@dotcms/types": "latest"
