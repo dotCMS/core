@@ -44,14 +44,17 @@ route in the admin UI depends on the menu.
    a type that uses the legacy editor opens that editor in a panel over the list, the same way
    new-editor content already opens. Content Drive never sends it to the Content Search route
    again, whatever the side-panel flag says.
-2. **Everything the legacy editor does works from the panel**: save, workflow actions (including
-   the workflow wizard and push publish), delete, jumping to the page editor, and comparing
-   versions from the History tab.
+2. **What the author needs from the legacy editor works from the panel**: save, workflow actions
+   (including the workflow wizard and push publish), delete, and comparing versions from the
+   History tab, including bringing an older version back. The panel listens only to the legacy
+   editor events these need. The editor's links to the page editor keep working as they are.
 3. **The list stays current**: it refreshes quietly on every save and every close, keeping
    folder, filters and page. Unsaved changes ask for confirmation before the panel closes.
 4. **The URL always says which panel is open**, for both editors: `editContent` with
    `editContentLang` while editing, `createContent=<type>` while creating (switching to the edit
-   params once the new content is saved). The params are removed when the panel closes. The same
+   params once the new content is saved). `editContentLang` follows a language switch inside the
+   legacy editor, and the params are removed when the panel closes. Params that can't hold
+   together open nothing. Every create starts in Content Drive's default language. The same
    URLs, when opened, reopen the panel in the editor the content type chose.
 5. **New-editor side-panel paths stay in Content Drive**: "switch to the old editor" reopens the
    content in the legacy panel, and a load error closes the panel instead of leaving for Content
@@ -95,7 +98,8 @@ plan decides the design.
 | The URL while a folder dialog is open: New Folder, Folder Settings (both through the store's dialog state) and Edit Permissions (a JSP dialog the row context menu opens directly, `dot-folder-list-context-menu.component.ts`) | No param, so a refresh closes the dialog and it can't be shared | US8 |
 | "Switch to the old editor" inside the new-editor side panel | Turns the new editor off for the type, then goes to `c/content/<inode>` and the user lands on their first portlet (`content.feature.ts`, `disableNewContentEditor`) | US6 |
 | The new-editor side panel failing to load its content | Leaves the drive for `c/content` (`content.feature.ts`, `initializeExistingContent` error branch) | US6 |
-| Compare versions from the legacy editor's History tab, inside the panel | Needs the admin app's compare dialog, which listens for the `compare-contentlet` event (`edit_contentlet_js_inc.jsp`, `emmitCompareEvent`) | US6 |
+| Compare versions from the legacy editor's History tab, inside the panel, and Bring Back | Needs the admin app's compare dialog, which listens for the `compare-contentlet` event (`edit_contentlet_js_inc.jsp`, `emmitCompareEvent`), and its Bring Back | US6 |
+| Switching language inside the legacy editor | The editor reloads itself in the new language and sends no event, so the URL can't follow it | US7 |
 | The `CD_` params from [#33726](https://github.com/dotCMS/core/pull/33726), added to every legacy hand-off so closing the full-page legacy editor returns to Content Drive (`mapQueryParamsToCDParams`, `mapParamsFromEditContentlet`, the `onClose` of `DotContentletWrapperComponent` and `DotCreateContentletComponent`), restored by Part 1's redirect, whose loop check exists only because of that hand-off | Still produced and read | FR-026, FR-027 |
 
 **Out of scope**
@@ -187,6 +191,8 @@ in the Content Drive panel with the site root as its location.
    Content Drive opens on the site root and that is the new content's location.
 5. **Given** a `createContent` link that also names a folder (`path`), **When** it is opened,
    **Then** Content Drive opens on that folder and the create form uses it as the location.
+6. **Given** any create, from Content Drive's create action or a `createContent` link, in either
+   editor, **When** the form opens, **Then** it starts in Content Drive's default language.
 
 ---
 
@@ -194,8 +200,8 @@ in the Content Drive panel with the site root as its location.
 
 From the legacy editor in the panel, the author runs workflow actions (publish, unpublish,
 archive, and so on), including ones that need extra input (comments, assignment, push publish),
-deletes or destroys the content, or jumps to the page editor. Each action works as it does in
-Content Search, and the list reflects the result.
+deletes or destroys the content, or follows one of its links to the page editor. Each action
+works as it does in Content Search, and the list reflects the result.
 
 **Why this priority**: Editing without workflow is only half of the job, but Stories 1 and 2
 already unblock the author for plain saves. These actions complete the parity with the Content
@@ -216,8 +222,9 @@ shows the new state.
    opens and works as it does in Content Search.
 4. **Given** the author deletes or destroys the content from the panel, **When** the action
    completes, **Then** the panel closes and the item is gone from the list.
-5. **Given** the editor offers a link to the page editor, **When** the author follows it,
-   **Then** the page editor opens for that page.
+5. **Given** the editor's links to the page editor (**Preview page**, and the pages listed in the
+   **References** tab), **When** the author follows one, **Then** the page editor opens, as it
+   does from the full-page editor today.
 
 ---
 
@@ -292,7 +299,7 @@ this spec fixes for Stories 1 and 2.
 
 **Independent Test**: As a user without Content Search in their menu, open new-editor content in
 the panel and switch to the old editor. Then force a load error in the panel. Then open a
-legacy-editor item and compare two versions from its History tab.
+legacy-editor item, compare two versions from its History tab, and bring the older one back.
 
 **Acceptance Scenarios**:
 
@@ -303,6 +310,8 @@ legacy-editor item and compare two versions from its History tab.
    error message is shown, the panel closes, and the list keeps its folder, filters and page.
 3. **Given** the legacy panel open, **When** the author compares two versions from the History
    tab, **Then** the compare dialog opens over Content Drive.
+4. **Given** that compare dialog, **When** the author uses **Bring Back** on a version, **Then**
+   that version is restored in the panel, the compare dialog closes, and the list refreshes.
 
 ---
 
@@ -336,6 +345,12 @@ the params are gone.
    create form.
 5. **Given** any panel open, **When** it closes for any reason, **Then** `editContent`,
    `editContentLang` and `createContent` are removed from the URL.
+6. **Given** the legacy panel open, **When** the author switches language inside the editor,
+   **Then** `editContentLang` changes to that language without adding a browser history entry,
+   and a refresh reopens the content in that language.
+7. **Given** a URL with params that can't hold together (`editContent` with `createContent`, a
+   panel param with a folder-dialog param, or two folder-dialog params), **When** it is opened,
+   **Then** nothing opens and all of those params are removed.
 
 ---
 
@@ -374,9 +389,8 @@ browser Back, and check that the param is gone.
 
 ### Edge Cases
 
-- **Delete of content that is not a page**: the legacy editor reports it as a plain close, the
-  same as Cancel. Only pages report a deletion of their own. So the list refreshes on every close,
-  whatever the reason, rather than trying to detect what happened.
+- **Delete from the panel**: the panel closed, so the list refreshes, as on every close (FR-014).
+  Content Drive does not try to tell a delete from any other close.
 - **Close with no changes**: this still triggers one quiet refresh. That costs one extra list
   request and is accepted, so that changes the drive cannot see (moves, language switches) are
   never missed.
@@ -393,8 +407,6 @@ browser Back, and check that the param is gone.
   standard error message is shown and the panel does not open.
 - **`createContent` names a type that doesn't exist or the user can't create**: the standard
   error message is shown, nothing opens, and the author stays on Content Drive.
-- **Author switches language inside the legacy editor**: the list refreshes on close. The URL may
-  still name the language the panel was opened with.
 - **Side-panel flag off**: legacy-editor content still opens in the panel, while new-editor content
   opens full screen, as today. The two editors behave differently in that configuration. This is
   accepted: the flag is on by default, and a full-page legacy editor could only bring the author
@@ -408,8 +420,9 @@ browser Back, and check that the param is gone.
 - **Folder dialog for a folder that is gone or out of reach** (deleted, moved to another site, no
   permission, a bad identifier): the standard error message is shown, no dialog opens, and the
   param is removed.
-- **A URL naming both a panel and a folder dialog**: only the panel opens, and the folder-dialog
-  param is removed. The two never stay open together.
+- **A URL with params that can't hold together** (`editContent` with `createContent`, a panel
+  param with a folder-dialog param, or two folder-dialog params): Content Drive can't tell which
+  one the author meant, so nothing opens and all of those params are removed.
 - **Related content from a Block Editor field inside a panel**: the Block Editor's bubble menu
   navigates the whole admin window to the related content's editor, for both panels, and the
   open panel is lost. Part 1's redirect lands the author back in Content Drive with that content
@@ -431,13 +444,14 @@ browser Back, and check that the param is gone.
 - **FR-002**: Creating content of a type that has not opted into the new editor MUST open the
   legacy create form in a Content Drive side panel, and MUST NOT navigate to the Content Search
   route.
-- **FR-003**: The legacy create form opened from Content Drive MUST pre-select, as the new
-  content's location, the folder Content Drive is showing: the folder the author is browsing, or,
-  for a `createContent` link, the folder the link names (FR-024).
+- **FR-003**: A create form opened from Content Drive, from its create action or from a
+  `createContent` link and in either editor, MUST pre-select, as the new content's location, the
+  folder Content Drive is showing: the folder the author is browsing, or, for a `createContent`
+  link, the folder the link names (FR-024). It MUST start in Content Drive's default language.
 - **FR-004**: FR-001 and FR-002 MUST work for a user whose menu does not include Content Search.
 - **FR-005**: Content types that opted into the new editor MUST keep their current behavior,
   including the side-panel flag deciding between the panel and the full-page editor, except for
-  FR-020, FR-025, FR-028 and FR-029.
+  the create's default language (FR-003), FR-020, FR-023, FR-025, FR-028 and FR-029.
 - **FR-006**: The legacy-editor panel MUST NOT depend on the side-panel flag: FR-001, FR-002,
   FR-021 and FR-024 apply whether the flag is on, off or not yet resolved. The flag keeps deciding
   only how new-editor content opens.
@@ -446,15 +460,18 @@ browser Back, and check that the param is gone.
 
 **In-panel behavior**
 
-- **FR-008**: The panel MUST support everything the full-page legacy editor supports through its
-  existing event contract with the admin UI: close, save, page deletion, change tracking, page
-  editor navigation, load notification and version comparison.
+- **FR-008**: The panel MUST listen only to the legacy editor events these requirements need, and
+  ignore the rest: close (FR-014, FR-016), save (FR-013, FR-018, FR-025), data changed (FR-017,
+  FR-018), workflow wizard (FR-009), push publish (FR-010) and compare versions. Comparing versions
+  from the History tab MUST open the compare dialog over Content Drive, and its **Bring Back** MUST
+  restore the chosen version in the panel, close the compare dialog and refresh the list.
 - **FR-009**: Workflow actions that need extra input MUST open the workflow wizard from the panel,
   and on completion MUST hand the wizard's input back to the legacy editor in the panel, which
   applies the action.
 - **FR-010**: Push publish actions MUST open the push publish dialog from the panel.
-- **FR-011**: A request from inside the legacy editor to open the page editor MUST navigate to
-  the page editor.
+- **FR-011**: The legacy editor's links to the page editor (**Preview page** and the
+  **References** tab) MUST keep opening the page editor. They are plain links, so the panel does
+  not handle them.
 - **FR-012**: The panel MUST show a title that identifies the content being edited, or the type
   being created.
 
@@ -463,7 +480,7 @@ browser Back, and check that the param is gone.
 - **FR-013**: Saving in the panel, including a workflow action (with or without the wizard), MUST
   refresh the Content Drive list while the panel stays open, and keep the current folder, filters
   and page.
-- **FR-014**: Closing the panel for any reason (the editor's own close, a page deletion, X, ESC,
+- **FR-014**: Closing the panel for any reason (the editor's own close, X, ESC,
   a click outside the panel, confirmed browser Back) MUST refresh the Content Drive list, and
   keep the current folder, filters and page.
 - **FR-015**: The refresh on close MUST NOT show the list's loading placeholder.
@@ -484,8 +501,9 @@ browser Back, and check that the param is gone.
 - **FR-020**: While a panel is open, for either editor, the Content Drive URL MUST name what it
   shows: `editContent=<identifier>` with `editContentLang=<language id>` for an edit, and
   `createContent=<content type variable>` for a create, replacing today's `editContent=new`
-  marker. Closing the panel for any reason MUST remove all three params. Refresh, Back and shared
-  links MUST behave the same for both editors.
+  marker. When the author switches language inside the legacy panel, `editContentLang` MUST
+  follow it, without adding a browser history entry. Closing the panel for any reason MUST remove
+  all three params. Refresh, Back and shared links MUST behave the same for both editors.
 - **FR-021**: Opening a Content Drive URL that names legacy-editor content (`editContent` with
   `editContentLang`) MUST open the legacy editor in the panel. This applies however the URL was
   reached, including Part 1's redirect from `c/content/<inode>`. Content Drive MUST look up the
@@ -493,11 +511,14 @@ browser Back, and check that the param is gone.
 - **FR-022**: Opening a Content Drive URL that names new-editor content MUST behave as today.
 - **FR-023**: The Content Drive links that open a panel (`editContent` with `editContentLang`,
   and `createContent`) are supported entry points. Part 1 redirects to them, other screens may
-  link to them, and they MUST keep working for both editor kinds.
+  link to them, and they MUST keep working for both editor kinds. A URL that combines params that
+  can't hold together (`editContent` with `createContent`, a panel param with a folder-dialog
+  param, or two folder-dialog params) MUST open nothing and have all of those params removed.
 - **FR-024**: Opening a Content Drive URL with `createContent=<content type variable>` MUST open
   the create form for that type, following FR-002 (legacy-editor type) or today's new-editor
   create (other types). Content Drive opens on the folder the URL names (`path`), or on the site
-  root when it names none, and that folder is the new content's location (FR-003). The param stays
+  root when it names none, and that folder is the new content's location, in Content Drive's
+  default language (FR-003). The param stays
   in the URL while the create panel is open (FR-020), so a refresh opens an empty create form for
   the same type in the same folder.
 - **FR-025**: When content created in a panel is saved for the first time, for either editor,
@@ -550,8 +571,9 @@ browser Back, and check that the param is gone.
 - **FR-034**: Automated tests MUST cover the routing decision (new vs legacy editor, flag on vs
   off, edit vs create vs `editContent` link vs `createContent` link), the handling of each legacy
   editor event, the list refresh after save and after every kind of close, the URL params for each
-  panel state (FR-020, FR-024, FR-025), FR-026 through FR-029, and the folder-dialog params
-  (FR-030 through FR-033).
+  panel state (FR-020, FR-024, FR-025), the language switch in the legacy panel, Bring Back, URLs
+  with params that can't hold together (FR-023), FR-026 through FR-029, and the folder-dialog
+  params (FR-030 through FR-033).
 
 ### Key Entities
 
@@ -564,17 +586,19 @@ browser Back, and check that the param is gone.
   create. They describe the open panel and are the same links Part 1 builds from other screens.
 - **Folder-dialog URL params**: `createFolder`, `editFolder` and `folderPermissions`. They describe
   the open folder dialog, and at most one of them, or of the panel params, is in the URL at a time.
-- **Legacy editor event**: a notification the embedded legacy editor sends to the admin UI
-  (close, save, page deleted, data changed, open page editor, loaded, compare versions, workflow
-  wizard, push publish).
+  A URL that combines params that can't hold together opens nothing and has all of them removed
+  (FR-023).
+- **Legacy editor event**: a notification the embedded legacy editor sends to the admin UI. The
+  panel listens to close, save, data changed, workflow wizard, push publish and compare versions,
+  and ignores every other one (FR-008).
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
 - **SC-001**: A user without Content Search in their menu can edit and create content of every
-  legacy-editor content type from Content Drive, with the side-panel flag on or off, and can
-  switch a type back to the old editor from the side panel. Zero of these attempts redirect them
+  legacy-editor content type from Content Drive, with the side-panel flag on or off, and, with the
+  flag on, can switch a type back to the old editor from the new editor's side panel. Zero of these attempts redirect them
   to another portlet.
 - **SC-002**: After saving or closing the legacy-editor panel, the author is on the same folder,
   filters and page they started from in 100% of cases, with no manual navigation.
@@ -640,14 +664,25 @@ browser Back, and check that the param is gone.
   - The create panel's URL uses `createContent=<type>`, the param Part 1 already builds, rather
     than `editContent=new` plus a type param, so an incoming link and an open panel share one
     format (decided 2026-09-30, on review).
+  - The panel listens only to the legacy editor events its requirements need, rather than the
+    full contract the full-page wrapper handles, since the product is moving away from the legacy
+    editor (decided 2026-10-01, on review). A URL with params that can't hold together opens
+    nothing, rather than letting one kind of param win (decided 2026-10-01, on review).
   - The folder dialogs follow the same URL rules as the panels (decided 2026-09-30, on review, as
     a nice to have). It is the lowest-priority story (US8) because it does not block replacing
     Content Search or Site Browser.
 
 ## Assumptions
 
-- The legacy editor's existing event contract is stable and sufficient. Embedding it needs no
-  change to the legacy editor.
+- The legacy editor events listed in FR-008 are stable and enough for these requirements.
+  Embedding it needs no change to the legacy editor.
+- The legacy editor sends no event when the author switches language: it reloads itself in the
+  new language. Bring Back also reloads it, with the restored version, and sends no save event.
+  The panel has to notice both from the reload, and refresh the list itself after a Bring Back.
+- The legacy editor's links to the page editor are plain links. The `edit-page` event the editor
+  defines is never sent by any of its screens, so the panel needs nothing for them.
+- Content Drive already loads its default language, so starting a create in it needs no extra
+  request.
 - The server already lets a user without Content Search in their menu load the legacy editor.
   Only the admin UI route is gated. Content-level permissions are still enforced by the editor
   itself.
