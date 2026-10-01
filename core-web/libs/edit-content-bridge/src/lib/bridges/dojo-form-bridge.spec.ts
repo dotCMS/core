@@ -23,6 +23,7 @@ describe('DojoFormBridge', () => {
         document.body.removeChild(inputElement);
         document.body.removeChild(textareaElement);
         bridge.destroy();
+        vi.restoreAllMocks();
     });
 
     describe('get', () => {
@@ -241,6 +242,7 @@ describe('DojoFormBridge', () => {
         });
 
         it('should cleanup load handler on destroy', () => {
+            vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
             const callback = vi.fn();
             bridge.ready(callback);
 
@@ -359,8 +361,60 @@ describe('DojoFormBridge', () => {
     });
 
     describe('ready', () => {
+        describe('while the page is still loading', () => {
+            beforeEach(() => {
+                vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
+            });
+
+            it('should wait for the load event before calling back', () => {
+                const callback = vi.fn();
+                bridge.ready(callback);
+
+                expect(callback).not.toHaveBeenCalled();
+
+                window.dispatchEvent(new Event('load'));
+
+                expect(callback).toHaveBeenCalledWith(bridge);
+            });
+
+            it('should call back every template that asked, not only the last one', () => {
+                const first = vi.fn();
+                const second = vi.fn();
+                bridge.ready(first);
+                bridge.ready(second);
+
+                window.dispatchEvent(new Event('load'));
+
+                expect(first).toHaveBeenCalledTimes(1);
+                expect(second).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not call back any template once the bridge is destroyed', () => {
+                const first = vi.fn();
+                const second = vi.fn();
+                bridge.ready(first);
+                bridge.ready(second);
+
+                bridge.destroy();
+                window.dispatchEvent(new Event('load'));
+
+                expect(first).not.toHaveBeenCalled();
+                expect(second).not.toHaveBeenCalled();
+            });
+        });
+
+        it('should call back right away when the page has already loaded', () => {
+            vi.spyOn(document, 'readyState', 'get').mockReturnValue('complete');
+            const callback = vi.fn();
+
+            bridge.ready(callback);
+
+            expect(callback).toHaveBeenCalledWith(bridge);
+        });
+
         it('should execute callback when loaded', () =>
             new Promise<void>((done) => {
+                vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
                 bridge.ready((api) => {
                     expect(api).toBeDefined();
                     done();
@@ -370,6 +424,7 @@ describe('DojoFormBridge', () => {
             }));
 
         it('should not execute callback if bridge is destroyed', () => {
+            vi.spyOn(document, 'readyState', 'get').mockReturnValue('loading');
             const callback = vi.fn();
             bridge.ready(callback);
 

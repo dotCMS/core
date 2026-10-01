@@ -4,6 +4,8 @@
 import { of, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
+import { FormControl, FormGroup } from '@angular/forms';
+
 import { DotSite } from '@dotcms/dotcms-models';
 import { DotAssetPickerComponent } from '@dotcms/ui';
 
@@ -122,9 +124,8 @@ describe('AngularFormBridge', () => {
         });
         expect(mockFormControl.markAsTouched).toHaveBeenCalled();
         expect(mockFormControl.markAsDirty).toHaveBeenCalled();
-        expect(mockFormControl.updateValueAndValidity).toHaveBeenCalledWith({
-            emitEvent: true
-        });
+        // setValue already re-runs validation; a second pass would emit valueChanges twice
+        expect(mockFormControl.updateValueAndValidity).not.toHaveBeenCalled();
     });
 
     it('should not set value if control is not found', () => {
@@ -1308,6 +1309,93 @@ describe('AngularFormBridge', () => {
 
         it('should not throw if no dialog is open when destroyed', () => {
             expect(() => bridge.destroy()).not.toThrow();
+        });
+    });
+});
+
+describe('AngularFormBridge with a real FormGroup', () => {
+    const zone = { run: (fn: () => void) => fn() } as any;
+    const dialogService = { open: vi.fn() } as any;
+    let form: FormGroup;
+    let bridge: AngularFormBridge;
+
+    beforeEach(() => {
+        AngularFormBridge.resetInstance();
+        form = new FormGroup({ slug: new FormControl(''), title: new FormControl('') });
+        bridge = AngularFormBridge.getInstance(form, zone, dialogService);
+    });
+
+    afterEach(() => {
+        AngularFormBridge.resetInstance();
+        delete (globalThis as any).DotCustomFieldApi;
+    });
+
+    describe('set', () => {
+        it('should notify onChange callbacks once per value change', () => {
+            const callback = vi.fn();
+            bridge.onChangeField('slug', callback);
+
+            bridge.set('slug', 'hello-world');
+
+            expect(callback).toHaveBeenCalledTimes(1);
+            expect(callback).toHaveBeenCalledWith('hello-world');
+        });
+
+        it('should mark the field touched and dirty by default', () => {
+            bridge.getField('slug').setValue('hello-world');
+
+            expect(form.get('slug')?.touched).toBe(true);
+            expect(form.get('slug')?.dirty).toBe(true);
+        });
+
+        it('should leave touched and dirty untouched when markDirty is false', () => {
+            bridge.getField('slug').setValue('000000', { markDirty: false });
+
+            expect(form.get('slug')?.value).toBe('000000');
+            expect(form.get('slug')?.touched).toBe(false);
+            expect(form.get('slug')?.dirty).toBe(false);
+        });
+
+        it('should still notify onChange callbacks when markDirty is false', () => {
+            const callback = vi.fn();
+            bridge.getField('slug').onChange(callback);
+
+            bridge.set('slug', '000000', { markDirty: false });
+
+            expect(callback).toHaveBeenCalledWith('000000');
+        });
+    });
+
+    describe('popInstance', () => {
+        it('should point window.DotCustomFieldApi back at the parent bridge', () => {
+            (globalThis as any).DotCustomFieldApi = bridge;
+
+            AngularFormBridge.pushInstance();
+            const nested = AngularFormBridge.getInstance(
+                new FormGroup({ title: new FormControl('') }),
+                zone,
+                dialogService
+            );
+            (globalThis as any).DotCustomFieldApi = nested;
+
+            AngularFormBridge.popInstance();
+
+            expect((globalThis as any).DotCustomFieldApi).toBe(bridge);
+        });
+
+        it('should leave window.DotCustomFieldApi alone when it is not the popped bridge', () => {
+            const other = { name: 'set by someone else' };
+            (globalThis as any).DotCustomFieldApi = other;
+
+            AngularFormBridge.pushInstance();
+            AngularFormBridge.getInstance(
+                new FormGroup({ title: new FormControl('') }),
+                zone,
+                dialogService
+            );
+            AngularFormBridge.popInstance();
+
+            expect((globalThis as any).DotCustomFieldApi).toBe(other);
         });
     });
 });

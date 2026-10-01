@@ -27,7 +27,7 @@ interface FieldListener {
  */
 export class DojoFormBridge implements FormBridge {
     private fieldListeners: Map<string, FieldListener> = new Map();
-    private loadHandler?: () => void;
+    private loadHandlers: Set<() => void> = new Set();
 
     constructor() {
         document.addEventListener('beforeunload', () => this.destroy());
@@ -195,10 +195,8 @@ export class DojoFormBridge implements FormBridge {
             this.cleanupFieldListeners(fieldId);
         });
 
-        if (this.loadHandler) {
-            window.removeEventListener('load', this.loadHandler);
-            this.loadHandler = undefined;
-        }
+        this.loadHandlers.forEach((handler) => window.removeEventListener('load', handler));
+        this.loadHandlers.clear();
     }
 
     /**
@@ -300,17 +298,29 @@ export class DojoFormBridge implements FormBridge {
     }
 
     /**
-     * Executes callback when bridge is ready, handling iframe load.
+     * Runs the callback once the page has loaded.
+     *
+     * A template that calls this after `load` has already fired (a script added late, or one that
+     * runs after an async step) is called back right away; waiting for a `load` that already
+     * happened would never call it at all. Every caller is called back, and none are once the
+     * bridge is destroyed.
      *
      * @param callback - The callback function to execute when the bridge is ready.
      */
     ready(callback: (api: FormBridge) => void): void {
-        // Wait for iframe to be fully loaded
-        this.loadHandler = () => {
+        if (document.readyState === 'complete') {
+            callback(this);
+
+            return;
+        }
+
+        const handler = () => {
+            this.loadHandlers.delete(handler);
             callback(this);
         };
 
-        window.addEventListener('load', this.loadHandler);
+        this.loadHandlers.add(handler);
+        window.addEventListener('load', handler, { once: true });
     }
 
     /**
