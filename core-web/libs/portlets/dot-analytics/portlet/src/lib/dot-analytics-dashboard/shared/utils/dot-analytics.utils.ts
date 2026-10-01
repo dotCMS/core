@@ -1,9 +1,6 @@
-import { differenceInCalendarDays, isBefore, isDate, parse } from 'date-fns';
+import { isBefore, isValid, parse } from 'date-fns';
 
 import { TIME_RANGE_OPTIONS, TimeRange } from '@dotcms/portlets/dot-analytics/data-access';
-
-/** Minimum number of days required for a custom date range (inclusive) */
-export const MIN_CUSTOM_DATE_RANGE_DAYS = 7;
 
 /**
  * Distributes integer percentages using the Largest Remainder Method,
@@ -38,27 +35,20 @@ export function distributePercentages(values: number[]): number[] {
 
 /**
  * Validates custom date range parameters.
- * The range must span at least MIN_CUSTOM_DATE_RANGE_DAYS days (inclusive).
+ * A single calendar day is valid; the end date must not precede the start date.
  * @param fromDate - Start date string (yyyy-MM-dd)
  * @param toDate - End date string (yyyy-MM-dd)
- * @returns true if the date range is valid and meets the minimum span
+ * @returns true if both dates are valid and in non-decreasing order
  */
 export const isValidCustomDateRange = (fromDate: string, toDate: string): boolean => {
     const fromDateObj = parse(fromDate, 'yyyy-MM-dd', new Date());
     const toDateObj = parse(toDate, 'yyyy-MM-dd', new Date());
 
-    // Ensure dates are valid Date objects
-    if (!isDate(fromDateObj) || !isDate(toDateObj)) {
+    if (!isValid(fromDateObj) || !isValid(toDateObj)) {
         return false;
     }
 
-    // Check order: from must be strictly before to
-    if (!isBefore(fromDateObj, toDateObj)) {
-        return false;
-    }
-
-    // Enforce minimum 7-day span (inclusive: day 1 to day 7 = 6 calendar days difference)
-    return differenceInCalendarDays(toDateObj, fromDateObj) >= MIN_CUSTOM_DATE_RANGE_DAYS - 1;
+    return !isBefore(toDateObj, fromDateObj);
 };
 
 /**
