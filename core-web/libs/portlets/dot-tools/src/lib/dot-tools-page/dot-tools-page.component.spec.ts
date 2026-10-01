@@ -1,8 +1,4 @@
-import {
-    createComponentFactory,
-    mockProvider,
-    Spectator
-} from '@openng/spectator/vitest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
