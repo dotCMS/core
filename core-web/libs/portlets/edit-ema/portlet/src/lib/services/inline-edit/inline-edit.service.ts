@@ -39,13 +39,8 @@ export const INLINE_EDIT_TINYMCE_BASE_OPTIONS = {
     valid_styles: {
         '*': 'font-size,font-family,color,text-decoration,text-align'
     },
-    // dotCMS ships TinyMCE under the GPL license, never commercial. This calls the raw
-    // `tinymce.init()` global directly (no Angular/React wrapper), so this option is the real
-    // mechanism here.
-    license_key: 'gpl',
-    // TinyMCE 6+ shows a premium-features promotion element by default; the pre-upgrade version
-    // (4.9.6) had no such thing, so this keeps the toolbar matching the original look.
-    promotion: false
+    powerpaste_word_import: 'clean',
+    powerpaste_html_import: 'clean'
 } as const;
 
 @Injectable({
@@ -100,20 +95,16 @@ export class InlineEditService {
         this.$iframeWindow.set(iframe.nativeElement.contentWindow);
         this.$isInlineEditingEnable.set(true);
 
-        if (!doc || doc.querySelector('script[data-inline="true"]')) {
+        if (doc.querySelector('script[data-inline="true"]')) {
             return;
         }
 
         this.#addStyles(doc);
-        this.#addScript(doc, '/ext/tinymce/tinymce.min.js');
+        this.#addScript(doc, '/html/js/tinymce/js/tinymce/tinymce.min.js');
     }
 
     removeInlineEdit(iframe: ElementRef<HTMLIFrameElement>) {
         const doc = iframe.nativeElement.contentDocument;
-
-        if (!doc) {
-            return;
-        }
 
         doc.querySelectorAll('script[data-inline="true"]').forEach((script) => script.remove());
         doc.querySelectorAll('style').forEach((style) => {
