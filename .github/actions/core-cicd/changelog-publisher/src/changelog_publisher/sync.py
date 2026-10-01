@@ -46,14 +46,15 @@ def load_state_file(path: str) -> dict:
 
 
 def parse_record_state(raw) -> dict:
-    if isinstance(raw, dict):
-        return raw
     if isinstance(raw, str):
         try:
-            parsed = json.loads(raw)
+            raw = json.loads(raw)
         except ValueError:
             return {}
-        return parsed if isinstance(parsed, dict) else {}
+    if isinstance(raw, dict):
+        tainted = raw.get("tainted", [])
+        ok = isinstance(tainted, list) and all(isinstance(v, str) for v in tainted)
+        return raw if ok else {}
     return {}
 
 
@@ -109,8 +110,8 @@ def reconcile(client: CorpsitesClient, hub: dict, *, apply: bool) -> SyncResult:
     return result
 
 
-def sync_with_retries(client: CorpsitesClient, hub: dict, *, attempts: int = 3,
-                      sleep=time.sleep) -> SyncResult:
+def sync_with_retries(client: CorpsitesClient, hub: dict) -> SyncResult:
+    attempts = len(_RETRY_DELAYS_SECONDS) + 1
     for i in range(1, attempts + 1):
         try:
             return reconcile(client, hub, apply=True)
@@ -118,4 +119,4 @@ def sync_with_retries(client: CorpsitesClient, hub: dict, *, attempts: int = 3,
             log.error("attempt %d/%d failed: %s", i, attempts, exc)
             if i == attempts:
                 raise
-            sleep(_RETRY_DELAYS_SECONDS[i - 1])
+            time.sleep(_RETRY_DELAYS_SECONDS[i - 1])

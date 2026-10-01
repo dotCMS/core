@@ -107,7 +107,7 @@ def test_differs_fires_one_evergreenstate_write(tmp_path, capsys):
 
 
 @responses_lib.activate
-@pytest.mark.parametrize("state", [dict(_OLD), "not json", ""])
+@pytest.mark.parametrize("state", [dict(_OLD), "not json", "", {"tainted": 5}, {"tainted": [["a"]]}])
 def test_object_and_garbage_record_state(tmp_path, state):
     _route_search(_record(state))
     responses_lib.add(responses_lib.PUT, _FIRE_URL, json={}, status=200)
