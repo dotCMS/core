@@ -60,6 +60,8 @@ jobs:
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - uses: astral-sh/setup-uv@v5
       - uses: docker/setup-buildx-action@v3
       - name: Docker login
@@ -116,7 +118,7 @@ jobs:
             gh release edit "v$VERSION" --repo "$GITHUB_REPOSITORY" --title "$NEW"
           fi
       - name: Notify title failure
-        if: steps.title.outcome == 'failure'
+        if: steps.title.outcome == 'failure' && inputs.mode == 'apply'
         continue-on-error: true
         uses: ./.github/actions/core-cicd/notification/notify-slack
         with:

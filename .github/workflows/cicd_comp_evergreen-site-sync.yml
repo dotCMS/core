@@ -45,7 +45,9 @@ jobs:
       contents: read
     continue-on-error: true
     concurrency:
-      group: evergreen-tracks-site-sync
+      # Dry-runs write nothing, so they get their own group; otherwise a queued dry-run
+      # would cancel a pending apply sync (R3 relies on the newer sync writing state).
+      group: evergreen-tracks-site-sync${{ !inputs.apply && '-dry-run' || '' }}
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -88,7 +90,8 @@ jobs:
             echo "reason=no release row for: $(echo "$OUTPUT" | grep -o '::evergreen-sync-missing-row::.*' | sed 's/^::evergreen-sync-missing-row:://' | paste -sd, -)" >> "$GITHUB_OUTPUT"
           elif [ "$RC" -ne 0 ]; then
             echo "result=failure" >> "$GITHUB_OUTPUT"
-            echo "reason=$(echo "$OUTPUT" | grep -o '::evergreen-sync-error::.*' | sed 's/^::evergreen-sync-error:://' | head -1)" >> "$GITHUB_OUTPUT"
+            REASON=$(echo "$OUTPUT" | grep -o '::evergreen-sync-error::.*' | sed 's/^::evergreen-sync-error:://' | head -1 || true)
+            echo "reason=${REASON:-sync-site exited rc=$RC (see run log)}" >> "$GITHUB_OUTPUT"
           else
             echo "result=ok" >> "$GITHUB_OUTPUT"
           fi
@@ -103,7 +106,7 @@ jobs:
           DOTCMS_DEVSITE_URL: ${{ vars.DOTCMS_DEVSITE_URL }}
           DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
         run: |
-          OUTPUT=$(uv run changelog-publisher sync-site --state-file "$RUNNER_TEMP/hub-state.json" 2>&1)
+          OUTPUT=$(uv run changelog-publisher sync-site --state-file "$RUNNER_TEMP/hub-state.json" 2>&1) || true
           echo "$OUTPUT"
           FIELDS=$(echo "$OUTPUT" | grep -o '::evergreen-sync::would-update fields=.*' | head -1 | sed 's/.*fields=//')
           if [ -n "$FIELDS" ]; then
