@@ -63,6 +63,22 @@ describe('DotAnalyticsFiltersComponent', () => {
     });
 
     describe('Default Values', () => {
+        it('offers only the requested presets, with Custom first', () => {
+            const dropdown = spectator.query(Select);
+            expect(dropdown.options.map((option) => option.value)).toEqual([
+                'custom',
+                'today',
+                'yesterday',
+                'thisweek',
+                'last7days',
+                'lastweek',
+                'last30days',
+                'thismonth',
+                'lastmonth',
+                'last90days'
+            ]);
+        });
+
         it('should initialize with default time period from constants', () => {
             expect(spectator.component.$selectedTimeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
         });
@@ -77,6 +93,19 @@ describe('DotAnalyticsFiltersComponent', () => {
     });
 
     describe('Custom Time Range Visibility', () => {
+        it('shows the date picker when Custom is chosen without querying an incomplete range', () => {
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
+            spectator.triggerEventHandler(byTestId('period-dropdown'), 'ngModelChange', 'custom');
+            spectator.triggerEventHandler(Select, 'onChange', {
+                value: 'custom',
+                originalEvent: createFakeEvent('change')
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(DatePicker)).toBeTruthy();
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
+        });
+
         it('should show custom calendar when CUSTOM_TIME_RANGE is selected', () => {
             spectator.component.$selectedTimeRange.set(TIME_RANGE_OPTIONS.custom);
             spectator.detectChanges();
@@ -145,6 +174,34 @@ describe('DotAnalyticsFiltersComponent', () => {
         beforeEach(() => {
             spectator.setInput('timeRange', TIME_RANGE_OPTIONS.custom);
             spectator.detectChanges();
+        });
+
+        it.each([27, 28, 29, 30])('allows visible September %s in the October calendar', (day) => {
+            const today = new Date('2026-10-01T00:00:00');
+            spectator.component.$today.set(today);
+            spectator.component.$customDateRange.set([today, today]);
+            spectator.detectChanges();
+
+            const calendar = spectator.query(DatePicker);
+            expect(calendar.selectOtherMonths).toBe(true);
+            expect(calendar.isSelectable(day, 8, 2026, true)).toBe(true);
+        });
+
+        it('keeps adjacent-month future dates unselectable', () => {
+            spectator.component.$today.set(new Date('2026-10-01T00:00:00'));
+            spectator.detectChanges();
+
+            const calendar = spectator.query(DatePicker);
+            expect(calendar.isSelectable(1, 10, 2026, true)).toBe(false);
+        });
+
+        it('emits a cross-month range selected through the calendar', () => {
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
+            spectator.triggerEventHandler(DatePicker, 'onSelect', new Date('2026-09-27T00:00:00'));
+            expect(changeFiltersSpy).not.toHaveBeenCalled();
+            spectator.triggerEventHandler(DatePicker, 'onSelect', new Date('2026-10-01T00:00:00'));
+
+            expect(changeFiltersSpy).toHaveBeenCalledExactlyOnceWith(['2026-09-27', '2026-10-01']);
         });
 
         it('keeps nearby dates selectable for short custom ranges', () => {
@@ -326,6 +383,26 @@ describe('DotAnalyticsFiltersComponent', () => {
     });
 
     describe('onChangeTimeRange', () => {
+        it.each([
+            'today',
+            'yesterday',
+            'thisweek',
+            'last7days',
+            'lastweek',
+            'last30days',
+            'thismonth',
+            'lastmonth',
+            'last90days'
+        ])('emits %s immediately when selected', (preset) => {
+            const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
+            spectator.triggerEventHandler(Select, 'onChange', {
+                value: preset,
+                originalEvent: createFakeEvent('change')
+            });
+
+            expect(changeFiltersSpy).toHaveBeenCalledExactlyOnceWith(preset);
+        });
+
         it('should emit time range when time range is selected', () => {
             const changeFiltersSpy = vi.spyOn(spectator.component.changeFilters, 'emit');
             spectator.triggerEventHandler(Select, 'onChange', {

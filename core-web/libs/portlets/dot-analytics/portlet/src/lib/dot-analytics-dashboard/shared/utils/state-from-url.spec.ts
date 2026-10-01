@@ -3,6 +3,23 @@ import { convertToParamMap } from '@angular/router';
 import { getProperQueryParamsFromUrl } from './state-from-url';
 
 describe('Analytics custom date range URL state', () => {
+    it.each([
+        'today',
+        'yesterday',
+        'thisweek',
+        'last7days',
+        'lastweek',
+        'last30days',
+        'thismonth',
+        'lastmonth',
+        'last90days'
+    ])('restores the %s preset without requiring absolute dates in the URL', (preset) => {
+        expect(getProperQueryParamsFromUrl(convertToParamMap({ time_range: preset }))).toEqual({
+            type: 'timeRange',
+            timeRange: preset
+        });
+    });
+
     it('restores a today-only custom range rather than resetting to last7days', () => {
         const result = getProperQueryParamsFromUrl(
             convertToParamMap({
