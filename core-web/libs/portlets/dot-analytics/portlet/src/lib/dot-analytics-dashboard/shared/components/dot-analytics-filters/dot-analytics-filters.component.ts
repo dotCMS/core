@@ -1,5 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
-import { addDays, format, isBefore, parse, startOfDay } from 'date-fns';
+import { format, isBefore, parse, startOfDay } from 'date-fns';
 
 import {
     ChangeDetectionStrategy,
@@ -26,10 +26,7 @@ import {
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { FilterOption, TIME_PERIOD_OPTIONS } from '../../constants';
-import {
-    isValidCustomDateRange,
-    MIN_CUSTOM_DATE_RANGE_DAYS
-} from '../../utils/dot-analytics.utils';
+import { isValidCustomDateRange } from '../../utils/dot-analytics.utils';
 
 /**
  * Filter controls component for analytics dashboard.
@@ -61,33 +58,8 @@ export class DotAnalyticsFiltersComponent {
     /** Maximum selectable date — today (no future dates allowed) */
     readonly $today = signal<Date>(startOfDay(new Date()));
 
-    /**
-     * Tracks the first date selected during range picking.
-     * Used to compute which intermediate dates should be disabled.
-     */
+    /** Tracks the first date selected until the inclusive range is completed. */
     readonly $rangeStart = signal<Date | null>(null);
-
-    /**
-     * Dates that cannot be selected as end date after a start date is chosen.
-     * Disables dates (both forward and backward) that would create a range shorter
-     * than MIN_CUSTOM_DATE_RANGE_DAYS. Resets to an empty array when no start date is active.
-     */
-    readonly $disabledDates = computed<Date[]>(() => {
-        const start = this.$rangeStart();
-
-        if (!start) {
-            return [];
-        }
-
-        // Disable dates from start±1 to start±(MIN-2), inclusive
-        // These would result in a range shorter than MIN_CUSTOM_DATE_RANGE_DAYS days
-        const offsets = Array.from({ length: MIN_CUSTOM_DATE_RANGE_DAYS - 2 }, (_, i) => i + 1);
-
-        return [
-            ...offsets.map((i) => addDays(start, i)), // forward: too close after start
-            ...offsets.map((i) => addDays(start, -i)) // backward: too close before start
-        ];
-    });
 
     /** Check if custom time range is selected */
     $showCustomTimeRange = computed(() => this.$selectedTimeRange() === TIME_RANGE_OPTIONS.custom);
@@ -121,7 +93,7 @@ export class DotAnalyticsFiltersComponent {
 
     /**
      * Handles each date click in the calendar (range mode).
-     * Tracks the first selected date to compute disabledDates for the minimum range.
+     * Tracks the first selected date; selecting it again completes a single-day range.
      *
      * On each click PrimeNG updates its internal model BEFORE firing (onSelect).
      * However, since $customDateRange is a model() signal used via ControlValueAccessor,
