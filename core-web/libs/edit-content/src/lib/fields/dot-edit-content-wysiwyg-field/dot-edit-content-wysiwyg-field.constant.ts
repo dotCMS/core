@@ -103,7 +103,10 @@ export const DEFAULT_TINYMCE_CONFIG: Partial<RawEditorOptions> = {
         'undo redo | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent dotAddImage hr',
     plugins:
         'advlist autolink lists link image charmap preview anchor pagebreak searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking save table directionality emoticons template',
-    theme: 'silver'
+    theme: 'silver',
+    // TinyMCE 6+ shows a premium-features promotion element by default; the pre-upgrade version
+    // (4.9.6) had no such thing, so this keeps the toolbar matching the original look.
+    promotion: false
 };
 
 /**
