@@ -28,6 +28,7 @@ interface FieldListener {
 export class DojoFormBridge implements FormBridge {
     private fieldListeners: Map<string, FieldListener> = new Map();
     private loadHandlers: Set<() => void> = new Set();
+    private isDestroyed = false;
 
     constructor() {
         document.addEventListener('beforeunload', () => this.destroy());
@@ -56,6 +57,10 @@ export class DojoFormBridge implements FormBridge {
     /**
      * Sets the value of a field in the Dojo form.
      *
+     * Legacy fields are plain `<input>` / `<textarea>` elements, so every value is stored, and read
+     * back by {@link get}, as a string: an array comma-separated (as the legacy checkbox field
+     * stores its options), an object as JSON.
+     *
      * @param fieldId - The ID of the field to set the value for.
      * @param value - The value to set for the field.
      */
@@ -63,15 +68,33 @@ export class DojoFormBridge implements FormBridge {
         try {
             const element = document.getElementById(fieldId);
             if (element instanceof HTMLInputElement) {
-                element.value = String(value ?? '');
+                element.value = this.toFieldString(value);
                 element.dispatchEvent(new Event('change', { bubbles: true }));
             } else if (element instanceof HTMLTextAreaElement) {
-                element.textContent = String(value ?? '');
+                element.textContent = this.toFieldString(value);
                 element.dispatchEvent(new Event('change', { bubbles: true }));
             }
         } catch (error) {
             console.warn('Error setting field value:', error);
         }
+    }
+
+    /**
+     * Turns a field value into the string a legacy `<input>` / `<textarea>` holds.
+     *
+     * @param value - The value to store.
+     * @returns `''` for null, the items joined with `,` for an array, JSON for an object.
+     */
+    private toFieldString(value: FormFieldValue): string {
+        if (value === null || value === undefined) {
+            return '';
+        }
+
+        if (Array.isArray(value)) {
+            return value.join(',');
+        }
+
+        return typeof value === 'object' ? JSON.stringify(value) : String(value);
     }
 
     /**
@@ -197,6 +220,7 @@ export class DojoFormBridge implements FormBridge {
 
         this.loadHandlers.forEach((handler) => window.removeEventListener('load', handler));
         this.loadHandlers.clear();
+        this.isDestroyed = true;
     }
 
     /**
@@ -308,6 +332,10 @@ export class DojoFormBridge implements FormBridge {
      * @param callback - The callback function to execute when the bridge is ready.
      */
     ready(callback: (api: FormBridge) => void): void {
+        if (this.isDestroyed) {
+            return;
+        }
+
         if (document.readyState === 'complete') {
             callback(this);
 

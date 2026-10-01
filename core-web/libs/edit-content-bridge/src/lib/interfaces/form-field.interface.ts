@@ -6,6 +6,9 @@ import { Subscription } from 'rxjs';
  * Most fields hold a string, but not all: checkbox, multi-select, tag and category fields hold a
  * `string[]`, the Block Editor holds its JSON document as an object, and date fields hold a
  * timestamp. `setValue` does not convert, so pass the shape the target field already holds.
+ *
+ * In the legacy editor every field is an `<input>` / `<textarea>` and holds a string: an array is
+ * stored comma-separated, an object as JSON, and both read back as that string.
  */
 export type FormFieldValue = string | number | boolean | null | string[] | Record<string, unknown>;
 

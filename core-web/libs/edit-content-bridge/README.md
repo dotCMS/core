@@ -40,7 +40,7 @@ DotCustomFieldApi.ready(() => {
 
 | Method | Notes |
 | --- | --- |
-| `getValue()` | The control's value. Most fields hold a string; checkbox, multi-select, tag and category fields hold `string[]`, the Block Editor an object, dates a timestamp. |
+| `getValue()` | The control's value. Most fields hold a string; checkbox, multi-select, tag and category fields hold `string[]`, the Block Editor an object, dates a timestamp. In the legacy editor every value is a string (an array comma-separated, an object as JSON). |
 | `setValue(value, { markDirty? })` | Sets the value without converting it, so pass the shape the field holds. Marks the field touched and dirty unless `markDirty: false`, which is for values the template derives rather than ones the user entered. |
 | `onChange(callback)` | Fires once per change, including changes made with `setValue`. It does not fire for the initial value, so read that with `getValue()`. Returns an unsubscribe function. |
 | `getValidationState()` / `onValidationChange(callback)` | `{ valid, invalid, touched, dirty, errors }`. `onValidationChange` emits the current state right away. A no-op in the legacy editor. |

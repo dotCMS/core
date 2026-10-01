@@ -83,6 +83,16 @@ describe('DojoFormBridge', () => {
             expect(inputElement.value).toBe('');
         });
 
+        it('should store an array the way the legacy checkbox field does, comma-separated', () => {
+            bridge.set('testInput', ['a', 'b']);
+            expect(inputElement.value).toBe('a,b');
+        });
+
+        it('should store an object as JSON', () => {
+            bridge.set('testTextarea', { type: 'doc', content: [] });
+            expect(textareaElement.value).toBe('{"type":"doc","content":[]}');
+        });
+
         it('should dispatch change event after setting value', () => {
             const changeSpy = vi.fn();
             inputElement.addEventListener('change', changeSpy);
@@ -410,6 +420,16 @@ describe('DojoFormBridge', () => {
             bridge.ready(callback);
 
             expect(callback).toHaveBeenCalledWith(bridge);
+        });
+
+        it('should not call back once the bridge is destroyed, even after the page loaded', () => {
+            vi.spyOn(document, 'readyState', 'get').mockReturnValue('complete');
+            const callback = vi.fn();
+
+            bridge.destroy();
+            bridge.ready(callback);
+
+            expect(callback).not.toHaveBeenCalled();
         });
 
         it('should execute callback when loaded', () =>
