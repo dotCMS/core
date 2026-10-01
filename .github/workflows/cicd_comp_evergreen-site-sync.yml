@@ -99,7 +99,7 @@ jobs:
 
       - name: Check for drift
         id: drift
-        if: always() && inputs.drift_check && steps.hub.outcome == 'success'
+        if: always() && inputs.drift_check && steps.hub.outcome == 'success' && steps.sync.outcome == 'success'
         continue-on-error: true
         working-directory: .github/actions/core-cicd/changelog-publisher
         env:
