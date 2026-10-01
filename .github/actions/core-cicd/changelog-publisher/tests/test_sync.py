@@ -178,6 +178,16 @@ def test_two_records_is_an_error(tmp_path):
 
 
 @responses_lib.activate
+def test_two_records_short_circuits_apply_retries(tmp_path, capsys):
+    """A duplicate record can't resolve itself on retry, so --apply must fail on the
+    first attempt instead of burning the 60s/180s retry delays."""
+    _route_search(_fixture("evergreen_state_two_hits.json"))
+    assert main(["sync-site", "--state-file", _state_file(tmp_path), "--apply"]) == 1
+    assert len(responses_lib.calls) == 1
+    assert "::evergreen-sync-error::" in capsys.readouterr().out
+
+
+@responses_lib.activate
 @pytest.mark.parametrize("raw", [
     "not json",
     json.dumps({k: v for k, v in _HUB.items() if k != "trailing"}),

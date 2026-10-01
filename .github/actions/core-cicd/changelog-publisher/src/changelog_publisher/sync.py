@@ -115,6 +115,8 @@ def sync_with_retries(client: CorpsitesClient, hub: dict) -> SyncResult:
     for i in range(1, attempts + 1):
         try:
             return reconcile(client, hub, apply=True)
+        except AmbiguousMatchError:
+            raise  # duplicate record is a permanent data-integrity error, not transient
         except (requests.RequestException, RuntimeError) as exc:
             log.error("attempt %d/%d failed: %s", i, attempts, exc)
             if i == attempts:
