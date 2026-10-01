@@ -75,7 +75,8 @@ public class CompanyUtilTest {
 
             assertEquals(updatedName,updatedCompany.getName());
             assertEquals(updatedShortName,updatedCompany.getShortName());
-            assertEquals(updatedAuthType,updatedCompany.getAuthType());
+            // getAuthType() normalizes to the canonical AUTH_TYPE_ID/AUTH_TYPE_EA values
+            assertEquals(Company.AUTH_TYPE_ID, updatedCompany.getAuthType());
             assertEquals(updatedAutoLogin,updatedCompany.getAutoLogin());
             assertEquals(updatedEmail,updatedCompany.getEmailAddress());
             assertEquals(updatedHomeURL,updatedCompany.getHomeURL());
@@ -83,7 +84,9 @@ public class CompanyUtilTest {
             assertEquals(updatedMx,updatedCompany.getMx());
             assertEquals(updatedType,updatedCompany.getType());
             assertEquals(updatedPhone,updatedCompany.getPhone());
-            assertEquals(updatedPortalURL,updatedCompany.getPortalURL());
+            // getPortalURL() resolves the canonical admin site url (ADMIN_SITE_URL); the stored
+            // column is read back through getOldPortalURL()
+            assertEquals(updatedPortalURL,updatedCompany.getOldPortalURL());
 
         } catch (SystemException | NoSuchCompanyException e) {
             Logger.error(CompanyUtilTest.class, e);

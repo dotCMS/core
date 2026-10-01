@@ -853,8 +853,9 @@ public class WebAPI implements ViewTool {
 	}
 	
 	public boolean contentHasLiveVersion(String identifier) throws Exception {
-	    long lang=Long.parseLong((String)request.getSession().getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
-	    Optional<ContentletVersionInfo> cvi=APILocator.getVersionableAPI().getContentletVersionInfo(identifier, lang);
+
+	    long lang= WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+		Optional<ContentletVersionInfo> cvi=APILocator.getVersionableAPI().getContentletVersionInfo(identifier, lang);
 	    return cvi.isPresent() && UtilMethods.isSet(cvi.get().getLiveInode());
 	}
 	
