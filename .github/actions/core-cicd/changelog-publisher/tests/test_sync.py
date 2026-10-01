@@ -191,7 +191,8 @@ def test_invalid_state_file_rejected_before_http(tmp_path, raw):
 
 @responses_lib.activate
 def test_transient_500_then_success(tmp_path, capsys):
-    _route_search([_fixture("evergreen_state_hit.json"), _NEW_RECORD])
+    old = _fixture("evergreen_state_hit.json")
+    _route_search([old, old, _NEW_RECORD])  # attempt 1 read, attempt 2 read, read-back
     responses_lib.add(responses_lib.PUT, _FIRE_URL, json={}, status=500)
     responses_lib.add(responses_lib.PUT, _FIRE_URL, json={}, status=200)
     assert main(["sync-site", "--state-file", _state_file(tmp_path), "--apply"]) == 0
