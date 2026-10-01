@@ -29,6 +29,20 @@ describe('Filters Utils', () => {
     });
 
     describe('paramsToTimeRange', () => {
+        it.each([
+            'today',
+            'yesterday',
+            'thisweek',
+            'last7days',
+            'lastweek',
+            'last30days',
+            'thismonth',
+            'lastmonth',
+            'last90days'
+        ])('restores the %s preset from URL state', (preset) => {
+            expect(paramsToTimeRange({ time_range: preset })).toBe(preset);
+        });
+
         it('should return custom date range when time_range is custom and from/to are provided', () => {
             const params: Params = {
                 time_range: TIME_RANGE_OPTIONS.custom,
@@ -101,6 +115,23 @@ describe('Filters Utils', () => {
     });
 
     describe('getComparisonLabel', () => {
+        it.each(['today', 'yesterday'] as const)(
+            'uses a singular previous-day label for %s',
+            (preset) => {
+                expect(getComparisonLabel(preset)).toEqual({
+                    key: 'analytics.metrics.comparison.previous-day',
+                    args: []
+                });
+            }
+        );
+
+        it('uses a 90-day comparison label for Last 90 days', () => {
+            expect(getComparisonLabel('last90days')).toEqual({
+                key: 'analytics.metrics.comparison.previous-days',
+                args: ['90']
+            });
+        });
+
         it('should return i18n key with days arg for last7days range', () => {
             expect(getComparisonLabel(TIME_RANGE_OPTIONS.last7days)).toEqual({
                 key: 'analytics.metrics.comparison.previous-days',

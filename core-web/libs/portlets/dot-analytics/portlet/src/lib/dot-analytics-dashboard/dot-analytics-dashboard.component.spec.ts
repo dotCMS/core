@@ -230,7 +230,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             expect(store.timeRange()).toEqual(['2024-01-01', '1993-01-31']);
         });
 
-        it('should set timeRange to last7days when today is in query params', () => {
+        it('should restore Today when today is in query params', () => {
             spectator = createComponent({
                 queryParams: {
                     time_range: 'today'
@@ -238,10 +238,10 @@ describe('DotAnalyticsDashboardComponent', () => {
             });
             store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
-            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+            expect(store.timeRange()).toBe('today');
         });
 
-        it('should set timeRange to last7days when yesterday is in query params', () => {
+        it('should restore Yesterday when yesterday is in query params', () => {
             spectator = createComponent({
                 queryParams: {
                     time_range: 'yesterday'
@@ -249,7 +249,7 @@ describe('DotAnalyticsDashboardComponent', () => {
             });
             store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
-            expect(store.timeRange()).toBe(TIME_RANGE_OPTIONS.last7days);
+            expect(store.timeRange()).toBe('yesterday');
         });
     });
 
