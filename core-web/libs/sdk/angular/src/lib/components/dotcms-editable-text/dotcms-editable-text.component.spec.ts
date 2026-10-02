@@ -175,7 +175,7 @@ describe('DotCMSEditableTextComponent', () => {
                     expect(spectator.component.mode()).toBe('plain');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['plain'],
-                        base_url: 'http://localhost:8080/ext/tinymcev7'
+                        base_url: 'http://localhost:8080/ext/tinymce'
                     });
                 });
 
@@ -188,7 +188,7 @@ describe('DotCMSEditableTextComponent', () => {
                     expect(spectator.component.mode()).toBe('minimal');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['minimal'],
-                        base_url: 'http://localhost:8080/ext/tinymcev7'
+                        base_url: 'http://localhost:8080/ext/tinymce'
                     });
                 });
 
@@ -201,7 +201,7 @@ describe('DotCMSEditableTextComponent', () => {
                     expect(spectator.component.mode()).toBe('full');
                     expect(editorComponent?.init).toEqual({
                         ...TINYMCE_CONFIG['full'],
-                        base_url: 'http://localhost:8080/ext/tinymcev7'
+                        base_url: 'http://localhost:8080/ext/tinymce'
                     });
                 });
             });
@@ -453,4 +453,49 @@ describe('DotCMSEditableTextComponent', () => {
     });
 
     afterEach(() => vi.clearAllMocks()); // Clear all mocks to avoid side effects from other tests
+});
+
+/**
+ * `TINYMCE_SCRIPT_SRC`'s real factory (not the static override the suite above uses for
+ * convenience) builds its URL from `__TINYMCE_PATH_ON_DOTCMS__`. **This is the "new builds" side
+ * of the alias contract, not the alias itself**: newly built SDK code (this branch included)
+ * must point at the new version-neutral vendored path — `/ext/tinymcev7` is kept serving valid
+ * 8.x files only so *already-published* SDK versions (whose compiled JS still hardcodes the old
+ * path and cannot be changed retroactively) keep working, which is a server-side concern verified
+ * manually per `specs/upgrade-tinymce-legacy-version/quickstart.md` Scenario 3, not by this spec.
+ * See `specs/upgrade-tinymce-legacy-version/contracts/backward-compat-alias.md`.
+ */
+describe('DotCMSEditableTextComponent — TINYMCE_SCRIPT_SRC points at the new vendored path', () => {
+    let spectator: Spectator<DotCMSEditableTextComponent<DotCMSBasicContentlet>>;
+
+    const createComponent = createComponentFactory({
+        component: DotCMSEditableTextComponent,
+        declarations: [MockComponent(EditorComponent)],
+        providers: [
+            Renderer2,
+            {
+                provide: DomSanitizer,
+                useValue: { bypassSecurityTrustHtml: () => '', sanitize: () => '' }
+            },
+            { provide: ElementRef, useValue: { nativeElement: document.createElement('div') } }
+            // TINYMCE_SCRIPT_SRC intentionally NOT overridden here — this suite asserts on the
+            // component's real factory.
+        ]
+    });
+
+    afterEach(() => vi.clearAllMocks());
+
+    it('resolves to the new version-neutral vendored path, not the deprecated /ext/tinymcev7 alias', () => {
+        vi.spyOn(dotCMSUVE, 'getUVEState').mockReturnValue(BASE_UVE_STATE);
+
+        spectator = createComponent({
+            props: { contentlet: dotcmsContentletMock, fieldName: 'title' }
+        });
+
+        // TINYMCE_SCRIPT_SRC is provided in the component's own `providers` (component-level DI),
+        // so it resolves through this component's injector, not the root TestBed injector.
+        const scriptSrc = spectator.fixture.debugElement.injector.get(TINYMCE_SCRIPT_SRC);
+        expect(scriptSrc).toBe('http://localhost:8080/ext/tinymce/tinymce.min.js');
+        expect(scriptSrc).not.toContain('/ext/tinymcev7');
+    });
 });
