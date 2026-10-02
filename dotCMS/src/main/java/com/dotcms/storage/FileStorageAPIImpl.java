@@ -295,7 +295,20 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         return metadataMap;
     }
 
-    /** Restore only when generation needs bytes, retaining the cache lease through every file read. */
+    /**
+     * Runs metadata generation with the binary present locally. With the flag on, the binary is
+     * restored from durable storage if it is not cached, and the cache lease is held through every
+     * file read.
+     *
+     * <p>A binary that is neither cached nor stored durably is simply absent, so generation runs
+     * as it does with the flag off: the raw generators return an empty result and the configured
+     * path rejects the file. A restore that fails is an error and is not hidden.</p>
+     *
+     * @param binary     the binary to read
+     * @param generation the metadata generation to run
+     * @return the generated metadata
+     * @throws com.dotmarketing.exception.DotRuntimeException if the binary could not be restored
+     */
     private Map<String, Serializable> withLocalBinary(final File binary,
             final Supplier<Map<String, Serializable>> generation) {
         if (!AssetStorageFeature.isEnabled() || binary == null) {
@@ -303,6 +316,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         }
         final var assets = APILocator.getBinaryAssetStorageAPI();
         try (var lease = assets.acquireCacheLease(); var input = assets.openLocalFile(binary)) {
+            return generation.get();
+        } catch (final java.nio.file.NoSuchFileException absent) {
             return generation.get();
         } catch (final java.io.IOException | DotDataException failure) {
             throw new com.dotmarketing.exception.DotRuntimeException(

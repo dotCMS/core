@@ -103,4 +103,31 @@ class MetadataLocalCacheTest {
         }
     }
 
+    /**
+     * A binary that is neither cached nor stored durably is absent, not a failed restore, so metadata
+     * generation gives the flag-off results: empty raw metadata, and the configured path rejects the file.
+     */
+    @Test void absentBinaryGivesTheSameResultsAsWithTheFlagOff() throws Exception {
+        final String oldFlag = Config.getStringProperty(AssetStorageFeature.FLAG, null);
+        final var file = root.resolve("Missing.Txt").toFile();
+        final var assets = mock(BinaryAssetStorageAPI.class);
+        final var api = new FileStorageAPIImpl(mock(ObjectReaderDelegate.class), mock(ObjectWriterDelegate.class),
+                mock(MetadataGenerator.class), mock(StoragePersistenceProvider.class), mock(MetadataCache.class));
+        final var config = new GenerateMetadataConfig.Builder()
+                .storageKey(new StorageKey.Builder().group("dotmetadata").path("/test").storage(StorageType.FILE_SYSTEM).build())
+                .override(true).store(false).cache(false).full(false).build();
+        when(assets.acquireCacheLease()).thenReturn(() -> { });
+        when(assets.openLocalFile(file)).thenThrow(new java.nio.file.NoSuchFileException(file.toString()));
+        try (var locator = mockStatic(APILocator.class)) {
+            locator.when(APILocator::getBinaryAssetStorageAPI).thenReturn(assets);
+            Config.setProperty(AssetStorageFeature.FLAG, true);
+            assertTrue(api.generateRawBasicMetaData(file).isEmpty());
+            assertTrue(api.generateRawFullMetaData(file, 100).isEmpty());
+            assertThrows(IllegalArgumentException.class, () -> api.generateMetaData(file, config));
+            verify(assets, times(3)).openLocalFile(file);
+        } finally {
+            Config.setProperty(AssetStorageFeature.FLAG, oldFlag);
+        }
+    }
+
 }

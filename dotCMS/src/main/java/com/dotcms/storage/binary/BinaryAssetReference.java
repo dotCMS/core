@@ -53,20 +53,55 @@ public final class BinaryAssetReference {
         }
     }
 
-    /** Returns an immutable key, null for a legacy binary, or empty for an absent row/field. */
+    /**
+     * Looks up the storage key that a contentlet row records for one binary field.
+     *
+     * @param inode the contentlet inode
+     * @param field the field variable name
+     * @return the immutable revision key; {@code null} when the field holds an older-layout binary or
+     *         the row has no {@code contentlet_as_json}, so the caller must search the older layout;
+     *         an empty string when the row's JSON records no binary for the field
+     * @throws DotDataException if the row cannot be read or its JSON cannot be parsed
+     */
     public static String find(final String inode, final String field) throws DotDataException {
-        final StoredBinary binary = findStored(inode, field);
+        final String json = contentJson(inode);
+        if (json == null) {
+            return null;
+        }
+        final StoredBinary binary = fromContentField(json, inode, field);
         return binary == null ? "" : binary.storageKey();
     }
 
+    /**
+     * Reads the {@code contentlet_as_json} column of one contentlet row.
+     *
+     * <p>The column is empty when {@code SAVE_CONTENTLET_AS_JSON} is false or the row has not been
+     * populated yet. That says nothing about whether the row has a binary, so callers fall back to
+     * the older filesystem layout instead of treating it as "no binary".</p>
+     *
+     * @param inode the contentlet inode
+     * @return the JSON text, or {@code null} when the row is missing or the column is null or blank
+     * @throws DotDataException if the query fails
+     */
     @com.dotcms.business.CloseDBIfOpened
-    public static StoredBinary findStored(final String inode, final String field) throws DotDataException {
+    static String contentJson(final String inode) throws DotDataException {
         final String json = new DotConnect()
                 .setSQL("select contentlet_as_json from contentlet where inode = ?")
                 .addParam(inode).getString("contentlet_as_json");
-        if (json == null || json.isBlank()) {
-            return null;
-        }
+        return json == null || json.isBlank() ? null : json;
+    }
+
+    /**
+     * Reads the binary reference recorded for one field in a contentlet's JSON.
+     *
+     * @param json  the row's {@code contentlet_as_json}, as returned by {@link #contentJson(String)}
+     * @param inode the contentlet inode
+     * @param field the field variable name
+     * @return the stored reference, or {@code null} when the JSON records no binary for the field
+     * @throws DotDataException if the JSON cannot be parsed
+     */
+    static StoredBinary fromContentField(final String json, final String inode, final String field)
+            throws DotDataException {
         try {
             return fromJson(JSON.readTree(json).path("fields").path(field), inode, field);
         } catch (java.io.IOException e) {
@@ -102,12 +137,33 @@ public final class BinaryAssetReference {
     }
 
     private static String ownerPrefix(final String inode, final String field) {
-        if (inode == null || !inode.matches("[A-Za-z0-9_-]{2,}") || field == null
-                || field.isBlank() || field.contains("/") || field.contains("\\")
-                || field.equals(".") || field.equals("..")) {
+        if (!isValidOwner(inode, field)) {
             throw new IllegalArgumentException("Invalid binary owner");
         }
         return inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/" + field;
+    }
+
+    /**
+     * Checks that an inode and field can name a directory in the asset layout without leaving it.
+     *
+     * @param inode the contentlet inode: at least two letters, digits, underscores or hyphens
+     * @param field the field variable name, which must pass {@link #isValidName(String)}
+     * @return true when both are safe to use as path segments
+     */
+    static boolean isValidOwner(final String inode, final String field) {
+        return inode != null && inode.matches("[A-Za-z0-9_-]{2,}") && isValidName(field);
+    }
+
+    /**
+     * Checks that a field or file name is a single path segment: not blank, no {@code /} or
+     * {@code \}, and not {@code .} or {@code ..}.
+     *
+     * @param name the field variable name or file name
+     * @return true when the name cannot move a path out of its parent directory
+     */
+    static boolean isValidName(final String name) {
+        return name != null && !name.isBlank() && !name.contains("/") && !name.contains("\\")
+                && !name.equals(".") && !name.equals("..");
     }
 
     /** A File still names the same binary bytes; the additional reference pins its metadata snapshot. */
@@ -169,10 +225,18 @@ public final class BinaryAssetReference {
                 ? new MetadataFile(restored, metadataKeyOf(snapshot)) : restored;
     }
 
+    /**
+     * Maps an immutable revision key to its file in the local asset cache, after checking that the
+     * key belongs to the given owner and has the {@code .revisions/<uuid>/<fileName>} layout.
+     *
+     * @param inode the contentlet inode that owns the revision
+     * @param field the field variable name that owns the revision
+     * @param key   the revision key, relative to the asset root
+     * @return the local cache file for the key
+     * @throws IllegalArgumentException if the owner or the key is not valid
+     */
     public static File localFile(final String inode, final String field, final String key) {
-        if (inode == null || !inode.matches("[A-Za-z0-9_-]{2,}") || field == null
-                || field.isBlank() || field.contains("/") || field.contains("\\")
-                || field.equals(".") || field.equals("..")) {
+        if (!isValidOwner(inode, field)) {
             throw new IllegalArgumentException("Invalid binary owner");
         }
         final String prefix = inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/" + field + "/.revisions/";
