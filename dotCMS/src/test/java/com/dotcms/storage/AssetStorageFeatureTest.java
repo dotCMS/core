@@ -81,7 +81,7 @@ class AssetStorageFeatureTest {
         assertFalse(chain(provider).backfillObject(GROUP, "unused", new JsonWriterDelegate(),
                 new JsonReaderDelegate<>(Map.class), new java.util.HashMap<>()));
         assertFalse(new BinaryAssetStorageAPIImpl(provider).backfillBinary("abc123", "field", null));
-        assertThrows(IllegalStateException.class, () -> com.dotcms.storage.binary.BinaryAssetBackfill.runBatch("", 1));
+        assertThrows(IllegalStateException.class, () -> com.dotcms.storage.binary.BinaryAssetBackfill.runBatch("", 1, () -> { }));
         verifyNoInteractions(provider);
         assertFalse(filesystem().backfillFile(GROUP, "unused", root.resolve("missing-file").toFile()));
     }

@@ -223,7 +223,17 @@ Each batch uses conditional, verified backfill of originals and metadata, and co
 objects to SHA-256 references without changing their database paths. It reads persisted binary
 fields, including retired field definitions, and migrates recognized completed renditions for each
 inode. Local sources are left in place. Only a fully verified batch advances the cursor, retries
-reload the cursor from the job database, and a stale worker cannot overwrite newer progress.
+reload the cursor from the job database, and a stale worker cannot overwrite newer progress. The
+page size is applied in the SQL query, so each batch reads only its own rows. The job sends a
+heartbeat after every inode, so a slow batch is not mistaken for an abandoned job.
+
+Problems in the data itself do not stop the scan, because a retry cannot fix them: a referenced
+binary or metadata record that exists neither locally nor in S3, a row whose JSON cannot be parsed,
+and a legacy row whose content cannot be found. Each one is logged with its inode and field, the
+rest of the row is still copied, and the job reports `skippedCount` and `skippedInodes` (the first
+1000 inodes) in its parameters and result. Storage and database errors, including an S3 object
+that conflicts with the local bytes, still fail the batch so the retry policy applies; the error
+message names the inode.
 
 `POST /api/v1/jobs/{jobId}/cancel` stops between batches. After a cancellation or exhausted
 retries, submit a new job with the last persisted parameters, for example
@@ -243,20 +253,41 @@ binaries. Listing failures propagate instead of being read as absence.
 ## Starter export and import
 
 With the flag on, starter asset export lists persisted binary references, restores originals from
-S3 and includes raw metadata alongside legacy local files. A missing referenced original fails the
-export instead of producing an incomplete ZIP. Importing a starter publishes its binaries to S3
-before the database commit, and cleanup of the imported files runs only after both succeed.
+S3 and includes raw metadata alongside legacy local files. It holds a cache lease for one binary at
+a time, so eviction can keep trimming the files it restores, and it skips a binary whose stored
+metadata says it exceeds `maxSize` before restoring it. Restored originals still pass through the
+local cache; streaming them from S3 straight into the archive is not implemented. A missing
+referenced original or any other export error fails the export without finishing the archive: the
+client receives a truncated ZIP with no central directory, which standard ZIP readers reject,
+instead of a valid ZIP that silently lacks the remaining entries. Whether the HTTP transfer also
+ends with an error depends on the servlet container. With the flag off, export behaves as before,
+including logging and skipping a file that cannot be read.
+
+Importing a starter publishes its binaries to S3 before the database commit, and cleanup of the
+imported files runs only after both succeed. A referenced binary or metadata record that is in
+neither the starter nor S3 is logged and skipped, as before, so starters exported without assets,
+with `maxSize` or with `oldAssets=false` still import; a summary count is logged at the end. S3 and
+database errors still fail the import, and so does an error importing rules, so a starter is
+never left partly imported.
 
 Importing over a populated database with the flag on performs a full replacement: existing
 variants, workflows, templates, categories, rules and experiments are cleared before import,
 foreign keys stay enforced, and caches are flushed afterwards. With the flag off, import behaves as
 before.
 
+A starter exported with the flag on cannot be fully restored into an instance with the flag off.
+Content checked in with the flag on has its binary only at its `.revisions/<uuid>/` key, and the
+archive stores it there; a flag-off instance resolves binaries by the legacy field path and ignores
+`storageKey`, so those binaries are missing after import. Import such a starter only into an
+instance with the flag on.
+
 ## Integrity checks
 
 With the flag on, the file-asset integrity checker's repair copies stored binaries to the repaired
 content before its corrected JSON is published, and removes the old sources in the same
-repair transaction.
+repair transaction. The copies are uploaded before the commit, so a rollback listener deletes
+them, and their metadata, if the repair rolls back; a failed deletion is logged and leaves an
+unreferenced object behind.
 
 ## Local cache eviction
 
@@ -356,7 +387,7 @@ docker run -d --rm --name binary-cleanup-postgres-test \
   -e POSTGRES_DB=binary_storage_test postgres:16-alpine
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002 \
   -Ds3.test.jdbc=jdbc:postgresql://127.0.0.1:19003/binary_storage_test
 

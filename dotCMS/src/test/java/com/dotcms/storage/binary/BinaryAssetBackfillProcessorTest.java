@@ -8,6 +8,7 @@ import com.dotcms.jobs.business.error.JobProcessingException;
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobState;
+import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.storage.AssetStorageFeature;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -70,15 +71,15 @@ class BinaryAssetBackfillProcessorTest {
     @ValueSource(strings = {"copy", "before-commit", "after-commit"})
     void newWorkerResumesCommittedCheckpointAfterFailure(String failure) throws Exception {
         final Job originalRequest = persisted.get();
-        copies.when(() -> BinaryAssetBackfill.runBatch("", 1))
-                .thenReturn(new BinaryAssetBackfill.Result("aa", 2, false));
+        copies.when(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any()))
+                .thenReturn(new BinaryAssetBackfill.Result("aa", 2, false, List.of()));
         if (failure.equals("copy")) {
-            copies.when(() -> BinaryAssetBackfill.runBatch("aa", 1))
+            copies.when(() -> BinaryAssetBackfill.runBatch(eq("aa"), eq(1), any()))
                     .thenThrow(new DotDataException("S3 unavailable"))
-                    .thenReturn(new BinaryAssetBackfill.Result("bb", 3, true));
+                    .thenReturn(new BinaryAssetBackfill.Result("bb", 3, true, List.of()));
         } else {
-            copies.when(() -> BinaryAssetBackfill.runBatch("aa", 1))
-                    .thenReturn(new BinaryAssetBackfill.Result("bb", 3, true));
+            copies.when(() -> BinaryAssetBackfill.runBatch(eq("aa"), eq(1), any()))
+                    .thenReturn(new BinaryAssetBackfill.Result("bb", 3, true, List.of()));
         }
         try (var checkpoints = checkpointStore(failure)) {
             assertThrows(JobProcessingException.class,
@@ -87,11 +88,12 @@ class BinaryAssetBackfillProcessorTest {
             assertEquals(expectedCursor, persisted.get().parameters().getOrDefault("afterInode", ""));
             final var restarted = new BinaryAssetBackfillProcessor();
             restarted.process(originalRequest); // Intentionally stale job: the new worker must reload it.
-            assertEquals(Map.of("afterInode", "bb", "verifiedBinaries", 5L, "complete", true),
+            assertEquals(Map.of("afterInode", "bb", "verifiedBinaries", 5L, "complete", true,
+                    "skippedCount", 0L, "skippedInodes", List.of()),
                     restarted.getResultMetadata(originalRequest));
             assertEquals("administrator", persisted.get().parameters().get("userId"));
             assertEquals(1, persisted.get().parameters().get("batchSize"));
-            copies.verify(() -> BinaryAssetBackfill.runBatch("", 1),
+            copies.verify(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any()),
                     times(failure.equals("before-commit") ? 2 : 1));
         }
     }
@@ -100,33 +102,69 @@ class BinaryAssetBackfillProcessorTest {
     void cancellationKeepsLastCompletedBatchAndDoesNotClaimCompletion() throws Exception {
         final Job request = persisted.get();
         final var processor = new BinaryAssetBackfillProcessor();
-        copies.when(() -> BinaryAssetBackfill.runBatch("", 1)).thenAnswer(call -> {
+        copies.when(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any())).thenAnswer(call -> {
             processor.cancel(request);
-            return new BinaryAssetBackfill.Result("aa", 2, false);
+            return new BinaryAssetBackfill.Result("aa", 2, false, List.of());
         });
         try (var checkpoints = checkpointStore("none")) {
             processor.process(request);
-            assertEquals(Map.of("afterInode", "aa", "verifiedBinaries", 2L, "complete", false),
+            assertEquals(Map.of("afterInode", "aa", "verifiedBinaries", 2L, "complete", false,
+                    "skippedCount", 0L, "skippedInodes", List.of()),
                     processor.getResultMetadata(request));
             assertEquals("aa", persisted.get().parameters().get("afterInode"));
-            copies.verify(() -> BinaryAssetBackfill.runBatch("", 1));
+            copies.verify(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any()));
             copies.verifyNoMoreInteractions();
         }
     }
 
     @Test
     void lostCheckpointRaceStopsWithoutAdvancing() throws Exception {
-        copies.when(() -> BinaryAssetBackfill.runBatch("", 1))
-                .thenReturn(new BinaryAssetBackfill.Result("aa", 2, false));
+        copies.when(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any()))
+                .thenReturn(new BinaryAssetBackfill.Result("aa", 2, false, List.of()));
         try (var queries = mockConstruction(DotConnect.class, withSettings().defaultAnswer(RETURNS_SELF),
                 (query, context) -> when(query.loadObjectResults()).thenReturn(List.of()))) {
             final var processor = new BinaryAssetBackfillProcessor();
             assertThrows(JobProcessingException.class, () -> processor.process(persisted.get()));
             assertEquals("", processor.getResultMetadata(persisted.get()).get("afterInode"));
             assertFalse(persisted.get().parameters().containsKey("afterInode"));
-            copies.verify(() -> BinaryAssetBackfill.runBatch("", 1));
+            copies.verify(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any()));
             copies.verifyNoMoreInteractions();
         }
+    }
+
+    @Test
+    void skippedInodesDoNotStopTheScanAndSurviveARestart() throws Exception {
+        final Job request = persisted.get();
+        copies.when(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any()))
+                .thenReturn(new BinaryAssetBackfill.Result("aa", 0, false, List.of("aa")));
+        copies.when(() -> BinaryAssetBackfill.runBatch(eq("aa"), eq(1), any()))
+                .thenThrow(new DotDataException("S3 unavailable"))
+                .thenReturn(new BinaryAssetBackfill.Result("bb", 1, false, List.of("bb")));
+        copies.when(() -> BinaryAssetBackfill.runBatch(eq("bb"), eq(1), any()))
+                .thenReturn(new BinaryAssetBackfill.Result("cc", 2, true, List.of()));
+        try (var checkpoints = checkpointStore("none")) {
+            assertThrows(JobProcessingException.class, () -> new BinaryAssetBackfillProcessor().process(request));
+            final var restarted = new BinaryAssetBackfillProcessor();
+            restarted.process(request);
+            assertEquals(Map.of("afterInode", "cc", "verifiedBinaries", 3L, "complete", true,
+                    "skippedCount", 2L, "skippedInodes", List.of("aa", "bb")), restarted.getResultMetadata(request));
+        }
+    }
+
+    @Test
+    void everyVisitedInodeSendsAHeartbeat() throws Exception {
+        final var tracker = mock(ProgressTracker.class);
+        final Job request = Job.builder().from(persisted.get()).progressTracker(tracker).build();
+        copies.when(() -> BinaryAssetBackfill.runBatch(eq(""), eq(1), any())).thenAnswer(call -> {
+            final Runnable afterEachInode = call.getArgument(2);
+            afterEachInode.run();
+            afterEachInode.run();
+            return new BinaryAssetBackfill.Result("aa", 2, true, List.of());
+        });
+        try (var checkpoints = checkpointStore("none")) {
+            new BinaryAssetBackfillProcessor().process(request);
+        }
+        verify(tracker, times(2)).heartbeat();
     }
 
     @Test

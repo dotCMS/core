@@ -243,6 +243,8 @@ public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase im
                 com.dotmarketing.business.CacheLocator.getContentletCache().remove(sourceInode);
             }
             Assert.assertEquals(originalKey, com.dotcms.storage.binary.BinaryAssetReference.find(sourceInode, field));
+            Assert.assertTrue("A rolled-back repair must remove the revisions it uploaded",
+                    binaries.listBinaryPaths(targetInode).isEmpty());
             Assert.assertEquals(0, new DotConnect().setSQL("select count(*) as total from job where queue_name = ? and parameters ->> 'inode' = ?")
                     .addParam(com.dotcms.storage.binary.BinaryAssetCleanupProcessor.QUEUE).addParam(sourceInode).getInt("total"));
             Assert.assertTrue(binaries.evictLocalFile(original));

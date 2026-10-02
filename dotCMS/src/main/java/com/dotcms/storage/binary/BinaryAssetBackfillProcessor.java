@@ -7,6 +7,7 @@ import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.processor.Cancellable;
 import com.dotcms.jobs.business.processor.ExponentialBackoffRetryPolicy;
 import com.dotcms.jobs.business.processor.JobProcessor;
+import com.dotcms.jobs.business.processor.ProgressTracker;
 import com.dotcms.jobs.business.processor.Queue;
 import com.dotcms.jobs.business.processor.Validator;
 import com.dotcms.storage.AssetStorageFeature;
@@ -16,6 +17,8 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.enterprise.context.Dependent;
@@ -27,11 +30,22 @@ import javax.enterprise.context.Dependent;
 public class BinaryAssetBackfillProcessor implements JobProcessor, Validator, Cancellable {
     public static final String QUEUE = "binaryAssetBackfill";
     private static final ObjectMapper JSON = new ObjectMapper();
+    // prune: the job row keeps the first 1000 skipped inodes; the log names every one. Page them if operators need more.
+    private static final int MAX_REPORTED_SKIPS = 1000;
     private final AtomicBoolean cancelled = new AtomicBoolean();
     private String afterInode = "";
     private long verifiedBinaries;
+    private long skippedCount;
+    private List<String> skippedInodes = List.of();
     private boolean complete;
 
+    /**
+     * Checks that the flag is on, the submitting user is an active administrator and the resume
+     * parameters (cursor, counters and the skipped inode report) are well formed.
+     *
+     * @param parameters the submitted or persisted job parameters
+     * @throws JobValidationException if any check fails
+     */
     @Override
     @CloseDBIfOpened
     public void validate(final Map<String, Object> parameters) throws JobValidationException {
@@ -55,6 +69,10 @@ public class BinaryAssetBackfillProcessor implements JobProcessor, Validator, Ca
             if (Long.parseLong(parameters.getOrDefault("verifiedBinaries", 0).toString()) < 0) {
                 throw new JobValidationException("The verified binary count cannot be negative");
             }
+            if (Long.parseLong(parameters.getOrDefault("skippedCount", 0).toString()) < 0
+                    || !(parameters.getOrDefault("skippedInodes", List.of()) instanceof List)) {
+                throw new JobValidationException("The skipped inode report is invalid");
+            }
         } catch (JobValidationException failure) {
             throw failure;
         } catch (Exception failure) {
@@ -66,6 +84,16 @@ public class BinaryAssetBackfillProcessor implements JobProcessor, Validator, Ca
         return Integer.parseInt(parameters.getOrDefault("batchSize", 250).toString());
     }
 
+    /**
+     * Runs batches from the committed checkpoint until the scan completes or the job is cancelled.
+     * Each batch's cursor, counters and skipped inodes are saved with a compare-and-set on the
+     * previous cursor, so an overlapping worker cannot overwrite newer progress. Inodes skipped
+     * because their data is missing or unreadable are reported, not retried; storage errors fail
+     * the batch so the retry policy applies. A heartbeat is sent after every inode.
+     *
+     * @param job the job to run
+     * @throws JobProcessingException if the flag is off, the job is invalid or a batch fails
+     */
     @Override
     @CloseDBIfOpened
     public void process(final Job job) throws JobProcessingException {
@@ -85,16 +113,25 @@ public class BinaryAssetBackfillProcessor implements JobProcessor, Validator, Ca
             validate(current.parameters());
             afterInode = (String) current.parameters().getOrDefault("afterInode", "");
             verifiedBinaries = Long.parseLong(current.parameters().getOrDefault("verifiedBinaries", 0).toString());
+            skippedCount = Long.parseLong(current.parameters().getOrDefault("skippedCount", 0).toString());
+            skippedInodes = ((List<?>) current.parameters().getOrDefault("skippedInodes", List.of()))
+                    .stream().map(String::valueOf).toList();
             complete = false;
             final int size = batchSize(current.parameters());
             while (!cancelled.get()) {
                 if (Thread.currentThread().isInterrupted()) {
                     throw new DotDataException("Backfill interrupted before completion");
                 }
-                final var batch = BinaryAssetBackfill.runBatch(afterInode, size);
+                final var batch = BinaryAssetBackfill.runBatch(afterInode, size,
+                        () -> job.progressTracker().ifPresent(ProgressTracker::heartbeat));
                 final long verified = Math.addExact(verifiedBinaries, batch.binaries());
+                final long skipped = Math.addExact(skippedCount, batch.skippedInodes().size());
+                final List<String> reported = new ArrayList<>(skippedInodes);
+                batch.skippedInodes().stream().limit(Math.max(0, MAX_REPORTED_SKIPS - reported.size()))
+                        .forEach(reported::add);
                 final String checkpoint = JSON.writeValueAsString(Map.of(
-                        "afterInode", batch.afterInode(), "verifiedBinaries", verified));
+                        "afterInode", batch.afterInode(), "verifiedBinaries", verified,
+                        "skippedCount", skipped, "skippedInodes", reported));
                 // Only verified batches advance. A failed/uncertain save retries idempotent copies.
                 // Compare the cursor so an overlapping worker cannot overwrite newer progress.
                 final var saved = new DotConnect().setSQL("update job set parameters = parameters || ?::jsonb, "
@@ -108,6 +145,8 @@ public class BinaryAssetBackfillProcessor implements JobProcessor, Validator, Ca
                 CacheLocator.getJobCache().remove(job);
                 afterInode = batch.afterInode();
                 verifiedBinaries = verified;
+                skippedCount = skipped;
+                skippedInodes = List.copyOf(reported);
                 complete = batch.complete();
                 if (complete) {
                     job.progressTracker().ifPresent(tracker -> tracker.updateProgress(1.0f));
@@ -115,7 +154,7 @@ public class BinaryAssetBackfillProcessor implements JobProcessor, Validator, Ca
                 }
             }
         } catch (Exception failure) {
-            throw new JobProcessingException(job.id(), "Unable to backfill binary assets", failure);
+            throw new JobProcessingException(job.id(), "Unable to backfill binary assets: " + failure.getMessage(), failure);
         }
     }
 
@@ -124,8 +163,17 @@ public class BinaryAssetBackfillProcessor implements JobProcessor, Validator, Ca
         cancelled.set(true);
     }
 
+    /**
+     * Reports the last committed cursor and counters, whether the scan completed, and the inodes
+     * skipped because their binaries or metadata were missing everywhere or their rows were unreadable
+     * (the first 1000 of them; {@code skippedCount} has the total).
+     *
+     * @param job the job being reported
+     * @return the result metadata
+     */
     @Override
     public Map<String, Object> getResultMetadata(final Job job) {
-        return Map.of("afterInode", afterInode, "verifiedBinaries", verifiedBinaries, "complete", complete);
+        return Map.of("afterInode", afterInode, "verifiedBinaries", verifiedBinaries, "complete", complete,
+                "skippedCount", skippedCount, "skippedInodes", skippedInodes);
     }
 }
