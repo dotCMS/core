@@ -1,8 +1,11 @@
 package com.dotcms.storage;
 
+import com.dotcms.storage.binary.BinaryAssetStorageAPI;
+import com.dotcms.storage.binary.BinaryAssetStorageAPIImpl;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,7 +23,7 @@ class AssetStorageFeatureTest {
     @TempDir Path root;
     private String previousFlag;
     private String previousRoot;
-    private static final String GROUP = "binary-assets";
+    private static final String GROUP = BinaryAssetStorageAPI.BINARY_ASSETS_GROUP;
     private static final String KEY = "a/b/abc123/HeroImage/MyFile.PNG";
 
     @BeforeEach
@@ -46,6 +49,24 @@ class AssetStorageFeatureTest {
     private ChainableStoragePersistenceAPI chain(StoragePersistenceAPI... providers) {
         return new ChainableStoragePersistenceAPI(new JsonWriterDelegate(), List.of(providers),
                 mock(Chainable404StorageCache.class));
+    }
+
+    @Test
+    void disabledFlagPreventsEvictionAndAllRenditionProviderCalls() throws Exception {
+        Config.setProperty(AssetStorageFeature.FLAG, null);
+        assertFalse(AssetStorageFeature.isEnabled(), "Absent flag defaults to disabled");
+        var provider = mock(StoragePersistenceAPI.class);
+        var api = new BinaryAssetStorageAPIImpl(provider);
+        File file = Files.writeString(root.resolve("File.PNG"), "cached pixels").toFile();
+        api.storeGeneratedFile(file);
+        api.deleteGeneratedFiles("abc123");
+        assertSame(file, api.getGeneratedFile(file));
+        assertFalse(api.evictLocalFile(file));
+        try (var lease = api.acquireCacheLease()) {
+            assertTrue(file.exists());
+        }
+        assertTrue(file.exists());
+        verifyNoInteractions(provider);
     }
 
     @Test
@@ -131,6 +152,38 @@ class AssetStorageFeatureTest {
     }
 
     @Test
+    void stalledRenditionInvalidationDoesNotBlockAnotherAssetRead() throws Exception {
+        final var storage = mock(StoragePersistenceAPI.class);
+        when(storage.existsGroup(anyString())).thenReturn(true);
+        final File other = Files.writeString(root.resolve("Other.PNG"), "other asset").toFile();
+        when(storage.pullFile(GROUP, "c/d/cd123/HeroImage/Other.PNG")).thenReturn(other);
+        final var api = new BinaryAssetStorageAPIImpl(storage);
+        try (var paths = mockStatic(ConfigUtils.class)) {
+            paths.when(ConfigUtils::getDotGeneratedPath).thenReturn(root.resolve("generated").toString());
+            api.getGeneratedFile(root.resolve("generated/a/b/abc123/dotGenerated_resize_1234.png").toFile());
+        }
+        final var listing = new CountDownLatch(1);
+        final var release = new CountDownLatch(1);
+        when(storage.listObjectPaths(BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP, "a/b/abc123/"))
+                .thenAnswer(call -> {
+                    listing.countDown();
+                    assertTrue(release.await(10, TimeUnit.SECONDS));
+                    return List.of();
+                });
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var deleting = executor.submit(() -> { api.deleteGeneratedFiles("abc123"); return null; });
+            try {
+                assertTrue(listing.await(5, TimeUnit.SECONDS));
+                var reading = executor.submit(() -> api.getBinaryFile("cd123", "HeroImage", "Other.PNG"));
+                assertSame(other, reading.get(5, TimeUnit.SECONDS));
+            } finally {
+                release.countDown();
+            }
+            deleting.get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
     void storageOutagePropagatesAndRecoveryBypassesNegativeCache() throws Exception {
         var provider = mock(StoragePersistenceAPI.class);
         File file = Files.writeString(root.resolve("remote"), "restored").toFile();
@@ -169,6 +222,22 @@ class AssetStorageFeatureTest {
         assertInstanceOf(DotDataException.class,
                 assertThrows(ExecutionException.class, () -> result.get(5, TimeUnit.SECONDS)).getCause());
         assertEquals("previous version", Files.readString(destination));
+    }
+
+    @Test
+    void coldRestoreDisposesProviderStagingAndKeepsMixedCaseDestination() throws Exception {
+        var fs = filesystem();
+        File download = Files.writeString(root.resolve("download.tmp"), "remote contents").toFile();
+        var remote = mock(StoragePersistenceAPI.class);
+        when(remote.pullFile(GROUP, KEY)).thenReturn(download);
+        doAnswer(call -> Files.deleteIfExists(download.toPath())).when(remote).releaseRetrievedFile(download);
+        File restored = chain(fs, remote).pullFile(GROUP, KEY);
+        assertTrue(Files.isSameFile(root.resolve(KEY), restored.toPath()));
+        assertEquals("remote contents", Files.readString(restored.toPath()));
+        assertFalse(download.exists());
+        try (var entries = Files.list(restored.toPath().getParent())) {
+            assertEquals(List.of("MyFile.PNG"), entries.map(p -> p.getFileName().toString()).toList());
+        }
     }
 
     @Test

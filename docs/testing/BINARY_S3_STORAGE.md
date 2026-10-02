@@ -59,11 +59,73 @@ The storage chain (`ChainableStoragePersistenceAPI`) and its providers change as
   per lookup. Only listings that need every key (`listObjectPaths`, `listObjectSnapshots`,
   `deleteGroup` and static push) follow every page.
 
-Two building blocks are included for the slices that follow. `S3ContentAddressedStorage`
-stores one immutable copy of each set of bytes at
-`asset-blobs/sha256/<chars-1-2>/<chars-3-4>/<chars-5-6>/<chars-7-8>/<sha256>`.
 `SharedExtractedMetadata` caches byte-derived Tika extraction at
-`extracted-metadata/<source-sha256>/<configuration-hash>.json`. Nothing calls either one yet.
+`extracted-metadata/<source-sha256>/<configuration-hash>.json`. Nothing calls it yet; metadata
+generation starts using it in a later slice.
+
+## Binary asset API
+
+`BinaryAssetStorageAPI` (`APILocator.getBinaryAssetStorageAPI()`) manages binary assets and
+completed renditions through the storage chain. Binary assets use the `binary-assets` group under
+the asset root, laid out as `{inode[0]}/{inode[1]}/{inode}/{field}/{fileName}`. Renditions use the
+`generated-assets` group under the `dotGenerated` root. With the flag on, keys in both groups keep
+their mixed-case names; other groups are still lowercased.
+
+With the flag on, S3 keeps one immutable copy of each set of bytes for these two groups, at
+`asset-blobs/sha256/<chars-1-2>/<chars-3-4>/<chars-5-6>/<chars-7-8>/<sha256>`
+(`S3ContentAddressedStorage`). The owned key holds a small reference object marked by the S3
+user-metadata header `dotcms-blob-sha256`, and identical bytes under different names or owners
+share one blob. Uploads hash a private snapshot, so the hashed bytes are the uploaded bytes.
+Existing blobs are compared by content, and cold downloads verify SHA-256 before entering the
+local cache. Older one-level blob keys and raw objects remain readable. Backfill replaces a raw
+object with a reference only if its ETag still matches the version that was read, so a concurrent
+replacement or deletion makes the migration fail instead of overwriting or resurrecting it.
+Deleting an owner removes its reference, not the shared blob; shared blobs are not reclaimed yet.
+
+With the flag on, a lookup by inode and field uses the binary reference recorded in the row's
+`contentlet_as_json`. A row without that JSON (`SAVE_CONTENTLET_AS_JSON=false`, or a row not yet
+populated) falls back to the older `{inode}/{field}/{fileName}` lookup instead of reporting no binary.
+
+The API rejects an inode that is not at least two letters, digits, underscores or hyphens, and a
+field or file name that is blank, contains `/` or `\`, or is `.` or `..`, so a built path cannot
+leave its `{inode}/{field}` directory. This applies with the flag on or off.
+
+With the flag off, the API uses the existing filesystem/NFS paths and makes no remote calls.
+
+## Local cache eviction
+
+With the flag on, the local asset directory is a cache that `BinaryCacheEvictionJob` can trim.
+The job is scheduled only when `BINARY_CACHE_EVICTION_CRON` is set. Each node has its own cache, so
+the job runs on every node from the node-local scheduled thread pool, not from the clustered Quartz
+scheduler, which would fire it on only one node per run. The first run is at least ten minutes after
+startup, and each run schedules the next one when it finishes, so runs never overlap. A run holds
+one thread of the shared scheduled pool (`SCHEDULER_COREPOOLSIZE`, default 5) while it works. It
+evicts the oldest files once the cache exceeds `BINARY_CACHE_MAX_SIZE_MB` (default 5000), skipping
+files newer than `BINARY_CACHE_EVICTION_MIN_AGE_MINUTES` (default 60).
+
+A file is evicted only when S3 holds a verified copy under the exact key. For `binary-assets` and
+`generated-assets`, the key must hold a reference whose SHA-256 matches the local file, and the
+shared blob it names is then compared with the local file byte for byte. A raw object at the key,
+written before references existed, is also compared byte for byte. For other groups the provider
+requires the same size, then accepts a matching MD5 ETag and otherwise compares bytes. The byte comparison is deliberate: a matching
+hash proves only what the reference says, not that the blob in the bucket still holds those bytes,
+and eviction removes the last local copy. Its cost is one full download of each evicted file.
+
+Only owned layouts are candidates (inode shards, a field/file pair or a UUID revision, or a
+completed rendition). Operational files, hidden staging, temporary files and symlinked descendants
+never enter the budget. Files without a verified S3 copy stay local, so the cache can exceed its
+limit safely; eviction does not backfill.
+
+Callers that hold a `File` across a read must take `acquireCacheLease()` before resolving it and
+close the lease on the same thread after use. Verification runs with no lock held, so readers never
+wait for it. Only the final check and delete take the eviction lock, and they do not wait for it: if
+a lease or storage operation is active at that moment, or the file changed during verification, the
+file is kept for a later run. Sustained activity can therefore defer eviction on that node.
+
+The lease is local to one process and does not coordinate external writers or several processes
+sharing one asset directory. With the flag on, the binary API always uses the filesystem-plus-S3
+chain, so the job evicts from whatever asset directory is configured, including a shared NFS mount.
+Do not set `BINARY_CACHE_EVICTION_CRON` on nodes that share an asset directory.
 
 ## Credentials and region
 
@@ -120,7 +182,7 @@ docker run -d --rm --name binary-s3-test \
   minio/minio:latest server /data
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002
 
 docker stop binary-s3-test
