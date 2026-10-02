@@ -24,6 +24,24 @@ public class JpegImageFilter extends ImageFilter {
 
 		};
 	}
+
+    /**
+     * Predicts the file this filter writes. With S3 asset storage on, this is the {@code .jpg}
+     * path that {@link #runFilter} writes, so an existing rendition is found locally or in S3
+     * without running the filter. With the flag off, it keeps the inherited {@code .png}
+     * prediction, so the existing cache lookups behave exactly as before.
+     *
+     * @param file the input image
+     * @param parameters the request's filter parameters
+     * @return the predicted output file
+     */
+    @Override
+    public File getResultsFile(final File file, final Map<String, String[]> parameters) {
+        return com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? getResultsFile(file, parameters, "jpg")
+                : super.getResultsFile(file, parameters);
+    }
+
 	public File runFilter(File file,   Map<String, String[]> parameters) {
 		int quality = parameters.get(getPrefix() +"q") != null?Integer.parseInt(parameters.get(getPrefix() +"q")[0]):85;
         boolean progressive = (parameters.get(getPrefix() +"p") != null);

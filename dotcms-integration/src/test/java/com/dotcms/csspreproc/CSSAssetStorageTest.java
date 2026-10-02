@@ -63,10 +63,17 @@ public class CSSAssetStorageTest {
                 doThrow(new DotDataException("Injected CSS publication outage")).when(failing).storeGeneratedFile(any());
                 try (var locator = mockStatic(APILocator.class, CALLS_REAL_METHODS)) {
                     locator.when(APILocator::getBinaryAssetStorageAPI).thenReturn(failing);
-                    assertThrows(RuntimeException.class, () -> new DotLibSassCompiler(site, asset.getURI(), false, request).compile());
+                    final var outage = new DotLibSassCompiler(site, asset.getURI(), false, request);
+                    outage.compile();
+                    assertCSS(outage.getOutput(), "red");
                     verify(failing).storeGeneratedFile(any());
                 }
-                assertTrue(cssFiles(generated).isEmpty(), "Failed upload must not leave a reusable local-only CSS result");
+                // A failed upload keeps the compiled CSS locally, and eviction must not remove it.
+                assertEquals(1, cssFiles(generated).size(), "Compiled CSS is kept locally after a failed upload");
+                final File localOnly = cssFiles(generated).get(0).toFile();
+                assertFalse(binaries.evictLocalFile(localOnly), "CSS without a durable copy must not be evicted");
+                // Start the round trip below from a cold state, so its first compile uploads normally.
+                Files.delete(localOnly.toPath());
             }
 
             final var first = new DotLibSassCompiler(site, asset.getURI(), false, request);
