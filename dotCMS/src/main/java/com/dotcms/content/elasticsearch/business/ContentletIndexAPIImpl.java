@@ -27,6 +27,8 @@ import com.dotcms.content.index.ContentletIndexOperations;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexAPIImpl;
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
+import com.dotcms.content.index.IndexDocumentConstraints;
+import com.dotcms.content.index.IndexDocumentViolation;
 import com.dotcms.content.index.MigrationHaltReport;
 import com.dotcms.content.index.opensearch.IndexStartupValidator;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
@@ -182,6 +184,8 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     private final PhaseRouter<ContentletIndexOperations> router;
 
     private static final ObjectMapper objectMapper = DotObjectMapperProvider.createDefaultMapper();
+    /** Predicts which index documents the engine clients' JSON parser would refuse (#37269). */
+    private static final IndexDocumentConstraints documentConstraints = new IndexDocumentConstraints();
 
     /**
      * Max seconds a single reindex-journal entry may spend loading/mapping its contentlets
@@ -2704,8 +2708,25 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
             return;
         }
+        final List<MappedDocument> healthy = new ArrayList<>(documents.size());
+        final List<String> rejections = new ArrayList<>();
+        for (final MappedDocument document : documents) {
+            if (document.isRejected()) {
+                rejections.add(document.rejection().toFailureReason());
+            } else {
+                healthy.add(document);
+            }
+        }
+        if (!rejections.isEmpty()) {
+            // A document the engine clients' parser would refuse is withheld on its own instead of
+            // failing every document that would share its bulk request (#37269).
+            final String reason = String.join("; ", rejections);
+            Logger.warn(this, "Withholding index document(s) for identifier '"
+                    + idx.getIdentToIndex() + "': " + reason);
+            APILocator.getReindexQueueAPI().markAsFailed(idx, reason);
+        }
         try {
-            enqueueMappedDocuments(proc, documents, idx.isReindex());
+            enqueueMappedDocuments(proc, healthy, idx.isReindex());
         } catch (final Exception e) {
             APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
         }
@@ -2862,7 +2883,38 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
      */
     @VisibleForTesting
     record MappedDocument(Contentlet contentlet, String id, String mapping, boolean isWorking,
-                          boolean isLive) {
+                          boolean isLive, IndexDocumentViolation rejection) {
+
+        /**
+         * Creates a document ready to be sent to the index.
+         */
+        MappedDocument(final Contentlet contentlet, final String id, final String mapping,
+                final boolean isWorking, final boolean isLive) {
+            this(contentlet, id, mapping, isWorking, isLive, null);
+        }
+
+        /**
+         * Creates a placeholder for a document that must not be sent because the engine clients'
+         * parser would reject it (#37269).
+         *
+         * @param contentlet the offending contentlet version
+         * @param id         the index document id it would have had
+         * @param rejection  why it is withheld
+         * @return a rejected document with no mapping
+         */
+        static MappedDocument rejected(final Contentlet contentlet, final String id,
+                final IndexDocumentViolation rejection) {
+            return new MappedDocument(contentlet, id, null, false, false, rejection);
+        }
+
+        /**
+         * Tells whether this document was withheld instead of mapped.
+         *
+         * @return {@code true} when the document must not be sent to the index
+         */
+        boolean isRejected() {
+            return rejection != null;
+        }
     }
 
     /**
@@ -2881,8 +2933,19 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 return Optional.empty();
             }
             // Compute mapping once; reuse across all providers for the same contentlet.
-            final String mapping = Try.of(
-                            () -> objectMapper.writeValueAsString(getMappingAPI().toMap(contentlet)))
+            final Map<String, Object> document = Try.of(() -> getMappingAPI().toMap(contentlet))
+                    .getOrElseThrow(DotRuntimeException::new);
+            // Both engine clients re-read the document with Jackson before sending it; one that
+            // their parser would refuse is withheld here, before anything is queued, so it cannot
+            // fail the whole bulk request it would have joined (#37269).
+            final Optional<IndexDocumentConstraints.Violation> violation =
+                    documentConstraints.check(document);
+            if (violation.isPresent()) {
+                return Optional.of(MappedDocument.rejected(contentlet, id,
+                        new IndexDocumentViolation(contentlet.getIdentifier(), contentlet.getInode(),
+                                contentlet.getLanguageId(), violation.get())));
+            }
+            final String mapping = Try.of(() -> objectMapper.writeValueAsString(document))
                     .getOrElseThrow(DotRuntimeException::new);
             return Optional.of(new MappedDocument(contentlet, id, mapping, isWorking, isLive));
         } catch (final Exception ex) {
