@@ -111,14 +111,19 @@ keeps its original `value` filename and adds `storageKey` (and `metadataStorageK
 metadata). The field reference changes in the content transaction, so an uncommitted replacement
 does not overwrite the prior object, and a rollback keeps the previous revision. Legacy binary
 JSON and storage keys remain readable. Reconstructed files keep the stored revision path without
-I/O. Old and rolled-back revisions are kept until whole-inode cleanup.
+I/O. Old revisions are kept until whole-inode cleanup. A check-in that rolls back deletes the
+revision and revision metadata it uploaded, through a rollback listener; the key carries a fresh
+UUID, so no other version can reference it. If that delete fails it is logged and the object is
+left behind. Metadata written under a different key during the rolled-back check-in, and
+revisions abandoned by a rollback to a savepoint, are not reclaimed.
 
 Custom metadata is copied to replacements, and metadata files and cache entries identify the exact
 binary revision. Binary HTTP responses (`BinaryExporterServlet`) hold a cache lease while they
-resolve and consume the file. `FileAsset.getInputStream` and `Contentlet.getBinaryStream` hold it
-only until the stream is open, because a lease must be released on the thread that took it and a
-caller may read or close the stream elsewhere. On a local disk an open file survives eviction, so
-this is safe. Eviction on an NFS asset directory, where deleting an open file can break the read,
+resolve, export and open the file, and release it before streaming, so a slow client does not
+defer eviction. `FileAsset.getInputStream` and `Contentlet.getBinaryStream` also hold it only until
+the stream is open, because a lease must be released on the thread that took it and a caller may
+read or close the stream elsewhere. On a local disk an open file survives eviction, so this is
+safe. Eviction on an NFS asset directory, where deleting an open file can break the read,
 has not been validated.
 
 ## Metadata from evicted originals
@@ -142,12 +147,24 @@ regenerated from a cold legacy or revision path.
 
 ## Durable deletion
 
-Whole-inode deletion and old-version maintenance record `binaryAssetCleanup` jobs in the same
-database transaction as the content deletion. The worker checks that the version is absent, then
-deletes metadata before source objects, so a failure leaves the sources available for a retry. S3
-failures use the job queue's retry policy; after retries are exhausted the job stays failed and
-can be retried through the job management API. With the flag off, workers do not touch storage and
-pending jobs are not silently completed.
+Whole-inode deletion, deletion of one language of multilingual content, and old-version
+maintenance record one `binaryAssetCleanup` job per deleted inode in the same database transaction
+as the content deletion. Main leaves the files of a deleted language on disk (#9146); with the
+flag on, that path now records cleanup jobs and, when `BACKUP_DELETED_CONTENTLETS_TO_DISK` is on,
+recovery archives like the other deletion paths.
+
+The job carries the exact binary and metadata paths stored for the inode when it was recorded, so
+recording it lists the inode's objects inside the deletion transaction, and a storage listing
+failure aborts the deletion. The worker refuses while a content version with that inode exists,
+then deletes the recorded metadata before the recorded source objects, so a failure leaves the
+sources available for a retry. It never deletes by prefix: an inode can be re-created after the
+deletion (push publishing keeps the sender's inodes), and the revisions it uploads survive. Objects
+uploaded under the deleted inode by a transaction that overlapped the deletion are therefore not
+reclaimed. The inode's completed renditions and legacy image cache are still removed whole, since
+they regenerate on demand. S3 failures use the job queue's retry policy; after retries are
+exhausted the job stays failed and can be retried through the job management API. Direct
+submissions through the public job endpoint are rejected. With the flag off, workers do not touch
+storage and pending jobs are not silently completed.
 
 ## Binary field trash
 
@@ -171,9 +188,10 @@ trash behave as before.
 When both the flag and the existing `BACKUP_DELETED_CONTENTLETS_TO_DISK` option are on, deletion
 writes a verified S3 recovery ZIP before removing content. Archives live in the
 `deleted-content-backups` group at `<identifier>/<inode>/<uuid>.zip`. Full destruction and
-all-version deletion archive each version; single-version deletion archives only that version. A
-failed backup aborts the deletion. Binary cleanup never deletes recovery archives. Field trash
-ZIPs use the same group and layout.
+all-version deletion archive each version, deleting one language archives each version in that
+language, and single-version deletion archives only that version. A failed backup aborts the
+deletion. Binary cleanup never deletes recovery archives. Field trash ZIPs use the same group and
+layout.
 
 Each ZIP contains `contentlet.json` (the row's complete typed field data), `contentlet.xml`, and
 `assets/` entries under the original binary and metadata paths, including binary fields whose

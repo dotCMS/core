@@ -46,6 +46,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -663,20 +664,25 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
         return Optional.empty();
     }
 
-    /** Removes legacy and revision metadata while source keys are still available for retries. */
+    /**
+     * Lists a deleted inode's legacy and revision metadata from storage. With the flag off it returns
+     * nothing. See {@link FileMetadataAPI#listMetadataForInode}.
+     *
+     * @param inode       the deleted contentlet inode
+     * @param binaryPaths the inode's stored binary paths at deletion time
+     * @return the metadata paths to delete, each starting with {@code /}
+     * @throws DotDataException if metadata cannot be listed or a path escapes the inode
+     */
     @Override
-    public void removeMetadataForInode(final String inode, final List<String> binaryPaths) throws DotDataException {
+    public List<String> listMetadataForInode(final String inode, final List<String> binaryPaths) throws DotDataException {
         if (!AssetStorageFeature.isEnabled()) {
-            return;
+            return List.of();
         }
-        if (inode == null || !inode.matches("[A-Za-z0-9_-]{2,}")) {
-            throw new IllegalArgumentException("Invalid metadata inode");
-        }
-        final String prefix = inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/";
+        final String prefix = metadataInodePrefix(inode);
         final String group = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
         final StoragePersistenceAPI storage = StoragePersistenceProvider.INSTANCE.get()
                 .getStorage(StoragePersistenceProvider.getStorageType());
-        final Set<String> paths = new HashSet<>();
+        final Set<String> paths = new LinkedHashSet<>();
         // Legacy metadata can exist even when its field/source no longer exists.
         for (final String path : storage.listObjectPaths(group, "/" + prefix)) {
             if (path.endsWith(METADATA_JSON)) {
@@ -703,14 +709,65 @@ public class FileMetadataAPIImpl implements FileMetadataAPI {
             }
         }
         for (final String path : paths) {
-            if (!path.startsWith("/" + prefix) || !Path.of(path).normalize().toString().equals(path)) {
-                throw new DotDataException("Metadata path escapes cleanup inode: " + path);
-            }
+            requireMetadataPathOf(prefix, path);
+        }
+        return List.copyOf(paths);
+    }
+
+    /**
+     * Deletes exactly the metadata paths recorded for a deleted inode and evicts them from the
+     * metadata cache. With the flag off it does nothing. See {@link FileMetadataAPI#removeMetadataPaths}.
+     *
+     * @param inode         the deleted contentlet inode
+     * @param metadataPaths the recorded metadata paths, each under the inode's folder
+     * @throws DotDataException if a path escapes the inode or remains after deletion
+     */
+    @Override
+    public void removeMetadataPaths(final String inode, final List<String> metadataPaths) throws DotDataException {
+        if (!AssetStorageFeature.isEnabled()) {
+            return;
+        }
+        final String prefix = metadataInodePrefix(inode);
+        for (final String path : metadataPaths) {
+            requireMetadataPathOf(prefix, path);
+        }
+        final String group = Config.getStringProperty(METADATA_GROUP_NAME, DOT_METADATA);
+        final StoragePersistenceAPI storage = StoragePersistenceProvider.INSTANCE.get()
+                .getStorage(StoragePersistenceProvider.getStorageType());
+        for (final String path : metadataPaths) {
             storage.deleteObjectAndReferences(group, path);
             if (storage.existsObject(group, path)) {
                 throw new DotDataException("Metadata remains after deletion: " + path);
             }
             metadataCache.removeMetadata(path);
+        }
+    }
+
+    /**
+     * Returns the storage prefix {@code {a}/{b}/{inode}/} that owns an inode's metadata.
+     *
+     * @param inode the contentlet inode
+     * @return the prefix, without a leading slash
+     * @throws IllegalArgumentException if the inode could escape the asset layout
+     */
+    private static String metadataInodePrefix(final String inode) {
+        if (inode == null || !inode.matches("[A-Za-z0-9_-]{2,}")) {
+            throw new IllegalArgumentException("Invalid metadata inode");
+        }
+        return inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/";
+    }
+
+    /**
+     * Rejects a metadata path that is not a normalized path under the inode's folder, so a recorded
+     * or listed path can never delete another inode's metadata.
+     *
+     * @param prefix the inode prefix from {@link #metadataInodePrefix}
+     * @param path   the metadata path, starting with {@code /}
+     * @throws DotDataException if the path escapes the inode
+     */
+    private static void requireMetadataPathOf(final String prefix, final String path) throws DotDataException {
+        if (path == null || !path.startsWith("/" + prefix) || !Path.of(path).normalize().toString().equals(path)) {
+            throw new DotDataException("Metadata path escapes cleanup inode: " + path);
         }
     }
 

@@ -656,8 +656,16 @@ class BinaryS3StorageTest {
         assertNull(metadata.retrieveMetaData(absent), "A real S3 404 is still normal absence");
 
         Files.writeString(local, "broken JSON");
+        when(provider.getStorage(any())).thenReturn(new ChainableStoragePersistenceAPI(new JsonWriterDelegate(),
+                List.of(fs), mock(Chainable404StorageCache.class)));
         assertThrows(com.dotmarketing.exception.DotDataException.class, () -> metadata.retrieveMetaData(request));
-        assertEquals("broken JSON", Files.readString(local), "Read errors must not delete evidence or regenerate metadata");
+        assertEquals("broken JSON", Files.readString(local),
+                "Without a durable copy, read errors must not delete evidence or regenerate metadata");
+        verifyNoInteractions(generator);
+        when(provider.getStorage(any())).thenReturn(chain);
+        assertEquals("0.75,0.5", metadata.retrieveMetaData(request).get("dot:focalPoint"),
+                "An unreadable local copy is replaced from S3");
+        assertNotEquals("broken JSON", Files.readString(local));
         Files.delete(local);
         assertEquals("0.75,0.5", metadata.retrieveMetaData(request).get("dot:focalPoint"));
         org.apache.commons.io.FileUtils.deleteDirectory(cacheRoot.toFile());

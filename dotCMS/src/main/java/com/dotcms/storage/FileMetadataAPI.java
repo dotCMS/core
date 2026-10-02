@@ -35,14 +35,32 @@ public interface FileMetadataAPI {
     String METADATA_JSON = "-metadata.json";
 
     /**
-     * Removes an absent inode's metadata before its source keys are removed by durable cleanup.
-     * Only the S3 asset lifecycle calls this; the default keeps metadata, as filesystem/NFS cleanup does.
+     * Lists the stored metadata paths that belong to a deleted inode: legacy per-field metadata, any
+     * metadata left under the inode folder, and the metadata of each revision in {@code binaryPaths}.
+     * Whole-inode deletion records this list with its cleanup job, so the job later deletes exactly
+     * these paths and never metadata written after the deletion. Only the S3 asset lifecycle calls
+     * this; the default returns nothing, as filesystem/NFS cleanup keeps metadata.
      *
      * @param inode       the deleted contentlet inode
-     * @param binaryPaths the inode's stored binary paths
-     * @throws DotDataException if stored metadata cannot be removed
+     * @param binaryPaths the inode's stored binary paths at deletion time
+     * @return the metadata paths to delete, each starting with {@code /}
+     * @throws DotDataException if metadata cannot be listed or a path escapes the inode
      */
-    default void removeMetadataForInode(String inode, java.util.List<String> binaryPaths) throws DotDataException { }
+    default java.util.List<String> listMetadataForInode(String inode, java.util.List<String> binaryPaths)
+            throws DotDataException {
+        return java.util.List.of();
+    }
+
+    /**
+     * Deletes the metadata paths recorded by {@link #listMetadataForInode} for a deleted inode and
+     * evicts them from the metadata cache. Deleting a path that is already gone succeeds, so a retried
+     * cleanup job can call this again. The default does nothing.
+     *
+     * @param inode         the deleted contentlet inode
+     * @param metadataPaths the recorded metadata paths, each under the inode's folder
+     * @throws DotDataException if a path escapes the inode or remains after deletion
+     */
+    default void removeMetadataPaths(String inode, java.util.List<String> metadataPaths) throws DotDataException { }
 
     /**
      * Metadata file generator.
