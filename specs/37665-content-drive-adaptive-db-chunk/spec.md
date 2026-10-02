@@ -165,7 +165,7 @@ size on every iteration.
   where today's loop needs one more 400-row chunk. Every row read is loaded and
   permission-checked. The rows past the page's last item are wasted work, and the next page
   re-reads them, because it resumes right after that item. The per-step growth cap (FR-003)
-  bounds this: here the loop reads 1,600 rows, not the 7,000 ceiling.
+  bounds this: here the loop reads 1,600 rows, not the 2,000 ceiling.
 - **Caller's chunk size already at or above the ceiling** (a very large page size): the chunk
   never grows, because the floor wins over the ceiling. Behavior matches today.
 - **Scan budget nearly used up**: growth never takes a chunk past what is left of the scan budget.
@@ -204,8 +204,10 @@ size on every iteration.
   - a per-step growth cap: a configurable multiple of the size requested for the previous chunk,
     4x by default. The doubling path (2x) never reaches it. It exists to bound the ratio path
     when visibility is clustered (see Edge Cases);
-  - the configurable ceiling, which defaults to 7,000 (the same default as
-    `BROWSER_SINGLE_PASS_CHUNK_SIZE`);
+  - the configurable ceiling, which defaults to 2,000. Every row of a chunk is loaded before the
+    permission filter, so the ceiling bounds each request's working set. The original 7,000 (the
+    `BROWSER_SINGLE_PASS_CHUNK_SIZE` default) saturated a 2 GB heap under 10 concurrent
+    permission-limited listings in the review benchmark (dotCMS/core#37838);
   - what is left of the `BROWSER_DB_MAX_SCAN_ROWS` budget, measured the same way as the existing
     cutoff.
   A chunk MUST NOT be requested below the caller's chunk size either. When the floor and a limit
