@@ -267,7 +267,7 @@ The impression tracker observes a contentlet only when it has a `data-dot-identi
 3. A contentlet receiving `data-dot-identifier`. The renderers print it after hydration, within milliseconds of the contentlet, so this observer (`createContentletObserver` in `contentlets/utils.ts`, with `identifiers: true`) does not drop the calls inside its 250 ms throttle window: the last one runs when the window ends.
 4. `CONTENTLET_RESCAN_EVENT`, sent when hidden rows are shown.
 
-A scan only adds contentlets it has not seen, so the signals can overlap freely. On an SPA navigation (`onNavigation`, so `history` is not patched where the browser has the Navigation API) the tracker forgets the page's impressions: the next page counts its own. The click tracker attaches its listener regardless of the attributes and reads them on click, so it watches added contentlets only.
+A scan only adds contentlets it has not seen, so the signals can overlap freely. On an SPA navigation (`onNavigation`, so `history` is not patched where the browser has the Navigation API) the tracker forgets the page's impressions: the next page counts its own. The click tracker scans nothing: it listens once, on the document, in the capture phase, finds the clicked link or button and its contentlet with `closest`, and reads the contentlet's attributes and position when the click happens. So a contentlet added at any time counts, an app's `stopPropagation()` cannot hide a click, and a click inside nested contentlets counts once, for the innermost (`@dotcms/analytics`, with a listener on each contentlet, sent one event per nesting level). The click tracker writes nothing to the contentlets; the impression tracker still saves its own position on them (`data-dot-dom-index`).
 
 ### Layout and Names
 
@@ -349,11 +349,11 @@ Dependencies go one way. `pipeline/` imports nothing built on it; the content tr
 
 ## Performance
 
-- The `events-init` probe in `libs/sdk/bundle-budgets` bundles `import { dotEvents } from '@dotcms/events'` with its dependencies: 29,342 B gzip, against a 30,000 B ceiling. The `#` private fields add 977 B of that, since the `es2020` target compiles them to WeakMap helpers (measured against `private`). `events-react` bundles `DotCMSExperiment`: 1,496 B gzip against 2,200, and it fails if the engine or Analytics.js comes along. Raise a ceiling only with a measurement and a reason.
+- The `events-init` probe in `libs/sdk/bundle-budgets` bundles `import { dotEvents } from '@dotcms/events'` with its dependencies: 29,022 B gzip, against a 30,000 B ceiling. The `#` private fields add 977 B of that, since the `es2020` target compiles them to WeakMap helpers (measured against `private`). `events-react` bundles `DotCMSExperiment`: 1,496 B gzip against 2,200, and it fails if the engine or Analytics.js comes along. Raise a ceiling only with a measurement and a reason.
 - `sideEffects: false`, and importing the package does nothing until `init`.
 - `isUserIncluded` is asked once per tab session, by the engine only. The pageview hold is bounded by the timeout, and the CSS rule shows the content after 3 s even when no script runs.
 - The boot script is about 1.1 KB gzip in the HTML of each page that runs an experiment (1,079 B minified with esbuild), minified by the app's build. From a server component it costs the client no JavaScript, but Next.js repeats the markup in the RSC payload of the HTML. From a client component, the builder (the `events-react` probe) is in that route's JavaScript.
-- `ca.min.js` is 73,673 B raw and 25,739 B gzip, experiments included (its build keeps the `#` fields native); `@dotcms/analytics`'s is 22,782 B gzip. The contentlets mode is in `events-init` too (412 B gzip), since the engine holds both.
+- `ca.min.js` is 72,524 B raw and 25,462 B gzip, experiments included (its build keeps the `#` fields native); `@dotcms/analytics`'s is 22,782 B gzip. The contentlets mode is in `events-init` too (412 B gzip), since the engine holds both.
 - The impression and click plugins are only added when enabled, but their code is always in the bundle, because `getEnhancedTrackingPlugins` references both.
 
 ### Measured Cost

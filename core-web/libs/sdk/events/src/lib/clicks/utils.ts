@@ -1,6 +1,6 @@
 import { CLICKABLE_ELEMENTS_SELECTOR, CLICK_EVENT_TYPE } from './constants';
 
-import { extractContentletData } from '../contentlets/utils';
+import { extractContentletData, findContentlets } from '../contentlets/utils';
 import { getViewportMetrics } from '../contentlets/viewport';
 
 import type { DotCMSContentClickPayload } from '../pipeline/models';
@@ -8,7 +8,8 @@ import type { createPluginLogger } from '../pipeline/utils';
 
 /**
  * Handles click events on elements within a contentlet.
- * The contentlet element is already known since we attach listeners to contentlets.
+ * The tracker passes the contentlet the click landed in: the innermost one around the clicked
+ * link or button.
  *
  * @param event - The mouse event
  * @param contentletElement - The contentlet container element
@@ -69,9 +70,9 @@ export const handleContentletClick = (
         }
     }
 
-    // Read cached DOM index instead of expensive O(3n) query
-    // Index is cached in data-attribute when listener is attached
-    const domIndex = parseInt(contentletElement.dataset['dotAnalyticsDomIndex'] || '-1', 10);
+    // The contentlet's position among the page's contentlets, read when it is clicked: one
+    // query per click, and the position stays right as contentlets are added or moved
+    const domIndex = findContentlets().indexOf(contentletElement);
 
     const payload: DotCMSContentClickPayload = {
         content: {

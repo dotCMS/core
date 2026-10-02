@@ -50,6 +50,11 @@ describe('Click Utils', () => {
         beforeEach(() => {
             trackCallback = vi.fn();
 
+            // The page's contentlets, as findContentlets finds them
+            (trackingUtils.findContentlets as Mock).mockImplementation(() =>
+                Array.from(document.querySelectorAll<HTMLElement>(`.${CONTENTLET_CLASS}`))
+            );
+
             // Mock extractContentletData
             (trackingUtils.extractContentletData as Mock).mockReturnValue({
                 identifier: 'test-123',
@@ -125,9 +130,6 @@ describe('Click Utils', () => {
             it('should call trackCallback with correct payload for button click', () => {
                 const contentlet = createContentletWithButton('test-123');
                 document.body.appendChild(contentlet);
-
-                // Set DOM index as would be done by attachClickListener
-                contentlet.dataset['dotAnalyticsDomIndex'] = '0';
 
                 const button = contentlet.querySelector('button') as HTMLElement;
                 const event = new MouseEvent('click', { bubbles: true });
@@ -298,7 +300,7 @@ describe('Click Utils', () => {
                 document.body.removeChild(contentlet);
             });
 
-            it('should calculate correct dom_index', () => {
+            it("should report the contentlet's position among the page's contentlets", () => {
                 // Create multiple contentlets
                 const contentlet1 = createContentletWithButton('test-1');
                 const contentlet2 = createContentletWithButton('test-2');
@@ -307,11 +309,6 @@ describe('Click Utils', () => {
                 document.body.appendChild(contentlet1);
                 document.body.appendChild(contentlet2);
                 document.body.appendChild(contentlet3);
-
-                // Set DOM index as would be done by attachClickListener
-                contentlet1.dataset['dotAnalyticsDomIndex'] = '0';
-                contentlet2.dataset['dotAnalyticsDomIndex'] = '1';
-                contentlet3.dataset['dotAnalyticsDomIndex'] = '2';
 
                 // Click on button in second contentlet
                 const button = contentlet2.querySelector('button') as HTMLElement;
@@ -327,6 +324,27 @@ describe('Click Utils', () => {
                 document.body.removeChild(contentlet1);
                 document.body.removeChild(contentlet2);
                 document.body.removeChild(contentlet3);
+            });
+
+            it('should report the position at click time, after a contentlet is inserted before it', () => {
+                const contentlet1 = createContentletWithButton('test-1');
+                const contentlet2 = createContentletWithButton('test-2');
+                document.body.append(contentlet1, contentlet2);
+
+                // Rendered later, before the clicked contentlet
+                document.body.insertBefore(createContentletWithButton('test-0'), contentlet1);
+
+                const button = contentlet2.querySelector('button') as HTMLElement;
+                const event = new MouseEvent('click', { bubbles: true });
+                Object.defineProperty(event, 'target', { value: button });
+
+                handleContentletClick(event, contentlet2, trackCallback, mockLogger);
+
+                const payload = trackCallback.mock.calls[0]![1] as DotCMSContentClickPayload;
+
+                expect(payload.position.dom_index).toBe(2);
+
+                document.body.innerHTML = '';
             });
 
             it('should use viewport metrics from getViewportMetrics', () => {

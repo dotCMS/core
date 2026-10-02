@@ -12,11 +12,10 @@ import type { AnalyticsInstance } from 'analytics';
  * Handles automatic tracking of clicks on content elements.
  *
  * This plugin initializes the click tracker which:
- * - Uses MutationObserver to detect contentlet containers
- * - Attaches click listeners to each .dotcms-contentlet element
- * - Filters for clicks on <a> or <button> elements inside tracked contentlets
- * - Extracts contentlet data and element metadata
- * - Throttles clicks to prevent duplicates
+ * - Listens for clicks once, on the document, in the capture phase
+ * - Reports clicks on <a> or <button> elements inside a contentlet, the innermost one
+ * - Extracts contentlet data, its position when clicked, and element metadata
+ * - Throttles clicks per contentlet to prevent duplicates
  * - Fires 'content_click' events via subscription callback
  *
  * Note: This plugin is only registered if config.clicks is enabled.
