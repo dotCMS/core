@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -23,6 +24,8 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
     private static final String NULL = "NULL";
     private static final String UNABLE_TO_READ_FILE = "File does not exist or unable to read : ";
     private static final String NOT_FOUND_ERROR = "Property Name not Found: ";
+    private static final Set<SamlName> SIGNATURE_CHECKS = Set.of(
+            SamlName.DOT_SAML_VERIFY_SIGNATURE_CREDENTIALS, SamlName.DOT_SAML_VERIFY_SIGNATURE_PROFILE);
 
     private AtomicBoolean init = new AtomicBoolean(false);
     private final Map<String, String> defaultProperties = new ConcurrentHashMap<>();
@@ -73,7 +76,17 @@ public abstract class DotAbstractSamlConfigurationServiceImpl implements SamlCon
                 properties.forEach((key, value) -> {
 
                     final SamlName samlName = SamlName.findProperty((String)key);
-                    if (null != samlName) {
+                    if (null == samlName) {
+
+                        return;
+                    }
+
+                    if (SIGNATURE_CHECKS.contains(samlName)) {
+
+                        // signature checks can't be switched off: keep the default (true)
+                        Logger.warn(this, "Ignoring '" + key + "' in " + dotSamlDefaultPropertiesValue
+                                + ": SAML signatures are always verified.");
+                    } else {
 
                         this.defaultProperties.put(samlName.getPropertyName(), (String)value);
                     }
