@@ -8,15 +8,21 @@
         appendTo="body" />
     <div class="flex flex-1 items-center gap-2">
         <input
+            id="visitors-location-radius"
             [value]="getRadiusInPreferredUnit() | number: '1.0-0'"
             [readonly]="true"
             pInputText
             class="flex-1 text-right text-black" />
-        <label class="whitespace-nowrap">{{ $preferredUnit() }}</label>
+        <label for="visitors-location-radius" class="whitespace-nowrap">
+            {{ $preferredUnit() }}
+        </label>
     </div>
     <div class="flex grow-2 items-center gap-2">
-        <label class="whitespace-nowrap">{{ $fromLabel() }}</label>
+        <label for="visitors-location-coords" class="whitespace-nowrap">
+            {{ $fromLabel() }}
+        </label>
         <input
+            id="visitors-location-coords"
             [value]="getFormattedLatLong()"
             [readonly]="true"
             pInputText
@@ -28,8 +34,7 @@
         severity="secondary"
         icon="pi pi-plus"
         label="Show Map"
-        class="shrink-0"
-        ariaLabel="Show Map"></button>
+        class="shrink-0"></button>
 </div>
 <dot-area-picker-dialog-component
     (circleUpdate)="onMapUpdate($event)"
