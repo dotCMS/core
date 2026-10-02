@@ -6,6 +6,7 @@ import com.dotcms.enterprise.publishing.storage.AWSS3Storage;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -111,6 +112,36 @@ class S3StorageConfigurationTest {
             assertEquals("ap-southeast-2", client(storage).getRegionName());
             assertEquals(19078, client(storage).getUrl("test-bucket", "file").getPort());
         } finally { storage.shutdownTransferManager(); }
+    }
+
+    @Test
+    void staticPushClientsWithoutARegionUseTheGlobalEndpointWithRegionLookup() throws Exception {
+        // Keys without a region or endpoint used to fail with "Unable to find a region", and the
+        // credential-chain path was pinned to us-west-2. Both now use the global endpoint, with no
+        // signer override, so the SDK can look up each bucket's region and sign SigV4 for it.
+        var keysOnly = new AWSS3Storage(new AWSS3Configuration.Builder()
+                .accessKey("publisher-key").secretKey("publisher-secret").build());
+        var credentialChain = new AWSS3Storage(NoWebIdentityCredentialsProviderChain.defaultChain());
+        try {
+            for (var storage : List.of(keysOnly, credentialChain)) {
+                assertEquals("test-bucket.s3.amazonaws.com", client(storage).getUrl("test-bucket", "file").getHost());
+                assertNull(signerOverride(storage));
+            }
+        } finally {
+            keysOnly.shutdownTransferManager();
+            credentialChain.shutdownTransferManager();
+        }
+
+        Config.setProperty(AssetStorageFeature.FLAG, false);
+        var legacy = new AWSS3Storage(NoWebIdentityCredentialsProviderChain.defaultChain());
+        try {
+            assertEquals("test-bucket.s3.amazonaws.com", client(legacy).getUrl("test-bucket", "file").getHost());
+            assertEquals("S3SignerType", signerOverride(legacy));
+        } finally { legacy.shutdownTransferManager(); }
+    }
+
+    private static String signerOverride(AWSS3Storage storage) throws Exception {
+        return ((com.amazonaws.AmazonWebServiceClient) client(storage)).getClientConfiguration().getSignerOverride();
     }
 
     // Inspect the real SDK configuration without making network requests or exposing production getters.

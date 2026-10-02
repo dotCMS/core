@@ -20,6 +20,7 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.pusher.PushUtils;
 import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.storage.NoWebIdentityCredentialsProviderChain;
 import com.dotcms.publishing.*;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.system.event.local.type.pushpublish.EndpointFailureDetail;
@@ -507,6 +508,8 @@ public class AWSS3Publisher extends Publisher {
     /**
 	 * Creates and returns an AWSS3EndPointPublisher.
 	 * Uses the default AWS credentials provider chain if the tokenProp and/or secretProp are not set.
+	 * With S3 asset storage off, that chain leaves out the web identity step, as it did before the
+	 * STS module was packaged (see {@link NoWebIdentityCredentialsProviderChain#defaultChain()}).
 	 * Uses the provided tokenProp and secretProp if they are both set.
 	 *
 	 * @param tokenProp - the AWS credentials token key
@@ -519,7 +522,7 @@ public class AWSS3Publisher extends Publisher {
             final String secretProp, final String endPoint, final String region) {
 		AWSS3EndPointPublisher endPointPublisher;
 		if (!UtilMethods.isSet(tokenProp) || !UtilMethods.isSet(secretProp)) {
-			DefaultAWSCredentialsProviderChain creds = new DefaultAWSCredentialsProviderChain();
+			DefaultAWSCredentialsProviderChain creds = NoWebIdentityCredentialsProviderChain.defaultChain();
 			endPointPublisher = new AWSS3EndPointPublisher(creds);
 		} else {
 			AWSS3Configuration awss3Configuration =

@@ -343,6 +343,17 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         );
     }
 
+    /**
+     * Returns the stored file for the path. With S3 asset storage on, an unmapped group or a missing
+     * file returns {@code null} so the chain can try the next provider, and a path that is not a
+     * regular file fails. With it off, a missing group or file throws
+     * {@link IllegalArgumentException} as before.
+     *
+     * @param groupName the group to read from
+     * @param path      the object's path
+     * @return the stored file, or {@code null} when the flag is on and it is absent
+     * @throws DotDataException if the file cannot be read
+     */
     @Override
     public File pullFile(final String groupName, final String path) throws DotDataException {
 
@@ -377,9 +388,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 if (destBucketFile.exists()) {
                     clientFile = destBucketFile;
                 } else {
-                    if (AssetStorageFeature.isEnabled()) {
-                        return null;
-                    }
                     throw new IllegalArgumentException(
                             "The group: " + destBucketFile + ", does not exists.");
                 }
@@ -394,6 +402,21 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return clientFile;
     }
 
+    /**
+     * Reads and deserializes the stored object for the path. With S3 asset storage on, an unmapped
+     * group or a missing file returns {@code null}. A zero-length or truncated file is kept and
+     * reported as {@link UnreadableStoredObjectException}, so the chain can replace it from durable
+     * storage and nothing treats it as absent and regenerates it. Other read failures throw.
+     * With the flag off, a corrupt file is deleted and an empty map is returned, and a missing group
+     * or file throws {@link IllegalArgumentException}, as before.
+     *
+     * @param groupName      the group to read from
+     * @param path           the object's path
+     * @param readerDelegate deserializes the stored value
+     * @return the object, or {@code null} when the flag is on and the file is absent
+     * @throws UnreadableStoredObjectException if the flag is on and the file cannot be deserialized
+     * @throws DotDataException if the flag is on and the file cannot be read
+     */
     @Override
     public Object pullObject(final String groupName, final String path,
             final ObjectReaderDelegate readerDelegate) throws DotDataException {
@@ -411,6 +434,9 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 }
             } catch (NoSuchFileException absent) {
                 return null;
+            } catch (com.fasterxml.jackson.core.JsonProcessingException | java.io.EOFException corrupt) {
+                // Keep the file: the chain replaces it from durable storage, or the read fails.
+                throw new UnreadableStoredObjectException("Unable to read stored object " + path, corrupt);
             } catch (IOException e) {
                 throw new DotDataException("Unable to read stored object " + path, e);
             }
@@ -437,9 +463,6 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 try (InputStream input = FileUtil.createInputStream(file.toPath(), compressor)) {
                     object = readerDelegate.read(input);
                 } catch (final FileNotFoundException | NoSuchFileException absent) {
-                    if (AssetStorageFeature.isEnabled()) {
-                        return null;
-                    }
                     throw new IllegalArgumentException("The file: " + path + ", does not exists.");
                 }
             } catch (MismatchedInputException e) {
@@ -531,6 +554,15 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
     }
 
+    /**
+     * Lists the stored files under a prefix, relative to the group folder. The prefix is mapped to
+     * disk the same way keys are when they are written, so a prefix in any letter case finds them.
+     *
+     * @param groupName  the group to list
+     * @param pathPrefix the key prefix
+     * @return the matching paths as stored on disk, or an empty list
+     * @throws DotDataException if the folder cannot be resolved or walked
+     */
     @Override
     public List<String> listObjectPaths(final String groupName,
                                         final String pathPrefix) throws DotDataException {
@@ -543,7 +575,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         final File groupDir = groups.get(groupNameLC);
         final Path prefixDir;
         try {
-            prefixDir = Paths.get(groupDir.getCanonicalPath(), pathPrefix);
+            // Keys are stored through normalizePath, so the prefix must be resolved the same way.
+            prefixDir = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, pathPrefix));
         } catch (final IOException e) {
             throw new DotDataException(
                     "Failed to resolve prefix path for group '" + groupName + "': " + e.getMessage(), e);

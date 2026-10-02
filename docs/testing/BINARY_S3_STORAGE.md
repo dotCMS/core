@@ -6,6 +6,23 @@ the filesystem/NFS behavior is unchanged.
 
 This page describes what is in the code today. It grows as the remaining parts land.
 
+## Behavior with the flag off
+
+With the flag off, the storage chain, its providers, metadata and static push publishing run
+the same code paths as before. Two details are worth knowing:
+
+- This feature packages the AWS STS module (`aws-java-sdk-sts`). Before, the web identity step
+  of the SDK's default credential chain always failed for lack of that module, and the chain
+  moved on to the profile files and then the container or EC2 instance role. With the flag off,
+  every place where dotCMS falls back to the default chain (static push publishing, endpoint
+  validation and the S3 metadata provider) uses `NoWebIdentityCredentialsProviderChain`, which
+  is that chain without the web identity step, so a pod with a web identity token keeps using
+  the identity it used before. Two differences remain because the module is on the classpath:
+  a profile in the AWS config files that assumes a role (`role_arn`) now resolves instead of
+  failing over to the instance role, and an OSGi plugin that builds its own
+  `DefaultAWSCredentialsProviderChain` now gets the web identity step.
+- The flag is logged at INFO only when it is on. With it off, the first read logs at debug.
+
 ## Feature flag
 
 Set `FEATURE_FLAG_S3_ASSET_STORAGE=true` (Docker: `DOT_FEATURE_FLAG_S3_ASSET_STORAGE=true`)
@@ -25,7 +42,12 @@ The storage chain (`ChainableStoragePersistenceAPI`) and its providers change as
 - Writes publish to every durable provider before the new local copy becomes visible, and a
   failed remote write keeps the previous local contents.
 - Reads restore a missing local copy from S3. A miss is not cached as a 404, because another
-  node can upload the same key at any time.
+  node can upload the same key at any time. Object reads restore under the same per-key lock
+  as writes and deletes, so a restore cannot overwrite a newer write on the same chain.
+- A zero-length or truncated local metadata file is a read failure, not a miss. When S3 holds a
+  readable copy, the chain replaces the local file with it under the per-key lock. Otherwise the
+  read fails and the local file is kept, so the metadata is never treated as absent and
+  regenerated, which would drop custom attributes such as a focal point.
 - Deletes keep the local copy until all durable providers accept the deletion, so an
   in-flight restore on the same chain cannot bring the object back.
 - Storage and database query failures propagate instead of being reported as a missing
@@ -33,6 +55,9 @@ The storage chain (`ChainableStoragePersistenceAPI`) and its providers change as
 - Providers can list objects under a prefix, verify that a durable copy has the same
   contents (`hasDurableCopy`), and copy an existing file or object to durable storage without
   overwriting a conflicting one (`backfillFile`, `backfillObject`).
+- S3 existence checks (`existsGroup`, `existsObject`, `hasDurableCopy`) list at most one key
+  per lookup. Only listings that need every key (`listObjectPaths`, `listObjectSnapshots`,
+  `deleteGroup` and static push) follow every page.
 
 Two building blocks are included for the slices that follow. `S3ContentAddressedStorage`
 stores one immutable copy of each set of bytes at
@@ -46,10 +71,11 @@ With the flag on, leave both `storage.file-metadata.s3.access-key` and
 `storage.file-metadata.s3.secret-access-key` unset to use the AWS SDK default credential
 provider chain. The configured bucket region and endpoint are kept in that mode. A partial
 key pair fails initialization. The AWS STS module is packaged so role-based providers,
-including web identity, work.
+including web identity, work with the flag on.
 
-Without a custom endpoint, a configured region selects the regional AWS endpoint, and an
-absent region falls back to the SDK region provider chain. A custom endpoint
+Without a custom endpoint, a configured region selects the regional AWS endpoint. With no
+region, the client uses the global endpoint and the SDK looks up the bucket's region on first
+use. Requests are signed with SigV4, the SDK's default S3 signer. A custom endpoint
 (`storage.file-metadata.s3.endpoint`) must be an absolute HTTP(S) URL and requires
 `storage.file-metadata.s3.bucket-region` for request signing. Invalid endpoint configuration
 fails instead of silently selecting AWS. With the flag off, configuration behaves as before.
@@ -58,8 +84,10 @@ fails instead of silently selecting AWS. With the flag off, configuration behave
 
 With the flag on, `storage.file-metadata.s3.namespace` (Docker:
 `DOT_STORAGE_FILE_METADATA_S3_NAMESPACE`) separates the keys of installations that share a
-bucket. Owned keys become `asset-namespaces/<namespace>/<group>/<existing-key>`; shared
-extracted metadata stays at the bucket root so identical bytes are extracted once. Use the same
+bucket. Owned keys become `asset-namespaces/<namespace>/<group>/<existing-key>`. Two prefixes
+stay at the bucket root and are shared by every namespace: content-addressed blobs
+(`asset-blobs/`), so identical bytes are stored once, and shared extracted metadata
+(`extracted-metadata/`), so identical bytes are extracted once. Use the same
 value for all nodes in one cluster and distinct values for independent installations. Values
 are 1 to 64 letters, digits, underscores or hyphens, starting with a letter or digit. Empty is
 the default and keeps the existing layout.
@@ -71,8 +99,12 @@ bucket credentials can access.
 ## Static push publishing
 
 Enabling the flag also changes static push publishing to S3 (`AWSS3Storage`). Clients sign
-with SigV4, resolve the endpoint from the region when no endpoint is configured, and list
-every page of objects instead of only the first 1,000.
+with SigV4 and list every page of objects instead of only the first 1,000. Without a custom
+endpoint, a configured region selects that region's endpoint; with no region, the client uses
+the global endpoint and the SDK looks up the bucket's region, so a region is not required.
+Endpoints that use the default credential chain are not pinned to a region either. Their
+configured endpoint and region are still not passed to the client on that path, as before, so
+an S3-compatible custom endpoint needs a key and secret.
 
 ## Running the checks
 
@@ -88,7 +120,7 @@ docker run -d --rm --name binary-s3-test \
   minio/minio:latest server /data
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,BinaryS3StorageTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002
 
 docker stop binary-s3-test
