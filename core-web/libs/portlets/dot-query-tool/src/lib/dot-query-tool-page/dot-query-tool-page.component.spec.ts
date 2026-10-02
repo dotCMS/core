@@ -205,8 +205,9 @@ describe('DotQueryToolPageComponent', () => {
 
         it('leaves the store query untouched when the URL carries no q', () => {
             // The store hydrates `query` from localStorage in its own onInit, which runs before
-            // ngOnInit. Writing the (absent) `q` param over it would erase the restored query —
-            // and, via the debounced persistence pipeline, delete the stored entry as well.
+            // ngOnInit. Writing the (absent) `q` param over it wipes the restored query from the
+            // UI. Storage itself survives — the persistence pipeline's `skip(1)` absorbs the stray
+            // '' — so the damage is confined to the editor the user is looking at.
             setup({});
             const store = spectator.inject(DotQueryToolStore, true);
             expect(store.setQuery).not.toHaveBeenCalled();
@@ -804,8 +805,15 @@ describe('DotQueryToolPageComponent (persisted query, real store)', () => {
             ]
         });
 
-    beforeEach(() => window.localStorage.clear());
-    afterEach(() => window.localStorage.clear());
+    beforeEach(() => {
+        vi.useFakeTimers();
+        window.localStorage.clear();
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        window.localStorage.clear();
+    });
 
     it('restores the persisted query when the portlet is reopened without params', () => {
         window.localStorage.setItem(persistedKey, JSON.stringify('+contentType:Blog'));
@@ -815,16 +823,20 @@ describe('DotQueryToolPageComponent (persisted query, real store)', () => {
         expect(spectator.component.store.query()).toBe('+contentType:Blog');
     });
 
-    it('keeps the stored entry intact after reopening (no debounced erase)', async () => {
+    it('never erases the stored entry on reopen, whatever the restore path does', () => {
+        // NOT a regression test for the ngOnInit guard — this passes with that guard reverted,
+        // because the persistence pipeline's `skip(1)` absorbs the stray '' before it can reach
+        // `removeKey`. It guards the invariant underneath: reopening the portlet is a read, and
+        // must never destroy the saved query. That `skip(1)` is the only thing standing between
+        // a stray write-on-init and silent data loss, so it is worth pinning on its own.
         window.localStorage.setItem(persistedKey, JSON.stringify('+contentType:Blog'));
 
         spectator = mount();
-        // Real timers, not fake ones: the persistence debounce runs on rxjs' asyncScheduler inside
-        // zone.js, which vitest's fake clock does not drive. Waiting out the real 300 ms is the
-        // only way to observe the write — an empty value overwriting the restored query lands in
-        // `removeKey` here and wipes the entry for good.
-        await new Promise((resolve) => setTimeout(resolve, 400));
-        spectator.detectChanges();
+        // flushEffects() pushes the field signal through the rxMethod effect; only then does the
+        // debounce timer exist for the fake clock to advance. Skipping it is what makes fake
+        // timers look like they do not drive this pipeline.
+        spectator.flushEffects();
+        vi.advanceTimersByTime(500);
 
         expect(window.localStorage.getItem(persistedKey)).toBe(JSON.stringify('+contentType:Blog'));
     });
