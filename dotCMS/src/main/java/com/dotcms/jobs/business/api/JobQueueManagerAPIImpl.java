@@ -169,7 +169,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         this.realTimeJobMonitor = realTimeJobMonitor;
 
         // Register discovered processors by CDI
-        discovery.discoverJobProcessors().forEach(this::registerProcessor);
+        discovery.discoverJobProcessors().stream()
+                .filter(com.dotcms.storage.AssetStorageFeature::allowsJobProcessor)
+                .forEach(this::registerProcessor);
 
         APILocator.getLocalSystemEventsAPI().subscribe(
                 JobCancelRequestEvent.class,

@@ -4,6 +4,8 @@ import com.dotcms.storage.binary.BinaryAssetStorageAPI;
 import com.dotcms.storage.binary.BinaryAssetStorageAPIImpl;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +18,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -137,6 +140,29 @@ class AssetStorageFeatureTest {
     }
 
     @Test
+    void receivedMetadataOnlyUsesLegacyRecursiveCleanupWhenFeatureIsDisabled() throws Exception {
+        final var storage = mock(FileStorageAPI.class);
+        final var content = mock(com.dotmarketing.portlets.contentlet.model.Contentlet.class);
+        final var type = mock(com.dotcms.contenttype.model.type.ContentType.class);
+        when(content.getContentType()).thenReturn(type);
+        when(type.fields(com.dotcms.contenttype.model.field.BinaryField.class)).thenReturn(List.of());
+        try (var locator = mockStatic(com.dotmarketing.business.APILocator.class);
+             var caches = mockStatic(com.dotmarketing.business.CacheLocator.class)) {
+            locator.when(com.dotmarketing.business.APILocator::getFileStorageAPI).thenReturn(storage);
+            caches.when(com.dotmarketing.business.CacheLocator::getMetadataCache)
+                    .thenReturn(mock(com.dotmarketing.portlets.contentlet.business.MetadataCache.class));
+            final var api = spy(new FileMetadataAPIImpl());
+            doReturn(Map.of()).when(api).removeMetadata(content);
+            api.setMetadata(content, Map.of());
+            verify(api, never()).removeMetadata(content);
+            verifyNoInteractions(storage);
+            Config.setProperty(AssetStorageFeature.FLAG, false);
+            api.setMetadata(content, Map.of());
+            verify(api).removeMetadata(content);
+        }
+    }
+
+    @Test
     void disabledFilesystemProviderKeepsLegacyPathAndMissingFileBehavior() throws Exception {
         Config.setProperty(AssetStorageFeature.FLAG, false);
         var storage = filesystem();
@@ -149,6 +175,73 @@ class AssetStorageFeatureTest {
         assertTrue(storage.deleteObjectAndReferences(GROUP, KEY));
         assertFalse(Files.exists(legacyPath));
         assertThrows(IllegalArgumentException.class, () -> storage.pullFile(GROUP, KEY));
+    }
+
+    @Test
+    void disabledContentletReadUsesLegacyFilesystemAndPreservesStringTypeGuard() throws Exception {
+        Config.setProperty(AssetStorageFeature.FLAG, false);
+        Path path = root.resolve(KEY);
+        Files.createDirectories(path.getParent());
+        Files.writeString(path, "legacy binary");
+        var fileAPI = mock(FileAssetAPI.class);
+        when(fileAPI.getRealAssetsRootPath()).thenReturn(root.toString());
+        try (var locator = mockStatic(com.dotmarketing.business.APILocator.class)) {
+            locator.when(com.dotmarketing.business.APILocator::getFileAssetAPI).thenReturn(fileAPI);
+            var content = new com.dotmarketing.portlets.contentlet.model.Contentlet();
+            content.setInode("abc123");
+            content.getMap().put("HeroImage", "MyFile.PNG");
+            assertEquals(path.toFile(), content.getBinary("HeroImage"));
+            locator.verify(com.dotmarketing.business.APILocator::getBinaryAssetStorageAPI, never());
+        }
+    }
+
+    @Test
+    void enabledFileWrapperResolvesAgainAfterEviction() throws Exception {
+        Path path = root.resolve("Theme.CSS");
+        AtomicInteger calls = new AtomicInteger();
+        FileAsset wrapper = mock(FileAsset.class, CALLS_REAL_METHODS);
+        doAnswer(invocation -> {
+            calls.incrementAndGet();
+            if (!Files.exists(path)) Files.writeString(path, "body {}");
+            return path.toFile();
+        }).when(wrapper).getBinary(FileAssetAPI.BINARY_FIELD);
+        assertTrue(wrapper.getFileAsset().exists());
+        Files.delete(path);
+        final var api = mock(BinaryAssetStorageAPI.class);
+        final var lease = mock(BinaryAssetStorageAPI.CacheLease.class);
+        when(api.acquireCacheLease()).thenReturn(lease);
+        try (var locator = mockStatic(com.dotmarketing.business.APILocator.class)) {
+            locator.when(com.dotmarketing.business.APILocator::getBinaryAssetStorageAPI).thenReturn(api);
+            try (var input = wrapper.getInputStream()) {
+                assertEquals("body {}", new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+            }
+        }
+        verify(lease).close();
+        assertEquals(2, calls.get());
+    }
+
+    @Test
+    void enabledThumbnailCleanupDoesNotFallThroughToLegacyShardDeletion() throws Exception {
+        final Path generated = root.resolve("generated");
+        final Path legacy = generated.resolve("a/b/dotGenerated_resize_1234.png");
+        Files.createDirectories(legacy.getParent());
+        Files.writeString(legacy, "legacy neighboring rendition");
+        final var asset = mock(FileAsset.class);
+        when(asset.getInode()).thenReturn("abc123");
+        final var api = mock(com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl.class, CALLS_REAL_METHODS);
+        doReturn(root.toString()).when(api).getRealAssetsRootPath();
+        final var storage = mock(BinaryAssetStorageAPI.class);
+        try (var paths = mockStatic(ConfigUtils.class);
+             var locator = mockStatic(com.dotmarketing.business.APILocator.class)) {
+            paths.when(ConfigUtils::getDotGeneratedPath).thenReturn(generated.toString());
+            locator.when(com.dotmarketing.business.APILocator::getBinaryAssetStorageAPI).thenReturn(storage);
+            api.cleanThumbnailsFromFileAsset(asset);
+            assertTrue(Files.exists(legacy), "S3 invalidation must not clear the legacy shared shard");
+            Config.setProperty(AssetStorageFeature.FLAG, false);
+            api.cleanThumbnailsFromFileAsset(asset);
+            assertFalse(Files.exists(legacy), "Disabled behavior must retain main's original cleanup");
+            verify(storage, times(1)).deleteGeneratedFiles("abc123");
+        }
     }
 
     @Test

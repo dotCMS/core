@@ -24,6 +24,10 @@ public class JacksonMarshalUtilsImpl implements MarshalUtils{
 
     private final Lazy<ObjectMapper> defaultMapper = Lazy.of(() -> {
         final ObjectMapper objectMapper = new ObjectMapper();
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            objectMapper.registerModule(new com.fasterxml.jackson.module.paramnames.ParameterNamesModule(
+                    com.fasterxml.jackson.annotation.JsonCreator.Mode.PROPERTIES));
+        }
         objectMapper.registerModule(new Jdk8Module());
         objectMapper.registerModule(new GuavaModule());
         objectMapper.registerModule(new JavaTimeModule().addSerializer(java.sql.Time.class, new SqlTimeStampSerializer()));
