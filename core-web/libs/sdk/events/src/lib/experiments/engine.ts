@@ -78,7 +78,7 @@ export interface ExperimentsEngine {
      * experiment the visitor is in; none on any other page.
      */
     contextExperiments(sessionId: string): DotCMSEventContextExperiment[];
-    /** Stops watching the page for marks that arrive later. */
+    /** Stops watching the page: for marks that arrive later, and for its navigations. */
     stop(): void;
 }
 
@@ -190,12 +190,12 @@ export const createExperimentsEngine = ({
     let navigations = 0;
     // The visit whose page runs an experiment the visitor is in: only its events carry them
     let visitInExperiment: number | undefined;
-
-    if (pages === 'markup') {
-        onNavigation(() => {
-            navigations += 1;
-        });
-    }
+    const stopCountingNavigations =
+        pages === 'markup'
+            ? onNavigation(() => {
+                  navigations += 1;
+              })
+            : undefined;
 
     const findAssignment = (experimentId: string): StoredExperiment | undefined =>
         assignments?.experiments.find((experiment) => experiment.id === experimentId);
@@ -597,6 +597,7 @@ export const createExperimentsEngine = ({
         stop: () => {
             stopObserving?.();
             stopObserving = undefined;
+            stopCountingNavigations?.();
         }
     };
 };

@@ -7,12 +7,10 @@ import {
     generateSecureId,
     getEventContext,
     getBrowserEventData,
-    getDeviceData,
     getLocalTime,
-    getPageData,
     getSessionId,
     getUserId,
-    getUtmData
+    onPageDiscard
 } from './utils';
 
 describe('Analytics Utils', () => {
@@ -327,111 +325,6 @@ describe('Analytics Utils', () => {
         });
     });
 
-    describe('getPageData', () => {
-        it('should extract page data from browser event data and payload', () => {
-            const browserData = {
-                url: 'https://example.com/page',
-                doc_encoding: 'UTF-8',
-                page_title: 'Test Page',
-                doc_path: '/page',
-                doc_host: 'example.com',
-                doc_protocol: 'https:',
-                doc_hash: '#section',
-                doc_search: '?param=1',
-                utm: {},
-                referrer: 'https://referrer.com'
-            } as any;
-
-            const payload = {
-                properties: {
-                    width: 1024,
-                    height: 768,
-                    title: 'Test Page'
-                }
-            } as any;
-
-            const result = getPageData(browserData, payload);
-
-            expect(result).toEqual({
-                url: 'https://example.com/page',
-                path: '/page',
-                hash: '#section',
-                search: '?param=1',
-                title: 'Test Page',
-                width: '1024',
-                height: '768',
-                referrer: 'https://referrer.com'
-            });
-        });
-    });
-
-    describe('getDeviceData', () => {
-        it('should extract device data from browser event data', () => {
-            const browserData = {
-                screen_resolution: '1920x1080',
-                user_language: 'en-US',
-                vp_size: '1024x768'
-            } as any;
-
-            const result = getDeviceData(browserData);
-
-            expect(result).toEqual({
-                screen_resolution: '1920x1080',
-                language: 'en-US',
-                viewport_width: '1024',
-                viewport_height: '768'
-            });
-        });
-    });
-
-    describe('getUtmData', () => {
-        it('should extract UTM data from browser event data', () => {
-            const browserData = {
-                utm: {
-                    source: 'google',
-                    medium: 'cpc',
-                    campaign: 'spring_sale',
-                    term: 'shoes',
-                    content: 'ad1'
-                }
-            } as any;
-
-            const result = getUtmData(browserData);
-
-            expect(result).toEqual({
-                source: 'google',
-                medium: 'cpc',
-                campaign: 'spring_sale',
-                term: 'shoes',
-                content: 'ad1'
-            });
-        });
-
-        it('should return empty object when no UTM data exists or is empty', () => {
-            const browserData = { utm: {} } as any;
-
-            const result = getUtmData(browserData);
-
-            expect(result).toEqual({});
-        });
-
-        it('should handle partial UTM data', () => {
-            const browserData = {
-                utm: {
-                    source: 'facebook',
-                    campaign: 'summer'
-                }
-            } as any;
-
-            const result = getUtmData(browserData);
-
-            expect(result).toEqual({
-                source: 'facebook',
-                campaign: 'summer'
-            });
-        });
-    });
-
     describe('getEventContext', () => {
         const mockLocalStorage = {
             getItem: vi.fn(),
@@ -619,5 +512,37 @@ describe('Analytics Utils', () => {
             expect(result.context.device).toBeDefined();
             expect(result.page.locale_id).toBe('es-es');
         });
+    });
+});
+
+describe('onPageDiscard', () => {
+    const pagehide = (persisted: boolean) =>
+        window.dispatchEvent(Object.assign(new Event('pagehide'), { persisted }));
+
+    it('runs on the pagehide that discards the page', () => {
+        const discarded = vi.fn();
+        onPageDiscard(discarded);
+
+        pagehide(false);
+
+        expect(discarded).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves a page the browser keeps in the back/forward cache as it is, so it works when restored', () => {
+        const discarded = vi.fn();
+        onPageDiscard(discarded);
+
+        pagehide(true);
+
+        expect(discarded).not.toHaveBeenCalled();
+    });
+
+    it('does not run on beforeunload, which also fires before the page goes into that cache', () => {
+        const discarded = vi.fn();
+        onPageDiscard(discarded);
+
+        window.dispatchEvent(new Event('beforeunload'));
+
+        expect(discarded).not.toHaveBeenCalled();
     });
 });

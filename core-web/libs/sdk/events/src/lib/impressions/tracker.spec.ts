@@ -189,6 +189,31 @@ describe('DotCMSImpressionTracker', () => {
             );
         });
 
+        it('should clamp a visibility threshold outside 0 to 1, which IntersectionObserver rejects', () => {
+            tracker = new DotCMSImpressionTracker({
+                ...mockConfig,
+                impressions: { visibilityThreshold: 50 }
+            });
+            tracker.initialize();
+
+            expect(global.IntersectionObserver).toHaveBeenLastCalledWith(
+                expect.any(Function),
+                expect.objectContaining({ threshold: 1 })
+            );
+
+            tracker.cleanup();
+            tracker = new DotCMSImpressionTracker({
+                ...mockConfig,
+                impressions: { visibilityThreshold: -0.5 }
+            });
+            tracker.initialize();
+
+            expect(global.IntersectionObserver).toHaveBeenLastCalledWith(
+                expect.any(Function),
+                expect.objectContaining({ threshold: 0 })
+            );
+        });
+
         it('should use default config when impressions is true', () => {
             tracker = new DotCMSImpressionTracker(mockConfig);
             tracker.initialize();
@@ -695,6 +720,74 @@ describe('DotCMSImpressionTracker', () => {
 
             // Session tracking should be cleared after navigation
             expect(callback).toHaveBeenCalledTimes(1); // Still only 1 from before navigation
+        });
+
+        it('should reset on a navigation through the Navigation API, without patching history', () => {
+            const globalScope = window as unknown as Record<string, unknown>;
+            const navigation = new EventTarget();
+            globalScope['navigation'] = navigation;
+            const { pushState, replaceState } = history;
+
+            try {
+                const element = createMockContentletElement('content-123');
+                document.body.appendChild(element);
+                const callback = vi.fn();
+                tracker = new DotCMSImpressionTracker(mockConfig);
+                tracker.onImpression(callback);
+                tracker.initialize();
+                vi.advanceTimersByTime(INITIAL_SCAN_DELAY_MS);
+
+                expect(history.pushState).toBe(pushState);
+                expect(history.replaceState).toBe(replaceState);
+
+                const seen = () => {
+                    intersectionCallback(
+                        [
+                            {
+                                target: element,
+                                isIntersecting: true
+                            } as unknown as IntersectionObserverEntry
+                        ],
+                        mockIntersectionObserver
+                    );
+                    vi.advanceTimersByTime(DEFAULT_IMPRESSION_CONFIG.dwellMs);
+                };
+
+                seen();
+                expect(callback).toHaveBeenCalledTimes(1);
+
+                // The next page shows the same contentlet: it counts again there
+                history.pushState({}, '', '/next-page');
+                navigation.dispatchEvent(new Event('currententrychange'));
+                window.dispatchEvent(new Event(CONTENTLET_RESCAN_EVENT));
+                seen();
+
+                expect(callback).toHaveBeenCalledTimes(2);
+            } finally {
+                tracker.cleanup();
+                delete globalScope['navigation'];
+                history.replaceState({}, '', '/');
+            }
+        });
+
+        it('should stop watching navigations on cleanup', () => {
+            const globalScope = window as unknown as Record<string, unknown>;
+            const navigation = new EventTarget();
+            const removeEventListener = vi.spyOn(navigation, 'removeEventListener');
+            globalScope['navigation'] = navigation;
+
+            try {
+                tracker = new DotCMSImpressionTracker(mockConfig);
+                tracker.initialize();
+                tracker.cleanup();
+
+                expect(removeEventListener).toHaveBeenCalledWith(
+                    'currententrychange',
+                    expect.any(Function)
+                );
+            } finally {
+                delete globalScope['navigation'];
+            }
         });
     });
 

@@ -45,4 +45,27 @@ describe('onNavigation', () => {
         onRouteChange.mock.calls[0]?.[0]('/blog');
         expect(navigated).toHaveBeenCalledTimes(1);
     });
+
+    it('stops calling back once unsubscribed, through the Navigation API', () => {
+        const navigation = new EventTarget();
+        globalScope['navigation'] = navigation;
+        const navigated = vi.fn();
+        const stop = onNavigation(navigated);
+
+        stop();
+        window.history.pushState(null, '', '/blog');
+        navigation.dispatchEvent(new Event('currententrychange'));
+
+        expect(navigated).not.toHaveBeenCalled();
+    });
+
+    it('stops calling back once unsubscribed, in the fallback, which cannot detach from router-utils', () => {
+        const navigated = vi.fn();
+        const stop = onNavigation(navigated);
+
+        stop();
+        onRouteChange.mock.calls[0]?.[0]('/blog');
+
+        expect(navigated).not.toHaveBeenCalled();
+    });
 });

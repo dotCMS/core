@@ -4,7 +4,7 @@ import {
     CONTENTLET_OBSERVER_DEBOUNCE_MS
 } from './constants';
 
-import { isBrowser } from '../pipeline/utils';
+import { isBrowser, onPageDiscard } from '../pipeline/utils';
 
 import type { ContentletData, PipelineConfig } from '../pipeline/models';
 import type { AnalyticsPlugin } from 'analytics';
@@ -182,15 +182,14 @@ export const createContentletObserver = (
 };
 
 /**
- * Sets up cleanup handlers for page unload events
- * Registers cleanup function to both 'beforeunload' and 'pagehide' for maximum compatibility
- * @param cleanup - Function to call on page unload
+ * Cleans up a content tracker when the browser discards the page. A page kept in the
+ * back/forward cache keeps its tracker, which works again when the visitor goes back to it.
+ * @param cleanup - Function to call when the page is discarded
  */
 export const setupPluginCleanup = (cleanup: () => void): void => {
     if (!isBrowser()) return;
 
-    window.addEventListener('beforeunload', cleanup);
-    window.addEventListener('pagehide', cleanup);
+    onPageDiscard(cleanup);
 };
 
 /**

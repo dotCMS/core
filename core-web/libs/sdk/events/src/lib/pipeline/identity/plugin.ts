@@ -4,7 +4,7 @@ import {
     updateSessionActivity
 } from './activity';
 
-import { getEventContext } from '../utils';
+import { getEventContext, onPageDiscard } from '../utils';
 
 import type { AnalyticsBaseParams, PipelineConfig } from '../models';
 
@@ -62,18 +62,13 @@ export const identityPlugin = (config: PipelineConfig) => {
         },
 
         /**
-         * Clean up on plugin unload
-         * Sets up cleanup handlers for activity tracking
+         * Cleans up activity tracking when the browser discards the page. A page kept in the
+         * back/forward cache keeps it, and keeps `__dotAnalyticsActive__` set, so the
+         * renderers still print the contentlet attributes once the visitor goes back to it.
          */
         loaded: () => {
-            // Set up cleanup on page unload
             if (typeof window !== 'undefined') {
-                // beforeunload for traditional browsers and desktop
-                window.addEventListener('beforeunload', cleanupActivityTracking);
-
-                // pagehide for mobile/tablet scenarios and modern browsers
-                // Handles cases where page goes to bfcache or gets suspended
-                window.addEventListener('pagehide', cleanupActivityTracking);
+                onPageDiscard(cleanupActivityTracking);
             }
 
             return true;

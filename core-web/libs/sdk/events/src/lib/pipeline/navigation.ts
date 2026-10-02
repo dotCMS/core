@@ -3,6 +3,7 @@ import onRouteChange from '@analytics/router-utils';
 /** The part of the browser's Navigation API this module listens to. */
 interface NavigationApi {
     addEventListener(type: 'currententrychange', listener: () => void): void;
+    removeEventListener(type: 'currententrychange', listener: () => void): void;
 }
 
 /**
@@ -12,20 +13,30 @@ interface NavigationApi {
  * back to `@analytics/router-utils`, which reports path changes only.
  *
  * @param navigated - Called once the URL has changed
+ * @returns Stops the calls. router-utils has no way to detach, so in the fallback its listener
+ * stays and only stops calling back
  */
-export const onNavigation = (navigated: () => void): void => {
+export const onNavigation = (navigated: () => void): (() => void) => {
     const navigation = (window as unknown as { navigation?: NavigationApi }).navigation;
 
     if (!navigation) {
-        onRouteChange(() => navigated());
+        let active = true;
 
-        return;
+        onRouteChange(() => {
+            if (active) {
+                navigated();
+            }
+        });
+
+        return () => {
+            active = false;
+        };
     }
 
     const pageOf = (): string => `${window.location.pathname}${window.location.search}`;
     let current = pageOf();
 
-    navigation.addEventListener('currententrychange', () => {
+    const listener = (): void => {
         const next = pageOf();
 
         // Routers also save their own state on the URL they are on
@@ -33,5 +44,9 @@ export const onNavigation = (navigated: () => void): void => {
             current = next;
             navigated();
         }
-    });
+    };
+
+    navigation.addEventListener('currententrychange', listener);
+
+    return () => navigation.removeEventListener('currententrychange', listener);
 };

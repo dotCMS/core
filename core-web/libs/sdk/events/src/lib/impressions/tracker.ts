@@ -10,6 +10,7 @@ import {
     INITIAL_SCAN_DELAY_MS
 } from '../contentlets/utils';
 import { getViewportMetrics } from '../contentlets/viewport';
+import { onNavigation } from '../pipeline/navigation';
 import { createPluginLogger, isBrowser } from '../pipeline/utils';
 
 import type {
@@ -47,7 +48,7 @@ export class DotCMSImpressionTracker {
     #elementImpressionStates = new Map<string, ImpressionState>();
     #sessionTrackedImpressions = new Set<string>();
     #impressionConfig: Required<ImpressionConfig>;
-    #currentPagePath = '';
+    #stopWatchingNavigations: (() => void) | null = null;
     #subscribers = new Set<ImpressionCallback>();
     #logger: ReturnType<typeof createPluginLogger>;
 
@@ -82,7 +83,10 @@ export class DotCMSImpressionTracker {
         });
     }
 
-    /** Merges user config with defaults */
+    /**
+     * Merges user config with defaults. IntersectionObserver throws on a visibility threshold
+     * outside 0 to 1, so one outside that range is clamped to it, with a warning
+     */
     private resolveImpressionConfig(
         userConfig: ImpressionConfig | boolean | undefined
     ): Required<ImpressionConfig> {
@@ -92,10 +96,19 @@ export class DotCMSImpressionTracker {
         }
 
         // Merge user config with defaults
-        return {
-            ...DEFAULT_IMPRESSION_CONFIG,
-            ...userConfig
-        };
+        const merged = { ...DEFAULT_IMPRESSION_CONFIG, ...userConfig };
+        const requested = merged.visibilityThreshold;
+        const visibilityThreshold = Number.isFinite(requested)
+            ? Math.min(1, Math.max(0, requested))
+            : DEFAULT_IMPRESSION_CONFIG.visibilityThreshold;
+
+        if (visibilityThreshold !== requested) {
+            this.#logger.warn(
+                `visibilityThreshold must be between 0 and 1, got ${requested}: using ${visibilityThreshold}`
+            );
+        }
+
+        return { ...merged, visibilityThreshold };
     }
 
     /** Initializes tracking: sets up observers, finds contentlets, handles visibility/navigation */
@@ -250,56 +263,31 @@ export class DotCMSImpressionTracker {
         });
     }
 
-    /** Resets tracking on SPA navigation (listens to pushState, replaceState, popstate) */
+    /**
+     * Resets tracking when the visitor goes to another page. It listens through onNavigation:
+     * the browser's Navigation API where there is one, which needs no patch of `history`
+     */
     private initializePageNavigationHandler(): void {
-        // Store initial path
-        this.#currentPagePath = window.location.pathname;
+        this.#stopWatchingNavigations = onNavigation(() => {
+            this.#logger.warn(
+                `Navigation detected (${window.location.pathname}), resetting impression tracking`
+            );
 
-        // Runs on popstate, pushState and replaceState: there is no polling
-        const checkPathChange = () => {
-            const newPath = window.location.pathname;
+            // Reset tracked impressions for the new page
+            this.#sessionTrackedImpressions.clear();
 
-            if (newPath !== this.#currentPagePath) {
-                this.#logger.warn(
-                    `Navigation detected (${this.#currentPagePath} → ${newPath}), resetting impression tracking`
-                );
+            // Cancel all active timers
+            this.#elementImpressionStates.forEach((state) => {
+                if (state.timer !== null) {
+                    window.clearTimeout(state.timer);
+                    state.timer = null;
+                    state.visibleSince = null;
+                }
+            });
 
-                // Update current path
-                this.#currentPagePath = newPath;
-
-                // Reset tracked impressions for the new page
-                this.#sessionTrackedImpressions.clear();
-
-                // Cancel all active timers
-                this.#elementImpressionStates.forEach((state) => {
-                    if (state.timer !== null) {
-                        window.clearTimeout(state.timer);
-                        state.timer = null;
-                        state.visibleSince = null;
-                    }
-                });
-
-                // Clear element states
-                this.#elementImpressionStates.clear();
-            }
-        };
-
-        // Listen for popstate (back/forward navigation)
-        window.addEventListener('popstate', checkPathChange);
-
-        // Listen for pushstate/replacestate (programmatic navigation)
-        const originalPushState = history.pushState;
-        const originalReplaceState = history.replaceState;
-
-        history.pushState = function (...args) {
-            originalPushState.apply(this, args);
-            checkPathChange();
-        };
-
-        history.replaceState = function (...args) {
-            originalReplaceState.apply(this, args);
-            checkPathChange();
-        };
+            // Clear element states
+            this.#elementImpressionStates.clear();
+        });
     }
 
     /** Handles visibility changes: starts timer on enter, cancels on exit */
@@ -510,6 +498,9 @@ export class DotCMSImpressionTracker {
         }
 
         window.removeEventListener(CONTENTLET_RESCAN_EVENT, this.#handleRescan);
+
+        this.#stopWatchingNavigations?.();
+        this.#stopWatchingNavigations = null;
 
         // Clear all active dwell timers
         this.#elementImpressionStates.forEach((state) => {

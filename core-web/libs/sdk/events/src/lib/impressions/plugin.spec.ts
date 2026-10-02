@@ -20,6 +20,9 @@ describe('impressionsPlugin', () => {
     let mockTracker: Mocked<DotCMSImpressionTracker>;
     let mockSubscription: Mocked<ImpressionSubscription>;
 
+    // A pagehide that discards the page, unlike one that keeps it in the back/forward cache
+    const discarded = { persisted: false } as PageTransitionEvent;
+
     beforeEach(() => {
         vi.clearAllMocks();
 
@@ -201,14 +204,17 @@ describe('impressionsPlugin', () => {
     });
 
     describe('Loaded Hook', () => {
-        it('should setup cleanup handlers on beforeunload', async () => {
+        it('should not clean up on beforeunload, which also fires before the page goes into the back/forward cache', async () => {
             const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
 
             const plugin = impressionsPlugin(mockConfig);
             await plugin.initialize({ instance: mockAnalyticsInstance }); // Initialize first
             plugin.loaded();
 
-            expect(addEventListenerSpy).toHaveBeenCalledWith('beforeunload', expect.any(Function));
+            expect(addEventListenerSpy).not.toHaveBeenCalledWith(
+                'beforeunload',
+                expect.any(Function)
+            );
 
             addEventListenerSpy.mockRestore();
         });
@@ -249,12 +255,12 @@ describe('impressionsPlugin', () => {
 
     describe('Cleanup', () => {
         it('should unsubscribe and cleanup tracker on page unload', async () => {
-            let unloadCallback: (() => void) | undefined;
+            let unloadCallback: ((event: PageTransitionEvent) => void) | undefined;
             const addEventListenerSpy = vi
                 .spyOn(window, 'addEventListener')
                 .mockImplementation((event, handler) => {
-                    if (event === 'beforeunload') {
-                        unloadCallback = handler as () => void;
+                    if (event === 'pagehide') {
+                        unloadCallback = handler as (event: PageTransitionEvent) => void;
                     }
                 });
 
@@ -269,7 +275,7 @@ describe('impressionsPlugin', () => {
             // Simulate page unload
             expect(unloadCallback).toBeDefined();
 
-            unloadCallback!();
+            unloadCallback!(discarded);
 
             // Verify cleanup
             expect(mockSubscription.unsubscribe).toHaveBeenCalled();
@@ -279,12 +285,12 @@ describe('impressionsPlugin', () => {
         });
 
         it('should handle cleanup when tracker is not initialized', async () => {
-            let unloadCallback: (() => void) | undefined;
+            let unloadCallback: ((event: PageTransitionEvent) => void) | undefined;
             const addEventListenerSpy = vi
                 .spyOn(window, 'addEventListener')
                 .mockImplementation((event, handler) => {
-                    if (event === 'beforeunload') {
-                        unloadCallback = handler as () => void;
+                    if (event === 'pagehide') {
+                        unloadCallback = handler as (event: PageTransitionEvent) => void;
                     }
                 });
 
@@ -305,12 +311,12 @@ describe('impressionsPlugin', () => {
         });
 
         it('should log debug message on cleanup in debug mode', async () => {
-            let unloadCallback: (() => void) | undefined;
+            let unloadCallback: ((event: PageTransitionEvent) => void) | undefined;
             const addEventListenerSpy = vi
                 .spyOn(window, 'addEventListener')
                 .mockImplementation((event, handler) => {
-                    if (event === 'beforeunload') {
-                        unloadCallback = handler as () => void;
+                    if (event === 'pagehide') {
+                        unloadCallback = handler as (event: PageTransitionEvent) => void;
                     }
                 });
 
@@ -324,7 +330,7 @@ describe('impressionsPlugin', () => {
 
             // Simulate page unload
 
-            unloadCallback!();
+            unloadCallback!(discarded);
 
             expect(consoleInfoSpy).toHaveBeenCalledWith(
                 '[dotCMS events | Impression] [INFO]',
@@ -335,16 +341,14 @@ describe('impressionsPlugin', () => {
             consoleInfoSpy.mockRestore();
         });
 
-        it('should register cleanup handlers for both beforeunload and pagehide events', async () => {
-            const eventHandlers: { [key: string]: (() => void)[] } = {};
+        it('should keep the tracker when the page goes into the back/forward cache, and clean it up when the page is discarded', async () => {
+            const pagehideHandlers: ((event: PageTransitionEvent) => void)[] = [];
             const addEventListenerSpy = vi
                 .spyOn(window, 'addEventListener')
-                .mockImplementation((event: string, handler) => {
-                    const eventName = event as string;
-                    if (!eventHandlers[eventName]) {
-                        eventHandlers[eventName] = [];
+                .mockImplementation((event, handler) => {
+                    if (event === 'pagehide') {
+                        pagehideHandlers.push(handler as (event: PageTransitionEvent) => void);
                     }
-                    eventHandlers[eventName].push(handler as () => void);
                 });
 
             const plugin = impressionsPlugin(mockConfig);
@@ -352,21 +356,14 @@ describe('impressionsPlugin', () => {
             await plugin.initialize({ instance: mockAnalyticsInstance });
             plugin.loaded();
 
-            // Verify both events are registered with the same cleanup function
-            expect(eventHandlers['beforeunload']).toBeDefined();
-            expect(eventHandlers['pagehide']).toBeDefined();
-            expect(eventHandlers['beforeunload']!.length).toBe(1);
-            expect(eventHandlers['pagehide']!.length).toBe(1);
+            expect(pagehideHandlers).toHaveLength(1);
 
-            // Trigger beforeunload
-            eventHandlers['beforeunload']![0]!();
-            expect(mockTracker.cleanup).toHaveBeenCalledTimes(1);
-            expect(mockSubscription.unsubscribe).toHaveBeenCalledTimes(1);
+            // Chrome keeps the page, and restores it as it was when the visitor goes back
+            pagehideHandlers[0]!({ persisted: true } as PageTransitionEvent);
+            expect(mockTracker.cleanup).not.toHaveBeenCalled();
+            expect(mockSubscription.unsubscribe).not.toHaveBeenCalled();
 
-            // Trigger pagehide - cleanup is idempotent (tracker already null)
-            // So cleanup() won't be called again, but the handler runs
-            eventHandlers['pagehide']![0]!();
-            // Still only 1 because impressionTracker becomes null after first cleanup
+            pagehideHandlers[0]!(discarded);
             expect(mockTracker.cleanup).toHaveBeenCalledTimes(1);
             expect(mockSubscription.unsubscribe).toHaveBeenCalledTimes(1);
 
@@ -376,12 +373,12 @@ describe('impressionsPlugin', () => {
 
     describe('Integration Flow', () => {
         it('should complete full lifecycle: initialize -> impression -> cleanup', async () => {
-            let unloadCallback: (() => void) | undefined;
+            let unloadCallback: ((event: PageTransitionEvent) => void) | undefined;
             const addEventListenerSpy = vi
                 .spyOn(window, 'addEventListener')
                 .mockImplementation((event, handler) => {
-                    if (event === 'beforeunload') {
-                        unloadCallback = handler as () => void;
+                    if (event === 'pagehide') {
+                        unloadCallback = handler as (event: PageTransitionEvent) => void;
                     }
                 });
 
@@ -411,7 +408,7 @@ describe('impressionsPlugin', () => {
 
             // Step 4: Cleanup
 
-            unloadCallback!();
+            unloadCallback!(discarded);
             expect(mockSubscription.unsubscribe).toHaveBeenCalled();
             expect(mockTracker.cleanup).toHaveBeenCalled();
 

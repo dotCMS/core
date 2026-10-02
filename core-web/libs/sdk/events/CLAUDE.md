@@ -150,6 +150,8 @@ Everything a renderer or the experiment needs happens before `init` returns; Ana
 
 The queue sends batches of up to 15 events, every 5 s, and flushes everything with `keepalive` when the page is hidden (not on SPA navigation, where it persists the queue to sessionStorage instead). Each event keeps the context it was created with: a batch goes out as one request per run of events that share the site, session, visitor and experiments, with the latest context of the run. The device alone does not split a batch, since the viewport changes on scroll on phones.
 
+A page the browser keeps in the back/forward cache comes back as it was, so the content trackers and the activity tracker clean up only on the `pagehide` that discards the page (`onPageDiscard` in `pipeline/utils.ts`), and work again when the visitor goes back. `beforeunload` is not used: it fires before the page goes into that cache too. The queue still sends what it holds on every `pagehide`.
+
 ### Pageview Flow on an Experiment Page
 
 A returning visitor's variant is decided by the boot script the page prints, while the HTML is parsed, from what the engine stored on an earlier page. A new visitor's is decided by the engine, once it loads. Both run the same function, `decideVariant` (`experiments/decision.ts`): the engine imports it, and the boot script receives it printed next to itself. It is pure and reads only its input: the experiment, the rendered variant, the URL, the stored assignments and whether experiments are off. It returns one of:
@@ -250,7 +252,7 @@ What it puts on the page:
 | `__dotEventsExperimentBoot` | window       | The boot script's `ExperimentBootState`, set when it replaces the page                                   |
 | `dotcms:analytics:ready`    | window event | Sent once the SDK is active, so those renderers render again                                             |
 | `dotcms:events:rescan`      | window event | Asks the impression tracker to scan again                                                                |
-| `dotcms:events:cleanup`     | window event | Sent by the activity tracker on `pagehide` and `beforeunload`; nothing listens to it yet                |
+| `dotcms:events:cleanup`     | window event | Sent by the activity tracker on the `pagehide` that discards the page; nothing listens to it yet        |
 
 New names use `dotEvents` or the `dot_events_` prefix, and console messages the `[dotCMS events]` prefix. `__dotAnalyticsActive__` and `dotcms:analytics:ready` keep their names because other SDKs read them: `@dotcms/uve/internal` declares them again (`ANALYTICS_ACTIVE_WINDOW_KEY`, `ANALYTICS_READY_EVENT`), and the React, Vue and Angular SDKs use them. Renaming them means changing `@dotcms/uve` in the same release.
 
@@ -265,7 +267,7 @@ The impression tracker observes a contentlet only when it has a `data-dot-identi
 3. A contentlet receiving `data-dot-identifier`. The renderers print it after hydration, within milliseconds of the contentlet, so this observer (`createContentletObserver` in `contentlets/utils.ts`, with `identifiers: true`) does not drop the calls inside its 250 ms throttle window: the last one runs when the window ends.
 4. `CONTENTLET_RESCAN_EVENT`, sent when hidden rows are shown.
 
-A scan only adds contentlets it has not seen, so the signals can overlap freely. The click tracker attaches its listener regardless of the attributes and reads them on click, so it watches added contentlets only.
+A scan only adds contentlets it has not seen, so the signals can overlap freely. On an SPA navigation (`onNavigation`, so `history` is not patched where the browser has the Navigation API) the tracker forgets the page's impressions: the next page counts its own. The click tracker attaches its listener regardless of the attributes and reads them on click, so it watches added contentlets only.
 
 ### Layout and Names
 
@@ -339,17 +341,19 @@ Dependencies go one way. `pipeline/` imports nothing built on it; the content tr
   - `events.spec.ts` replaces Analytics.js with a fake instance and covers `window.dotEvents`, the public methods, the conversion payload and the memory storage;
   - `standalone.spec.ts` and `standalone/config.spec.ts` cover the IIFE: the attributes dotCMS prints, their defaults and overrides, the advanced JSON, and a tag without a site auth;
   - `experiments/` has specs for `decision.ts`, `boot.ts` (with a fake window), `engine.ts` (how it follows the boot script, `onError`, marks that stream in or sit in a hidden route, a visitor who leaves during the wait, which pages' events carry the experiments, and pages marked by dotCMS's contentlet wrappers), `markup.ts` and `dom.ts`;
-  - `pipeline/navigation.spec.ts` covers SPA navigations through the Navigation API, and the fallback without it;
+  - `experiments/store.spec.ts` covers what the engine stores: how an `isUserIncluded` answer merges into the assignments, expiry, the tab's check, the session's experiments and the day off after a 403;
+  - `pipeline/navigation.spec.ts` covers SPA navigations through the Navigation API, the fallback without it, and unsubscribing;
+  - `pipeline/identity/plugin.spec.ts` and `onPageDiscard` in `pipeline/utils.spec.ts` cover the back/forward cache: a page kept there keeps its trackers;
   - `react/DotCMSExperiment.spec.tsx` uses Testing Library without the jest-dom matchers, which this project does not set up.
 - Vitest does not type-check, so run `tsc -p libs/sdk/events/tsconfig.spec.json` as well: it must report no errors. When the core specs moved here they carried 8 errors from `@dotcms/analytics` (an import of `ANALYTICS_CONTENTLET_CLASS`, which no longer exists, gave their contentlets the class `undefined`, and several fixtures no longer matched the models); those are fixed.
 
 ## Performance
 
-- The `events-init` probe in `libs/sdk/bundle-budgets` bundles `import { dotEvents } from '@dotcms/events'` with its dependencies: 29,317 B gzip, against a 30,000 B ceiling. The `#` private fields add 977 B of that, since the `es2020` target compiles them to WeakMap helpers (measured against `private`). `events-react` bundles `DotCMSExperiment`: 1,496 B gzip against 2,200, and it fails if the engine or Analytics.js comes along. Raise a ceiling only with a measurement and a reason.
+- The `events-init` probe in `libs/sdk/bundle-budgets` bundles `import { dotEvents } from '@dotcms/events'` with its dependencies: 29,342 B gzip, against a 30,000 B ceiling. The `#` private fields add 977 B of that, since the `es2020` target compiles them to WeakMap helpers (measured against `private`). `events-react` bundles `DotCMSExperiment`: 1,496 B gzip against 2,200, and it fails if the engine or Analytics.js comes along. Raise a ceiling only with a measurement and a reason.
 - `sideEffects: false`, and importing the package does nothing until `init`.
 - `isUserIncluded` is asked once per tab session, by the engine only. The pageview hold is bounded by the timeout, and the CSS rule shows the content after 3 s even when no script runs.
 - The boot script is about 1.1 KB gzip in the HTML of each page that runs an experiment (1,079 B minified with esbuild), minified by the app's build. From a server component it costs the client no JavaScript, but Next.js repeats the markup in the RSC payload of the HTML. From a client component, the builder (the `events-react` probe) is in that route's JavaScript.
-- `ca.min.js` is 73,671 B raw and 25,727 B gzip, experiments included (its build keeps the `#` fields native); `@dotcms/analytics`'s is 22,782 B gzip. The contentlets mode is in `events-init` too (412 B gzip), since the engine holds both.
+- `ca.min.js` is 73,673 B raw and 25,739 B gzip, experiments included (its build keeps the `#` fields native); `@dotcms/analytics`'s is 22,782 B gzip. The contentlets mode is in `events-init` too (412 B gzip), since the engine holds both.
 - The impression and click plugins are only added when enabled, but their code is always in the bundle, because `getEnhancedTrackingPlugins` references both.
 
 ### Measured Cost
@@ -385,7 +389,7 @@ Chrome traces of the `nextjs-experiments` example in production mode (`next buil
 - The boot script and `leavePageFor` hold the `fetch` calls of the page being left by replacing `window.fetch` on it for 5 s. That page is going away, but the override is global while it lasts: keep it only if that trade is accepted.
 - Only React has an adapter. Angular and Vue apps can print `experimentMarkup` themselves until they get one; traditional (VTL) pages run them from `ca.min.js`, on dotCMS's contentlet wrappers.
 - With localStorage blocked, the core prints `[dotCMS events] Could not save dot_events_user_id to localStorage` on every page load, debug or not. Events still go out, without a lasting user id.
-- `experiments/plugin.ts`, `experiments/store.ts` and `experiments/api.ts` have no specs, and `events.spec.ts` does not cover the pageview flow.
+- `experiments/plugin.ts` and `experiments/api.ts` have no specs, and `events.spec.ts` does not cover the pageview flow.
 
 ## Summary Checklist
 

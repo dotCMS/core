@@ -20,7 +20,6 @@ import type {
     JsonObject,
     JsonValue
 } from './models';
-import type { PageData } from 'analytics';
 
 // Export activity tracking functions from identity plugin
 export {
@@ -381,59 +380,6 @@ export const getLocalTime = (): string => {
 };
 
 /**
- * Gets page data from browser event data and payload.
- * @internal This function is for internal use only.
- * @param browserData - Browser event data
- * @param payload - Payload with properties
- * @returns PageData object for Analytics.js
- */
-export const getPageData = (
-    browserData: DotCMSBrowserData,
-    payload: { properties: Record<string, unknown> }
-): PageData => {
-    const payloadProperties = payload.properties;
-
-    return {
-        url: browserData.url,
-        path: browserData.doc_path,
-        hash: browserData.doc_hash,
-        search: browserData.doc_search,
-        title: browserData.page_title ?? (payloadProperties['title'] as string),
-        width: String(payloadProperties['width']),
-        height: String(payloadProperties['height']),
-        referrer: browserData.referrer
-    };
-};
-
-/**
- * Gets device data from browser event data.
- * @internal This function is for internal use only.
- * @param browserData - Browser event data
- * @returns Device data with screen resolution, language, and viewport dimensions
- */
-export const getDeviceData = (browserData: DotCMSBrowserData): DotCMSEventDeviceData => {
-    const [viewportWidth, viewportHeight] = (browserData.vp_size ?? '0x0').split('x');
-
-    return {
-        screen_resolution: browserData.screen_resolution,
-        language: browserData.user_language,
-        viewport_width: viewportWidth ?? '0',
-        viewport_height: viewportHeight ?? '0'
-    };
-};
-
-/**
- * Gets UTM data from browser event data.
- * @internal This function is for internal use only.
- * @param browserData - Browser event data
- * @returns UTM data with source, medium, campaign, etc.
- */
-export const getUtmData = (browserData: DotCMSBrowserData): DotCMSEventUtmData => {
-    // UTM data is already in DotCMS format (transformed by extractUTMParameters)
-    return browserData.utm || {};
-};
-
-/**
  * Optimized payload enrichment using existing analytics.js data.
  * Filters out Analytics.js default properties and only keeps user-provided properties in custom.
  * Used by the enricher plugin to transform Analytics.js payload into DotCMS event format.
@@ -494,6 +440,22 @@ export const enrichPagePayloadOptimized = (
  */
 export const isBrowser = (): boolean => {
     return typeof window !== 'undefined' && typeof document !== 'undefined';
+};
+
+/**
+ * Runs a callback when the browser discards the page. A page it keeps in the back/forward
+ * cache (`pagehide` with `persisted`) comes back as it was when the visitor returns, with its
+ * listeners and observers, so it is left alone. `beforeunload` is not used: it fires before the
+ * page goes into that cache too.
+ *
+ * @param discarded - Called on the `pagehide` that discards the page
+ */
+export const onPageDiscard = (discarded: () => void): void => {
+    window.addEventListener('pagehide', (event) => {
+        if (!event.persisted) {
+            discarded();
+        }
+    });
 };
 
 /**
