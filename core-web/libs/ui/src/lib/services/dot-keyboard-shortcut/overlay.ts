@@ -4,6 +4,11 @@ import { ZIndexUtils } from 'primeng/utils';
  * The lowest z-index PrimeNG stacks an overlay at: its default `overlay` and `menu` bases, which
  * dotCMS does not override. Below this an inline z-index is ordinary layout, such as the `2` PrimeNG
  * puts on an input's icon, and must not be read as something open above the page.
+ *
+ * Most overlays add their `baseZIndex` to these bases (a dialog stacks at `baseZIndex + 1100`), so a
+ * small `baseZIndex` such as the wizard's `100` still lands above this. Drawer, datepicker and
+ * galleria are the exception: they use `baseZIndex || base`, so one given a `baseZIndex` below 1000
+ * would stack under this line and stop blocking shortcuts while a toast is up. None does today.
  */
 const LOWEST_OVERLAY_Z_INDEX = 1000;
 
