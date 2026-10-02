@@ -103,6 +103,21 @@ describe('DotSystemConfigService', () => {
             expect(config).toEqual(expect.objectContaining(ceilings));
         });
 
+        it('should carry the time zones the server accepts', () => {
+            const timezones = [
+                { id: 'America/New_York', label: 'Eastern Standard Time', offset: -18000000 },
+                { id: 'UTC', label: 'Coordinated Universal Time', offset: 0 }
+            ];
+            let config: DotSystemConfig | undefined;
+
+            spectator.service.getSystemConfig().subscribe((value) => (config = value));
+            spectator
+                .expectOne('/api/v1/appconfiguration', HttpMethod.GET)
+                .flush({ entity: { config: { timezones } } });
+
+            expect(config?.timezones).toEqual(timezones);
+        });
+
         it('should handle errors when fetching system configuration', () => {
             spectator.service.getSystemConfig().subscribe(
                 () => expect.fail('Expected an error, but received a response'),

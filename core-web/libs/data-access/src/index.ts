@@ -16,6 +16,7 @@ export * from './lib/dot-bulk-refresh/dot-bulk-refresh.service';
 export * from './lib/dot-folder-bulk-duplicate/dot-folder-bulk-duplicate.service';
 export * from './lib/dot-job-queue/dot-job-queue.service';
 export * from './lib/dot-categories/dot-categories.service';
+export * from './lib/dot-company-configuration/dot-company-configuration.service';
 export * from './lib/dot-containers/dot-containers.service';
 export * from './lib/dot-content-drive/dot-content-drive.service';
 export * from './lib/dot-content-search/dot-content-search.service';
